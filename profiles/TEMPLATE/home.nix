@@ -9,8 +9,6 @@
     stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
     keyboard.layout = "us"; # TEMPLATE
     home.packages = with pkgs; [
-      # xdg-utils
-      # nodejs_20
       # ---------------------------------------------------------------
       # if schildichat works on this machine, use it, otherwise go for element
       # element-desktop
