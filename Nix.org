@@ -1,0 +1,2988 @@
+#+title: Nix  Configuration
+
+This file holds the entirety of all configuration files for both NixOS as well as home manager across all machines that I currently use.
+
+The only exception is my Emacs configuration which is held in its own .org file - this is done because that allows for upon-switch parsing of that file and installation of all emacs-packages through home-manager. The init.el file cannot be used there as it contains UTF-8 characters that would break the nix function responsible for handling the emacs-package building process.
+
+* Noweb-Ref blocks
+
+These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the themeing section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS. This serves to reduce code duplication.
+
+** All systems
+*** Themeing
+
+This is where the theme for the whole OS is defined. This noweb-ref section cannot be copied to the general NixOS config for now since they are on different levels in the config, which would make the flake impure.
+
+#+begin_src nix :noweb-ref theme
+
+
+  stylix = {
+    base16Scheme = ../../wallpaper/swarsel.yaml;
+    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    polarity = "dark";
+    opacity.popups = 0.5;
+    cursor = {
+      package = pkgs.capitaine-cursors;
+      name = "capitaine-cursors";
+      size = 16;
+    };
+    fonts = {
+      sizes = {
+        terminal = 10;
+        applications = 11;
+      };
+      serif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      sansSerif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      monospace = {
+        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
+        name = "FiraCode Nerd Font Mono";
+      };
+
+      emoji = {
+        package = pkgs.noto-fonts-emoji;
+        name = "Noto Color Emoji";
+      };
+    };
+  };
+
+
+
+#+end_src
+*** Waybar items - LAPTOPS
+
+#+begin_src nix :noweb-ref waybarlaptop
+
+  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark"
+                                                    "mpris"
+                                                    "custom/left-arrow-light"
+                                                    "network"
+                                                    "custom/left-arrow-dark"
+                                                    "pulseaudio"
+                                                    "custom/left-arrow-light"
+                                                    "custom/pseudobat"
+                                                    "battery"
+                                                    "custom/left-arrow-dark"
+                                                    "group/hardware"
+                                                    "custom/left-arrow-light"
+                                                    "clock#2"
+                                                    "custom/left-arrow-dark"
+                                                    "clock#1"
+                                                   ];
+
+#+end_src
+*** Waybar items - PC
+
+#+begin_src nix :noweb-ref waybarpc
+
+        programs.waybar.settings.mainBar."custom/pseudobat"= {
+          format= "";
+          on-click-right= "wlogout -p layer-shell";
+        };
+        programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark"
+                                                          "mpris"
+                                                          "custom/left-arrow-light"
+                                                          "network"
+                                                          "custom/left-arrow-dark"
+                                                          "pulseaudio"
+                                                          "custom/left-arrow-light"
+                                                          "custom/pseudobat"
+                                                          "battery"
+                                                          "custom/left-arrow-dark"
+                                                          "group/hardware"
+                                                          "custom/left-arrow-light"
+                                                          "clock#2"
+                                                          "custom/left-arrow-dark"
+                                                          "clock#1"
+                                                         ];
+
+#+end_src
+** NixOS
+*** Sway Startup commands
+
+#+begin_src nix :noweb-ref startupnixos
+
+          { command = "nextcloud --background";}
+          { command = "spotify";}
+          { command = "discord --start-minimized";}
+          { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+          { command = "ANKI_WAYLAND=1 anki";}
+          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
+          { command = "nm-applet";}
+
+#+end_src
+
+*** gpg-agent
+
+#+begin_src nix :noweb-ref gpgagent
+
+  services.gpg-agent = {
+    enable = true;
+    enableSshSupport = true;
+  };
+
+#+end_src
+
+*** Wrap with hardware-configuration
+
+#+begin_src nix :noweb-ref wrap
+
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
+#+end_src
+
+* TODO System specific configuration
+
+This section mainly exists house different `configuration.nix` files for system level configurations of NixOS systems as well as `home.nix` for user level configurations on all systems.
+
+Important: Think about if a settings really needs to go into this area - chances are that the settings can also go to the general settings.
+
+** Template (for new machines)
+
+This section holds the minimum configuration that is needed on a new host. These assume a NixOS machine (so not standalone home-manager on a non-NixOS host), as this is the setting that I will most likely use in the future now. All of these blocks need to be updated, with entries called TEMPLATE mostly needed to be filled with host-/user-specific values or other inputs. If TEMPLATE is given in a comment section, see the provided values as likely defaults. The TEMPLATE comments should afterwards be deleted for clarity.
+
+If a non-NixOS host must be used, check the Surface configuration for pointers. Most likely the waybar settings need to be adjusted, since non-NixOS (as of writing this) fails to display drawers in the waybar properly.
+
+No matter what you do, check the initial /etc/nixos/configuration.nix for notable changes that might emerge in future versions of nix.
+
+*** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/TEMPLATE/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      getty.autologinUser = "TEMPLATE";
+      greetd.settings.initial_session.user="TEMPLATE";
+    };
+
+    # Bootloader
+    boot.loader.grub.enable = true;
+    boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    boot.loader.grub.useOSProber = true;
+
+    # --------------------------------------
+    # you might need a configuration like this instead:
+    # Bootloader
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.devices = ["nodev" ];
+    # boot.loader.grub.useOSProber = true;
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
+    # --------------------------------------
+
+    networking.hostName = "TEMPLATE"; # Define your hostname.
+
+    stylix.image = ../../wallpaper/TEMPLATEwp.png;
+    <<theme>>
+
+    # Configure keymap in X11 (only used for login)
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+
+    users.users.TEMPLATE = {
+      isNormalUser = true;
+      description = "TEMPLATE";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+
+  }
+
+#+end_src
+
+*** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/TEMPLATE/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgconf>>
+    home = {
+      username = "TEMPLATE";
+      homeDirectory = "/home/TEMPLATE";
+      stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
+      keyboard.layout = "us"; # TEMPLATE
+      home.packages = with pkgs; [
+        # xdg-utils
+        # nodejs_20
+        # ---------------------------------------------------------------
+        # if schildichat works on this machine, use it, otherwise go for element
+        # element-desktop
+        # ---------------------------------------------------------------
+      ];
+    };
+    # update path if the sops private key is stored somewhere else
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config - TEMPLATE - update for cores and temp
+    programs.waybar.settings.mainBar = {
+      #cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+    };
+
+    # -----------------------------------------------------------------
+    # is this machine always connected to power? If yes, use this block:
+    # <<waybarpc>>
+    # -----------------------------------------------------------------
+
+    # -----------------------------------------------------------------
+    # if not always connected to power (laptop), use this (default):
+    <<waybarlaptop>>
+    # -----------------------------------------------------------------
+
+    wayland.windowManager.sway= {
+      config = rec {
+        # update for actual inputs here,
+        input = {
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+
+        };
+
+        output = {
+          DP-1 = {
+            mode = "2560x1440"; # TEMPLATE
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/TEMPLATE.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          # TEMPLATE
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+          # "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+    };
+  }
+
+#+end_src
+
+** TODO Surface
+
+My Surface Pro 3, only used for on-the-go university work. Be careful when pushing largechanges to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
+
+*** TODO Channel setup
+
+This installs nixGL, which is needed to run GL apps installed through home-manager, since this machine is not using NixOS.
+
+- TODO: move this to flake.nix by using an overlay
+
+1) Install nixGL:
+
+#+begin_src nix
+  nix-channel --add https://github.com/guibou/nixGL/archive/main.tar.gz nixgl && nix-channel --update
+    nix-env -iA nixgl.auto.nixGLDefault   # or replace `nixGLDefault` with your desired wrapper
+#+end_src
+
+This is needed in order to use EGL. Prefix programs that use it with `nixGL`
+
+*** Home manager
+
+#+begin_src nix :noweb yes :tangle profiles/surface/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+    programs.home-manager.enable = true;
+    home.username = "leons";
+    home.homeDirectory = "/home/leons";
+
+    home.stateVersion = "23.05"; # Please read the comment before changing.
+
+     stylix.image = ../../wallpaper/surfacewp.png;
+    <<theme>>
+
+    nixpkgs = {
+      config = {
+        allowUnfree = true;
+        allowUnfreePredicate = (_: true);
+      };
+    };
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+    #keyboard config
+    home.keyboard.layout = "us";
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config
+    programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+
+    programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
+                                                      "network"
+                                                      "custom/left-arrow-dark"
+                                                      "pulseaudio"
+                                                      "custom/left-arrow-light"
+                                                      "battery"
+                                                      "custom/left-arrow-dark"
+                                                      "temperature"
+                                                      "custom/left-arrow-light"
+                                                      "disk"
+                                                      "custom/left-arrow-dark"
+                                                      "memory"
+                                                      "custom/left-arrow-light"
+                                                      "cpu"
+                                                      "custom/left-arrow-dark"
+                                                      "tray"
+                                                      "custom/left-arrow-light"
+                                                      "clock#2"
+                                                      "custom/left-arrow-dark"
+                                                      "clock#1" ];
+    services.blueman-applet.enable = true;
+    home.packages = with pkgs; [
+      # nixgl.auto.nixGLDefault
+      evince
+      # nodejs_20
+
+      # messaging
+      # we use gomuks for RAM preservation, but keep schildi around for files and images
+    ];
+
+    programs.zsh.initExtra = "
+  export GPG_TTY=\"$(tty)\"
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+        ";
+
+    # sway config
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "*" = {
+            xkb_layout = "us";
+            xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "2160x1440@59.955Hz";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
+          "${modifier}+Ctrl+p" = "exec nixGL wl-mirror eDP-1";
+          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
+          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
+        };
+
+        startup = [
+          { command = "sleep 60 && nixGL nextcloud --background";}
+          # { command = "sleep 60 && nixGL spotify";}
+          { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+          # { command = "sleep 60 && nixGL schildichat-desktop --hidden";}
+          { command = "sleep 60 && nixGL syncthingtray --wait"; }
+          { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki";}
+          { command = "nm-applet --indicator";}
+          { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+        ];
+
+        keycodebindings = {
+          "124" = "exec systemctl suspend";
+        };
+      };
+
+      extraConfig = "
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
+      ";
+    };
+  }
+
+#+end_src
+
+** Onett (Lenovo Y510P)
+
+My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
+
+*** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/onett/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      greetd.settings.initial_session.user ="swarsel";
+      xserver.videoDrivers = ["nvidia"];
+    };
+
+    hardware = {
+      nvidia = {
+        modesetting.enable = true;
+        powerManagement.enable = true;
+        prime = {
+          intelBusId = "PCI:0:2:0";
+          nvidiaBusId = "PCI:1:0:0";
+          sync.enable = true;
+        };
+      };
+      pulseaudio.configFile = pkgs.runCommand "default.pa" {} ''
+                   sed 's/module-udev-detect$/module-udev-detect tsched=0/' \
+                     ${pkgs.pulseaudio}/etc/pulse/default.pa > $out
+                   '';
+      bluetooth.enable = true;
+    };
+
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
+
+    boot.loader.grub = {
+      enable = true;
+      device = "/dev/sda";
+      useOSProber = true;
+    };
+
+    networking.hostName = "onett"; # Define your hostname.
+
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp"];
+      packages = with pkgs; [];
+    };
+
+    system.stateVersion = "23.05"; # Did you read the comment?
+
+  }
+
+#+end_src
+
+*** Home Manager
+
+#+begin_src nix :noweb yes :tangle profiles/onett/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgagent>>
+
+    home = {
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "de";
+      packages = with pkgs; [
+        # xdg-utils
+        # nodejs_20
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # # waybar config
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    };
+    <<waybarlaptop>>
+
+    services.blueman-applet.enable = true;
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "1:1:AT_Translated_Set_2_keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "2362:33538:ipad_keyboard_Keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "altwin:swap_lalt_lwin,ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "colemak_dh";
+          };
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "1920,0";
+          };
+          VGA-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "0,0";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
+          "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
+          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
+          "XF86HomePage" = "exec wtype -P Escape -p Escape";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+        keycodebindings = {
+          "94" = "exec wtype c";
+          "Shift+94" = "exec wtype C";
+          "Ctrl+94" = "exec wtype -M ctrl c -m ctrl";
+          "Ctrl+Shift+94" = "exec wtype -M ctrl -M shift c -m ctrl -m shift";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+
+      extraConfig = "
+   ";
+    };
+  }
+
+#+end_src
+
+** Stand
+
+My home PC, the most powerful machine. Sadly Sway cannot make good use out of it's NVIDIA card, so it runs a dual boot setup with a kind of broken GRUB that does not autodetect the windows partition.
+
+*** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/stand/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      getty.autologinUser = "homelen";
+      greetd.settings.initial_session.user="homelen";
+    };
+
+    stylix.image = ../../wallpaper/standwp.png;
+    <<theme>>
+
+    # Bootloader.
+    boot.loader.grub = {
+      enable = true;
+      devices = ["nodev" ];
+      useOSProber = true;
+    };
+
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
+    networking = {
+      hostName = "stand"; # Define your hostname.
+      enableIPv6 = false;
+      firewall.enable = false;
+    # networkmanager.enable = true;
+    };
+
+    hardware = {
+      bluetooth.enable = true;
+    };
+
+    users.users.homelen = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+    system.stateVersion = "23.05"; # Did you read the comment? Dont change this basically
+
+  }
+
+#+end_src
+
+*** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/stand/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgagent>>
+
+    home = {
+      username = "homelen";
+      homeDirectory = "/home/homelen";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "us";
+      packages = with pkgs; [
+        # xdg-utils
+        # nodejs_20
+        # element-desktop
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    services.blueman-applet.enable = true;
+
+    # waybar config
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+    };
+    <<waybarpc>>
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+
+        output = {
+          DP-1 = {
+            mode = "2560x1440";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/standwp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+    };
+  }
+
+#+end_src
+
+** Threed (Surface Pro 3)
+
+New setup for the SP3, this time using NixOS - another machine will take over the HM-only config for compatibility in the future.
+
+*** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/threed/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+    <<wrap>>
+
+    services = {
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user="swarsel";
+    };
+
+    # Bootloader
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce false;
+      lanzaboote = {
+        enable = true;
+        pkiBundle = "/etc/secureboot";
+      };
+      loader.efi.canTouchEfiVariables = true;
+      # use bootspec instead of lzbt for secure boot. This is not a generally needed setting
+      bootspec.enable = true;
+      # kernelPackages = pkgs.linuxPackages_latest;
+    };
+
+    networking = {
+      hostName = "threed";
+      enableIPv6 = false;
+      firewall.enable = false;
+    };
+
+    stylix.image = ../../wallpaper/surfacewp.png;
+    <<theme>>
+
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+    system.stateVersion = "23.05";
+
+  }
+
+#+end_src
+
+*** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/threed/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpg-agent>>
+
+    home = {
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "us";
+      packages = with pkgs; [
+        # xdg-utils
+        # nodejs_20
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+    };
+    <<waybarlaptop>>
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "*" = {
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "2160x1440@59.955Hz";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
+          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
+          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
+          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+
+        keycodebindings = {
+          "124" = "exec systemctl suspend";
+        };
+      };
+
+      extraConfig = "
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
+      ";
+    };
+  }
+#+end_src
+
+* Common NixOS
+
+These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
+
+** General
+
+Section for all settings that are not really deserving of their own section.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    home-manager.useGlobalPkgs = true;
+    home-manager.useUserPackages = true;
+
+    # login keymap
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+
+    # mount NAS drive
+    # works only at home, but w/e
+    fileSystems."/mnt/smb" = {
+      device = "//192.168.1.3/Eternor";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+    };
+
+    # enable flakes - urgent line!!
+    nix.settings.experimental-features = ["nix-command" "flakes"];
+    environment.sessionVariables.NIXOS_OZONE_WL = "1";
+    # correct time between linux and windows
+    time.hardwareClockInLocalTime = true;
+
+    # dont style GRUB with stylix
+    stylix.targets.grub.enable = false; # the styling makes grub more ugly
+
+    # cura fix
+    # xdg.portal = {
+    #   enable = true;
+    #   extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    #   wlr.enable = true;
+    #   config = {
+    #     common = {
+    #       default = [
+    #         "*"
+    #       ];
+    #     };
+    #   };
+    # };
+    # wayland-related
+    security.polkit.enable = true;
+    hardware.opengl = {
+      enable = true;
+      driSupport = true;
+      driSupport32Bit = true;
+    };
+
+    # audio
+    sound.enable = true;
+    # nixpkgs.config.pulseaudio = true;
+    hardware.pulseaudio= {
+      enable = true;
+      package = pkgs.pulseaudioFull;
+    };
+    hardware.enableAllFirmware = true;
+    hardware.bluetooth.powerOnBoot = true;
+    hardware.bluetooth.settings = {
+      General = {
+        Enable = "Source,Sink,Media,Socket";
+      };
+    };
+    # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+    networking.networkmanager.enable = true;
+
+    time.timeZone = "Europe/Vienna";
+
+    i18n.defaultLocale = "en_US.UTF-8";
+    i18n.extraLocaleSettings = {
+      LC_ADDRESS = "de_AT.UTF-8";
+      LC_IDENTIFICATION = "de_AT.UTF-8";
+      LC_MEASUREMENT = "de_AT.UTF-8";
+      LC_MONETARY = "de_AT.UTF-8";
+      LC_NAME = "de_AT.UTF-8";
+      LC_NUMERIC = "de_AT.UTF-8";
+      LC_PAPER = "de_AT.UTF-8";
+      LC_TELEPHONE = "de_AT.UTF-8";
+      LC_TIME = "de_AT.UTF-8";
+    };
+
+#+end_src
+
+** System Packages
+
+Mostly used to install some compilers and lps's that I want to have available when not using a devShell flake.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  environment.systemPackages = with pkgs; [
+    # yubikey packages
+    gnupg
+    yubikey-personalization
+    yubikey-personalization-gui
+    yubico-pam
+    yubioath-flutter
+    yubikey-manager
+    yubikey-manager-qt
+    yubico-piv-tool
+    pinentry
+
+    # theme related
+    gnome.adwaita-icon-theme
+
+    # kde-connect
+    xdg-desktop-portal
+
+    # bluetooth
+    bluez
+
+    # lsp-related -------------------------------
+    # nix
+    rnix-lsp
+    # latex
+    texlab
+    ghostscript_headless
+    # rust
+    rust-analyzer
+    clippy
+    rustfmt
+    # cpp
+    clang-tools
+    # + cuda
+    cudatoolkit
+    #lsp-bridge / python
+    gcc
+    gdb
+    (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+    # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+    # --------------------------------------------
+  ];
+
+#+end_src
+
+** Programs (including zsh setup)
+
+Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  programs.dconf.enable = true;
+  programs.evince.enable = true;
+  programs.kdeconnect.enable = true;
+
+
+  # zsh section, do not delete ------
+  programs.zsh.enable = true;
+  users.defaultUserShell = pkgs.zsh;
+  environment.shells = with pkgs; [ zsh ];
+  environment.pathsToLink = [ "/share/zsh" ];
+  # ---------------------------------
+
+#+end_src
+
+** Services
+
+Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  services.blueman.enable = true;
+
+  # enable discovery and usage of network devices (esp. printers)
+  services.printing.enable = true;
+  services.avahi = {
+    enable = true;
+    nssmdns = true;
+    openFirewall = true;
+  };
+
+  # nautilus file manager
+  services.gvfs.enable = true;
+
+  # Make CAPS work as a dual function ESC/CTRL key
+  services.interception-tools = {
+    enable = true;
+    udevmonConfig = let
+      dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+        TIMING:
+          TAP_MILLISEC: 200
+          DOUBLE_TAP_MILLISEC: 0
+
+        MAPPINGS:
+          - KEY: KEY_CAPSLOCK
+            TAP: KEY_ESC
+            HOLD: KEY_LEFTCTRL
+      '';
+    in ''
+      - JOB: |
+          ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+            | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+            | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+        DEVICE:
+          EVENTS:
+            EV_KEY: [KEY_CAPSLOCK]
+    '';
+  };
+
+#+end_src
+
+** Yubikey settings
+
+It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
+
+The exception is the system packages, since that cannot be defined twice in the same file (common.nix). The comment is left in as a remider for that.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  programs.ssh.startAgent = false;
+
+  services.pcscd.enable = true;
+
+  # environment.systemPackages = with pkgs; [
+  # --- IN SYSTEM PACKAGES SECTION ---
+  # ];
+
+  services.udev.packages = with pkgs; [
+    yubikey-personalization
+  ];
+
+
+#+end_src
+
+** System Login
+
+This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  services.greetd = {
+    enable = true;
+    settings = {
+      initial_session.command = "sway";
+      # initial_session.user ="swarsel";
+      default_session.command = ''
+                  ${pkgs.greetd.tuigreet}/bin/tuigreet \
+                    --time \
+                    --asterisks \
+                    --user-menu \
+                    --cmd sway
+                '';
+    };
+  };
+
+  environment.etc."greetd/environments".text = ''
+                sway
+              '';
+
+#+end_src
+
+* Common Home-Manager
+** Installed packages
+
+Here are defined some packages that I would like to use across all my machines. Most of these should not require further setup. Notably the cura package is severely outdated on nixpkgs, so I just fetch a more recent AppImage and run that instead.
+
+Also, I define some useful shell scripts here.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub , ... }:
+
+  {
+    home.packages = with pkgs; [
+
+      # "big" programs
+      filebot
+      gimp
+      zoom-us
+      nomacs
+      libreoffice-qt
+      xournalpp
+      obsidian
+      spotify
+      discord
+      nextcloud-client
+      spotify-tui
+      schildichat-desktop
+
+      # kyria
+      qmk
+      qmk-udev-rules
+
+      # games
+      lutris
+      wine
+
+      # firefox related
+      tridactyl-native
+
+      # mako related
+      mako
+      libnotify
+
+      # general utilities
+      unrar
+      samba
+      cifs-utils
+      zbar # qr codes
+      readline
+      autotiling
+      brightnessctl
+      libappindicator-gtk3
+      sqlite
+      speechd
+      networkmanagerapplet
+      psmisc # kill etc
+      jq # used for searching the i3 tree in check<xxx>.sh files
+
+      # specifically needed for anki
+      mpv
+      anki-bin
+
+      # dirvish file previews
+      fd
+      imagemagick
+      poppler
+      ffmpegthumbnailer
+      mediainfo
+      gnutar
+      unzip
+
+      #nautilus
+      gnome.nautilus
+      xfce.tumbler
+      libgsf
+
+      # wayland stuff
+      wtype
+      wl-clipboard
+      wl-mirror
+
+      # screenshotting tools
+      grim
+      slurp
+
+      # the following packages are used (in some way) by waybar
+      playerctl
+      pavucontrol
+      pamixer
+      gnome.gnome-clocks
+      wlogout
+      jdiskreport
+      syncthingtray
+      monitor
+
+      #keychain
+      qalculate-gtk
+      gcr # needed for gnome-secrets to work
+      gnome.seahorse
+
+      # sops-related
+      sops
+      ssh-to-age
+
+      # mail related packages
+      mu
+
+      # latex and related packages
+      (pkgs.texlive.combine {
+        inherit (pkgs.texlive) scheme-full
+          dvisvgm dvipng # for preview and export as html
+          wrapfig amsmath ulem hyperref capt-of;
+      })
+
+      # font stuff
+      (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly"]; })
+      noto-fonts-emoji
+      font-awesome_5
+      noto-fonts
+      noto-fonts-cjk-sans
+
+      # cura
+      (let cura5 = appimageTools.wrapType2 rec {
+             name = "cura5";
+             version = "5.4.0";
+             src = fetchurl {
+               url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+               hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+             };
+             extraPkgs = pkgs: with pkgs; [ ];
+           }; in writeScriptBin "cura" ''
+            #! ${pkgs.bash}/bin/bash
+            # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
+            # So we convert each of the files passed as argument to an absolute path.
+            # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+            args=()
+            for a in "$@"; do
+                if [ -e "$a" ]; then
+                   a="$(realpath "$a")"
+                fi
+                args+=("$a")
+            done
+            exec "${cura5}/bin/cura5" "''${args[@]}"
+            '')
+
+      #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
+      (pkgs.writeShellScriptBin "e" ''
+         bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
+         '')
+      (pkgs.writeShellScriptBin "timer" ''
+         sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
+         '')
+
+      (pkgs.writeScriptBin "project" ''
+   #! ${pkgs.bash}/bin/bash
+   if [ "$1" == "rust" ]; then
+   cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
+   cp ~/.dotfiles/templates/toolchain.toml .
+   elif [ "$1" == "cpp" ]; then
+   cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
+   elif [ "$1" == "python" ]; then
+   cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
+   elif [ "$1" == "cuda" ]; then
+   cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
+   elif [ "$1" == "latex" ]; then
+     if [ "$2" == "" ]; then
+     echo "No filename specified, usage: 'project latex <NAME>'"
+     exit 0
+     fi
+   cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
+   exit 0
+   else
+   echo "No valid argument given. Valid arguments are rust cpp python, cuda"
+   exit 0
+   fi
+   echo "use flake" >> .envrc
+   direnv allow
+   '')
+
+      (pkgs.writeShellApplication {
+        name = "pass-fuzzel";
+        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+        text = ''
+         shopt -s nullglob globstar
+
+         typeit=0
+         if [[ $# -ge 1 && $1 == "--type" ]]; then
+           typeit=1
+           shift
+         fi
+
+         export PASSWORD_STORE_DIR=~/.local/share/password-store
+         prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+         password_files=( "$prefix"/**/*.gpg )
+         password_files=( "''${password_files[@]#"$prefix"/}" )
+         password_files=( "''${password_files[@]%.gpg}" )
+
+         password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+         [[ -n $password ]] || exit
+
+         if [[ $typeit -eq 0 ]]; then
+           pass show -c "$password" &>/tmp/pass-fuzzel
+         else
+           pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+         fi
+         notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+       '';
+      })
+
+
+    ];
+
+
+    #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
+
+
+#+end_src
+
+** SSH Machines
+
+It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.ssh= {
+    enable = true;
+    extraConfig = "SetEnv TERM=xterm-256color";
+    matchBlocks = {
+      "nginx" = {
+        hostname = "192.168.2.14";
+        port = 22;
+        user = "root";
+      };
+      "pfsense" = {
+        hostname = "192.168.1.1";
+        port = 22;
+        user = "root";
+      };
+      "proxmox" = {
+        hostname = "192.168.1.2";
+        port = 22;
+        user = "root";
+      };
+      "transmission" = {
+        hostname = "192.168.1.6";
+        port = 22;
+        user = "root";
+      };
+      "omv" = {
+        hostname = "192.168.1.3";
+        port = 22;
+        user = "root";
+      };
+      "webbot" = {
+        hostname = "192.168.1.11";
+        port = 22;
+        user = "root";
+      };
+      "plex" = {
+        hostname = "192.168.1.16";
+        port = 22;
+        user = "root";
+      };
+      "nextcloud" = {
+        hostname = "192.168.2.5";
+        port = 22;
+        user = "root";
+      };
+      "subsonic" = {
+        hostname = "192.168.2.13";
+        port = 22;
+        user = "root";
+      };
+      "wordpress" = {
+        hostname = "192.168.2.7";
+        port = 22;
+        user = "root";
+      };
+      "turn" = {
+        hostname = "192.168.2.17";
+        port = 22;
+        user = "root";
+      };
+      "hugo" = {
+        hostname = "192.168.2.19";
+        port = 22;
+        user = "root";
+      };
+      "matrix" = {
+        hostname = "192.168.2.20";
+        port = 22;
+        user = "root";
+      };
+      "database" = {
+        hostname = "192.168.2.21";
+        port = 22;
+        user = "root";
+      };
+      "pkv" = {
+        hostname = "46.232.248.161";
+        port = 22;
+        user = "root";
+      };
+      "calibre" = {
+        hostname = "192.168.2.22";
+        port = 22;
+        user = "root";
+      };
+      "nebula" = {
+        hostname = "128.131.171.15";
+        port = 22;
+        user = "amp23s56";
+        compression = true;
+        identityFile = "~/.ssh/id_ed25519";
+        proxyCommand = "ssh -p 1022 -i ~/.ssh/id_ed25519 -q -W %h:%p %r@venus.par.tuwien.ac.at";
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+        };
+      };
+      "efficient" = {
+        hostname = "g0.complang.tuwien.ac.at";
+        port = 22;
+        forwardAgent = true;
+        user = "ep01427399";
+
+        # leaving the below lines in for future reference
+
+        # remoteForwards = [
+        #   {
+        #     bind.address = "/run/user/21217/gnupg/S.gpg-agent";
+        #     host.address = "/run/user/1000/gnupg/S.gpg-agent.extra";
+        #   }
+        #   {
+        #     bind.address = "/run/user/21217/gnupg/S.gpg-agent.ssh";
+        #     host.address = "/run/user/1000/gnupg/S.gpg-agent.ssh";
+        #   }
+        # ];
+        # extraOptions = {
+        # "RemoteForward" = "/run/user/21217/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra";
+        # "StreamLocalBindUnlink" = "yes";
+        # "RemoteForward" = "/run/user/21217/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh";
+        # };
+        # setEnv = {
+        #   "TERM" = "xterm";
+        # };
+      };
+      "hydra" = {
+        hostname = "128.131.171.215";
+        port = 22;
+        user = "hpc23w33";
+        compression = true;
+        forwardAgent = true;
+        # identityFile = "~/.ssh/id_tuwien_hpc";
+        # proxyCommand = "ssh -p 1022 -i ~/.ssh/id_tuwien_hpc -q -W %h:%p %r@venus.par.tuwien.ac.at";
+        proxyCommand = "ssh -p 1022 -q -W %h:%p %r@venus.par.tuwien.ac.at";
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+        };
+      };
+    };
+  };
+
+#+end_src
+
+** sops
+
+I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
+- `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
+- cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
+- add the output to .sops.yaml
+- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
+- update entry for sops.age.sshKeyPaths
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+    sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+    sops.validateSopsFiles = false;
+    # sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
+    # since we are using the home-manager implementation, we need to specify the runtime path for each secret
+    sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
+    # sops.secrets.mrswarsel = { };
+    sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
+    # sops.secrets.nautilus = { };
+    sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
+    sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+    # sops.secrets.leon = { };
+#+end_src
+
+** Fonts + Theme
+
+These section allows home-manager to allow theme settings, and handles some other appearance-related settings like cursor styles. Interestingly, system icons (adwaita) still need to be setup on system-level, and will break if defined here.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  stylix.targets.emacs.enable = false;
+
+    # fonts.fontconfig.enable = true;
+    # gtk = {
+    #   enable = true;
+
+    #   theme = {
+    #     name = "Arc-Dark";
+    #     package = pkgs.arc-theme;
+    #   };
+
+    #   cursorTheme = {
+    #     name = "capitaine-cursors";
+    #     package = pkgs.capitaine-cursors;
+    #   };
+
+    #   gtk3.extraConfig = {
+    #     Settings = ''
+    #    gtk-application-prefer-dark-theme=1
+    #    '';
+    #   };
+
+    #   gtk4.extraConfig = {
+    #     Settings = ''
+    #    gtk-application-prefer-dark-theme=1
+    #    '';
+    #   };
+    # };
+
+#+end_src
+
+** TODO Desktop Entries
+
+Some programs lack a dmenu launcher - I define them myself here.
+
+TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  xdg.desktopEntries = {
+
+    cura = {
+      name = "Ultimaker Cura";
+      genericName = "Cura";
+      exec = "cura";
+      terminal = false;
+      categories = [ "Application"];
+    };
+
+    anki = {
+      name = "Anki Flashcards";
+      genericName = "Anki";
+      exec = "anki";
+      terminal = false;
+      categories = [ "Application"];
+    };
+
+    schlidichat = {
+      name = "SchildiChat Matrix Client";
+      genericName = "SchildiChat";
+      exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+      terminal = false;
+      categories = [ "Application"];
+    };
+
+    # currently unused but kept for possible future use-case
+    # not needed as long as schildichat is working properly
+  #   element = {
+  #     name = "Element Matrix Client";
+  #     genericName = "Element";
+  #     exec = "element-desktop";
+  #     terminal = false;
+  #     categories = [ "Application"];
+  #   };
+
+  };
+
+#+end_src
+
+** TODO Sourcing dotfiles and environment variables
+
+This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
+
+TODO At the moment this is only used for emacs' init.el and early-init.el - I plan to migrate them to a NUR emacs-init setup at some point in the future, but that is a lot of work and will take possibly more time than I am able to spend on this right now
+
+As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  home.file = {
+    "init.el" = {
+      source = ../../programs/emacs/init.el;
+      target = ".emacs.d/init.el";
+    };
+    "early-init.el" = {
+      source = ../../programs/emacs/early-init.el;
+      target = ".emacs.d/early-init.el";
+    };
+  };
+
+  home.sessionVariables = {
+    EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
+    GTK_THEME = "Arc-Dark";
+  };
+
+#+end_src
+
+** Programs
+
+Let Home Manager install and manage itself - this is needed.
+
+
+Other programs:
+
+*** General
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.password-store = {
+    enable = true;
+    package = pkgs.pass.withExtensions (exts: [exts.pass-otp]);
+  };
+  # zsh Integration is enabled by default for these
+  programs.fzf.enable = true;
+  programs.direnv.enable = true;
+  programs.zoxide.enable = true;
+  programs.navi.enable = true;
+  programs.eza = {
+    enable = true;
+    enableAliases = true;
+    icons = true;
+    git = true;
+    extraOptions = [
+      "-l"
+      "--group-directories-first"
+    ];
+  };
+  programs.git = {
+    enable = true;
+    aliases = {
+      c = "commit";
+      co = "checkout";
+      s = "status";
+      p = "pull";
+      pp = "push";
+    };
+    signing = {
+      key = "0x76FD3810215AE097";
+      signByDefault = true;
+    };
+    userEmail = "leon.schwarzaeugl@gmail.com";
+    userName = "Swarsel";
+  };
+
+#+end_src
+
+*** Fuzzel
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.fuzzel = {
+    enable = true;
+    settings = {
+      main = {
+        layer = "overlay";
+        # font = "Monospace:size=8";
+        lines = "10";
+        width = "40";
+      };
+      colors = {
+        # background="293744dd";
+        # text="f8f8f2ff";
+        # match="8be9fdff";
+        # selection-match="8be9fdff";
+        # selection="44475add";
+        # selection-text="f8f8f2ff";
+        # border="ffd700ff";
+      };
+      border.radius = "0";
+    };
+  };
+
+#+end_src
+
+*** Starship
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      add_newline = false;
+      format = "$character";
+      right_format = "$all";
+      command_timeout = 3000;
+
+      directory.substitutions = {
+        "Documents" = "󰈙 ";
+        "Downloads" = " ";
+        "Music" = " ";
+        "Pictures" = " ";
+      };
+
+      git_status = {
+        style = "bg:#394260";
+        format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+      };
+
+      character = {
+        success_symbol = "[λ](bold green)";
+        error_symbol = "[λ](bold red)";
+      };
+
+      aws.symbol = "  ";
+      buf.symbol = " ";
+      c.symbol = " ";
+      conda.symbol = " ";
+      dart.symbol = " ";
+      directory.read_only = " 󰌾";
+      docker_context.symbol = " ";
+      elixir.symbol = " ";
+      elm.symbol = " ";
+      fossil_branch.symbol = " ";
+      git_branch.symbol = " ";
+      golang.symbol = " ";
+      guix_shell.symbol = " ";
+      haskell.symbol = " ";
+      haxe.symbol = " ";
+      hg_branch.symbol = " ";
+      hostname.ssh_symbol = " ";
+      java.symbol = " ";
+      julia.symbol = " ";
+      lua.symbol = " ";
+      memory_usage.symbol = "󰍛 ";
+      meson.symbol = "󰔷 ";
+      nim.symbol = "󰆥 ";
+      nix_shell.symbol = " ";
+      nodejs.symbol = " ";
+
+      os.symbols = {
+        Alpaquita = " ";
+        Alpine = " ";
+        Amazon = " ";
+        Android = " ";
+        Arch = " ";
+        Artix = " ";
+        CentOS = " ";
+        Debian = " ";
+        DragonFly = " ";
+        Emscripten = " ";
+        EndeavourOS = " ";
+        Fedora = " ";
+        FreeBSD = " ";
+        Garuda = "󰛓 ";
+        Gentoo = " ";
+        HardenedBSD = "󰞌 ";
+        Illumos = "󰈸 ";
+        Linux = " ";
+        Mabox = " ";
+        Macos = " ";
+        Manjaro = " ";
+        Mariner = " ";
+        MidnightBSD = " ";
+        Mint = " ";
+        NetBSD = " ";
+        NixOS = " ";
+        OpenBSD = "󰈺 ";
+        openSUSE = " ";
+        OracleLinux = "󰌷 ";
+        Pop = " ";
+        Raspbian = " ";
+        Redhat = " ";
+        RedHatEnterprise = " ";
+        Redox = "󰀘 ";
+        Solus = "󰠳 ";
+        SUSE = " ";
+        Ubuntu = " ";
+        Unknown = " ";
+        Windows = "󰍲 ";
+      };
+
+      package.symbol = "󰏗 ";
+      pijul_channel.symbol = " ";
+      python.symbol = " ";
+      rlang.symbol = "󰟔 ";
+      ruby.symbol = " ";
+      rust.symbol = " ";
+      scala.symbol = " ";
+    };
+  };
+
+#+end_src
+
+*** Kitty
+
+Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.kitty = {
+    enable = true;
+    keybindings = {
+      "ctrl+shift+left" = "no_op";
+      "ctrl+shift+right" = "no_op";
+      "ctrl+shift+home" = "no_op";
+      "ctrl+shift+end" = "no_op";
+    };
+    # theme = "citylights";
+  };
+
+#+end_src
+
+*** zsh
+
+zsh is clearly the most convenient shell for me and it happens to be super neat to configure within home manager.
+
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.zsh = {
+    enable = true;
+    shellAliases = {
+      hg = "history | grep";
+      hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
+      nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
+      magit = "emacsclient -nc -e \"(magit-status)\"";
+      config="git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+      c="git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+      passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+      passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+    };
+    enableAutosuggestions = true;
+    enableCompletion = true;
+    syntaxHighlighting.enable = true;
+    autocd = false;
+    cdpath = [
+      "~/.dotfiles"
+      # "~/Documents/GitHub"
+    ];
+    defaultKeymap = "emacs";
+    dirHashes = {
+      dl    = "$HOME/Downloads";
+    };
+    history = {
+      expireDuplicatesFirst = true;
+      path = "$HOME/.histfile";
+      save = 10000;
+      size = 10000;
+    };
+    historySubstringSearch.enable = true;
+  };
+
+#+end_src
+
+*** Mail
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.mbsync = {
+    enable = true;
+  };
+  # this is needed so that mbsync can use the passwords from sops
+  systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
+
+  programs.msmtp = {
+    enable = true;
+  };
+
+  programs.mu = {
+    enable = true;
+  };
+
+  accounts.email = {
+    maildirBasePath = "Mail";
+    accounts.leon = {
+      primary = true;
+      address = "leon.schwarzaeugl@gmail.com";
+      userName = "leon.schwarzaeugl@gmail.com";
+      realName = "Leon Schwarzäugl";
+      passwordCommand = "cat ${config.sops.secrets.leon.path}";
+      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/leon.schwarzaeugl@gmail.com.gpg";
+      gpg = {
+        key = "0x76FD3810215AE097";
+        signByDefault = true;
+      };
+      imap.host = "imap.gmail.com";
+      smtp.host = "smtp.gmail.com";
+      mu.enable = true;
+      msmtp = {
+        enable = true;
+      };
+      mbsync = {
+        enable = true;
+        create= "maildir";
+        expunge = "both";
+        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        extraConfig = {
+          channel = {
+            Sync = "All";
+          };
+          account = {
+            Timeout = 120;
+            PipelineDepth = 1;
+          };
+        };
+      };
+    };
+
+    accounts.nautilus = {
+      primary = false;
+      address = "nautilus.dw@gmail.com";
+      userName = "nautilus.dw@gmail.com";
+      realName = "Nautilus";
+      passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
+      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/nautilus.dw@gmail.com.gpg";
+      imap.host = "imap.gmail.com";
+      smtp.host = "smtp.gmail.com";
+      msmtp.enable = true;
+      mu.enable = true;
+      mbsync = {
+        enable = true;
+        create= "maildir";
+        expunge = "both";
+        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        extraConfig = {
+          channel = {
+            Sync = "All";
+          };
+          account = {
+            Timeout = 120;
+            PipelineDepth = 1;
+          };
+        };
+      };
+    };
+    accounts.mrswarsel = {
+      primary = false;
+      address = "mrswarsel@gmail.com";
+      userName = "mrswarsel@gmail.com";
+      realName = "Swarsel";
+      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/mrswarsel@gmail.com.gpg";
+      passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
+      imap.host = "imap.gmail.com";
+      smtp.host = "smtp.gmail.com";
+      msmtp.enable = true;
+      mu.enable = true;
+      mbsync = {
+        enable = true;
+        create= "maildir";
+        expunge = "both";
+        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        extraConfig = {
+          channel = {
+            Sync = "All";
+          };
+          account = {
+            Timeout = 120;
+            PipelineDepth = 1;
+          };
+        };
+      };
+    };
+  };
+
+#+end_src
+
+*** Emacs
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  # enable emacs overlay for bleeding edge features
+  # also read init.el file and install use-package packages
+  programs.emacs = {
+    enable = true;
+    package = (pkgs.emacsWithPackagesFromUsePackage {
+      config = ../../Emacs.org; # tangling my Emacs.org file here instead of directly putting init.el allows avoidance of automatically installing packages in blocks using UTF-8 characters, which would break the nix evaluation happening in this line. This line is also the reason why (for now) the Emacs configuration lives in a different .org file
+      package = pkgs.emacs-pgtk;
+      alwaysEnsure = true;
+      alwaysTangle = true;
+      extraEmacsPackages = epkgs: [
+        epkgs.mu4e
+        epkgs.use-package
+        epkgs.lsp-bridge
+        epkgs.doom-themes
+
+        # build the rest of the packages myself
+        # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
+        # build the package from the haji-ali fork, which is well-maintained
+         (epkgs.trivialBuild rec {
+          pname = "calfw";
+          version = "1.0.0-20231002";
+          src = pkgs.fetchFromGitHub {
+            owner = "haji-ali";
+            repo = "emacs-calfw";
+            rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+            hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+          };
+          packageRequires = [ epkgs.howm ];
+        })
+
+      ];
+    });
+  };
+
+#+end_src
+
+*** Waybar
+
+Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.waybar = {
+
+    enable = true;
+    # systemd.enable = true;
+    settings = {
+      mainBar = {
+        layer = "top";
+        position = "top";
+        modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
+        modules-center = [ "sway/mode" "custom/configwarn" ];
+        "sway/mode" = {
+          format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+        };
+
+        "custom/configwarn" = {
+          exec= "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+          interval= 60;
+        };
+
+        "group/hardware" = {
+          orientation = "inherit";
+          drawer = {
+            "transition-left-to-right" = true;
+          };
+          modules = [
+            "tray"
+            "temperature"
+            "custom/left-arrow-light"
+            "disk"
+            "custom/left-arrow-dark"
+            "memory"
+            "custom/left-arrow-light"
+            "cpu"
+            "custom/left-arrow-dark"
+          ];
+        };
+
+        temperature = {
+          critical-threshold = 80;
+          format-critical = " {temperatureC}°C";
+          format = " {temperatureC}°C";
+
+        };
+
+        mpris = {
+          format= "{player_icon} {title} <small>[{position}/{length}]</small>";
+          format-paused=  "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+          player-icons=  {
+            "default" = "▶ ";
+            "mpv" = "🎵 ";
+            "spotify" = " ";
+          };
+          status-icons= {
+            "paused"= " ";
+          };
+          interval = 1;
+          title-len = 20;
+          artist-len = 20;
+          album-len = 10;
+        };
+        "custom/left-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/outer-left-arrow-dark"= {
+          format = "";
+          tooltip = false;
+        };
+        "custom/left-arrow-light"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/right-arrow-dark"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/outer-right-arrow-dark"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/right-arrow-light"= {
+          format= "";
+          tooltip= false;
+        };
+        "sway/workspaces"= {
+          disable-scroll= true;
+          format= "{name}";
+        };
+
+        "clock#1"= {
+          min-length= 8;
+          interval= 1;
+          format= "{:%H:%M:%S}";
+          on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>\n\nR:Clocks";
+        };
+
+        "clock#2"= {
+          format= "{:%d. %B %Y}";
+          on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>\n\nR:Clocks";
+        };
+
+
+        pulseaudio= {
+          format= "{icon} {volume:2}%";
+          format-bluetooth= "{icon} {volume}%";
+          format-muted= "MUTE";
+          format-icons= {
+            headphones= "";
+            default= [
+              ""
+              ""
+            ];
+          };
+          scroll-step= 1;
+          on-click= "pamixer -t";
+          on-click-right= "pavucontrol";
+        };
+        memory= {
+          interval= 5;
+          format= " {}%";
+          tooltip-format= "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
+        };
+        cpu= {
+          min-length= 6;
+          interval= 5;
+          format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
+          on-click-right= "com.github.stsdc.monitor";
+
+        };
+        battery= {
+          states= {
+            "warning"= 60;
+            "error"= 30;
+            "critical"= 15;
+          };
+          interval=5;
+          format= "{icon} {capacity}%";
+          format-charging= "{capacity}% ";
+          format-plugged= "{capacity}% ";
+          format-icons= [
+            ""
+            ""
+            ""
+            ""
+            ""
+          ];
+          on-click-right= "wlogout -p layer-shell";
+        };
+        disk= {
+          interval= 30;
+          format= "Disk {percentage_used:2}%";
+          path= "/";
+          states= {
+            "warning"= 80;
+            "critical"= 90;
+          };
+          tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
+        };
+        tray= {
+          icon-size= 20;
+        };
+        network= {
+          interval = 5;
+          format-wifi= "{signalStrength}% ";
+          format-ethernet= "";
+          format-linked= "{ifname} (No IP) ";
+          format-disconnected= "Disconnected ⚠";
+          format-alt= "{ifname}: {ipaddr}/{cidr}";
+          tooltip-format-ethernet= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+          tooltip-format-wifi= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+        };
+      };
+    };
+
+    style = ''
+    @define-color foreground #fdf6e3;
+    @define-color background #1a1a1a;
+    @define-color background-alt #292b2e;
+    @define-color foreground-warning #268bd2;
+    @define-color background-warning @background;
+    @define-color foreground-error red;
+    @define-color background-error @background;
+    @define-color foreground-critical gold;
+    @define-color background-critical blue;
+
+
+    ,* {
+        border: none;
+        border-radius: 0;
+        font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
+        font-size: 14px;
+        min-height: 0;
+        margin: -1px 0px;
+    }
+
+    window#waybar {
+            background: transparent;
+            color: @foreground;
+            transition-duration: .5s;
+    }
+
+    window#waybar.hidden {
+        opacity: 0.2;
+    }
+
+
+    #mpris {
+        padding: 0 10px;
+        background-color: transparent;
+        color: #1DB954;
+        font-family: Monospace;
+        font-size: 12px;
+    }
+
+    #custom-right-arrow-dark,
+    #custom-left-arrow-dark {
+            color: @background;
+            background: @background-alt;
+            font-size: 24px;
+    }
+
+    #window {
+            font-size: 12px;
+            padding: 0 20px;
+    }
+
+    #mode {
+        background: @background-critical;
+        color: @foreground-critical;
+        padding: 0 3px;
+    }
+
+    #custom-configwarn {
+        color: black;
+        padding: 0 3px;
+        animation-name: configblink;
+        animation-duration: 0.5s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+    }
+
+    #custom-outer-right-arrow-dark,
+    #custom-outer-left-arrow-dark {
+            color: @background;
+            font-size: 24px;
+    }
+
+    #custom-outer-left-arrow-dark,
+    #custom-left-arrow-dark,
+    #custom-left-arrow-light {
+            margin: 0 -1px;
+    }
+
+    #custom-right-arrow-light,
+    #custom-left-arrow-light {
+            color: @background-alt;
+            background: @background;
+            font-size: 24px;
+    }
+
+    #workspaces,
+    #clock.1,
+    #clock.2,
+    #clock.3,
+    #pulseaudio,
+    #memory,
+    #cpu,
+    #temperature,
+    #mpris,
+    #tray {
+            background: @background;
+    }
+
+    #network,
+    #clock.2,
+    #battery,
+    #cpu,
+    #custom-pseudobat,
+    #disk {
+            background: @background-alt;
+    }
+
+
+    #workspaces button {
+            padding: 0 2px;
+            color: #fdf6e3;
+    }
+    #workspaces button.focused {
+            color: @foreground-warning;
+    }
+
+    #workspaces button:hover {
+        background: @foreground;
+        color: @background;
+            border: @foreground;
+            padding: 0 2px;
+            box-shadow: inherit;
+            text-shadow: inherit;
+    }
+
+    #workspaces button.urgent {
+        color: @background-critical;
+        background: @foreground-critical;
+    }
+
+    #network {
+        color: #cc99c9;
+    }
+
+    #temperature {
+        color: #9ec1cf;
+    }
+
+    #disk {
+        /*color: #b58900;*/
+        color: #9ee09e;
+    }
+
+    #disk.warning {
+        color:            @foreground-error;
+        background-color: @background-error;
+    }
+    #disk.critical,
+    #temperature.critical {
+        color:            @foreground-critical;
+        background-color: @background-critical;
+        animation-name: blink;
+        animation-duration: 0.5s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+    }
+    #pulseaudio.muted {
+        color: @foreground-error;
+    }
+    #memory {
+            /*color: #2aa198;*/
+            color: #fdfd97;
+    }
+    #cpu {
+        /*color: #6c71c4;*/
+        color: #feb144;
+    }
+
+    #pulseaudio {
+        /*color: #268bd2;*/
+        color: #ff6663;
+    }
+
+    #battery,
+    #custom-pseudobat {
+            color: cyan;
+    }
+    #battery.discharging {
+        color:      #859900;
+    }
+
+    @keyframes blink {
+        to {
+            color:            @foreground-error;
+            background-color: @background-error;
+        }
+    }
+    @keyframes configblink {
+        to {
+            color:            @foreground-error;
+            background-color: transparent;
+        }
+    }
+
+    #battery.critical:not(.charging) {
+        color:            @foreground-critical;
+        background-color: @background-critical;
+        animation-name: blink;
+        animation-duration: 0.5s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+    }
+
+    #clock.1,
+    #clock.2,
+    #clock.3 {
+        font-family: Monospace;
+    }
+
+    #clock,
+    #pulseaudio,
+    #memory,
+    #cpu,
+    #tray,
+    #temperature,
+    #network,
+    #mpris,
+    #battery,
+    #custom-pseudobat,
+    #disk {
+            padding: 0 3px;
+    }
+        '';
+  };
+
+#+end_src
+
+*** Firefox
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  programs.firefox = {
+    enable = true;
+    package = pkgs.firefox.override {
+      nativeMessagingHosts = [
+        pkgs.tridactyl-native
+        pkgs.browserpass
+        pkgs.plasma5Packages.plasma-browser-integration
+      ];
+    };
+    policies = {
+        CaptivePortal = false;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableTelemetry = true;
+        DisableFirefoxAccounts = false;
+        NoDefaultBookmarks = true;
+        OfferToSaveLogins = false;
+        OfferToSaveLoginsDefault = false;
+        EnableTrackingProtection = true;
+        };
+    profiles.default = {
+      isDefault = true;
+      extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+        tridactyl
+        browserpass
+        clearurls
+        darkreader
+        enhancer-for-youtube
+        istilldontcareaboutcookies
+        translate-web-pages
+        ublock-origin
+        reddit-enhancement-suite
+        pushbullet
+        sponsorblock
+        web-archives
+        single-file
+        widegithub
+        enhanced-github
+        unpaywall
+        # fastforwardteam
+        don-t-fuck-with-paste
+        plasma-integration
+
+        # build the rest of my firefox addons myself
+        # app id can be found in the manifest.json file of the .xpi
+        # (.xpi is just a normal archive)
+        # url can be found by copy url of the "add extension" button on the addon page
+        # the rest of the information is also found in the manifest.json, but might not be
+        # needed
+
+        (let version = "3.4.5.0";
+                                in buildFirefoxXpiAddon {
+    pname = "bypass-paywalls-clean";
+    inherit version;
+    addonId = "magnolia@12.34";
+    url =
+      "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
+    sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
+    meta = with lib; {
+      homepage =
+        "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
+      description = "Bypass Paywalls of (custom) news sites";
+      license = licenses.mit;
+      platforms = platforms.all;
+    };
+  })
+
+
+        (buildFirefoxXpiAddon {
+          pname = ":emoji:";
+          version = "0.1.3";
+          addonId = "gonelf@gmail.com";
+          url = "https://addons.mozilla.org/firefox/downloads/file/3365324/emojidots-0.1.3.xpi";
+          sha256 = "4f7cc25c478fe52eb82f37c9ff4978dcaa3f95020398c5b184e517f6efa2c201";
+          meta = with lib;
+            {
+              description = "emoji autocomplete anywhere on the internet";
+              mozPermissions = [ "https://gist.githubusercontent.com/gonelf/d8ae3ccb7902b501c4a5dd625d4089da/raw/5eeda197ba92f8c8139e846a1225d5640077e06f/emoji_pretty.json" "tabs" "storage"];
+              platforms = platforms.all;
+            };
+        })
+
+      ];
+      search.engines = {
+        "Nix Packages" = {
+          urls = [{
+            template = "https://search.nixos.org/packages";
+            params = [
+              { name = "type"; value = "packages"; }
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@np" ];
+        };
+
+        "NixOS Wiki" = {
+          urls = [{
+            template = "https://nixos.wiki/index.php?search={searchTerms}";
+          }];
+          iconUpdateURL = "https://nixos.wiki/favicon.png";
+          updateInterval = 24 * 60 * 60 * 1000; # every day
+          definedAliases = [ "@nw" ];
+        };
+
+        "NixOS Options" = {
+          urls = [{
+            template = "https://search.nixos.org/options";
+            params = [
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
+
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@no" ];
+        };
+
+        "Home Manager Options" = {
+          urls = [{ template = "https://mipmip.github.io/home-manager-option-search/";
+                    params = [
+                      { name = "query"; value = "{searchTerms}"; }
+                    ];
+                  }];
+
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@hm" ];
+        };
+
+        "Google".metaData.alias = "@g";
+      };
+      search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+    };
+  };
+
+#+end_src
+
+*** Browserpass
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  # programs.browserpass = {
+  #   enable = true;
+  #   browsers = [
+  #     "firefox"
+  #     ];
+  #   };
+
+#+end_src
+
+** Services
+
+Services that can be defined through home-manager should be defined here.
+
+*** General
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  services.gnome-keyring = {
+    enable = true;
+  };
+
+  services.mbsync = {
+    enable = false;
+  };
+
+
+  services.kdeconnect = {
+    enable = true;
+    indicator = true;
+  };
+
+  services.syncthing = {
+    enable = true;
+  };
+
+  # this enables the emacs server
+  services.emacs.enable = true;
+
+#+end_src
+
+*** Mako
+
+The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multiline strings, when indented Mako will fail to start. This might be a mako bug as well.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  services.mako = {
+    enable = true;
+    # backgroundColor = "#2e3440";
+    # borderColor = "#88c0d0";
+    borderRadius = 15;
+    borderSize = 1;
+    defaultTimeout = 5000;
+    height = 150;
+    icons = true;
+    ignoreTimeout = true;
+    layer = "overlay";
+    maxIconSize = 64;
+    sort = "-time";
+    width = 300;
+    # font = "monospace 10";
+    extraConfig = "[urgency=low]
+  border-color=#cccccc
+  [urgency=normal]
+  border-color=#d08770
+  [urgency=high]
+  border-color=#bf616a
+  default-timeout=3000
+  [category=mpd]
+  default-timeout=2000
+  group-by=category
+  ";
+  };
+
+#+end_src
+
+** Sway
+
+I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  wayland.windowManager.sway = {
+    enable = true;
+    package = pkgs.swayfx;
+    systemd.enable = true;
+    systemd.xdgAutostart = true;
+    wrapperFeatures.gtk = true;
+    config = rec {
+      modifier = "Mod4";
+      terminal = "kitty";
+      menu = "fuzzel";
+      bars = [{ command = "waybar";}];
+      keybindings = let
+        modifier = config.wayland.windowManager.sway.config.modifier;
+      in {
+        "${modifier}+q" = "kill";
+        "${modifier}+f" = "exec firefox";
+        "${modifier}+Space" = "exec fuzzel";
+        "${modifier}+Shift+Space" = "floating toggle";
+        "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+        "${modifier}+Shift+m" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
+        "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
+        "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
+        "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
+        "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
+        "${modifier}+Shift+F12" = "move scratchpad";
+        "${modifier}+F12" = "scratchpad show";
+        "${modifier}+c" = "exec qalculate-gtk";
+        "${modifier}+p" = "exec pass-fuzzel";
+        "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+        "${modifier}+Escape" = "mode $exit";
+        "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
+        "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+        "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
+        "${modifier}+1" = "workspace 1:一";
+        "${modifier}+Shift+1" = "move container to workspace 1:一";
+        "${modifier}+2" = "workspace 2:二";
+        "${modifier}+Shift+2" = "move container to workspace 2:二";
+        "${modifier}+3" = "workspace 3:三";
+        "${modifier}+Shift+3" = "move container to workspace 3:三";
+        "${modifier}+4" = "workspace 4:四";
+        "${modifier}+Shift+4" = "move container to workspace 4:四";
+        "${modifier}+5" = "workspace 5:五";
+        "${modifier}+Shift+5" = "move container to workspace 5:五";
+        "${modifier}+6" = "workspace 6:六";
+        "${modifier}+Shift+6" = "move container to workspace 6:六";
+        "${modifier}+7" = "workspace 7:七";
+        "${modifier}+Shift+7" = "move container to workspace 7:七";
+        "${modifier}+8" = "workspace 8:八";
+        "${modifier}+Shift+8" = "move container to workspace 8:八";
+        "${modifier}+9" = "workspace 9:九";
+        "${modifier}+Shift+9" = "move container to workspace 9:九";
+        "${modifier}+0" = "workspace 10:十";
+        "${modifier}+Shift+0" = "move container to workspace 10:十";
+        "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+        "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+        "${modifier}+Left" = "focus left";
+        "${modifier}+Right" = "focus right";
+        "${modifier}+Down" = "focus down";
+        "${modifier}+Up" = "focus up";
+        "${modifier}+Shift+Left" = "move left 40px";
+        "${modifier}+Shift+Right" = "move right 40px";
+        "${modifier}+Shift+Down" = "move down 40px";
+        "${modifier}+Shift+Up" = "move up 40px";
+        "${modifier}+h" = "focus left";
+        "${modifier}+l" = "focus right";
+        "${modifier}+j" = "focus down";
+        "${modifier}+k" = "focus up";
+        "${modifier}+Shift+h" = "move left 40px";
+        "${modifier}+Shift+l" = "move right 40px";
+        "${modifier}+Shift+j" = "move down 40px";
+        "${modifier}+Shift+k" = "move up 40px";
+        "${modifier}+Shift+c" = "reload";
+        "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+        "${modifier}+r" = "mode resize";
+        "${modifier}+Return" = "exec kitty";
+      };
+      modes = {
+        resize = {
+          Down = "resize grow height 10 px or 10 ppt";
+          Escape = "mode default";
+          Left = "resize shrink width 10 px or 10 ppt";
+          Return = "mode default";
+          Right = "resize grow width 10 px or 10 ppt";
+          Up = "resize shrink height 10 px or 10 ppt";
+        };
+      };
+      defaultWorkspace = "workspace 1:一";
+      startup = [
+        { command = "kitty -T kittyterm";}
+        { command = "sleep 60; kitty -T spotifytui spt";}
+      ];
+      window = {
+        border = 1;
+        titlebar = false;
+      };
+      assigns = {
+        # disabled, this is too annoying to be of use
+        # "1:一" = [{ app_id = "^firefox$"; }];
+      };
+      colors = {
+        focused = {
+          # background = "#080808";
+          # border = "#80a0ff";
+          # childBorder = "#80a0ff";
+          # indicator = "#080808";
+          # text = "#ffd700";
+        };
+        unfocused = {
+          # background = "#080808";
+          # border = "#80a0ff";
+          # childBorder = "#303030";
+          # indicator = "#80a0ff";
+          # text = "#c6c6c6";
+        };
+      };
+      floating = {
+        border = 1;
+        criteria = [
+          {title = "^Picture-in-Picture$";}
+          {app_id = "qalculate-gtk";}
+          {app_id = "org.gnome.clocks";}
+          {app_id = "com.github.stsdc.monitor";}
+          {app_id = "blueman";}
+          {app_id = "pavucontrol";}
+          {app_id = "syncthingtray";}
+          {app_id = "SchildiChat";}
+          {class = "Element";}
+          {title = "Element";}
+          {app_id = "com.nextcloud.desktopclient.nextcloud";}
+          {app_id = "gnome-system-monitor";}
+          {title = "(?:Open|Save) (?:File|Folder|As)";}
+          {title = "^Add$";}
+          {title = "com-jgoodies-jdiskreport-JDiskReport";}
+          {app_id = "discord";}
+          {window_role = "pop-up";}
+          {window_role = "bubble";}
+          {window_role = "dialog";}
+          {window_role = "task_dialog";}
+          {window_role = "menu";}
+          {window_role = "Preferences";}
+        ];
+        titlebar = false;
+      };
+      window = {
+        commands = [
+          {
+            command = "opacity 0.95";
+            criteria = {
+              class = ".*";
+            };
+          }
+          {
+            command = "opacity 0.95";
+            criteria = {
+              app_id = ".*";
+            };
+          }
+          {
+            command = "opacity 0.99";
+            criteria = {
+              app_id = "firefox";
+            };
+          }
+          {
+            command = "sticky enable, shadows enable";
+            criteria = {
+              title="^Picture-in-Picture$";
+            };
+          }
+          {
+            command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
+            criteria = {
+              title="kittyterm";
+            };
+          }
+          {
+            command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
+            criteria = {
+              title="spotifytui";
+            };
+          }
+          {
+            command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+            criteria = {
+              app_id="^$";
+              class="^$";
+            };
+          }
+          {
+
+            command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+            criteria = {
+              class="Spotify";
+            };
+          }
+          {
+            command = "sticky enable";
+            criteria = {
+              app_id = "discord";
+            };
+          }
+          {
+            command = "resize set width 60 ppt height 60 ppt, sticky enable";
+            criteria = {
+              class = "Element";
+            };
+          }
+          {
+            command = "resize set width 60 ppt height 60 ppt, sticky enable";
+            criteria = {
+              app_id = "SchildiChat";
+            };
+          }
+        ];
+      };
+      gaps = {
+        inner = 5;
+      };
+    };
+    extraSessionCommands =''
+        export SDL_VIDEODRIVER=wayland
+        export QT_QPA_PLATFORM=wayland
+        export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
+        export _JAVA_AWT_WM_NONREPARENTING=1
+        export XDG_CURRENT_DESKTOP=sway
+        export XDG_SESSION_DESKTOP=sway
+        export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
+        export ANKI_WAYLAND=1;
+        export OBSIDIAN_USE_WAYLAND=1;
+      '';
+    # extraConfigEarly = "
+    # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+    # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+    # ";
+    extraConfig =let
+      modifier = config.wayland.windowManager.sway.config.modifier;
+    in "
+        exec_always autotiling
+        set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
+        mode $exit {
+
+            bindsym --to-code {
+                s exec \"systemctl suspend\", mode \"default\"
+                p exec \"systemctl poweroff\"
+                r exec \"systemctl reboot\"
+                l exec \"swaymsg exit\"
+
+                Return mode \"default\"
+                Escape mode \"default\"
+                ${modifier}+x mode \"default\"
+            }
+        }
+
+        exec systemctl --user import-environment
+
+        blur enable
+        blur_xray disable
+        blur_passes 1
+        blur_radius 1
+        shadows enable
+        corner_radius 2
+        titlebar_separator disable
+        default_dim_inactive 0.02
+
+        ";
+  };
+
+#+end_src
+
+* TODO Manual tasks and Closing Parenthesis (this needs to be the last heading)
+
+Here are listed some tasks that I was not able to automate yet, these need to be done automatically for now. Also, this section exists to add an extra closing parenthesis to common.nix so that I do not need to think about this anymore if I ever decide to add more headings towards the end of this file ;)
+
+- TODO: Check if the below tasks can be automated
+
+1) In blueman, toggle the `ConnectionNotifier` plugin to off (since it is highly annoing)
+
+The last blocks exist to close the opening parenthesis of modules/common.nix (home-manager) and profiles/common.nix (NixOS):
+
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  }
+
+#+end_src
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  }
+
+#+end_src
