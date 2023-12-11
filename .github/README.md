@@ -23,10 +23,10 @@ That being said, there is a lot of general configuration that you *probably* can
 
 The files that are possibly of biggest interest are found here:
 
-- [flake.nix](../.dotfiles/flake.nix)
-- [Nix.org](../.dotfiles/Nix.org)
-- [early-init.el](../.dotfiles/programs/emacs/early-init.el)
-- [Emacs.org](../.dotfiles/Emacs.org)
+- [flake.nix](../flake.nix)
+- [Nix.org](../Nix.org)
+- [early-init.el](../programs/emacs/early-init.el)
+- [Emacs.org](../Emacs.org)
 
 This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager machines, also using some overlays etc. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located. flake.nix and early-init.el are not tangled at the moment, flake.nix mostly for the reason that I rarely need to update it; early-init.el for the reason that adding it would break the emacs-overlay parsing.
 
@@ -52,12 +52,12 @@ For a pure Home-Manager configuration, you need a few different steps. The bigge
 
 
 ###### To do that:
-1) adapt [flake.nix](../.dotfiles/flake.nix):
+1) adapt [flake.nix](../flake.nix):
   - Copy either one of the nixosSystem or homeManagerConfiguration blocks depending on what configuration you are going to be using.
   - Adapt all lines referencing the host- and username to the names chosen for your system.
   - Also adapt the file paths to reference the files where you want your specific configuration to be stored.
   - If using home-manager on the host, consider the settings for `home-manager.useGlobalPkgs` and `home-manager.useUserPackages` - in this repo they are moved to the general NixOS section to reduce code duplication.
-2) adapt [Nix.org](../.dotfiles/Nix.org)
+2) adapt [Nix.org](../Nix.org)
   - Make a copy of "System Specific Configurations/TEMPLATE".
   - Adapt all references to TEMPLATE to your host- and usernames etc (make sure to also create that directory where it is to be tangled to).
   - Add the settings needed for your specific machine.
