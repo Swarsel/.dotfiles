@@ -83,22 +83,16 @@ nix = {
 };
 ```
 2) `sudo nixos-rebuild switch`
-###### Setup of the bare repository (these steps are not mandatory but make managing the repository easier)
-3) `echo ".cfg" >> .gitignore`
-4) `git clone --bare https://github.com/Swarsel/dotfiles.git $HOME/.cfg`
-5)  `alias config='git --git-dir=$HOME/.cfg --work-tree=$HOME'`
-6) `config config --local status.showUntrackedFiles no`
-7) `config checkout`
-###### Host SSH key setup for use with sops-nix 
-8) `ssh-keygen -t ed25519 -C "<YOUR_HOSTNAME> sops"`, use e.g. "sops" as name for `<SOPS_KEY>`
-9) `cd ~/.dotfiles`
-10) `cat ~/<SOPS_KEY>.pub | ssh-to-age >> ~/.dotfiles/.sops.yaml`
-11) `nano .sops.yaml` - add last line to keys and make a new &system_<xxx> entry, make sure to remove that last line
-12) `cp ~/<SOPS_KEY>.pub ~/.dotfiles/secrets/keys/<YOUR_HOSTNAME>.pub`
-13) move `<SOPS_KEY>` to where you want to store your host private key
-14) update entry for `sops.age.sshKeyPaths` in Nix.org to the location that you have just moved the private key to (or manually edit `.dotfiles/profiles/<YOUR_HOSTNAME>/home.nix`)
+###### Host SSH key setup for use with sops-nix (only needed if you want to use sops-nix for secrets management)
+3) `ssh-keygen -t ed25519 -C "<YOUR_HOSTNAME> sops"`, use e.g. "sops" as name for `<SOPS_KEY>`
+4) `cd ~/.dotfiles`
+5) `cat ~/<SOPS_KEY>.pub | ssh-to-age >> ~/.dotfiles/.sops.yaml`
+6) `nano .sops.yaml` - add last line to keys and make a new &system_<xxx> entry, make sure to remove that last line
+7) `cp ~/<SOPS_KEY>.pub ~/.dotfiles/secrets/keys/<YOUR_HOSTNAME>.pub`
+8) move `<SOPS_KEY>` to where you want to store your host private key
+9) update entry for `sops.age.sshKeyPaths` in Nix.org to the location that you have just moved the private key to (or manually edit `.dotfiles/profiles/<YOUR_HOSTNAME>/home.nix`)
 ###### Switching to the configuration
-15) `cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/profiles/<YOUR_HOSTNAME>`
-16) `sudo nixos-rebuild --flake .#<YOUR_HOSTNAME> switch`
+10) `cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/profiles/<YOUR_HOSTNAME>`
+11) `sudo nixos-rebuild --flake .#<YOUR_HOSTNAME> switch`
   - This build will take a while (mostly because it fully builds Emacs), so do not worry too much :)
   - In case you get a dependency error for some of the `firefox-addons`, just comment out those specific extensions and try to uncomment them again a few days later. Sometimes when these packages are updated, the old .xpi file is deleted by the addon developer and the download link breaks. It is usually updated swiftly. If you do not want to wait, you can also package the addon yourself - there is one example in the files how this is generally done.
