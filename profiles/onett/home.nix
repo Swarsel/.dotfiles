@@ -15,8 +15,6 @@
     stateVersion = "23.05"; # Please read the comment before changing.
     keyboard.layout = "de";
     packages = with pkgs; [
-      # xdg-utils
-      # nodejs_20
     ];
   };
 
