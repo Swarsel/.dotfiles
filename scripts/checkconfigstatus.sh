@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CFG=$(git --git-dir=$HOME/.cfg/ --work-tree=$HOME diff --numstat | wc -l)
-CFG=$(git --git-dir=$HOME/.cfg/ --work-tree=$HOME status -s | wc -l)
+CFG=$(git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/ status -s | wc -l)
 CSE=$(git --git-dir=$HOME/Documents/GitHub/CSE_TUWIEN/.git --work-tree=$HOME/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
 PASS=$(git --git-dir=$HOME/.local/share/password-store/.git --work-tree=$HOME/.local/share/password-store/ status -s | wc -l)
 

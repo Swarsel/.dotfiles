@@ -846,8 +846,7 @@
 
 ;; (setq dnd-capture-source nil)
 
-;; ;; these ne
-xt lines provide an interface for org-download in markdown mode for use with obsidian
+;; these next lines provide an interface for org-download in markdown mode for use with obsidian
 
 (defvar org-download-markdown-link-format
   "![[./%s]]\n"

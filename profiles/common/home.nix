@@ -460,9 +460,12 @@ programs.eza = {
 programs.git = {
   enable = true;
   aliases = {
+    a = "add";
     c = "commit";
     co = "checkout";
+    b = "branch";
     s = "status";
+    r = "restore";
     p = "pull";
     pp = "push";
   };
@@ -620,7 +623,8 @@ programs.zsh = {
     edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
     magit = "emacsclient -nc -e \"(magit-status)\"";
     config="git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
-    c="git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+    g="git";
+    c="git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
     passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
     passpull = "cd ~/.local/share/password-store; git pull; cd -;";
   };
