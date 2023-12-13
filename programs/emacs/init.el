@@ -99,7 +99,7 @@
   :hook (prog-mode . highlight-indent-guides-mode)
   :init
   (setq highlight-indent-guides-method 'character)
-  (setq highlight-indent-guides-character "‖")
+  (setq highlight-indent-guides-character "|")
   (setq highlight-indent-guides-responsive 'top)
   )
 
@@ -793,6 +793,19 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
+(use-package auctex)
+(setq TeX-auto-save t)
+(setq TeX-save-query nil)
+(setq TeX-parse-self t)
+(setq-default TeX-master nil)
+
+;; (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+
+;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+;; (setq reftex-plug-into-AUCTeX t)
+
 (add-hook 'markdown-mode-hook
           (lambda ()
             (local-set-key (kbd "C-c C-x C-l") 'org-latex-preview)
@@ -834,6 +847,13 @@
 
 (use-package nix-mode
   :mode "\\.nix\\'")
+
+(use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown")
+  :bind (:map markdown-mode-map
+         ("C-c C-e" . markdown-do)))
 
 ;; https://github.com/mooreryan/markdown-dnd-images
 ;; (add-to-list 'load-path "~/.emacs.d/packages")
@@ -1694,6 +1714,17 @@
     )
   (find-file (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
 
+(let ((mu4epath
+       (concat
+        (f-dirname
+         (file-truename
+          (executable-find "mu")))
+        "/../share/emacs/site-lisp/mu4e")))
+  (when (and
+         (string-prefix-p "/nix/store/" mu4epath)
+         (file-directory-p mu4epath))
+    (add-to-list 'load-path mu4epath)))
+
 (use-package mu4e
   :ensure nil
   ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
@@ -1701,14 +1732,19 @@
   :config
 
   ;; This is set to 't' to avoid mail syncing issues when using mbsync
+  (setq send-mail-function 'smtpmail-send-it)
   (setq mu4e-change-filenames-when-moving t)
   (setq mu4e-mu-binary (executable-find "mu"))
 
-  ;; Refresh mail using isync every 10 minutes
-  (setq mu4e-update-interval (* 10 60))
+  (setq mu4e-update-interval 180)
   (setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-maildir "~/Mail")
-  ;;(setq mu4e t)
+
+  ;; enable inline images
+  (setq mu4e-view-show-images t)
+  ;; use imagemagick, if available
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
 
   (setq mu4e-drafts-folder "/Drafts")
   (setq mu4e-sent-folder   "/Sent Mail")
@@ -1727,16 +1763,11 @@
 (setq user-mail-address "leon.schwarzaeugl@gmail.com"
       user-full-name "Leon Schwarzäugl")
 
-(let ((mu4epath
-       (concat
-        (f-dirname
-         (file-truename
-          (executable-find "mu")))
-        "/../share/emacs/site-lisp/mu4e")))
-  (when (and
-         (string-prefix-p "/nix/store/" mu4epath)
-         (file-directory-p mu4epath))
-    (add-to-list 'load-path mu4epath)))
+(use-package mu4e-alert)
+(mu4e-alert-set-default-style 'libnotify)
+(add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+
+(mu4e t)
 
 (use-package org-caldav
   :init
@@ -1786,10 +1817,6 @@
    (list
     (cfw:org-create-source "Purple")  ; orgmode source
     (cfw:ical-create-source "TISS" "https://tiss.tuwien.ac.at/events/rest/calendar/personal?locale=de&token=4463bf7a-87a3-490a-b54c-99b4a65192f3" "Cyan"))))
-
-(use-package mu4e-alert)
-(mu4e-alert-set-default-style 'libnotify)
-(add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 
 ;;show mail
   ;;(mu4e)

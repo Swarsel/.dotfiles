@@ -345,15 +345,20 @@ programs.ssh= {
 
 sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 sops.validateSopsFiles = false;
+
+# sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
+# This will generate a new key if the key specified above does not exist
+# sops.age.generateKey = true;
+
 # sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
 # since we are using the home-manager implementation, we need to specify the runtime path for each secret
 sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-# sops.secrets.mrswarsel = { };
 sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
-# sops.secrets.nautilus = { };
 sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
 sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
 # sops.secrets.leon = { };
+# sops.secrets.nautilus = { };
+# sops.secrets.mrswarsel = { };
 
 stylix.targets.emacs.enable = false;
 
