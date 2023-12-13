@@ -159,18 +159,18 @@ These settings are mostly useless in my eyes and provide little more than a dist
 
 #+begin_src emacs-lisp
 
-  (setq-default indent-tabs-mode nil
-                tab-width 2)
+    (setq-default indent-tabs-mode nil
+                  tab-width 2)
 
-  (setq tab-always-indent 'complete)
+    (setq tab-always-indent 'complete)
 
-(use-package highlight-indent-guides
-  :hook (prog-mode . highlight-indent-guides-mode)
-  :init
-  (setq highlight-indent-guides-method 'character)
-  (setq highlight-indent-guides-character "‖")
-  (setq highlight-indent-guides-responsive 'top)
-  )
+  (use-package highlight-indent-guides
+    :hook (prog-mode . highlight-indent-guides-mode)
+    :init
+    (setq highlight-indent-guides-method 'character)
+    (setq highlight-indent-guides-character "|")
+    (setq highlight-indent-guides-responsive 'top)
+    )
 
 #+end_src
 
@@ -1057,7 +1057,7 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
 
 ** aucTex
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
   (use-package auctex)
   (setq TeX-auto-save t)
@@ -1155,7 +1155,7 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
 * Markdown Mode
 ** Mode
 
-#+begin_src emacs-lisp :tangle yes
+#+begin_src emacs-lisp
 
 (use-package markdown-mode
   :ensure t
@@ -2289,6 +2289,23 @@ The following block is 100% stolen from Dominik :P
 #+end_src
 
 * Email + Calendar
+** make sure mu4e is found
+
+#+begin_src emacs-lisp
+
+  (let ((mu4epath
+         (concat
+          (f-dirname
+           (file-truename
+            (executable-find "mu")))
+          "/../share/emacs/site-lisp/mu4e")))
+    (when (and
+           (string-prefix-p "/nix/store/" mu4epath)
+           (file-directory-p mu4epath))
+      (add-to-list 'load-path mu4epath)))
+
+#+end_src
+
 ** mu4e
 
 #+begin_src emacs-lisp
@@ -2300,14 +2317,19 @@ The following block is 100% stolen from Dominik :P
     :config
 
     ;; This is set to 't' to avoid mail syncing issues when using mbsync
+    (setq send-mail-function 'smtpmail-send-it)
     (setq mu4e-change-filenames-when-moving t)
     (setq mu4e-mu-binary (executable-find "mu"))
 
-    ;; Refresh mail using isync every 10 minutes
-    (setq mu4e-update-interval (* 10 60))
+    (setq mu4e-update-interval 180)
     (setq mu4e-get-mail-command "mbsync -a")
     (setq mu4e-maildir "~/Mail")
-    ;;(setq mu4e t)
+
+    ;; enable inline images
+    (setq mu4e-view-show-images t)
+    ;; use imagemagick, if available
+    (when (fboundp 'imagemagick-register-types)
+      (imagemagick-register-types))
 
     (setq mu4e-drafts-folder "/Drafts")
     (setq mu4e-sent-folder   "/Sent Mail")
@@ -2328,21 +2350,24 @@ The following block is 100% stolen from Dominik :P
 
 #+end_src
 
-** make sure mu4e is found
+** mu4e-alert
+
+Choose the style you prefer for desktop notifications
+If you are on Linux you can use
+1. notifications - Emacs lisp implementation of the Desktop Notifications API
+2. libnotify     - Notifications using the `notify-send' program, requires `notify-send' to be in PATH
+
+On Mac OSX you can set style to
+1. notifier      - Notifications using the `terminal-notifier' program, requires `terminal-notifier' to be in PATH
+1. growl         - Notifications using the `growl' program, requires `growlnotify' to be in PATH
 
 #+begin_src emacs-lisp
 
-  (let ((mu4epath
-         (concat
-          (f-dirname
-           (file-truename
-            (executable-find "mu")))
-          "/../share/emacs/site-lisp/mu4e")))
-    (when (and
-           (string-prefix-p "/nix/store/" mu4epath)
-           (file-directory-p mu4epath))
-      (add-to-list 'load-path mu4epath)))
+  (use-package mu4e-alert)
+  (mu4e-alert-set-default-style 'libnotify)
+  (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 
+  (mu4e t)
 #+end_src
 
 ** Calendar
@@ -2397,25 +2422,6 @@ The following block is 100% stolen from Dominik :P
            (list
             (cfw:org-create-source "Purple")  ; orgmode source
             (cfw:ical-create-source "TISS" "https://tiss.tuwien.ac.at/events/rest/calendar/personal?locale=de&token=4463bf7a-87a3-490a-b54c-99b4a65192f3" "Cyan"))))
-
-#+end_src
-
-** mu4e-alert
-
-Choose the style you prefer for desktop notifications
-If you are on Linux you can use
-1. notifications - Emacs lisp implementation of the Desktop Notifications API
-2. libnotify     - Notifications using the `notify-send' program, requires `notify-send' to be in PATH
-
-On Mac OSX you can set style to
-1. notifier      - Notifications using the `terminal-notifier' program, requires `terminal-notifier' to be in PATH
-1. growl         - Notifications using the `growl' program, requires `growlnotify' to be in PATH
-
-#+begin_src emacs-lisp
-
-  (use-package mu4e-alert)
-  (mu4e-alert-set-default-style 'libnotify)
-  (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 
 #+end_src
 

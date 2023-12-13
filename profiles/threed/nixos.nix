@@ -13,6 +13,8 @@
     greetd.settings.initial_session.user="swarsel";
   };
 
+  hardware.bluetooth.enable = true;
+
   # Bootloader
   boot = {
     loader.systemd-boot.enable = lib.mkForce false;
