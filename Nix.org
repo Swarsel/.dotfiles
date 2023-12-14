@@ -1164,7 +1164,7 @@ Also, I define some useful shell scripts here.
       filebot
       gimp
       zoom-us
-      nomacs
+      # nomacs
       libreoffice-qt
       xournalpp
       obsidian
@@ -1202,10 +1202,10 @@ Also, I define some useful shell scripts here.
       speechd
       networkmanagerapplet
       psmisc # kill etc
-      jq # used for searching the i3 tree in check<xxx>.sh files
+      # jq # used for searching the i3 tree in check<xxx>.sh files
 
       # specifically needed for anki
-      mpv
+      # mpv
       anki-bin
 
       # dirvish file previews
@@ -1235,11 +1235,11 @@ Also, I define some useful shell scripts here.
       playerctl
       pavucontrol
       pamixer
-      gnome.gnome-clocks
-      wlogout
-      jdiskreport
+      # gnome.gnome-clocks
+      # wlogout
+      # jdiskreport
       syncthingtray
-      monitor
+      # monitor
 
       #keychain
       qalculate-gtk
@@ -1648,18 +1648,13 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
   home.sessionVariables = {
     EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
-    GTK_THEME = "Arc-Dark";
+    EDITORBAK = "bash ~/.dotfiles/scripts/editor.sh";
+    # GTK_THEME = "Arc-Dark";
   };
 
 #+end_src
 
 ** Programs
-
-Let Home Manager install and manage itself - this is needed.
-
-
-Other programs:
-
 *** General
 
 #+begin_src nix :tangle profiles/common/home.nix
@@ -1669,10 +1664,25 @@ Other programs:
     package = pkgs.pass.withExtensions (exts: [exts.pass-otp]);
   };
   # zsh Integration is enabled by default for these
+  programs.bottom.enable = true;
+  programs.imv.enable = true;
+  programs.sioyek.enable = true;
+  programs.bat.enable = true;
+  programs.carapace.enable = true;
+  programs.wlogout.enable = true;
+  programs.swayr.enable = true;
+  programs.yt-dlp.enable = true;
+  programs.mpv.enable = true;
+  programs.jq.enable = true;
+  programs.nix-index.enable = true;
+  programs.ripgrep.enable = true;
+  programs.pandoc.enable = true;
   programs.fzf.enable = true;
-  programs.direnv.enable = true;
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    };
   programs.zoxide.enable = true;
-  programs.navi.enable = true;
   programs.eza = {
     enable = true;
     enableAliases = true;
@@ -1688,8 +1698,11 @@ Other programs:
     aliases = {
       a = "add";
       c = "commit";
+      cl = "clone";
       co = "checkout";
       b = "branch";
+      i = "init";
+      m = "merge";
       s = "status";
       r = "restore";
       p = "pull";
@@ -1902,6 +1915,10 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
       size = 10000;
     };
     historySubstringSearch.enable = true;
+    initExtra = ''
+      bindkey "^[D" backward-word
+      bindkey "^[C" forward-word
+    '';
   };
 
 #+end_src
@@ -2052,6 +2069,18 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
           packageRequires = [ epkgs.howm ];
         })
 
+         (epkgs.trivialBuild rec {
+          pname = "fast-scroll";
+          version = "1.0.0-20191016";
+          src = pkgs.fetchFromGitHub {
+            owner = "ahungry";
+            repo = "fast-scroll";
+            rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
+            hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
+          };
+          packageRequires = [];
+        })
+
       ];
     });
   };
@@ -2157,14 +2186,14 @@ Again I am just using the first bar option here that I was able to find good und
           min-length= 8;
           interval= 1;
           format= "{:%H:%M:%S}";
-          on-click-right= "gnome-clocks";
-          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>\n\nR:Clocks";
+          # on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
         };
 
         "clock#2"= {
           format= "{:%d. %B %Y}";
-          on-click-right= "gnome-clocks";
-          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>\n\nR:Clocks";
+          # on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
         };
 
 
@@ -2192,7 +2221,8 @@ Again I am just using the first bar option here that I was able to find good und
           min-length= 6;
           interval= 5;
           format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
-          on-click-right= "com.github.stsdc.monitor";
+          # on-click-right= "com.github.stsdc.monitor";
+          on-click-right= "kitty -o confirm_os_window_close=0 btm";
 
         };
         battery= {
@@ -2716,7 +2746,9 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         "${modifier}+Space" = "exec fuzzel";
         "${modifier}+Shift+Space" = "floating toggle";
         "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-        "${modifier}+Shift+m" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
+        "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
+        "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
+        "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
         "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
         "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
         "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
@@ -2727,7 +2759,8 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         "${modifier}+p" = "exec pass-fuzzel";
         "${modifier}+Shift+p" = "exec pass-fuzzel --type";
         "${modifier}+Escape" = "mode $exit";
-        "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
+        # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
+        "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
         "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
         "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
         "${modifier}+1" = "workspace 1:一";
@@ -2768,7 +2801,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         "${modifier}+Shift+l" = "move right 40px";
         "${modifier}+Shift+j" = "move down 40px";
         "${modifier}+Shift+k" = "move up 40px";
-        "${modifier}+Shift+c" = "reload";
+        "${modifier}+Ctrl+Shift+c" = "reload";
         "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
         "${modifier}+r" = "mode resize";
         "${modifier}+Return" = "exec kitty";
@@ -2786,7 +2819,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
       defaultWorkspace = "workspace 1:一";
       startup = [
         { command = "kitty -T kittyterm";}
-        { command = "sleep 60; kitty -T spotifytui spt";}
+        { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spt";}
       ];
       window = {
         border = 1;

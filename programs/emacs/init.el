@@ -1,5 +1,4 @@
 ;; The default is 800 kilobytes.  Measured in bytes.
-(setq gc-cons-threshold (* 50 1000 1000))
 
 ;; use UTF-8 everywhere
 (set-language-environment "UTF-8")
@@ -62,25 +61,26 @@
 (load custom-file t)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
-;;(setq-default show-trailing-whitespace t)
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
-(global-hl-line-mode 1)
-;; (setq redisplay-dont-pause t) ;; obsolete
-(delete-selection-mode 1)
-(pixel-scroll-precision-mode 1)
-(setq vc-follow-symlinks t)
-(setq require-final-newline t)
-(winner-mode 1)
-;; less noise when compiling elisp
-(setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
-(setq native-comp-async-report-warnings-errors nil)
-(setq load-prefer-newer t)
+ ;;(setq-default show-trailing-whitespace t)
+ (add-hook 'before-save-hook 'delete-trailing-whitespace)
+ (global-hl-line-mode 1)
+ ;; (setq redisplay-dont-pause t) ;; obsolete
+ (setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
+ (delete-selection-mode 1)
+ (setq vc-follow-symlinks t)
+ (setq require-final-newline t)
+ (winner-mode 1)
+ ;; less noise when compiling elisp
+ (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+ (setq native-comp-async-report-warnings-errors nil)
+ (setq load-prefer-newer t)
 
-;; disable a keybind that does more harm than good
-(global-set-key [remap suspend-frame]
-                (lambda ()
-                  (interactive)
-                  (message "This keybinding is disabled (was 'suspend-frame')")))
+(setq browse-url-browser-function 'browse-url-firefox)
+ ;; disable a keybind that does more harm than good
+ (global-set-key [remap suspend-frame]
+                 (lambda ()
+                   (interactive)
+                   (message "This keybinding is disabled (was 'suspend-frame')")))
 
 ;; (scroll-bar-mode -1)
 ;; (tool-bar-mode -1)
@@ -91,21 +91,37 @@
       initial-scratch-message nil)
 
 (setq-default indent-tabs-mode nil
-                tab-width 2)
+              tab-width 2)
 
-  (setq tab-always-indent 'complete)
+(setq tab-always-indent 'complete)
+;; dont send nag when creating python files
+(setq python-indent-guess-indent-offset-verbose nil)
 
 (use-package highlight-indent-guides
   :hook (prog-mode . highlight-indent-guides-mode)
   :init
-  (setq highlight-indent-guides-method 'character)
-  (setq highlight-indent-guides-character "|")
+  (setq highlight-indent-guides-method 'column)
+  ;; (setq highlight-indent-guides-method 'character)
+  ;; (setq highlight-indent-guides-character ?|)
   (setq highlight-indent-guides-responsive 'top)
   )
+;;(set-face--background 'highlight-indent-guides-odd-face "dark slate gray")
+;;(set-face-background 'highlight-indent-guides-even-face "steel blue")
+;;(set-face-foreground 'highlight-indent-guides-character-face "dark violet")
 
 (setq scroll-step 1
       scroll-margin 4
-      scroll-conservatively 5)
+      scroll-conservatively 101)
+
+;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+;; (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+;; (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+
+(pixel-scroll-precision-mode 1)
+
+;; (use-package fast-scroll
+;;   :ensure nil
+;;   :init (fast-scroll-mode 1))
 
 (defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
   (let ((parent-directory (file-name-directory buffer-file-name)))
@@ -159,34 +175,22 @@
     (evil-collection-init)
     (setq forge-add-default-bindings nil))
 
-
-
+;; enables 2-char inline search
   (use-package evil-snipe
     :after evil
     :demand
     :config
     (evil-snipe-mode +1)
+    ;; replace 1-char searches (f&t) with this better UI
     (evil-snipe-override-mode +1))
 
+;; for parentheses-heavy languades modify evil commands to keep balance of parantheses
 (use-package evil-cleverparens)
 
-
-(use-package evil-surround)
-
-  (use-package evil-goggles
-    :after evil
-    :demand
-    :init
-    (setq evil-goggles-duration 0.05)
-    :config
-    (push '(evil-operator-eval
-            :face evil-goggles-yank-face
-            :switch evil-goggles-enable-yank
-            :advice evil-goggles--generic-async-advice)
-          evil-goggles--commands)
-    (evil-goggles-mode)
-    (evil-goggles-use-diff-faces)
-    )
+;; enables surrounding text with S
+(use-package evil-surround
+  :config
+  (global-evil-surround-mode 1))
 
 (use-package undo-tree
   ;; :init (global-undo-tree-mode)
@@ -235,6 +239,7 @@
     "t"  '(:ignore t :which-key "toggles")
     "ts" '(hydra-text-scale/body :which-key "scale text")
     "tl" '(display-line-numbers-mode :which-key "line numbers")
+    "tp" '(evil-cleverparens-mode :wk "cleverparens")
     "to" '(olivetti-mode :wk "olivetti")
     "td" '(darkroom-tentative-mode :wk "darkroom")
     "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
@@ -244,21 +249,21 @@
     "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
     "mp" '(popper-toggle :which-key "popper")
     "md" '(dirvish :which-key "dirvish")
-    "c"  '(:ignore c :which-key "capture")
-    "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-    "cs" '(markdown-download-screenshot :which-key "screenshot")
+    ;; "c"  '(:ignore c :which-key "capture")
+    ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+    ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
     "l"  '(:ignore l :which-key "links")
     "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
     "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
     "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-    "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
+    ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
     "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
     "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
     "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-    "a"   '(:ignore a :which-key "anki")
-    "ap"  '(anki-editor-push-tree :which-key "push new cards")
-    "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-    "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
+    ;; "a"   '(:ignore a :which-key "anki")
+    ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
+    ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
+    ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
     "h"   '(:ignore h :which-key "help")
     "hy"  '(yas-describe-tables :which-key "yas tables")
     "hb"  '(embark-bindings :which-key "current key bindings")
@@ -269,6 +274,7 @@
     "hl"  '(view-lossage :which-key "show command keypresses")
     "hL"  'find-library
     "hm"  'describe-mode
+    "ho"  'describe-symbol
     "hk"  'describe-key
     "hK"  'describe-keymap
     "hp"  'describe-package
@@ -293,9 +299,9 @@
 ;; General often used hotkeys
 (general-define-key
  "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
- "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
- "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetye for new anki cards
- "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
+ ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
+ ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetye for new anki cards
+ ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
  "C-c d" 'duplicate-line ; duplicate line on CURSOR
  "C-M-j" 'consult-buffer
  "C-s" 'consult-line
@@ -318,9 +324,6 @@
 (use-package rainbow-mode
   :config (rainbow-mode))
 
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-(setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
-(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
@@ -356,11 +359,15 @@
 
   ;; (add-hook 'after-make-frame-functions #'swarsel/font-setup)
 
-(use-package doom-themes
-  :init (load-theme 'doom-city-lights t))
-
 (use-package solaire-mode
-  :init (solaire-global-mode +1))
+  :defer t
+  :custom (solaire-global-mode +1))
+
+(use-package doom-themes
+  :defer t
+  :hook (server-after-make-frame . (lambda () (load-theme
+                                               'doom-city-lights t)))
+  )
 
 ;; (set-frame-parameter (selected-frame) 'alpha '(95 . 95))
 ;; (add-to-list 'default-frame-alist '(alpha . (95 . 95)))
@@ -607,11 +614,11 @@
 ;; (setq evil-auto-indent nil)
 ;;(diminish org-indent-mode)
 
-(defun swarsel/org-font-setup ()
-  ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
+;; (defun swarsel/org-font-setup ()
+;;   ;; Replace list hyphen with dot
+;;   (font-lock-add-keywords 'org-mode
+;;                           '(("^ *\\([-]\\) "
+;;                              (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
 
 (use-package org
   ;;:diminish (org-indent-mode)
@@ -622,9 +629,9 @@
         org-hide-emphasis-markers t)
   (setq org-startup-folded t)
   (setq org-support-shift-select t)
-  (setq org-agenda-start-with-log-mode t)
-  (setq org-log-done 'time)
-  (setq org-log-into-drawer t)
+  ;; (setq org-agenda-start-with-log-mode t)
+  ;; (setq org-log-done 'time)
+  ;; (setq org-log-into-drawer t)
   (setq org-startup-with-inline-images t)
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
@@ -633,95 +640,95 @@
   ;;       '(swarsel-org-tasks-filepath
   ;;         swarsel-org-archive-filepath
   ;;         swarsel-org-anki-filepath))
+  (setq org-agenda-files '("/home/swarsel/Calendars/leon_cal.org"))
 
-  (setq org-agenda-files
-          '("~/Calendars/leon_cal.org"))
 
-  (require 'org-habit)
-  (add-to-list 'org-modules 'org-habit)
-  (setq org-habit-graph-column 60)
+  ;; (require 'org-habit)
+  ;; (add-to-list 'org-modules 'org-habit)
+  ;; (setq org-habit-graph-column 60)
 
-  (setq org-todo-keywords
-        '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-          (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
+  ;; (setq org-todo-keywords
+  ;;       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+  ;;         (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
-  (setq org-refile-targets
-        '((swarsel-archive-org-file :maxlevel . 1)
-          (swarsel-anki-org-file :maxlevel . 1)
-          (swarsel-tasks-org-file :maxlevel . 1)))
+  ;; (setq org-refile-targets
+  ;;       '((swarsel-archive-org-file :maxlevel . 1)
+  ;;         (swarsel-anki-org-file :maxlevel . 1)
+  ;;         (swarsel-tasks-org-file :maxlevel . 1)))
 
-  ;; Configure custom agenda views
-  (setq org-agenda-custom-commands
-        '(("d" "Dashboard"
-           ((agenda "" ((org-deadline-warning-days 7)))
-            (todo "NEXT"
-                  ((org-agenda-overriding-header "Next Tasks")))
-            (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
+  ;; ;; Configure custom agenda views
+  ;; (setq org-agenda-custom-commands
+  ;;       '(("d" "Dashboard"
+  ;;          ((agenda "" ((org-deadline-warning-days 7)))
+  ;;           (todo "NEXT"
+  ;;                 ((org-agenda-overriding-header "Next Tasks")))
+  ;;           (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
 
-          ("n" "Next Tasks"
-           ((todo "NEXT"
-                  ((org-agenda-overriding-header "Next Tasks")))))
+  ;;         ("n" "Next Tasks"
+  ;;          ((todo "NEXT"
+  ;;                 ((org-agenda-overriding-header "Next Tasks")))))
 
-          ("W" "Work Tasks" tags-todo "+work-email")
+  ;;         ("W" "Work Tasks" tags-todo "+work-email")
 
-          ;; Low-effort next actions
-          ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-           ((org-agenda-overriding-header "Low Effort Tasks")
-            (org-agenda-max-todos 20)
-            (org-agenda-files org-agenda-files)))
+  ;;         ;; Low-effort next actions
+  ;;         ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
+  ;;          ((org-agenda-overriding-header "Low Effort Tasks")
+  ;;           (org-agenda-max-todos 20)
+  ;;           (org-agenda-files org-agenda-files)))
 
-          ("w" "Workflow Status"
-           ((todo "WAIT"
-                  ((org-agenda-overriding-header "Waiting on External")
-                   (org-agenda-files org-agenda-files)))
-            (todo "REVIEW"
-                  ((org-agenda-overriding-header "In Review")
-                   (org-agenda-files org-agenda-files)))
-            (todo "PLAN"
-                  ((org-agenda-overriding-header "In Planning")
-                   (org-agenda-todo-list-sublevels nil)
-                   (org-agenda-files org-agenda-files)))
-            (todo "BACKLOG"
-                  ((org-agenda-overriding-header "Project Backlog")
-                   (org-agenda-todo-list-sublevels nil)
-                   (org-agenda-files org-agenda-files)))
-            (todo "READY"
-                  ((org-agenda-overriding-header "Ready for Work")
-                   (org-agenda-files org-agenda-files)))
-            (todo "ACTIVE"
-                  ((org-agenda-overriding-header "Active Projects")
-                   (org-agenda-files org-agenda-files)))
-            (todo "COMPLETED"
-                  ((org-agenda-overriding-header "Completed Projects")
-                   (org-agenda-files org-agenda-files)))
-            (todo "CANC"
-                  ((org-agenda-overriding-header "Cancelled Projects")
-                   (org-agenda-files org-agenda-files)))))))
+  ;;         ("w" "Workflow Status"
+  ;;          ((todo "WAIT"
+  ;;                 ((org-agenda-overriding-header "Waiting on External")
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "REVIEW"
+  ;;                 ((org-agenda-overriding-header "In Review")
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "PLAN"
+  ;;                 ((org-agenda-overriding-header "In Planning")
+  ;;                  (org-agenda-todo-list-sublevels nil)
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "BACKLOG"
+  ;;                 ((org-agenda-overriding-header "Project Backlog")
+  ;;                  (org-agenda-todo-list-sublevels nil)
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "READY"
+  ;;                 ((org-agenda-overriding-header "Ready for Work")
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "ACTIVE"
+  ;;                 ((org-agenda-overriding-header "Active Projects")
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "COMPLETED"
+  ;;                 ((org-agenda-overriding-header "Completed Projects")
+  ;;                  (org-agenda-files org-agenda-files)))
+  ;;           (todo "CANC"
+  ;;                 ((org-agenda-overriding-header "Cancelled Projects")
+  ;;                  (org-agenda-files org-agenda-files)))))))
 
-  (setq org-capture-templates
-        `(
-          ("a" "Anki basic"
-           entry
-           (file+headline swarsel-org-anki-filepath "Dispatch")
-           (function swarsel-anki-make-template-string))
+  ;; (setq org-capture-templates
+  ;;       `(
+  ;;         ("a" "Anki basic"
+  ;;          entry
+  ;;          (file+headline swarsel-org-anki-filepath "Dispatch")
+  ;;          (function swarsel-anki-make-template-string))
 
-          ("A" "Anki cloze"
-           entry
-           (file+headline org-swarsel-anki-file "Dispatch")
-           "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
-          ("t" "Tasks / Projects")
-          ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
-           "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+  ;;         ("A" "Anki cloze"
+  ;;          entry
+  ;;          (file+headline org-swarsel-anki-file "Dispatch")
+  ;;          "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
+  ;;         ("t" "Tasks / Projects")
+  ;;         ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
+  ;;          "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
 
-          ("j" "Journal Entries")
-          ("jj" "Journal" entry
-           (file+olp+datetree swarsel-org-journal-filepath)
-           "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-           ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-           :clock-in :clock-resume
-           :empty-lines 1)))
+  ;;         ("j" "Journal Entries")
+  ;;         ("jj" "Journal" entry
+  ;;          (file+olp+datetree swarsel-org-journal-filepath)
+  ;;          "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+  ;;          ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
+  ;;          :clock-in :clock-resume
+  ;;          :empty-lines 1)))
 
-  (swarsel/org-font-setup))
+  ;; (swarsel/org-font-setup)
+  )
 
 ;; ;; Set faces for heading levels
 ;; (with-eval-after-load 'org-faces  (dolist (face '((org-level-1 . 1.3)
@@ -743,18 +750,18 @@
 ;;                       (set-face-attribute 'org-checkbox nil :inherit '(fixed-pitch)))
 
 ;; Show hidden emphasis markers
-(use-package org-appear
-  :hook (org-mode . org-appear-mode)
-  :init
-  (setq org-appear-autolinks t)
-  (setq org-appear-autosubmarkers t)
-  )
+;; (use-package org-appear
+;;   :hook (org-mode . org-appear-mode)
+;;   :init
+;;   (setq org-appear-autolinks t)
+;;   (setq org-appear-autosubmarkers t)
+  ;; )
 
-(use-package org-bullets
-  :after org
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+;; (use-package org-bullets
+;;   :after org
+;;   :hook (org-mode . org-bullets-mode)
+;;   :custom
+;;   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (defun swarsel/org-mode-visual-fill ()
   (setq visual-fill-column-width 150
@@ -868,104 +875,104 @@
 
 ;; these next lines provide an interface for org-download in markdown mode for use with obsidian
 
-(defvar org-download-markdown-link-format
-  "![[./%s]]\n"
-  "Format of the file link to insert.")
+;; (defvar org-download-markdown-link-format
+;;   "![[./%s]]\n"
+;;   "Format of the file link to insert.")
 
-(defcustom org-download-markdown-link-format-function #'org-download-markdown-link-format-function-default
-  "Function that takes FILENAME and returns a org link."
-  :type 'function)
+;; (defcustom org-download-markdown-link-format-function #'org-download-markdown-link-format-function-default
+;;   "Function that takes FILENAME and returns a org link."
+;;   :type 'function)
 
-(defun org-download-markdown-link-format-function-default (filename)
-  "The default function of `org-download-link-format-function'."
-  (if (and (>= (string-to-number org-version) 9.3)
-           (eq org-download-method 'attach))
-      (format "[[attachment:%s]]\n"
-              (org-link-escape
-               (file-relative-name filename (org-attach-dir))))
-    (format org-download-markdown-link-format
-            (org-link-escape
-             (funcall org-download-abbreviate-filename-function filename)))))
+;; (defun org-download-markdown-link-format-function-default (filename)
+;;   "The default function of `org-download-link-format-function'."
+;;   (if (and (>= (string-to-number org-version) 9.3)
+;;            (eq org-download-method 'attach))
+;;       (format "[[attachment:%s]]\n"
+;;               (org-link-escape
+;;                (file-relative-name filename (org-attach-dir))))
+;;     (format org-download-markdown-link-format
+;;             (org-link-escape
+;;              (funcall org-download-abbreviate-filename-function filename)))))
 
-(defun org-download-markdown-image (link)
-  "Save image at address LINK to `org-download--dir'."
-  (interactive "sUrl: ")
-  (let* ((link-and-ext (org-download--parse-link link))
-         (filename
-          (cond ((and (derived-mode-p 'org-mode)
-                      (eq org-download-method 'attach))
-                 (let ((org-download-image-dir (org-attach-dir t))
-                       org-download-heading-lvl)
-                   (apply #'org-download--fullname link-and-ext)))
-                ((fboundp org-download-method)
-                 (funcall org-download-method link))
-                (t
-                 (apply #'org-download--fullname link-and-ext)))))
-    (setq org-download-path-last-file filename)
-    (org-download--image link filename)
-    (when (org-download-org-mode-p)
-      (when (eq org-download-method 'attach)
-        (org-attach-attach filename nil 'none))
-      (org-download-markdown-insert-link link filename))
-    (when (and (eq org-download-delete-image-after-download t)
-               (not (url-handler-file-remote-p (current-kill 0))))
-      (delete-file link delete-by-moving-to-trash))))
+;; (defun org-download-markdown-image (link)
+;;   "Save image at address LINK to `org-download--dir'."
+;;   (interactive "sUrl: ")
+;;   (let* ((link-and-ext (org-download--parse-link link))
+;;          (filename
+;;           (cond ((and (derived-mode-p 'org-mode)
+;;                       (eq org-download-method 'attach))
+;;                  (let ((org-download-image-dir (org-attach-dir t))
+;;                        org-download-heading-lvl)
+;;                    (apply #'org-download--fullname link-and-ext)))
+;;                 ((fboundp org-download-method)
+;;                  (funcall org-download-method link))
+;;                 (t
+;;                  (apply #'org-download--fullname link-and-ext)))))
+;;     (setq org-download-path-last-file filename)
+;;     (org-download--image link filename)
+;;     (when (org-download-org-mode-p)
+;;       (when (eq org-download-method 'attach)
+;;         (org-attach-attach filename nil 'none))
+;;       (org-download-markdown-insert-link link filename))
+;;     (when (and (eq org-download-delete-image-after-download t)
+;;                (not (url-handler-file-remote-p (current-kill 0))))
+;;       (delete-file link delete-by-moving-to-trash))))
 
-(defun org-download-markdown-screenshot (&optional basename)
-  "Capture screenshot and insert the resulting file.
-  The screenshot tool is determined by `org-download-screenshot-method'."
-  (interactive)
-  (let* ((screenshot-dir (file-name-directory org-download-screenshot-file))
-         (org-download-screenshot-file
-          (if basename
-              (concat screenshot-dir basename) org-download-screenshot-file)))
-    (make-directory screenshot-dir t)
-    (if (functionp org-download-screenshot-method)
-        (funcall org-download-screenshot-method
-                 org-download-screenshot-file)
-      (shell-command-to-string
-       (format org-download-screenshot-method
-               org-download-screenshot-file)))
-    (when (file-exists-p org-download-screenshot-file)
-      (org-download-markdown-image org-download-screenshot-file)
-      (delete-file org-download-screenshot-file))))
+;; (defun org-download-markdown-screenshot (&optional basename)
+;;   "Capture screenshot and insert the resulting file.
+;;   The screenshot tool is determined by `org-download-screenshot-method'."
+;;   (interactive)
+;;   (let* ((screenshot-dir (file-name-directory org-download-screenshot-file))
+;;          (org-download-screenshot-file
+;;           (if basename
+;;               (concat screenshot-dir basename) org-download-screenshot-file)))
+;;     (make-directory screenshot-dir t)
+;;     (if (functionp org-download-screenshot-method)
+;;         (funcall org-download-screenshot-method
+;;                  org-download-screenshot-file)
+;;       (shell-command-to-string
+;;        (format org-download-screenshot-method
+;;                org-download-screenshot-file)))
+;;     (when (file-exists-p org-download-screenshot-file)
+;;       (org-download-markdown-image org-download-screenshot-file)
+;;       (delete-file org-download-screenshot-file))))
 
 
-(defun org-download-markdown-insert-link (link filename)
-  (let* ((beg (point))
-         (line-beg (line-beginning-position))
-         (indent (- beg line-beg))
-         (in-item-p (org-in-item-p))
-         str)
-    (if (looking-back "^[ \t]+" line-beg)
-        (delete-region (match-beginning 0) (match-end 0))
-      (newline))
-    (insert (funcall org-download-annotate-function link))
-    (dolist (attr org-download-image-attr-list)
-      (insert attr "\n"))
-    (insert (if (= org-download-image-html-width 0)
-                ""
-              (format "#+attr_html: :width %dpx\n" org-download-image-html-width)))
-    (insert (if (= org-download-image-latex-width 0)
-                ""
-              (format "#+attr_latex: :width %dcm\n" org-download-image-latex-width)))
-    (insert (if (= org-download-image-org-width 0)
-                ""
-              (format "#+attr_org: :width %dpx\n" org-download-image-org-width)))
-    (insert (funcall org-download-markdown-link-format-function filename))
-    (org-download--display-inline-images)
-    (setq str (buffer-substring-no-properties line-beg (point)))
-    (when in-item-p
-      (indent-region line-beg (point) indent))
-    str))
+;; (defun org-download-markdown-insert-link (link filename)
+;;   (let* ((beg (point))
+;;          (line-beg (line-beginning-position))
+;;          (indent (- beg line-beg))
+;;          (in-item-p (org-in-item-p))
+;;          str)
+;;     (if (looking-back "^[ \t]+" line-beg)
+;;         (delete-region (match-beginning 0) (match-end 0))
+;;       (newline))
+;;     (insert (funcall org-download-annotate-function link))
+;;     (dolist (attr org-download-image-attr-list)
+;;       (insert attr "\n"))
+;;     (insert (if (= org-download-image-html-width 0)
+;;                 ""
+;;               (format "#+attr_html: :width %dpx\n" org-download-image-html-width)))
+;;     (insert (if (= org-download-image-latex-width 0)
+;;                 ""
+;;               (format "#+attr_latex: :width %dcm\n" org-download-image-latex-width)))
+;;     (insert (if (= org-download-image-org-width 0)
+;;                 ""
+;;               (format "#+attr_org: :width %dpx\n" org-download-image-org-width)))
+;;     (insert (funcall org-download-markdown-link-format-function filename))
+;;     (org-download--display-inline-images)
+;;     (setq str (buffer-substring-no-properties line-beg (point)))
+;;     (when in-item-p
+;;       (indent-region line-beg (point) indent))
+;;     str))
 
-(defun markdown-download-screenshot ()
-  (interactive)
-  (org-mode)
-  (org-download-markdown-screenshot)
-  (markdown-mode))
+;; (defun markdown-download-screenshot ()
+;;   (interactive)
+;;   (org-mode)
+;;   (org-download-markdown-screenshot)
+;;   (markdown-mode))
 
-(add-hook 'markdown-mode-hook (lambda () (org-display-inline-images)))
+;;(add-hook 'markdown-mode-hook (lambda () (org-display-inline-images)))
 
 (use-package olivetti
   :init
@@ -1100,12 +1107,14 @@
 
 (use-package highlight-parentheses
   :config
-  (setq highlight-parentheses-colors nil)
+  (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
   (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
   (global-highlight-parentheses-mode t))
 
 (electric-pair-mode 1)
 (setq electric-pair-preserve-balance nil)
+;; don't try to be overly smart
+(setq electric-pair-delete-adjacent-pairs nil)
 ;; don't skip newline when auto-pairing parenthesis
 (setq electric-pair-skip-whitespace-chars '(9 32))
 
@@ -1141,7 +1150,7 @@
       (corfu-cycle t)
       (corfu-quit-no-match 'separator)
       (corfu-separator ?\s)
-      (corfu-quit-no-match t)
+      ;; (corfu-quit-no-match t)
       (corfu-popupinfo-max-height 70)
       (corfu-popupinfo-delay '(0.5 . 0.2))
       ;; (corfu-preview-current 'insert) ; insert previewed candidate
@@ -1151,19 +1160,28 @@
       :bind (:map corfu-map
                   ("M-SPC"      . corfu-insert-separator)
                   ("<return>" . swarsel/corfu-normal-return)
+                  ;; ("C-<return>" . swarsel/corfu-complete)
                   ("S-<up>" . corfu-popupinfo-scroll-down)
                   ("S-<down>" . corfu-popupinfo-scroll-up)
                   ("C-<up>" . corfu-previous)
                   ("C-<down>" . corfu-next)
                   ("<up>"      . swarsel/corfu-quit-and-up)
-                  ("<down>"      . swarsel/corfu-quit-and-down))
+                  ("<down>"     . swarsel/corfu-quit-and-down))
       )
+
 
   ;; dont disrupt file navigation with completions
   (defun swarsel/corfu-normal-return (&optional arg)
     (interactive)
-    (corfu-complete)
-    (corfu-quit))
+    (corfu-quit)
+    (newline)
+    )
+
+  ;; (defun swarsel/corfu-complete (&optional arg)
+  ;;   (interactive)
+  ;;   (corfu-complete)
+  ;;   (newline)
+  ;;   )
 
   (defun swarsel/corfu-quit-and-up (&optional arg)
     (interactive)
@@ -1213,15 +1231,15 @@
   (add-to-list 'completion-at-point-functions #'cape-dabbrev)
   (add-to-list 'completion-at-point-functions #'cape-file)
   (add-to-list 'completion-at-point-functions #'cape-elisp-block)
-  ;;(add-to-list 'completion-at-point-functions #'cape-history)
-  ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-tex)
-  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
-  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-dict)
-  ;;(add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
+  ;; (add-to-list 'completion-at-point-functions #'cape-history)
+  ;; (add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
+  ;; (add-to-list 'completion-at-point-functions #'cape-sgml)
+  ;; (add-to-list 'completion-at-point-functions #'cape-rfc1345)
+  ;; (add-to-list 'completion-at-point-functions #'cape-abbrev)
+  ;; (add-to-list 'completion-at-point-functions #'cape-dict)
+  (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
+  ;; (add-to-list 'completion-at-point-functions #'cape-line)
 )
 
 ;; (use-package rustic
@@ -1628,91 +1646,91 @@
 
 (use-package ein)
 
-(use-package obsidian
-  :ensure t
-  :demand t
-  :config
-  (obsidian-specify-path swarsel-obsidian-vault-directory)
-  (global-obsidian-mode t)
-  :custom
-  ;; This directory will be used for `obsidian-capture' if set.
-  (obsidian-inbox-directory "Inbox")
-  (bind-key (kbd "C-c M-o") 'obsidian-hydra/body 'obsidian-mode-map)
-  :bind (:map obsidian-mode-map
-              ;; Replace C-c C-o with Obsidian.el's implementation. It's ok to use another key binding.
-              ("C-c C-o" . obsidian-follow-link-at-point)
-              ;; Jump to backlinks
-              ("C-c C-b" . obsidian-backlink-jump)
-              ;; If you prefer you can use `obsidian-insert-link'
-              ("C-c C-l" . obsidian-insert-wikilink)))
+;; (use-package obsidian
+;;   :ensure t
+;;   :demand t
+;;   :config
+;;   (obsidian-specify-path swarsel-obsidian-vault-directory)
+;;   (global-obsidian-mode t)
+;;   :custom
+;;   ;; This directory will be used for `obsidian-capture' if set.
+;;   (obsidian-inbox-directory "Inbox")
+;;   (bind-key (kbd "C-c M-o") 'obsidian-hydra/body 'obsidian-mode-map)
+;;   :bind (:map obsidian-mode-map
+;;               ;; Replace C-c C-o with Obsidian.el's implementation. It's ok to use another key binding.
+;;               ("C-c C-o" . obsidian-follow-link-at-point)
+;;               ;; Jump to backlinks
+;;               ("C-c C-b" . obsidian-backlink-jump)
+;;               ;; If you prefer you can use `obsidian-insert-link'
+;;               ("C-c C-l" . obsidian-insert-wikilink)))
 
-(use-package anki-editor
-  :after org
-  :bind (:map org-mode-map
-              ("<f12>" . anki-editor-cloze-region-auto-incr)
-              ("<f11>" . anki-editor-cloze-region-dont-incr)
-              ("<f10>" . anki-editor-reset-cloze-number)
-              ("<f9>"  . anki-editor-push-tree))
-  :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
-  :config
-  (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
-        anki-editor-org-tags-as-anki-tags t)
+;; (use-package anki-editor
+;;   :after org
+;;   :bind (:map org-mode-map
+;;               ("<f12>" . anki-editor-cloze-region-auto-incr)
+;;               ("<f11>" . anki-editor-cloze-region-dont-incr)
+;;               ("<f10>" . anki-editor-reset-cloze-number)
+;;               ("<f9>"  . anki-editor-push-tree))
+;;   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
+;;   :config
+;;   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
+;;         anki-editor-org-tags-as-anki-tags t)
 
-  (defun anki-editor-cloze-region-auto-incr (&optional arg)
-    "Cloze region without hint and increase card number."
-    (interactive)
-    (anki-editor-cloze-region swarsel-anki-editor-cloze-number "")
-    (setq swarsel-anki-editor-cloze-number (1+ swarsel-anki-editor-cloze-number))
-    (forward-sexp))
-  (defun anki-editor-cloze-region-dont-incr (&optional arg)
-    "Cloze region without hint using the previous card number."
-    (interactive)
-    (anki-editor-cloze-region (1- swarsel-anki-editor-cloze-number) "")
-    (forward-sexp))
-  (defun anki-editor-reset-cloze-number (&optional arg)
-    "Reset cloze number to ARG or 1"
-    (interactive)
-    (setq swarsel-anki-editor-cloze-number (or arg 1)))
-  (defun anki-editor-push-tree ()
-    "Push all notes under a tree."
-    (interactive)
-    (anki-editor-push-notes '(4))
-    (anki-editor-reset-cloze-number))
-  ;; Initialize
-  (anki-editor-reset-cloze-number)
-  )
+;;   (defun anki-editor-cloze-region-auto-incr (&optional arg)
+;;     "Cloze region without hint and increase card number."
+;;     (interactive)
+;;     (anki-editor-cloze-region swarsel-anki-editor-cloze-number "")
+;;     (setq swarsel-anki-editor-cloze-number (1+ swarsel-anki-editor-cloze-number))
+;;     (forward-sexp))
+;;   (defun anki-editor-cloze-region-dont-incr (&optional arg)
+;;     "Cloze region without hint using the previous card number."
+;;     (interactive)
+;;     (anki-editor-cloze-region (1- swarsel-anki-editor-cloze-number) "")
+;;     (forward-sexp))
+;;   (defun anki-editor-reset-cloze-number (&optional arg)
+;;     "Reset cloze number to ARG or 1"
+;;     (interactive)
+;;     (setq swarsel-anki-editor-cloze-number (or arg 1)))
+;;   (defun anki-editor-push-tree ()
+;;     "Push all notes under a tree."
+;;     (interactive)
+;;     (anki-editor-push-notes '(4))
+;;     (anki-editor-reset-cloze-number))
+;;   ;; Initialize
+;;   (anki-editor-reset-cloze-number)
+;;   )
 
-(require 'anki-editor)
+;; (require 'anki-editor)
 
-(defvar swarsel-anki-deck nil)
-(defvar swarsel-anki-notetype nil)
-(defvar swarsel-anki-fields nil)
+;; (defvar swarsel-anki-deck nil)
+;; (defvar swarsel-anki-notetype nil)
+;; (defvar swarsel-anki-fields nil)
 
-(defun swarsel-anki-set-deck-and-notetype ()
-  (interactive)
-  (setq swarsel-anki-deck  (completing-read "Choose a deck: "
-                                            (sort (anki-editor-deck-names) #'string-lessp)))
-  (setq swarsel-anki-notetype (completing-read "Choose a note type: "
-                                               (sort (anki-editor-note-types) #'string-lessp)))
-  (setq swarsel-anki-fields (progn
-                              (anki-editor--anki-connect-invoke-result "modelFieldNames" `((modelName . ,swarsel-anki-notetype)))))
-  )
+;; (defun swarsel-anki-set-deck-and-notetype ()
+;;   (interactive)
+;;   (setq swarsel-anki-deck  (completing-read "Choose a deck: "
+;;                                             (sort (anki-editor-deck-names) #'string-lessp)))
+;;   (setq swarsel-anki-notetype (completing-read "Choose a note type: "
+;;                                                (sort (anki-editor-note-types) #'string-lessp)))
+;;   (setq swarsel-anki-fields (progn
+;;                               (anki-editor--anki-connect-invoke-result "modelFieldNames" `((modelName . ,swarsel-anki-notetype)))))
+;;   )
 
-(defun swarsel-anki-make-template-string ()
-  (if (not swarsel-anki-deck)
-      (call-interactively 'swarsel-anki-set-deck-and-notetype))
-  (setq swarsel-temp swarsel-anki-fields)
-  (concat (concat "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: " swarsel-anki-notetype "\n:ANKI_DECK: " swarsel-anki-deck "\n:END:\n** ")(pop swarsel-temp) "\n%?\n** " (mapconcat 'identity swarsel-temp "\n\n** ") "\n\n"))
+;; (defun swarsel-anki-make-template-string ()
+;;   (if (not swarsel-anki-deck)
+;;       (call-interactively 'swarsel-anki-set-deck-and-notetype))
+;;   (setq swarsel-temp swarsel-anki-fields)
+;;   (concat (concat "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: " swarsel-anki-notetype "\n:ANKI_DECK: " swarsel-anki-deck "\n:END:\n** ")(pop swarsel-temp) "\n%?\n** " (mapconcat 'identity swarsel-temp "\n\n** ") "\n\n"))
 
-(defun swarsel-today()
-  (format-time-string "%Y-%m-%d"))
+;; (defun swarsel-today()
+;;   (format-time-string "%Y-%m-%d"))
 
-(defun swarsel-obsidian-daily ()
-  (interactive)
-  (if (not (file-exists-p (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
-      (write-region "" nil (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory))
-    )
-  (find-file (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
+;; (defun swarsel-obsidian-daily ()
+;;   (interactive)
+;;   (if (not (file-exists-p (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
+;;       (write-region "" nil (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory))
+;;     )
+;;   (find-file (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
 
 (let ((mu4epath
        (concat
@@ -1871,4 +1889,5 @@
           )))
   (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
 
+(setq gc-cons-threshold (* 800 1000 ))
 (fset 'epg-wait-for-status 'ignore)
