@@ -33,9 +33,15 @@
     # enable secure boot on NixOS
     lanzaboote.url = github:nix-community/lanzaboote;
 
+    # nix for android
+    nix-on-droid = {
+      url = github:t184256/nix-on-droid/release-23.05;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, emacs-overlay, nur, nixgl, stylix, sops-nix, lanzaboote, ... }: let
+  outputs = inputs@{ self, nixpkgs, home-manager, nix-on-droid, emacs-overlay, nur, nixgl, stylix, sops-nix, lanzaboote, ... }: let
     system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
     pkgs = import nixpkgs { inherit system;
                             overlays = [ emacs-overlay.overlay
@@ -122,6 +128,10 @@
 		  };
 
 	  };
+
+    nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
+      modules = [ ./profiles/mysticant/configuration.nix ];
+    };
 
   };
 }
