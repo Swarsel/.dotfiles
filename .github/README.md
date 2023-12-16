@@ -28,12 +28,12 @@ The files that are possibly of biggest interest are found here:
 - [early-init.el](../programs/emacs/early-init.el)
 - [Emacs.org](../Emacs.org)
 
-This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager machines, also using some overlays etc. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located. flake.nix and early-init.el are not tangled at the moment, flake.nix mostly for the reason that I rarely need to update it; early-init.el for the reason that adding it would break the emacs-overlay parsing.
+This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager machines, also using some overlays etc. There even is a configuration for an Android build. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located. flake.nix and early-init.el are not tangled at the moment, flake.nix mostly for the reason that I rarely need to update it; early-init.el for the reason that adding it would break the emacs-overlay parsing.
 
 Have fun!
 
 ### General Nix tips
-Sadly all things nix feel a bit underdocumented. Below is a small list of tips that I thought could be helpful if you are new to the nix ecosystem:
+Sadly all things nix feel a bit underdocumented (even though it mostly is not). Below is a small list of tips that I thought could be helpful if you are new to the nix ecosystem:
 
 - Once you have the experimental feature `nix-command` enabled, you can temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
   - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix 
