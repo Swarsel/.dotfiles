@@ -149,6 +149,246 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 #+end_src
 
+** flake.nix
+*** Inputs & Inputs@Outputs
+
+#+begin_src nix :noweb-ref flakeinputsatoutputs
+
+  nixpkgs,
+  home-manager,
+  nix-on-droid,
+  nixos-generators,
+  emacs-overlay,
+  nur,
+  nixgl,
+  stylix,
+  sops-nix,
+  lanzaboote,
+
+#+end_src
+
+#+begin_src nix :noweb-ref flakeinputs
+
+  nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+
+
+  # user-level configuration
+  home-manager = {
+    url = github:nix-community/home-manager;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # overlay to access bleeding edge emacs
+  emacs-overlay = {
+    url = github:nix-community/emacs-overlay;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # nix user repository
+  # i use this mainly to not have to build all firefox extensions
+  # myself as well as for the emacs-init package (tbd)
+  nur.url = github:nix-community/NUR;
+
+  # provides GL to non-NixOS hosts
+  nixgl.url = github:guibou/nixGL;
+
+  # manages all themeing using Home-Manager
+  stylix.url = github:danth/stylix;
+
+  # nix secrets management
+  sops-nix.url = github:Mic92/sops-nix;
+
+  # enable secure boot on NixOS
+  lanzaboote.url = github:nix-community/lanzaboote;
+
+  # nix for android
+  nix-on-droid = {
+    url = github:t184256/nix-on-droid/release-23.05;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # generate NixOS images
+  nixos-generators = {
+    url = github:nix-community/nixos-generators;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+#+end_src
+*** let
+
+#+begin_src nix :noweb-ref flakelet
+
+  system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
+  pkgs = import nixpkgs { inherit system;
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
+                                     ];
+                          config.allowUnfree = true;
+                        };
+  # NixOS modules that can only be used on NixOS systems
+  nixModules = [ stylix.nixosModules.stylix
+                 ./profiles/common/nixos.nix
+               ];
+
+  # Home-Manager modules wanted on non-NixOS systems
+  homeModules = [ stylix.homeManagerModules.stylix
+                ];
+  # Home-Manager modules wanted on both NixOS and non-NixOS systems
+  mixedModules = [ sops-nix.homeManagerModules.sops
+                   ./profiles/common/home.nix
+                 ];
+
+#+end_src
+*** nixosConfigurations
+
+#+begin_src nix :noweb-ref flakenixosconf
+
+        onett = nixpkgs.lib.nixosSystem {
+          specialArgs = {inherit inputs pkgs; };
+          modules = nixModules ++ [
+            ./profiles/onett/nixos.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/onett/home.nix
+              ];
+            }
+          ];
+        };
+
+        twoson = nixpkgs.lib.nixosSystem {
+          specialArgs = {inherit inputs pkgs; };
+          modules = nixModules ++ [
+            ./profiles/twoson/nixos.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/twoson/home.nix
+              ];
+            }
+          ];
+        };
+
+        stand = nixpkgs.lib.nixosSystem {
+          specialArgs = {inherit inputs pkgs; };
+          modules = nixModules ++ [
+            ./profiles/stand/nixos.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.users.homelen.imports = mixedModules ++ [
+                ./profiles/stand/home.nix
+              ];
+            }
+          ];
+        };
+
+        threed = nixpkgs.lib.nixosSystem {
+          specialArgs = {inherit inputs pkgs; };
+          modules = nixModules ++ [
+            lanzaboote.nixosModules.lanzaboote
+            ./profiles/threed/nixos.nix
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/threed/home.nix
+              ];
+            }
+          ];
+        };
+
+#+end_src
+*** homeConfigurations
+
+#+begin_src nix :noweb-ref flakehomeconf
+
+  "leons@PCisLee" = home-manager.lib.homeManagerConfiguration {
+    inherit pkgs;
+    modules = homeModules ++ mixedModules ++ [
+      ./profiles/surface/home.nix
+    ];
+  };
+
+#+end_src
+
+*** nixOnDroidConfigurations
+
+#+begin_src nix :noweb-ref flakedroidconf
+
+  default = nix-on-droid.lib.nixOnDroidConfiguration {
+    modules = [
+      ./profiles/mysticant/configuration.nix
+    ];
+  };
+
+#+end_src
+
+*** nixos-generators
+
+#+begin_src nix :noweb-ref flakenixosgenerators
+
+  proxmox-lxc = nixos-generators.nixosGenerate {
+    inherit system;
+    modules = [
+       ./profiles/server1/TEMPLATE/nixos.nix
+    ];
+    format = "proxmox-lxc";
+  };
+
+#+end_src
+
+* flake.nix
+
+This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+
+#+begin_src nix :noweb yes :tangle flake.nix
+
+    {
+    description = "SwarseFlake - Nix Flake for all SwarselSystems";
+
+    inputs = {
+      <<flakeinputs>>
+    };
+
+    outputs = inputs@{
+      self,
+        <<flakeinputsatoutputs>>
+        ...
+    }: let
+      <<flakelet>>
+    in {
+
+      # NixOS setups - run home-manager as a NixOS module for better compatibility
+      # another benefit - full rebuild on nixos-rebuild switch
+      # run rebuild using `nswitch`
+
+      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
+      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+
+      nixosConfigurations = {
+        <<flakenixosconf>>
+      };
+
+      # pure Home Manager setups - for non-NixOS machines
+      # run rebuild using `hmswitch`
+
+      homeConfigurations = {
+        <<flakehomeconf>>
+      };
+
+      nixOnDroidConfigurations = {
+        <<flakedroidconf>>
+      };
+
+      packages.x86_64-linux = {
+        <<flakenixosgenerators>>
+      };
+
+    };
+  }
+
+#+end_src
+
 * TODO System specific configuration
 
 This section mainly exists house different `configuration.nix` files for system level configurations of NixOS systems as well as `home.nix` for user level configurations on all systems.
@@ -214,7 +454,6 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
     ];
 
     system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
 
   }
 
@@ -308,11 +547,12 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 
 #+end_src
 
-** TODO Surface
+** Physical hosts
+*** TODO Surface
 
 My Surface Pro 3, only used for on-the-go university work. Be careful when pushing largechanges to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
 
-*** TODO Channel setup
+**** TODO Channel setup
 
 This installs nixGL, which is needed to run GL apps installed through home-manager, since this machine is not using NixOS.
 
@@ -327,7 +567,7 @@ This installs nixGL, which is needed to run GL apps installed through home-manag
 
 This is needed in order to use EGL. Prefix programs that use it with `nixGL`
 
-*** Home manager
+**** Home manager
 
 #+begin_src nix :noweb yes :tangle profiles/surface/home.nix
 
@@ -463,11 +703,11 @@ This is needed in order to use EGL. Prefix programs that use it with `nixGL`
 
 #+end_src
 
-** Onett (Lenovo Y510P)
+*** Onett (Lenovo Y510P)
 
 My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
 
-*** NixOS
+**** NixOS
 
 #+begin_src nix :noweb yes :tangle profiles/onett/nixos.nix
 
@@ -523,7 +763,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 
 #+end_src
 
-*** Home Manager
+**** Home Manager
 
 #+begin_src nix :noweb yes :tangle profiles/onett/home.nix
 
@@ -625,13 +865,10 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 
 #+end_src
 
-** Stand
+*** Twoson (Lenovo Thinkpad T14s Gen3)
+**** NixOS
 
-My home PC, the most powerful machine. Sadly Sway cannot make good use out of it's NVIDIA card, so it runs a dual boot setup with a kind of broken GRUB that does not autodetect the windows partition.
-
-*** NixOS
-
-#+begin_src nix :noweb yes :tangle profiles/stand/nixos.nix
+#+begin_src nix :noweb yes :tangle profiles/twoson/nixos.nix
 
   { config, lib, pkgs, inputs, ... }:
 
@@ -640,35 +877,38 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
     <<wrap>>
 
     services = {
-      getty.autologinUser = "homelen";
-      greetd.settings.initial_session.user="homelen";
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user="swarsel";
     };
 
-    stylix.image = ../../wallpaper/standwp.png;
+    # Bootloader
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    # boot.loader.grub.useOSProber = true;
+
+    # --------------------------------------
+    # you might need a configuration like this instead:
+    # Bootloader
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.devices = ["nodev" ];
+    # boot.loader.grub.useOSProber = true;
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
+    # --------------------------------------
+
+    networking.hostName = "twoson"; # Define your hostname.
+
+    stylix.image = ../../wallpaper/t14swp.png;
     <<theme>>
 
-    # Bootloader.
-    boot.loader.grub = {
-      enable = true;
-      devices = ["nodev" ];
-      useOSProber = true;
+    # Configure keymap in X11 (only used for login)
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
     };
 
-    # boot.kernelPackages = pkgs.linuxPackages_latest;
-    networking = {
-      hostName = "stand"; # Define your hostname.
-      enableIPv6 = false;
-      firewall.enable = false;
-    # networkmanager.enable = true;
-    };
-
-    hardware = {
-      bluetooth.enable = true;
-    };
-
-    users.users.homelen = {
+    users.users.swarsel = {
       isNormalUser = true;
-      description = "Leon S";
+      description = "TEMPLATE";
       extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
       packages = with pkgs; [];
     };
@@ -676,62 +916,90 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
     environment.systemPackages = with pkgs; [
     ];
 
-    system.stateVersion = "23.05"; # Did you read the comment? Dont change this basically
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
 
   }
 
 #+end_src
 
-*** Home Manager
-#+begin_src nix :noweb yes :tangle profiles/stand/home.nix
+**** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/twoson/home.nix
 
   { config, pkgs, lib, fetchFromGitHub, ... }:
 
   {
 
-    <<gpgagent>>
-
+    <<gpgconf>>
     home = {
-      username = "homelen";
-      homeDirectory = "/home/homelen";
-      stateVersion = "23.05"; # Please read the comment before changing.
-      keyboard.layout = "us";
-      packages = with pkgs; [
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
+      keyboard.layout = "us"; # TEMPLATE
+      home.packages = with pkgs; [
+        # ---------------------------------------------------------------
+        # if schildichat works on this machine, use it, otherwise go for element
+        # element-desktop
+        # ---------------------------------------------------------------
       ];
     };
-
+    # update path if the sops private key is stored somewhere else
     sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
-    services.blueman-applet.enable = true;
-
-    # waybar config
+    # waybar config - TEMPLATE - update for cores and temp
     programs.waybar.settings.mainBar = {
+      #cpu.format = "{icon0} {icon1} {icon2} {icon3}";
       cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
       temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
     };
-    <<waybarpc>>
+
+    # -----------------------------------------------------------------
+    # is this machine always connected to power? If yes, use this block:
+    # <<waybarpc>>
+    # -----------------------------------------------------------------
+
+    # -----------------------------------------------------------------
+    # if not always connected to power (laptop), use this (default):
+    <<waybarlaptop>>
+    # -----------------------------------------------------------------
 
     wayland.windowManager.sway= {
       config = rec {
+        # update for actual inputs here,
         input = {
           "36125:53060:splitkb.com_Kyria_rev3" = {
             xkb_layout = "us";
             xkb_variant = "altgr-intl";
           };
+          # "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
+          #   xkb_layout = "us";
+          #   xkb_options = "grp:win_space_toggle";
+          #   # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+          #   xkb_variant = "altgr-intl";
+          # };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+
         };
 
         output = {
           DP-1 = {
-            mode = "2560x1440";
+            mode = "1920x1280"; # TEMPLATE
             scale = "1";
-            bg = "~/.dotfiles/wallpaper/standwp.png fill";
+            bg = "~/.dotfiles/wallpaper/t14swp.png fill";
           };
         };
 
         keybindings = let
           modifier = config.wayland.windowManager.sway.config.modifier;
         in {
+          # TEMPLATE
           "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+          # "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
         };
 
         startup = [
@@ -743,11 +1011,11 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
 
 #+end_src
 
-** Threed (Surface Pro 3)
+*** Threed (Surface Pro 3)
 
 New setup for the SP3, this time using NixOS - another machine will take over the HM-only config for compatibility in the future.
 
-*** NixOS
+**** NixOS
 
 #+begin_src nix :noweb yes :tangle profiles/threed/nixos.nix
 
@@ -801,7 +1069,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+end_src
 
-*** Home Manager
+**** Home Manager
 #+begin_src nix :noweb yes :tangle profiles/threed/home.nix
 
   { config, pkgs, lib, fetchFromGitHub, ... }:
@@ -879,6 +1147,168 @@ New setup for the SP3, this time using NixOS - another machine will take over th
       ";
     };
   }
+#+end_src
+
+*** Stand
+
+My home PC, the most powerful machine. Sadly Sway cannot make good use out of it's NVIDIA card, so it runs a dual boot setup with a kind of broken GRUB that does not autodetect the windows partition.
+
+**** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/stand/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      getty.autologinUser = "homelen";
+      greetd.settings.initial_session.user="homelen";
+    };
+
+    stylix.image = ../../wallpaper/standwp.png;
+    <<theme>>
+
+    # Bootloader.
+    boot.loader.grub = {
+      enable = true;
+      devices = ["nodev" ];
+      useOSProber = true;
+    };
+
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
+    networking = {
+      hostName = "stand"; # Define your hostname.
+      enableIPv6 = false;
+      firewall.enable = false;
+    # networkmanager.enable = true;
+    };
+
+    hardware = {
+      bluetooth.enable = true;
+    };
+
+    users.users.homelen = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+    system.stateVersion = "23.05"; # Did you read the comment? Dont change this basically
+
+  }
+
+#+end_src
+
+**** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/stand/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgagent>>
+
+    home = {
+      username = "homelen";
+      homeDirectory = "/home/homelen";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "us";
+      packages = with pkgs; [
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    services.blueman-applet.enable = true;
+
+    # waybar config
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+    };
+    <<waybarpc>>
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+
+        output = {
+          DP-1 = {
+            mode = "2560x1440";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/standwp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+    };
+  }
+
+#+end_src
+
+** Virtual hosts
+*** TEMPLATE
+**** NixOS
+
+#+begin_src nix :tangle profiles/server1/TEMPLATE/nixos.nix
+
+  { pkgs, modulesPath, ... }:
+
+  {
+    imports = [
+      (modulesPath + "/virtualisation/proxmox-lxc.nix")
+    ];
+
+    environment.systemPackages = with pkgs; [
+      git
+      gnupg
+      ssh-to-age
+    ];
+
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+
+    proxmoxLXC.manageNetwork = true; # manage network myself
+    proxmoxLXC.manageHostName = true; # manage hostname myself
+    networking.hostName = "TEMPLATE"; # Define your hostname.
+    networking.useDHCP = true;
+    networking.enableIPv6 = false;
+    networking.firewall.enable = false;
+    services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+    };
+    users.users.root.openssh.authorizedKeys.keyFiles = [
+      ../../../secrets/keys/authorized_keys
+    ];
+    # users.users.root.password = "TEMPLATE";
+
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+  }
+
 #+end_src
 
 * Common NixOS

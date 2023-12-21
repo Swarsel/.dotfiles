@@ -10,14 +10,14 @@
   
 
   services = {
-    getty.autologinUser = "TEMPLATE";
-    greetd.settings.initial_session.user="TEMPLATE";
+    getty.autologinUser = "swarsel";
+    greetd.settings.initial_session.user="swarsel";
   };
 
   # Bootloader
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-  boot.loader.grub.useOSProber = true;
+  # boot.loader.grub.enable = true;
+  # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+  # boot.loader.grub.useOSProber = true;
 
   # --------------------------------------
   # you might need a configuration like this instead:
@@ -28,9 +28,9 @@
   # boot.kernelPackages = pkgs.linuxPackages_latest;
   # --------------------------------------
 
-  networking.hostName = "TEMPLATE"; # Define your hostname.
+  networking.hostName = "twoson"; # Define your hostname.
 
-  stylix.image = ../../wallpaper/TEMPLATEwp.png;
+  stylix.image = ../../wallpaper/t14swp.png;
   
   
   stylix = {
@@ -87,7 +87,7 @@
     xkbVariant = "altgr-intl";
   };
 
-  users.users.TEMPLATE = {
+  users.users.swarsel = {
     isNormalUser = true;
     description = "TEMPLATE";
     extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
@@ -98,5 +98,6 @@
   ];
 
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
 
 }
