@@ -3,6 +3,12 @@
 {
   home.packages = with pkgs; [
 
+    # audio stuff
+    spek # spectrum analyzer
+    losslessaudiochecker
+    ffmpeg_5-full
+    flac
+
     # "big" programs
     filebot
     gimp
@@ -205,12 +211,34 @@
 
   #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
 
+sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+sops.validateSopsFiles = false;
+
+# sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
+# This will generate a new key if the key specified above does not exist
+# sops.age.generateKey = true;
+
+# sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
+# since we are using the home-manager implementation, we need to specify the runtime path for each secret
+sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
+sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
+sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
+sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+# sops.secrets.leon = { };
+# sops.secrets.nautilus = { };
+# sops.secrets.mrswarsel = { };
+
 programs.ssh= {
   enable = true;
   extraConfig = "SetEnv TERM=xterm-256color";
   matchBlocks = {
     "nginx" = {
       hostname = "192.168.2.14";
+      port = 22;
+      user = "root";
+    };
+    "jellyfin" = {
+      hostname = "192.168.2.16";
       port = 22;
       user = "root";
     };
@@ -226,6 +254,11 @@ programs.ssh= {
     };
     "transmission" = {
       hostname = "192.168.1.6";
+      port = 22;
+      user = "root";
+    };
+    "fetcher" = {
+      hostname = "192.168.1.192";
       port = 22;
       user = "root";
     };
@@ -254,6 +287,11 @@ programs.ssh= {
       port = 22;
       user = "root";
     };
+    "spotify" = {
+      hostname = "192.168.1.17";
+      port = 22;
+      user = "root";
+    };
     "wordpress" = {
       hostname = "192.168.2.7";
       port = 22;
@@ -274,10 +312,25 @@ programs.ssh= {
       port = 22;
       user = "root";
     };
+    "matrix2" = {
+      hostname = "192.168.2.20";
+      port = 22;
+      user = "root";
+    };
     "database" = {
       hostname = "192.168.2.21";
       port = 22;
       user = "root";
+    };
+    "minecraft" = {
+      hostname = "130.61.119.129";
+      port = 22;
+      user = "opc";
+    };
+    "sync" = {
+      hostname = "193.122.53.173";
+      port = 22;
+      user = "root"; #this is a oracle vm server but needs root due to nixos-infect
     };
     "pkv" = {
       hostname = "46.232.248.161";
@@ -342,23 +395,6 @@ programs.ssh= {
     };
   };
 };
-
-sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-sops.validateSopsFiles = false;
-
-# sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
-# This will generate a new key if the key specified above does not exist
-# sops.age.generateKey = true;
-
-# sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
-# since we are using the home-manager implementation, we need to specify the runtime path for each secret
-sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
-sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
-sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
-# sops.secrets.leon = { };
-# sops.secrets.nautilus = { };
-# sops.secrets.mrswarsel = { };
 
 stylix.targets.emacs.enable = false;
 

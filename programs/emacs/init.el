@@ -305,6 +305,7 @@
  "C-c d" 'duplicate-line ; duplicate line on CURSOR
  "C-M-j" 'consult-buffer
  "C-s" 'consult-line
+ "C-<f9>" 'my-python-shell-run
  )
 
 (setq inhibit-startup-message t)
@@ -800,7 +801,8 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
-(use-package auctex)
+;; (use-package auctex
+;;   :ensure nil)
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
@@ -1095,12 +1097,7 @@
 (use-package git-timemachine
    :hook (git-time-machine-mode . evil-normalize-keymaps)
    :init (setq git-timemachine-show-minibuffer-details t)
-   :general
-   (general-nmap "SPC g t" 'git-timemachine-toggle)
-   (git-timemachine-mode-map
-    "C-k" 'git-timemachine-show-previous-revision
-    "C-j" 'git-timemachine-show-next-revision
-    "q" 'git-timemachine-quit))
+)
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -1283,11 +1280,33 @@
   :mode ("\\.rs" . rustic-mode))
 
 ;; run the python inferior shell immediately upon entering a python buffer
-  (add-hook 'python-mode-hook 'swarsel/run-python)
+    ;; (add-hook 'python-mode-hook 'swarsel/run-python)
 
-(defun swarsel/run-python ()
-  (save-selected-window
-    (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+  ;; (defun swarsel/run-python ()
+  ;;   (save-selected-window
+  ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+
+;; reload python shell automatically
+(defun my-python-shell-run ()
+  (interactive)
+  (when (get-buffer-process "*Python*")
+     (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
+     (kill-process (get-buffer-process "*Python*"))
+     ;; Uncomment If you want to clean the buffer too.
+     ;;(kill-buffer "*Python*")
+     ;; Not so fast!
+     (sleep-for 0.5))
+  (run-python (python-shell-parse-command) nil nil)
+  (python-shell-send-buffer)
+  ;; Pop new window only if shell isnt visible
+  ;; in any frame.
+  (unless (get-buffer-window "*Python*" t)
+    (python-shell-switch-to-shell)))
+
+(defun my-python-shell-run-region ()
+  (interactive)
+  (python-shell-send-region (region-beginning) (region-end))
+  (python-shell-switch-to-shell))
 
 ;; (use-package cuda-mode)
 
@@ -1750,7 +1769,7 @@
   :config
 
   ;; This is set to 't' to avoid mail syncing issues when using mbsync
-  (setq send-mail-function 'smtpmail-send-it)
+  (setq send-mail-function 'sendmail-send-it)
   (setq mu4e-change-filenames-when-moving t)
   (setq mu4e-mu-binary (executable-find "mu"))
 

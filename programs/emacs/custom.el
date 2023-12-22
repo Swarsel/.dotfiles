@@ -7,7 +7,8 @@
    '("7ec8fd456c0c117c99e3a3b16aaf09ed3fb91879f6601b1ea0eeaee9c6def5d9"
      "badd1a5e20bd0c29f4fe863f3b480992c65ef1fa63951f59aa5d6b129a3f9c4c"
      "2e05569868dc11a52b08926b4c1a27da77580daa9321773d92822f7a639956ce"
-     default)))
+     default))
+ '(send-mail-function 'sendmail-send-it))
 ;; (custom-set-faces
 ;;  ;; custom-set-faces was added by Custom.
 ;;  ;; If you edit it by hand, you could mess it up, so be careful.
