@@ -19,6 +19,8 @@
 
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
+  proxmoxLXC.manageNetwork = true; # manage network myself
+  proxmoxLXC.manageHostName = false; # manage hostname myself
   networking.hostName = "nginx"; # Define your hostname.
   networking.useDHCP = true;
   networking.enableIPv6 = false;
