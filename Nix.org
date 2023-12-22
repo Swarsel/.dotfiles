@@ -1275,6 +1275,9 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
 #+end_src
 
 ** Virtual hosts
+
+My server setup is built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk has suffered a weird failure where it has become unable to be cloned, but it is still functional for now. I am currently rewriting all machines on there to use NixOS instead; this is a ongoing process.
+
 *** TEMPLATE
 **** NixOS
 
@@ -1367,6 +1370,10 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
       acceptTerms = true;
       defaults.email = "mrswarsel@gmail.com";
     };
+
+    environment.shellAliases = {
+      nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    }
 
     services.nginx = {
       enable = true;
