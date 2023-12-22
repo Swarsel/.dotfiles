@@ -1380,30 +1380,11 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
               "/" = {
                 proxyPass = "https://192.168.2.5";
                 extraConfig = ''
-                proxy_read_timeout 36000s;
-                proxy_http_version 1.1;
-                proxy_buffering off;
                 client_max_body_size 0;
-                proxy_redirect off;
-                proxy_set_header Connection "";
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X_Forwarded_For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Host $host;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_hide_header X-Powered-By;
-                proxy_pass_header Authorization;
                 '';
               };
               "/push/" = {
                 proxyPass = "http://192.168.2.5:7867";
-                extraConfig = ''
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "Upgrade";
-                  proxy_set_header Host $host;
-                  proxy_set_header X_Forwarded_For $proxy_add_x_forwarded_for;
-                '';
               };
               "/.well-known/carddav" = {
                 return = "301 $scheme://$host/remote.php/dav";
