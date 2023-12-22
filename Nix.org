@@ -1795,6 +1795,35 @@ Also, I define some useful shell scripts here.
 
 #+end_src
 
+** sops
+
+I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
+- `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
+- cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
+- add the output to .sops.yaml
+- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
+- update entry for sops.age.sshKeyPaths
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+  sops.validateSopsFiles = false;
+
+  # sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
+  # This will generate a new key if the key specified above does not exist
+  # sops.age.generateKey = true;
+
+  # sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
+  # since we are using the home-manager implementation, we need to specify the runtime path for each secret
+  sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
+  sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
+  sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
+  sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+  # sops.secrets.leon = { };
+  # sops.secrets.nautilus = { };
+  # sops.secrets.mrswarsel = { };
+#+end_src
+
 ** SSH Machines
 
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters.
@@ -1939,35 +1968,6 @@ It is very convenient to have SSH aliases in place for machines that I use. This
     };
   };
 
-#+end_src
-
-** sops
-
-I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
-- `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
-- cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
-- add the output to .sops.yaml
-- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
-- update entry for sops.age.sshKeyPaths
-
-#+begin_src nix :tangle profiles/common/home.nix
-
-  sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-  sops.validateSopsFiles = false;
-
-  # sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
-  # This will generate a new key if the key specified above does not exist
-  # sops.age.generateKey = true;
-
-  # sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
-  # since we are using the home-manager implementation, we need to specify the runtime path for each secret
-  sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-  sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
-  sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
-  sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
-  # sops.secrets.leon = { };
-  # sops.secrets.nautilus = { };
-  # sops.secrets.mrswarsel = { };
 #+end_src
 
 ** Fonts + Theme
