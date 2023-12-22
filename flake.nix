@@ -151,6 +151,13 @@
         ];
       };
       
+      nginx = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          ./profiles/server1/nginx/nixos.nix
+        ];
+      };
+      
     };
 
     # pure Home Manager setups - for non-NixOS machines

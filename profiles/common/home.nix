@@ -296,6 +296,11 @@ programs.ssh= {
       port = 22;
       user = "root";
     };
+    "minecraft" = {
+      hostname = "130.61.119.129";
+      port = 22;
+      user = "opc";
+    };
     "pkv" = {
       hostname = "46.232.248.161";
       port = 22;
