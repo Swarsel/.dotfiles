@@ -3,7 +3,7 @@
 {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
-    ./profiles/server1/nginx/hardware-configuration.nix
+    ./hardware-configuration.nix
   ];
 
   environment.systemPackages = with pkgs; [
