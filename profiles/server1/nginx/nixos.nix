@@ -21,11 +21,12 @@
 
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
+  sops.validateSopsFiles = false;
   sops.secrets.dnsmail = { };
   sops.secrets.dnstoken = { };
   sops.templates."certs.secret".content = ''
-  mail = "${config.sops.placeholder.dnsmail}"
-  token = "${config.sops.placeholder.dnstoken}"
+  CF_API_EMAIL = "${config.sops.placeholder.dnsmail}"
+  CF_DNS_API_TOKEN = "${config.sops.placeholder.dnstoken}"
   '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
@@ -48,6 +49,7 @@
     acceptTerms = true;
     defaults.email = "mrswarsel@gmail.com";
     defaults.dnsProvider = "cloudflare";
+    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
   };
 
   environment.shellAliases = {
