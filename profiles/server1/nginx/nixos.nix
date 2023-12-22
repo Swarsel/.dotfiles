@@ -36,6 +36,11 @@
 
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
 
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "mrswarsel@gmail.com";
+  };
+
   services.nginx = {
     enable = true;
     recommendedProxySettings = true;
