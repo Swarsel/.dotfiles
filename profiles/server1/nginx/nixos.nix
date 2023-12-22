@@ -65,6 +65,7 @@
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
+        acmeRoot = null;
         locations = {
           "/" = {
             proxyPass = "https://192.168.2.5";
@@ -87,6 +88,7 @@
         "sound.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "https://192.168.2.13";
@@ -100,6 +102,7 @@
         "matrix.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
+          acmeRoot = null;
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
               proxyPass = "http://192.168.2.20:8008";
@@ -113,6 +116,7 @@
         "books.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.22:8080";
@@ -126,6 +130,7 @@
         "blog.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "https://192.168.2.7";
