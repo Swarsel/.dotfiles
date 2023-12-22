@@ -57,7 +57,7 @@
     options = let
       # this line prevents hanging on network split
       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-    in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path}"];
+    in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path},uid=0,iocharset=utf8,vers=2.0,noperm"];
   };
 
 #   services.calibre-server = {
