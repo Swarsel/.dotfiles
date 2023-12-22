@@ -46,6 +46,7 @@
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
     virtualHosts = {
+
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -66,7 +67,7 @@
             return = "301 $scheme://$host/remote.php/dav";
           };
         };
-        };
+      };
 
         "sound.swarsel.win" = {
           enableACME = true;
@@ -75,24 +76,51 @@
             "/" = {
               proxyPass = "https://192.168.2.13";
               extraConfig = ''
-                # proxy_read_timeout 36000s;
-                # proxy_http_version 1.1;
-                # proxy_buffering off;
                 client_max_body_size 0;
-                # proxy_redirect off;
-                # proxy_set_header Connection "";
-                # proxy_set_header Host $host;
-                # proxy_set_header X-Real-IP $remote_addr;
-                # proxy_set_header X_Forwarded_For $proxy_add_x_forwarded_for;
-                # proxy_set_header X-Forwarded-Host $host;
-                # proxy_set_header X-Forwarded-Proto $scheme;
-                # proxy_hide_header X-Powered-By;
-                # proxy_hide_header X-Frame-Options;
-                # proxy_pass_header Authorization;
               '';
             };
           };
         };
+
+        "matrix.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          locations = {
+            "~ ^(/_matrix|/_synapse/client)" = {
+              proxyPass = "http://192.168.2.20:8008";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+
+        "books.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.2.22:8080";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+
+        "blog.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          locations = {
+            "/" = {
+              proxyPass = "https://192.168.2.7";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+
       };
     };
 
