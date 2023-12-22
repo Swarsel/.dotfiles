@@ -14,6 +14,7 @@
     xserver.videoDrivers = ["nvidia"];
   };
 
+
   hardware = {
     nvidia = {
       modesetting.enable = true;
@@ -89,6 +90,7 @@
   };
 
   networking.hostName = "onett"; # Define your hostname.
+  networking.enableIPv6 = false;
 
   users.users.swarsel = {
     isNormalUser = true;
@@ -98,5 +100,9 @@
   };
 
   system.stateVersion = "23.05"; # Did you read the comment?
+
+  environment.systemPackages = with pkgs; [
+  ];
+
 
 }

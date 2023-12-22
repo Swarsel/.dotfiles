@@ -412,6 +412,7 @@ Base emacs undo logic is very useful, but not easy to understand. I prefer undo-
    "C-c d" 'duplicate-line ; duplicate line on CURSOR
    "C-M-j" 'consult-buffer
    "C-s" 'consult-line
+   "C-<f9>" 'my-python-shell-run
    )
 
 #+end_src
@@ -1068,18 +1069,19 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
 
 #+begin_src emacs-lisp
 
-  (use-package auctex)
-  (setq TeX-auto-save t)
-  (setq TeX-save-query nil)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil)
+    ;; (use-package auctex
+    ;;   :ensure nil)
+    (setq TeX-auto-save t)
+    (setq TeX-save-query nil)
+    (setq TeX-parse-self t)
+    (setq-default TeX-master nil)
 
-  ;; (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-  ;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  ;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+    ;; (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+    ;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+    ;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 
-  ;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-  ;; (setq reftex-plug-into-AUCTeX t)
+    ;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+    ;; (setq reftex-plug-into-AUCTeX t)
 
 #+end_src
 
@@ -1503,12 +1505,7 @@ NOTE: Make sure to configure a GitHub token before using this package!
  (use-package git-timemachine
     :hook (git-time-machine-mode . evil-normalize-keymaps)
     :init (setq git-timemachine-show-minibuffer-details t)
-    :general
-    (general-nmap "SPC g t" 'git-timemachine-toggle)
-    (git-timemachine-mode-map
-     "C-k" 'git-timemachine-show-previous-revision
-     "C-j" 'git-timemachine-show-next-revision
-     "q" 'git-timemachine-quit))
+ )
 
 #+end_src
 
@@ -1733,12 +1730,35 @@ Currently unused
 
 #+begin_src emacs-lisp
 
-  ;; run the python inferior shell immediately upon entering a python buffer
-  (add-hook 'python-mode-hook 'swarsel/run-python)
+      ;; run the python inferior shell immediately upon entering a python buffer
+      ;; (add-hook 'python-mode-hook 'swarsel/run-python)
 
-(defun swarsel/run-python ()
-  (save-selected-window
-    (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+    ;; (defun swarsel/run-python ()
+    ;;   (save-selected-window
+    ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+
+  ;; reload python shell automatically
+  (defun my-python-shell-run ()
+    (interactive)
+    (when (get-buffer-process "*Python*")
+       (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
+       (kill-process (get-buffer-process "*Python*"))
+       ;; Uncomment If you want to clean the buffer too.
+       ;;(kill-buffer "*Python*")
+       ;; Not so fast!
+       (sleep-for 0.5))
+    (run-python (python-shell-parse-command) nil nil)
+    (python-shell-send-buffer)
+    ;; Pop new window only if shell isnt visible
+    ;; in any frame.
+    (unless (get-buffer-window "*Python*" t)
+      (python-shell-switch-to-shell)))
+
+  (defun my-python-shell-run-region ()
+    (interactive)
+    (python-shell-send-region (region-beginning) (region-end))
+    (python-shell-switch-to-shell))
+
 #+end_src
 
 *** CUDA
@@ -2337,7 +2357,7 @@ The following block is 100% stolen from Dominik :P
     :config
 
     ;; This is set to 't' to avoid mail syncing issues when using mbsync
-    (setq send-mail-function 'smtpmail-send-it)
+    (setq send-mail-function 'sendmail-send-it)
     (setq mu4e-change-filenames-when-moving t)
     (setq mu4e-mu-binary (executable-find "mu"))
 

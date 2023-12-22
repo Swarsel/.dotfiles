@@ -47,6 +47,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    pia = {
+      url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    # provides expressions for mautrix-signal
+    nixpkgs-mautrix-signal ={
+      url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
+    };
+    
+    
   };
 
   outputs = inputs@{
@@ -62,6 +73,8 @@
       stylix,
       sops-nix,
       lanzaboote,
+      pia,
+      nixpkgs-mautrix-signal,
       
       ...
   }: let
@@ -71,9 +84,24 @@
                             overlays = [ emacs-overlay.overlay
                                          nur.overlay
                                          nixgl.overlay
+                                         # (self: super: {
+                                           # airsonic = super.airsonic.overrideAttrs (_: rec {
+                                             # version = "11.0.2-kagemomiji";
+                                             # name = "airsonic-advanced-${version}";
+                                             # src = super.fetchurl {
+                                               # url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
+                                               # sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
+                                             # };
+                                           # });
+                                         # })
                                        ];
                             config.allowUnfree = true;
                           };
+    
+    pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
+                            config.allowUnfree = true;
+                          };
+    
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
                    ./profiles/common/nixos.nix
@@ -148,6 +176,76 @@
               ./profiles/threed/home.nix
             ];
           }
+        ];
+      };
+      
+      nginx = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/nginx/nixos.nix
+        ];
+      };
+      
+      calibre = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/calibre/nixos.nix
+        ];
+      };
+      
+      jellyfin = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          # sops-nix.nixosModules.sops
+          ./profiles/server1/jellyfin/nixos.nix
+        ];
+      };
+      
+      transmission = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          pia.nixosModule
+          ./profiles/server1/transmission/nixos.nix
+        ];
+      };
+      
+      matrix = nixpkgs.lib.nixosSystem {
+        # specialArgs = {inherit pkgsmautrix; };
+        pkgs = pkgsmautrix;
+        # this is to import a service module that is not on nixpkgs
+        # this way avoids infinite recursion errors
+        specialArgs.unstable = nixpkgs-mautrix-signal;
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/matrix/nixos.nix
+        ];
+      };
+      
+      sound = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/sound/nixos.nix
+        ];
+      };
+      
+      spotifyd = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/spotifyd/nixos.nix
+        ];
+      };
+      
+      #ovm
+      sync = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/remote/oracle/sync/nixos.nix
         ];
       };
       

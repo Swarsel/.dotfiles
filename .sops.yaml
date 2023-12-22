@@ -7,6 +7,13 @@ keys:
   - &server_nixos age1zdjm8qa5t25mca0xxhhkpuh85mgg4l267mqjj2pdttksq7zg4unqdmqyp4
   - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
   - &server_stand age1hkajkcje5xvg8jd4zj2e0s9tndpv36hwhn7p38x9lyq2z8g7v45q2nhlej
+  - &server_nginx age1zyts3egct4he229klgrfkd9r442xw9r3qg3hyydh44pvk3wjhd3s2zjqvt
+  - &server_calibre age1q2k4j9m6ge6dgygehulzd8vqjcdgv5s7s4zrferaq29qlu94a4uqpv76s5
+  - &server_transmiss age1wevwwytv5q8wx8yttc85gly678hn4k3qe4csgnq2frf3wxes63jqlt8kqs
+  - &server_matrix age1t2uj8arq8nnmd5s3h32p7z7masj2gqe5ec49dtr8ex2nlgef3yfqtgcnj6
+  - &server_spotifyd age16d6wulu4vzuawvsnqv0cqjhxdz9e20qm3xdnzq2lp7787srl8shqsqlfps
+  - &server_sound age1w7tfe7k0r0hm6mzz0kmz8302kfn0rlh96w7g6zwqd4muqg7u9anqv07745
+  - &server_sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -22,3 +29,45 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_surface
+  - path_regex: secrets/nginx/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_nginx
+  - path_regex: secrets/calibre/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_calibre
+  - path_regex: secrets/transmission/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_transmiss
+  - path_regex: secrets/matrix/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_matrix
+  - path_regex: secrets/spotifyd/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_spotifyd
+  - path_regex: secrets/sound/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_sound
+  - path_regex: secrets/sync/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_sync
