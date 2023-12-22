@@ -43,7 +43,7 @@
 
   environment.shellAliases = {
     nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-  }
+  };
 
   services.nginx = {
     enable = true;
