@@ -59,19 +59,19 @@
     in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path},uid=1000,gid=100"];
   };
 
-  services.calibre-server = {
-    enable = true;
-    user = "bookuser";
-    auth.enable = true;
-    auth.userDb = "/srv/calibre/users.sqlite";
-    libraries = [
-      /media/books/Books/calibre/main
-      /media/books/Books/calibre/diverse
-      /media/books/Books/calibre/language
-      /media/books/Books/calibre/science
-      /media/books/Books/calibre/sport
-      /media/books/Books/calibre/novels
-    ];
-  };
+#   services.calibre-server = {
+#     enable = true;
+#     user = "bookuser";
+#     auth.enable = true;
+#     auth.userDb = "/srv/calibre/users.sqlite";
+#     libraries = [
+#       /media/books/Books/calibre/main
+#       /media/books/Books/calibre/diverse
+#       /media/books/Books/calibre/language
+#       /media/books/Books/calibre/science
+#       /media/books/Books/calibre/sport
+#       /media/books/Books/calibre/novels
+#     ];
+#   };
 
 }
