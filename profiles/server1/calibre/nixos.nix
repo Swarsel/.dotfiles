@@ -58,7 +58,7 @@
     in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path},uid=1000,gid=100"];
   };
 
-  services.calibre = {
+  services.calibre-server = {
     enable = true;
     user = "bookuser";
     auth.enable = true;
