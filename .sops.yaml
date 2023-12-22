@@ -8,6 +8,7 @@ keys:
   - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
   - &server_stand age1hkajkcje5xvg8jd4zj2e0s9tndpv36hwhn7p38x9lyq2z8g7v45q2nhlej
   - &server_nginx age1zyts3egct4he229klgrfkd9r442xw9r3qg3hyydh44pvk3wjhd3s2zjqvt
+  - &server_calibre age1q2k4j9m6ge6dgygehulzd8vqjcdgv5s7s4zrferaq29qlu94a4uqpv76s5
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -29,3 +30,9 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_nginx
+  - path_regex: secrets/calibre/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_calibre
