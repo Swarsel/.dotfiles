@@ -64,12 +64,12 @@
       auth.enable = true;
       auth.userDb = "/srv/calibre/users.sqlite";
       libraries = [
-        /media/books/Bücher/calibre/main
-        /media/books/Bücher/calibre/diverse
-        /media/books/Bücher/calibre/language
-        /media/books/Bücher/calibre/science
-        /media/books/Bücher/calibre/sport
-        /media/books/Bücher/calibre/novels
+        /media/books/Books/calibre/main
+        /media/books/Books/calibre/diverse
+        /media/books/Books/calibre/language
+        /media/books/Books/calibre/science
+        /media/books/Books/calibre/sport
+        /media/books/Books/calibre/novels
       ];
     };
 ExecStart=/opt/calibre/calibre-server /home/calibre/main /home/calibre/science /home/calibre/diverse
