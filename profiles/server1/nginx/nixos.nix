@@ -78,6 +78,7 @@
             return = "301 $scheme://$host/remote.php/dav";
           };
         };
+        };
 
         "sound.swarsel.win" = {
           enableACME = true;
@@ -106,7 +107,6 @@
         };
       };
     };
-  };
 
 
 
