@@ -10,6 +10,7 @@
     git
     gnupg
     ssh-to-age
+    cifs-utils
   ];
 
   services.xserver = {
