@@ -154,10 +154,18 @@
       nginx = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = [
+          sops-nix.nixosModules.sops
           ./profiles/server1/nginx/nixos.nix
         ];
       };
       
+      calibre = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/calibre/nixos.nix
+        ];
+      };
     };
 
     # pure Home Manager setups - for non-NixOS machines

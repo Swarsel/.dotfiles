@@ -19,6 +19,14 @@
 
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
+  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+  sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
+  sops.secrets.dnsmail = { };
+  sops.secrets.dnstoken = { };
+  sops.templates."certs.secret".content = ''
+  mail = "${config.sops.placeholder.dnsmail}"
+  token = "${config.sops.placeholder.dnstoken}"
+  '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
   networking.hostName = "nginx"; # Define your hostname.
@@ -39,6 +47,7 @@
   security.acme = {
     acceptTerms = true;
     defaults.email = "mrswarsel@gmail.com";
+    defaults.dnsProvider = "cloudflare";
   };
 
   environment.shellAliases = {

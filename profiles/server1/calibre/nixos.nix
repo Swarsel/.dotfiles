@@ -1,0 +1,79 @@
+{ pkgs, modulesPath, ... }:
+
+  {
+    imports = [
+      (modulesPath + "/virtualisation/proxmox-lxc.nix")
+      ./hardware-configuration.nix
+    ];
+
+    environment.systemPackages = with pkgs; [
+      git
+      gnupg
+      ssh-to-age
+    ];
+
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+
+    nix.settings.experimental-features = ["nix-command" "flakes"];
+
+    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    sops.defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
+    sops.secrets.smbuser = { };
+    sops.secrets.smbpassword = { };
+    sops.secrets.smbdomain = { };
+    sops.templates."smb.cred".content = ''
+    user = "${config.sops.placeholder.smbuser}"
+    password = "${config.sops.placeholder.smbpassword}"
+    domain = "${config.sops.placeholder.smbdomain}"
+    '';
+    proxmoxLXC.manageNetwork = true; # manage network myself
+    proxmoxLXC.manageHostName = false; # manage hostname myself
+    networking.hostName = "calibre"; # Define your hostname.
+    networking.useDHCP = true;
+    networking.enableIPv6 = false;
+    networking.firewall.enable = false;
+    services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+    };
+    users.users.root.openssh.authorizedKeys.keyFiles = [
+      ../../../secrets/keys/authorized_keys
+    ];
+
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+    environment.shellAliases = {
+      nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    };
+
+    fileSystems."/media/books" = {
+      device = "//192.168.1.3/Eternor";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+      in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path},uid=1000,gid=100"];
+    };
+
+    services.calibre = {
+      enable = true;
+      user = "bookuser";
+      auth.enable = true;
+      auth.userDb = "/srv/calibre/users.sqlite";
+      libraries = [
+        /media/books/Bücher/calibre/main
+        /media/books/Bücher/calibre/diverse
+        /media/books/Bücher/calibre/language
+        /media/books/Bücher/calibre/science
+        /media/books/Bücher/calibre/sport
+        /media/books/Bücher/calibre/novels
+      ];
+    };
+ExecStart=/opt/calibre/calibre-server /home/calibre/main /home/calibre/science /home/calibre/diverse
+ /home/calibre/sport /home/calibre/language /home/calibre/novels --enable-local-write --enable-auth
+
+
+  }
