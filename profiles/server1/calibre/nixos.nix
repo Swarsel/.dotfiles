@@ -21,6 +21,7 @@
 
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   sops.defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
+  sops.validateSopsFiles = false;
   sops.secrets.smbuser = { };
   sops.secrets.smbpassword = { };
   sops.secrets.smbdomain = { };
