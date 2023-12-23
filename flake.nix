@@ -166,6 +166,15 @@
           ./profiles/server1/calibre/nixos.nix
         ];
       };
+      
+      jellyfin = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          # sops-nix.nixosModules.sops
+          ./profiles/server1/jellyfin/nixos.nix
+        ];
+      };
+      
     };
 
     # pure Home Manager setups - for non-NixOS machines
