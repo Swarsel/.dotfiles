@@ -26,8 +26,8 @@
   sops.secrets.dnsmail = {owner="acme";};
   sops.secrets.dnstoken = {owner="acme";};
   sops.templates."certs.secret".content = ''
-  CF_API_EMAIL = "${config.sops.placeholder.dnsmail}"
-  CF_DNS_API_TOKEN = "${config.sops.placeholder.dnstoken}"
+  CF_API_EMAIL=${config.sops.placeholder.dnsmail}
+  CF_DNS_API_TOKEN=${config.sops.placeholder.dnstoken}
   '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
