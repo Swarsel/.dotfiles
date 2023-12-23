@@ -84,7 +84,7 @@
       enableBookUploading = true;
       enableKepubify = true;
       enableBookConversion = true;
-      calibreLibrary = "/media/Eternor/Books/main";
+      calibreLibrary = "/media/Books";
     };
   };
 
