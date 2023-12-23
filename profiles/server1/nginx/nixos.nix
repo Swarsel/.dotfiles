@@ -48,8 +48,8 @@
   security.acme = {
     acceptTerms = true;
     defaults.email = "mrswarsel@gmail.com";
-    defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+    # defaults.dnsProvider = "cloudflare";
+    # defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
   };
 
   environment.shellAliases = {
@@ -102,7 +102,7 @@
         "shows.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          acmeRoot = null;
+          # acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.16:8096";
@@ -127,10 +127,10 @@
           };
         };
 
-        "books.swarsel.win" = {
+        "scrolls.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          acmeRoot = null;
+          # acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.22:8080";
@@ -141,7 +141,7 @@
           };
         };
 
-        "scrolls.swarsel.win" = {
+        "books.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
