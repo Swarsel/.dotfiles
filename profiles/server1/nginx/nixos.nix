@@ -22,8 +22,8 @@
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
   sops.validateSopsFiles = false;
-  sops.secrets.dnsmail = { };
-  sops.secrets.dnstoken = { };
+  sops.secrets.dnsmail = {owner="acme";};
+  sops.secrets.dnstoken = {owner="acme";};
   sops.templates."certs.secret".content = ''
   CF_API_EMAIL = "${config.sops.placeholder.dnsmail}"
   CF_DNS_API_TOKEN = "${config.sops.placeholder.dnstoken}"
