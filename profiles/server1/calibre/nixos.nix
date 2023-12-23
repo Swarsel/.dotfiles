@@ -27,9 +27,9 @@
   sops.secrets.smbpassword = { };
   sops.secrets.smbdomain = { };
   sops.templates."smb.cred".content = ''
-  user = "${config.sops.placeholder.smbuser}"
-  password = "${config.sops.placeholder.smbpassword}"
-  domain = "${config.sops.placeholder.smbdomain}"
+  user=${config.sops.placeholder.smbuser}
+  password=${config.sops.placeholder.smbpassword}
+  domain=${config.sops.placeholder.smbdomain}
   '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
