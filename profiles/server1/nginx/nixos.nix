@@ -48,8 +48,8 @@
   security.acme = {
     acceptTerms = true;
     defaults.email = "mrswarsel@gmail.com";
-    # defaults.dnsProvider = "cloudflare";
-    # defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+    defaults.dnsProvider = "cloudflare";
+    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
   };
 
   environment.shellAliases = {
@@ -65,7 +65,7 @@
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
-        # acmeRoot = null;
+        acmeRoot = null;
         locations = {
           "/" = {
             proxyPass = "https://192.168.2.5";
@@ -88,7 +88,7 @@
         "sound.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "https://192.168.2.13";
@@ -102,7 +102,7 @@
         "shows.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.16:8096";
@@ -116,7 +116,7 @@
         "matrix.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
               proxyPass = "http://192.168.2.20:8008";
@@ -130,7 +130,7 @@
         "scrolls.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.22:8080";
@@ -144,7 +144,7 @@
         "books.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.22:8083";
@@ -158,7 +158,7 @@
         "blog.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
-          # acmeRoot = null;
+          acmeRoot = null;
           locations = {
             "/" = {
               proxyPass = "https://192.168.2.7";
