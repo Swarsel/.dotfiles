@@ -10,6 +10,7 @@
     git
     gnupg
     ssh-to-age
+    lego
   ];
 
   services.xserver = {
