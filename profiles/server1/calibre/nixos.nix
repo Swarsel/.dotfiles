@@ -10,13 +10,12 @@
     git
     gnupg
     ssh-to-age
-    cifs-utils
   ];
 
   users.groups.lxc_shares = {
     gid = 10000;
     members = [
-            "bookuser"
+            "calibre-server"
             "root"
           ];
   };
@@ -59,20 +58,11 @@
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
-#   fileSystems."/media/books" = {
-#     device = "//192.168.1.3/Eternor/Books";
-#     fsType = "cifs";
-#     options = let
-#       # this line prevents hanging on network split
-#       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-#     in ["${automount_opts},credentials=${config.sops.templates."smb.cred".path},uid=0,iocharset=utf8,vers=2.0,noperm"];
-#   };
 
     services.calibre-server = {
     enable = true;
-    user = "bookuser";
-    # auth.enable = true;
-    # auth.userDb = "/srv/calibre/users.sqlite";
+    auth.enable = true;
+    auth.userDb = "/srv/calibre/users.sqlite";
     libraries = [
       /media/Eternor/Books/main
       /media/Eternor/Books/diverse
