@@ -48,7 +48,7 @@
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
 
   environment.shellAliases = {
-    nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
   fileSystems."/media/books" = {
