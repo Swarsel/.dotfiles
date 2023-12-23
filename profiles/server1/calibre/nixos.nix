@@ -84,7 +84,7 @@
       enableBookUploading = true;
       enableKepubify = true;
       enableBookConversion = true;
-      calibreLibrary = "/root";
+      calibreLibrary = "/opt/calibre";
     };
   };
 
