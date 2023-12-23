@@ -16,7 +16,7 @@
   users.groups.lxc_shares = {
     gid = 10000;
     members = [
-            "calibre-web"
+            "kavita"
             "root"
           ];
   };
@@ -75,17 +75,24 @@
   #   ];
   # };
 
-  services.calibre-web = {
+#   services.calibre-web = {
+#     enable = true;
+#     user = "calibre-web";
+#     group = "calibre-web";
+#     listen.port = 8080;
+#     listen.ip = "0.0.0.0";
+#     options = {
+#       enableBookUploading = true;
+#       enableKepubify = true;
+#       enableBookConversion = true;
+#     };
+#   };
+
+  services.kavita = {
     enable = true;
-    user = "calibre-web";
-    group = "calibre-web";
-    listen.port = 8080;
-    listen.ip = "0.0.0.0";
-    options = {
-      enableBookUploading = true;
-      enableKepubify = true;
-      enableBookConversion = true;
-    };
+    user = "kavita";
+    port = 8080;
   };
+
 
 }
