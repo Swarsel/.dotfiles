@@ -36,7 +36,7 @@
   networking.hostName = "jellyfin"; # Define your hostname.
   networking.useDHCP = true;
   networking.enableIPv6 = false;
-  networking.firewall.enable = true;
+  networking.firewall.enable = false;
   services.openssh = {
     enable = true;
     settings.PermitRootLogin = "yes";
