@@ -68,12 +68,12 @@
     auth.enable = true;
     auth.userDb = "/srv/calibre/users.sqlite";
     libraries = [
-      "/media/Books/main"
-      "/media/Books/diverse"
-      "/media/Books/language"
-      "/media/Books/science"
-      "/media/Books/sport"
-      "/media/Books/novels"
+      /media/Books/main
+      /media/Books/diverse
+      /media/Books/language
+      /media/Books/science
+      /media/Books/sport
+      /media/Books/novels
     ];
   };
 
