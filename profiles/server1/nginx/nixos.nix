@@ -53,7 +53,7 @@
   };
 
   environment.shellAliases = {
-    nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
   services.nginx = {
@@ -113,7 +113,7 @@
           };
         };
 
-        "books.swarsel.win" = {
+        "scrolls.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
