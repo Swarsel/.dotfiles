@@ -15,7 +15,7 @@
   users.groups.lxc_shares = {
     gid = 10000;
     members = [
-            "calibre-server"
+            "calibre-web"
             "root"
           ];
   };
@@ -59,19 +59,33 @@
   };
 
 
-    services.calibre-server = {
+  #   services.calibre-server = {
+  #   enable = true;
+  #   user = "root";
+  #   auth.enable = true;
+  #   auth.userDb = "/srv/calibre/users.sqlite";
+  #   libraries = [
+  #     "/media/Eternor/Books/main"
+  #     "/media/Eternor/Books/diverse"
+  #     "/media/Eternor/Books/language"
+  #     "/media/Eternor/Books/science"
+  #     "/media/Eternor/Books/sport"
+  #     "/media/Eternor/Books/novels"
+  #   ];
+  # };
+
+  services.calibre-web = {
     enable = true;
-    user = "root";
-    auth.enable = true;
-    auth.userDb = "/srv/calibre/users.sqlite";
-    libraries = [
-      "/media/Eternor/Books/main"
-      "/media/Eternor/Books/diverse"
-      "/media/Eternor/Books/language"
-      "/media/Eternor/Books/science"
-      "/media/Eternor/Books/sport"
-      "/media/Eternor/Books/novels"
-    ];
+    user = "calibre-web";
+    group = "calibre-web";
+    listen.port = 8080;
+    listen.ip = "0.0.0.0";
+    options = {
+      enableBookUploading = true;
+      enableKepubify = true;
+      enableBookConversion = true;
+      calibreLibrary = "/media/Eternor/Books/main";
+    };
   };
 
 }
