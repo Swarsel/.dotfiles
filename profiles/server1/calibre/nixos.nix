@@ -14,12 +14,13 @@
   ];
 
   users.groups.lxc_shares = {
-    gid = 10000
+    gid = 10000;
     members = [
             "bookuser"
             "root"
-          ]
-  }
+          ];
+  };
+
   services.xserver = {
     layout = "us";
     xkbVariant = "altgr-intl";
