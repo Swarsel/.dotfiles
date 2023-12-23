@@ -17,7 +17,7 @@
     gid = 10000;
     members = [
             "kavita"
-            "calibre-server"
+            "calibre-web"
             "root"
           ];
   };
@@ -62,33 +62,33 @@
   };
 
 
-    services.calibre-server = {
-    enable = true;
-    user = "calibre-server";
-    auth.enable = true;
-    auth.userDb = "/srv/calibre/users.sqlite";
-    libraries = [
-      /media/Books/main
-      /media/Books/diverse
-      /media/Books/language
-      /media/Books/science
-      /media/Books/sport
-      /media/Books/novels
-    ];
-  };
+    # services.calibre-server = {
+    # enable = true;
+    # user = "calibre-server";
+    # auth.enable = true;
+    # auth.userDb = "/srv/calibre/users.sqlite";
+    # libraries = [
+    #   /media/Books/main
+    #   /media/Books/diverse
+    #   /media/Books/language
+    #   /media/Books/science
+    #   /media/Books/sport
+    #   /media/Books/novels
+    # ];
+  # };
 
-#   services.calibre-web = {
-#     enable = true;
-#     user = "calibre-web";
-#     group = "calibre-web";
-#     listen.port = 8080;
-#     listen.ip = "0.0.0.0";
-#     options = {
-#       enableBookUploading = true;
-#       enableKepubify = true;
-#       enableBookConversion = true;
-#     };
-#   };
+  services.calibre-web = {
+    enable = true;
+    user = "calibre-web";
+    group = "calibre-web";
+    listen.port = 8080;
+    listen.ip = "0.0.0.0";
+    options = {
+      enableBookUploading = true;
+      enableKepubify = true;
+      enableBookConversion = true;
+    };
+  };
 
   services.kavita = {
     enable = true;
