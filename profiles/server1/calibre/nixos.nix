@@ -17,6 +17,7 @@
     gid = 10000;
     members = [
             "kavita"
+            "calibre-server"
             "root"
           ];
   };
@@ -61,20 +62,20 @@
   };
 
 
-  #   services.calibre-server = {
-  #   enable = true;
-  #   user = "root";
-  #   auth.enable = true;
-  #   auth.userDb = "/srv/calibre/users.sqlite";
-  #   libraries = [
-  #     "/media/Eternor/Books/main"
-  #     "/media/Eternor/Books/diverse"
-  #     "/media/Eternor/Books/language"
-  #     "/media/Eternor/Books/science"
-  #     "/media/Eternor/Books/sport"
-  #     "/media/Eternor/Books/novels"
-  #   ];
-  # };
+    services.calibre-server = {
+    enable = true;
+    user = "calibre-server";
+    auth.enable = true;
+    auth.userDb = "/srv/calibre/users.sqlite";
+    libraries = [
+      "/media/Books/main"
+      "/media/Books/diverse"
+      "/media/Books/language"
+      "/media/Books/science"
+      "/media/Books/sport"
+      "/media/Books/novels"
+    ];
+  };
 
 #   services.calibre-web = {
 #     enable = true;
@@ -92,7 +93,7 @@
   services.kavita = {
     enable = true;
     user = "kavita";
-    port = 8080;
+    # port = 8080;
     tokenKeyFile = config.sops.secrets.kavita.path;
   };
 
