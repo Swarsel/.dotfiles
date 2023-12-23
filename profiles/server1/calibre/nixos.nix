@@ -31,14 +31,15 @@
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   sops.defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
   sops.validateSopsFiles = false;
-  sops.secrets.smbuser = { };
-  sops.secrets.smbpassword = { };
-  sops.secrets.smbdomain = { };
-  sops.templates."smb.cred".content = ''
-  user=${config.sops.placeholder.smbuser}
-  password=${config.sops.placeholder.smbpassword}
-  domain=${config.sops.placeholder.smbdomain}
-  '';
+  sops.secrets.kavita = { };
+  # sops.secrets.smbuser = { };
+  # sops.secrets.smbpassword = { };
+  # sops.secrets.smbdomain = { };
+  # sops.templates."smb.cred".content = ''
+  # user=${config.sops.placeholder.smbuser}
+  # password=${config.sops.placeholder.smbpassword}
+  # domain=${config.sops.placeholder.smbdomain}
+  # '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
   networking.hostName = "calibre"; # Define your hostname.
@@ -92,6 +93,7 @@
     enable = true;
     user = "kavita";
     port = 8080;
+    tokenKeyFile = config.sops.secrets.kavita.path;
   };
 
 
