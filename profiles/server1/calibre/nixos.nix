@@ -61,6 +61,7 @@
 
     services.calibre-server = {
     enable = true;
+    user = "root";
     auth.enable = true;
     auth.userDb = "/srv/calibre/users.sqlite";
     libraries = [
