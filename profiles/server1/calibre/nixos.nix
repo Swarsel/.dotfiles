@@ -81,7 +81,7 @@
     enable = true;
     user = "calibre-web";
     group = "calibre-web";
-    listen.port = 8080;
+    listen.port = 8083;
     listen.ip = "0.0.0.0";
     options = {
       enableBookUploading = true;
@@ -93,7 +93,7 @@
   services.kavita = {
     enable = true;
     user = "kavita";
-    # port = 8080;
+    port = 8080;
     tokenKeyFile = config.sops.secrets.kavita.path;
   };
 
