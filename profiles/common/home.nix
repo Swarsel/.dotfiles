@@ -231,6 +231,11 @@ programs.ssh= {
       port = 22;
       user = "root";
     };
+    "jellyfin" = {
+      hostname = "192.168.2.16";
+      port = 22;
+      user = "root";
+    };
     "pfsense" = {
       hostname = "192.168.1.1";
       port = 22;

@@ -1446,6 +1446,20 @@ My server setup is built on Proxmox VE; back when I started, I created all kinds
             };
           };
 
+          "shows.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://192.168.2.16:8096";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+
           "matrix.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
@@ -1516,9 +1530,18 @@ My server setup is built on Proxmox VE; back when I started, I created all kinds
 *** [Manual steps required] Calibre
 
 This machine requires manual setup:
-- Disable auth related settings in calibre-server (2 lines)
-- set up a user `calibre-server --userdb /srv/calibre/users.sqlite --manage-users`
-- reenable
+1) Set up calibre-web:
+   - Create metadata.db with 664 permissions, make sure parent directory is writeable
+   - Login @ books.swarsel.win using initial creds:
+     - user: admin
+     - pw: admin123
+   - point to metadata.db file, make sure you can upload
+   - Change pw, create normal user
+2) Setup kavita:
+   - Login @ scrolls.swarsel.win
+   - Create admin user
+   - Import Libraries
+   - Create normal user
 
 **** NixOS
 
@@ -2222,6 +2245,11 @@ It is very convenient to have SSH aliases in place for machines that I use. This
     matchBlocks = {
       "nginx" = {
         hostname = "192.168.2.14";
+        port = 22;
+        user = "root";
+      };
+      "jellyfin" = {
+        hostname = "192.168.2.16";
         port = 22;
         user = "root";
       };
