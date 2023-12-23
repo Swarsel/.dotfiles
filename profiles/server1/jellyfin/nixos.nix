@@ -51,7 +51,7 @@
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
-  services.jellyin = {
+  services.jellyfin = {
     enable = true;
     user = "jellyfin";
     openFirewall = true; # this works only for the default ports
