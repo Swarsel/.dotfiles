@@ -74,12 +74,12 @@
     # auth.enable = true;
     # auth.userDb = "/srv/calibre/users.sqlite";
     libraries = [
-      /media/Eternor/Books/calibre/main
-      /media/Eternor/Books/calibre/diverse
-      /media/Eternor/Books/calibre/language
-      /media/Eternor/Books/calibre/science
-      /media/Eternor/Books/calibre/sport
-      /media/Eternor/Books/calibre/novels
+      /media/Eternor/Books/main
+      /media/Eternor/Books/diverse
+      /media/Eternor/Books/language
+      /media/Eternor/Books/science
+      /media/Eternor/Books/sport
+      /media/Eternor/Books/novels
     ];
   };
 
