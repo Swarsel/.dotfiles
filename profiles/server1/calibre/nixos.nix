@@ -10,6 +10,7 @@
     git
     gnupg
     ssh-to-age
+    calibre
   ];
 
   users.groups.lxc_shares = {
