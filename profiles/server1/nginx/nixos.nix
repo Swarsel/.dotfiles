@@ -127,7 +127,7 @@
           };
         };
 
-        "scrolls.swarsel.win" = {
+        "books.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
@@ -141,7 +141,7 @@
           };
         };
 
-        "books.swarsel.win" = {
+        "scrolls.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
