@@ -11,6 +11,7 @@
     gnupg
     ssh-to-age
     lego
+    nginx
   ];
 
   services.xserver = {
@@ -75,9 +76,9 @@
             client_max_body_size 0;
             '';
           };
-          "/push/" = {
-            proxyPass = "http://192.168.2.5:7867";
-          };
+          # "/push/" = {
+            # proxyPass = "http://192.168.2.5:7867";
+          # };
           "/.well-known/carddav" = {
             return = "301 $scheme://$host/remote.php/dav";
           };
