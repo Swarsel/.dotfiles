@@ -48,6 +48,7 @@
 
   security.acme = {
     acceptTerms = true;
+    preliminarySelfsigned = false;
     defaults.email = "mrswarsel@gmail.com";
     defaults.dnsProvider = "cloudflare";
     defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
@@ -107,8 +108,6 @@
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.16:8096";
-              recommendedProxySettings = true;
-              recommendedTlsSettings = true;
               extraConfig = ''
                 client_max_body_size 0;
               '';

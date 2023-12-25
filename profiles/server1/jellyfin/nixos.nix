@@ -54,7 +54,7 @@
   services.jellyfin = {
     enable = true;
     user = "jellyfin";
-    openFirewall = true; # this works only for the default ports
+    # openFirewall = true; # this works only for the default ports
   };
 
 }

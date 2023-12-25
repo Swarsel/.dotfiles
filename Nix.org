@@ -1345,188 +1345,187 @@ My server setup is built on Proxmox VE; back when I started, I created all kinds
 
 #+begin_src nix :tangle profiles/server1/nginx/nixos.nix
 
-  { config, pkgs, modulesPath, ... }:
+    { config, pkgs, modulesPath, ... }:
 
-  {
-    imports = [
-      (modulesPath + "/virtualisation/proxmox-lxc.nix")
-      ./hardware-configuration.nix
-    ];
+    {
+      imports = [
+        (modulesPath + "/virtualisation/proxmox-lxc.nix")
+        ./hardware-configuration.nix
+      ];
 
-    environment.systemPackages = with pkgs; [
-      git
-      gnupg
-      ssh-to-age
-      lego
-    ];
+      environment.systemPackages = with pkgs; [
+        git
+        gnupg
+        ssh-to-age
+        lego
+      ];
 
-    services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
-
-    nix.settings.experimental-features = ["nix-command" "flakes"];
-
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.dnsmail = {owner="acme";};
-    sops.secrets.dnstoken = {owner="acme";};
-    sops.templates."certs.secret".content = ''
-    CF_API_EMAIL=${config.sops.placeholder.dnsmail}
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstoken}
-    '';
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "nginx"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
-    services.openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
-    };
-    users.users.root.openssh.authorizedKeys.keyFiles = [
-      ../../../secrets/keys/authorized_keys
-    ];
-    # users.users.root.password = "TEMPLATE";
-
-    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-    security.acme = {
-      acceptTerms = true;
-      defaults.email = "mrswarsel@gmail.com";
-      defaults.dnsProvider = "cloudflare";
-      defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
-    };
-
-    environment.shellAliases = {
-      nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
-
-    services.nginx = {
-      enable = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-      virtualHosts = {
-
-        "stash.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://192.168.2.5";
-              extraConfig = ''
-              client_max_body_size 0;
-              '';
-            };
-            "/push/" = {
-              proxyPass = "http://192.168.2.5:7867";
-            };
-            "/.well-known/carddav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-            "/.well-known/caldav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-          };
-        };
-
-          "sound.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "https://192.168.2.13";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "shows.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.2.16:8096";
-                recommendedProxySettings = true;
-                recommendedTlsSettings = true;
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "matrix.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "~ ^(/_matrix|/_synapse/client)" = {
-                proxyPass = "http://192.168.2.20:8008";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "scrolls.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.2.22:8080";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "books.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.2.22:8083";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "blog.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "https://192.168.2.7";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-        };
+      services.xserver = {
+        layout = "us";
+        xkbVariant = "altgr-intl";
       };
 
+      nix.settings.experimental-features = ["nix-command" "flakes"];
+
+      sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
+      sops.validateSopsFiles = false;
+      sops.secrets.dnsmail = {owner="acme";};
+      sops.secrets.dnstoken = {owner="acme";};
+      sops.templates."certs.secret".content = ''
+      CF_API_EMAIL=${config.sops.placeholder.dnsmail}
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstoken}
+      '';
+      proxmoxLXC.manageNetwork = true; # manage network myself
+      proxmoxLXC.manageHostName = false; # manage hostname myself
+      networking.hostName = "nginx"; # Define your hostname.
+      networking.useDHCP = true;
+      networking.enableIPv6 = false;
+      networking.firewall.enable = false;
+      services.openssh = {
+        enable = true;
+        settings.PermitRootLogin = "yes";
+      };
+      users.users.root.openssh.authorizedKeys.keyFiles = [
+        ../../../secrets/keys/authorized_keys
+      ];
+      # users.users.root.password = "TEMPLATE";
+
+      system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+      security.acme = {
+        acceptTerms = true;
+        preliminarySelfsigned = false;
+        defaults.email = "mrswarsel@gmail.com";
+        defaults.dnsProvider = "cloudflare";
+        defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+      };
+
+      environment.shellAliases = {
+        nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      };
+
+      services.nginx = {
+        enable = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        virtualHosts = {
+
+          "stash.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://192.168.2.5";
+                extraConfig = ''
+                client_max_body_size 0;
+                '';
+              };
+              "/push/" = {
+                proxyPass = "http://192.168.2.5:7867";
+              };
+              "/.well-known/carddav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+              "/.well-known/caldav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+            };
+          };
+
+            "sound.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "https://192.168.2.13";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "shows.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://192.168.2.16:8096";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "matrix.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "~ ^(/_matrix|/_synapse/client)" = {
+                  proxyPass = "http://192.168.2.20:8008";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "scrolls.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://192.168.2.22:8080";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "books.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://192.168.2.22:8083";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "blog.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "https://192.168.2.7";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+          };
+        };
 
 
 
 
-  }
+
+    }
 
 #+end_src
 
@@ -1716,7 +1715,7 @@ This machine requires manual setup:
     services.jellyfin = {
       enable = true;
       user = "jellyfin";
-      openFirewall = true; # this works only for the default ports
+      # openFirewall = true; # this works only for the default ports
     };
 
   }
