@@ -100,8 +100,7 @@
           };
         };
 
-        # "shows.swarsel.win" = {
-        "test.swarsel.win" = {
+        "screen.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
@@ -129,7 +128,7 @@
           };
         };
 
-        "scrolls.swarsel.win" = {
+        "scroll.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
