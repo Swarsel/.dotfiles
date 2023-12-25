@@ -26,7 +26,7 @@
   sops.validateSopsFiles = false;
   sops.secrets.dnstokenfull = {owner="acme";};
   sops.templates."certs.secret".content = ''
-  CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfulltr}
+  CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
   '';
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
