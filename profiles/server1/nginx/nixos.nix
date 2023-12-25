@@ -107,9 +107,10 @@
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.16:8096";
+              recommendedProxySettings = true;
+              recommendedTlsSettings = true;
               extraConfig = ''
                 client_max_body_size 0;
-                http2_disable on;
               '';
             };
           };
