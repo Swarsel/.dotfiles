@@ -28,6 +28,7 @@
 
       nix.settings.experimental-features = ["nix-command" "flakes"];
 
+      boot.kernelModules = [ "tun" ];
       sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
       sops.defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
       sops.validateSopsFiles = false;
