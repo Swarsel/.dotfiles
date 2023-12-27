@@ -115,7 +115,7 @@
 
 services.transmission = {
   enable = true;
-  credentialsFile = config.sops.templates."rpc.json".path;
+  # credentialsFile = config.sops.templates."rpc.json".path;
 };
 
 
