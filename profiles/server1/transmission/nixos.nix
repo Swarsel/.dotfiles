@@ -63,11 +63,12 @@
       sops.secrets.vpnloc = {};
       sops.secrets.crlpem = {};
       sops.secrets.capem = {};
-      sops.templates."rpc.json".owner = "transmission";
-      sops.templates."rpc.json".content = ''
-      "rpc-password": "${config.sops.placeholder.rpcpass}",
-      "rpc-username": "${config.sops.placeholder.rpcuser}",
-      '';
+      sops.templates."transmission-rpc".owner = "transmission";
+      sops.templates."transmission-rpc".content = builtins.toJSON {
+        rpc-username = config.sops.placeholder.rpcpass;
+        rpc-password = config.sops.placeholder.rpcuser;
+      };
+
       sops.templates.vpn.content = ''
         client
         dev tun
@@ -115,7 +116,7 @@
 
 services.transmission = {
   enable = true;
-  credentialsFile = "${config.sops.templates."rpc.json".path}";
+  credentialsFile = config.sops.templates."transmission-rpc".path;
   settings = {
 
   alt-speed-down= 8000;
