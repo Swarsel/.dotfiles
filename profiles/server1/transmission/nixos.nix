@@ -103,7 +103,7 @@
       '';
   services.openvpn.servers = {
     pia = {
-      autoStart = true;
+      autoStart = false;
       # these are outsourced to a local file, I am not sure if it can be done with sops-nix
       # authUserPass = {
         # username = "TODO:secrets";
