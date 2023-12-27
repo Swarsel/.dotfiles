@@ -53,6 +53,7 @@
 
     sops.secrets.vpnuser = {};
     sops.secrets.vpnpass = {};
+    sops.secrets.vpnprot = {};
     sops.secrets.vpnport = {};
     sops.secrets.vpnloc = {};
     sops.secrets.crlpem = {};
