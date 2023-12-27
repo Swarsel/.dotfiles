@@ -59,7 +59,7 @@
       sops.secrets.vpnloc = {};
       sops.secrets.crlpem = {};
       sops.secrets.capem = {};
-      sops.templates.rpc.content = ''
+      sops.templates."rpc.json".content = ''
       "rpc-password": "${config.sops.placeholder.rpcpass}",
       "rpc-username": "${config.sops.placeholder.rpcuser}",
       '';
@@ -113,7 +113,7 @@
 
 services.transmission = {
   enable = true;
-  credentialsFile = config.sops.templates.rpc.path;
+  credentialsFile = config.sops.templates."rpc.json".path;
 };
 
 
