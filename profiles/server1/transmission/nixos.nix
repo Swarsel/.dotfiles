@@ -58,7 +58,7 @@
     sops.secrets.vpnloc = {};
     sops.secrets.crlpem = {};
     sops.secrets.capem = {};
-    sops.templates."vpn.config".content = ''
+    sops.templates.vpn.content = ''
       client
       dev tun
       proto ${config.sops.placeholder.vpnprot}
@@ -87,7 +87,6 @@
       -----BEGIN CERTIFICATE-----
       ${config.sops.placeholder.capem}
       -----END CERTIFICATE-----
-
       </ca>
 
       disable-occ
@@ -103,7 +102,7 @@ services.openvpn.servers = {
       password = "TODO:secrets";
     };
     # Most of these options came from the OVPN file from the generator
-    config = "config ${config.sops.templates."vpn.config".path}";
+    config = "config ${config.sops.templates.vpn.path}";
   };
 };
 
