@@ -11,6 +11,7 @@
         git
         gnupg
         ssh-to-age
+        openvpn
       ];
 
       users.groups.lxc_shares = {
