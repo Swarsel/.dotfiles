@@ -173,7 +173,6 @@ services.transmission = {
   rpc-whitelist-enabled= true;
   scrape-paused-torrents-enabled= true;
   script-torrent-done-enabled= false;
-  script-torrent-done-filename= "";
   seed-queue-enabled= false;
   seed-queue-size= 10;
   speed-limit-down= 6000;
