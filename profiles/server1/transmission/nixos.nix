@@ -33,6 +33,7 @@
       sops.defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
       sops.validateSopsFiles = false;
 
+      boot.kernelModules = [ "tun" ];
       proxmoxLXC.manageNetwork = true; # manage network myself
       proxmoxLXC.manageHostName = false; # manage hostname myself
       networking.hostName = "transmission"; # Define your hostname.
@@ -48,7 +49,7 @@
       ];
 
       system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-      users.users.root.password = "TEMPLATE";
+      # users.users.root.password = "TEMPLATE";
 
       environment.shellAliases = {
         nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
@@ -100,22 +101,22 @@
 
         disable-occ
       '';
-  services.openvpn.servers = {
-    pia = {
-      autoStart = true;
-      # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-      # authUserPass = {
-        # username = "TODO:secrets";
-        # password = "TODO:secrets";
-      # };
-      config = "config ${config.sops.templates.vpn.path}";
-    };
-  };
+#   services.openvpn.servers = {
+#     pia = {
+#       autoStart = true;
+#       # these are outsourced to a local file, I am not sure if it can be done with sops-nix
+#       # authUserPass = {
+#         # username = "TODO:secrets";
+#         # password = "TODO:secrets";
+#       # };
+#       config = "config ${config.sops.templates.vpn.path}";
+#     };
+#   };
 
-services.transmission = {
-  enable = true;
-  credentialsFile = config.sops.templates."rpc.json".path;
-};
+# services.transmission = {
+#   enable = true;
+#   credentialsFile = config.sops.templates."rpc.json".path;
+# };
 
 
     }
