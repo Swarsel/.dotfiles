@@ -160,15 +160,15 @@ services.transmission = {
   ratio-limit= 2;
   ratio-limit-enabled= false;
   rename-partial-files= true;
-  rpc-authentication-required= true;
+  rpc-authentication-required= false;
   rpc-bind-address= "0.0.0.0";
   rpc-enabled= true;
   rpc-host-whitelist= "";
-  rpc-host-whitelist-enabled= true;
+  rpc-host-whitelist-enabled= false;
   rpc-port= 9091;
   rpc-url= "/transmission/";
   rpc-whitelist= "127.0.0.1,192.168.3.2";
-  rpc-whitelist-enabled= true;
+  rpc-whitelist-enabled= false;
   };
 };
 
