@@ -116,6 +116,60 @@
 services.transmission = {
   enable = true;
   # credentialsFile = config.sops.templates."rpc.json".path;
+  settings = {
+
+    alt-speed-down= 8000;
+    alt-speed-enabled= false;
+  alt-speed-time-begin= 0;
+  alt-speed-time-day= 127;
+  alt-speed-time-enabled= true;
+  alt-speed-time-end= 360;
+  alt-speed-up= 2000;
+  bind-address-ipv4= "0.0.0.0";
+  bind-address-ipv6= "::";
+  blocklist-enabled= false;
+  blocklist-url= "http://www.example.com/blocklist";
+  cache-size-mb= 4;
+  dht-enabled= false;
+  download-limit= 100;
+  download-limit-enabled= 0;
+  download-queue-enabled= true;
+  download-queue-size= 5;
+  encryption= 2;
+  idle-seeding-limit= 30;
+  idle-seeding-limit-enabled= false;
+  incomplete-dir-enabled= false;
+  lpd-enabled= false;
+  max-peers-global= 200;
+  message-level= 1;
+  peer-congestion-algorithm= "";
+  peer-id-ttl-hours= 6;
+  peer-limit-global= 100;
+  peer-limit-per-torrent= 40;
+  peer-port= 22371;
+  peer-port-random-high= 65535;
+  peer-port-random-low= 49152;
+  peer-port-random-on-start= false;
+  peer-socket-tos= "default";
+  pex-enabled= false;
+  port-forwarding-enabled= false;
+  preallocation= 1;
+  prefetch-enabled= true;
+  queue-stalled-enabled= true;
+  queue-stalled-minutes= 30;
+  ratio-limit= 2;
+  ratio-limit-enabled= false;
+  rename-partial-files= true;
+  rpc-authentication-required= true;
+  rpc-bind-address= "0.0.0.0";
+  rpc-enabled= true;
+  rpc-host-whitelist= "";
+  rpc-host-whitelist-enabled= true;
+  rpc-port= 9091;
+  rpc-url= "/transmission/";
+  rpc-whitelist= "127.0.0.1";
+  rpc-whitelist-enabled= true;
+  };
 };
 
 
