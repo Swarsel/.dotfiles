@@ -116,7 +116,6 @@
 services.transmission = {
   enable = true;
   # credentialsFile = config.sops.templates."rpc.json".path;
-  rpc-bind-address = "0.0.0.0";
   settings = {
 
   alt-speed-down= 8000;
