@@ -4,6 +4,7 @@
       imports = [
         (modulesPath + "/virtualisation/proxmox-lxc.nix")
         ./hardware-configuration.nix
+        ./openvpn.nix
       ];
 
       environment.systemPackages = with pkgs; [
@@ -100,14 +101,11 @@
   services.openvpn.servers = {
     pia = {
       autoStart = true;
-      # Note that this is bad security practise, because the details
-      # will be available in the nix store for everyone to see.
-      # https://nixos.wiki/wiki/Comparison_of_secret_managing_schemes
-      authUserPass = {
-        username = "TODO:secrets";
-        password = "TODO:secrets";
-      };
-      # Most of these options came from the OVPN file from the generator
+      # these are outsourced to a local file, I am not sure if it can be done with sops-nix
+      # authUserPass = {
+        # username = "TODO:secrets";
+        # password = "TODO:secrets";
+      # };
       config = "config ${config.sops.templates.vpn.path}";
     };
   };
