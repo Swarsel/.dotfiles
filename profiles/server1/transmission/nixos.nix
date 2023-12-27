@@ -4,7 +4,7 @@
       imports = [
         (modulesPath + "/virtualisation/proxmox-lxc.nix")
         ./hardware-configuration.nix
-        ./openvpn.nix
+        # ./openvpn.nix
       ];
 
       environment.systemPackages = with pkgs; [
