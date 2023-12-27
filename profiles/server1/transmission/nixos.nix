@@ -29,7 +29,6 @@
 
       nix.settings.experimental-features = ["nix-command" "flakes"];
 
-      boot.kernelModules = [ "tun" ];
       sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
       sops.defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
       sops.validateSopsFiles = false;
@@ -49,6 +48,7 @@
       ];
 
       system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+      users.users.root.password = "TEMPLATE";
 
       environment.shellAliases = {
         nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
