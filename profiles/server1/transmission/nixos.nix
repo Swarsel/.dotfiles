@@ -65,8 +65,8 @@
       sops.secrets.capem = {};
       sops.templates."transmission-rpc".owner = "transmission";
       sops.templates."transmission-rpc".content = builtins.toJSON {
-        rpc-username = config.sops.placeholder.rpcpass;
-        rpc-password = config.sops.placeholder.rpcuser;
+        rpc-username = config.sops.placeholder.rpcuser;
+        rpc-password = config.sops.placeholder.rpcpass;
       };
 
       sops.templates.vpn.content = ''
