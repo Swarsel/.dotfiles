@@ -60,8 +60,8 @@
     sops.templates."vpn.config".content = ''
       client
       dev tun
-      proto ${config.sops.placeholder.vpnport}
-      remote ${config.sops.placeholder.vpnloc} 1198
+      proto ${config.sops.placeholder.vpnprot}
+      remote ${config.sops.placeholder.vpnloc} ${config.sops.placeholder.vpnport}
       resolv-retry infinite
       nobind
       persist-key
@@ -77,11 +77,16 @@
       reneg-sec 0
 
       <crl-verify>
+      -----BEGIN X509 CRL-----
       ${config.sops.placeholder.crlpem}
+      -----END X509 CRL-----
       </crl-verify>
 
       <ca>
+      -----BEGIN CERTIFICATE-----
       ${config.sops.placeholder.capem}
+      -----END CERTIFICATE-----
+
       </ca>
 
       disable-occ
