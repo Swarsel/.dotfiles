@@ -321,6 +321,14 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
+  transmission = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/transmission/nixos.nix
+    ];
+  };
+
 #+end_src
 *** homeConfigurations
 
@@ -1722,7 +1730,6 @@ This machine requires manual setup:
 #+end_src
 
 *** [WIP/Incomplete/Untested] Transmission
-
 **** NixOS
 
 #+begin_src nix :tangle profiles/server1/transmission/nixos.nix
