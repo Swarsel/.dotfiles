@@ -52,13 +52,14 @@
       };
 
       sops.secrets.vpnuser = {};
-      sops.secrets.rpcuser = {};
+      sops.secrets.rpcuser = {owner="transmission";};
       sops.secrets.vpnpass = {};
-      sops.secrets.rpcpass = {};
+      sops.secrets.rpcpass = {owner="transmission";};
       sops.secrets.vpnprot = {};
       sops.secrets.vpnloc = {};
       sops.secrets.crlpem = {};
       sops.secrets.capem = {};
+      sops.templates."rpc.json".owner = "transmission";
       sops.templates."rpc.json".content = ''
       "rpc-password": "${config.sops.placeholder.rpcpass}",
       "rpc-username": "${config.sops.placeholder.rpcuser}",
