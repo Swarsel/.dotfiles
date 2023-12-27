@@ -62,7 +62,7 @@
       client
       dev tun
       proto ${config.sops.placeholder.vpnprot}
-      remote ${config.sops.placeholder.vpnloc} ${config.sops.placeholder.vpnport}
+      remote ${config.sops.placeholder.vpnloc}
       resolv-retry infinite
       nobind
       persist-key
