@@ -45,7 +45,7 @@
               proxmoxLXC.manageNetwork = true; # manage network myself
               proxmoxLXC.manageHostName = false; # manage hostname myself
               networking.hostName = "transmission"; # Define your hostname.
-              networking.useDHCP = true;
+              # networking.useDHCP = true;
               networking.enableIPv6 = false;
               networking.firewall.enable = false;
                 networking.interfaces = {
