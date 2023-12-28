@@ -22,9 +22,11 @@
             "root"
           ];
         };
+        users.groups.vpn = {};
 
         users.users.vpn = {
           isSystemUser = true;
+          group = "vpn";
           home = "/var/empty";
           shell = "/run/current-system/sw/bin/nologin";
         };
