@@ -13,6 +13,7 @@
                 ssh-to-age
                 openvpn
                 iptables
+                wireguard-tools
               ];
 
               users.groups.lxc_shares = {
@@ -75,28 +76,28 @@
                 # "net.ipv4.conf.default.rp_filter" = 2;
                 # "net.ipv4.conf.eth0.rp_filter" = 2;
               # };
-              environment.etc = {
-                "openvpn/iptables.sh" =
-                  { source = ../../../scripts/server1/iptables.sh;
-                    mode = "0755";
-                  };
-                "openvpn/update-resolv-conf" =
-                  { source = ../../../scripts/server1/update-resolv-conf;
-                    mode = "0755";
-                  };
-                "openvpn/routing.sh" =
-                  { source = ../../../scripts/server1/routing.sh;
-                    mode = "0755";
-                  };
-                "openvpn/ca.rsa.2048.crt" =
-                  { source = ../../../secrets/certs/ca.rsa.2048.crt;
-                    mode = "0644";
-                  };
-                "openvpn/crl.rsa.2048.pem" =
-                  { source = ../../../secrets/certs/crl.rsa.2048.pem;
-                    mode = "0644";
-                  };
-              };
+              # environment.etc = {
+              #   "openvpn/iptables.sh" =
+              #     { source = ../../../scripts/server1/iptables.sh;
+              #       mode = "0755";
+              #     };
+              #   "openvpn/update-resolv-conf" =
+              #     { source = ../../../scripts/server1/update-resolv-conf;
+              #       mode = "0755";
+              #     };
+              #   "openvpn/routing.sh" =
+              #     { source = ../../../scripts/server1/routing.sh;
+              #       mode = "0755";
+              #     };
+              #   "openvpn/ca.rsa.2048.crt" =
+              #     { source = ../../../secrets/certs/ca.rsa.2048.crt;
+              #       mode = "0644";
+              #     };
+              #   "openvpn/crl.rsa.2048.pem" =
+              #     { source = ../../../secrets/certs/crl.rsa.2048.pem;
+              #       mode = "0644";
+              #     };
+              # };
               services.openssh = {
                 enable = true;
                 settings.PermitRootLogin = "yes";
@@ -179,10 +180,10 @@
             #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
             # };
          # };
-          services.openvpn.servers = {
-            pia = {
-              autoStart = false;
-              updateResolvConf = true;
+          # services.openvpn.servers = {
+            # pia = {
+              # autoStart = false;
+              # updateResolvConf = true;
 #               up = ''
 # export INTERFACE="tun0"
 # export VPNUSER="vpn"
@@ -221,9 +222,9 @@
                 # username = "TODO:secrets";
                 # password = "TODO:secrets";
               # };
-              config = "config ${config.sops.templates.vpn.path}";
-            };
-          };
+              # config = "config ${config.sops.templates.vpn.path}";
+            # };
+          # };
 
         services.transmission = {
           enable = true;
