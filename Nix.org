@@ -1891,7 +1891,7 @@ This machine requires manual setup:
         RuntimeDirectory="openvpn";
         PrivateTmp=true;
         KillMode="mixed";
-        ExecStart = ''${pkgs.openvpn}/sbin/openvpn --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/%i.pid'';
+        ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/%i.pid'';
         PIDFile=''/run/openvpn/%i.pid'';
         ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
         WorkingDirectory="/etc/openvpn";
