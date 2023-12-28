@@ -1,6 +1,4 @@
-
-#! /bin/bash
-
+#!/run/current-system/sw/bin/bash
 VPNIF="tun0"
 VPNUSER="vpn"
 GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)

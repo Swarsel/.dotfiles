@@ -1,6 +1,4 @@
-#! /bin/bash
-# Niftiest Software  ^ ^  www.niftiestsoftware.com
-# Modified version by HTPC Guides  ^ ^  www.htpcguides.com
+#!/run/current-system/sw/bin/bash
 
 export INTERFACE="tun0"
 export VPNUSER="vpn"
