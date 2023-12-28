@@ -168,8 +168,8 @@
     services.openvpn.servers = {
       pia = {
         autoStart = true;
-        up = "/etc/openvpn/iptables.sh";
-        down = "/etc/openvpn/update-resolv-conf";
+        up = "bash /etc/openvpn/iptables.sh";
+        down = "bash /etc/openvpn/update-resolv-conf";
         # these are outsourced to a local file, I am not sure if it can be done with sops-nix
         # authUserPass = {
           # username = "TODO:secrets";
