@@ -1784,6 +1784,20 @@ This machine requires manual setup:
                 networking.useDHCP = true;
                 networking.enableIPv6 = false;
                 networking.firewall.enable = false;
+                  networking.interfaces = {
+                    lo = {
+                      useDHCP = false;
+                      addresses = [
+                        { address = "127.0.0.1"; prefixLength = 8; }
+                        { address = "::1"; prefixLength = 128; }
+                      ];
+                    };
+
+                    eth0 = {
+                      useDHCP = true;
+                    };
+                  };
+
                 # networking.firewall.extraCommands = ''
                 # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
                 # '';
@@ -1869,7 +1883,7 @@ This machine requires manual setup:
                   remote-cert-tls server
 
                   auth-user-pass ${config.sops.templates.pia.path}
-
+                  compress
                   verb 1
                   reneg-sec 0
 
@@ -1881,6 +1895,19 @@ This machine requires manual setup:
                   dhcp-option DNS 209.222.18.218
                   dhcp-option DNS 8.8.8.8
                 '';
+                networking = {
+                  interfaces = {
+                    ens3.ipv6.addresses = [{
+                      address = "2a01:4f8:1c1b:16d0::";
+                      prefixLength = 64;
+                    }];
+                  };
+                  defaultGateway6 = {
+                    address = "fe80::1";
+                    interface = "ens3";
+                  };
+                };
+
 
               #     systemd.services.openvpn-vpn = {
               # wantedBy = [ "multi-user.target" ];
