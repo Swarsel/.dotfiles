@@ -27,7 +27,7 @@
         users.users.vpn = {
           isSystemUser = true;
           group = "vpn";
-          home = "/var/empty";
+          home = "/home/vpn";
           shell = "/run/current-system/sw/bin/nologin";
         };
 
@@ -200,7 +200,7 @@
     blocklist-url= "http://www.example.com/blocklist";
     cache-size-mb= 4;
     dht-enabled= false;
-    download-dir= "/media/New";
+    download-dir= "/home/vpn/Downloads";
     download-limit= 100;
     download-limit-enabled= 0;
     download-queue-enabled= true;
