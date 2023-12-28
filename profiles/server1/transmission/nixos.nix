@@ -169,7 +169,7 @@
       pia = {
         autoStart = true;
         up = "bash /etc/openvpn/iptables.sh";
-        down = "bash /etc/openvpn/update-resolv-conf";
+        # down = "bash /etc/openvpn/update-resolv-conf";
         # these are outsourced to a local file, I am not sure if it can be done with sops-nix
         # authUserPass = {
           # username = "TODO:secrets";
@@ -184,6 +184,7 @@
     credentialsFile = config.sops.templates."transmission-rpc".path;
     user = "vpn";
     group = "vpn";
+    updateResolvConf = true;
     settings = {
 
     alt-speed-down= 8000;
