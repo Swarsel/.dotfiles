@@ -144,39 +144,39 @@
           disable-occ
           script-security 2
           route-noexec
-          up /etc/openvpn/iptables.sh
-          down /etc/openvpn/update-resolv-conf
         '';
 
-          systemd.services.openvpn-vpn = {
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-      description = "OpenVPN connection to pia";
-      serviceConfig = {
-        Type = "forking";
-        RuntimeDirectory="openvpn";
-        PrivateTmp=true;
-        KillMode="mixed";
-        ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
-        PIDFile=''/run/openvpn/pia.pid'';
-        ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
-        WorkingDirectory="/etc/openvpn";
-        Restart="on-failure";
-        RestartSec=30;
-        ProtectSystem="yes";
-        DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
+      #     systemd.services.openvpn-vpn = {
+      # wantedBy = [ "multi-user.target" ];
+      # after = [ "network.target" ];
+      # description = "OpenVPN connection to pia";
+      # serviceConfig = {
+      #   Type = "forking";
+      #   RuntimeDirectory="openvpn";
+      #   PrivateTmp=true;
+      #   KillMode="mixed";
+      #   ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
+      #   PIDFile=''/run/openvpn/pia.pid'';
+      #   ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
+      #   WorkingDirectory="/etc/openvpn";
+      #   Restart="on-failure";
+      #   RestartSec=30;
+      #   ProtectSystem="yes";
+      #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
       };
    };
-    # services.openvpn.servers = {
-      # pia = {
-        # autoStart = false;
+    services.openvpn.servers = {
+      pia = {
+        autoStart = true;
+        up = "/etc/openvpn/iptables.sh";
+        down = "/etc/openvpn/update-resolv-conf";
         # these are outsourced to a local file, I am not sure if it can be done with sops-nix
         # authUserPass = {
           # username = "TODO:secrets";
           # password = "TODO:secrets";
         # };
-        # config = "config ${config.sops.templates.vpn.path}";
-      # };
+        config = "config ${config.sops.templates.vpn.path}";
+      };
     # };
 
   services.transmission = {
