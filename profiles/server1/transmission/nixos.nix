@@ -162,7 +162,6 @@
       Restart="on-failure";
       RestartSec=30;
       ProtectSystem="yes";
-      LimitNPROC=10;
       DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
     };
  };
