@@ -12,6 +12,7 @@
         gnupg
         ssh-to-age
         openvpn
+        iptables
       ];
 
       users.groups.lxc_shares = {
