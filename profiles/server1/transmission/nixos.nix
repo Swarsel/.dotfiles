@@ -28,7 +28,6 @@
           isNormalUser = true;
           group = "vpn";
           home = "/home/vpn";
-          shell = "/run/current-system/sw/bin/nologin";
         };
 
         services.xserver = {
