@@ -68,6 +68,7 @@
       stylix,
       sops-nix,
       lanzaboote,
+      pia,
       
       ...
   }: let
