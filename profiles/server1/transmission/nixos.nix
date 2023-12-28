@@ -155,7 +155,7 @@
       RuntimeDirectory="openvpn";
       PrivateTmp=true;
       KillMode="mixed";
-      ExecStart = ''openvpn --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/%i.pid'';
+      ExecStart = ''${pkgs.openvpn} --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/%i.pid'';
       PIDFile=''/run/openvpn/%i.pid'';
       ExecReload=''/bin/kill -HUP $MAINPID'';
       WorkingDirectory="/etc/openvpn";
