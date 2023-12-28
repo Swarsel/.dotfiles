@@ -4,7 +4,7 @@
       imports = [
         (modulesPath + "/virtualisation/proxmox-lxc.nix")
         ./hardware-configuration.nix
-        ./openvpn.nix #this file holds the vpn login data
+        # ./openvpn.nix #this file holds the vpn login data
       ];
 
       environment.systemPackages = with pkgs; [
@@ -103,6 +103,11 @@
         rpc-password = config.sops.placeholder.rpcpass;
       };
 
+      sops.templates.pia.content = ''
+      ${config.sops.placeholder.vpnuser}
+      ${config.sops.placeholder.vpnpass}
+      '';
+
       sops.templates.vpn.content = ''
         client
         dev tun
@@ -117,7 +122,7 @@
         tls-client
         remote-cert-tls server
 
-        auth-user-pass
+        auth-user-pass ${config.sops.templates.pia.path}
         auth-nocache
         comp-lzo
         verb 1
