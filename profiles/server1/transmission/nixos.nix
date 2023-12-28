@@ -12,6 +12,7 @@
                 gnupg
                 ssh-to-age
                 openvpn
+                jq
                 iptables
                 wireguard-tools
               ];
