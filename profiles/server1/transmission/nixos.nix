@@ -45,7 +45,7 @@
               proxmoxLXC.manageNetwork = true; # manage network myself
               proxmoxLXC.manageHostName = false; # manage hostname myself
               networking.hostName = "transmission"; # Define your hostname.
-              # networking.useDHCP = true;
+              networking.useDHCP = true;
               networking.enableIPv6 = false;
               networking.firewall.enable = false;
                 networking.interfaces = {
@@ -159,18 +159,6 @@
                 dhcp-option DNS 209.222.18.218
                 dhcp-option DNS 8.8.8.8
               '';
-              networking = {
-                interfaces = {
-                  ens3.ipv6.addresses = [{
-                    address = "2a01:4f8:1c1b:16d0::";
-                    prefixLength = 64;
-                  }];
-                };
-                defaultGateway6 = {
-                  address = "fe80::1";
-                  interface = "ens3";
-                };
-              };
 
 
             #     systemd.services.openvpn-vpn = {
