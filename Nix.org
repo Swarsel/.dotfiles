@@ -1809,6 +1809,14 @@ This machine requires manual setup:
             { source = ../../../scripts/server1/routing.sh;
               mode = "0755";
             };
+          "openvpn/ca.rsa.2048.crt" =
+            { source = ../../../secrets/certs/ca.rsa.2048.crt;
+              mode = "0644";
+            };
+          "openvpn/crl.rsa.2048.pem" =
+            { source = ../../../secrets/certs/crl.rsa.2048.pem;
+              mode = "0644";
+            };
         };
         services.openssh = {
           enable = true;
@@ -1864,17 +1872,8 @@ This machine requires manual setup:
           verb 1
           reneg-sec 0
 
-          <crl-verify>
-          -----BEGIN X509 CRL-----
-          ${config.sops.placeholder.crlpem}
-          -----END X509 CRL-----
-          </crl-verify>
-
-          <ca>
-          -----BEGIN CERTIFICATE-----
-          ${config.sops.placeholder.capem}
-          -----END CERTIFICATE-----
-          </ca>
+          crl-verify /etc/openvpn/crl.rsa.2048.pem
+          ca /etc/openvpn/ca.rsa.2048.crt
 
           disable-occ
           script-security 2
