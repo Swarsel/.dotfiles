@@ -35,6 +35,6 @@ iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
 
 # Start routing script
-/etc/openvpn/routing.sh
+bash /etc/openvpn/routing.sh
 
 exit 0
