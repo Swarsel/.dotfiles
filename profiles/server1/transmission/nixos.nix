@@ -163,8 +163,8 @@
       #   RestartSec=30;
       #   ProtectSystem="yes";
       #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
-      };
-   };
+      # };
+   # };
     services.openvpn.servers = {
       pia = {
         autoStart = true;
