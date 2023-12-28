@@ -133,7 +133,7 @@
                 remote-cert-tls server
 
                 auth-user-pass ${config.sops.templates.pia.path}
-                compress
+
                 verb 1
                 reneg-sec 0
 
