@@ -1740,7 +1740,7 @@ This machine requires manual setup:
         imports = [
           (modulesPath + "/virtualisation/proxmox-lxc.nix")
           ./hardware-configuration.nix
-          ./openvpn.nix
+          ./openvpn.nix #this file holds the vpn login data
         ];
 
         environment.systemPackages = with pkgs; [
@@ -1754,8 +1754,13 @@ This machine requires manual setup:
           gid = 10000;
           members = [
             "transmission"
+            "vpn"
             "root"
           ];
+        };
+
+        users.users.vpn = {
+          isNormalUser = true;
         };
 
         services.xserver = {
@@ -1776,6 +1781,34 @@ This machine requires manual setup:
         networking.useDHCP = true;
         networking.enableIPv6 = false;
         networking.firewall.enable = false;
+        networking.firewall.extraCommands = ''
+        sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+        '';
+        networking.iproute2 = {
+          enable = true;
+          rttablesExtraConfig = ''
+          200     vpn
+          '';
+        };
+        boot.kernel.sysctl = {
+          "net.ipv4.conf.all.rp_filter" = 2;
+          "net.ipv4.conf.default.rp_filter" = 2;
+          "net.ipv4.conf.eth0.rp_filter" = 2;
+        };
+        environment.etc = {
+          "openvpn/iptables.sh" =
+            { source = ../../../scripts/server1/iptables.sh;
+              mode = "0755";
+            };
+          "openvpn/update-resolv-conf" =
+            { source = ../../../scripts/server1/update-resolv-conf;
+              mode = "0755";
+            };
+          "openvpn/routing.sh" =
+            { source = ../../../scripts/server1/routing.sh;
+              mode = "0755";
+            };
+        };
         services.openssh = {
           enable = true;
           settings.PermitRootLogin = "yes";
@@ -1820,7 +1853,8 @@ This machine requires manual setup:
           remote-cert-tls server
 
           auth-user-pass
-          compress
+          auth-nocache
+          comp-lzo
           verb 1
           reneg-sec 0
 
@@ -1837,6 +1871,10 @@ This machine requires manual setup:
           </ca>
 
           disable-occ
+          script-security 2
+          route-noexec
+          up /etc/openvpn/iptables.sh
+          down /etc/openvpn/update-resolv-conf
         '';
     services.openvpn.servers = {
       pia = {
