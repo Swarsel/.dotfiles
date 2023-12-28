@@ -1787,24 +1787,24 @@ This machine requires manual setup:
                 sops.validateSopsFiles = false;
 
                 boot.kernelModules = [ "tun" ];
-                proxmoxLXC.manageNetwork = true; # manage network myself
+                proxmoxLXC.manageNetwork = false; # manage network myself
                 proxmoxLXC.manageHostName = false; # manage hostname myself
                 networking.hostName = "transmission"; # Define your hostname.
-                networking.useDHCP = true;
-                networking.enableIPv6 = false;
-                networking.firewall.enable = false;
-                  networking.interfaces = {
-                    lo = {
-                      useDHCP = false;
-                      ipv4.addresses = [
-                        { address = "127.0.0.1"; prefixLength = 8; }
-                      ];
-                    };
+                # networking.useDHCP = true;
+                # networking.enableIPv6 = false;
+                # networking.firewall.enable = false;
+                #   networking.interfaces = {
+                #     lo = {
+                #       useDHCP = false;
+                #       ipv4.addresses = [
+                #         { address = "127.0.0.1"; prefixLength = 8; }
+                #       ];
+                #     };
 
-                    eth0 = {
-                      useDHCP = true;
-                    };
-                  };
+                #     eth0 = {
+                #       useDHCP = true;
+                #     };
+                  # };
 
                 # networking.firewall.extraCommands = ''
                 # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
