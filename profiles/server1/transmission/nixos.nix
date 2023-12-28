@@ -18,7 +18,6 @@
       users.groups.lxc_shares = {
         gid = 10000;
         members = [
-          "transmission"
           "vpn"
           "root"
         ];
@@ -98,14 +97,14 @@
       };
 
       sops.secrets.vpnuser = {};
-      sops.secrets.rpcuser = {owner="transmission";};
+      sops.secrets.rpcuser = {owner="vpn";};
       sops.secrets.vpnpass = {};
-      sops.secrets.rpcpass = {owner="transmission";};
+      sops.secrets.rpcpass = {owner="vpn";};
       sops.secrets.vpnprot = {};
       sops.secrets.vpnloc = {};
       sops.secrets.crlpem = {};
       sops.secrets.capem = {};
-      sops.templates."transmission-rpc".owner = "transmission";
+      sops.templates."transmission-rpc".owner = "vpn";
       sops.templates."transmission-rpc".content = builtins.toJSON {
         rpc-username = config.sops.placeholder.rpcuser;
         rpc-password = config.sops.placeholder.rpcpass;
@@ -165,21 +164,22 @@
       DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
     };
  };
-  services.openvpn.servers = {
-    pia = {
-      autoStart = false;
+  # services.openvpn.servers = {
+    # pia = {
+      # autoStart = false;
       # these are outsourced to a local file, I am not sure if it can be done with sops-nix
       # authUserPass = {
         # username = "TODO:secrets";
         # password = "TODO:secrets";
       # };
-      config = "config ${config.sops.templates.vpn.path}";
-    };
-  };
+      # config = "config ${config.sops.templates.vpn.path}";
+    # };
+  # };
 
 services.transmission = {
   enable = true;
   credentialsFile = config.sops.templates."transmission-rpc".path;
+  user = "vpn";
   settings = {
 
   alt-speed-down= 8000;
