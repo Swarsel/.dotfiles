@@ -92,6 +92,7 @@
 
       system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
       # users.users.root.password = "TEMPLATE";
+      services.resolved.enable = true;
 
       environment.shellAliases = {
         nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
