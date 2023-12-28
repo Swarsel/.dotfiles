@@ -161,6 +161,10 @@
                 dhcp-option DNS 8.8.8.8
               '';
 
+              services.pia.enable = true;
+              services.pia.authUserPass.username = "na";
+              services.pia.authUserPass.password = "na";
+
 
             #     systemd.services.openvpn-vpn = {
             # wantedBy = [ "multi-user.target" ];

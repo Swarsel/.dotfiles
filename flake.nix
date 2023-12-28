@@ -47,6 +47,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    pia = {
+      url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    
   };
 
   outputs = inputs@{
@@ -179,6 +185,7 @@
         specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
+          pia.nixosModule
           ./profiles/server1/transmission/nixos.nix
         ];
       };

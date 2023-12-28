@@ -213,6 +213,12 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  pia = {
+    url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+
 #+end_src
 *** let
 
@@ -325,6 +331,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     specialArgs = {inherit inputs pkgs; };
     modules = [
       sops-nix.nixosModules.sops
+      pia.nixosModule
       ./profiles/server1/transmission/nixos.nix
     ];
   };
@@ -1896,6 +1903,10 @@ This machine requires manual setup:
                   dhcp-option DNS 209.222.18.218
                   dhcp-option DNS 8.8.8.8
                 '';
+
+                services.pia.enable = true;
+                services.pia.authUserPass.username = "na";
+                services.pia.authUserPass.password = "na";
 
 
               #     systemd.services.openvpn-vpn = {
