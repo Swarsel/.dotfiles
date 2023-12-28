@@ -120,8 +120,8 @@
               sops.secrets.rpcpass = {owner="vpn";};
               sops.secrets.vpnprot = {};
               sops.secrets.vpnloc = {};
-              sops.secrets.crlpem = {};
-              sops.secrets.capem = {};
+              # sops.secrets.crlpem = {};
+              # sops.secrets.capem = {};
               sops.templates."transmission-rpc".owner = "vpn";
               sops.templates."transmission-rpc".content = builtins.toJSON {
                 rpc-username = config.sops.placeholder.rpcuser;
@@ -163,7 +163,7 @@
 
               # services.pia.enable = true;
               # services.pia.authUserPass.username = "na";
-              # services.pia.authUserPass.password = "na";
+              services.pia.authUserPass.password = "na";
 
 
             #     systemd.services.openvpn-vpn = {
