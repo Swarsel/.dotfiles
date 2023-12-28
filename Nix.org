@@ -1784,20 +1784,20 @@ This machine requires manual setup:
               networking.useDHCP = true;
               networking.enableIPv6 = false;
               networking.firewall.enable = false;
-              networking.firewall.extraCommands = ''
-              sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-              '';
-              networking.iproute2 = {
-                enable = true;
-                rttablesExtraConfig = ''
-                200     vpn
-                '';
-              };
-              boot.kernel.sysctl = {
-                "net.ipv4.conf.all.rp_filter" = 2;
-                "net.ipv4.conf.default.rp_filter" = 2;
-                "net.ipv4.conf.eth0.rp_filter" = 2;
-              };
+              # networking.firewall.extraCommands = ''
+              # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+              # '';
+              # networking.iproute2 = {
+              #   enable = true;
+              #   rttablesExtraConfig = ''
+              #   200     vpn
+              #   '';
+              # };
+              # boot.kernel.sysctl = {
+                # "net.ipv4.conf.all.rp_filter" = 2;
+                # "net.ipv4.conf.default.rp_filter" = 2;
+                # "net.ipv4.conf.eth0.rp_filter" = 2;
+              # };
               environment.etc = {
                 "openvpn/iptables.sh" =
                   { source = ../../../scripts/server1/iptables.sh;
