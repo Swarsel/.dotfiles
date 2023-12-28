@@ -1881,6 +1881,28 @@ This machine requires manual setup:
           up /etc/openvpn/iptables.sh
           down /etc/openvpn/update-resolv-conf
         '';
+
+          systemd.services.openvpn-vpn = {
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      description = "OpenVPN connection to %i";
+      serviceConfig = {
+        Type = "forking";
+        RuntimeDirectory="openvpn";
+        PrivateTmp=true;
+        KillMode="mixed";
+        ExecStart = ''openvpn --daemon ovpn-%i --status /run/openvpn/%i.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/%i.pid'';
+        PIDFile=''/run/openvpn/%i.pid'';
+        ExecReload=''/bin/kill -HUP $MAINPID'';
+        WorkingDirectory="/etc/openvpn";
+        Restart="on-failure";
+        RestartSec=3;
+        ProtectSystem="yes";
+        LimitNPROC=10;
+        DeviceAllow="/dev/null rw";
+        DeviceAllow="/dev/net/tun rw";
+      };
+   };
     services.openvpn.servers = {
       pia = {
         autoStart = false;
