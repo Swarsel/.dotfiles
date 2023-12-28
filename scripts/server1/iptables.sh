@@ -1,5 +1,4 @@
-#!/run/current-system/sw/bin/bash
-
+#! /usr/bin/env bash
 export INTERFACE="tun0"
 export VPNUSER="vpn"
 export LOCALIP="192.168.1.191"
