@@ -133,8 +133,7 @@
                 remote-cert-tls server
 
                 auth-user-pass ${config.sops.templates.pia.path}
-                auth-nocache
-                comp-lzo
+                compress
                 verb 1
                 reneg-sec 0
 
@@ -142,8 +141,9 @@
                 ca /etc/openvpn/ca.rsa.2048.crt
 
                 disable-occ
-                route-noexec
                 dhcp-option DNS 209.222.18.222
+                dhcp-option DNS 209.222.18.218
+                dhcp-option DNS 8.8.8.8
               '';
 
             #     systemd.services.openvpn-vpn = {
