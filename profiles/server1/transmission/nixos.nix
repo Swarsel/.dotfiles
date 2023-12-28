@@ -163,8 +163,7 @@
       RestartSec=3;
       ProtectSystem="yes";
       LimitNPROC=10;
-      DeviceAllow="/dev/null rw";
-      DeviceAllow="/dev/net/tun rw";
+      DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
     };
  };
   services.openvpn.servers = {
