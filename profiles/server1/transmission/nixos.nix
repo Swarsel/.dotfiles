@@ -51,9 +51,8 @@
                 networking.interfaces = {
                   lo = {
                     useDHCP = false;
-                    addresses = [
+                    ipv4.addresses = [
                       { address = "127.0.0.1"; prefixLength = 8; }
-                      { address = "::1"; prefixLength = 128; }
                     ];
                   };
 
