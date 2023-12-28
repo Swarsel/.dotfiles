@@ -163,7 +163,7 @@
 
               # services.pia.enable = true;
               # services.pia.authUserPass.username = "na";
-              services.pia.authUserPass.password = "na";
+              # services.pia.authUserPass.password = "na";
 
 
             #     systemd.services.openvpn-vpn = {
