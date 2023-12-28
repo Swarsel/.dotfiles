@@ -24,7 +24,9 @@
         };
 
         users.users.vpn = {
-          isNormalUser = true;
+          isSystemUser = true;
+          home = "/var/empty";
+          shell = "/run/current-system/sw/bin/nologin";
         };
 
         services.xserver = {
@@ -180,6 +182,7 @@
     enable = true;
     credentialsFile = config.sops.templates."transmission-rpc".path;
     user = "vpn";
+    group = "vpn";
     settings = {
 
     alt-speed-down= 8000;
