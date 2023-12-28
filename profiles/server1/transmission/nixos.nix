@@ -177,7 +177,7 @@
         # };
         config = "config ${config.sops.templates.vpn.path}";
       };
-    # };
+    };
 
   services.transmission = {
     enable = true;
