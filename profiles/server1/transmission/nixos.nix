@@ -260,7 +260,7 @@ services.nginx = {
 
         "192.168.1.191" = {
           locations = {
-            "/" = {
+            "/transmission" = {
               proxyPass = "https://127.0.0.1:9091";
               extraConfig = ''
               client_max_body_size 0;
