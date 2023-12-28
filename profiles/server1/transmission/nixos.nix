@@ -143,6 +143,7 @@
 
                 disable-occ
                 route-noexec
+                dhcp-option DNS 209.222.18.222
               '';
 
             #     systemd.services.openvpn-vpn = {
