@@ -29,8 +29,8 @@
        registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
        '';
        sops.templates.mautrixtelegram.content = ''
-       MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder."mautrixtelegram_as"}
-       MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder."mautrixtelegram_hs"}
+       MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+       MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
       MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
       MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
       '';
