@@ -24,9 +24,10 @@
   sops.validateSopsFiles = false;
 
   sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-   services.matrix-synapse.extraConfigFiles = [
-     config.sops.secrets.matrixsharedsecret.path
-];
+  sops.templates."matrixshared".content = ''
+  registration_shared_secret${config.sops.placeholder.matrixsharedsecret}
+  '';
+
   proxmoxLXC.manageNetwork = true; # manage network myself
   proxmoxLXC.manageHostName = false; # manage hostname myself
   networking.hostName = "matrix"; # Define your hostname.
@@ -65,6 +66,9 @@
      enable = true;
      settings.server_name = "matrix.swarsel.win";
      settings.public_baseurl = "https://matrix.swarsel.win";
+     extraConfigFiles = [
+       config.sops.templates.matrixshared.path
+     ];
      settings.listeners = [
        { port = 8008;
          bind_addresses = [ "0.0.0.0" ];
