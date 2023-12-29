@@ -28,6 +28,11 @@
        sops.templates.matrixshared.content = ''
        registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
        '';
+       sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
+       sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
+       sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
+       sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
+       sops.templates.mautrixtelegram.owner = "matrix-synapse";
        sops.templates.mautrixtelegram.content = ''
        MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
        MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
