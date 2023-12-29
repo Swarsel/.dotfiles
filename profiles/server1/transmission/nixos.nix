@@ -200,8 +200,7 @@ export VPNUSER="vpn"
 export LOCALIP="192.168.1.191"
 export NETIF="eth0"
 export VPNIF="tun0"
-export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v
-
+export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
 iptables -F -t nat
 iptables -F -t mangle
 iptables -F -t filter
@@ -218,7 +217,6 @@ iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
 iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
 iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
-'255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
 if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
 ip rule add from all fwmark 0x1 lookup $VPNUSER
 fi
@@ -226,7 +224,7 @@ ip route replace default via $GATEWAYIP table $VPNUSER
 ip route append default via 127.0.0.1 dev lo table $VPNUSER
 ip route flush cache
               '';
-              down = "bash /etc/openvpn/update-resolv-conf";
+              # down = "bash /etc/openvpn/update-resolv-conf";
               # these are outsourced to a local file, I am not sure if it can be done with sops-nix
               # authUserPass = {
                 # username = "TODO:secrets";
