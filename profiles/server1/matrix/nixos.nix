@@ -65,8 +65,8 @@
 
    services.matrix-synapse = {
      enable = true;
-     settings.server_name = "matrix.swarsel.win";
-     settings.public_baseurl = "https://matrix.swarsel.win";
+     settings.server_name = "matrix2.swarsel.win";
+     settings.public_baseurl = "https://matrix2.swarsel.win";
      extraConfigFiles = [
        config.sops.templates.matrixshared.path
      ];
