@@ -51,33 +51,33 @@
               networking.useDHCP = true;
               networking.enableIPv6 = false;
               networking.firewall.enable = false;
-                networking.interfaces = {
-                  lo = {
-                    useDHCP = false;
-                    ipv4.addresses = [
-                      { address = "127.0.0.1"; prefixLength = 8; }
-                    ];
-                  };
+                # networking.interfaces = {
+                  # lo = {
+                    # useDHCP = false;
+                    # ipv4.addresses = [
+                      # { address = "127.0.0.1"; prefixLength = 8; }
+                    # ];
+                  # };
+              #
+                  # eth0 = {
+                    # useDHCP = true;
+                  # };
+                # };
 
-                  eth0 = {
-                    useDHCP = true;
-                  };
-                };
-
-              networking.firewall.extraCommands = ''
-              sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-              '';
-              networking.iproute2 = {
-                enable = true;
-                rttablesExtraConfig = ''
-                200     vpn
-                '';
-              };
-              boot.kernel.sysctl = {
-                "net.ipv4.conf.all.rp_filter" = 2;
-                "net.ipv4.conf.default.rp_filter" = 2;
-                "net.ipv4.conf.eth0.rp_filter" = 2;
-              };
+              # networking.firewall.extraCommands = ''
+              # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+              # '';
+              # networking.iproute2 = {
+                # enable = true;
+                # rttablesExtraConfig = ''
+                # 200     vpn
+                # '';
+              # };
+              # boot.kernel.sysctl = {
+              #   "net.ipv4.conf.all.rp_filter" = 2;
+              #   "net.ipv4.conf.default.rp_filter" = 2;
+              #   "net.ipv4.conf.eth0.rp_filter" = 2;
+              # };
               environment.etc = {
                 "openvpn/iptables.sh" =
                   { source = ../../../scripts/server1/iptables.sh;
