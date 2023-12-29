@@ -102,6 +102,10 @@
               services.openssh = {
                 enable = true;
                 settings.PermitRootLogin = "yes";
+                listenAdresses.* = {
+                                   port = 22;
+                                   addr = "0.0.0.0";
+                                 };
               };
               users.users.root.openssh.authorizedKeys.keyFiles = [
                 ../../../secrets/keys/authorized_keys
@@ -313,7 +317,7 @@
             enable = true;
             virtualHosts = {
 
-              "192.168.1.191" = {
+              "192.168.1.192" = {
                 locations = {
                   "/transmission" = {
                     proxyPass = "http://127.0.0.1:9091";
