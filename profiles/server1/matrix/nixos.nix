@@ -125,6 +125,11 @@
         domain = "matrix2.swarsel.win";
       };
       appservice = {
+        address= "http://localhost:29317";
+        tls_cert = false;
+        tls_key = false;
+        hostname = "0.0.0.0";
+        port = "29317";
         provisioning.enabled = true;
         id = "telegram";
         public = {
@@ -139,7 +144,7 @@
         relaybot.authless_portals = true;
         permissions = {
           "*" = "relaybot";
-          "@swarsel:matrix.swarsel.win" = "admin";
+          "@swarsel:matrix2.swarsel.win" = "admin";
         };
 
         # Animated stickers conversion requires additional packages in the
