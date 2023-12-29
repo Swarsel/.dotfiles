@@ -2130,10 +2130,14 @@ This machine requires manual setup:
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    # sops.defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
-    # sops.validateSopsFiles = false;
+    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    sops.defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
+    sops.validateSopsFiles = false;
 
+    sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
+     services.matrix-synapse.extraConfigFiles = [
+       config.sops.secrets.matrixsharedsecret.path
+  ];
     proxmoxLXC.manageNetwork = true; # manage network myself
     proxmoxLXC.manageHostName = false; # manage hostname myself
     networking.hostName = "matrix"; # Define your hostname.
