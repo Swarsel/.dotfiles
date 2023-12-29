@@ -191,6 +191,14 @@
         ];
       };
       
+      matrix = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/matrix/nixos.nix
+        ];
+      };
+      
     };
 
     # pure Home Manager setups - for non-NixOS machines
