@@ -227,7 +227,7 @@ ip route append default via 127.0.0.1 dev lo table $VPNUSER
 ip route flush cache
               '';
               down = "bash /etc/openvpn/update-resolv-conf";
-              these are outsourced to a local file, I am not sure if it can be done with sops-nix
+              # these are outsourced to a local file, I am not sure if it can be done with sops-nix
               authUserPass = {
                 username = "TODO:secrets";
                 password = "TODO:secrets";
