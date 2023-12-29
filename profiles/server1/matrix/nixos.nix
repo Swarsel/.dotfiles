@@ -10,6 +10,7 @@
          git
          gnupg
          ssh-to-age
+         matrix-synapse
        ];
 
        services.xserver = {
@@ -126,8 +127,6 @@
       };
       appservice = {
         address= "http://localhost:29317";
-        tls_cert = false;
-        tls_key = false;
         hostname = "0.0.0.0";
         port = "29317";
         provisioning.enabled = true;
