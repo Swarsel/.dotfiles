@@ -1,5 +1,4 @@
 { config, pkgs, modulesPath, ... }:
-
 {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
@@ -61,6 +60,8 @@
     enable = true;
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
     virtualHosts = {
 
       "stash.swarsel.win" = {
@@ -82,6 +83,20 @@
           };
           "/.well-known/caldav" = {
             return = "301 $scheme://$host/remote.php/dav";
+          };
+        };
+      };
+
+      "matrix2.swarsel.win" = {
+        enableACME = true;
+        forceSSL = true;
+        acmeRoot = null;
+        locations = {
+          "~ ^(/_matrix|/_synapse/client)" = {
+            proxyPass = "http://192.168.2.23:8008";
+            extraConfig = ''
+                client_max_body_size 0;
+              '';
           };
         };
       };

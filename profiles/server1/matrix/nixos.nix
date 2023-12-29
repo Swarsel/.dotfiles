@@ -48,5 +48,33 @@
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
+  services.postgresql.enable = true;
+  services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
+  CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+  CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+    TEMPLATE template0
+    LC_COLLATE = "C"
+    LC_CTYPE = "C";
+'';
+
+   services.matrix-synapse = {
+     enable = true;
+     settings.server_name = "matrix.swarsel.win";
+     settings.public_baseurl = "https://matrix.swarsel.win";
+     settings.listeners = [
+       { port = 8008;
+         bind_addresses = [ "0.0.0.0" ];
+         type = "http";
+         tls = false;
+         x_forwarded = true;
+         resources = [
+           {
+             names = [ "client" "federation" ];
+             compress = true;
+           }
+         ];
+       }
+     ];
+   };
 
 }
