@@ -102,7 +102,7 @@
               services.openssh = {
                 enable = true;
                 settings.PermitRootLogin = "yes";
-                listenAdresses = [{
+                listenAddresses = [{
                                    port = 22;
                                    addr = "0.0.0.0";
                                  }];
