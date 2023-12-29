@@ -121,7 +121,7 @@
     # It's also possible to use PostgreSQL.
     settings = {
       homeserver = {
-        address = "https://matrix2.swarsel.win";
+        address = "http://localhost:8008";
         domain = "matrix2.swarsel.win";
       };
       appservice = {
