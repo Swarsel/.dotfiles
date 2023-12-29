@@ -131,6 +131,7 @@
         port = "29317";
         provisioning.enabled = true;
         id = "telegram";
+        ephemeral_events = true;
         public = {
           enabled = false;
         };
@@ -141,6 +142,13 @@
       };
       bridge = {
         relaybot.authless_portals = true;
+        allow_avatar_remove = true;
+        allow_contact_info = true;
+        sync_channel_members = true;
+        startup_sync = true;
+        sync_create_limit = 0;
+        sync_direct_chats = true;
+        telegram_link_preview = true;
         permissions = {
           "*" = "relaybot";
           "@swarsel:matrix2.swarsel.win" = "admin";
