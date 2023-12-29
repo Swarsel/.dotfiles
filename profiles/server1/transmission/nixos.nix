@@ -228,10 +228,10 @@ ip route flush cache
               '';
               down = "bash /etc/openvpn/update-resolv-conf";
               # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-              authUserPass = {
-                username = "TODO:secrets";
-                password = "TODO:secrets";
-              };
+              # authUserPass = {
+                # username = "TODO:secrets";
+                # password = "TODO:secrets";
+              # };
               config = "config ${config.sops.templates.vpn.path}";
             };
           };
