@@ -26,7 +26,7 @@
   sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
   sops.templates."matrixshared".owner = "matrix-synapse";
   sops.templates."matrixshared".content = ''
-  registration_shared_secret${config.sops.placeholder.matrixsharedsecret}
+  registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
   '';
 
   proxmoxLXC.manageNetwork = true; # manage network myself
