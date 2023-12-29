@@ -72,6 +72,11 @@
          TEMPLATE template0
          LC_COLLATE = "C"
          LC_CTYPE = "C";
+       CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+       CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+         TEMPLATE template0
+         LC_COLLATE = "C"
+         LC_CTYPE = "C";
      '';
 
         services.matrix-synapse = {
