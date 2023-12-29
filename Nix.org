@@ -1807,21 +1807,21 @@ This machine requires manual setup:
                     };
                   };
 
-                # networking.firewall.extraCommands = ''
-                # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-                # '';
-                # networking.iproute2 = {
-                #   enable = true;
-                #   rttablesExtraConfig = ''
-                #   200     vpn
-                #   '';
-                # };
-                # boot.kernel.sysctl = {
-                  # "net.ipv4.conf.all.rp_filter" = 2;
-                  # "net.ipv4.conf.default.rp_filter" = 2;
-                  # "net.ipv4.conf.eth0.rp_filter" = 2;
-                # };
-                # environment.etc = {
+                networking.firewall.extraCommands = ''
+                sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+                '';
+                networking.iproute2 = {
+                  enable = true;
+                  rttablesExtraConfig = ''
+                  200     vpn
+                  '';
+                };
+                boot.kernel.sysctl = {
+                  "net.ipv4.conf.all.rp_filter" = 2;
+                  "net.ipv4.conf.default.rp_filter" = 2;
+                  "net.ipv4.conf.eth0.rp_filter" = 2;
+                };
+                environment.etc = {
                 #   "openvpn/iptables.sh" =
                 #     { source = ../../../scripts/server1/iptables.sh;
                 #       mode = "0755";
@@ -1834,15 +1834,15 @@ This machine requires manual setup:
                 #     { source = ../../../scripts/server1/routing.sh;
                 #       mode = "0755";
                 #     };
-                #   "openvpn/ca.rsa.2048.crt" =
-                #     { source = ../../../secrets/certs/ca.rsa.2048.crt;
-                #       mode = "0644";
-                #     };
-                #   "openvpn/crl.rsa.2048.pem" =
-                #     { source = ../../../secrets/certs/crl.rsa.2048.pem;
-                #       mode = "0644";
-                #     };
-                # };
+                  "openvpn/ca.rsa.2048.crt" =
+                    { source = ../../../secrets/certs/ca.rsa.2048.crt;
+                      mode = "0644";
+                    };
+                  "openvpn/crl.rsa.2048.pem" =
+                    { source = ../../../secrets/certs/crl.rsa.2048.pem;
+                      mode = "0644";
+                    };
+                };
                 services.openssh = {
                   enable = true;
                   settings.PermitRootLogin = "yes";
@@ -1907,6 +1907,7 @@ This machine requires manual setup:
                   dhcp-option DNS 209.222.18.222
                   dhcp-option DNS 209.222.18.218
                   dhcp-option DNS 8.8.8.8
+                  route-noexec
                 '';
 
                 # services.pia.enable = true;
@@ -1933,51 +1934,51 @@ This machine requires manual setup:
               #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
               # };
            # };
-            # services.openvpn.servers = {
-              # pia = {
-                # autoStart = false;
-                # updateResolvConf = true;
-  #               up = ''
-  # export INTERFACE="tun0"
-  # export VPNUSER="vpn"
-  # export LOCALIP="192.168.1.191"
-  # export NETIF="eth0"
-  # export VPNIF="tun0"
-  # export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v
+            services.openvpn.servers = {
+              pia = {
+                autoStart = false;
+                updateResolvConf = true;
+                up = ''
+  export INTERFACE="tun0"
+  export VPNUSER="vpn"
+  export LOCALIP="192.168.1.191"
+  export NETIF="eth0"
+  export VPNIF="tun0"
+  export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v
 
-  # iptables -F -t nat
-  # iptables -F -t mangle
-  # iptables -F -t filter
-  # iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
-  # iptables -t mangle -A OUTPUT ! --dest $LOCALIP -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p udp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p tcp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT ! --src $LOCALIP -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT -j CONNMARK --save-mark
-  # iptables -A INPUT -i $INTERFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A INPUT -i $INTERFACE -j REJECT
-  # iptables -A OUTPUT -o lo -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
-  # iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
-  # '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
-  # if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
-  # ip rule add from all fwmark 0x1 lookup $VPNUSER
-  # fi
-  # ip route replace default via $GATEWAYIP table $VPNUSER
-  # ip route append default via 127.0.0.1 dev lo table $VPNUSER
-  # ip route flush cache
-                # '';
-                # down = "bash /etc/openvpn/update-resolv-conf";
-                # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-                # authUserPass = {
-                  # username = "TODO:secrets";
-                  # password = "TODO:secrets";
-                # };
-                # config = "config ${config.sops.templates.vpn.path}";
-              # };
-            # };
+  iptables -F -t nat
+  iptables -F -t mangle
+  iptables -F -t filter
+  iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
+  iptables -t mangle -A OUTPUT ! --dest $LOCALIP -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
+  iptables -t mangle -A OUTPUT --dest $LOCALIP -p udp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
+  iptables -t mangle -A OUTPUT --dest $LOCALIP -p tcp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
+  iptables -t mangle -A OUTPUT ! --src $LOCALIP -j MARK --set-mark 0x1
+  iptables -t mangle -A OUTPUT -j CONNMARK --save-mark
+  iptables -A INPUT -i $INTERFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  iptables -A INPUT -i $INTERFACE -j REJECT
+  iptables -A OUTPUT -o lo -m owner --uid-owner $VPNUSER -j ACCEPT
+  iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
+  iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
+  iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
+  '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
+  if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
+  ip rule add from all fwmark 0x1 lookup $VPNUSER
+  fi
+  ip route replace default via $GATEWAYIP table $VPNUSER
+  ip route append default via 127.0.0.1 dev lo table $VPNUSER
+  ip route flush cache
+                '';
+                down = "bash /etc/openvpn/update-resolv-conf";
+                these are outsourced to a local file, I am not sure if it can be done with sops-nix
+                authUserPass = {
+                  username = "TODO:secrets";
+                  password = "TODO:secrets";
+                };
+                config = "config ${config.sops.templates.vpn.path}";
+              };
+            };
 
           services.transmission = {
             enable = true;
