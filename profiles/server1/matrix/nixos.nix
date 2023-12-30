@@ -152,9 +152,9 @@ in {
         database = "postgresql:///mautrix-telegram?host=/run/postgresql";
       };
       bridge = {
-        login_shared_secret_map = {
-          matrixDomain = "as_token:doublepuppet";
-        };
+        # login_shared_secret_map = {
+          # matrixDomain = "as_token:doublepuppet";
+        # };
         relaybot.authless_portals = true;
         allow_avatar_remove = true;
         allow_contact_info = true;
@@ -246,6 +246,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
+
         address= "http://localhost:29328";
         hostname = "0.0.0.0";
         port = 29328;
