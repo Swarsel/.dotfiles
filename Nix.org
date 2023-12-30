@@ -149,6 +149,44 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 #+end_src
 
+*** Virtual hosts init
+
+#+begin_src nix :noweb-ref vminit
+
+
+    imports = [
+      (modulesPath + "/virtualisation/proxmox-lxc.nix")
+      ./hardware-configuration.nix
+    ];
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+    nix.settings.experimental-features = ["nix-command" "flakes"];
+    proxmoxLXC.manageNetwork = true; # manage network myself
+    proxmoxLXC.manageHostName = false; # manage hostname myself
+    networking.useDHCP = true;
+    networking.enableIPv6 = false;
+    services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
+    };
+    users.users.root.openssh.authorizedKeys.keyFiles = [
+      ../../../secrets/keys/authorized_keys
+    ];
+
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+    environment.shellAliases = {
+      nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    };
+
+#+end_src
+
 ** flake.nix
 *** Inputs & Inputs@Outputs
 
@@ -2117,34 +2155,27 @@ Make sure to also do this for doublepuppet.yaml
 
 **** NixOS
 
-#+begin_src nix :tangle profiles/server1/matrix/nixos.nix
+#+begin_src nix :noweb yes :tangle profiles/server1/matrix/nixos.nix
 
-  { config, pkgs, modulesPath, ... }:
+  { config, pkgs, modulesPath, ... }: let
+    matrixDomain = "matrix2.swarsel.win";
+  in {
+    <<vminit>>
 
-  {
-    imports = [
-      (modulesPath + "/virtualisation/proxmox-lxc.nix")
-      ./hardware-configuration.nix
-    ];
-
+    networking.hostName = "matrix"; # Define your hostname.
+    networking.firewall.enable = false;
     environment.systemPackages = with pkgs; [
       git
       gnupg
       ssh-to-age
       matrix-synapse
+      lottieconverter
+      ffmpeg
     ];
-
-    services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
-
-    nix.settings.experimental-features = ["nix-command" "flakes"];
 
     sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
     sops.defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
     sops.validateSopsFiles = false;
-
     sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
     sops.templates."matrix_user_register.sh".content = ''
     register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
@@ -2169,30 +2200,6 @@ Make sure to also do this for doublepuppet.yaml
     # sops.templates.mautrixwhatsapp.content = ''
     # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
     # '';
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "matrix"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
-    services.openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
-    };
-    users.users.root.openssh.authorizedKeys.keyFiles = [
-      ../../../secrets/keys/authorized_keys
-    ];
-
-    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-    # users.users.root.password = "TEMPLATE";
-
-    environment.shellAliases = {
-      nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
 
     services.postgresql.enable = true;
     services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
@@ -2220,19 +2227,13 @@ Make sure to also do this for doublepuppet.yaml
 
     services.matrix-synapse = {
       settings.app_service_config_files = [
-        # The registration file is automatically generated after starting the
-        # appservice for the first time.
-        # cp /var/lib/mautrix-telegram/telegram-registration.yaml \
-        #   /var/lib/matrix-synapse/
-        # chown matrix-synapse:matrix-synapse \
-        #   /var/lib/matrix-synapse/telegram-registration.yaml
         "/var/lib/matrix-synapse/telegram-registration.yaml"
         "/var/lib/matrix-synapse/whatsapp-registration.yaml"
         "/var/lib/matrix-synapse/doublepuppet.yaml"
       ];
       enable = true;
-      settings.server_name = "matrix2.swarsel.win";
-      settings.public_baseurl = "https://matrix2.swarsel.win";
+      settings.server_name = matrixDomain;
+      settings.public_baseurl = "https://${matrixDomain}";
       extraConfigFiles = [
         config.sops.templates.matrixshared.path
       ];
@@ -2254,14 +2255,11 @@ Make sure to also do this for doublepuppet.yaml
 
     services.mautrix-telegram = {
       enable = true;
-
-      # file containing the appservice and telegram tokens
       environmentFile = config.sops.templates.mautrixtelegram.path;
-
       settings = {
         homeserver = {
           address = "http://localhost:8008";
-          domain = "matrix2.swarsel.win";
+          domain = matrixDomain;
         };
         appservice = {
           address= "http://localhost:29317";
@@ -2273,12 +2271,11 @@ Make sure to also do this for doublepuppet.yaml
           public = {
             enabled = false;
           };
-
           database = "postgresql:///mautrix-telegram?host=/run/postgresql";
         };
         bridge = {
           login_shared_secret_map = {
-            "matrix2.swarsel.win" = "as_token:doublepuppet";
+            matrixDomain = "as_token:doublepuppet";
           };
           relaybot.authless_portals = true;
           allow_avatar_remove = true;
@@ -2290,9 +2287,8 @@ Make sure to also do this for doublepuppet.yaml
           telegram_link_preview = true;
           permissions = {
             "*" = "relaybot";
-            "@swarsel:matrix2.swarsel.win" = "admin";
+            "@swarsel:${matrixDomain}" = "admin";
           };
-
           # Animated stickers conversion requires additional packages in the
           # service's path.
           # If this isn't a fresh installation, clearing the bridge's uploaded
@@ -2311,7 +2307,6 @@ Make sure to also do this for doublepuppet.yaml
         };
       };
     };
-
     systemd.services.mautrix-telegram.path = with pkgs; [
       lottieconverter  # for animated stickers conversion, unfree package
       ffmpeg           # if converting animated stickers to webm (very slow!)
@@ -2323,7 +2318,7 @@ Make sure to also do this for doublepuppet.yaml
       settings = {
         homeserver = {
           address = "http://localhost:8008";
-          domain = "matrix2.swarsel.win";
+          domain = matrixDomain;
         };
         appservice = {
           address= "http://localhost:29318";
@@ -2342,7 +2337,7 @@ Make sure to also do this for doublepuppet.yaml
             request_full_sync = true;
           };
           login_shared_secret_map = {
-            "matrix2.swarsel.win" = "as_token:doublepuppet";
+            matrixDomain = "as_token:doublepuppet";
           };
           sync_manual_marked_unread = true;
           send_presence_on_typing = true;
@@ -2352,7 +2347,7 @@ Make sure to also do this for doublepuppet.yaml
           extev_polls = true;
           permissions = {
             "*" = "relaybot";
-            "@swarsel:matrix2.swarsel.win" = "admin";
+            "@swarsel:${matrixDomain}" = "admin";
           };
         };
       };
