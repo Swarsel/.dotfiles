@@ -54,7 +54,7 @@
     
     # provides expressions for mautrix-signal
     nixpkgs-mautrix-signal ={
-      url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
+      url = github:niklaskorz/nixpkgs/tree/nixos-23.11-mautrix-signal;
     };
     
     
