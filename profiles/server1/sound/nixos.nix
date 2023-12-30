@@ -53,7 +53,6 @@
   services.airsonic = {
     enable = true;
     user = "airsonic";
-    maxMemory = 1000;
     listenAddress = "0.0.0.0";
     port = 4040;
   };
