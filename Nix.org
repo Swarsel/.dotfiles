@@ -394,8 +394,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   };
 
   matrix = nixpkgs.lib.nixosSystem {
-    specialArgs = {inherit pkgsmautrix; };
-    pkgs = pkgsmautrix;
+    # specialArgs = {inherit pkgsmautrix; };
+    inherit pkgsmautrix;
     # this is to import a service module that is not on nixpkgs
     # this way avoids infinite recursion errors
     # specialArgs.unstable = nixpkgs-mautrix-signal;
@@ -2191,7 +2191,7 @@ Make sure to also do this for doublepuppet.yaml
 #+begin_src nix :noweb yes :tangle profiles/server1/matrix/nixos.nix
 
   # { config, pkgs, modulesPath, unstable, sops, ... }: let
-  { config, pkgs, modulesPath, sops, ... }: let
+  { config, pkgsmautrix, modulesPath, sops, ... }: let
     matrixDomain = "matrix2.swarsel.win";
   in {
     <<vminitbare>>
@@ -2206,7 +2206,7 @@ Make sure to also do this for doublepuppet.yaml
 
     networking.hostName = "matrix"; # Define your hostname.
     networking.firewall.enable = false;
-    environment.systemPackages = with pkgs; [
+    environment.systemPackages = with pkgsmautrix; [
       git
       gnupg
       ssh-to-age
@@ -2244,7 +2244,7 @@ Make sure to also do this for doublepuppet.yaml
     # '';
 
     services.postgresql.enable = true;
-    services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
+    services.postgresql.initialScript = pkgsmautrix.writeText "synapse-init.sql" ''
       CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
       CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
         TEMPLATE template0
@@ -2350,7 +2350,7 @@ Make sure to also do this for doublepuppet.yaml
         };
       };
     };
-    systemd.services.mautrix-telegram.path = with pkgs; [
+    systemd.services.mautrix-telegram.path = with pkgsmautrix; [
       lottieconverter  # for animated stickers conversion, unfree package
       ffmpeg           # if converting animated stickers to webm (very slow!)
     ];

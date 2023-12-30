@@ -203,8 +203,8 @@
       };
       
       matrix = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit pkgsmautrix; };
-        pkgs = pkgsmautrix;
+        # specialArgs = {inherit pkgsmautrix; };
+        inherit pkgsmautrix;
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
         # specialArgs.unstable = nixpkgs-mautrix-signal;
