@@ -38,6 +38,12 @@
   
   
 
+  users.groups.lxc_shares = {
+    gid = 10000;
+    members = [
+      "root"
+    ];
+  };
   networking.hostName = "sound"; # Define your hostname.
   networking.firewall.enable = false;
   environment.systemPackages = with pkgs; [
