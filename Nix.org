@@ -1357,6 +1357,8 @@ My home PC, the most powerful machine. Sadly Sway cannot make good use out of it
 
 My server setup is built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk has suffered a weird failure where it has become unable to be cloned, but it is still functional for now. I am currently rewriting all machines on there to use NixOS instead; this is a ongoing process.
 
+In the long run, I am thinking about a transition to kubernetes or using just a server running NixOS and using the built-in container functionality. For now however, I like the network management provided by Proxmox, as I am a bit intimidated by doing that from scratch.
+
 *** TEMPLATE
 **** NixOS
 
@@ -1621,6 +1623,8 @@ This machine requires manual setup:
    - Import Libraries
    - Create normal user
 
+In general, I am not amazed by this setup; Kavita is the reader of choice, calibre-web mostly is there to have a convenient way to fullfill the opinionated folder structure when uploading ebooks (calibre-web does not work on its own since it forces sqlite which does not work nicely with my NFS book store). I hope that in the future Kavita will implement ebook upload, or that calibre-web will ditch the sqlite constraints.
+
 **** NixOS
 
 #+begin_src nix :tangle profiles/server1/calibre/nixos.nix
@@ -1799,6 +1803,9 @@ This machine requires manual setup:
 #+end_src
 
 *** [WIP/Incomplete/Untested] Transmission
+
+This stuff just does not work, I seem to be unable to create a working VPN Split Tunneling on NixOS. Maybe this is introduced by the wonky Proxmox-NixOS container interaction, I am not sure. For now, this machine does not work at all and I am stuck with my Debian Container that does this for me ...
+
 **** NixOS
 
 #+begin_src nix :tangle profiles/server1/transmission/nixos.nix
@@ -2267,7 +2274,7 @@ Make sure to also do this for doublepuppet.yaml
           port = "29317";
           provisioning.enabled = true;
           id = "telegram";
-          # ephemeral_events = true;
+          # ephemeral_events = true; # not needed due to double puppeting
           public = {
             enabled = false;
           };
@@ -2333,8 +2340,14 @@ Make sure to also do this for doublepuppet.yaml
           displayname_template = "{{or .FullName .PushName .JID}} (WA)";
           history_sync = {
             backfill = true;
+            max_initial_conversations = -1;
             message_count = -1;
             request_full_sync = true;
+            full_sync_config = {
+              days_limit = 900;
+              size_mb_limit = 5000;
+              storage_quota_mb = 5000;
+            };
           };
           login_shared_secret_map = {
             matrixDomain = "as_token:doublepuppet";

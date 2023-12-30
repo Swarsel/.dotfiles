@@ -140,7 +140,7 @@ in {
         port = "29317";
         provisioning.enabled = true;
         id = "telegram";
-        # ephemeral_events = true;
+        # ephemeral_events = true; # not needed due to double puppeting
         public = {
           enabled = false;
         };
@@ -206,8 +206,14 @@ in {
         displayname_template = "{{or .FullName .PushName .JID}} (WA)";
         history_sync = {
           backfill = true;
+          max_initial_conversations = -1;
           message_count = -1;
           request_full_sync = true;
+          full_sync_config = {
+            days_limit = 900;
+            size_mb_limit = 5000;
+            storage_quota_mb = 5000;
+          };
         };
         login_shared_secret_map = {
           matrixDomain = "as_token:doublepuppet";
