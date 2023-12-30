@@ -80,7 +80,6 @@
       listen-addr = "0.0.0.0:4040";
       music-path = ["/media"];
       podcast-path = "/opt/podcasts";
-      playlists-path = "/opt/playlists";
       jukebox-enabled = true;
     };
   };
