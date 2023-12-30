@@ -75,7 +75,7 @@
 
   services.gonic = {
     enable = true;
-    {
+    settings = {
       cache-path = "/var/cache/gonic";
       listen-addr = "0.0.0.0:4040";
       music-path = ["/media"];
