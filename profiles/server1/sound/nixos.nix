@@ -52,6 +52,7 @@
     isSystemUser = true;
     uid = 63925;
     group = "gonic";
+    extraGroups  = [ "audio" ];
   };
   networking.hostName = "sound"; # Define your hostname.
   networking.firewall.enable = false;
