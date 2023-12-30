@@ -86,12 +86,12 @@
        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
          TEMPLATE template0
          LC_COLLATE = "C"
-         LC_CTYPE = "C"
-       CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD signal';
+         LC_CTYPE = "C";
+       CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
          TEMPLATE template0
          LC_COLLATE = "C"
-         LC_CTYPE = "C"
+         LC_CTYPE = "C";
      '';
 
         services.matrix-synapse = {
