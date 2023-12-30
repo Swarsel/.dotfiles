@@ -122,8 +122,14 @@
           locations = {
             "/" = {
               proxyPass = "http://192.168.2.13:4040";
+              proxyWebsockets = true;
               extraConfig = ''
-                client_max_body_size 0;
+                proxy_redirect          http:// https://;
+                proxy_read_timeout      600s;
+                proxy_send_timeout      600s;
+                proxy_buffering         off;
+                proxy_request_buffering off;
+                client_max_body_size    0;
               '';
             };
           };
