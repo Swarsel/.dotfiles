@@ -65,12 +65,22 @@
   #     });
   #   }];
 
-  services.airsonic = {
+  # services.airsonic = {
+    # enable = true;
+    # user = "airsonic";
+    # listenAddress = "0.0.0.0";
+    # port = 4040;
+    # jre = pkgs.jdk17;
+  #};
+
+  services.gonic = {
     enable = true;
-    user = "airsonic";
-    listenAddress = "0.0.0.0";
-    port = 4040;
-    jre = pkgs.jdk17;
-  };
+    {
+      cache-path = "/var/cache/gonic";
+      listen-addr = "0.0.0.0:4040";
+      music-path = ["/media"];
+      jukebox-enabled = true;
+    }
+  }
 
 }
