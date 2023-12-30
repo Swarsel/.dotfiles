@@ -49,9 +49,9 @@
   # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   # sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
   # sops.validateSopsFiles = false;
-  users.users.airsonic = {
-    extraGroups  = [ "audio" ];
-  };
+  # users.users.airsonic = {
+    # extraGroups  = [ "audio" ];
+  # };
 
   # nixpkgs.overlays = [
   #   self: super: {
@@ -80,7 +80,7 @@
       listen-addr = "0.0.0.0:4040";
       music-path = ["/media"];
       jukebox-enabled = true;
-    }
-  }
+    };
+  };
 
 }
