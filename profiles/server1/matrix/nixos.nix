@@ -157,7 +157,7 @@
               database = "postgresql:///mautrix-telegram?host=/run/postgresql";
             };
             bridge = {
-              login_shared_secret = {
+              login_shared_secret_map = {
                 "matrix2.swarsel.win" = "as_token:doublepuppet";
               };
               relaybot.authless_portals = true;
@@ -227,7 +227,7 @@
                 message_count = -1;
                 request_full_sync = true;
               };
-              login_shared_secret = {
+              login_shared_secret_map = {
                 "matrix2.swarsel.win" = "as_token:doublepuppet";
               };
               sync_manual_marked_unread = true;
