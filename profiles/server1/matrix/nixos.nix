@@ -1,5 +1,5 @@
 # { config, pkgs, modulesPath, unstable, sops, ... }: let
-{ config, pkgsmautrix, modulesPath, sops, ... }: let
+{ config, pkgs, modulesPath, sops, ... }: let
   matrixDomain = "matrix2.swarsel.win";
 in {
   
@@ -42,7 +42,7 @@ in {
 
   networking.hostName = "matrix"; # Define your hostname.
   networking.firewall.enable = false;
-  environment.systemPackages = with pkgsmautrix; [
+  environment.systemPackages = with pkgs; [
     git
     gnupg
     ssh-to-age
@@ -80,7 +80,7 @@ in {
   # '';
 
   services.postgresql.enable = true;
-  services.postgresql.initialScript = pkgsmautrix.writeText "synapse-init.sql" ''
+  services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
     CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
     CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
       TEMPLATE template0
@@ -186,7 +186,7 @@ in {
       };
     };
   };
-  systemd.services.mautrix-telegram.path = with pkgsmautrix; [
+  systemd.services.mautrix-telegram.path = with pkgs; [
     lottieconverter  # for animated stickers conversion, unfree package
     ffmpeg           # if converting animated stickers to webm (very slow!)
   ];
