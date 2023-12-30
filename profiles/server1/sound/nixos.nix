@@ -1,4 +1,4 @@
-{ config, pkgs, modulesPath, unstable, sops, ... }:
+{ config, pkgs, modulesPath, ... }:
 
 {
   
@@ -46,9 +46,9 @@
     ssh-to-age
   ];
 
-  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
-  sops.validateSopsFiles = false;
+  # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+  # sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
+  # sops.validateSopsFiles = false;
 
   services.airsonic = {
     enable = true;

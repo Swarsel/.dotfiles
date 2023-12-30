@@ -218,7 +218,7 @@
         specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
-          ./profiles/server1/matrix/nixos.nix
+          ./profiles/server1/sound/nixos.nix
         ];
       };
       
