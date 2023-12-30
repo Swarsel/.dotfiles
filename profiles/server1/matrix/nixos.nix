@@ -104,6 +104,7 @@
        #   /var/lib/matrix-synapse/telegram-registration.yaml
        "/var/lib/matrix-synapse/telegram-registration.yaml"
        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+       "/var/lib/matrix-synapse/doublepuppet.yaml"
      ];
           enable = true;
           settings.server_name = "matrix2.swarsel.win";
@@ -146,7 +147,7 @@
               port = "29317";
               provisioning.enabled = true;
               id = "telegram";
-              ephemeral_events = true;
+              # ephemeral_events = true;
               public = {
                 enabled = false;
               };
@@ -156,6 +157,9 @@
               database = "postgresql:///mautrix-telegram?host=/run/postgresql";
             };
             bridge = {
+              login_shared_secret = {
+                "matrix2.swarsel.win" = "as_token:doublepuppet";
+              }
               relaybot.authless_portals = true;
               allow_avatar_remove = true;
               allow_contact_info = true;
@@ -208,7 +212,7 @@
               address= "http://localhost:29318";
               hostname = "0.0.0.0";
               port = 29318;
-              ephemeral_events = true;
+              # ephemeral_events = true;
         # The service uses SQLite by default, but it's also possible to use
         # PostgreSQL instead:
               database = {
@@ -217,11 +221,15 @@
               };
               };
             bridge = {
+              displayname_template = "{{or .FullName .PushName .JID}} (WA)";
               history_sync = {
                 backfill = true;
                 message_count = -1;
                 request_full_sync = true;
               };
+              login_shared_secret = {
+                "matrix2.swarsel.win" = "as_token:doublepuppet";
+              }
               sync_manual_marked_unread = true;
               send_presence_on_typing = true;
               parallel_member_sync = true;
