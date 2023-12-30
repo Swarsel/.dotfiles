@@ -207,7 +207,7 @@
             appservice = {
               address= "http://localhost:29318";
               hostname = "0.0.0.0";
-              port = "29318";
+              port = 29318;
               ephemeral_events = true;
         # The service uses SQLite by default, but it's also possible to use
         # PostgreSQL instead:
