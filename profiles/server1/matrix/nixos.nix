@@ -159,7 +159,7 @@
             bridge = {
               login_shared_secret = {
                 "matrix2.swarsel.win" = "as_token:doublepuppet";
-              }
+              };
               relaybot.authless_portals = true;
               allow_avatar_remove = true;
               allow_contact_info = true;
@@ -229,7 +229,7 @@
               };
               login_shared_secret = {
                 "matrix2.swarsel.win" = "as_token:doublepuppet";
-              }
+              };
               sync_manual_marked_unread = true;
               send_presence_on_typing = true;
               parallel_member_sync = true;
