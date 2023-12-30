@@ -151,7 +151,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 *** Virtual hosts init
 
-#+begin_src nix :noweb-ref vminit
+#+begin_src nix :noweb-ref vminitbare
 
 
     services.xserver = {
@@ -180,6 +180,17 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     environment.shellAliases = {
       nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     };
+
+#+end_src
+
+#+begin_src nix :noweb yes :noweb-ref vminit
+
+  imports = [
+    (modulesPath + "/virtualisation/proxmox-lxc.nix")
+    ./hardware-configuration.nix
+  ];
+
+  <<vminitbare>>
 
 #+end_src
 
@@ -384,6 +395,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
   matrix = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
+    # this is to import a service module that is not on nixpkgs
+    # this way avoids infinite recursion errors
     specialArgs.unstable = nixpkgs-mautrix-signal;
     modules = [
       sops-nix.nixosModules.sops
@@ -2179,11 +2192,13 @@ Make sure to also do this for doublepuppet.yaml
   { config, pkgs, modulesPath, unstable, ... }: let
     matrixDomain = "matrix2.swarsel.win";
   in {
-    <<vminit>>
+    <<vminitbare>>
 
     imports = [
       (modulesPath + "/virtualisation/proxmox-lxc.nix")
       ./hardware-configuration.nix
+      # we import here a service that is not available yet on normal nixpkgs
+      # this module is hence not in the modules list, we add it ourselves
       (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
     ];
 
@@ -2254,6 +2269,7 @@ Make sure to also do this for doublepuppet.yaml
       settings.app_service_config_files = [
         "/var/lib/matrix-synapse/telegram-registration.yaml"
         "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+        "/var/lib/matrix-synapse/signal-registration.yaml"
         "/var/lib/matrix-synapse/doublepuppet.yaml"
       ];
       enable = true;
@@ -2384,7 +2400,36 @@ Make sure to also do this for doublepuppet.yaml
       };
     };
 
-   services.mautrix-signal.enable = true;
+    services.mautrix-signal = {
+      enable = true;
+      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+      settings = {
+        homeserver = {
+          address = "http://localhost:8008";
+          domain = matrixDomain;
+        };
+        appservice = {
+          address= "http://localhost:29328";
+          hostname = "0.0.0.0";
+          port = 29328;
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+          };
+        };
+        bridge = {
+          displayname_template = "{{or .ContacrName .ProfileName .PhoneNumber}} (WA)";
+          login_shared_secret_map = {
+            matrixDomain = "as_token:doublepuppet";
+          };
+          caption_in_message = true;
+          permissions = {
+            "*" = "relaybot";
+            "@swarsel:${matrixDomain}" = "admin";
+          };
+        };
+      };
+    }
 
 
   }

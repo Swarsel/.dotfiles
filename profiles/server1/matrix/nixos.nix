@@ -34,6 +34,8 @@ in {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
+    # we import here a service that is not available yet on normal nixpkgs
+    # this module is hence not in the modules list, we add it ourselves
     (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
   ];
 
@@ -104,6 +106,7 @@ in {
     settings.app_service_config_files = [
       "/var/lib/matrix-synapse/telegram-registration.yaml"
       "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+      "/var/lib/matrix-synapse/signal-registration.yaml"
       "/var/lib/matrix-synapse/doublepuppet.yaml"
     ];
     enable = true;
@@ -234,7 +237,36 @@ in {
     };
   };
 
- services.mautrix-signal.enable = true;
+  services.mautrix-signal = {
+    enable = true;
+    # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+    settings = {
+      homeserver = {
+        address = "http://localhost:8008";
+        domain = matrixDomain;
+      };
+      appservice = {
+        address= "http://localhost:29328";
+        hostname = "0.0.0.0";
+        port = 29328;
+        database = {
+          type = "postgres";
+          uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+        };
+      };
+      bridge = {
+        displayname_template = "{{or .ContacrName .ProfileName .PhoneNumber}} (WA)";
+        login_shared_secret_map = {
+          matrixDomain = "as_token:doublepuppet";
+        };
+        caption_in_message = true;
+        permissions = {
+          "*" = "relaybot";
+          "@swarsel:${matrixDomain}" = "admin";
+        };
+      };
+    };
+  }
 
 
 }
