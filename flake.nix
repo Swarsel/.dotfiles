@@ -84,6 +84,16 @@
                             overlays = [ emacs-overlay.overlay
                                          nur.overlay
                                          nixgl.overlay
+                                         self: super: {
+                                           airsonic = super.airsonic.overrideAttrs (_: rec {
+                                             version = "11.0.2-kagemomiji";
+                                             name = "airsonic-advanced-${version}";
+                                             src = super.fetchurl {
+                                               url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
+                                               sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
+                                             };
+                                           });
+                                         }
                                        ];
                             config.allowUnfree = true;
                           };
