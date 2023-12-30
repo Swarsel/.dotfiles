@@ -79,6 +79,8 @@
       cache-path = "/var/cache/gonic";
       listen-addr = "0.0.0.0:4040";
       music-path = ["/media"];
+      podcast-path = ["/opt/podcasts"];
+      playlist-path = ["/opt/playlists"];
       jukebox-enabled = true;
     };
   };
