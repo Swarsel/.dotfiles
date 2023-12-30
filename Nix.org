@@ -405,6 +405,14 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
+  sound = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/matrix/nixos.nix
+    ];
+  };
+
 #+end_src
 *** homeConfigurations
 
@@ -442,58 +450,6 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
     format = "proxmox-lxc";
   };
-
-#+end_src
-
-* flake.nix
-
-This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
-
-#+begin_src nix :noweb yes :tangle flake.nix
-
-    {
-    description = "SwarseFlake - Nix Flake for all SwarselSystems";
-
-    inputs = {
-      <<flakeinputs>>
-    };
-
-    outputs = inputs@{
-      self,
-        <<flakeinputsatoutputs>>
-        ...
-    }: let
-      <<flakelet>>
-    in {
-
-      # NixOS setups - run home-manager as a NixOS module for better compatibility
-      # another benefit - full rebuild on nixos-rebuild switch
-      # run rebuild using `nswitch`
-
-      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
-
-      nixosConfigurations = {
-        <<flakenixosconf>>
-      };
-
-      # pure Home Manager setups - for non-NixOS machines
-      # run rebuild using `hmswitch`
-
-      homeConfigurations = {
-        <<flakehomeconf>>
-      };
-
-      nixOnDroidConfigurations = {
-        <<flakedroidconf>>
-      };
-
-      packages.x86_64-linux = {
-        <<flakenixosgenerators>>
-      };
-
-    };
-  }
 
 #+end_src
 
@@ -2433,6 +2389,40 @@ Make sure to also do this for doublepuppet.yaml
       };
     };
 
+
+  }
+
+#+end_src
+
+*** Sound
+**** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/server1/sound/nixos.nix
+
+  { config, pkgs, modulesPath, unstable, sops, ... }:
+
+  {
+    <<vminit>>
+
+    networking.hostName = "sound"; # Define your hostname.
+    networking.firewall.enable = false;
+    environment.systemPackages = with pkgs; [
+      git
+      gnupg
+      ssh-to-age
+    ];
+
+    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
+    sops.validateSopsFiles = false;
+
+    services.airsonic = {
+      enable = true;
+      user = "airsonic";
+      maxMemory = 1000;
+      listenAddress = "0.0.0.0";
+      port = 4040;
+    };
 
   }
 
@@ -4566,7 +4556,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
 #+end_src
 
-* TODO Manual tasks and Closing Parenthesis (this needs to be the last heading)
+* TODO Manual tasks, flake.nix skeleton and Closing Parenthesis (this needs to be the last heading)
 
 Here are listed some tasks that I was not able to automate yet, these need to be done automatically for now. Also, this section exists to add an extra closing parenthesis to common.nix so that I do not need to think about this anymore if I ever decide to add more headings towards the end of this file ;)
 
@@ -4576,6 +4566,7 @@ Here are listed some tasks that I was not able to automate yet, these need to be
 
 The last blocks exist to close the opening parenthesis of modules/common.nix (home-manager) and profiles/common.nix (NixOS):
 
+** Closing parentheses for common/home.nix and common/nixos.nix
 
 #+begin_src nix :tangle profiles/common/home.nix
 
@@ -4585,6 +4576,58 @@ The last blocks exist to close the opening parenthesis of modules/common.nix (ho
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
+  }
+
+#+end_src
+
+** flake.nix
+
+This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+
+#+begin_src nix :noweb yes :tangle flake.nix
+
+    {
+    description = "SwarseFlake - Nix Flake for all SwarselSystems";
+
+    inputs = {
+      <<flakeinputs>>
+    };
+
+    outputs = inputs@{
+      self,
+        <<flakeinputsatoutputs>>
+        ...
+    }: let
+      <<flakelet>>
+    in {
+
+      # NixOS setups - run home-manager as a NixOS module for better compatibility
+      # another benefit - full rebuild on nixos-rebuild switch
+      # run rebuild using `nswitch`
+
+      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
+      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+
+      nixosConfigurations = {
+        <<flakenixosconf>>
+      };
+
+      # pure Home Manager setups - for non-NixOS machines
+      # run rebuild using `hmswitch`
+
+      homeConfigurations = {
+        <<flakehomeconf>>
+      };
+
+      nixOnDroidConfigurations = {
+        <<flakedroidconf>>
+      };
+
+      packages.x86_64-linux = {
+        <<flakenixosgenerators>>
+      };
+
+    };
   }
 
 #+end_src
