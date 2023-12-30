@@ -2437,10 +2437,18 @@ Make sure to also do this for doublepuppet.yaml
     users.groups.lxc_shares = {
       gid = 10000;
       members = [
-        "airsonic"
+        "gonic"
         "root"
       ];
     };
+    users.groups.gonic = {
+      gid = 63925;
+    }
+    users.users.gonic = {
+      isSystemUser = true;
+      uid = 63925;
+      group = "gonic";
+    }
     networking.hostName = "sound"; # Define your hostname.
     networking.firewall.enable = false;
     environment.systemPackages = with pkgs; [
@@ -2468,24 +2476,25 @@ Make sure to also do this for doublepuppet.yaml
     #     });
     #   }];
 
-    services.airsonic = {
-      enable = true;
-      user = "airsonic";
-      listenAddress = "0.0.0.0";
-      port = 4040;
-      jre = pkgs.jdk17;
-    };
-
-    # services.gonic = {
+    # services.airsonic = {
       # enable = true;
-      # settings = {
-        # cache-path = "/var/cache/gonic";
-        # listen-addr = "0.0.0.0:4040";
-        # music-path = ["/media"];
-        # podcast-path = "/opt/podcasts";
-        # jukebox-enabled = true;
-      # };
+      # maxMemory = 4096;
+      # user = "airsonic";
+      # listenAddress = "0.0.0.0";
+      # port = 4040;
+      # jre = pkgs.jdk17;
     # };
+
+    services.gonic = {
+      enable = true;
+      settings = {
+        cache-path = "/var/cache/gonic";
+        listen-addr = "0.0.0.0:4040";
+        music-path = ["/media"];
+        podcast-path = "/opt/podcasts";
+        jukebox-enabled = true;
+      };
+    };
 
   }
 
