@@ -37,10 +37,14 @@
        sops.templates.mautrixtelegram.content = ''
        MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
        MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-      MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-      MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-      '';
-
+       MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+       MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+       '';
+       # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
+       # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
+       # sops.templates.mautrixwhatsapp.content = ''
+       # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
+       # '';
        proxmoxLXC.manageNetwork = true; # manage network myself
        proxmoxLXC.manageHostName = false; # manage hostname myself
        networking.hostName = "matrix"; # Define your hostname.
@@ -78,6 +82,16 @@
          TEMPLATE template0
          LC_COLLATE = "C"
          LC_CTYPE = "C";
+       CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+       CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+         TEMPLATE template0
+         LC_COLLATE = "C"
+         LC_CTYPE = "C"
+       CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD signal';
+       CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+         TEMPLATE template0
+         LC_COLLATE = "C"
+         LC_CTYPE = "C"
      '';
 
         services.matrix-synapse = {
@@ -89,6 +103,7 @@
        # chown matrix-synapse:matrix-synapse \
        #   /var/lib/matrix-synapse/telegram-registration.yaml
        "/var/lib/matrix-synapse/telegram-registration.yaml"
+       "/var/lib/matrix-synapse/whatsapp-registration.yaml"
      ];
           enable = true;
           settings.server_name = "matrix2.swarsel.win";
@@ -113,68 +128,121 @@
         };
 
         services.mautrix-telegram = {
-    enable = true;
+          enable = true;
 
-    # file containing the appservice and telegram tokens
-    environmentFile = config.sops.templates.mautrixtelegram.path;
+          # file containing the appservice and telegram tokens
+          environmentFile = config.sops.templates.mautrixtelegram.path;
 
-    # The appservice is pre-configured to use SQLite by default.
-    # It's also possible to use PostgreSQL.
-    settings = {
-      homeserver = {
-        address = "http://localhost:8008";
-        domain = "matrix2.swarsel.win";
-      };
-      appservice = {
-        address= "http://localhost:29317";
-        hostname = "0.0.0.0";
-        port = "29317";
-        provisioning.enabled = true;
-        id = "telegram";
-        ephemeral_events = true;
-        public = {
-          enabled = false;
-        };
+          # The appservice is pre-configured to use SQLite by default.
+          # It's also possible to use PostgreSQL.
+          settings = {
+            homeserver = {
+              address = "http://localhost:8008";
+              domain = "matrix2.swarsel.win";
+            };
+            appservice = {
+              address= "http://localhost:29317";
+              hostname = "0.0.0.0";
+              port = "29317";
+              provisioning.enabled = true;
+              id = "telegram";
+              ephemeral_events = true;
+              public = {
+                enabled = false;
+              };
 
-        # The service uses SQLite by default, but it's also possible to use
+              # The service uses SQLite by default, but it's also possible to use
         # PostgreSQL instead:
-        database = "postgresql:///mautrix-telegram?host=/run/postgresql";
-      };
-      bridge = {
-        relaybot.authless_portals = true;
-        allow_avatar_remove = true;
-        allow_contact_info = true;
-        sync_channel_members = true;
-        startup_sync = true;
-        sync_create_limit = 0;
-        sync_direct_chats = true;
-        telegram_link_preview = true;
-        permissions = {
-          "*" = "relaybot";
-          "@swarsel:matrix2.swarsel.win" = "admin";
-        };
+              database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+            };
+            bridge = {
+              relaybot.authless_portals = true;
+              allow_avatar_remove = true;
+              allow_contact_info = true;
+              sync_channel_members = true;
+              startup_sync = true;
+              sync_create_limit = 0;
+              sync_direct_chats = true;
+              telegram_link_preview = true;
+              permissions = {
+                "*" = "relaybot";
+                "@swarsel:matrix2.swarsel.win" = "admin";
+              };
 
-        # Animated stickers conversion requires additional packages in the
-        # service's path.
-        # If this isn't a fresh installation, clearing the bridge's uploaded
-        # file cache might be necessary (make a database backup first!):
-        # delete from telegram_file where \
-        #   mime_type in ('application/gzip', 'application/octet-stream')
-        animated_sticker = {
-          target = "gif";
-          args = {
-            width = 256;
-            height = 256;
-            fps = 30;               # only for webm
-            background = "020202";  # only for gif, transparency not supported
+              # Animated stickers conversion requires additional packages in the
+              # service's path.
+              # If this isn't a fresh installation, clearing the bridge's uploaded
+              # file cache might be necessary (make a database backup first!):
+              # delete from telegram_file where \
+              #   mime_type in ('application/gzip', 'application/octet-stream')
+              animated_sticker = {
+                target = "gif";
+                args = {
+                  width = 256;
+                  height = 256;
+                  fps = 30;               # only for webm
+                  background = "020202";  # only for gif, transparency not supported
+                };
+              };
+            };
           };
         };
-      };
-    };
-  };
 
   systemd.services.mautrix-telegram.path = with pkgs; [
     lottieconverter  # for animated stickers conversion, unfree package
     ffmpeg           # if converting animated stickers to webm (very slow!)
 ];
+
+  services.mautrix-whatsapp = {
+    enable = true;
+          # file containing the appservice and telegram tokens
+          # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+          # The appservice is pre-configured to use SQLite by default.
+          # It's also possible to use PostgreSQL.
+          settings = {
+            homeserver = {
+              address = "http://localhost:8008";
+              domain = "matrix2.swarsel.win";
+            };
+            appservice = {
+              address= "http://localhost:29318";
+              hostname = "0.0.0.0";
+              port = "29318";
+              ephemeral_events = true;
+        # The service uses SQLite by default, but it's also possible to use
+        # PostgreSQL instead:
+              database = {
+                type = "postgres";
+                uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+              };
+              };
+            bridge = {
+              history_sync = {
+                backfill = true;
+                message_count = -1;
+                request_full_sync = true;
+              };
+              sync_manual_marked_unread = true;
+              send_presence_on_typing = true;
+              parallel_member_sync = true;
+              url_previews = true;
+              caption_in_message = true;
+              extev_polls = true;
+              permissions = {
+                "*" = "relaybot";
+                "@swarsel:matrix2.swarsel.win" = "admin";
+              };
+
+              # Animated stickers conversion requires additional packages in the
+              # service's path.
+              # If this isn't a fresh installation, clearing the bridge's uploaded
+              # file cache might be necessary (make a database backup first!):
+              # delete from telegram_file where \
+              #   mime_type in ('application/gzip', 'application/octet-stream')
+
+            };
+          };
+        };
+
+
      }
