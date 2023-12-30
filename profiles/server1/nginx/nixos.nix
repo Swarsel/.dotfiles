@@ -121,7 +121,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "https://192.168.2.13";
+              proxyPass = "http://192.168.2.13:4040";
               extraConfig = ''
                 client_max_body_size 0;
               '';

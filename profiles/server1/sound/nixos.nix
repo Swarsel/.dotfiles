@@ -57,7 +57,7 @@
     enable = true;
     user = "airsonic";
     listenAddress = "0.0.0.0";
-    port = 443;
+    port = 4040;
   };
 
 }
