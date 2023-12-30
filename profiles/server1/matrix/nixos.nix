@@ -255,7 +255,7 @@ in {
         };
       };
       bridge = {
-        displayname_template = "{{or .ContacrName .ProfileName .PhoneNumber}} (WA)";
+        displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
         login_shared_secret_map = {
           matrixDomain = "as_token:doublepuppet";
         };
