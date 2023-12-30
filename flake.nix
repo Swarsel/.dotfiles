@@ -52,6 +52,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    # provides expressions for mautrix-signal
+    nixpkgs-mautrix-signal ={
+      url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
+    };
+    
     
   };
 
@@ -69,6 +74,7 @@
       sops-nix,
       lanzaboote,
       pia,
+      nixpkgs-mautrix-signal,
       
       ...
   }: let
@@ -81,6 +87,11 @@
                                        ];
                             config.allowUnfree = true;
                           };
+    
+    # pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
+                            # config.allowUnfree = true;
+                          # };
+    
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
                    ./profiles/common/nixos.nix
@@ -193,6 +204,7 @@
       
       matrix = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
+        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/server1/matrix/nixos.nix

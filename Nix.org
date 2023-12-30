@@ -154,10 +154,6 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 #+begin_src nix :noweb-ref vminit
 
 
-    imports = [
-      (modulesPath + "/virtualisation/proxmox-lxc.nix")
-      ./hardware-configuration.nix
-    ];
     services.xserver = {
       layout = "us";
       xkbVariant = "altgr-intl";
@@ -203,6 +199,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   sops-nix,
   lanzaboote,
   pia,
+  nixpkgs-mautrix-signal,
 
 #+end_src
 
@@ -257,6 +254,11 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  # provides expressions for mautrix-signal
+  nixpkgs-mautrix-signal ={
+    url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
+  };
+
 
 #+end_src
 *** let
@@ -271,6 +273,11 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
                                      ];
                           config.allowUnfree = true;
                         };
+
+  # pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
+                          # config.allowUnfree = true;
+                        # };
+
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
                  ./profiles/common/nixos.nix
@@ -377,6 +384,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
   matrix = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
+    specialArgs.unstable = nixpkgs-mautrix-signal;
     modules = [
       sops-nix.nixosModules.sops
       ./profiles/server1/matrix/nixos.nix
@@ -844,6 +852,10 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
     };
 
     system.stateVersion = "23.05"; # Did you read the comment?
+
+    environment.systemPackages = with pkgs; [
+    ];
+
 
   }
 
@@ -2164,10 +2176,16 @@ Make sure to also do this for doublepuppet.yaml
 
 #+begin_src nix :noweb yes :tangle profiles/server1/matrix/nixos.nix
 
-  { config, pkgs, modulesPath, ... }: let
+  { config, pkgs, modulesPath, unstable, ... }: let
     matrixDomain = "matrix2.swarsel.win";
   in {
     <<vminit>>
+
+    imports = [
+      (modulesPath + "/virtualisation/proxmox-lxc.nix")
+      ./hardware-configuration.nix
+      (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+    ];
 
     networking.hostName = "matrix"; # Define your hostname.
     networking.firewall.enable = false;
@@ -2365,6 +2383,8 @@ Make sure to also do this for doublepuppet.yaml
         };
       };
     };
+
+   services.mautrix-signal.enable = true;
 
 
   }

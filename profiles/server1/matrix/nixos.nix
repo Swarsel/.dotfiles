@@ -1,12 +1,8 @@
-{ config, pkgs, modulesPath, ... }: let
+{ config, pkgs, modulesPath, unstable, ... }: let
   matrixDomain = "matrix2.swarsel.win";
 in {
   
   
-  imports = [
-    (modulesPath + "/virtualisation/proxmox-lxc.nix")
-    ./hardware-configuration.nix
-  ];
   services.xserver = {
     layout = "us";
     xkbVariant = "altgr-intl";
@@ -34,6 +30,12 @@ in {
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
   
+
+  imports = [
+    (modulesPath + "/virtualisation/proxmox-lxc.nix")
+    ./hardware-configuration.nix
+    (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+  ];
 
   networking.hostName = "matrix"; # Define your hostname.
   networking.firewall.enable = false;
@@ -231,6 +233,8 @@ in {
       };
     };
   };
+
+ services.mautrix-signal.enable = true;
 
 
 }
