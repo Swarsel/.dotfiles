@@ -47,12 +47,12 @@
   };
   users.groups.gonic = {
     gid = 63925;
-  }
+  };
   users.users.gonic = {
     isSystemUser = true;
     uid = 63925;
     group = "gonic";
-  }
+  };
   networking.hostName = "sound"; # Define your hostname.
   networking.firewall.enable = false;
   environment.systemPackages = with pkgs; [
