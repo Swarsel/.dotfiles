@@ -208,7 +208,6 @@
         # this way avoids infinite recursion errors
         # specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
-          nixpkgs-mautrix-signal.nixosModules.pkgs
           sops-nix.nixosModules.sops
           ./profiles/server1/matrix/nixos.nix
         ];
