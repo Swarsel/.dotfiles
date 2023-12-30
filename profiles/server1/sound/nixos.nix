@@ -41,6 +41,7 @@
   users.groups.lxc_shares = {
     gid = 10000;
     members = [
+      "airsonic"
       "root"
     ];
   };
@@ -71,23 +72,23 @@
   #     });
   #   }];
 
-  # services.airsonic = {
-    # enable = true;
-    # user = "airsonic";
-    # listenAddress = "0.0.0.0";
-    # port = 4040;
-    # jre = pkgs.jdk17;
-  #};
-
-  services.gonic = {
+  services.airsonic = {
     enable = true;
-    settings = {
-      cache-path = "/var/cache/gonic";
-      listen-addr = "0.0.0.0:4040";
-      music-path = ["/media"];
-      podcast-path = "/opt/podcasts";
-      jukebox-enabled = true;
-    };
+    user = "airsonic";
+    listenAddress = "0.0.0.0";
+    port = 4040;
+    jre = pkgs.jdk17;
   };
+
+  # services.gonic = {
+    # enable = true;
+    # settings = {
+      # cache-path = "/var/cache/gonic";
+      # listen-addr = "0.0.0.0:4040";
+      # music-path = ["/media"];
+      # podcast-path = "/opt/podcasts";
+      # jukebox-enabled = true;
+    # };
+  # };
 
 }
