@@ -49,6 +49,9 @@
   # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   # sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
   # sops.validateSopsFiles = false;
+  users.users.airsonic = {
+    extraGroups  = [ "audio" ];
+  };
 
   services.airsonic = {
     enable = true;
