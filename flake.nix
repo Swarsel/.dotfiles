@@ -203,7 +203,7 @@
       };
       
       matrix = nixpkgs.lib.nixosSystem {
-        # specialArgs = {inherit inputs; };
+        specialArgs = {inherit pkgsmautrix; };
         pkgs = pkgsmautrix;
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
