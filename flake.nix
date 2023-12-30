@@ -88,9 +88,9 @@
                             config.allowUnfree = true;
                           };
     
-    # pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
-                            # config.allowUnfree = true;
-                          # };
+    pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
+                            config.allowUnfree = true;
+                          };
     
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
@@ -203,7 +203,8 @@
       };
       
       matrix = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs pkgs; };
+        specialArgs = {inherit inputs; };
+        pkgs = inherit pkgsmautrix;
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
         specialArgs.unstable = nixpkgs-mautrix-signal;
