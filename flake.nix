@@ -206,7 +206,7 @@
         specialArgs = {inherit pkgsmautrix; };
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
-        # specialArgs.unstable = nixpkgs-mautrix-signal;
+        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/server1/matrix/nixos.nix

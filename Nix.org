@@ -397,7 +397,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     specialArgs = {inherit pkgsmautrix; };
     # this is to import a service module that is not on nixpkgs
     # this way avoids infinite recursion errors
-    # specialArgs.unstable = nixpkgs-mautrix-signal;
+    specialArgs.unstable = nixpkgs-mautrix-signal;
     modules = [
       sops-nix.nixosModules.sops
       ./profiles/server1/matrix/nixos.nix
@@ -2200,7 +2200,7 @@ Make sure to also do this for doublepuppet.yaml
       ./hardware-configuration.nix
       # we import here a service that is not available yet on normal nixpkgs
       # this module is hence not in the modules list, we add it ourselves
-      # (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+      (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
     ];
 
     networking.hostName = "matrix"; # Define your hostname.
