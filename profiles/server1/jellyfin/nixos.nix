@@ -20,6 +20,10 @@
     ];
   };
 
+  users.users.jellyfin = {
+    extraGroups  = [ "video" "render" ];
+  };
+
   services.xserver = {
     layout = "us";
     xkbVariant = "altgr-intl";
