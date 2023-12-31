@@ -22,6 +22,7 @@
                 gid = 10000;
                 members = [
                   "vpn"
+                  "radarr"
                   "root"
                 ];
               };
