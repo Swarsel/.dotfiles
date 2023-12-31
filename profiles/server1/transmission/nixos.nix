@@ -57,6 +57,10 @@
                 enable = true;
               };
 
+              services.prowlarr = {
+                enable = true;
+              };
+
               # networking.interfaces = {
                   # lo = {
                     # useDHCP = false;
