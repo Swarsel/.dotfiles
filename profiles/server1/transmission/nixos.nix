@@ -57,6 +57,15 @@
                 enable = true;
               };
 
+              services.readarr = {
+                enable = true;
+              };
+              services.sonarr = {
+                enable = true;
+              };
+              services.lidarr = {
+                enable = true;
+              };
               services.prowlarr = {
                 enable = true;
               };
