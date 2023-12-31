@@ -23,6 +23,9 @@
                 members = [
                   "vpn"
                   "radarr"
+                  "sonarr"
+                  "lidarr"
+                  "readarr"
                   "root"
                 ];
               };
