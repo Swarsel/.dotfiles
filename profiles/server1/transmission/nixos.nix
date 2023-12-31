@@ -51,7 +51,12 @@
               networking.useDHCP = true;
               networking.enableIPv6 = false;
               networking.firewall.enable = false;
-                # networking.interfaces = {
+
+              services.radarr = {
+                enable = true;
+              };
+
+              # networking.interfaces = {
                   # lo = {
                     # useDHCP = false;
                     # ipv4.addresses = [

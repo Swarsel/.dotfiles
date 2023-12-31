@@ -796,6 +796,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
       xserver.videoDrivers = ["nvidia"];
     };
 
+
     hardware = {
       nvidia = {
         modesetting.enable = true;
@@ -1875,7 +1876,12 @@ This stuff just does not work, I seem to be unable to create a working VPN Split
                 networking.useDHCP = true;
                 networking.enableIPv6 = false;
                 networking.firewall.enable = false;
-                  # networking.interfaces = {
+
+                services.radarr = {
+                  enable = true;
+                };
+
+                # networking.interfaces = {
                     # lo = {
                       # useDHCP = false;
                       # ipv4.addresses = [
