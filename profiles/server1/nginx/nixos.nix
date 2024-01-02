@@ -177,19 +177,19 @@
           };
         };
 
-        "books.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://192.168.2.22:8083";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
+        # "books.swarsel.win" = {
+        #   enableACME = true;
+        #   forceSSL = true;
+        #   acmeRoot = null;
+        #   locations = {
+        #     "/" = {
+        #       proxyPass = "http://192.168.2.22:8083";
+        #       extraConfig = ''
+        #         client_max_body_size 0;
+        #       '';
+        #     };
+        #   };
+        # };
 
         "blog.swarsel.win" = {
           enableACME = true;

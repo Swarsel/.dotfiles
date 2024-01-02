@@ -824,6 +824,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
     };
 
     networking.hostName = "onett"; # Define your hostname.
+    networking.enableIPv6 = false;
 
     users.users.swarsel = {
       isNormalUser = true;
@@ -1581,19 +1582,19 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             };
           };
 
-          "books.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.2.22:8083";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
+          # "books.swarsel.win" = {
+          #   enableACME = true;
+          #   forceSSL = true;
+          #   acmeRoot = null;
+          #   locations = {
+          #     "/" = {
+          #       proxyPass = "http://192.168.2.22:8083";
+          #       extraConfig = ''
+          #         client_max_body_size 0;
+          #       '';
+          #     };
+          #   };
+          # };
 
           "blog.swarsel.win" = {
             enableACME = true;
@@ -1721,18 +1722,18 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
       # ];
     # };
 
-    services.calibre-web = {
-      enable = true;
-      user = "calibre-web";
-      group = "calibre-web";
-      listen.port = 8083;
-      listen.ip = "0.0.0.0";
-      options = {
-        enableBookUploading = true;
-        enableKepubify = true;
-        enableBookConversion = true;
-      };
-    };
+    # services.calibre-web = {
+    #   enable = true;
+    #   user = "calibre-web";
+    #   group = "calibre-web";
+    #   listen.port = 8083;
+    #   listen.ip = "0.0.0.0";
+    #   options = {
+    #     enableBookUploading = true;
+    #     enableKepubify = true;
+    #     enableBookConversion = true;
+    #   };
+    # };
 
     services.kavita = {
       enable = true;
@@ -1808,6 +1809,19 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
     environment.shellAliases = {
       nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     };
+
+     nixpkgs.config.packageOverrides = pkgs: {
+       vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+     };
+     hardware.opengl = {
+       enable = true;
+       extraPackages = with pkgs; [
+         intel-media-driver # LIBVA_DRIVER_NAME=iHD
+         vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+         vaapiVdpau
+         libvdpau-va-gl
+       ];
+     };
 
     services.jellyfin = {
       enable = true;
@@ -2806,6 +2820,12 @@ Also, I define some useful shell scripts here.
 
   {
     home.packages = with pkgs; [
+
+      # audio stuff
+      spek # spectrum analyzer
+      losslessaudiochecker
+      ffmpeg_5-full
+      flac
 
       # "big" programs
       filebot

@@ -77,18 +77,18 @@
     # ];
   # };
 
-  services.calibre-web = {
-    enable = true;
-    user = "calibre-web";
-    group = "calibre-web";
-    listen.port = 8083;
-    listen.ip = "0.0.0.0";
-    options = {
-      enableBookUploading = true;
-      enableKepubify = true;
-      enableBookConversion = true;
-    };
-  };
+  # services.calibre-web = {
+  #   enable = true;
+  #   user = "calibre-web";
+  #   group = "calibre-web";
+  #   listen.port = 8083;
+  #   listen.ip = "0.0.0.0";
+  #   options = {
+  #     enableBookUploading = true;
+  #     enableKepubify = true;
+  #     enableBookConversion = true;
+  #   };
+  # };
 
   services.kavita = {
     enable = true;

@@ -3,6 +3,12 @@
 {
   home.packages = with pkgs; [
 
+    # audio stuff
+    spek # spectrum analyzer
+    losslessaudiochecker
+    ffmpeg_5-full
+    flac
+
     # "big" programs
     filebot
     gimp

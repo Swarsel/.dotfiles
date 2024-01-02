@@ -90,6 +90,7 @@
   };
 
   networking.hostName = "onett"; # Define your hostname.
+  networking.enableIPv6 = false;
 
   users.users.swarsel = {
     isNormalUser = true;
