@@ -54,12 +54,25 @@
     group = "gonic";
     extraGroups  = [ "audio" ];
   };
+
+  sound = {
+    enable = true;
+    extraConfig = ''
+    pcm.!default {
+      type hw
+      card 0
+    }
+    '';
+
+    };
   networking.hostName = "sound"; # Define your hostname.
   networking.firewall.enable = false;
   environment.systemPackages = with pkgs; [
     git
     gnupg
     ssh-to-age
+    pciutils
+    alsa-utils
   ];
 
   # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
