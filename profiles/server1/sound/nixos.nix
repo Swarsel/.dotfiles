@@ -65,7 +65,7 @@
     '';
 
     };
-  hardware.enableAllFirmware = true
+  hardware.enableAllFirmware = true;
   networking.hostName = "sound"; # Define your hostname.
   networking.firewall.enable = false;
   environment.systemPackages = with pkgs; [
