@@ -71,7 +71,7 @@
           };
         };
 
-        "git.swarsel.win" = {
+        "swagit.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
