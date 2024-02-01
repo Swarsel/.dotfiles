@@ -147,8 +147,8 @@
         PROTOCOL = "http";
         HTTP_PORT = 3000;
         HTTP_ADDR = "0.0.0.0";
-        DOMAIN = "git.swarsel.win";
-        ROOT_URL = "https://git.swarsel.win";
+        DOMAIN = "swagit.swarsel.win";
+        ROOT_URL = "https://swagit.swarsel.win";
       };
       service = {
         DISABLE_REGISTRATION = true;
