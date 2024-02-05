@@ -431,6 +431,14 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
+  paperless = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/paperless/nixos.nix
+    ];
+  };
+
   #ovm
   sync = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
@@ -1580,6 +1588,20 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
                   proxy_buffering         off;
                   proxy_request_buffering off;
                   client_max_body_size    0;
+                '';
+              };
+            };
+          };
+
+          "scan.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://192.168.2.24:28981";
+                extraConfig = ''
+                  client_max_body_size 0;
                 '';
               };
             };
@@ -2854,6 +2876,59 @@ Make sure to also do this for doublepuppet.yaml
         service = {
           DISABLE_REGISTRATION = true;
           SHOW_REGISTRATION_BUTTON = false;
+        };
+      };
+    };
+
+  }
+
+#+end_src
+
+*** Paperless
+**** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/server1/paperless/nixos.nix
+
+  { config, pkgs, modulesPath, ... }:
+
+  {
+    <<vminit>>
+
+    users.groups.lxc_shares = {
+      gid = 10000;
+      members = [
+        "paperless"
+        "root"
+      ];
+    };
+
+    environment.systemPackages = with pkgs; [
+      git
+      gnupg
+      ssh-to-age
+    ];
+
+    networking.hostName = "paperless"; # Define your hostname.
+    networking.firewall.enable = false;
+
+    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    sops.defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
+    sops.validateSopsFiles = false;
+    sops.secrets.admin = { owner = "paperless";};
+
+    services.paperless = {
+      enable = true;
+      mediaDir = "/media";
+      user = "paperless";
+      port = 28981;
+      passwordFile = config.sops.secrets.admin.path;
+      address = "0.0.0.0";
+      extraConfig = {
+        PAPERLESS_OCR_LANGUAGE = "deu+eng";
+        PAPERLESS_URL = "scan.swarsel.win";
+        PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
+          optimize = 1;
+          pdfa_image_compression = "lossless";
         };
       };
     };
