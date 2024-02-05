@@ -240,6 +240,14 @@
         ];
       };
       
+      paperless = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/server1/paperless/nixos.nix
+        ];
+      };
+      
       #ovm
       sync = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };

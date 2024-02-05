@@ -163,6 +163,20 @@
           };
         };
 
+        "scan.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.2.24:28981";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+
         "screen.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
