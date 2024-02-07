@@ -586,13 +586,13 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 
   {
 
-    <<gpgconf>>
+    <<gpgagent>>
     home = {
       username = "TEMPLATE";
       homeDirectory = "/home/TEMPLATE";
       stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
       keyboard.layout = "us"; # TEMPLATE
-      home.packages = with pkgs; [
+      packages = with pkgs; [
         # ---------------------------------------------------------------
         # if schildichat works on this machine, use it, otherwise go for element
         # element-desktop
@@ -1340,7 +1340,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
       homeDirectory = "/home/swarsel";
       stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
       keyboard.layout = "us"; # TEMPLATE
-      home.packages = with pkgs; [
+      packages = with pkgs; [
       ];
     };
     sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];

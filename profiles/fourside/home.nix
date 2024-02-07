@@ -13,7 +13,7 @@
     homeDirectory = "/home/swarsel";
     stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
     keyboard.layout = "us"; # TEMPLATE
-    home.packages = with pkgs; [
+    packages = with pkgs; [
     ];
   };
   sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
