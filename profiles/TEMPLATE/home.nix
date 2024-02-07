@@ -3,12 +3,17 @@
 {
 
   
+  services.gpg-agent = {
+    enable = true;
+    enableSshSupport = true;
+  };
+  
   home = {
     username = "TEMPLATE";
     homeDirectory = "/home/TEMPLATE";
     stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
     keyboard.layout = "us"; # TEMPLATE
-    home.packages = with pkgs; [
+    packages = with pkgs; [
       # ---------------------------------------------------------------
       # if schildichat works on this machine, use it, otherwise go for element
       # element-desktop
