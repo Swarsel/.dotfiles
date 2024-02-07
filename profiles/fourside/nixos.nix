@@ -14,19 +14,10 @@
     greetd.settings.initial_session.user="swarsel";
   };
 
-  # Bootloader
-  # boot.loader.grub.enable = true;
-  # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-  # boot.loader.grub.useOSProber = true;
-
-  # --------------------------------------
-  # you might need a configuration like this instead:
-  # Bootloader
-  # boot.loader.grub.enable = true;
-  # boot.loader.grub.devices = ["nodev" ];
-  # boot.loader.grub.useOSProber = true;
-  # boot.kernelPackages = pkgs.linuxPackages_latest;
-  # --------------------------------------
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+  };
 
   networking.hostName = "fourside"; # Define your hostname.
 
