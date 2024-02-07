@@ -260,6 +260,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  # privateinternetaccess nixos integration - not sure if I will keep using
   pia = {
     url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -281,16 +282,15 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
                           overlays = [ emacs-overlay.overlay
                                        nur.overlay
                                        nixgl.overlay
-                                       # (self: super: {
-                                         # airsonic = super.airsonic.overrideAttrs (_: rec {
-                                           # version = "11.0.2-kagemomiji";
-                                           # name = "airsonic-advanced-${version}";
-                                           # src = super.fetchurl {
-                                             # url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
-                                             # sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
-                                           # };
-                                         # });
-                                       # })
+                                     ];
+                          config.allowUnfree = true;
+                        };
+
+  # for ovm arm hosts
+  armpkgs = import nixpkgs { system = "aarch64-linux";
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
                                      ];
                           config.allowUnfree = true;
                         };
@@ -343,19 +343,6 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
-  stand = nixpkgs.lib.nixosSystem {
-    specialArgs = {inherit inputs pkgs; };
-    modules = nixModules ++ [
-      ./profiles/stand/nixos.nix
-      home-manager.nixosModules.home-manager
-      {
-        home-manager.users.homelen.imports = mixedModules ++ [
-          ./profiles/stand/home.nix
-        ];
-      }
-    ];
-  };
-
   threed = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
     modules = nixModules ++ [
@@ -365,6 +352,32 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
       {
         home-manager.users.swarsel.imports = mixedModules ++ [
           ./profiles/threed/home.nix
+        ];
+      }
+    ];
+  };
+
+  fourside = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      ./profiles/fourside/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/fourside/home.nix
+        ];
+      }
+    ];
+  };
+
+  stand = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      ./profiles/stand/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.homelen.imports = mixedModules ++ [
+          ./profiles/stand/home.nix
         ];
       }
     ];
@@ -439,7 +452,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
-  #ovm
+  #ovm swarsel
   sync = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
     modules = [
@@ -448,6 +461,14 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     ];
   };
 
+  #ovm swarsel
+  backup = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/remote/oracle/backup/nixos.nix
+    ];
+  };
 #+end_src
 *** homeConfigurations
 
@@ -1252,6 +1273,139 @@ New setup for the SP3, this time using NixOS - another machine will take over th
       ";
     };
   }
+#+end_src
+
+*** Fourside (Lenovo Thinkpad P14s Gen2)
+**** NixOS
+
+#+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user="swarsel";
+    };
+
+    # Bootloader
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    # boot.loader.grub.useOSProber = true;
+
+    # --------------------------------------
+    # you might need a configuration like this instead:
+    # Bootloader
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.devices = ["nodev" ];
+    # boot.loader.grub.useOSProber = true;
+    # boot.kernelPackages = pkgs.linuxPackages_latest;
+    # --------------------------------------
+
+    networking.hostName = "fourside"; # Define your hostname.
+
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
+
+    hardware = {
+      bluetooth.enable = true;
+    };
+
+    # Configure keymap in X11 (only used for login)
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+    system.stateVersion = "23.05";
+
+  }
+
+#+end_src
+
+**** Home Manager
+#+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgconf>>
+    home = {
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
+      keyboard.layout = "us"; # TEMPLATE
+      home.packages = with pkgs; [
+      ];
+    };
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config - TEMPLATE - update for cores and temp
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+    };
+
+    <<waybarlaptop>>
+
+    wayland.windowManager.sway= {
+      config = rec {
+        # update for actual inputs here,
+        input = {
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          # "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
+            # xkb_layout = "us";
+            # xkb_options = "grp:win_space_toggle";
+            # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            # xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+
+        };
+
+        output = {
+          DP-1 = {
+            mode = "2560x1440"; # TEMPLATE
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+    };
+  }
+
 #+end_src
 
 *** Stand
@@ -5091,7 +5245,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
 #+end_src
 
-* TODO Manual tasks, flake.nix skeleton and Closing Parenthesis (this needs to be the last heading)
+* TODO Manual tasks, Useful bits, flake.nix skeleton and Closing Parenthesis (this needs to be the last heading)
 
 Here are listed some tasks that I was not able to automate yet, these need to be done automatically for now. Also, this section exists to add an extra closing parenthesis to common.nix so that I do not need to think about this anymore if I ever decide to add more headings towards the end of this file ;)
 
@@ -5100,6 +5254,35 @@ Here are listed some tasks that I was not able to automate yet, these need to be
 1) In blueman, toggle the `ConnectionNotifier` plugin to off (since it is highly annoing)
 
 The last blocks exist to close the opening parenthesis of modules/common.nix (home-manager) and profiles/common.nix (NixOS):
+** Useful bits
+
+Here I have gathered some snippets that I have deleted from my configuration but figured they might be of use to someone still :)
+
+*** let-block for overriding a package in nixpkgs (here: replacing airsonic with airsonic-advanced)
+
+This can be useful if a module does not let you use your own package yourself.
+
+#+begin_src nix
+
+  pkgs = import nixpkgs { inherit system;
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
+                                       (self: super: {
+                                         airsonic = super.airsonic.overrideAttrs (_: rec {
+                                           version = "11.0.2-kagemomiji";
+                                           name = "airsonic-advanced-${version}";
+                                           src = super.fetchurl {
+                                             url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
+                                             sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
+                                           };
+                                         });
+                                       })
+                                     ];
+                          config.allowUnfree = true;
+                        };
+
+#+end_src
 
 ** Closing parentheses for common/home.nix and common/nixos.nix
 
