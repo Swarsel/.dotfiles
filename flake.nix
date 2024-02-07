@@ -47,6 +47,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
+    # privateinternetaccess nixos integration - not sure if I will keep using
     pia = {
       url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -84,16 +85,15 @@
                             overlays = [ emacs-overlay.overlay
                                          nur.overlay
                                          nixgl.overlay
-                                         # (self: super: {
-                                           # airsonic = super.airsonic.overrideAttrs (_: rec {
-                                             # version = "11.0.2-kagemomiji";
-                                             # name = "airsonic-advanced-${version}";
-                                             # src = super.fetchurl {
-                                               # url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
-                                               # sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
-                                             # };
-                                           # });
-                                         # })
+                                       ];
+                            config.allowUnfree = true;
+                          };
+    
+    # for ovm arm hosts
+    armpkgs = import nixpkgs { system = "aarch64-linux";
+                            overlays = [ emacs-overlay.overlay
+                                         nur.overlay
+                                         nixgl.overlay
                                        ];
                             config.allowUnfree = true;
                           };
@@ -152,19 +152,6 @@
         ];
       };
       
-      stand = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs pkgs; };
-        modules = nixModules ++ [
-          ./profiles/stand/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.homelen.imports = mixedModules ++ [
-              ./profiles/stand/home.nix
-            ];
-          }
-        ];
-      };
-      
       threed = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
@@ -174,6 +161,32 @@
           {
             home-manager.users.swarsel.imports = mixedModules ++ [
               ./profiles/threed/home.nix
+            ];
+          }
+        ];
+      };
+      
+      fourside = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = nixModules ++ [
+          ./profiles/fourside/nixos.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.users.swarsel.imports = mixedModules ++ [
+              ./profiles/fourside/home.nix
+            ];
+          }
+        ];
+      };
+      
+      stand = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = nixModules ++ [
+          ./profiles/stand/nixos.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.users.homelen.imports = mixedModules ++ [
+              ./profiles/stand/home.nix
             ];
           }
         ];
@@ -248,7 +261,7 @@
         ];
       };
       
-      #ovm
+      #ovm swarsel
       sync = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = [
@@ -257,6 +270,14 @@
         ];
       };
       
+      #ovm swarsel
+      backup = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/remote/oracle/backup/nixos.nix
+        ];
+      };
     };
 
     # pure Home Manager setups - for non-NixOS machines
