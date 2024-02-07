@@ -3,6 +3,11 @@
 {
 
   
+  services.gpg-agent = {
+    enable = true;
+    enableSshSupport = true;
+  };
+  
   home = {
     username = "swarsel";
     homeDirectory = "/home/swarsel";
@@ -51,7 +56,7 @@
           # xkb_options = "grp:win_space_toggle";
           # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
           # xkb_variant = "altgr-intl";
-        };
+        # };
         "type:touchpad" = {
           dwt = "enabled";
           tap = "enabled";
