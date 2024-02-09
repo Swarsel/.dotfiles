@@ -1321,14 +1321,14 @@ programs.firefox = {
       # the rest of the information is also found in the manifest.json, but might not be
       # needed
 
-      (let version = "3.4.5.0";
+      (let version = "3.5.4.0";
                               in buildFirefoxXpiAddon {
   pname = "bypass-paywalls-clean";
   inherit version;
   addonId = "magnolia@12.34";
   url =
-    "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
-  sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
+    "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
+  sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
   meta = with lib; {
     homepage =
       "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";

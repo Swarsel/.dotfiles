@@ -15,9 +15,18 @@
   };
 
   # Bootloader
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-  boot.loader.grub.useOSProber = true;
+  # use this for single partition boot
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+  };
+
+  # -------------------------------------
+  # alternate setup using grub
+  # boot.loader.grub.enable = true;
+  # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+  # boot.loader.grub.useOSProber = true;
+  # -------------------------------------
 
   # --------------------------------------
   # you might need a configuration like this instead:
