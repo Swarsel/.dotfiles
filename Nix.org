@@ -523,6 +523,8 @@ If a non-NixOS host must be used, check the Surface configuration for pointers. 
 
 No matter what you do, check the initial /etc/nixos/configuration.nix for notable changes that might emerge in future versions of nix.
 
+Also, you will most likely need to update the version and hashsum for the firefox extension `bypass-paywalls-clean`.
+
 *** NixOS
 
 #+begin_src nix :noweb yes :tangle profiles/TEMPLATE/nixos.nix
@@ -539,9 +541,18 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
     };
 
     # Bootloader
-    boot.loader.grub.enable = true;
-    boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-    boot.loader.grub.useOSProber = true;
+    # use this for single partition boot
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+    };
+
+    # -------------------------------------
+    # alternate setup using grub
+    # boot.loader.grub.enable = true;
+    # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    # boot.loader.grub.useOSProber = true;
+    # -------------------------------------
 
     # --------------------------------------
     # you might need a configuration like this instead:
@@ -1348,7 +1359,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     # waybar config - TEMPLATE - update for cores and temp
     programs.waybar.settings.mainBar = {
       cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
+      temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
     };
 
     <<waybarlaptop>>
@@ -1361,12 +1372,12 @@ New setup for the SP3, this time using NixOS - another machine will take over th
             xkb_layout = "us";
             xkb_variant = "altgr-intl";
           };
-          # "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
-            # xkb_layout = "us";
-            # xkb_options = "grp:win_space_toggle";
+          "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
             # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-            # xkb_variant = "altgr-intl";
-          # };
+            xkb_variant = "altgr-intl";
+          };
           "type:touchpad" = {
             dwt = "enabled";
             tap = "enabled";
@@ -1377,8 +1388,8 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         };
 
         output = {
-          DP-1 = {
-            mode = "2560x1440"; # TEMPLATE
+          eDP-1 = {
+            mode = "1920x1080"; # TEMPLATE
             scale = "1";
             bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
           };
@@ -1388,6 +1399,17 @@ New setup for the SP3, this time using NixOS - another machine will take over th
           modifier = config.wayland.windowManager.sway.config.modifier;
         in {
           "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+          "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
+          "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
+          "XF86Display" = "exec wl-mirror eDP-1";
+          # "XF86WLAN" = "exec wl-mirror eDP-1";
+          # "XF86Messenger" = "exec wl-mirror eDP-1";
+          # "XF86Go" = "exec wl-mirror eDP-1";
+          # "XF86Favorites" = "exec wl-mirror eDP-1";
+          # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+          # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+          # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+          "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
         };
 
         startup = [
@@ -3387,7 +3409,7 @@ Also, I define some useful shell scripts here.
 
       # games
       lutris
-      wine
+      #wine
 
       # firefox related
       tridactyl-native
@@ -3580,6 +3602,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - add the output to .sops.yaml
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
+
+*Changes are only visible after reboot.*
 
 #+begin_src nix :tangle profiles/common/home.nix
 
@@ -4792,14 +4816,14 @@ Again I am just using the first bar option here that I was able to find good und
         # the rest of the information is also found in the manifest.json, but might not be
         # needed
 
-        (let version = "3.4.5.0";
+        (let version = "3.5.4.0";
                                 in buildFirefoxXpiAddon {
     pname = "bypass-paywalls-clean";
     inherit version;
     addonId = "magnolia@12.34";
     url =
-      "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
-    sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
+      "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
+    sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
     meta = with lib; {
       homepage =
         "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";

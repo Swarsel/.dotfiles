@@ -23,7 +23,7 @@
       swarsel-anki-org-file "Anki.org"
       swarsel-tasks-org-file "Tasks.org"
       swarsel-archive-org-file "Archive.org"
-      swarsel-org-folder-name "org"
+      swarsel-org-folder-name "Org"
       swarsel-obsidian-daily-folder-name "⭐ Personal/Journal"
       swarsel-obsidian-folder-name "Obsidian"
       swarsel-obsidian-vault-name "Main")
@@ -249,8 +249,9 @@
     "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
     "mp" '(popper-toggle :which-key "popper")
     "md" '(dirvish :which-key "dirvish")
-    ;; "c"  '(:ignore c :which-key "capture")
+    "c"  '(:ignore c :which-key "capture")
     ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+    "ct" '((lambda () (interactive) (org-capture nil "tt")) :which-key "tasks")
     ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
     "l"  '(:ignore l :which-key "links")
     "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
@@ -606,10 +607,10 @@
   (variable-pitch-mode 1)
   ;;(auto-fill-mode 0)
   (setq display-line-numbers-type 'relative
-        display-line-numbers-current-absolute 1
-        display-line-numbers-width-start nil
-        display-line-numbers-width 6
-        display-line-numbers-grow-only 1)
+	display-line-numbers-current-absolute 1
+	display-line-numbers-width-start nil
+	display-line-numbers-width 6
+	display-line-numbers-grow-only 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
   (visual-line-mode 1))
 ;; (setq evil-auto-indent nil)
@@ -627,7 +628,7 @@
   :bind ("C-<tab>" . org-fold-outer)
   :config
   (setq org-ellipsis " ⤵"
-        org-hide-emphasis-markers t)
+	org-hide-emphasis-markers t)
   (setq org-startup-folded t)
   (setq org-support-shift-select t)
   ;; (setq org-agenda-start-with-log-mode t)
@@ -637,11 +638,12 @@
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
-  ;; (setq org-agenda-files
-  ;;       '(swarsel-org-tasks-filepath
-  ;;         swarsel-org-archive-filepath
+  (setq org-agenda-files
+	'("/home/swarsel/Nextcloud/Org/Tasks.org"
+	"/home/swarsel/Nextcloud/Org/Archive.org"
+	  "/home/swarsel/Calendars/leon_cal.org"))
   ;;         swarsel-org-anki-filepath))
-  (setq org-agenda-files '("/home/swarsel/Calendars/leon_cal.org"))
+  ;; (setq org-agenda-files '("/home/swarsel/Calendars/leon_cal.org"))
 
 
   ;; (require 'org-habit)
@@ -649,13 +651,13 @@
   ;; (setq org-habit-graph-column 60)
 
   ;; (setq org-todo-keywords
-  ;;       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+  ;;       '((sequence "TODO(t)" "NEXT(n)" "|" "X1DONE(d!)")
   ;;         (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
-  ;; (setq org-refile-targets
-  ;;       '((swarsel-archive-org-file :maxlevel . 1)
+  (setq org-refile-targets
+	'((swarsel-archive-org-file :maxlevel . 1)
   ;;         (swarsel-anki-org-file :maxlevel . 1)
-  ;;         (swarsel-tasks-org-file :maxlevel . 1)))
+	  (swarsel-tasks-org-file :maxlevel . 1)))
 
   ;; ;; Configure custom agenda views
   ;; (setq org-agenda-custom-commands
@@ -705,8 +707,8 @@
   ;;                 ((org-agenda-overriding-header "Cancelled Projects")
   ;;                  (org-agenda-files org-agenda-files)))))))
 
-  ;; (setq org-capture-templates
-  ;;       `(
+  (setq org-capture-templates
+	`(
   ;;         ("a" "Anki basic"
   ;;          entry
   ;;          (file+headline swarsel-org-anki-filepath "Dispatch")
@@ -716,9 +718,10 @@
   ;;          entry
   ;;          (file+headline org-swarsel-anki-file "Dispatch")
   ;;          "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
-  ;;         ("t" "Tasks / Projects")
-  ;;         ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
-  ;;          "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+
+	  ("t" "Tasks / Projects")
+	  ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
+	   "* TODO %?\n  %U\n  %i" :empty-lines 1)
 
   ;;         ("j" "Journal Entries")
   ;;         ("jj" "Journal" entry
@@ -726,7 +729,8 @@
   ;;          "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
   ;;          ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
   ;;          :clock-in :clock-resume
-  ;;          :empty-lines 1)))
+  ;;          :empty-lines 1)
+	  ))
 
   ;; (swarsel/org-font-setup)
   )
