@@ -9,6 +9,9 @@
     ffmpeg_5-full
     flac
 
+    # b2 backup @backblaze
+    restic
+
     # "big" programs
     filebot
     gimp
@@ -29,7 +32,7 @@
 
     # games
     lutris
-    wine
+    #wine
 
     # firefox related
     tridactyl-native
