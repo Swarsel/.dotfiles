@@ -12,6 +12,7 @@
     # b2 backup @backblaze
     restic
 
+
     # "big" programs
     filebot
     gimp
@@ -32,7 +33,16 @@
 
     # games
     lutris
-    #wine
+    wine
+    libudev-zero
+    dwarfs
+    fuse-overlayfs
+    steam
+    steam-run
+    patchelf
+    gamescope
+    vulkan-tools
+    openssl
 
     # firefox related
     tridactyl-native

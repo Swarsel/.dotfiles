@@ -1291,50 +1291,61 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+      { config, lib, pkgs, inputs, ... }:
 
-  {
+      {
 
-    <<wrap>>
+        <<wrap>>
 
-    services = {
-      getty.autologinUser = "swarsel";
-      greetd.settings.initial_session.user="swarsel";
-    };
+        services = {
+          getty.autologinUser = "swarsel";
+          greetd.settings.initial_session.user="swarsel";
+        };
 
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-    };
+        boot = {
+          loader.systemd-boot.enable = true;
+          loader.efi.canTouchEfiVariables = true;
+        };
 
-    networking.hostName = "fourside"; # Define your hostname.
+        networking.hostName = "fourside"; # Define your hostname.
 
-    stylix.image = ../../wallpaper/lenovowp.png;
-    <<theme>>
+        networking.firewall.enable = false;
+        stylix.image = ../../wallpaper/lenovowp.png;
+        <<theme>>
 
-    hardware = {
-      bluetooth.enable = true;
-    };
+        hardware = {
+          opengl = {
+            enable = true;
+            driSupport = true;
+            driSupport32Bit = true;
+            extraPackages = with pkgs; [
+              vulkan-loader
+              vulkan-validation-layers
+              vulkan-extension-layer
+            ];
+          };
+          bluetooth.enable = true;
+        };
 
-    # Configure keymap in X11 (only used for login)
-    services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
+        # Configure keymap in X11 (only used for login)
+        services.xserver = {
+          layout = "us";
+          xkbVariant = "altgr-intl";
+        };
 
-    users.users.swarsel = {
-      isNormalUser = true;
-      description = "Leon S";
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-      packages = with pkgs; [];
-    };
+        users.users.swarsel = {
+          isNormalUser = true;
+          description = "Leon S";
+          extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+          packages = with pkgs; [];
+        };
 
-    environment.systemPackages = with pkgs; [
-    ];
+        environment.systemPackages = with pkgs; [
+        ];
 
-    system.stateVersion = "23.05";
+        system.stateVersion = "23.05";
 
-  }
+      }
 
 #+end_src
 
@@ -1667,7 +1678,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "https://192.168.2.5";
+              proxyPass = "https://192.168.1.5";
               extraConfig = ''
               client_max_body_size 0;
               '';
@@ -1690,7 +1701,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
           acmeRoot = null;
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://192.168.2.23:8008";
+              proxyPass = "http://192.168.1.23:8008";
               extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1746,7 +1757,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.2.13:4040";
+                proxyPass = "http://192.168.1.13:4040";
                 proxyWebsockets = true;
                 extraConfig = ''
                   proxy_redirect          http:// https://;
@@ -1766,7 +1777,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.2.24:28981";
+                proxyPass = "http://192.168.1.24:28981";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1780,7 +1791,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.2.16:8096";
+                proxyPass = "http://192.168.1.16:8096";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1794,7 +1805,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "~ ^(/_matrix|/_synapse/client)" = {
-                proxyPass = "http://192.168.2.20:8008";
+                proxyPass = "http://192.168.1.20:8008";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1808,7 +1819,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.2.22:8080";
+                proxyPass = "http://192.168.1.22:8080";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1836,7 +1847,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "https://192.168.2.7";
+                proxyPass = "https://192.168.1.7";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -3392,6 +3403,7 @@ Also, I define some useful shell scripts here.
       # b2 backup @backblaze
       restic
 
+
       # "big" programs
       filebot
       gimp
@@ -3412,7 +3424,16 @@ Also, I define some useful shell scripts here.
 
       # games
       lutris
-      #wine
+      wine
+      libudev-zero
+      dwarfs
+      fuse-overlayfs
+      steam
+      steam-run
+      patchelf
+      gamescope
+      vulkan-tools
+      openssl
 
       # firefox related
       tridactyl-native
