@@ -70,7 +70,7 @@
         acmeRoot = null;
         locations = {
           "/" = {
-            proxyPass = "https://192.168.2.5";
+            proxyPass = "https://192.168.1.5";
             extraConfig = ''
             client_max_body_size 0;
             '';
@@ -93,7 +93,7 @@
         acmeRoot = null;
         locations = {
           "~ ^(/_matrix|/_synapse/client)" = {
-            proxyPass = "http://192.168.2.23:8008";
+            proxyPass = "http://192.168.1.23:8008";
             extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -149,7 +149,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.2.13:4040";
+              proxyPass = "http://192.168.1.13:4040";
               proxyWebsockets = true;
               extraConfig = ''
                 proxy_redirect          http:// https://;
@@ -169,7 +169,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.2.24:28981";
+              proxyPass = "http://192.168.1.24:28981";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -183,7 +183,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.2.16:8096";
+              proxyPass = "http://192.168.1.16:8096";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -197,7 +197,7 @@
           acmeRoot = null;
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://192.168.2.20:8008";
+              proxyPass = "http://192.168.1.20:8008";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -211,7 +211,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.2.22:8080";
+              proxyPass = "http://192.168.1.22:8080";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -239,7 +239,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "https://192.168.2.7";
+              proxyPass = "https://192.168.1.7";
               extraConfig = ''
                 client_max_body_size 0;
               '';

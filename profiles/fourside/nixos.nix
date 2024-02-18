@@ -21,6 +21,7 @@
 
   networking.hostName = "fourside"; # Define your hostname.
 
+  networking.firewall.enable = false;
   stylix.image = ../../wallpaper/lenovowp.png;
   
   
@@ -73,6 +74,16 @@
   
 
   hardware = {
+    opengl = {
+      enable = true;
+      driSupport = true;
+      driSupport32Bit = true;
+      extraPackages = with pkgs; [
+        vulkan-loader
+        vulkan-validation-layers
+        vulkan-extension-layer
+      ];
+    };
     bluetooth.enable = true;
   };
 
