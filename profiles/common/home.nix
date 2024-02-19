@@ -246,118 +246,83 @@ programs.ssh= {
   extraConfig = "SetEnv TERM=xterm-256color";
   matchBlocks = {
     "nginx" = {
-      hostname = "192.168.2.14";
-      port = 22;
+      hostname = "192.168.1.14";
       user = "root";
     };
     "jellyfin" = {
-      hostname = "192.168.2.16";
-      port = 22;
+      hostname = "192.168.1.16";
       user = "root";
     };
     "pfsense" = {
       hostname = "192.168.1.1";
-      port = 22;
       user = "root";
     };
     "proxmox" = {
       hostname = "192.168.1.2";
-      port = 22;
       user = "root";
     };
     "transmission" = {
       hostname = "192.168.1.6";
-      port = 22;
       user = "root";
     };
     "fetcher" = {
-      hostname = "192.168.1.192";
-      port = 22;
+      hostname = "192.168.1.7";
       user = "root";
     };
     "omv" = {
       hostname = "192.168.1.3";
-      port = 22;
       user = "root";
     };
     "webbot" = {
       hostname = "192.168.1.11";
-      port = 22;
-      user = "root";
-    };
-    "plex" = {
-      hostname = "192.168.1.16";
-      port = 22;
       user = "root";
     };
     "nextcloud" = {
-      hostname = "192.168.2.5";
-      port = 22;
+      hostname = "192.168.1.5";
       user = "root";
     };
-    "subsonic" = {
-      hostname = "192.168.2.13";
-      port = 22;
+    "sound" = {
+      hostname = "192.168.1.13";
       user = "root";
     };
     "spotify" = {
       hostname = "192.168.1.17";
-      port = 22;
       user = "root";
     };
     "wordpress" = {
-      hostname = "192.168.2.7";
-      port = 22;
+      hostname = "192.168.1.9";
       user = "root";
     };
     "turn" = {
-      hostname = "192.168.2.17";
-      port = 22;
+      hostname = "192.168.1.18";
       user = "root";
     };
     "hugo" = {
-      hostname = "192.168.2.19";
-      port = 22;
+      hostname = "192.168.1.19";
       user = "root";
     };
     "matrix" = {
-      hostname = "192.168.2.20";
-      port = 22;
+      hostname = "192.168.1.23";
       user = "root";
     };
-    "matrix2" = {
-      hostname = "192.168.2.20";
-      port = 22;
-      user = "root";
-    };
-    "database" = {
-      hostname = "192.168.2.21";
-      port = 22;
+    "scroll" = {
+      hostname = "192.168.1.22";
       user = "root";
     };
     "minecraft" = {
       hostname = "130.61.119.129";
-      port = 22;
       user = "opc";
     };
     "sync" = {
       hostname = "193.122.53.173";
-      port = 22;
       user = "root"; #this is a oracle vm server but needs root due to nixos-infect
     };
     "pkv" = {
       hostname = "46.232.248.161";
-      port = 22;
-      user = "root";
-    };
-    "calibre" = {
-      hostname = "192.168.2.22";
-      port = 22;
       user = "root";
     };
     "nebula" = {
       hostname = "128.131.171.15";
-      port = 22;
       user = "amp23s56";
       compression = true;
       identityFile = "~/.ssh/id_ed25519";
@@ -368,7 +333,6 @@ programs.ssh= {
     };
     "efficient" = {
       hostname = "g0.complang.tuwien.ac.at";
-      port = 22;
       forwardAgent = true;
       user = "ep01427399";
 
@@ -395,7 +359,6 @@ programs.ssh= {
     };
     "hydra" = {
       hostname = "128.131.171.215";
-      port = 22;
       user = "hpc23w33";
       compression = true;
       forwardAgent = true;
