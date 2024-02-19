@@ -101,48 +101,6 @@
         };
       };
 
-        # "sound.swarsel.win" = {
-        #   enableACME = true;
-        #   forceSSL = true;
-        #   acmeRoot = null;
-        #   locations = {
-        #     "/" = {
-        #       proxyPass = "https://192.168.2.13";
-        #       extraConfig = ''
-        #         client_max_body_size 0;
-        #       '';
-        #     };
-        #   };
-        # };
-
-    #     "sound.swarsel.win" = {
-    #       enableACME = true;
-    #       forceSSL = true;
-    #       acmeRoot = null;
-    #       locations = {
-    #         "/" = {
-    #           proxyPass = "http://192.168.2.13:4040";
-    #       recommendedProxySettings = false;
-    #           # proxyWebsockets = true;
-    #           extraConfig = ''
-    # proxy_set_header Upgrade           $http_upgrade;
-    # proxy_set_header Connection        "Upgrade";
-    # proxy_set_header X-Real-IP         $remote_addr;
-    # proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-    # proxy_set_header X-Forwarded-Proto https;
-    # proxy_set_header X-Forwarded-Host  $host;
-    # proxy_set_header X-Forwarded-Port  $server_port;
-    # proxy_set_header Host              $host;
-    # proxy_max_temp_file_size           0;
-    # proxy_redirect                     http:// https://;
-    # proxy_buffering off;
-    # proxy_request_buffering off;
-    # client_max_body_size    0;
-    #           '';
-    #         };
-    #       };
-        # };
-
         "sound.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
@@ -219,20 +177,6 @@
           };
         };
 
-        # "books.swarsel.win" = {
-        #   enableACME = true;
-        #   forceSSL = true;
-        #   acmeRoot = null;
-        #   locations = {
-        #     "/" = {
-        #       proxyPass = "http://192.168.2.22:8083";
-        #       extraConfig = ''
-        #         client_max_body_size 0;
-        #       '';
-        #     };
-        #   };
-        # };
-
         "blog.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
@@ -249,9 +193,5 @@
 
       };
     };
-
-
-
-
 
 }

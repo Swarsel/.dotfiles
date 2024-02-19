@@ -1291,61 +1291,80 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
 
-      { config, lib, pkgs, inputs, ... }:
+  { config, lib, pkgs, inputs, ... }:
 
-      {
+  {
 
-        <<wrap>>
+    <<wrap>>
 
-        services = {
-          getty.autologinUser = "swarsel";
-          greetd.settings.initial_session.user="swarsel";
-        };
+    services = {
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user="swarsel";
+    };
 
-        boot = {
-          loader.systemd-boot.enable = true;
-          loader.efi.canTouchEfiVariables = true;
-        };
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+    };
 
-        networking.hostName = "fourside"; # Define your hostname.
+    networking.hostName = "fourside"; # Define your hostname.
 
-        networking.firewall.enable = false;
-        stylix.image = ../../wallpaper/lenovowp.png;
-        <<theme>>
+    networking.firewall.enable = false;
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
 
-        hardware = {
-          opengl = {
-            enable = true;
-            driSupport = true;
-            driSupport32Bit = true;
-            extraPackages = with pkgs; [
-              vulkan-loader
-              vulkan-validation-layers
-              vulkan-extension-layer
-            ];
-          };
-          bluetooth.enable = true;
-        };
-
-        # Configure keymap in X11 (only used for login)
-        services.xserver = {
-          layout = "us";
-          xkbVariant = "altgr-intl";
-        };
-
-        users.users.swarsel = {
-          isNormalUser = true;
-          description = "Leon S";
-          extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-          packages = with pkgs; [];
-        };
-
-        environment.systemPackages = with pkgs; [
+    hardware = {
+      opengl = {
+        enable = true;
+        driSupport = true;
+        driSupport32Bit = true;
+        extraPackages = with pkgs; [
+          vulkan-loader
+          vulkan-validation-layers
+          vulkan-extension-layer
         ];
+      };
+      bluetooth.enable = true;
+    };
 
-        system.stateVersion = "23.05";
+    # Configure keymap in X11 (only used for login)
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
 
-      }
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
+      temurin-bin-17
+
+      (prismlauncher.override {
+        glfw = (let
+          mcWaylandPatchRepo = fetchFromGitHub {
+            owner = "Admicos";
+            repo = "minecraft-wayland";
+            rev = "370ce5b95e3ae9bc4618fb45113bc641fbb13867";
+            sha256 =
+              "sha256-RPRg6Gd7N8yyb305V607NTC1kUzvyKiWsh6QlfHW+JE=";
+          };
+          mcWaylandPatches = map (name: "${mcWaylandPatchRepo}/${name}")
+            (lib.naturalSort (builtins.attrNames (lib.filterAttrs
+            (name: type:
+              type == "regular" && lib.hasSuffix ".patch" name)
+              (builtins.readDir mcWaylandPatchRepo))));
+        in glfw-wayland.overrideAttrs (previousAttrs: {
+          patches = previousAttrs.patches ++ mcWaylandPatches;
+        }));})
+    ];
+
+    system.stateVersion = "23.05";
+
+  }
 
 #+end_src
 
@@ -1709,48 +1728,6 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
           };
         };
 
-          # "sound.swarsel.win" = {
-          #   enableACME = true;
-          #   forceSSL = true;
-          #   acmeRoot = null;
-          #   locations = {
-          #     "/" = {
-          #       proxyPass = "https://192.168.2.13";
-          #       extraConfig = ''
-          #         client_max_body_size 0;
-          #       '';
-          #     };
-          #   };
-          # };
-
-      #     "sound.swarsel.win" = {
-      #       enableACME = true;
-      #       forceSSL = true;
-      #       acmeRoot = null;
-      #       locations = {
-      #         "/" = {
-      #           proxyPass = "http://192.168.2.13:4040";
-      #       recommendedProxySettings = false;
-      #           # proxyWebsockets = true;
-      #           extraConfig = ''
-      # proxy_set_header Upgrade           $http_upgrade;
-      # proxy_set_header Connection        "Upgrade";
-      # proxy_set_header X-Real-IP         $remote_addr;
-      # proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-      # proxy_set_header X-Forwarded-Proto https;
-      # proxy_set_header X-Forwarded-Host  $host;
-      # proxy_set_header X-Forwarded-Port  $server_port;
-      # proxy_set_header Host              $host;
-      # proxy_max_temp_file_size           0;
-      # proxy_redirect                     http:// https://;
-      # proxy_buffering off;
-      # proxy_request_buffering off;
-      # client_max_body_size    0;
-      #           '';
-      #         };
-      #       };
-          # };
-
           "sound.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
@@ -1827,20 +1804,6 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             };
           };
 
-          # "books.swarsel.win" = {
-          #   enableACME = true;
-          #   forceSSL = true;
-          #   acmeRoot = null;
-          #   locations = {
-          #     "/" = {
-          #       proxyPass = "http://192.168.2.22:8083";
-          #       extraConfig = ''
-          #         client_max_body_size 0;
-          #       '';
-          #     };
-          #   };
-          # };
-
           "blog.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
@@ -1857,10 +1820,6 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 
         };
       };
-
-
-
-
 
   }
 
@@ -3660,118 +3619,83 @@ It is very convenient to have SSH aliases in place for machines that I use. This
     extraConfig = "SetEnv TERM=xterm-256color";
     matchBlocks = {
       "nginx" = {
-        hostname = "192.168.2.14";
-        port = 22;
+        hostname = "192.168.1.14";
         user = "root";
       };
       "jellyfin" = {
-        hostname = "192.168.2.16";
-        port = 22;
+        hostname = "192.168.1.16";
         user = "root";
       };
       "pfsense" = {
         hostname = "192.168.1.1";
-        port = 22;
         user = "root";
       };
       "proxmox" = {
         hostname = "192.168.1.2";
-        port = 22;
         user = "root";
       };
       "transmission" = {
         hostname = "192.168.1.6";
-        port = 22;
         user = "root";
       };
       "fetcher" = {
-        hostname = "192.168.1.192";
-        port = 22;
+        hostname = "192.168.1.7";
         user = "root";
       };
       "omv" = {
         hostname = "192.168.1.3";
-        port = 22;
         user = "root";
       };
       "webbot" = {
         hostname = "192.168.1.11";
-        port = 22;
-        user = "root";
-      };
-      "plex" = {
-        hostname = "192.168.1.16";
-        port = 22;
         user = "root";
       };
       "nextcloud" = {
-        hostname = "192.168.2.5";
-        port = 22;
+        hostname = "192.168.1.5";
         user = "root";
       };
-      "subsonic" = {
-        hostname = "192.168.2.13";
-        port = 22;
+      "sound" = {
+        hostname = "192.168.1.13";
         user = "root";
       };
       "spotify" = {
         hostname = "192.168.1.17";
-        port = 22;
         user = "root";
       };
       "wordpress" = {
-        hostname = "192.168.2.7";
-        port = 22;
+        hostname = "192.168.1.9";
         user = "root";
       };
       "turn" = {
-        hostname = "192.168.2.17";
-        port = 22;
+        hostname = "192.168.1.18";
         user = "root";
       };
       "hugo" = {
-        hostname = "192.168.2.19";
-        port = 22;
+        hostname = "192.168.1.19";
         user = "root";
       };
       "matrix" = {
-        hostname = "192.168.2.20";
-        port = 22;
+        hostname = "192.168.1.23";
         user = "root";
       };
-      "matrix2" = {
-        hostname = "192.168.2.20";
-        port = 22;
-        user = "root";
-      };
-      "database" = {
-        hostname = "192.168.2.21";
-        port = 22;
+      "scroll" = {
+        hostname = "192.168.1.22";
         user = "root";
       };
       "minecraft" = {
         hostname = "130.61.119.129";
-        port = 22;
         user = "opc";
       };
       "sync" = {
         hostname = "193.122.53.173";
-        port = 22;
         user = "root"; #this is a oracle vm server but needs root due to nixos-infect
       };
       "pkv" = {
         hostname = "46.232.248.161";
-        port = 22;
-        user = "root";
-      };
-      "calibre" = {
-        hostname = "192.168.2.22";
-        port = 22;
         user = "root";
       };
       "nebula" = {
         hostname = "128.131.171.15";
-        port = 22;
         user = "amp23s56";
         compression = true;
         identityFile = "~/.ssh/id_ed25519";
@@ -3782,7 +3706,6 @@ It is very convenient to have SSH aliases in place for machines that I use. This
       };
       "efficient" = {
         hostname = "g0.complang.tuwien.ac.at";
-        port = 22;
         forwardAgent = true;
         user = "ep01427399";
 
@@ -3809,7 +3732,6 @@ It is very convenient to have SSH aliases in place for machines that I use. This
       };
       "hydra" = {
         hostname = "128.131.171.215";
-        port = 22;
         user = "hpc23w33";
         compression = true;
         forwardAgent = true;
