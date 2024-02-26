@@ -115,9 +115,9 @@
       startup = [
         
         { command = "nextcloud --background";}
-        { command = "spotify";}
+        # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
         { command = "discord --start-minimized";}
-        { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+        { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
         { command = "nm-applet";}

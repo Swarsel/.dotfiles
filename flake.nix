@@ -58,7 +58,15 @@
       url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
     };
     
+    # patches for gaming on nix
+    nix-gaming = {
+      url = github:fufexan/nix-gaming;
+    };
     
+    # hardware quirks on nix
+    nixos-hardware = {
+      url = github:NixOS/nixos-hardware/master;
+    };
   };
 
   outputs = inputs@{
@@ -76,7 +84,8 @@
       lanzaboote,
       pia,
       nixpkgs-mautrix-signal,
-      
+      nix-gaming,
+      nixos-hardware,
       ...
   }: let
     
@@ -169,6 +178,7 @@
       fourside = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
+          nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
           ./profiles/fourside/nixos.nix
           home-manager.nixosModules.home-manager
           {

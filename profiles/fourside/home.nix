@@ -6,6 +6,8 @@
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    pinentryFlavor = "gtk2";
+    enableExtraSocket = true; # for GPGAgent forwarding
   };
   
   home = {
@@ -77,10 +79,11 @@
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
       in {
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
         "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
         "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
         "XF86Display" = "exec wl-mirror eDP-1";
+        # these are left open to use
         # "XF86WLAN" = "exec wl-mirror eDP-1";
         # "XF86Messenger" = "exec wl-mirror eDP-1";
         # "XF86Go" = "exec wl-mirror eDP-1";
@@ -94,9 +97,9 @@
       startup = [
         
         { command = "nextcloud --background";}
-        { command = "spotify";}
+        # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
         { command = "discord --start-minimized";}
-        { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+        { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
         { command = "nm-applet";}

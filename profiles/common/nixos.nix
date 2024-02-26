@@ -6,9 +6,9 @@
   home-manager.useUserPackages = true;
 
   # login keymap
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "altgr-intl";
+    variant = "altgr-intl";
   };
 
   # mount NAS drive
@@ -145,7 +145,7 @@ services.blueman.enable = true;
 services.printing.enable = true;
 services.avahi = {
   enable = true;
-  nssmdns = true;
+  nssmdns4 = true;
   openFirewall = true;
 };
 

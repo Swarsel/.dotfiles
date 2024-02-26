@@ -2,12 +2,16 @@
 
 {
 
-  
+  nix.settings = {
+    substituters = ["https://nix-gaming.cachix.org"];
+    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
+  };
+
   imports =
     [
+      inputs.nix-gaming.nixosModules.steamCompat
       ./hardware-configuration.nix
     ];
-  
 
   services = {
     getty.autologinUser = "swarsel";
@@ -17,11 +21,14 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
   };
 
-  networking.hostName = "fourside"; # Define your hostname.
+  networking = {
+    hostName = "fourside"; # Define your hostname.
+    firewall.enable = true;
+  };
 
-  networking.firewall.enable = false;
   stylix.image = ../../wallpaper/lenovowp.png;
   
   
@@ -87,12 +94,6 @@
     bluetooth.enable = true;
   };
 
-  # Configure keymap in X11 (only used for login)
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
-  };
-
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
@@ -100,26 +101,22 @@
     packages = with pkgs; [];
   };
 
-  environment.systemPackages = with pkgs; [
-    temurin-bin-17
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [
+      inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+    ];
+  };
 
+  environment.systemPackages = with pkgs; [
+    # gog games installing
+    heroic
+
+    # minecraft
+    temurin-bin-17
     (prismlauncher.override {
-      glfw = (let
-        mcWaylandPatchRepo = fetchFromGitHub {
-          owner = "Admicos";
-          repo = "minecraft-wayland";
-          rev = "370ce5b95e3ae9bc4618fb45113bc641fbb13867";
-          sha256 =
-            "sha256-RPRg6Gd7N8yyb305V607NTC1kUzvyKiWsh6QlfHW+JE=";
-        };
-        mcWaylandPatches = map (name: "${mcWaylandPatchRepo}/${name}")
-          (lib.naturalSort (builtins.attrNames (lib.filterAttrs
-          (name: type:
-            type == "regular" && lib.hasSuffix ".patch" name)
-            (builtins.readDir mcWaylandPatchRepo))));
-      in glfw-wayland.overrideAttrs (previousAttrs: {
-        patches = previousAttrs.patches ++ mcWaylandPatches;
-      }));})
+      glfw = pkgs.glfw-wayland-minecraft;
+    })
   ];
 
   system.stateVersion = "23.05";

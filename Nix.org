@@ -118,9 +118,9 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 #+begin_src nix :noweb-ref startupnixos
 
           { command = "nextcloud --background";}
-          { command = "spotify";}
+          # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
           { command = "discord --start-minimized";}
-          { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+          { command = "element-desktop --hidden";}
           { command = "ANKI_WAYLAND=1 anki";}
           { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
           { command = "nm-applet";}
@@ -129,11 +129,15 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 *** gpg-agent
 
+This is actually a HM config ...
+
 #+begin_src nix :noweb-ref gpgagent
 
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    pinentryFlavor = "gtk2";
+    enableExtraSocket = true; # for GPGAgent forwarding
   };
 
 #+end_src
@@ -211,7 +215,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   lanzaboote,
   pia,
   nixpkgs-mautrix-signal,
-
+  nix-gaming,
+  nixos-hardware,
 #+end_src
 
 #+begin_src nix :noweb-ref flakeinputs
@@ -271,7 +276,15 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
   };
 
+  # patches for gaming on nix
+  nix-gaming = {
+    url = github:fufexan/nix-gaming;
+  };
 
+  # hardware quirks on nix
+  nixos-hardware = {
+    url = github:NixOS/nixos-hardware/master;
+  };
 #+end_src
 *** let
 
@@ -360,6 +373,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   fourside = nixpkgs.lib.nixosSystem {
     specialArgs = {inherit inputs pkgs; };
     modules = nixModules ++ [
+      nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
       ./profiles/fourside/nixos.nix
       home-manager.nixosModules.home-manager
       {
@@ -1291,80 +1305,82 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+    { config, lib, pkgs, inputs, ... }:
 
-  {
+    {
 
-    <<wrap>>
+      nix.settings = {
+        substituters = ["https://nix-gaming.cachix.org"];
+        trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
+      };
 
-    services = {
-      getty.autologinUser = "swarsel";
-      greetd.settings.initial_session.user="swarsel";
-    };
+      imports =
+        [
+          inputs.nix-gaming.nixosModules.steamCompat
+          ./hardware-configuration.nix
+        ];
 
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-    };
+      services = {
+        getty.autologinUser = "swarsel";
+        greetd.settings.initial_session.user="swarsel";
+      };
 
-    networking.hostName = "fourside"; # Define your hostname.
+      boot = {
+        loader.systemd-boot.enable = true;
+        loader.efi.canTouchEfiVariables = true;
+        kernelPackages = pkgs.linuxPackages_latest;
+      };
 
-    networking.firewall.enable = false;
-    stylix.image = ../../wallpaper/lenovowp.png;
-    <<theme>>
+      networking = {
+        hostName = "fourside"; # Define your hostname.
+        firewall.enable = true;
+      };
 
-    hardware = {
-      opengl = {
+      stylix.image = ../../wallpaper/lenovowp.png;
+      <<theme>>
+
+      hardware = {
+        opengl = {
+          enable = true;
+          driSupport = true;
+          driSupport32Bit = true;
+          extraPackages = with pkgs; [
+            vulkan-loader
+            vulkan-validation-layers
+            vulkan-extension-layer
+          ];
+        };
+        bluetooth.enable = true;
+      };
+
+      users.users.swarsel = {
+        isNormalUser = true;
+        description = "Leon S";
+        extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+        packages = with pkgs; [];
+      };
+
+      programs.steam = {
         enable = true;
-        driSupport = true;
-        driSupport32Bit = true;
-        extraPackages = with pkgs; [
-          vulkan-loader
-          vulkan-validation-layers
-          vulkan-extension-layer
+        extraCompatPackages = [
+          inputs.nix-gaming.packages.${pkgs.system}.proton-ge
         ];
       };
-      bluetooth.enable = true;
-    };
 
-    # Configure keymap in X11 (only used for login)
-    services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
+      environment.systemPackages = with pkgs; [
+        # gog games installing
+        heroic
 
-    users.users.swarsel = {
-      isNormalUser = true;
-      description = "Leon S";
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-      packages = with pkgs; [];
-    };
+        # minecraft
+        temurin-bin-17
+        (prismlauncher.override {
+          glfw = pkgs.glfw-wayland-minecraft;
+        })
+      ];
 
-    environment.systemPackages = with pkgs; [
-      temurin-bin-17
+      system.stateVersion = "23.05";
 
-      (prismlauncher.override {
-        glfw = (let
-          mcWaylandPatchRepo = fetchFromGitHub {
-            owner = "Admicos";
-            repo = "minecraft-wayland";
-            rev = "370ce5b95e3ae9bc4618fb45113bc641fbb13867";
-            sha256 =
-              "sha256-RPRg6Gd7N8yyb305V607NTC1kUzvyKiWsh6QlfHW+JE=";
-          };
-          mcWaylandPatches = map (name: "${mcWaylandPatchRepo}/${name}")
-            (lib.naturalSort (builtins.attrNames (lib.filterAttrs
-            (name: type:
-              type == "regular" && lib.hasSuffix ".patch" name)
-              (builtins.readDir mcWaylandPatchRepo))));
-        in glfw-wayland.overrideAttrs (previousAttrs: {
-          patches = previousAttrs.patches ++ mcWaylandPatches;
-        }));})
-    ];
-
-    system.stateVersion = "23.05";
-
-  }
+    }
 
 #+end_src
 
@@ -1428,10 +1444,11 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         keybindings = let
           modifier = config.wayland.windowManager.sway.config.modifier;
         in {
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
           "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
           "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
           "XF86Display" = "exec wl-mirror eDP-1";
+          # these are left open to use
           # "XF86WLAN" = "exec wl-mirror eDP-1";
           # "XF86Messenger" = "exec wl-mirror eDP-1";
           # "XF86Go" = "exec wl-mirror eDP-1";
@@ -3092,9 +3109,9 @@ Section for all settings that are not really deserving of their own section.
     home-manager.useUserPackages = true;
 
     # login keymap
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     # mount NAS drive
@@ -3255,7 +3272,7 @@ Setting up some hardware services as well as keyboard related settings. Here we 
   services.printing.enable = true;
   services.avahi = {
     enable = true;
-    nssmdns = true;
+    nssmdns4 = true;
     openFirewall = true;
   };
 
@@ -3362,9 +3379,7 @@ Also, I define some useful shell scripts here.
       # b2 backup @backblaze
       restic
 
-
       # "big" programs
-      filebot
       gimp
       zoom-us
       # nomacs
@@ -3374,8 +3389,8 @@ Also, I define some useful shell scripts here.
       spotify
       discord
       nextcloud-client
-      spotify-tui
-      schildichat-desktop
+      spotify-player
+      element-desktop-wayland
 
       # kyria
       qmk
@@ -3387,8 +3402,8 @@ Also, I define some useful shell scripts here.
       libudev-zero
       dwarfs
       fuse-overlayfs
-      steam
-      steam-run
+      # steam
+      # steam-run
       patchelf
       gamescope
       vulkan-tools
@@ -3522,6 +3537,8 @@ Also, I define some useful shell scripts here.
    cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
    elif [ "$1" == "cuda" ]; then
    cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
+   elif [ "$1" == "other" ]; then
+   cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
    elif [ "$1" == "latex" ]; then
      if [ "$2" == "" ]; then
      echo "No filename specified, usage: 'project latex <NAME>'"
@@ -3530,7 +3547,7 @@ Also, I define some useful shell scripts here.
    cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
    exit 0
    else
-   echo "No valid argument given. Valid arguments are rust cpp python, cuda"
+   echo "No valid argument given. Valid arguments are rust cpp, python, cuda, other, latex <NAME>"
    exit 0
    fi
    echo "use flake" >> .envrc
@@ -3810,23 +3827,22 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
       categories = [ "Application"];
     };
 
-    schlidichat = {
-      name = "SchildiChat Matrix Client";
-      genericName = "SchildiChat";
-      exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+    # now unused due to element taking over
+    # schlidichat = {
+    #   name = "SchildiChat Matrix Client";
+    #   genericName = "SchildiChat";
+    #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+    #   terminal = false;
+    #   categories = [ "Application"];
+    # };
+
+    element = {
+      name = "Element Matrix Client";
+      genericName = "Element";
+      exec = "element-desktop";
       terminal = false;
       categories = [ "Application"];
     };
-
-    # currently unused but kept for possible future use-case
-    # not needed as long as schildichat is working properly
-  #   element = {
-  #     name = "Element Matrix Client";
-  #     genericName = "Element";
-  #     exec = "element-desktop";
-  #     terminal = false;
-  #     categories = [ "Application"];
-  #   };
 
   };
 
@@ -4762,22 +4778,22 @@ Again I am just using the first bar option here that I was able to find good und
         # the rest of the information is also found in the manifest.json, but might not be
         # needed
 
-        (let version = "3.5.4.0";
-                                in buildFirefoxXpiAddon {
-    pname = "bypass-paywalls-clean";
-    inherit version;
-    addonId = "magnolia@12.34";
-    url =
-      "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
-    sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
-    meta = with lib; {
-      homepage =
-        "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
-      description = "Bypass Paywalls of (custom) news sites";
-      license = licenses.mit;
-      platforms = platforms.all;
-    };
-  })
+    #     (let version = "3.5.4.0";
+    #                             in buildFirefoxXpiAddon {
+    # pname = "bypass-paywalls-clean";
+    # inherit version;
+    # addonId = "magnolia@12.34";
+    # url =
+    #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
+    # sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
+    # meta = with lib; {
+    #   homepage =
+    #     "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
+    #   description = "Bypass Paywalls of (custom) news sites";
+    #   license = licenses.mit;
+    #   platforms = platforms.all;
+    # };
+  # })
 
 
         (buildFirefoxXpiAddon {
@@ -5026,7 +5042,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
       defaultWorkspace = "workspace 1:一";
       startup = [
         { command = "kitty -T kittyterm";}
-        { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spt";}
+        { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player";}
       ];
       window = {
         border = 1;
@@ -5063,8 +5079,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
           {app_id = "pavucontrol";}
           {app_id = "syncthingtray";}
           {app_id = "SchildiChat";}
-          {class = "Element";}
-          {title = "Element";}
+          {app_id = "Element";}
           {app_id = "com.nextcloud.desktopclient.nextcloud";}
           {app_id = "gnome-system-monitor";}
           {title = "(?:Open|Save) (?:File|Folder|As)";}
