@@ -16,6 +16,8 @@ keys:
   - &server_sound age1w7tfe7k0r0hm6mzz0kmz8302kfn0rlh96w7g6zwqd4muqg7u9anqv07745
   - &server_sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
   - &server_paperless age1j4y7mwh6hg8kvktgvq5g3xstnmlnaxkdhfrps8lnl029nfpr03dq2nr4cd
+  - &server_sandbox age1d4ywpqztawcw0eswn42udt4hhcktdcrm54v9kmt3uspkwkz8e52qx7d5aa
+  - &server_omatrix age198gj3dmryk7sya5c77tsrm3gdrct6xh7w7cx4gsfywe675aehu8sw2xw6q
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -80,3 +82,15 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_paperless
+  - path_regex: secrets/sandbox/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_sandbox
+  - path_regex: secrets/omatrix/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_omatrix

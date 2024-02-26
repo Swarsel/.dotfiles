@@ -115,12 +115,13 @@
       startup = [
         
         { command = "nextcloud --background";}
-        { command = "spotify";}
+        # { command = "spotify";}
         { command = "discord --start-minimized";}
-        { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+        { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
         { command = "nm-applet";}
+        # { command = "sleep 60 && syncthingtray --wait"; }
         
       ];
     };

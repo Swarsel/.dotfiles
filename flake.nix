@@ -58,6 +58,15 @@
       url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
     };
     
+    # patches for gaming on nix
+    nix-gaming = {
+      url = github:fufexan/nix-gaming;
+    };
+    
+    # hardware quirks on nix
+    nixos-hardware = {
+      url = github:NixOS/nixos-hardware/master;
+    };
     
   };
 
@@ -76,6 +85,8 @@
       lanzaboote,
       pia,
       nixpkgs-mautrix-signal,
+      nix-gaming,
+      nixos-hardware,
       
       ...
   }: let
@@ -139,6 +150,15 @@
         ];
       };
       
+      sandbox = nixpkgs.lib.nixosSystem {
+        pkgs = pkgsmautrix;
+        specialArgs.unstable = nixpkgs-mautrix-signal;
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/sandbox/nixos.nix
+        ];
+      };
+      
       twoson = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
@@ -169,6 +189,7 @@
       fourside = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
+          nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
           ./profiles/fourside/nixos.nix
           home-manager.nixosModules.home-manager
           {
@@ -271,11 +292,15 @@
       };
       
       #ovm swarsel
-      backup = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs pkgs; };
+      swatrix = nixpkgs.lib.nixosSystem {
+        # specialArgs = {inherit pkgsmautrix; };
+        pkgs = pkgsmautrix;
+        # this is to import a service module that is not on nixpkgs
+        # this way avoids infinite recursion errors
+        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
-          ./profiles/remote/oracle/backup/nixos.nix
+          ./profiles/remote/oracle/matrix/nixos.nix
         ];
       };
     };

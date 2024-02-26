@@ -8,10 +8,13 @@
     losslessaudiochecker
     ffmpeg_5-full
     flac
+    mediainfo
+    picard
+    audacity
+    sox
 
     # b2 backup @backblaze
     restic
-
 
     # "big" programs
     filebot
@@ -24,8 +27,12 @@
     spotify
     discord
     nextcloud-client
-    spotify-tui
-    schildichat-desktop
+    spotify-player
+    element-desktop-wayland
+    nicotine-plus
+    transmission
+    mktorrent
+    hexchat
 
     # kyria
     qmk
@@ -37,12 +44,12 @@
     libudev-zero
     dwarfs
     fuse-overlayfs
-    steam
-    steam-run
+    # steam
+    # steam-run
     patchelf
     gamescope
     vulkan-tools
-    openssl
+    moonlight-qt
 
     # firefox related
     tridactyl-native
@@ -64,6 +71,8 @@
     speechd
     networkmanagerapplet
     psmisc # kill etc
+    lm_sensors
+    # syncthingtray
     # jq # used for searching the i3 tree in check<xxx>.sh files
 
     # specifically needed for anki
@@ -100,7 +109,7 @@
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
-    syncthingtray
+    # syncthingtray
     # monitor
 
     #keychain
@@ -172,6 +181,8 @@
  cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
  elif [ "$1" == "cuda" ]; then
  cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
+ elif [ "$1" == "other" ]; then
+ cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
  elif [ "$1" == "latex" ]; then
    if [ "$2" == "" ]; then
    echo "No filename specified, usage: 'project latex <NAME>'"
@@ -419,23 +430,23 @@ xdg.desktopEntries = {
     categories = [ "Application"];
   };
 
-  schlidichat = {
-    name = "SchildiChat Matrix Client";
-    genericName = "SchildiChat";
-    exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-    terminal = false;
-    categories = [ "Application"];
-  };
+  # schlidichat = {
+  #   name = "SchildiChat Matrix Client";
+  #   genericName = "SchildiChat";
+  #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+  #   terminal = false;
+  #   categories = [ "Application"];
+  # };
 
   # currently unused but kept for possible future use-case
   # not needed as long as schildichat is working properly
-#   element = {
-#     name = "Element Matrix Client";
-#     genericName = "Element";
-#     exec = "element-desktop";
-#     terminal = false;
-#     categories = [ "Application"];
-#   };
+  element = {
+    name = "Element Matrix Client";
+    genericName = "Element";
+    exec = "element-desktop";
+    terminal = false;
+    categories = [ "Application"];
+  };
 
 };
 
@@ -1297,22 +1308,22 @@ programs.firefox = {
       # the rest of the information is also found in the manifest.json, but might not be
       # needed
 
-      (let version = "3.5.4.0";
-                              in buildFirefoxXpiAddon {
-  pname = "bypass-paywalls-clean";
-  inherit version;
-  addonId = "magnolia@12.34";
-  url =
-    "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
-  sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
-  meta = with lib; {
-    homepage =
-      "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
-    description = "Bypass Paywalls of (custom) news sites";
-    license = licenses.mit;
-    platforms = platforms.all;
-  };
-})
+  #     (let version = "3.4.5.0";
+  #                             in buildFirefoxXpiAddon {
+  # pname = "bypass-paywalls-clean";
+  # inherit version;
+  # addonId = "magnolia@12.34";
+  # url =
+  #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
+  # sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
+  # meta = with lib; {
+  #   homepage =
+  #     "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
+  #   description = "Bypass Paywalls of (custom) news sites";
+  #   license = licenses.mit;
+  #   platforms = platforms.all;
+  # };
+  # })
 
 
       (buildFirefoxXpiAddon {
@@ -1404,6 +1415,9 @@ services.kdeconnect = {
 
 services.syncthing = {
   enable = true;
+  tray = {
+    enable = false;
+  };
 };
 
 # this enables the emacs server
@@ -1529,7 +1543,7 @@ wayland.windowManager.sway = {
     defaultWorkspace = "workspace 1:一";
     startup = [
       { command = "kitty -T kittyterm";}
-      { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spt";}
+      { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player";}
     ];
     window = {
       border = 1;
@@ -1566,8 +1580,7 @@ wayland.windowManager.sway = {
         {app_id = "pavucontrol";}
         {app_id = "syncthingtray";}
         {app_id = "SchildiChat";}
-        {class = "Element";}
-        {title = "Element";}
+        {app_id = "Element";}
         {app_id = "com.nextcloud.desktopclient.nextcloud";}
         {app_id = "gnome-system-monitor";}
         {title = "(?:Open|Save) (?:File|Folder|As)";}

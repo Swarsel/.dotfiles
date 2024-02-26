@@ -8,7 +8,6 @@
      "badd1a5e20bd0c29f4fe863f3b480992c65ef1fa63951f59aa5d6b129a3f9c4c"
      "2e05569868dc11a52b08926b4c1a27da77580daa9321773d92822f7a639956ce"
      default))
- '(org-agenda-files nil)
  '(send-mail-function 'sendmail-send-it))
 ;; (custom-set-faces
 ;;  ;; custom-set-faces was added by Custom.

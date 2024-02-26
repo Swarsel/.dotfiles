@@ -25,6 +25,15 @@
   # enable flakes - urgent line!!
   nix.settings.experimental-features = ["nix-command" "flakes"];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+  # gstreamer plugins for nautilus (used for file metadata)
+  environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+    gst-plugins-good
+    gst-plugins-bad
+    gst-plugins-ugly
+    gst-libav
+  ]);
+
   # correct time between linux and windows
   time.hardwareClockInLocalTime = true;
 
@@ -111,6 +120,8 @@ environment.systemPackages = with pkgs; [
   # latex
   texlab
   ghostscript_headless
+  # wireguard
+  wireguard-tools
   # rust
   rust-analyzer
   clippy

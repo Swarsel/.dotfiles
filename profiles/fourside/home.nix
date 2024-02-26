@@ -21,7 +21,8 @@
   # waybar config - TEMPLATE - update for cores and temp
   programs.waybar.settings.mainBar = {
     cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-    temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
+    # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
+    temperature.hwmon-path = "/sys/class/hwmon/hwmon4/temp1_input";
   };
 
   
@@ -54,7 +55,6 @@
         "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
           xkb_layout = "us";
           xkb_options = "grp:win_space_toggle";
-          # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
           xkb_variant = "altgr-intl";
         };
         "type:touchpad" = {
@@ -67,8 +67,8 @@
       };
 
       output = {
-        eDP-1 = {
-          mode = "1920x1080"; # TEMPLATE
+        DP-1 = {
+          mode = "2560x1440"; # TEMPLATE
           scale = "1";
           bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
         };
@@ -77,10 +77,11 @@
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
       in {
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
         "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
         "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
         "XF86Display" = "exec wl-mirror eDP-1";
+        # these are left open to use
         # "XF86WLAN" = "exec wl-mirror eDP-1";
         # "XF86Messenger" = "exec wl-mirror eDP-1";
         # "XF86Go" = "exec wl-mirror eDP-1";
@@ -94,12 +95,13 @@
       startup = [
         
         { command = "nextcloud --background";}
-        { command = "spotify";}
+        # { command = "spotify";}
         { command = "discord --start-minimized";}
-        { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+        { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
         { command = "nm-applet";}
+        # { command = "sleep 60 && syncthingtray --wait"; }
         
       ];
     };

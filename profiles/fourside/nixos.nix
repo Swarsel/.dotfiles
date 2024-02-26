@@ -2,12 +2,22 @@
 
 {
 
-  
+  # 
+  # imports =
+  #   [
+  #     ./hardware-configuration.nix
+  #   ];
+  # 
   imports =
     [
+      inputs.nix-gaming.nixosModules.steamCompat
       ./hardware-configuration.nix
     ];
-  
+
+  nix.settings = {
+    substituters = ["https://nix-gaming.cachix.org"];
+    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
+  };
 
   services = {
     getty.autologinUser = "swarsel";
@@ -17,11 +27,38 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
   };
 
-  networking.hostName = "fourside"; # Define your hostname.
+  networking = {
+    hostName = "fourside"; # Define your hostname.
+    nftables.enable = true;
+    enableIPv6 = false;
+    firewall.checkReversePath = false;
+    firewall = {
+      enable = true;
+      allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedTCPPortRanges = [
+        {from = 27015; to = 27030;} # barotrauma
+        {from = 27036; to = 27037;} # barotrauma
+      ];
+      allowedUDPPortRanges = [
+        {from = 27000; to = 27031;} # barotrauma
+      ];
+    };
+  };
 
-  networking.firewall.enable = false;
+  virtualisation.virtualbox = {
+    host = {
+    enable = true;
+    enableExtensionPack = true;
+    };
+    guest = {
+      enable = true;
+      x11 = true;
+      };
+    };
+
   stylix.image = ../../wallpaper/lenovowp.png;
   
   
@@ -74,54 +111,55 @@
   
 
   hardware = {
-    opengl = {
-      enable = true;
-      driSupport = true;
-      driSupport32Bit = true;
-      extraPackages = with pkgs; [
-        vulkan-loader
-        vulkan-validation-layers
-        vulkan-extension-layer
-      ];
+      opengl = {
+        enable = true;
+        driSupport = true;
+        driSupport32Bit = true;
+        extraPackages = with pkgs; [
+          vulkan-loader
+          vulkan-validation-layers
+          vulkan-extension-layer
+        ];
+      };
+      bluetooth.enable = true;
     };
-    bluetooth.enable = true;
+
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [
+      inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+    ];
   };
 
-  # Configure keymap in X11 (only used for login)
+    # Configure keymap in X11 (only used for login)
   services.xserver = {
     layout = "us";
     xkbVariant = "altgr-intl";
   };
 
+  services.thinkfan = {
+    enable = false;
+  };
+  services.power-profiles-daemon.enable = true;
+
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" ];
     packages = with pkgs; [];
   };
 
   environment.systemPackages = with pkgs; [
-    temurin-bin-17
-
-    (prismlauncher.override {
-      glfw = (let
-        mcWaylandPatchRepo = fetchFromGitHub {
-          owner = "Admicos";
-          repo = "minecraft-wayland";
-          rev = "370ce5b95e3ae9bc4618fb45113bc641fbb13867";
-          sha256 =
-            "sha256-RPRg6Gd7N8yyb305V607NTC1kUzvyKiWsh6QlfHW+JE=";
-        };
-        mcWaylandPatches = map (name: "${mcWaylandPatchRepo}/${name}")
-          (lib.naturalSort (builtins.attrNames (lib.filterAttrs
-          (name: type:
-            type == "regular" && lib.hasSuffix ".patch" name)
-            (builtins.readDir mcWaylandPatchRepo))));
-      in glfw-wayland.overrideAttrs (previousAttrs: {
-        patches = previousAttrs.patches ++ mcWaylandPatches;
-      }));})
+      # gog games installing
+      heroic
+      # minecraft
+      temurin-bin-17
+      (prismlauncher.override {
+        glfw = pkgs.glfw-wayland-minecraft;
+      })
   ];
 
   system.stateVersion = "23.05";
+
 
 }

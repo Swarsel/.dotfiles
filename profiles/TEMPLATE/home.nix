@@ -13,7 +13,7 @@
     homeDirectory = "/home/TEMPLATE";
     stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
     keyboard.layout = "us"; # TEMPLATE
-    packages = with pkgs; [
+    home.packages = with pkgs; [
       # ---------------------------------------------------------------
       # if schildichat works on this machine, use it, otherwise go for element
       # element-desktop
@@ -120,12 +120,13 @@
       startup = [
         
         { command = "nextcloud --background";}
-        { command = "spotify";}
+        # { command = "spotify";}
         { command = "discord --start-minimized";}
-        { command = "schildichat-desktop --disable-gpu-driver-bug-workarounds --hidden";}
+        { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
         { command = "nm-applet";}
+        # { command = "sleep 60 && syncthingtray --wait"; }
         
       ];
     };
