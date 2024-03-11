@@ -6,8 +6,6 @@
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
-    pinentryFlavor = "gtk2";
-    enableExtraSocket = true; # for GPGAgent forwarding
   };
   
   home = {
@@ -56,7 +54,6 @@
         "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
           xkb_layout = "us";
           xkb_options = "grp:win_space_toggle";
-          # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
           xkb_variant = "altgr-intl";
         };
         "type:touchpad" = {
@@ -69,8 +66,8 @@
       };
 
       output = {
-        eDP-1 = {
-          mode = "1920x1080"; # TEMPLATE
+        DP-1 = {
+          mode = "2560x1440"; # TEMPLATE
           scale = "1";
           bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
         };
@@ -97,7 +94,7 @@
       startup = [
         
         { command = "nextcloud --background";}
-        # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
+        # { command = "spotify";}
         { command = "discord --start-minimized";}
         { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}

@@ -13,6 +13,7 @@
     restic
 
     # "big" programs
+    filebot
     gimp
     zoom-us
     # nomacs
@@ -24,6 +25,9 @@
     nextcloud-client
     spotify-player
     element-desktop-wayland
+    nicotine-plus
+    transmission
+    mktorrent
 
     # kyria
     qmk
@@ -40,7 +44,7 @@
     patchelf
     gamescope
     vulkan-tools
-    openssl
+    moonlight-qt
 
     # firefox related
     tridactyl-native
@@ -98,7 +102,7 @@
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
-    syncthingtray
+    # syncthingtray
     # monitor
 
     #keychain
@@ -180,7 +184,7 @@
  cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
  exit 0
  else
- echo "No valid argument given. Valid arguments are rust cpp, python, cuda, other, latex <NAME>"
+ echo "No valid argument given. Valid arguments are rust cpp python, cuda"
  exit 0
  fi
  echo "use flake" >> .envrc
@@ -419,7 +423,6 @@ xdg.desktopEntries = {
     categories = [ "Application"];
   };
 
-  # now unused due to element taking over
   # schlidichat = {
   #   name = "SchildiChat Matrix Client";
   #   genericName = "SchildiChat";
@@ -428,6 +431,8 @@ xdg.desktopEntries = {
   #   categories = [ "Application"];
   # };
 
+  # currently unused but kept for possible future use-case
+  # not needed as long as schildichat is working properly
   element = {
     name = "Element Matrix Client";
     genericName = "Element";
@@ -1296,14 +1301,14 @@ programs.firefox = {
       # the rest of the information is also found in the manifest.json, but might not be
       # needed
 
-  #     (let version = "3.5.4.0";
+  #     (let version = "3.4.5.0";
   #                             in buildFirefoxXpiAddon {
   # pname = "bypass-paywalls-clean";
   # inherit version;
   # addonId = "magnolia@12.34";
   # url =
-  #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
-  # sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
+  #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
+  # sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
   # meta = with lib; {
   #   homepage =
   #     "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
@@ -1311,7 +1316,7 @@ programs.firefox = {
   #   license = licenses.mit;
   #   platforms = platforms.all;
   # };
-# })
+  # })
 
 
       (buildFirefoxXpiAddon {
@@ -1403,6 +1408,9 @@ services.kdeconnect = {
 
 services.syncthing = {
   enable = true;
+  tray = {
+    enable = true;
+  };
 };
 
 # this enables the emacs server

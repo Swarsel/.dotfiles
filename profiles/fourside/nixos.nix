@@ -2,16 +2,21 @@
 
 {
 
-  nix.settings = {
-    substituters = ["https://nix-gaming.cachix.org"];
-    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
-  };
-
+  # 
+  # imports =
+  #   [
+  #     ./hardware-configuration.nix
+  #   ];
+  # 
   imports =
     [
       inputs.nix-gaming.nixosModules.steamCompat
       ./hardware-configuration.nix
     ];
+  nix.settings = {
+    substituters = ["https://nix-gaming.cachix.org"];
+    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
+  };
 
   services = {
     getty.autologinUser = "swarsel";
@@ -21,13 +26,9 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_latest;
   };
 
-  networking = {
-    hostName = "fourside"; # Define your hostname.
-    firewall.enable = true;
-  };
+  networking.hostName = "fourside"; # Define your hostname.
 
   stylix.image = ../../wallpaper/lenovowp.png;
   
@@ -81,17 +82,30 @@
   
 
   hardware = {
-    opengl = {
-      enable = true;
-      driSupport = true;
-      driSupport32Bit = true;
-      extraPackages = with pkgs; [
-        vulkan-loader
-        vulkan-validation-layers
-        vulkan-extension-layer
-      ];
+      opengl = {
+        enable = true;
+        driSupport = true;
+        driSupport32Bit = true;
+        extraPackages = with pkgs; [
+          vulkan-loader
+          vulkan-validation-layers
+          vulkan-extension-layer
+        ];
+      };
+      bluetooth.enable = true;
     };
-    bluetooth.enable = true;
+
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [
+      inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+    ];
+  };
+
+    # Configure keymap in X11 (only used for login)
+  services.xserver = {
+    layout = "us";
+    xkbVariant = "altgr-intl";
   };
 
   users.users.swarsel = {
@@ -101,22 +115,14 @@
     packages = with pkgs; [];
   };
 
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = [
-      inputs.nix-gaming.packages.${pkgs.system}.proton-ge
-    ];
-  };
-
   environment.systemPackages = with pkgs; [
-    # gog games installing
-    heroic
-
-    # minecraft
-    temurin-bin-17
-    (prismlauncher.override {
-      glfw = pkgs.glfw-wayland-minecraft;
-    })
+      # gog games installing
+      heroic
+      # minecraft
+      temurin-bin-17
+      (prismlauncher.override {
+        glfw = pkgs.glfw-wayland-minecraft;
+      })
   ];
 
   system.stateVersion = "23.05";

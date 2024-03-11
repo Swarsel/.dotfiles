@@ -67,6 +67,7 @@
     nixos-hardware = {
       url = github:NixOS/nixos-hardware/master;
     };
+    
   };
 
   outputs = inputs@{
@@ -86,6 +87,7 @@
       nixpkgs-mautrix-signal,
       nix-gaming,
       nixos-hardware,
+      
       ...
   }: let
     

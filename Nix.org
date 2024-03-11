@@ -118,7 +118,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 #+begin_src nix :noweb-ref startupnixos
 
           { command = "nextcloud --background";}
-          # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
+          # { command = "spotify";}
           { command = "discord --start-minimized";}
           { command = "element-desktop --hidden";}
           { command = "ANKI_WAYLAND=1 anki";}
@@ -129,15 +129,11 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 *** gpg-agent
 
-This is actually a HM config ...
-
 #+begin_src nix :noweb-ref gpgagent
 
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
-    pinentryFlavor = "gtk2";
-    enableExtraSocket = true; # for GPGAgent forwarding
   };
 
 #+end_src
@@ -217,6 +213,7 @@ This is actually a HM config ...
   nixpkgs-mautrix-signal,
   nix-gaming,
   nixos-hardware,
+
 #+end_src
 
 #+begin_src nix :noweb-ref flakeinputs
@@ -285,6 +282,7 @@ This is actually a HM config ...
   nixos-hardware = {
     url = github:NixOS/nixos-hardware/master;
   };
+
 #+end_src
 *** let
 
@@ -537,8 +535,6 @@ If a non-NixOS host must be used, check the Surface configuration for pointers. 
 
 No matter what you do, check the initial /etc/nixos/configuration.nix for notable changes that might emerge in future versions of nix.
 
-Also, you will most likely need to update the version and hashsum for the firefox extension `bypass-paywalls-clean`.
-
 *** NixOS
 
 #+begin_src nix :noweb yes :tangle profiles/TEMPLATE/nixos.nix
@@ -555,18 +551,9 @@ Also, you will most likely need to update the version and hashsum for the firefo
     };
 
     # Bootloader
-    # use this for single partition boot
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-    };
-
-    # -------------------------------------
-    # alternate setup using grub
-    # boot.loader.grub.enable = true;
-    # boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-    # boot.loader.grub.useOSProber = true;
-    # -------------------------------------
+    boot.loader.grub.enable = true;
+    boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    boot.loader.grub.useOSProber = true;
 
     # --------------------------------------
     # you might need a configuration like this instead:
@@ -617,7 +604,7 @@ Also, you will most likely need to update the version and hashsum for the firefo
       homeDirectory = "/home/TEMPLATE";
       stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
       keyboard.layout = "us"; # TEMPLATE
-      packages = with pkgs; [
+      home.packages = with pkgs; [
         # ---------------------------------------------------------------
         # if schildichat works on this machine, use it, otherwise go for element
         # element-desktop
@@ -1305,41 +1292,37 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
 
-    { config, lib, pkgs, inputs, ... }:
+  { config, lib, pkgs, inputs, ... }:
 
-    {
+  {
 
-      nix.settings = {
-        substituters = ["https://nix-gaming.cachix.org"];
-        trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
-      };
+    # <<wrap>>
+    imports =
+      [
+        inputs.nix-gaming.nixosModules.steamCompat
+        ./hardware-configuration.nix
+      ];
+    nix.settings = {
+      substituters = ["https://nix-gaming.cachix.org"];
+      trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
+    };
 
-      imports =
-        [
-          inputs.nix-gaming.nixosModules.steamCompat
-          ./hardware-configuration.nix
-        ];
+    services = {
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user="swarsel";
+    };
 
-      services = {
-        getty.autologinUser = "swarsel";
-        greetd.settings.initial_session.user="swarsel";
-      };
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+    };
 
-      boot = {
-        loader.systemd-boot.enable = true;
-        loader.efi.canTouchEfiVariables = true;
-        kernelPackages = pkgs.linuxPackages_latest;
-      };
+    networking.hostName = "fourside"; # Define your hostname.
 
-      networking = {
-        hostName = "fourside"; # Define your hostname.
-        firewall.enable = true;
-      };
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
 
-      stylix.image = ../../wallpaper/lenovowp.png;
-      <<theme>>
-
-      hardware = {
+    hardware = {
         opengl = {
           enable = true;
           driSupport = true;
@@ -1353,34 +1336,39 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         bluetooth.enable = true;
       };
 
-      users.users.swarsel = {
-        isNormalUser = true;
-        description = "Leon S";
-        extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-        packages = with pkgs; [];
-      };
+    programs.steam = {
+      enable = true;
+      extraCompatPackages = [
+        inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+      ];
+    };
 
-      programs.steam = {
-        enable = true;
-        extraCompatPackages = [
-          inputs.nix-gaming.packages.${pkgs.system}.proton-ge
-        ];
-      };
+      # Configure keymap in X11 (only used for login)
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
 
-      environment.systemPackages = with pkgs; [
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+      packages = with pkgs; [];
+    };
+
+    environment.systemPackages = with pkgs; [
         # gog games installing
         heroic
-
         # minecraft
         temurin-bin-17
         (prismlauncher.override {
           glfw = pkgs.glfw-wayland-minecraft;
         })
-      ];
+    ];
 
-      system.stateVersion = "23.05";
+    system.stateVersion = "23.05";
 
-    }
+  }
 
 #+end_src
 
@@ -1421,7 +1409,6 @@ New setup for the SP3, this time using NixOS - another machine will take over th
           "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
             xkb_layout = "us";
             xkb_options = "grp:win_space_toggle";
-            # # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
             xkb_variant = "altgr-intl";
           };
           "type:touchpad" = {
@@ -1434,8 +1421,8 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         };
 
         output = {
-          eDP-1 = {
-            mode = "1920x1080"; # TEMPLATE
+          DP-1 = {
+            mode = "2560x1440"; # TEMPLATE
             scale = "1";
             bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
           };
@@ -1745,6 +1732,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
           };
         };
 
+
           "sound.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
@@ -1837,6 +1825,10 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 
         };
       };
+
+
+
+
 
   }
 
@@ -3109,9 +3101,9 @@ Section for all settings that are not really deserving of their own section.
     home-manager.useUserPackages = true;
 
     # login keymap
-    services.xserver.xkb = {
+    services.xserver = {
       layout = "us";
-      variant = "altgr-intl";
+      xkbVariant = "altgr-intl";
     };
 
     # mount NAS drive
@@ -3272,7 +3264,7 @@ Setting up some hardware services as well as keyboard related settings. Here we 
   services.printing.enable = true;
   services.avahi = {
     enable = true;
-    nssmdns4 = true;
+    nssmdns = true;
     openFirewall = true;
   };
 
@@ -3365,231 +3357,235 @@ Also, I define some useful shell scripts here.
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub , ... }:
+    { config, pkgs, lib, fetchFromGitHub , ... }:
 
-  {
-    home.packages = with pkgs; [
+    {
+      home.packages = with pkgs; [
 
-      # audio stuff
-      spek # spectrum analyzer
-      losslessaudiochecker
-      ffmpeg_5-full
-      flac
+        # audio stuff
+        spek # spectrum analyzer
+        losslessaudiochecker
+        ffmpeg_5-full
+        flac
 
-      # b2 backup @backblaze
-      restic
+        # b2 backup @backblaze
+        restic
 
-      # "big" programs
-      gimp
-      zoom-us
-      # nomacs
-      libreoffice-qt
-      xournalpp
-      obsidian
-      spotify
-      discord
-      nextcloud-client
-      spotify-player
-      element-desktop-wayland
+        # "big" programs
+        filebot
+        gimp
+        zoom-us
+        # nomacs
+        libreoffice-qt
+        xournalpp
+        obsidian
+        spotify
+        discord
+        nextcloud-client
+        spotify-player
+        element-desktop-wayland
+        nicotine-plus
+        transmission
+        mktorrent
 
-      # kyria
-      qmk
-      qmk-udev-rules
+        # kyria
+        qmk
+        qmk-udev-rules
 
-      # games
-      lutris
-      wine
-      libudev-zero
-      dwarfs
-      fuse-overlayfs
-      # steam
-      # steam-run
-      patchelf
-      gamescope
-      vulkan-tools
-      openssl
+        # games
+        lutris
+        wine
+        libudev-zero
+        dwarfs
+        fuse-overlayfs
+        # steam
+        # steam-run
+        patchelf
+        gamescope
+        vulkan-tools
+        moonlight-qt
 
-      # firefox related
-      tridactyl-native
+        # firefox related
+        tridactyl-native
 
-      # mako related
-      mako
-      libnotify
+        # mako related
+        mako
+        libnotify
 
-      # general utilities
-      unrar
-      samba
-      cifs-utils
-      zbar # qr codes
-      readline
-      autotiling
-      brightnessctl
-      libappindicator-gtk3
-      sqlite
-      speechd
-      networkmanagerapplet
-      psmisc # kill etc
-      # jq # used for searching the i3 tree in check<xxx>.sh files
+        # general utilities
+        unrar
+        samba
+        cifs-utils
+        zbar # qr codes
+        readline
+        autotiling
+        brightnessctl
+        libappindicator-gtk3
+        sqlite
+        speechd
+        networkmanagerapplet
+        psmisc # kill etc
+        # jq # used for searching the i3 tree in check<xxx>.sh files
 
-      # specifically needed for anki
-      # mpv
-      anki-bin
+        # specifically needed for anki
+        # mpv
+        anki-bin
 
-      # dirvish file previews
-      fd
-      imagemagick
-      poppler
-      ffmpegthumbnailer
-      mediainfo
-      gnutar
-      unzip
+        # dirvish file previews
+        fd
+        imagemagick
+        poppler
+        ffmpegthumbnailer
+        mediainfo
+        gnutar
+        unzip
 
-      #nautilus
-      gnome.nautilus
-      xfce.tumbler
-      libgsf
+        #nautilus
+        gnome.nautilus
+        xfce.tumbler
+        libgsf
 
-      # wayland stuff
-      wtype
-      wl-clipboard
-      wl-mirror
+        # wayland stuff
+        wtype
+        wl-clipboard
+        wl-mirror
 
-      # screenshotting tools
-      grim
-      slurp
+        # screenshotting tools
+        grim
+        slurp
 
-      # the following packages are used (in some way) by waybar
-      playerctl
-      pavucontrol
-      pamixer
-      # gnome.gnome-clocks
-      # wlogout
-      # jdiskreport
-      syncthingtray
-      # monitor
+        # the following packages are used (in some way) by waybar
+        playerctl
+        pavucontrol
+        pamixer
+        # gnome.gnome-clocks
+        # wlogout
+        # jdiskreport
+        # syncthingtray
+        # monitor
 
-      #keychain
-      qalculate-gtk
-      gcr # needed for gnome-secrets to work
-      gnome.seahorse
+        #keychain
+        qalculate-gtk
+        gcr # needed for gnome-secrets to work
+        gnome.seahorse
 
-      # sops-related
-      sops
-      ssh-to-age
+        # sops-related
+        sops
+        ssh-to-age
 
-      # mail related packages
-      mu
+        # mail related packages
+        mu
 
-      # latex and related packages
-      (pkgs.texlive.combine {
-        inherit (pkgs.texlive) scheme-full
-          dvisvgm dvipng # for preview and export as html
-          wrapfig amsmath ulem hyperref capt-of;
-      })
+        # latex and related packages
+        (pkgs.texlive.combine {
+          inherit (pkgs.texlive) scheme-full
+            dvisvgm dvipng # for preview and export as html
+            wrapfig amsmath ulem hyperref capt-of;
+        })
 
-      # font stuff
-      (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly"]; })
-      noto-fonts-emoji
-      font-awesome_5
-      noto-fonts
-      noto-fonts-cjk-sans
+        # font stuff
+        (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly"]; })
+        noto-fonts-emoji
+        font-awesome_5
+        noto-fonts
+        noto-fonts-cjk-sans
 
-      # cura
-      (let cura5 = appimageTools.wrapType2 rec {
-             name = "cura5";
-             version = "5.4.0";
-             src = fetchurl {
-               url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-               hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-             };
-             extraPkgs = pkgs: with pkgs; [ ];
-           }; in writeScriptBin "cura" ''
-            #! ${pkgs.bash}/bin/bash
-            # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-            # So we convert each of the files passed as argument to an absolute path.
-            # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-            args=()
-            for a in "$@"; do
-                if [ -e "$a" ]; then
-                   a="$(realpath "$a")"
-                fi
-                args+=("$a")
-            done
-            exec "${cura5}/bin/cura5" "''${args[@]}"
-            '')
+        # cura
+        (let cura5 = appimageTools.wrapType2 rec {
+               name = "cura5";
+               version = "5.4.0";
+               src = fetchurl {
+                 url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+                 hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+               };
+               extraPkgs = pkgs: with pkgs; [ ];
+             }; in writeScriptBin "cura" ''
+              #! ${pkgs.bash}/bin/bash
+              # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
+              # So we convert each of the files passed as argument to an absolute path.
+              # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+              args=()
+              for a in "$@"; do
+                  if [ -e "$a" ]; then
+                     a="$(realpath "$a")"
+                  fi
+                  args+=("$a")
+              done
+              exec "${cura5}/bin/cura5" "''${args[@]}"
+              '')
 
-      #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-      (pkgs.writeShellScriptBin "e" ''
-         bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-         '')
-      (pkgs.writeShellScriptBin "timer" ''
-         sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
-         '')
+        #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
+        (pkgs.writeShellScriptBin "e" ''
+           bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
+           '')
+        (pkgs.writeShellScriptBin "timer" ''
+           sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
+           '')
 
-      (pkgs.writeScriptBin "project" ''
-   #! ${pkgs.bash}/bin/bash
-   if [ "$1" == "rust" ]; then
-   cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
-   cp ~/.dotfiles/templates/toolchain.toml .
-   elif [ "$1" == "cpp" ]; then
-   cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
-   elif [ "$1" == "python" ]; then
-   cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
-   elif [ "$1" == "cuda" ]; then
-   cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
-   elif [ "$1" == "other" ]; then
-   cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
-   elif [ "$1" == "latex" ]; then
-     if [ "$2" == "" ]; then
-     echo "No filename specified, usage: 'project latex <NAME>'"
+        (pkgs.writeScriptBin "project" ''
+     #! ${pkgs.bash}/bin/bash
+     if [ "$1" == "rust" ]; then
+     cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
+     cp ~/.dotfiles/templates/toolchain.toml .
+     elif [ "$1" == "cpp" ]; then
+     cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
+     elif [ "$1" == "python" ]; then
+     cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
+     elif [ "$1" == "cuda" ]; then
+     cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
+     elif [ "$1" == "other" ]; then
+     cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
+     elif [ "$1" == "latex" ]; then
+       if [ "$2" == "" ]; then
+       echo "No filename specified, usage: 'project latex <NAME>'"
+       exit 0
+       fi
+     cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
+     exit 0
+     else
+     echo "No valid argument given. Valid arguments are rust cpp python, cuda"
      exit 0
      fi
-   cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
-   exit 0
-   else
-   echo "No valid argument given. Valid arguments are rust cpp, python, cuda, other, latex <NAME>"
-   exit 0
-   fi
-   echo "use flake" >> .envrc
-   direnv allow
-   '')
+     echo "use flake" >> .envrc
+     direnv allow
+     '')
 
-      (pkgs.writeShellApplication {
-        name = "pass-fuzzel";
-        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-        text = ''
-         shopt -s nullglob globstar
+        (pkgs.writeShellApplication {
+          name = "pass-fuzzel";
+          runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+          text = ''
+           shopt -s nullglob globstar
 
-         typeit=0
-         if [[ $# -ge 1 && $1 == "--type" ]]; then
-           typeit=1
-           shift
-         fi
+           typeit=0
+           if [[ $# -ge 1 && $1 == "--type" ]]; then
+             typeit=1
+             shift
+           fi
 
-         export PASSWORD_STORE_DIR=~/.local/share/password-store
-         prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-         password_files=( "$prefix"/**/*.gpg )
-         password_files=( "''${password_files[@]#"$prefix"/}" )
-         password_files=( "''${password_files[@]%.gpg}" )
+           export PASSWORD_STORE_DIR=~/.local/share/password-store
+           prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+           password_files=( "$prefix"/**/*.gpg )
+           password_files=( "''${password_files[@]#"$prefix"/}" )
+           password_files=( "''${password_files[@]%.gpg}" )
 
-         password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+           password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
 
-         [[ -n $password ]] || exit
+           [[ -n $password ]] || exit
 
-         if [[ $typeit -eq 0 ]]; then
-           pass show -c "$password" &>/tmp/pass-fuzzel
-         else
-           pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-         fi
-         notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-       '';
-      })
+           if [[ $typeit -eq 0 ]]; then
+             pass show -c "$password" &>/tmp/pass-fuzzel
+           else
+             pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+           fi
+           notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+         '';
+        })
 
 
-    ];
+      ];
 
 
-    #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
+      #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
 
 
 #+end_src
@@ -3602,8 +3598,6 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - add the output to .sops.yaml
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
-
-*Changes are only visible after reboot.*
 
 #+begin_src nix :tangle profiles/common/home.nix
 
@@ -3827,7 +3821,6 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
       categories = [ "Application"];
     };
 
-    # now unused due to element taking over
     # schlidichat = {
     #   name = "SchildiChat Matrix Client";
     #   genericName = "SchildiChat";
@@ -3836,6 +3829,8 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
     #   categories = [ "Application"];
     # };
 
+    # currently unused but kept for possible future use-case
+    # not needed as long as schildichat is working properly
     element = {
       name = "Element Matrix Client";
       genericName = "Element";
@@ -4778,14 +4773,14 @@ Again I am just using the first bar option here that I was able to find good und
         # the rest of the information is also found in the manifest.json, but might not be
         # needed
 
-    #     (let version = "3.5.4.0";
+    #     (let version = "3.4.5.0";
     #                             in buildFirefoxXpiAddon {
     # pname = "bypass-paywalls-clean";
     # inherit version;
     # addonId = "magnolia@12.34";
     # url =
-    #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.5.4.0.xpi";
-    # sha256 = "ab81f711c30c4f7a010d69bd964bdfaf0179802c0b27d0a88c73c0aa6b044803";
+    #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
+    # sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
     # meta = with lib; {
     #   homepage =
     #     "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
@@ -4793,7 +4788,7 @@ Again I am just using the first bar option here that I was able to find good und
     #   license = licenses.mit;
     #   platforms = platforms.all;
     # };
-  # })
+    # })
 
 
         (buildFirefoxXpiAddon {
@@ -4901,6 +4896,9 @@ Services that can be defined through home-manager should be defined here.
 
   services.syncthing = {
     enable = true;
+    tray = {
+      enable = true;
+    };
   };
 
   # this enables the emacs server

@@ -6,8 +6,6 @@
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
-    pinentryFlavor = "gtk2";
-    enableExtraSocket = true; # for GPGAgent forwarding
   };
   
   home = {
@@ -15,7 +13,7 @@
     homeDirectory = "/home/TEMPLATE";
     stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
     keyboard.layout = "us"; # TEMPLATE
-    packages = with pkgs; [
+    home.packages = with pkgs; [
       # ---------------------------------------------------------------
       # if schildichat works on this machine, use it, otherwise go for element
       # element-desktop
@@ -122,7 +120,7 @@
       startup = [
         
         { command = "nextcloud --background";}
-        # { command = "spotify";} # spotify-player sends to MPRIS so this does not need to run all the time
+        # { command = "spotify";}
         { command = "discord --start-minimized";}
         { command = "element-desktop --hidden";}
         { command = "ANKI_WAYLAND=1 anki";}
