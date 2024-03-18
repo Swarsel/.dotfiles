@@ -623,7 +623,7 @@ networking.hostId = "8a8ad84a";
     };
 
     services.mautrix-telegram = {
-      enable = true;
+      enable = false;
       environmentFile = config.sops.templates.mautrixtelegram.path;
       settings = {
         homeserver = {
@@ -682,7 +682,7 @@ networking.hostId = "8a8ad84a";
     ];
 
     services.mautrix-whatsapp = {
-      enable = true;
+      enable = false;
       # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
@@ -729,7 +729,7 @@ networking.hostId = "8a8ad84a";
     };
 
     services.mautrix-signal = {
-      enable = true;
+      enable = false;
       # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
