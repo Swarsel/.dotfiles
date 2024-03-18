@@ -83,6 +83,9 @@ in {
     networking.enableIPv6 = false;
     networking.firewall.enable = false;
 
+    documentation = {
+      enable = false;
+    };
 
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
   sops.defaultSopsFile = "/.dotfiles/secrets/sandbox/secrets.yaml";
