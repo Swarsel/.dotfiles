@@ -3138,6 +3138,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
       environment.systemPackages = with pkgs; [
       git
       gnupg
+      sops
       ssh-to-age
       lego
       nginx
@@ -3190,7 +3191,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
       };
 
     sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/sandbox/secrets.yaml";
+    sops.defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
     sops.validateSopsFiles = false;
     sops.secrets.dnstokenfull = {owner="acme";};
     sops.templates."certs.secret".content = ''

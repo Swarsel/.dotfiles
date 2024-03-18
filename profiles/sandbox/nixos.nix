@@ -36,6 +36,7 @@ in {
     environment.systemPackages = with pkgs; [
     git
     gnupg
+    sops
     ssh-to-age
     lego
     nginx
@@ -88,7 +89,7 @@ in {
     };
 
   sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/.dotfiles/secrets/sandbox/secrets.yaml";
+  sops.defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
   sops.validateSopsFiles = false;
   sops.secrets.dnstokenfull = {owner="acme";};
   sops.templates."certs.secret".content = ''
