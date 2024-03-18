@@ -878,6 +878,19 @@ in {
     # add a user with sudo smbpasswd -a <user>
     services.samba = {
       package = pkgs.samba4Full;
+      extraConfig = ''
+      workgroup = WORKGROUP
+      server role = standalone server
+      dns proxy = no
+
+      pam password change = yes
+      map to guest = bad user
+      create mask = 0664
+      force create mode = 0664
+      directory mask = 0775
+      force directory mode = 0775
+      follow symlinks = yes
+      '';
 
       # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
       # Required for samba to register mDNS records for auto discovery
@@ -891,8 +904,6 @@ in {
         path = "/test";
         writable = "true";
         comment = "Eternor";
-        "force create mode" = "2775";
-        "force directory mode" = "2775";
       };
     };
 
