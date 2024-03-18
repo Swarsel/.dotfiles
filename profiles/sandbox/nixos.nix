@@ -875,6 +875,7 @@ in {
   };
 
     # Network shares
+    # add a user with sudo smbpasswd -a <user>
     services.samba = {
       package = pkgs.samba4Full;
       # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
@@ -887,11 +888,6 @@ in {
         writable = "true";
         comment = "Eternor";
       };
-      extraConfig = ''
-        server smb encrypt = required
-        # ^^ Note: Breaks `smbclient -L <ip/host> -U%` by default, might require the client to set `client min protocol`?
-        server min protocol = SMB3_00
-      '';
     };
 
 
