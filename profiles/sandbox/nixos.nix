@@ -681,10 +681,10 @@ networking.hostId = "8a8ad84a";
         };
       };
     };
-    systemd.services.mautrix-telegram.path = with pkgs; [
-      lottieconverter  # for animated stickers conversion, unfree package
-      ffmpeg           # if converting animated stickers to webm (very slow!)
-    ];
+    # systemd.services.mautrix-telegram.path = with pkgs; [
+      # lottieconverter  # for animated stickers conversion, unfree package
+      # ffmpeg           # if converting animated stickers to webm (very slow!)
+    # ];
 
     services.mautrix-whatsapp = {
       enable = false;
