@@ -910,7 +910,7 @@ enable = true;
       enable = true;
       openFirewall = true;
     };
-  };
+
 
 
 
