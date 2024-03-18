@@ -886,9 +886,9 @@ in {
       # openFirewall = true;
       shares.eternor = {
         browseable = "yes";
-        "read only" = "no";
+        "read only" = "yes";
         "guest ok" = "no";
-        path = "/test";
+        path = "/testsyste";
         writable = "true";
         comment = "Eternor";
       };
