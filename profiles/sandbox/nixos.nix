@@ -887,8 +887,8 @@ in {
       shares.eternor = {
         browseable = "yes";
         "read only" = "no";
-        "guest ok" = "no";
-        path = "/testsyste";
+        "guest ok" = "tes";
+        path = "/test";
         writable = "true";
         comment = "Eternor";
       };
