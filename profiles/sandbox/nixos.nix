@@ -364,7 +364,8 @@ networking.hostId = "8a8ad84a";
                   remote-cert-tls server
 
                   auth-user-pass ${config.sops.templates.pia.path}
-                  compress
+                  auth-nocache
+                  comp-lzo
                   verb 1
                   reneg-sec 0
 
@@ -375,7 +376,11 @@ networking.hostId = "8a8ad84a";
                   dhcp-option DNS 209.222.18.222
                   dhcp-option DNS 209.222.18.218
                   dhcp-option DNS 8.8.8.8
+                  script-security 2
                   route-noexec
+
+                  up /etc/openvpn/iptables.sh
+                  down /etc/openvpn/update-resolv-conf
                 '';
 
                 # services.pia.enable = true;
@@ -405,7 +410,7 @@ networking.hostId = "8a8ad84a";
 
             services.openvpn.servers = {
               pia = {
-                autoStart = true;
+                autoStart = false;
                 updateResolvConf = true;
   #               up = ''
   # export INTERFACE="tun0"
