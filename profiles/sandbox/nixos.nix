@@ -309,23 +309,23 @@ networking.hostId = "8a8ad84a";
                 # };
                 environment.etc = {
                   "openvpn/iptables.sh" =
-                    { source = ../../../scripts/server1/iptables.sh;
+                    { source = ../../scripts/server1/iptables.sh;
                       mode = "0755";
                     };
                   "openvpn/update-resolv-conf" =
-                    { source = ../../../scripts/server1/update-resolv-conf;
+                    { source = ../../scripts/server1/update-resolv-conf;
                       mode = "0755";
                     };
                   "openvpn/routing.sh" =
-                    { source = ../../../scripts/server1/routing.sh;
+                    { source = ../../scripts/server1/routing.sh;
                       mode = "0755";
                     };
                   "openvpn/ca.rsa.2048.crt" =
-                    { source = ../../../secrets/certs/ca.rsa.2048.crt;
+                    { source = ../../secrets/certs/ca.rsa.2048.crt;
                       mode = "0644";
                     };
                   "openvpn/crl.rsa.2048.pem" =
-                    { source = ../../../secrets/certs/crl.rsa.2048.pem;
+                    { source = ../../secrets/certs/crl.rsa.2048.pem;
                       mode = "0644";
                     };
                 };
