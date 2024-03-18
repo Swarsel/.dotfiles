@@ -342,7 +342,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     };
 
     sandbox = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
+      pkgs = pkgsmautrix;
+      specialArgs.unstable = nixpkgs-mautrix-signal;
       modules = [
         sops-nix.nixosModules.sops
         ./profiles/sandbox/nixos.nix
@@ -3176,7 +3177,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
       system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
 
       environment.shellAliases = {
-        nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+        nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
       };
 
 

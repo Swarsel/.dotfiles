@@ -151,7 +151,8 @@
       };
       
       sandbox = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs pkgs; };
+        pkgs = pkgsmautrix;
+        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/sandbox/nixos.nix
