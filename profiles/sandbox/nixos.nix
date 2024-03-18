@@ -891,6 +891,8 @@ in {
         path = "/test";
         writable = "true";
         comment = "Eternor";
+        "force create mode" = "2775";
+        "force directory mode" = "2775";
       };
     };
 
