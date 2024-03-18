@@ -36,7 +36,6 @@ in {
     environment.systemPackages = with pkgs; [
     git
     gnupg
-    sops
     ssh-to-age
     lego
     nginx
