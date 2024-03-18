@@ -446,7 +446,6 @@ in {
           enable = true;
           credentialsFile = config.sops.templates."transmission-rpc".path;
           user = "vpn";
-          group = "lxc_shares";
           settings = {
 
           alt-speed-down= 8000;
