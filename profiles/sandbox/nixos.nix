@@ -884,6 +884,9 @@ in {
       enable = true;
       # openFirewall = true;
       shares.eternor = {
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
         path = "/root/test22";
         writable = "true";
         comment = "Eternor";
@@ -898,13 +901,11 @@ in {
       nssmdns = true;
       # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
 enable = true;
-      openFirewall = true;
     };
 
     services.samba-wsdd = {
     # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
       enable = true;
-      openFirewall = true;
     };
 
 
