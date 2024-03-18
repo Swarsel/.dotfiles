@@ -3409,28 +3409,28 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
                   #   "net.ipv4.conf.default.rp_filter" = 2;
                   #   "net.ipv4.conf.eth0.rp_filter" = 2;
                   # };
-                  # environment.etc = {
-                  #   "openvpn/iptables.sh" =
-                  #     { source = ../../../scripts/server1/iptables.sh;
-                  #       mode = "0755";
-                  #     };
-                  #   "openvpn/update-resolv-conf" =
-                  #     { source = ../../../scripts/server1/update-resolv-conf;
-                  #       mode = "0755";
-                  #     };
-                  #   "openvpn/routing.sh" =
-                  #     { source = ../../../scripts/server1/routing.sh;
-                  #       mode = "0755";
-                  #     };
-                  #   "openvpn/ca.rsa.2048.crt" =
-                  #     { source = ../../../secrets/certs/ca.rsa.2048.crt;
-                  #       mode = "0644";
-                  #     };
-                  #   "openvpn/crl.rsa.2048.pem" =
-                  #     { source = ../../../secrets/certs/crl.rsa.2048.pem;
-                  #       mode = "0644";
-                      # };
-                  # };
+                  environment.etc = {
+                    "openvpn/iptables.sh" =
+                      { source = ../../../scripts/server1/iptables.sh;
+                        mode = "0755";
+                      };
+                    "openvpn/update-resolv-conf" =
+                      { source = ../../../scripts/server1/update-resolv-conf;
+                        mode = "0755";
+                      };
+                    "openvpn/routing.sh" =
+                      { source = ../../../scripts/server1/routing.sh;
+                        mode = "0755";
+                      };
+                    "openvpn/ca.rsa.2048.crt" =
+                      { source = ../../../secrets/certs/ca.rsa.2048.crt;
+                        mode = "0644";
+                      };
+                    "openvpn/crl.rsa.2048.pem" =
+                      { source = ../../../secrets/certs/crl.rsa.2048.pem;
+                        mode = "0644";
+                      };
+                  };
 
                   sops.secrets.vpnuser = {};
                   sops.secrets.rpcuser = {owner="vpn";};
@@ -3485,25 +3485,26 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
                   # services.pia.authUserPass.password = "na";
 
 
-                #     systemd.services.openvpn-vpn = {
-                # wantedBy = [ "multi-user.target" ];
-                # after = [ "network.target" ];
-                # description = "OpenVPN connection to pia";
-                # serviceConfig = {
-                #   Type = "forking";
-                #   RuntimeDirectory="openvpn";
-                #   PrivateTmp=true;
-                #   KillMode="mixed";
-                #   ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
-                #   PIDFile=''/run/openvpn/pia.pid'';
-                #   ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
-                #   WorkingDirectory="/etc/openvpn";
-                #   Restart="on-failure";
-                #   RestartSec=30;
-                #   ProtectSystem="yes";
-                #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
-                # };
-             # };
+                    systemd.services.openvpn-vpn = {
+                wantedBy = [ "multi-user.target" ];
+                after = [ "network.target" ];
+                description = "OpenVPN connection to pia";
+                serviceConfig = {
+                  Type = "forking";
+                  RuntimeDirectory="openvpn";
+                  PrivateTmp=true;
+                  KillMode="mixed";
+                  ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
+                  PIDFile=''/run/openvpn/pia.pid'';
+                  ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
+                  WorkingDirectory="/etc/openvpn";
+                  Restart="on-failure";
+                  RestartSec=30;
+                  ProtectSystem="yes";
+                  DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
+                };
+             };
+
               services.openvpn.servers = {
                 pia = {
                   autoStart = true;
