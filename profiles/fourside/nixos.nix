@@ -29,7 +29,7 @@
   };
 
   networking.hostName = "fourside"; # Define your hostname.
-
+  networking.firewall.enable = false;
   stylix.image = ../../wallpaper/lenovowp.png;
   
   

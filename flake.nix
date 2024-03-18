@@ -150,6 +150,14 @@
         ];
       };
       
+      sandbox = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = [
+          sops-nix.nixosModules.sops
+          ./profiles/sandbox/nixos.nix
+        ];
+      };
+      
       twoson = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
