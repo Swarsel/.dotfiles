@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 export INTERFACE="tun0"
 export VPNUSER="vpn"
-export LOCALIP="192.168.1.191"
-export NETIF="eth0"
+export LOCALIP="192.168.1.107"
+export NETIF="enp7s0"
 
 # flushes all the iptables rules, if you have other rules to use then add them into the script
 iptables -F -t nat
