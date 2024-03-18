@@ -600,7 +600,7 @@ networking.hostId = "8a8ad84a";
         "/var/lib/matrix-synapse/signal-registration.yaml"
         "/var/lib/matrix-synapse/doublepuppet.yaml"
       ];
-      enable = true;
+      enable = false;
       settings.server_name = matrixDomain;
       settings.public_baseurl = "https://${matrixDomain}";
       extraConfigFiles = [
