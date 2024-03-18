@@ -816,7 +816,7 @@ in {
       EnableSharing = true;
       EnableTranscodingConfig = true;
       Scanner.GroupAlbumReleases = true;
-      ScanSchedule = "@every 1d";
+      ScanSchedule = "@every 24h";
       # Insert these values locally as sops-nix does not work for them
       # LastFM.ApiKey = TEMPLATE;
       # LastFM.Secret = TEMPLATE;
