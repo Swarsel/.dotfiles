@@ -915,10 +915,11 @@ networking.hostId = "8a8ad84a";
         shares.eternor = {
           browseable = "yes";
           "read only" = "no";
-          "guest ok" = "yes";
-          path = "/test";
+          "guest ok" = "no";
+          path = "/test2";
           writable = "true";
           comment = "Eternor";
+          "valid users" = "@smbtest2";
         };
       };
 
