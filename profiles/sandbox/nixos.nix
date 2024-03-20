@@ -84,7 +84,7 @@ boot.zfs.forceImportRoot = false;
 networking.hostId = "8a8ad84a";
 
       networking.hostName = "sandbox"; # Define your hostname.
-      networking.enableIPv6 = false;
+      networking.enableIPv6 = true;
       networking.firewall.enable = false;
 
       documentation = {
