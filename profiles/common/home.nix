@@ -8,6 +8,10 @@
     losslessaudiochecker
     ffmpeg_5-full
     flac
+    mediainfo
+    picard
+    audacity
+    sox
 
     # b2 backup @backblaze
     restic
@@ -28,6 +32,7 @@
     nicotine-plus
     transmission
     mktorrent
+    hexchat
 
     # kyria
     qmk
@@ -66,6 +71,7 @@
     speechd
     networkmanagerapplet
     psmisc # kill etc
+    syncthingtray
     # jq # used for searching the i3 tree in check<xxx>.sh files
 
     # specifically needed for anki
@@ -1409,7 +1415,7 @@ services.kdeconnect = {
 services.syncthing = {
   enable = true;
   tray = {
-    enable = true;
+    enable = false;
   };
 };
 

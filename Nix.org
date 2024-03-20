@@ -124,6 +124,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
           { command = "ANKI_WAYLAND=1 anki";}
           { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
           { command = "nm-applet";}
+          { command = "sleep 60 && syncthingtray --wait"; }
 
 #+end_src
 
@@ -3382,19 +3383,6 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
                     enable = true;
                   };
 
-                  # networking.interfaces = {
-                      # lo = {
-                        # useDHCP = false;
-                        # ipv4.addresses = [
-                          # { address = "127.0.0.1"; prefixLength = 8; }
-                        # ];
-                      # };
-                  #
-                      # eth0 = {
-                        # useDHCP = true;
-                      # };
-                    # };
-
                   networking.firewall.extraCommands = ''
                   sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
                   '';
@@ -3466,8 +3454,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
                     remote-cert-tls server
 
                     auth-user-pass ${config.sops.templates.pia.path}
-                    auth-nocache
-                    comp-lzo
+                    compress
                     verb 1
                     reneg-sec 0
 
@@ -3475,81 +3462,12 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
                     ca /etc/openvpn/ca.rsa.2048.crt
 
                     disable-occ
-                    dhcp-option DNS 209.222.18.222
-                    dhcp-option DNS 209.222.18.218
-                    dhcp-option DNS 8.8.8.8
-                    script-security 2
-                    route-noexec
-
-                    up /etc/openvpn/iptables.sh
-                    down /etc/openvpn/update-resolv-conf
                   '';
-
-                  # services.pia.enable = true;
-                  # services.pia.authUserPass.username = "na";
-                  # services.pia.authUserPass.password = "na";
-
-
-                    systemd.services.openvpn-vpn = {
-                wantedBy = [ "multi-user.target" ];
-                after = [ "network.target" ];
-                description = "OpenVPN connection to pia";
-                serviceConfig = {
-                  Type = "forking";
-                  RuntimeDirectory="openvpn";
-                  PrivateTmp=true;
-                  KillMode="mixed";
-                  ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
-                  PIDFile=''/run/openvpn/pia.pid'';
-                  ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
-                  WorkingDirectory="/etc/openvpn";
-                  Restart="on-failure";
-                  RestartSec=30;
-                  ProtectSystem="yes";
-                  DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
-                };
-             };
 
               services.openvpn.servers = {
                 pia = {
-                  autoStart = false;
-                  updateResolvConf = true;
-    #               up = ''
-    # export INTERFACE="tun0"
-    # export VPNUSER="vpn"
-    # export LOCALIP="192.168.1.191"
-    # export NETIF="eth0"
-    # export VPNIF="tun0"
-    # export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
-    # iptables -F -t nat
-    # iptables -F -t mangle
-    # iptables -F -t filter
-    # iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
-    # iptables -t mangle -A OUTPUT ! --dest $LOCALIP -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-    # iptables -t mangle -A OUTPUT --dest $LOCALIP -p udp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-    # iptables -t mangle -A OUTPUT --dest $LOCALIP -p tcp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-    # iptables -t mangle -A OUTPUT ! --src $LOCALIP -j MARK --set-mark 0x1
-    # iptables -t mangle -A OUTPUT -j CONNMARK --save-mark
-    # iptables -A INPUT -i $INTERFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-    # iptables -A INPUT -i $INTERFACE -j REJECT
-    # iptables -A OUTPUT -o lo -m owner --uid-owner $VPNUSER -j ACCEPT
-    # iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
-    # iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
-    # iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-    # iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
-    # if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
-    # ip rule add from all fwmark 0x1 lookup $VPNUSER
-    # fi
-    # ip route replace default via $GATEWAYIP table $VPNUSER
-    # ip route append default via 127.0.0.1 dev lo table $VPNUSER
-    # ip route flush cache
-                  # '';
-                  # down = "bash /etc/openvpn/update-resolv-conf";
-                  # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-                  # authUserPass = {
-                    # username = "TODO:secrets";
-                    # password = "TODO:secrets";
-                  # };
+                  autoStart = true;
+                  updateResolvConf = false;
                   config = "config ${config.sops.templates.vpn.path}";
                 };
               };
@@ -4089,6 +4007,15 @@ Section for all settings that are not really deserving of their own section.
     # enable flakes - urgent line!!
     nix.settings.experimental-features = ["nix-command" "flakes"];
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+    # gstreamer plugins for nautilus (used for file metadata)
+    environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+      gst-plugins-good
+      gst-plugins-bad
+      gst-plugins-ugly
+      gst-libav
+    ]);
+
     # correct time between linux and windows
     time.hardwareClockInLocalTime = true;
 
@@ -4326,235 +4253,241 @@ Also, I define some useful shell scripts here.
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-    { config, pkgs, lib, fetchFromGitHub , ... }:
+  { config, pkgs, lib, fetchFromGitHub , ... }:
 
-    {
-      home.packages = with pkgs; [
+  {
+    home.packages = with pkgs; [
 
-        # audio stuff
-        spek # spectrum analyzer
-        losslessaudiochecker
-        ffmpeg_5-full
-        flac
+      # audio stuff
+      spek # spectrum analyzer
+      losslessaudiochecker
+      ffmpeg_5-full
+      flac
+      mediainfo
+      picard
+      audacity
+      sox
 
-        # b2 backup @backblaze
-        restic
+      # b2 backup @backblaze
+      restic
 
-        # "big" programs
-        filebot
-        gimp
-        zoom-us
-        # nomacs
-        libreoffice-qt
-        xournalpp
-        obsidian
-        spotify
-        discord
-        nextcloud-client
-        spotify-player
-        element-desktop-wayland
-        nicotine-plus
-        transmission
-        mktorrent
+      # "big" programs
+      filebot
+      gimp
+      zoom-us
+      # nomacs
+      libreoffice-qt
+      xournalpp
+      obsidian
+      spotify
+      discord
+      nextcloud-client
+      spotify-player
+      element-desktop-wayland
+      nicotine-plus
+      transmission
+      mktorrent
+      hexchat
 
-        # kyria
-        qmk
-        qmk-udev-rules
+      # kyria
+      qmk
+      qmk-udev-rules
 
-        # games
-        lutris
-        wine
-        libudev-zero
-        dwarfs
-        fuse-overlayfs
-        # steam
-        # steam-run
-        patchelf
-        gamescope
-        vulkan-tools
-        moonlight-qt
+      # games
+      lutris
+      wine
+      libudev-zero
+      dwarfs
+      fuse-overlayfs
+      # steam
+      # steam-run
+      patchelf
+      gamescope
+      vulkan-tools
+      moonlight-qt
 
-        # firefox related
-        tridactyl-native
+      # firefox related
+      tridactyl-native
 
-        # mako related
-        mako
-        libnotify
+      # mako related
+      mako
+      libnotify
 
-        # general utilities
-        unrar
-        samba
-        cifs-utils
-        zbar # qr codes
-        readline
-        autotiling
-        brightnessctl
-        libappindicator-gtk3
-        sqlite
-        speechd
-        networkmanagerapplet
-        psmisc # kill etc
-        # jq # used for searching the i3 tree in check<xxx>.sh files
+      # general utilities
+      unrar
+      samba
+      cifs-utils
+      zbar # qr codes
+      readline
+      autotiling
+      brightnessctl
+      libappindicator-gtk3
+      sqlite
+      speechd
+      networkmanagerapplet
+      psmisc # kill etc
+      syncthingtray
+      # jq # used for searching the i3 tree in check<xxx>.sh files
 
-        # specifically needed for anki
-        # mpv
-        anki-bin
+      # specifically needed for anki
+      # mpv
+      anki-bin
 
-        # dirvish file previews
-        fd
-        imagemagick
-        poppler
-        ffmpegthumbnailer
-        mediainfo
-        gnutar
-        unzip
+      # dirvish file previews
+      fd
+      imagemagick
+      poppler
+      ffmpegthumbnailer
+      mediainfo
+      gnutar
+      unzip
 
-        #nautilus
-        gnome.nautilus
-        xfce.tumbler
-        libgsf
+      #nautilus
+      gnome.nautilus
+      xfce.tumbler
+      libgsf
 
-        # wayland stuff
-        wtype
-        wl-clipboard
-        wl-mirror
+      # wayland stuff
+      wtype
+      wl-clipboard
+      wl-mirror
 
-        # screenshotting tools
-        grim
-        slurp
+      # screenshotting tools
+      grim
+      slurp
 
-        # the following packages are used (in some way) by waybar
-        playerctl
-        pavucontrol
-        pamixer
-        # gnome.gnome-clocks
-        # wlogout
-        # jdiskreport
-        # syncthingtray
-        # monitor
+      # the following packages are used (in some way) by waybar
+      playerctl
+      pavucontrol
+      pamixer
+      # gnome.gnome-clocks
+      # wlogout
+      # jdiskreport
+      # syncthingtray
+      # monitor
 
-        #keychain
-        qalculate-gtk
-        gcr # needed for gnome-secrets to work
-        gnome.seahorse
+      #keychain
+      qalculate-gtk
+      gcr # needed for gnome-secrets to work
+      gnome.seahorse
 
-        # sops-related
-        sops
-        ssh-to-age
+      # sops-related
+      sops
+      ssh-to-age
 
-        # mail related packages
-        mu
+      # mail related packages
+      mu
 
-        # latex and related packages
-        (pkgs.texlive.combine {
-          inherit (pkgs.texlive) scheme-full
-            dvisvgm dvipng # for preview and export as html
-            wrapfig amsmath ulem hyperref capt-of;
-        })
+      # latex and related packages
+      (pkgs.texlive.combine {
+        inherit (pkgs.texlive) scheme-full
+          dvisvgm dvipng # for preview and export as html
+          wrapfig amsmath ulem hyperref capt-of;
+      })
 
-        # font stuff
-        (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly"]; })
-        noto-fonts-emoji
-        font-awesome_5
-        noto-fonts
-        noto-fonts-cjk-sans
+      # font stuff
+      (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly"]; })
+      noto-fonts-emoji
+      font-awesome_5
+      noto-fonts
+      noto-fonts-cjk-sans
 
-        # cura
-        (let cura5 = appimageTools.wrapType2 rec {
-               name = "cura5";
-               version = "5.4.0";
-               src = fetchurl {
-                 url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-                 hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-               };
-               extraPkgs = pkgs: with pkgs; [ ];
-             }; in writeScriptBin "cura" ''
-              #! ${pkgs.bash}/bin/bash
-              # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-              # So we convert each of the files passed as argument to an absolute path.
-              # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-              args=()
-              for a in "$@"; do
-                  if [ -e "$a" ]; then
-                     a="$(realpath "$a")"
-                  fi
-                  args+=("$a")
-              done
-              exec "${cura5}/bin/cura5" "''${args[@]}"
-              '')
+      # cura
+      (let cura5 = appimageTools.wrapType2 rec {
+             name = "cura5";
+             version = "5.4.0";
+             src = fetchurl {
+               url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+               hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+             };
+             extraPkgs = pkgs: with pkgs; [ ];
+           }; in writeScriptBin "cura" ''
+            #! ${pkgs.bash}/bin/bash
+            # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
+            # So we convert each of the files passed as argument to an absolute path.
+            # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+            args=()
+            for a in "$@"; do
+                if [ -e "$a" ]; then
+                   a="$(realpath "$a")"
+                fi
+                args+=("$a")
+            done
+            exec "${cura5}/bin/cura5" "''${args[@]}"
+            '')
 
-        #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-        (pkgs.writeShellScriptBin "e" ''
-           bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-           '')
-        (pkgs.writeShellScriptBin "timer" ''
-           sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
-           '')
+      #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
+      (pkgs.writeShellScriptBin "e" ''
+         bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
+         '')
+      (pkgs.writeShellScriptBin "timer" ''
+         sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
+         '')
 
-        (pkgs.writeScriptBin "project" ''
-     #! ${pkgs.bash}/bin/bash
-     if [ "$1" == "rust" ]; then
-     cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
-     cp ~/.dotfiles/templates/toolchain.toml .
-     elif [ "$1" == "cpp" ]; then
-     cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
-     elif [ "$1" == "python" ]; then
-     cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
-     elif [ "$1" == "cuda" ]; then
-     cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
-     elif [ "$1" == "other" ]; then
-     cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
-     elif [ "$1" == "latex" ]; then
-       if [ "$2" == "" ]; then
-       echo "No filename specified, usage: 'project latex <NAME>'"
-       exit 0
-       fi
-     cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
-     exit 0
-     else
-     echo "No valid argument given. Valid arguments are rust cpp python, cuda"
+      (pkgs.writeScriptBin "project" ''
+   #! ${pkgs.bash}/bin/bash
+   if [ "$1" == "rust" ]; then
+   cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
+   cp ~/.dotfiles/templates/toolchain.toml .
+   elif [ "$1" == "cpp" ]; then
+   cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
+   elif [ "$1" == "python" ]; then
+   cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
+   elif [ "$1" == "cuda" ]; then
+   cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
+   elif [ "$1" == "other" ]; then
+   cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
+   elif [ "$1" == "latex" ]; then
+     if [ "$2" == "" ]; then
+     echo "No filename specified, usage: 'project latex <NAME>'"
      exit 0
      fi
-     echo "use flake" >> .envrc
-     direnv allow
-     '')
+   cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
+   exit 0
+   else
+   echo "No valid argument given. Valid arguments are rust cpp python, cuda"
+   exit 0
+   fi
+   echo "use flake" >> .envrc
+   direnv allow
+   '')
 
-        (pkgs.writeShellApplication {
-          name = "pass-fuzzel";
-          runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-          text = ''
-           shopt -s nullglob globstar
+      (pkgs.writeShellApplication {
+        name = "pass-fuzzel";
+        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+        text = ''
+         shopt -s nullglob globstar
 
-           typeit=0
-           if [[ $# -ge 1 && $1 == "--type" ]]; then
-             typeit=1
-             shift
-           fi
+         typeit=0
+         if [[ $# -ge 1 && $1 == "--type" ]]; then
+           typeit=1
+           shift
+         fi
 
-           export PASSWORD_STORE_DIR=~/.local/share/password-store
-           prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-           password_files=( "$prefix"/**/*.gpg )
-           password_files=( "''${password_files[@]#"$prefix"/}" )
-           password_files=( "''${password_files[@]%.gpg}" )
+         export PASSWORD_STORE_DIR=~/.local/share/password-store
+         prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+         password_files=( "$prefix"/**/*.gpg )
+         password_files=( "''${password_files[@]#"$prefix"/}" )
+         password_files=( "''${password_files[@]%.gpg}" )
 
-           password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+         password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
 
-           [[ -n $password ]] || exit
+         [[ -n $password ]] || exit
 
-           if [[ $typeit -eq 0 ]]; then
-             pass show -c "$password" &>/tmp/pass-fuzzel
-           else
-             pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-           fi
-           notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-         '';
-        })
-
-
-      ];
+         if [[ $typeit -eq 0 ]]; then
+           pass show -c "$password" &>/tmp/pass-fuzzel
+         else
+           pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+         fi
+         notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+       '';
+      })
 
 
-      #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
+    ];
+
+
+    #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
 
 
 #+end_src
@@ -5866,7 +5799,7 @@ Services that can be defined through home-manager should be defined here.
   services.syncthing = {
     enable = true;
     tray = {
-      enable = true;
+      enable = false;
     };
   };
 

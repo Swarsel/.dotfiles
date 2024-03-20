@@ -280,19 +280,6 @@ networking.hostId = "8a8ad84a";
                   enable = true;
                 };
 
-                # networking.interfaces = {
-                    # lo = {
-                      # useDHCP = false;
-                      # ipv4.addresses = [
-                        # { address = "127.0.0.1"; prefixLength = 8; }
-                      # ];
-                    # };
-                #
-                    # eth0 = {
-                      # useDHCP = true;
-                    # };
-                  # };
-
                 networking.firewall.extraCommands = ''
                 sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
                 '';
@@ -364,8 +351,7 @@ networking.hostId = "8a8ad84a";
                   remote-cert-tls server
 
                   auth-user-pass ${config.sops.templates.pia.path}
-                  auth-nocache
-                  comp-lzo
+                  compress
                   verb 1
                   reneg-sec 0
 
@@ -373,81 +359,12 @@ networking.hostId = "8a8ad84a";
                   ca /etc/openvpn/ca.rsa.2048.crt
 
                   disable-occ
-                  dhcp-option DNS 209.222.18.222
-                  dhcp-option DNS 209.222.18.218
-                  dhcp-option DNS 8.8.8.8
-                  script-security 2
-                  route-noexec
-
-                  up /etc/openvpn/iptables.sh
-                  down /etc/openvpn/update-resolv-conf
                 '';
-
-                # services.pia.enable = true;
-                # services.pia.authUserPass.username = "na";
-                # services.pia.authUserPass.password = "na";
-
-
-                  systemd.services.openvpn-vpn = {
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network.target" ];
-              description = "OpenVPN connection to pia";
-              serviceConfig = {
-                Type = "forking";
-                RuntimeDirectory="openvpn";
-                PrivateTmp=true;
-                KillMode="mixed";
-                ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
-                PIDFile=''/run/openvpn/pia.pid'';
-                ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
-                WorkingDirectory="/etc/openvpn";
-                Restart="on-failure";
-                RestartSec=30;
-                ProtectSystem="yes";
-                DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
-              };
-           };
 
             services.openvpn.servers = {
               pia = {
-                autoStart = false;
-                updateResolvConf = true;
-  #               up = ''
-  # export INTERFACE="tun0"
-  # export VPNUSER="vpn"
-  # export LOCALIP="192.168.1.191"
-  # export NETIF="eth0"
-  # export VPNIF="tun0"
-  # export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
-  # iptables -F -t nat
-  # iptables -F -t mangle
-  # iptables -F -t filter
-  # iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
-  # iptables -t mangle -A OUTPUT ! --dest $LOCALIP -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p udp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p tcp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT ! --src $LOCALIP -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT -j CONNMARK --save-mark
-  # iptables -A INPUT -i $INTERFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A INPUT -i $INTERFACE -j REJECT
-  # iptables -A OUTPUT -o lo -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
-  # iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
-  # if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
-  # ip rule add from all fwmark 0x1 lookup $VPNUSER
-  # fi
-  # ip route replace default via $GATEWAYIP table $VPNUSER
-  # ip route append default via 127.0.0.1 dev lo table $VPNUSER
-  # ip route flush cache
-                # '';
-                # down = "bash /etc/openvpn/update-resolv-conf";
-                # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-                # authUserPass = {
-                  # username = "TODO:secrets";
-                  # password = "TODO:secrets";
-                # };
+                autoStart = true;
+                updateResolvConf = false;
                 config = "config ${config.sops.templates.vpn.path}";
               };
             };
