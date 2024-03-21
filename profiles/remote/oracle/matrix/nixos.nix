@@ -57,7 +57,7 @@ in {
         acmeRoot = null;
         locations = {
           "~ ^(/_matrix|/_synapse/client)" = {
-            proxyPass = "localhost:8008";
+            proxyPass = "http://localhost:8008";
             extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -73,7 +73,6 @@ in {
   networking.enableIPv6 = false;
   # networking.domain = "subnet03112148.vcn03112148.oraclevcn.com";
   networking.domain = "swarsel.win";
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
   networking.firewall.extraCommands = ''
   iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
   iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
