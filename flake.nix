@@ -292,11 +292,15 @@
       };
       
       #ovm swarsel
-      backup = nixpkgs.lib.nixosSystem {
-        specialArgs = {inherit inputs pkgs; };
+      swatrix = nixpkgs.lib.nixosSystem {
+        # specialArgs = {inherit pkgsmautrix; };
+        pkgs = pkgsmautrix;
+        # this is to import a service module that is not on nixpkgs
+        # this way avoids infinite recursion errors
+        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
-          ./profiles/remote/oracle/backup/nixos.nix
+          ./profiles/remote/oracle/matrix/nixos.nix
         ];
       };
     };
