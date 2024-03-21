@@ -31,6 +31,10 @@ in {
   CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
   '';
 
+  documentation = {
+    enable = false;
+  };
+
   security.acme = {
     acceptTerms = true;
     preliminarySelfsigned = false;
