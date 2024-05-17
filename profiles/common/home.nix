@@ -13,6 +13,17 @@
     audacity
     sox
 
+    # printing
+    cups
+    gnome.simple-scan
+
+    # dict
+    (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
+
+    # utilities
+    util-linux
+    nmap
+
     # b2 backup @backblaze
     restic
 
@@ -72,7 +83,6 @@
     networkmanagerapplet
     psmisc # kill etc
     lm_sensors
-    # syncthingtray
     # jq # used for searching the i3 tree in check<xxx>.sh files
 
     # specifically needed for anki
@@ -109,7 +119,7 @@
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
-    # syncthingtray
+    syncthingtray
     # monitor
 
     #keychain
@@ -229,6 +239,36 @@
      '';
     })
 
+    (pkgs.writeShellApplication {
+      name = "pass-fuzzel-otp";
+      runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
+      text = ''
+       shopt -s nullglob globstar
+
+       typeit=0
+       if [[ $# -ge 1 && $1 == "--type" ]]; then
+         typeit=1
+         shift
+       fi
+
+       export PASSWORD_STORE_DIR=~/.local/share/password-store
+       prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+       password_files=( "$prefix"/otp/**/*.gpg )
+       password_files=( "''${password_files[@]#"$prefix"/}" )
+       password_files=( "''${password_files[@]%.gpg}" )
+
+       password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+       [[ -n $password ]] || exit
+
+       if [[ $typeit -eq 0 ]]; then
+         pass otp -c "$password" &>/tmp/pass-fuzzel
+       else
+         pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+       fi
+       notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
+     '';
+    })
 
   ];
 
@@ -459,6 +499,11 @@ home.file = {
     source = ../../programs/emacs/early-init.el;
     target = ".emacs.d/early-init.el";
   };
+  # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
+  ".aspell.conf" = {
+    source = ../../programs/config/.aspell.conf;
+    target = ".aspell.conf";
+  };
 };
 
 home.sessionVariables = {
@@ -493,7 +538,6 @@ programs.direnv = {
 programs.zoxide.enable = true;
 programs.eza = {
   enable = true;
-  enableAliases = true;
   icons = true;
   git = true;
   extraOptions = [
@@ -674,8 +718,9 @@ programs.zsh = {
     c="git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
     passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
     passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+    hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
   };
-  enableAutosuggestions = true;
+  autosuggestion.enable = true;
   enableCompletion = true;
   syntaxHighlighting.enable = true;
   autocd = false;
@@ -874,11 +919,12 @@ programs.waybar = {
       "group/hardware" = {
         orientation = "inherit";
         drawer = {
-          "transition-left-to-right" = true;
+          "transition-left-to-right" = false;
         };
         modules = [
           "tray"
           "temperature"
+          "power-profiles-daemon"
           "custom/left-arrow-light"
           "disk"
           "custom/left-arrow-dark"
@@ -887,6 +933,18 @@ programs.waybar = {
           "cpu"
           "custom/left-arrow-dark"
         ];
+      };
+
+      power-profiles-daemon = {
+        format= "{icon}";
+        tooltip-format= "Power profile: {profile}\nDriver: {driver}";
+        tooltip= true;
+        format-icons= {
+          "default"= "";
+          "performance"= "";
+          "balanced"= "";
+          "power-saver"= "";
+        };
       };
 
       temperature = {
@@ -1124,6 +1182,7 @@ programs.waybar = {
   #memory,
   #cpu,
   #temperature,
+  #power-profiles-daemon,
   #mpris,
   #tray {
           background: @background;
@@ -1165,7 +1224,8 @@ programs.waybar = {
       color: #cc99c9;
   }
 
-  #temperature {
+  #temperature,
+  #power-profiles-daemon {
       color: #9ec1cf;
   }
 
@@ -1248,6 +1308,7 @@ programs.waybar = {
   #cpu,
   #tray,
   #temperature,
+  #power-profiles-daemon,
   #network,
   #mpris,
   #battery,
@@ -1376,14 +1437,14 @@ programs.firefox = {
       };
 
       "Home Manager Options" = {
-        urls = [{ template = "https://mipmip.github.io/home-manager-option-search/";
+        urls = [{ template = "https://home-manager-options.extranix.com/";
                   params = [
                     { name = "query"; value = "{searchTerms}"; }
                   ];
                 }];
 
         icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-        definedAliases = [ "@hm" ];
+        definedAliases = [ "@hm" "@ho" "@hmo" ];
       };
 
       "Google".metaData.alias = "@g";
@@ -1404,7 +1465,7 @@ services.gnome-keyring = {
 };
 
 services.mbsync = {
-  enable = false;
+  enable = true;
 };
 
 
@@ -1416,12 +1477,16 @@ services.kdeconnect = {
 services.syncthing = {
   enable = true;
   tray = {
-    enable = false;
+    enable = false; # we enable this by installing the syncthingtray package instead, it works better.
   };
 };
 
 # this enables the emacs server
-services.emacs.enable = true;
+services.emacs = {
+  enable = true;
+  # socketActivation.enable = false;
+  # startWithUserSession = "graphical";
+};
 
 services.mako = {
   enable = true;
@@ -1453,7 +1518,8 @@ group-by=category
 
 wayland.windowManager.sway = {
   enable = true;
-  package = pkgs.swayfx;
+  # package = pkgs.swayfx;
+  package = pkgs.sway;
   systemd.enable = true;
   systemd.xdgAutostart = true;
   wrapperFeatures.gtk = true;
@@ -1481,7 +1547,9 @@ wayland.windowManager.sway = {
       "${modifier}+F12" = "scratchpad show";
       "${modifier}+c" = "exec qalculate-gtk";
       "${modifier}+p" = "exec pass-fuzzel";
+      "${modifier}+o" = "exec pass-fuzzel-otp";
       "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+      "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
       "${modifier}+Escape" = "mode $exit";
       # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
       "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
@@ -1611,6 +1679,12 @@ wayland.windowManager.sway = {
           };
         }
         {
+          command = "opacity 1";
+          criteria = {
+            app_id = "Gimp-2.10";
+          };
+        }
+        {
           command = "opacity 0.99";
           criteria = {
             app_id = "firefox";
@@ -1689,6 +1763,17 @@ wayland.windowManager.sway = {
   # ";
   extraConfig =let
     modifier = config.wayland.windowManager.sway.config.modifier;
+    swayfxSettings = "
+        blur enable
+        blur_xray disable
+        blur_passes 1
+        blur_radius 1
+        shadows enable
+        corner_radius 2
+        titlebar_separator disable
+        default_dim_inactive 0.02
+    ";
+    swayfxSettingsOff = "";
   in "
       exec_always autotiling
       set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
@@ -1708,14 +1793,7 @@ wayland.windowManager.sway = {
 
       exec systemctl --user import-environment
 
-      blur enable
-      blur_xray disable
-      blur_passes 1
-      blur_radius 1
-      shadows enable
-      corner_radius 2
-      titlebar_separator disable
-      default_dim_inactive 0.02
+      ${swayfxSettingsOff}
 
       ";
 };

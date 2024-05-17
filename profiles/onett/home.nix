@@ -6,6 +6,8 @@
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    enableExtraSocket = true;
+    pinentryPackage = pkgs.pinentry-gtk2;
   };
   
 

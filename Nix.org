@@ -135,6 +135,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    enableExtraSocket = true;
+    pinentryPackage = pkgs.pinentry-gtk2;
   };
 
 #+end_src
@@ -1313,14 +1315,8 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     # <<wrap>>
     imports =
       [
-        inputs.nix-gaming.nixosModules.steamCompat
         ./hardware-configuration.nix
       ];
-
-    nix.settings = {
-      substituters = ["https://nix-gaming.cachix.org"];
-      trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
-    };
 
     services = {
       getty.autologinUser = "swarsel";
@@ -1330,7 +1326,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
-      kernelPackages = pkgs.linuxPackages_latest;
+      # kernelPackages = pkgs.linuxPackages_latest;
     };
 
     networking = {
@@ -1358,7 +1354,6 @@ New setup for the SP3, this time using NixOS - another machine will take over th
       };
       guest = {
         enable = true;
-        x11 = true;
         };
       };
 
@@ -1382,15 +1377,11 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     programs.steam = {
       enable = true;
       extraCompatPackages = [
-        inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+        pkgs.proton-ge-bin
       ];
     };
 
       # Configure keymap in X11 (only used for login)
-    services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
 
     services.thinkfan = {
       enable = false;
@@ -1400,7 +1391,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     users.users.swarsel = {
       isNormalUser = true;
       description = "Leon S";
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" ];
+      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
       packages = with pkgs; [];
     };
 
@@ -1443,7 +1434,8 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     programs.waybar.settings.mainBar = {
       cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
       # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-      temperature.hwmon-path = "/sys/class/hwmon/hwmon4/temp1_input";
+      temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+      temperature.input-filename = "temp1_input";
     };
 
     <<waybarlaptop>>
@@ -1474,7 +1466,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
           DP-1 = {
             mode = "2560x1440"; # TEMPLATE
             scale = "1";
-            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            #bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
           };
         };
 
@@ -4377,25 +4369,27 @@ Section for all settings that are not really deserving of their own section.
 
     # login keymap
     services.xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
+      xkb.layout = "us";
+      xkb.variant = "altgr-intl";
     };
 
     # mount NAS drive
     # works only at home, but w/e
-    fileSystems."/mnt/smb" = {
-      device = "//192.168.1.3/Eternor";
-      fsType = "cifs";
-      options = let
-        # this line prevents hanging on network split
-        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-      in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-    };
+    # fileSystems."/mnt/smb" = {
+    #   device = "//192.168.1.3/Eternor";
+    #   fsType = "cifs";
+    #   options = let
+    #     # this line prevents hanging on network split
+    #     automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+    #   in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+    # };
 
-    # enable flakes - urgent line!!
+    # # enable flakes - urgent line!!
     nix.settings.experimental-features = ["nix-command" "flakes"];
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
+    # wordlist for look
+    environment.wordlist.enable = true;
     # gstreamer plugins for nautilus (used for file metadata)
     environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
       gst-plugins-good
@@ -4477,11 +4471,11 @@ Mostly used to install some compilers and lps's that I want to have available wh
     yubikey-personalization
     yubikey-personalization-gui
     yubico-pam
-    yubioath-flutter
-    yubikey-manager
-    yubikey-manager-qt
+    # yubioath-flutter
+    # yubikey-manager
+    # yubikey-manager-qt
     yubico-piv-tool
-    pinentry
+    # pinentry
 
     # theme related
     gnome.adwaita-icon-theme
@@ -4494,7 +4488,6 @@ Mostly used to install some compilers and lps's that I want to have available wh
 
     # lsp-related -------------------------------
     # nix
-    rnix-lsp
     # latex
     texlab
     ghostscript_headless
@@ -4544,43 +4537,61 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  services.blueman.enable = true;
+    services.blueman.enable = true;
 
-  # enable discovery and usage of network devices (esp. printers)
-  services.printing.enable = true;
-  services.avahi = {
-    enable = true;
-    nssmdns = true;
-    openFirewall = true;
-  };
+    # enable scanners over network
+    hardware.sane = {
+      enable = true;
+      extraBackends = [ pkgs.sane-airscan ];
+    };
 
-  # nautilus file manager
-  services.gvfs.enable = true;
+    # enable discovery and usage of network devices (esp. printers)
+    services.printing.enable = true;
+    services.printing.drivers = [
+      pkgs.gutenprint
+      pkgs.gutenprintBin
+    ];
+    services.printing.browsedConf = ''
+  BrowseDNSSDSubTypes _cups,_print
+  BrowseLocalProtocols all
+  BrowseRemoteProtocols all
+  CreateIPPPrinterQueues All
 
-  # Make CAPS work as a dual function ESC/CTRL key
-  services.interception-tools = {
-    enable = true;
-    udevmonConfig = let
-      dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-        TIMING:
-          TAP_MILLISEC: 200
-          DOUBLE_TAP_MILLISEC: 0
-
-        MAPPINGS:
-          - KEY: KEY_CAPSLOCK
-            TAP: KEY_ESC
-            HOLD: KEY_LEFTCTRL
+  BrowseProtocols all
       '';
-    in ''
-      - JOB: |
-          ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-            | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-            | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-        DEVICE:
-          EVENTS:
-            EV_KEY: [KEY_CAPSLOCK]
-    '';
-  };
+    services.avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
+
+    # nautilus file manager
+    services.gvfs.enable = true;
+
+    # Make CAPS work as a dual function ESC/CTRL key
+    services.interception-tools = {
+      enable = true;
+      udevmonConfig = let
+        dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+          TIMING:
+            TAP_MILLISEC: 200
+            DOUBLE_TAP_MILLISEC: 0
+
+          MAPPINGS:
+            - KEY: KEY_CAPSLOCK
+              TAP: KEY_ESC
+              HOLD: KEY_LEFTCTRL
+        '';
+      in ''
+        - JOB: |
+            ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+              | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+              | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+          DEVICE:
+            EVENTS:
+              EV_KEY: [KEY_CAPSLOCK]
+      '';
+    };
 
 #+end_src
 
@@ -4658,6 +4669,17 @@ Also, I define some useful shell scripts here.
       audacity
       sox
 
+      # printing
+      cups
+      gnome.simple-scan
+
+      # dict
+      (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
+
+      # utilities
+      util-linux
+      nmap
+
       # b2 backup @backblaze
       restic
 
@@ -4717,7 +4739,6 @@ Also, I define some useful shell scripts here.
       networkmanagerapplet
       psmisc # kill etc
       lm_sensors
-      # syncthingtray
       # jq # used for searching the i3 tree in check<xxx>.sh files
 
       # specifically needed for anki
@@ -4754,7 +4775,7 @@ Also, I define some useful shell scripts here.
       # gnome.gnome-clocks
       # wlogout
       # jdiskreport
-      # syncthingtray
+      syncthingtray
       # monitor
 
       #keychain
@@ -4874,6 +4895,36 @@ Also, I define some useful shell scripts here.
        '';
       })
 
+      (pkgs.writeShellApplication {
+        name = "pass-fuzzel-otp";
+        runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
+        text = ''
+         shopt -s nullglob globstar
+
+         typeit=0
+         if [[ $# -ge 1 && $1 == "--type" ]]; then
+           typeit=1
+           shift
+         fi
+
+         export PASSWORD_STORE_DIR=~/.local/share/password-store
+         prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+         password_files=( "$prefix"/otp/**/*.gpg )
+         password_files=( "''${password_files[@]#"$prefix"/}" )
+         password_files=( "''${password_files[@]%.gpg}" )
+
+         password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+         [[ -n $password ]] || exit
+
+         if [[ $typeit -eq 0 ]]; then
+           pass otp -c "$password" &>/tmp/pass-fuzzel
+         else
+           pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+         fi
+         notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
+       '';
+      })
 
     ];
 
@@ -5155,6 +5206,11 @@ As for the `home.sessionVariables`, it should be noted that environment variable
       source = ../../programs/emacs/early-init.el;
       target = ".emacs.d/early-init.el";
     };
+    # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
+    ".aspell.conf" = {
+      source = ../../programs/config/.aspell.conf;
+      target = ".aspell.conf";
+    };
   };
 
   home.sessionVariables = {
@@ -5196,7 +5252,6 @@ As for the `home.sessionVariables`, it should be noted that environment variable
   programs.zoxide.enable = true;
   programs.eza = {
     enable = true;
-    enableAliases = true;
     icons = true;
     git = true;
     extraOptions = [
@@ -5406,8 +5461,9 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
       c="git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
       passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
       passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+      hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
     };
-    enableAutosuggestions = true;
+    autosuggestion.enable = true;
     enableCompletion = true;
     syntaxHighlighting.enable = true;
     autocd = false;
@@ -5604,411 +5660,427 @@ Again I am just using the first bar option here that I was able to find good und
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-  programs.waybar = {
+   programs.waybar = {
 
-    enable = true;
-    # systemd.enable = true;
-    settings = {
-      mainBar = {
-        layer = "top";
-        position = "top";
-        modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
-        modules-center = [ "sway/mode" "custom/configwarn" ];
-        "sway/mode" = {
-          format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
-        };
+     enable = true;
+     # systemd.enable = true;
+     settings = {
+       mainBar = {
+         layer = "top";
+         position = "top";
+         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
+         modules-center = [ "sway/mode" "custom/configwarn" ];
+         "sway/mode" = {
+           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+         };
 
-        "custom/configwarn" = {
-          exec= "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
-          interval= 60;
-        };
+         "custom/configwarn" = {
+           exec= "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+           interval= 60;
+         };
 
-        "group/hardware" = {
-          orientation = "inherit";
-          drawer = {
-            "transition-left-to-right" = true;
-          };
-          modules = [
-            "tray"
-            "temperature"
-            "custom/left-arrow-light"
-            "disk"
-            "custom/left-arrow-dark"
-            "memory"
-            "custom/left-arrow-light"
-            "cpu"
-            "custom/left-arrow-dark"
-          ];
-        };
+         "group/hardware" = {
+           orientation = "inherit";
+           drawer = {
+             "transition-left-to-right" = false;
+           };
+           modules = [
+             "tray"
+             "temperature"
+             "power-profiles-daemon"
+             "custom/left-arrow-light"
+             "disk"
+             "custom/left-arrow-dark"
+             "memory"
+             "custom/left-arrow-light"
+             "cpu"
+             "custom/left-arrow-dark"
+           ];
+         };
 
-        temperature = {
-          critical-threshold = 80;
-          format-critical = " {temperatureC}°C";
-          format = " {temperatureC}°C";
+         power-profiles-daemon = {
+           format= "{icon}";
+           tooltip-format= "Power profile: {profile}\nDriver: {driver}";
+           tooltip= true;
+           format-icons= {
+             "default"= "";
+             "performance"= "";
+             "balanced"= "";
+             "power-saver"= "";
+           };
+         };
 
-        };
+         temperature = {
+           critical-threshold = 80;
+           format-critical = " {temperatureC}°C";
+           format = " {temperatureC}°C";
 
-        mpris = {
-          format= "{player_icon} {title} <small>[{position}/{length}]</small>";
-          format-paused=  "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
-          player-icons=  {
-            "default" = "▶ ";
-            "mpv" = "🎵 ";
-            "spotify" = " ";
-          };
-          status-icons= {
-            "paused"= " ";
-          };
-          interval = 1;
-          title-len = 20;
-          artist-len = 20;
-          album-len = 10;
-        };
-        "custom/left-arrow-dark" = {
-          format = "";
-          tooltip = false;
-        };
-        "custom/outer-left-arrow-dark"= {
-          format = "";
-          tooltip = false;
-        };
-        "custom/left-arrow-light"= {
-          format= "";
-          tooltip= false;
-        };
-        "custom/right-arrow-dark"= {
-          format= "";
-          tooltip= false;
-        };
-        "custom/outer-right-arrow-dark"= {
-          format= "";
-          tooltip= false;
-        };
-        "custom/right-arrow-light"= {
-          format= "";
-          tooltip= false;
-        };
-        "sway/workspaces"= {
-          disable-scroll= true;
-          format= "{name}";
-        };
+         };
 
-        "clock#1"= {
-          min-length= 8;
-          interval= 1;
-          format= "{:%H:%M:%S}";
-          # on-click-right= "gnome-clocks";
-          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-        };
+         mpris = {
+           format= "{player_icon} {title} <small>[{position}/{length}]</small>";
+           format-paused=  "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+           player-icons=  {
+             "default" = "▶ ";
+             "mpv" = "🎵 ";
+             "spotify" = " ";
+           };
+           status-icons= {
+             "paused"= " ";
+           };
+           interval = 1;
+           title-len = 20;
+           artist-len = 20;
+           album-len = 10;
+         };
+         "custom/left-arrow-dark" = {
+           format = "";
+           tooltip = false;
+         };
+         "custom/outer-left-arrow-dark"= {
+           format = "";
+           tooltip = false;
+         };
+         "custom/left-arrow-light"= {
+           format= "";
+           tooltip= false;
+         };
+         "custom/right-arrow-dark"= {
+           format= "";
+           tooltip= false;
+         };
+         "custom/outer-right-arrow-dark"= {
+           format= "";
+           tooltip= false;
+         };
+         "custom/right-arrow-light"= {
+           format= "";
+           tooltip= false;
+         };
+         "sway/workspaces"= {
+           disable-scroll= true;
+           format= "{name}";
+         };
 
-        "clock#2"= {
-          format= "{:%d. %B %Y}";
-          # on-click-right= "gnome-clocks";
-          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-        };
+         "clock#1"= {
+           min-length= 8;
+           interval= 1;
+           format= "{:%H:%M:%S}";
+           # on-click-right= "gnome-clocks";
+           tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+         };
 
-
-        pulseaudio= {
-          format= "{icon} {volume:2}%";
-          format-bluetooth= "{icon} {volume}%";
-          format-muted= "MUTE";
-          format-icons= {
-            headphones= "";
-            default= [
-              ""
-              ""
-            ];
-          };
-          scroll-step= 1;
-          on-click= "pamixer -t";
-          on-click-right= "pavucontrol";
-        };
-        memory= {
-          interval= 5;
-          format= " {}%";
-          tooltip-format= "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
-        };
-        cpu= {
-          min-length= 6;
-          interval= 5;
-          format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
-          # on-click-right= "com.github.stsdc.monitor";
-          on-click-right= "kitty -o confirm_os_window_close=0 btm";
-
-        };
-        battery= {
-          states= {
-            "warning"= 60;
-            "error"= 30;
-            "critical"= 15;
-          };
-          interval=5;
-          format= "{icon} {capacity}%";
-          format-charging= "{capacity}% ";
-          format-plugged= "{capacity}% ";
-          format-icons= [
-            ""
-            ""
-            ""
-            ""
-            ""
-          ];
-          on-click-right= "wlogout -p layer-shell";
-        };
-        disk= {
-          interval= 30;
-          format= "Disk {percentage_used:2}%";
-          path= "/";
-          states= {
-            "warning"= 80;
-            "critical"= 90;
-          };
-          tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
-        };
-        tray= {
-          icon-size= 20;
-        };
-        network= {
-          interval = 5;
-          format-wifi= "{signalStrength}% ";
-          format-ethernet= "";
-          format-linked= "{ifname} (No IP) ";
-          format-disconnected= "Disconnected ⚠";
-          format-alt= "{ifname}: {ipaddr}/{cidr}";
-          tooltip-format-ethernet= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-          tooltip-format-wifi= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-        };
-      };
-    };
-
-    style = ''
-    @define-color foreground #fdf6e3;
-    @define-color background #1a1a1a;
-    @define-color background-alt #292b2e;
-    @define-color foreground-warning #268bd2;
-    @define-color background-warning @background;
-    @define-color foreground-error red;
-    @define-color background-error @background;
-    @define-color foreground-critical gold;
-    @define-color background-critical blue;
+         "clock#2"= {
+           format= "{:%d. %B %Y}";
+           # on-click-right= "gnome-clocks";
+           tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+         };
 
 
-    ,* {
-        border: none;
-        border-radius: 0;
-        font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
-        font-size: 14px;
-        min-height: 0;
-        margin: -1px 0px;
-    }
+         pulseaudio= {
+           format= "{icon} {volume:2}%";
+           format-bluetooth= "{icon} {volume}%";
+           format-muted= "MUTE";
+           format-icons= {
+             headphones= "";
+             default= [
+               ""
+               ""
+             ];
+           };
+           scroll-step= 1;
+           on-click= "pamixer -t";
+           on-click-right= "pavucontrol";
+         };
+         memory= {
+           interval= 5;
+           format= " {}%";
+           tooltip-format= "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
+         };
+         cpu= {
+           min-length= 6;
+           interval= 5;
+           format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
+           # on-click-right= "com.github.stsdc.monitor";
+           on-click-right= "kitty -o confirm_os_window_close=0 btm";
 
-    window#waybar {
-            background: transparent;
-            color: @foreground;
-            transition-duration: .5s;
-    }
+         };
+         battery= {
+           states= {
+             "warning"= 60;
+             "error"= 30;
+             "critical"= 15;
+           };
+           interval=5;
+           format= "{icon} {capacity}%";
+           format-charging= "{capacity}% ";
+           format-plugged= "{capacity}% ";
+           format-icons= [
+             ""
+             ""
+             ""
+             ""
+             ""
+           ];
+           on-click-right= "wlogout -p layer-shell";
+         };
+         disk= {
+           interval= 30;
+           format= "Disk {percentage_used:2}%";
+           path= "/";
+           states= {
+             "warning"= 80;
+             "critical"= 90;
+           };
+           tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
+         };
+         tray= {
+           icon-size= 20;
+         };
+         network= {
+           interval = 5;
+           format-wifi= "{signalStrength}% ";
+           format-ethernet= "";
+           format-linked= "{ifname} (No IP) ";
+           format-disconnected= "Disconnected ⚠";
+           format-alt= "{ifname}: {ipaddr}/{cidr}";
+           tooltip-format-ethernet= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+           tooltip-format-wifi= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+         };
+       };
+     };
 
-    window#waybar.hidden {
-        opacity: 0.2;
-    }
-
-
-    #mpris {
-        padding: 0 10px;
-        background-color: transparent;
-        color: #1DB954;
-        font-family: Monospace;
-        font-size: 12px;
-    }
-
-    #custom-right-arrow-dark,
-    #custom-left-arrow-dark {
-            color: @background;
-            background: @background-alt;
-            font-size: 24px;
-    }
-
-    #window {
-            font-size: 12px;
-            padding: 0 20px;
-    }
-
-    #mode {
-        background: @background-critical;
-        color: @foreground-critical;
-        padding: 0 3px;
-    }
-
-    #custom-configwarn {
-        color: black;
-        padding: 0 3px;
-        animation-name: configblink;
-        animation-duration: 0.5s;
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
-        animation-direction: alternate;
-    }
-
-    #custom-outer-right-arrow-dark,
-    #custom-outer-left-arrow-dark {
-            color: @background;
-            font-size: 24px;
-    }
-
-    #custom-outer-left-arrow-dark,
-    #custom-left-arrow-dark,
-    #custom-left-arrow-light {
-            margin: 0 -1px;
-    }
-
-    #custom-right-arrow-light,
-    #custom-left-arrow-light {
-            color: @background-alt;
-            background: @background;
-            font-size: 24px;
-    }
-
-    #workspaces,
-    #clock.1,
-    #clock.2,
-    #clock.3,
-    #pulseaudio,
-    #memory,
-    #cpu,
-    #temperature,
-    #mpris,
-    #tray {
-            background: @background;
-    }
-
-    #network,
-    #clock.2,
-    #battery,
-    #cpu,
-    #custom-pseudobat,
-    #disk {
-            background: @background-alt;
-    }
+     style = ''
+     @define-color foreground #fdf6e3;
+     @define-color background #1a1a1a;
+     @define-color background-alt #292b2e;
+     @define-color foreground-warning #268bd2;
+     @define-color background-warning @background;
+     @define-color foreground-error red;
+     @define-color background-error @background;
+     @define-color foreground-critical gold;
+     @define-color background-critical blue;
 
 
-    #workspaces button {
-            padding: 0 2px;
-            color: #fdf6e3;
-    }
-    #workspaces button.focused {
-            color: @foreground-warning;
-    }
+     ,* {
+         border: none;
+         border-radius: 0;
+         font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
+         font-size: 14px;
+         min-height: 0;
+         margin: -1px 0px;
+     }
 
-    #workspaces button:hover {
-        background: @foreground;
-        color: @background;
-            border: @foreground;
-            padding: 0 2px;
-            box-shadow: inherit;
-            text-shadow: inherit;
-    }
+     window#waybar {
+             background: transparent;
+             color: @foreground;
+             transition-duration: .5s;
+     }
 
-    #workspaces button.urgent {
-        color: @background-critical;
-        background: @foreground-critical;
-    }
+     window#waybar.hidden {
+         opacity: 0.2;
+     }
 
-    #network {
-        color: #cc99c9;
-    }
 
-    #temperature {
-        color: #9ec1cf;
-    }
+     #mpris {
+         padding: 0 10px;
+         background-color: transparent;
+         color: #1DB954;
+         font-family: Monospace;
+         font-size: 12px;
+     }
 
-    #disk {
-        /*color: #b58900;*/
-        color: #9ee09e;
-    }
+     #custom-right-arrow-dark,
+     #custom-left-arrow-dark {
+             color: @background;
+             background: @background-alt;
+             font-size: 24px;
+     }
 
-    #disk.warning {
-        color:            @foreground-error;
-        background-color: @background-error;
-    }
-    #disk.critical,
-    #temperature.critical {
-        color:            @foreground-critical;
-        background-color: @background-critical;
-        animation-name: blink;
-        animation-duration: 0.5s;
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
-        animation-direction: alternate;
-    }
-    #pulseaudio.muted {
-        color: @foreground-error;
-    }
-    #memory {
-            /*color: #2aa198;*/
-            color: #fdfd97;
-    }
-    #cpu {
-        /*color: #6c71c4;*/
-        color: #feb144;
-    }
+     #window {
+             font-size: 12px;
+             padding: 0 20px;
+     }
 
-    #pulseaudio {
-        /*color: #268bd2;*/
-        color: #ff6663;
-    }
+     #mode {
+         background: @background-critical;
+         color: @foreground-critical;
+         padding: 0 3px;
+     }
 
-    #battery,
-    #custom-pseudobat {
-            color: cyan;
-    }
-    #battery.discharging {
-        color:      #859900;
-    }
+     #custom-configwarn {
+         color: black;
+         padding: 0 3px;
+         animation-name: configblink;
+         animation-duration: 0.5s;
+         animation-timing-function: linear;
+         animation-iteration-count: infinite;
+         animation-direction: alternate;
+     }
 
-    @keyframes blink {
-        to {
-            color:            @foreground-error;
-            background-color: @background-error;
-        }
-    }
-    @keyframes configblink {
-        to {
-            color:            @foreground-error;
-            background-color: transparent;
-        }
-    }
+     #custom-outer-right-arrow-dark,
+     #custom-outer-left-arrow-dark {
+             color: @background;
+             font-size: 24px;
+     }
 
-    #battery.critical:not(.charging) {
-        color:            @foreground-critical;
-        background-color: @background-critical;
-        animation-name: blink;
-        animation-duration: 0.5s;
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
-        animation-direction: alternate;
-    }
+     #custom-outer-left-arrow-dark,
+     #custom-left-arrow-dark,
+     #custom-left-arrow-light {
+             margin: 0 -1px;
+     }
 
-    #clock.1,
-    #clock.2,
-    #clock.3 {
-        font-family: Monospace;
-    }
+     #custom-right-arrow-light,
+     #custom-left-arrow-light {
+             color: @background-alt;
+             background: @background;
+             font-size: 24px;
+     }
 
-    #clock,
-    #pulseaudio,
-    #memory,
-    #cpu,
-    #tray,
-    #temperature,
-    #network,
-    #mpris,
-    #battery,
-    #custom-pseudobat,
-    #disk {
-            padding: 0 3px;
-    }
-        '';
-  };
+     #workspaces,
+     #clock.1,
+     #clock.2,
+     #clock.3,
+     #pulseaudio,
+     #memory,
+     #cpu,
+     #temperature,
+     #power-profiles-daemon,
+     #mpris,
+     #tray {
+             background: @background;
+     }
+
+     #network,
+     #clock.2,
+     #battery,
+     #cpu,
+     #custom-pseudobat,
+     #disk {
+             background: @background-alt;
+     }
+
+
+     #workspaces button {
+             padding: 0 2px;
+             color: #fdf6e3;
+     }
+     #workspaces button.focused {
+             color: @foreground-warning;
+     }
+
+     #workspaces button:hover {
+         background: @foreground;
+         color: @background;
+             border: @foreground;
+             padding: 0 2px;
+             box-shadow: inherit;
+             text-shadow: inherit;
+     }
+
+     #workspaces button.urgent {
+         color: @background-critical;
+         background: @foreground-critical;
+     }
+
+     #network {
+         color: #cc99c9;
+     }
+
+     #temperature,
+     #power-profiles-daemon {
+         color: #9ec1cf;
+     }
+
+     #disk {
+         /*color: #b58900;*/
+         color: #9ee09e;
+     }
+
+     #disk.warning {
+         color:            @foreground-error;
+         background-color: @background-error;
+     }
+     #disk.critical,
+     #temperature.critical {
+         color:            @foreground-critical;
+         background-color: @background-critical;
+         animation-name: blink;
+         animation-duration: 0.5s;
+         animation-timing-function: linear;
+         animation-iteration-count: infinite;
+         animation-direction: alternate;
+     }
+     #pulseaudio.muted {
+         color: @foreground-error;
+     }
+     #memory {
+             /*color: #2aa198;*/
+             color: #fdfd97;
+     }
+     #cpu {
+         /*color: #6c71c4;*/
+         color: #feb144;
+     }
+
+     #pulseaudio {
+         /*color: #268bd2;*/
+         color: #ff6663;
+     }
+
+     #battery,
+     #custom-pseudobat {
+             color: cyan;
+     }
+     #battery.discharging {
+         color:      #859900;
+     }
+
+     @keyframes blink {
+         to {
+             color:            @foreground-error;
+             background-color: @background-error;
+         }
+     }
+     @keyframes configblink {
+         to {
+             color:            @foreground-error;
+             background-color: transparent;
+         }
+     }
+
+     #battery.critical:not(.charging) {
+         color:            @foreground-critical;
+         background-color: @background-critical;
+         animation-name: blink;
+         animation-duration: 0.5s;
+         animation-timing-function: linear;
+         animation-iteration-count: infinite;
+         animation-direction: alternate;
+     }
+
+     #clock.1,
+     #clock.2,
+     #clock.3 {
+         font-family: Monospace;
+     }
+
+     #clock,
+     #pulseaudio,
+     #memory,
+     #cpu,
+     #tray,
+     #temperature,
+     #power-profiles-daemon,
+     #network,
+     #mpris,
+     #battery,
+     #custom-pseudobat,
+     #disk {
+             padding: 0 3px;
+     }
+         '';
+   };
 
 #+end_src
 
@@ -6134,14 +6206,14 @@ Again I am just using the first bar option here that I was able to find good und
         };
 
         "Home Manager Options" = {
-          urls = [{ template = "https://mipmip.github.io/home-manager-option-search/";
+          urls = [{ template = "https://home-manager-options.extranix.com/";
                     params = [
                       { name = "query"; value = "{searchTerms}"; }
                     ];
                   }];
 
           icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@hm" ];
+          definedAliases = [ "@hm" "@ho" "@hmo" ];
         };
 
         "Google".metaData.alias = "@g";
@@ -6178,7 +6250,7 @@ Services that can be defined through home-manager should be defined here.
   };
 
   services.mbsync = {
-    enable = false;
+    enable = true;
   };
 
 
@@ -6190,13 +6262,16 @@ Services that can be defined through home-manager should be defined here.
   services.syncthing = {
     enable = true;
     tray = {
-      enable = false;
+      enable = false; # we enable this by installing the syncthingtray package instead, it works better.
     };
   };
 
   # this enables the emacs server
-  services.emacs.enable = true;
-
+  services.emacs = {
+    enable = true;
+    # socketActivation.enable = false;
+    # startWithUserSession = "graphical";
+  };
 #+end_src
 
 *** Mako
@@ -6243,7 +6318,8 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
   wayland.windowManager.sway = {
     enable = true;
-    package = pkgs.swayfx;
+    # package = pkgs.swayfx;
+    package = pkgs.sway;
     systemd.enable = true;
     systemd.xdgAutostart = true;
     wrapperFeatures.gtk = true;
@@ -6271,7 +6347,9 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         "${modifier}+F12" = "scratchpad show";
         "${modifier}+c" = "exec qalculate-gtk";
         "${modifier}+p" = "exec pass-fuzzel";
+        "${modifier}+o" = "exec pass-fuzzel-otp";
         "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+        "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
         "${modifier}+Escape" = "mode $exit";
         # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
         "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
@@ -6401,6 +6479,12 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
             };
           }
           {
+            command = "opacity 1";
+            criteria = {
+              app_id = "Gimp-2.10";
+            };
+          }
+          {
             command = "opacity 0.99";
             criteria = {
               app_id = "firefox";
@@ -6479,6 +6563,17 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
     # ";
     extraConfig =let
       modifier = config.wayland.windowManager.sway.config.modifier;
+      swayfxSettings = "
+          blur enable
+          blur_xray disable
+          blur_passes 1
+          blur_radius 1
+          shadows enable
+          corner_radius 2
+          titlebar_separator disable
+          default_dim_inactive 0.02
+      ";
+      swayfxSettingsOff = "";
     in "
         exec_always autotiling
         set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
@@ -6498,14 +6593,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
         exec systemctl --user import-environment
 
-        blur enable
-        blur_xray disable
-        blur_passes 1
-        blur_radius 1
-        shadows enable
-        corner_radius 2
-        titlebar_separator disable
-        default_dim_inactive 0.02
+        ${swayfxSettingsOff}
 
         ";
   };

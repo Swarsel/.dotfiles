@@ -10,14 +10,8 @@
   # 
   imports =
     [
-      inputs.nix-gaming.nixosModules.steamCompat
       ./hardware-configuration.nix
     ];
-
-  nix.settings = {
-    substituters = ["https://nix-gaming.cachix.org"];
-    trusted-public-keys = ["nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="];
-  };
 
   services = {
     getty.autologinUser = "swarsel";
@@ -27,7 +21,7 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_latest;
+    # kernelPackages = pkgs.linuxPackages_latest;
   };
 
   networking = {
@@ -55,7 +49,6 @@
     };
     guest = {
       enable = true;
-      x11 = true;
       };
     };
 
@@ -127,15 +120,11 @@
   programs.steam = {
     enable = true;
     extraCompatPackages = [
-      inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+      pkgs.proton-ge-bin
     ];
   };
 
     # Configure keymap in X11 (only used for login)
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
-  };
 
   services.thinkfan = {
     enable = false;
@@ -145,7 +134,7 @@
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" ];
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
     packages = with pkgs; [];
   };
 

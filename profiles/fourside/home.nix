@@ -6,6 +6,8 @@
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
+    enableExtraSocket = true;
+    pinentryPackage = pkgs.pinentry-gtk2;
   };
   
   home = {
@@ -22,7 +24,8 @@
   programs.waybar.settings.mainBar = {
     cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
     # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-    temperature.hwmon-path = "/sys/class/hwmon/hwmon4/temp1_input";
+    temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+    temperature.input-filename = "temp1_input";
   };
 
   
@@ -70,7 +73,7 @@
         DP-1 = {
           mode = "2560x1440"; # TEMPLATE
           scale = "1";
-          bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          #bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
         };
       };
 

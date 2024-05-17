@@ -7,25 +7,27 @@
 
   # login keymap
   services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
+    xkb.layout = "us";
+    xkb.variant = "altgr-intl";
   };
 
   # mount NAS drive
   # works only at home, but w/e
-  fileSystems."/mnt/smb" = {
-    device = "//192.168.1.3/Eternor";
-    fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-    in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-  };
+  # fileSystems."/mnt/smb" = {
+  #   device = "//192.168.1.3/Eternor";
+  #   fsType = "cifs";
+  #   options = let
+  #     # this line prevents hanging on network split
+  #     automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+  #   in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+  # };
 
-  # enable flakes - urgent line!!
+  # # enable flakes - urgent line!!
   nix.settings.experimental-features = ["nix-command" "flakes"];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
+  # wordlist for look
+  environment.wordlist.enable = true;
   # gstreamer plugins for nautilus (used for file metadata)
   environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
     gst-plugins-good
@@ -99,11 +101,11 @@ environment.systemPackages = with pkgs; [
   yubikey-personalization
   yubikey-personalization-gui
   yubico-pam
-  yubioath-flutter
-  yubikey-manager
-  yubikey-manager-qt
+  # yubioath-flutter
+  # yubikey-manager
+  # yubikey-manager-qt
   yubico-piv-tool
-  pinentry
+  # pinentry
 
   # theme related
   gnome.adwaita-icon-theme
@@ -116,7 +118,6 @@ environment.systemPackages = with pkgs; [
 
   # lsp-related -------------------------------
   # nix
-  rnix-lsp
   # latex
   texlab
   ghostscript_headless
@@ -152,41 +153,59 @@ environment.pathsToLink = [ "/share/zsh" ];
 
 services.blueman.enable = true;
 
-# enable discovery and usage of network devices (esp. printers)
-services.printing.enable = true;
-services.avahi = {
-  enable = true;
-  nssmdns = true;
-  openFirewall = true;
-};
+  # enable scanners over network
+  hardware.sane = {
+    enable = true;
+    extraBackends = [ pkgs.sane-airscan ];
+  };
 
-# nautilus file manager
-services.gvfs.enable = true;
+  # enable discovery and usage of network devices (esp. printers)
+  services.printing.enable = true;
+  services.printing.drivers = [
+    pkgs.gutenprint
+    pkgs.gutenprintBin
+  ];
+  services.printing.browsedConf = ''
+BrowseDNSSDSubTypes _cups,_print
+BrowseLocalProtocols all
+BrowseRemoteProtocols all
+CreateIPPPrinterQueues All
 
-# Make CAPS work as a dual function ESC/CTRL key
-services.interception-tools = {
-  enable = true;
-  udevmonConfig = let
-    dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-      TIMING:
-        TAP_MILLISEC: 200
-        DOUBLE_TAP_MILLISEC: 0
-
-      MAPPINGS:
-        - KEY: KEY_CAPSLOCK
-          TAP: KEY_ESC
-          HOLD: KEY_LEFTCTRL
+BrowseProtocols all
     '';
-  in ''
-    - JOB: |
-        ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-          | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-          | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-      DEVICE:
-        EVENTS:
-          EV_KEY: [KEY_CAPSLOCK]
-  '';
-};
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
+
+  # nautilus file manager
+  services.gvfs.enable = true;
+
+  # Make CAPS work as a dual function ESC/CTRL key
+  services.interception-tools = {
+    enable = true;
+    udevmonConfig = let
+      dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+        TIMING:
+          TAP_MILLISEC: 200
+          DOUBLE_TAP_MILLISEC: 0
+
+        MAPPINGS:
+          - KEY: KEY_CAPSLOCK
+            TAP: KEY_ESC
+            HOLD: KEY_LEFTCTRL
+      '';
+    in ''
+      - JOB: |
+          ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+            | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+            | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+        DEVICE:
+          EVENTS:
+            EV_KEY: [KEY_CAPSLOCK]
+    '';
+  };
 
 programs.ssh.startAgent = false;
 

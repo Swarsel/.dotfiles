@@ -192,6 +192,37 @@
   :config
   (global-evil-surround-mode 1))
 
+;; set the NixOS wordlist by hand
+(setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
+
+(defun suppress-messages (old-fun &rest args)
+  (cl-flet ((silence (&rest args1) (ignore)))
+    (advice-add 'message :around #'silence)
+    (unwind-protect
+         (apply old-fun args)
+      (advice-remove 'message #'silence))))
+
+(advice-add 'pixel-scroll-precision :around #'suppress-messages)
+(advice-add 'mu4e--server-filter :around #'suppress-messages)
+(advice-add 'org-unlogged-message :around #'suppress-messages)
+(advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
+
+;; to reenable
+;; (advice-remove 'timer-event-handler #'suppress-messages)
+
+(defun who-called-me? (old-fun format &rest args)
+(let ((trace nil) (n 1) (frame nil))
+    (while (setf frame (backtrace-frame n))
+      (setf n     (1+ n)
+            trace (cons (cadr frame) trace)) )
+    (apply old-fun (concat "<<%S>>\n" format) (cons trace args))))
+
+;; enable to get message backtrace, the first function shown in backtrace calls the other functions
+;; (advice-add 'message :around #'who-called-me?)
+
+;; disable to stop receiving backtrace
+;; (advice-remove 'message #'who-called-me?)
+
 (use-package undo-tree
   ;; :init (global-undo-tree-mode)
   :bind (:map undo-tree-visualizer-mode-map
@@ -300,11 +331,12 @@
 (general-define-key
  "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
  ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
- ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetye for new anki cards
+ ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
  ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
  "C-c d" 'duplicate-line ; duplicate line on CURSOR
  "C-M-j" 'consult-buffer
  "C-s" 'consult-line
+ "M-o" 'avy-goto-char-timer
  "C-<f9>" 'my-python-shell-run
  )
 
@@ -389,7 +421,8 @@
   :init (doom-modeline-mode)
   :custom
   ((doom-modeline-height 22)
-   (doom-modeline-indent-info t)))
+   (doom-modeline-indent-info nil)
+   (doom-modeline-buffer-encoding nil)))
 
 ;; Generally show line numbers
 (column-number-mode)
@@ -397,78 +430,82 @@
 ;; (unless (string-match-p "^Power N/A" (battery))   ; On laptops...
 ;;   (display-battery-mode 1))
 
+(setq read-buffer-completion-ignore-case t
+      read-file-name-completion-ignore-case t
+      completion-ignore-case t)
+
 (use-package vertico
-    :custom
-    (vertico-scroll-margin 0)
-    (vertico-count 10)
-    (vertico-resize t)
-    (vertico-cycle t)
-    :init
-    (vertico-mode)
-    (vertico-mouse-mode))
-
-  (use-package vertico-directory
-    :ensure nil
-    :after vertico
-    :bind (:map vertico-map
-                ("RET" . vertico-directory-enter)
-                ("DEL" . vertico-directory-delete-char)
-                ("M-DEL" . vertico-directory-delete-word))
-    ;; Tidy shadowed file names
-    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
-
-  (use-package orderless
-    :custom
-    (completion-styles '(orderless flex basic))
-    (completion-category-overrides '((file (styles . (partial-completion)))
-                                     (eglot (styles orderless)))))
-
-  (use-package consult
-    :config
-    (setq consult-fontify-max-size 1024)
-    :bind
-    ("C-x b" . consult-buffer)
-    ("C-c <C-m>" . consult-global-mark)
-    ("C-c C-a" . consult-org-agenda)
-    ("C-x O" . consult-outline)
-    ("M-g M-g" . consult-goto-line)
-    ("M-g i" . consult-imenu)
-    ("M-s s" . consult-line)
-    ("M-s M-s" . consult-line-multi))
-
-  (use-package embark
-    :bind
-    (("C-." . embark-act)
-     ("M-." . embark-dwim)
-     ("C-h B" . embark-bindings))
-    :custom
-    (prefix-help-command #'embark-prefix-help-command)
-    (embark-quit-after-action '((t . nil)))
-    :config
-    (add-to-list 'display-buffer-alist
-                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                   nil
-                   (window-parameters (mode-line-format . none)))))
-
-  (use-package embark-consult
-    :after (embark consult)
-    :demand t ; only necessary if you have the hook below
-    ;; if you want to have consult previews as you move around an
-    ;; auto-updating embark collect buffer
-    :hook
-    (embark-collect-mode . consult-preview-at-point-mode))
-
-  (use-package marginalia
-    :after vertico
-    :init
-    (marginalia-mode)
-    (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
-
-(use-package nerd-icons-completion
-  :after (marginalia nerd-icons)
-  :hook (marginalia-mode . nerd-icons-completion-marginalia-setup)
+  :custom
+  (vertico-scroll-margin 0)
+  (vertico-count 10)
+  (vertico-resize t)
+  (vertico-cycle t)
   :init
-  (nerd-icons-completion-mode))
+  (vertico-mode)
+  (vertico-mouse-mode))
+
+    (use-package vertico-directory
+      :ensure nil
+      :after vertico
+      :bind (:map vertico-map
+                  ("RET" . vertico-directory-enter)
+                  ("DEL" . vertico-directory-delete-word)
+                  ("M-DEL" . vertico-directory-delete-char))
+      ;; Tidy shadowed file names
+      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+    (use-package orderless
+      :custom
+      (completion-styles '(orderless flex basic))
+      (completion-category-overrides '((file (styles . (partial-completion)))
+                                       (eglot (styles orderless)))))
+
+    (use-package consult
+      :config
+      (setq consult-fontify-max-size 1024)
+      :bind
+      ("C-x b" . consult-buffer)
+      ("C-c <C-m>" . consult-global-mark)
+      ("C-c C-a" . consult-org-agenda)
+      ("C-x O" . consult-outline)
+      ("M-g M-g" . consult-goto-line)
+      ("M-g i" . consult-imenu)
+      ("M-s s" . consult-line)
+      ("M-s M-s" . consult-line-multi))
+
+    (use-package embark
+      :bind
+      (("C-." . embark-act)
+       ("M-." . embark-dwim)
+       ("C-h B" . embark-bindings))
+      :custom
+      (prefix-help-command #'embark-prefix-help-command)
+      (embark-quit-after-action '((t . nil)))
+      :config
+      (add-to-list 'display-buffer-alist
+                   '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                     nil
+                     (window-parameters (mode-line-format . none)))))
+
+    (use-package embark-consult
+      :after (embark consult)
+      :demand t ; only necessary if you have the hook below
+      ;; if you want to have consult previews as you move around an
+      ;; auto-updating embark collect buffer
+      :hook
+      (embark-collect-mode . consult-preview-at-point-mode))
+
+    (use-package marginalia
+      :after vertico
+      :init
+      (marginalia-mode)
+      (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+
+  (use-package nerd-icons-completion
+    :after (marginalia nerd-icons)
+    :hook (marginalia-mode . nerd-icons-completion-marginalia-setup)
+    :init
+    (nerd-icons-completion-mode))
 
 ;; (use-package ivy
 ;;   :init (ivy-mode 1)
@@ -801,25 +838,19 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
-;; (use-package auctex
-;;   :ensure nil)
+(use-package auctex
+  :ensure nil)
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
 (setq-default TeX-master nil)
 
-;; (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-;; (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+(add-hook 'LaTeX-mode-hook 'visual-line-mode)
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+(add-hook 'LaTeX-mode-hook 'reftex-mode)
 
-;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
 ;; (setq reftex-plug-into-AUCTeX t)
-
-(add-hook 'markdown-mode-hook
-          (lambda ()
-            (local-set-key (kbd "C-c C-x C-l") 'org-latex-preview)
-            (local-set-key (kbd "C-c C-x C-u") 'markdown-toggle-url-hiding)
-            ))
 
 (use-package org-download
   :after org
@@ -976,6 +1007,12 @@
 
 ;;(add-hook 'markdown-mode-hook (lambda () (org-display-inline-images)))
 
+(add-hook 'markdown-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c C-x C-l") 'org-latex-preview)
+            (local-set-key (kbd "C-c C-x C-u") 'markdown-toggle-url-hiding)
+            ))
+
 (use-package olivetti
   :init
   (setq olivetti-body-width 100)
@@ -1049,6 +1086,12 @@
   ;; :init (add-hook 'prog-mode-hook #'direnv-update-environment)
   :custom (direnv-always-show-summary nil)
   :config (direnv-mode))
+
+(use-package avy
+  :config
+  (setq avy-all-windows 'all-frames))
+
+(use-package crdt)
 
 (use-package devdocs)
 
@@ -1162,8 +1205,8 @@
                   ("S-<down>" . corfu-popupinfo-scroll-up)
                   ("C-<up>" . corfu-previous)
                   ("C-<down>" . corfu-next)
-                  ("<up>"      . swarsel/corfu-quit-and-up)
-                  ("<down>"     . swarsel/corfu-quit-and-down))
+                  ("<insert-state> <up>"      . swarsel/corfu-quit-and-up)
+                  ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
       )
 
 
@@ -1203,31 +1246,31 @@
 (use-package cape
   ;; Bind dedicated completion commands
   ;; Alternative prefix keys: C-c p, M-p, M-+, ...
-  ;; :bind (("C-c p p" . completion-at-point) ;; capf
-  ;;        ("C-c p t" . complete-tag)        ;; etags
-  ;;        ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-  ;;        ("C-c p h" . cape-history)
-  ;;        ("C-c p f" . cape-file)
-  ;;        ("C-c p k" . cape-keyword)
-  ;;        ("C-c p s" . cape-elisp-symbol)
-  ;;        ("C-c p e" . cape-elisp-block)
-  ;;        ("C-c p a" . cape-abbrev)
-  ;;        ("C-c p l" . cape-line)
-  ;;        ("C-c p w" . cape-dict)
-  ;;        ("C-c p :" . cape-emoji)
-  ;;        ("C-c p \\" . cape-tex)
-  ;;        ("C-c p _" . cape-tex)
-  ;;        ("C-c p ^" . cape-tex)
-  ;;        ("C-c p &" . cape-sgml)
-  ;;        ("C-c p r" . cape-rfc1345))
-  :init
+  :bind
+  ("C-c p p" . completion-at-point) ;; capf
+  ("C-c p t" . complete-tag)        ;; etags
+  ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
+  ("C-c p h" . cape-history)
+  ("C-c p f" . cape-file)
+  ("C-c p k" . cape-keyword)
+  ("C-c p s" . cape-elisp-symbol)
+  ("C-c p e" . cape-elisp-block)
+  ("C-c p a" . cape-abbrev)
+  ("C-c p l" . cape-line)
+  ("C-c p w" . cape-dict)
+  ("C-c p :" . cape-emoji)
+  ("C-c p \\" . cape-tex)
+  ("C-c p _" . cape-tex)
+  ("C-c p ^" . cape-tex)
+  ("C-c p &" . cape-sgml)
+  ("C-c p r" . cape-rfc1345)
   ;; Add to the global default value of `completion-at-point-functions' which is
   ;; used by `completion-at-point'.  The order of the functions matters, the
   ;; first function returning a result wins.  Note that the list of buffer-local
   ;; completion functions takes precedence over the global list.
-  (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  (add-to-list 'completion-at-point-functions #'cape-file)
-  (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+  ;; (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  ;; (add-to-list 'completion-at-point-functions #'cape-file)
+  ;; (add-to-list 'completion-at-point-functions #'cape-elisp-block)
   ;; (add-to-list 'completion-at-point-functions #'cape-history)
   ;; (add-to-list 'completion-at-point-functions #'cape-keyword)
   ;; (add-to-list 'completion-at-point-functions #'cape-tex)
@@ -1235,7 +1278,7 @@
   ;; (add-to-list 'completion-at-point-functions #'cape-rfc1345)
   ;; (add-to-list 'completion-at-point-functions #'cape-abbrev)
   ;; (add-to-list 'completion-at-point-functions #'cape-dict)
-  (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
+  ;; (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;; (add-to-list 'completion-at-point-functions #'cape-line)
 )
 
@@ -1338,6 +1381,15 @@
                            "-o ControlMaster=auto -o ControlPersist=yes"))
 )
 
+(use-package diff-hl
+  :hook
+  ((prog-mode
+    org-mode) . diff-hl-mode)
+  :init
+  (diff-fl-flydiff-mode)
+  (diff-hl-margin-mode)
+  (diff-hl-show-hunk-mouse-mode))
+
 (use-package evil-nerd-commenter
   :bind ("M-/" . evilnc-comment-or-uncomment-lines))
 
@@ -1364,7 +1416,7 @@
           ("e" . "\\epsilon")
           ("z" . "\\zeta")
           ("h" . "\\eta")
-          ("t" . "\\theta")
+          ("th" . "\\theta")
           ("i" . "\\iota")
           ("k" . "\\kappa")
           ("l" . "\\lambda")
@@ -1543,29 +1595,32 @@
 ;;    flycheck-posframe-prefix "💬 "))
 
 (use-package eglot
-    :ensure nil
-    :hook
-    ((python-mode
-      c-mode
-      c++-mode
-      ) . (lambda () (progn
-                       (eglot-ensure)
-                       (add-hook 'before-save-hook 'eglot-format nil 'local))))
-    :custom
-    (eldoc-echo-area-use-multiline-p nil)
-    (completion-category-defaults nil)
-    :config
-    ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
-    (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
-    (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
-    ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
-    ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
-    :bind (:map eglot-mode-map
-                ("M-(" . flymake-goto-next-error)
-                ("C-c ," . eglot-code-actions)))
+      :ensure nil
+      :hook
+      ((python-mode
+        c-mode
+        c++-mode
+        tex-mode
+        ) . (lambda () (progn
+                         (eglot-ensure)
+                         (add-hook 'before-save-hook 'eglot-format nil 'local))))
+      :custom
+      (eldoc-echo-area-use-multiline-p nil)
+      (completion-category-defaults nil)
+      :config
+      ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
+      (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
+      (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
+      ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
+      ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
+      :bind (:map eglot-mode-map
+                  ("M-(" . flymake-goto-next-error)
+                  ("C-c ," . eglot-code-actions)))
 
-(use-package breadcrumb
-  :config (breadcrumb-mode))
+(defalias 'start-lsp-server #'eglot)
+
+  (use-package breadcrumb
+    :config (breadcrumb-mode))
 
 ;; (use-package lsp-bridge
 ;;   :ensure nil
@@ -1763,42 +1818,44 @@
     (add-to-list 'load-path mu4epath)))
 
 (use-package mu4e
-  :ensure nil
-  ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
-  ;;:defer 20 ; Wait until 20 seconds after startup
-  :config
+    :ensure nil
+    ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
+    ;;:defer 20 ; Wait until 20 seconds after startup
+    :config
 
-  ;; This is set to 't' to avoid mail syncing issues when using mbsync
-  (setq send-mail-function 'sendmail-send-it)
-  (setq mu4e-change-filenames-when-moving t)
-  (setq mu4e-mu-binary (executable-find "mu"))
+    ;; This is set to 't' to avoid mail syncing issues when using mbsync
+    (setq send-mail-function 'sendmail-send-it)
+    (setq mu4e-change-filenames-when-moving t)
+    (setq mu4e-mu-binary (executable-find "mu"))
 
-  (setq mu4e-update-interval 180)
-  (setq mu4e-get-mail-command "mbsync -a")
-  (setq mu4e-maildir "~/Mail")
+    (setq mu4e-update-interval 180)
+    (setq mu4e-get-mail-command "mbsync -a")
+    (setq mu4e-maildir "~/Mail")
 
-  ;; enable inline images
-  (setq mu4e-view-show-images t)
-  ;; use imagemagick, if available
-  (when (fboundp 'imagemagick-register-types)
-    (imagemagick-register-types))
+    ;; enable inline images
+    (setq mu4e-view-show-images t)
+    ;; use imagemagick, if available
+    (when (fboundp 'imagemagick-register-types)
+      (imagemagick-register-types))
 
-  (setq mu4e-drafts-folder "/Drafts")
-  (setq mu4e-sent-folder   "/Sent Mail")
-  (setq mu4e-refile-folder "/All Mail")
-  (setq mu4e-trash-folder  "/Trash")
+    (setq mu4e-drafts-folder "/Drafts")
+    (setq mu4e-sent-folder   "/Sent Mail")
+    (setq mu4e-refile-folder "/All Mail")
+    (setq mu4e-trash-folder  "/Trash")
 
-  (setq mu4e-maildir-shortcuts
-        '((:maildir "/leon/Inbox"    :key ?1)
-          (:maildir "/nautilus/Inbox" :key ?2)
-          (:maildir "/mrswarsel/Inbox"     :key ?3)
-          (:maildir "/Sent Mail"     :key ?s)
-          (:maildir "/Trash"     :key ?t)
-          (:maildir "/Drafts"     :key ?d)
-          (:maildir "/All Mail"     :key ?a))))
+    (setq mu4e-maildir-shortcuts
+          '((:maildir "/leon/Inbox"    :key ?1)
+            (:maildir "/nautilus/Inbox" :key ?2)
+            (:maildir "/mrswarsel/Inbox"     :key ?3)
+            (:maildir "/Sent Mail"     :key ?s)
+            (:maildir "/Trash"     :key ?t)
+            (:maildir "/Drafts"     :key ?d)
+            (:maildir "/All Mail"     :key ?a))))
 
-(setq user-mail-address "leon.schwarzaeugl@gmail.com"
-      user-full-name "Leon Schwarzäugl")
+  (setq user-mail-address "leon.schwarzaeugl@gmail.com"
+        user-full-name "Leon Schwarzäugl")
+
+(setq mu4e-hide-index-messages t)
 
 (use-package mu4e-alert)
 (mu4e-alert-set-default-style 'libnotify)
@@ -1875,6 +1932,15 @@
         dashboard-startup-banner "~/.dotfiles/wallpaper/swarsel.png"
         dashboard-projects-backend 'projectile
         dashboard-set-navigator t
+        dashboard-startupify-list '(dashboard-insert-banner
+                                    dashboard-insert-newline
+                                    dashboard-insert-banner-title
+                                    dashboard-insert-newline
+                                    dashboard-insert-navigator
+                                    dashboard-insert-newline
+                                    dashboard-insert-init-info
+                                    dashboard-insert-items
+                                    )
         dashboard-navigator-buttons
         `(;; line1
           ((,""
@@ -1906,7 +1972,7 @@
             (lambda (&rest _) (browse-url "swarsel.win")))
            )
           )))
-  (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
+  (setq dashboard-projects-switch-function 'project-switch-project)
 
 (setq gc-cons-threshold (* 800 1000 ))
 (fset 'epg-wait-for-status 'ignore)
