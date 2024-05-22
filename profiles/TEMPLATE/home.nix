@@ -8,7 +8,11 @@
     enableSshSupport = true;
     enableExtraSocket = true;
     pinentryPackage = pkgs.pinentry-gtk2;
-  };
+    extraConfig = ''
+    allow-emacs-pinentry
+    allow-loopback-pinentry
+    '';
+    };
   
   home = {
     username = "TEMPLATE";

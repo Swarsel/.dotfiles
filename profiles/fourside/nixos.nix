@@ -38,6 +38,7 @@
       ];
       allowedUDPPortRanges = [
         {from = 27000; to = 27031;} # barotrauma
+        {from = 58962; to = 58964;} # barotrauma
       ];
     };
   };

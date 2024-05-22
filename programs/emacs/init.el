@@ -1127,6 +1127,10 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
 
+;; yubikey support for pushing commits
+;; commiting is enabled through nixos gpg-agent config
+(setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+
 (use-package forge
     :after magit)
 

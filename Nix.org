@@ -137,7 +137,11 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     enableSshSupport = true;
     enableExtraSocket = true;
     pinentryPackage = pkgs.pinentry-gtk2;
-  };
+    extraConfig = ''
+    allow-emacs-pinentry
+    allow-loopback-pinentry
+    '';
+    };
 
 #+end_src
 
@@ -1343,6 +1347,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         ];
         allowedUDPPortRanges = [
           {from = 27000; to = 27031;} # barotrauma
+          {from = 58962; to = 58964;} # barotrauma
         ];
       };
     };
