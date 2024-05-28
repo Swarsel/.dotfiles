@@ -120,7 +120,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
           { command = "nextcloud --background";}
           # { command = "spotify";}
           { command = "discord --start-minimized";}
-          { command = "element-desktop --hidden";}
+          # { command = "element-desktop --hidden";}
+          { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
           { command = "ANKI_WAYLAND=1 anki";}
           { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
           { command = "nm-applet";}
@@ -220,6 +221,7 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   nixpkgs-mautrix-signal,
   nix-gaming,
   nixos-hardware,
+  nix-alien,
 
 #+end_src
 
@@ -290,6 +292,11 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
     url = github:NixOS/nixos-hardware/master;
   };
 
+  # dynamic library loading
+  nix-alien = {
+    url = github:thiagokokada/nix-alien;
+  };
+
 #+end_src
 *** let
 
@@ -320,7 +327,15 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
                  ./profiles/common/nixos.nix
-               ];
+                 # dynamic library loading
+                 ({ self, system, ... }: {
+                   environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
+                     nix-alien
+                   ];
+                   # needed for `nix-alien-ld`
+                   programs.nix-ld.enable = true;
+                   })
+                 ];
 
   # Home-Manager modules wanted on non-NixOS systems
   homeModules = [ stylix.homeManagerModules.stylix
@@ -4705,6 +4720,7 @@ Also, I define some useful shell scripts here.
       transmission
       mktorrent
       hexchat
+      hugo
 
       # kyria
       qmk
@@ -5183,7 +5199,7 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
     element = {
       name = "Element Matrix Client";
       genericName = "Element";
-      exec = "element-desktop";
+      exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
       terminal = false;
       categories = [ "Application"];
     };
@@ -6323,8 +6339,9 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
   wayland.windowManager.sway = {
     enable = true;
-    # package = pkgs.swayfx;
-    package = pkgs.sway;
+    checkConfig = false; # delete this line once SwayFX is fixed upstream
+    package = pkgs.swayfx;
+    # package = pkgs.sway;
     systemd.enable = true;
     systemd.xdgAutostart = true;
     wrapperFeatures.gtk = true;
@@ -6452,6 +6469,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
           {app_id = "blueman";}
           {app_id = "pavucontrol";}
           {app_id = "syncthingtray";}
+          {title = "Syncthing Tray";}
           {app_id = "SchildiChat";}
           {app_id = "Element";}
           {app_id = "com.nextcloud.desktopclient.nextcloud";}
@@ -6513,13 +6531,13 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
               title="spotifytui";
             };
           }
-          {
-            command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-            criteria = {
-              app_id="^$";
-              class="^$";
-            };
-          }
+          # {
+          #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+          #   criteria = {
+          #     app_id="^$";
+          #     class="^$";
+            # };
+          # }
           {
 
             command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
@@ -6598,7 +6616,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
         exec systemctl --user import-environment
 
-        ${swayfxSettingsOff}
+        ${swayfxSettings}
 
         ";
   };

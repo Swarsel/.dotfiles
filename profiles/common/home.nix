@@ -44,6 +44,7 @@
     transmission
     mktorrent
     hexchat
+    hugo
 
     # kyria
     qmk
@@ -483,7 +484,7 @@ xdg.desktopEntries = {
   element = {
     name = "Element Matrix Client";
     genericName = "Element";
-    exec = "element-desktop";
+    exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
     terminal = false;
     categories = [ "Application"];
   };
@@ -1518,8 +1519,9 @@ group-by=category
 
 wayland.windowManager.sway = {
   enable = true;
-  # package = pkgs.swayfx;
-  package = pkgs.sway;
+  checkConfig = false; # delete this line once SwayFX is fixed upstream
+  package = pkgs.swayfx;
+  # package = pkgs.sway;
   systemd.enable = true;
   systemd.xdgAutostart = true;
   wrapperFeatures.gtk = true;
@@ -1647,6 +1649,7 @@ wayland.windowManager.sway = {
         {app_id = "blueman";}
         {app_id = "pavucontrol";}
         {app_id = "syncthingtray";}
+        {title = "Syncthing Tray";}
         {app_id = "SchildiChat";}
         {app_id = "Element";}
         {app_id = "com.nextcloud.desktopclient.nextcloud";}
@@ -1708,13 +1711,13 @@ wayland.windowManager.sway = {
             title="spotifytui";
           };
         }
-        {
-          command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-          criteria = {
-            app_id="^$";
-            class="^$";
-          };
-        }
+        # {
+        #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+        #   criteria = {
+        #     app_id="^$";
+        #     class="^$";
+          # };
+        # }
         {
 
           command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
@@ -1793,7 +1796,7 @@ wayland.windowManager.sway = {
 
       exec systemctl --user import-environment
 
-      ${swayfxSettingsOff}
+      ${swayfxSettings}
 
       ";
 };

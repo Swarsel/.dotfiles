@@ -68,6 +68,11 @@
       url = github:NixOS/nixos-hardware/master;
     };
     
+    # dynamic library loading
+    nix-alien = {
+      url = github:thiagokokada/nix-alien;
+    };
+    
   };
 
   outputs = inputs@{
@@ -87,6 +92,7 @@
       nixpkgs-mautrix-signal,
       nix-gaming,
       nixos-hardware,
+      nix-alien,
       
       ...
   }: let
@@ -116,7 +122,15 @@
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
                    ./profiles/common/nixos.nix
-                 ];
+                   # dynamic library loading
+                   ({ self, system, ... }: {
+                     environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
+                       nix-alien
+                     ];
+                     # needed for `nix-alien-ld`
+                     programs.nix-ld.enable = true;
+                     })
+                   ];
     
     # Home-Manager modules wanted on non-NixOS systems
     homeModules = [ stylix.homeManagerModules.stylix
