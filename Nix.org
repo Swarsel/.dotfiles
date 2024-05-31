@@ -4485,49 +4485,74 @@ Mostly used to install some compilers and lps's that I want to have available wh
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  environment.systemPackages = with pkgs; [
-    # yubikey packages
-    gnupg
-    yubikey-personalization
-    yubikey-personalization-gui
-    yubico-pam
-    # yubioath-flutter
-    # yubikey-manager
-    # yubikey-manager-qt
-    yubico-piv-tool
-    # pinentry
+    environment.systemPackages = with pkgs; [
+      # yubikey packages
+      gnupg
+      yubikey-personalization
+      yubikey-personalization-gui
+      yubico-pam
+      # yubioath-flutter
+      # yubikey-manager
+      # yubikey-manager-qt
+      yubico-piv-tool
+      # pinentry
 
-    # theme related
-    gnome.adwaita-icon-theme
+      # theme related
+      gnome.adwaita-icon-theme
 
-    # kde-connect
-    xdg-desktop-portal
+      # kde-connect
+      xdg-desktop-portal
 
-    # bluetooth
-    bluez
+      # bluetooth
+      bluez
 
-    # lsp-related -------------------------------
-    # nix
-    # latex
-    texlab
-    ghostscript_headless
-    # wireguard
-    wireguard-tools
-    # rust
-    rust-analyzer
-    clippy
-    rustfmt
-    # cpp
-    clang-tools
-    # + cuda
-    cudatoolkit
-    #lsp-bridge / python
-    gcc
-    gdb
-    (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-    # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-    # --------------------------------------------
-  ];
+      # lsp-related -------------------------------
+      # nix
+      # latex
+      texlab
+      ghostscript_headless
+      # wireguard
+      wireguard-tools
+      # rust
+      rust-analyzer
+      clippy
+      rustfmt
+      # cpp
+      clang-tools
+      # + cuda
+      cudatoolkit
+      #lsp-bridge / python
+      gcc
+      gdb
+      (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+      # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+      # --------------------------------------------
+
+  (stdenv.mkDerivation {
+      name = "oama";
+
+      src = pkgs.fetchurl {
+          name = "oama";
+          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+      };
+
+      phases = [
+        "unpackPhase"
+      ];
+
+      unpackPhase = ''
+      mkdir -p $out/bin
+      tar xvf $src -C $out/
+      mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+      '';
+
+  })
+
+
+
+
+    ];
 
 #+end_src
 
@@ -4978,6 +5003,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
   sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
   sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
+  sops.secrets.swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
   sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
   # sops.secrets.leon = { };
   # sops.secrets.nautilus = { };
@@ -5563,6 +5589,28 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
           };
         };
       };
+    };
+
+    accounts.swarsel = {
+      address = "leon@swarsel.win";
+      userName = "8227dc594dd515ce232eda1471cb9a19";
+      realName = "Leon Schwarzäugl";
+      passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+      smtp = {
+        host = "in-v3.mailjet.com";
+        port = 587;
+        tls = {
+          enable = true;
+          useStartTls = true;
+        };
+      };
+      mu.enable = false;
+      msmtp = {
+        enable = true;
+      };
+      mbsync = {
+        enable = false;
+        };
     };
 
     accounts.nautilus = {
@@ -6365,6 +6413,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
         "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
         "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
+        "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
         "${modifier}+Shift+F12" = "move scratchpad";
         "${modifier}+F12" = "scratchpad show";
         "${modifier}+c" = "exec qalculate-gtk";

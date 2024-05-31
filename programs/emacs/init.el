@@ -66,6 +66,7 @@
  (global-hl-line-mode 1)
  ;; (setq redisplay-dont-pause t) ;; obsolete
  (setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
+ (setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
  (delete-selection-mode 1)
  (setq vc-follow-symlinks t)
  (setq require-final-newline t)
@@ -109,19 +110,33 @@
 ;;(set-face-background 'highlight-indent-guides-even-face "steel blue")
 ;;(set-face-foreground 'highlight-indent-guides-character-face "dark violet")
 
-(setq scroll-step 1
-      scroll-margin 4
-      scroll-conservatively 101)
+;; (setq scroll-step 1
+  ;;       scroll-margin 4
+  ;;       scroll-conservatively 101)
 
-;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-;; (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
-;; (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(setq mouse-wheel-scroll-amount
+      '(1
+        ((shift) . 5)
+        ((meta) . 0.5)
+        ((control) . text-scale))
+      mouse-drag-copy-region nil
+      make-pointer-invisible t
+      mouse-wheel-progressive-speed t
+      mouse-wheel-follow-mouse t)
 
-(pixel-scroll-precision-mode 1)
+(setq-default scroll-preserve-screen-position t
+              scroll-conservatively 1
+              scroll-margin 0
+              next-screen-context-lines 0)
+  ;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+  ;; (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+  ;; (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
-;; (use-package fast-scroll
-;;   :ensure nil
-;;   :init (fast-scroll-mode 1))
+  (pixel-scroll-precision-mode 1)
+
+  ;; (use-package fast-scroll
+  ;;   :ensure nil
+  ;;   :init (fast-scroll-mode 1))
 
 (defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
   (let ((parent-directory (file-name-directory buffer-file-name)))
@@ -206,6 +221,7 @@
 (advice-add 'mu4e--server-filter :around #'suppress-messages)
 (advice-add 'org-unlogged-message :around #'suppress-messages)
 (advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
+(advice-add 'push-mark  :around #'suppress-messages)
 
 ;; to reenable
 ;; (advice-remove 'timer-event-handler #'suppress-messages)
@@ -221,7 +237,7 @@
 ;; (advice-add 'message :around #'who-called-me?)
 
 ;; disable to stop receiving backtrace
-;; (advice-remove 'message #'who-called-me?)
+(advice-remove 'message #'who-called-me?)
 
 (use-package undo-tree
   ;; :init (global-undo-tree-mode)
@@ -280,6 +296,8 @@
     "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
     "mp" '(popper-toggle :which-key "popper")
     "md" '(dirvish :which-key "dirvish")
+    "o"  '(:ignore o :which-key "org")
+    "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
     ;; "c"  '(:ignore c :which-key "capture")
     ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
     ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
@@ -768,24 +786,26 @@
   ;; (swarsel/org-font-setup)
   )
 
-;; ;; Set faces for heading levels
-;; (with-eval-after-load 'org-faces  (dolist (face '((org-level-1 . 1.3)
-;;                                                   (org-level-2 . 1.2)
-;;                                                   (org-level-3 . 1.15)
-;;                                                   (org-level-4 . 1.1)
-;;                                                   (org-level-5 . 1.1)
-;;                                                   (org-level-6 . 1.1)
-;;                                                   (org-level-7 . 1.1)
-;;                                                   (org-level-8 . 1.1)))
-;;                                     (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'regular :height (cdr face)))
+;; Set faces for heading levels
+(with-eval-after-load 'org-faces  (dolist (face '((org-level-1 . 1.1)
+                                                  (org-level-2 . 0.9)
+                                                  (org-level-3 . 0.9)
+                                                  (org-level-4 . 0.9)
+                                                  (org-level-5 . 0.9)
+                                                  (org-level-6 . 0.9)
+                                                  (org-level-7 . 0.9)
+                                                  (org-level-8 . 0.9)))
+                                    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
 
-;;                       ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-;;                       (set-face-attribute 'org-block nil   :inherit '(fixed-pitch))
-;;                       (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-;;                       (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-;;                       (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-;;                       (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-;;                       (set-face-attribute 'org-checkbox nil :inherit '(fixed-pitch)))
+                      ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+                      (set-face-attribute 'org-block nil   :inherit 'fixed-pitch)
+                      (set-face-attribute 'org-table nil   :inherit 'fixed-pitch)
+                      (set-face-attribute 'org-formula nil   :inherit 'fixed-pitch)
+                      (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+                      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+                      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+                      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+                      (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 ;; Show hidden emphasis markers
 ;; (use-package org-appear
@@ -814,14 +834,16 @@
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((emacs-lisp . t)
-   (python . t)))
+   (python . t)
+   (shell . t)
+   ))
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-(add-to-list 'org-structure-template-alist '("py" . "src python"))
+(add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
 (add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
 
 (defun swarsel/org-babel-tangle-config ()
@@ -838,19 +860,20 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
-(use-package auctex
-  :ensure nil)
+(use-package auctex)
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
-(setq-default TeX-master nil)
+  (setq-default TeX-master nil)
 
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
 (add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'reftex-mode)
-
-;; (setq reftex-plug-into-AUCTeX t)
+(setq LaTeX-electric-left-right-brace t)
+(setq font-latex-fontify-script nil)
+(setq TeX-electric-sub-and-superscript t)
+  ;; (setq reftex-plug-into-AUCTeX t)
 
 (use-package org-download
   :after org
@@ -884,6 +907,108 @@
                 '((t . t)
                   ("src" "»" "∥")))
   :hook (org-mode . org-modern-mode))
+
+(use-package org-present
+    :bind (:map org-present-mode-keymap
+           ("q" . org-present-quit)
+           ("<left>" . swarsel/org-present-prev)
+           ("<up>" . 'ignore)
+           ("<down>" . 'ignore)
+           ("<right>" . swarsel/org-present-next))
+    :hook ((org-present-mode . swarsel/org-present-start)
+           (org-present-mode-quit . swarsel/org-present-end))
+    )
+
+
+    (use-package hide-mode-line)
+
+    (defun swarsel/org-present-start ()
+      (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                         (header-line (:height 4.0) variable-pitch)
+                                         (org-document-title (:height 1.75) org-document-title)
+                                         (org-code (:height 1.55) org-code)
+                                         (org-verbatim (:height 1.55) org-verbatim)
+                                         (org-block (:height 1.25) org-block)
+                                         (org-block-begin-line (:height 0.7) org-block)
+                                         ))
+      (dolist (face '((org-level-1 . 1.1)
+                                                    (org-level-2 . 1.2)
+                                                    (org-level-3 . 1.2)
+                                                    (org-level-4 . 1.2)
+                                                    (org-level-5 . 1.2)
+                                                    (org-level-6 . 1.2)
+                                                    (org-level-7 . 1.2)
+                                                    (org-level-8 . 1.2)))
+                                      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+
+      (setq header-line-format " ")
+      (setq visual-fill-column-width 90)
+      (setq indicate-buffer-boundaries nil)
+      (setq inhibit-message nil)
+      (breadcrumb-mode 0)
+      (org-display-inline-images)
+      (global-hl-line-mode 0)
+      (display-line-numbers-mode 0)
+      (org-modern-mode 0)
+      (evil-insert-state 1)
+      (beginning-of-buffer)
+      (org-present-read-only)
+      ;; (org-present-hide-cursor)
+      (swarsel/org-present-slide)
+      )
+
+    (defun swarsel/org-present-end ()
+           (setq-local face-remapping-alist '((default variable-pitch default)))
+           (dolist (face '((org-level-1 . 1.1)
+                                                    (org-level-2 . 0.9)
+                                                    (org-level-3 . 0.9)
+                                                    (org-level-4 . 0.9)
+                                                    (org-level-5 . 0.9)
+                                                    (org-level-6 . 0.9)
+                                                    (org-level-7 . 0.9)
+                                                    (org-level-8 . 0.9)))
+                                      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+           (setq header-line-format nil)
+           (setq visual-fill-column-width 150)
+           (setq indicate-buffer-boundaries t)
+           (setq inhibit-message nil)
+           (breadcrumb-mode 1)
+           (global-hl-line-mode 1)
+           (display-line-numbers-mode 1)
+           (org-remove-inline-images)
+           (org-modern-mode 1)
+           (evil-normal-state 1)
+           ;; (org-present-show-cursor)
+           )
+
+  (defun swarsel/org-present-slide ()
+    (org-overview)
+    (org-show-entry)
+    (org-show-children)
+      )
+
+  (defun swarsel/org-present-prev ()
+    (interactive)
+    (org-present-prev)
+    (swarsel/org-present-slide))
+
+  (defun swarsel/org-present-next ()
+    (interactive)
+    (unless (eobp)
+    (org-next-visible-heading 1)
+    (org-fold-show-entry))
+    (when (eobp)
+    (org-present-next)
+    (swarsel/org-present-slide)
+    ))
+
+(defun clojure-leave-clojure-mode-function ()
+ )
+
+(add-hook 'buffer-list-update-hook #'clojure-leave-clojure-mode-function)
+    (add-hook 'org-present-mode-hook 'swarsel/org-present-start)
+    (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
+    (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
 (use-package nix-mode
   :mode "\\.nix\\'")
@@ -1147,20 +1272,26 @@
 )
 
 (use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+    :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package highlight-parentheses
-  :config
-  (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
-  (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
-  (global-highlight-parentheses-mode t))
+  (use-package highlight-parentheses
+    :config
+    (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
+    (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
+    (global-highlight-parentheses-mode t))
 
-(electric-pair-mode 1)
-(setq electric-pair-preserve-balance nil)
-;; don't try to be overly smart
-(setq electric-pair-delete-adjacent-pairs nil)
-;; don't skip newline when auto-pairing parenthesis
-(setq electric-pair-skip-whitespace-chars '(9 32))
+  (electric-pair-mode 1)
+  (setq electric-pair-preserve-balance nil)
+  ;; don't try to be overly smart
+  (setq electric-pair-delete-adjacent-pairs nil)
+  ;; don't skip newline when auto-pairing parenthesis
+  (setq electric-pair-skip-whitespace-chars '(9 32))
+
+  ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
+(add-hook 'org-mode-hook (lambda ()
+           (setq-local electric-pair-inhibit-predicate
+                   `(lambda (c)
+                  (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
 ;; (use-package company
 ;;   :after lsp-mode
@@ -1405,58 +1536,58 @@
 
       ;; (use-package yasnippet-snippets)
 
-(setq wtf/latex-greek-prefix "'")
-(setq wtf/latex-math-prefix "`")
+;; (setq wtf/latex-greek-prefix "'")
+;; (setq wtf/latex-math-prefix "`")
 (setq wtf/latex-mathbb-prefix "''")
 (setq swarsel/latex-mathcal-prefix "``")
 
 (use-package yasnippet
   :config
-  (setq swtf/greek-alphabet
-        '(("a" . "\\alpha")
-          ("b" . "\\beta" )
-          ("g" . "\\gamma")
-          ("d" . "\\delta")
-          ("e" . "\\epsilon")
-          ("z" . "\\zeta")
-          ("h" . "\\eta")
-          ("th" . "\\theta")
-          ("i" . "\\iota")
-          ("k" . "\\kappa")
-          ("l" . "\\lambda")
-          ("m" . "\\mu")
-          ("n" . "\\nu")
-          ("x" . "\\xi")
-          ("p" . "\\pi")
-          ("r" . "\\rho")
-          ("s" . "\\sigma")
-          ("t" . "\\tau")
-          ("u" . "\\upsilon")
-          ("f" . "\\phi")
-          ("c" . "\\chi")
-          ("v" . "\\psi")
-          ("o" . "\\omega")))
+  ;; (setq swtf/greek-alphabet
+  ;;       '(("a" . "\\alpha")
+  ;;         ("b" . "\\beta" )
+  ;;         ("g" . "\\gamma")
+  ;;         ("d" . "\\delta")
+  ;;         ("e" . "\\epsilon")
+  ;;         ("z" . "\\zeta")
+  ;;         ("h" . "\\eta")
+  ;;         ("th" . "\\theta")
+  ;;         ("i" . "\\iota")
+  ;;         ("k" . "\\kappa")
+  ;;         ("l" . "\\lambda")
+  ;;         ("m" . "\\mu")
+  ;;         ("n" . "\\nu")
+  ;;         ("x" . "\\xi")
+  ;;         ("p" . "\\pi")
+  ;;         ("r" . "\\rho")
+  ;;         ("s" . "\\sigma")
+  ;;         ("t" . "\\tau")
+  ;;         ("u" . "\\upsilon")
+  ;;         ("f" . "\\phi")
+  ;;         ("c" . "\\chi")
+  ;;         ("v" . "\\psi")
+  ;;         ("o" . "\\omega")))
 
 
   ;; The same for capitalized letters
-  (dolist (elem swtf/greek-alphabet)
-    (let ((key (car elem))
-          (value (cdr elem)))
-      (when (string-equal key (downcase key))
-        (add-to-list 'swtf/greek-alphabet
-                     (cons
-                      (capitalize (car elem))
-                      (concat
-                       (substring value 0 1)
-                       (capitalize (substring value 1 2))
-                       (substring value 2)))))))
+  ;; (dolist (elem swtf/greek-alphabet)
+  ;;   (let ((key (car elem))
+  ;;         (value (cdr elem)))
+  ;;     (when (string-equal key (downcase key))
+  ;;       (add-to-list 'swtf/greek-alphabet
+  ;;                    (cons
+  ;;                     (capitalize (car elem))
+  ;;                     (concat
+  ;;                      (substring value 0 1)
+  ;;                      (capitalize (substring value 1 2))
+  ;;                      (substring value 2)))))))
 
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (list (concat wtf/latex-greek-prefix (car elem)) (cdr elem) (concat "Greek letter " (car elem))))
-    swtf/greek-alphabet))
+  ;; (yas-define-snippets
+  ;;  'latex-mode
+  ;;  (mapcar
+  ;;   (lambda (elem)
+  ;;     (list (concat wtf/latex-greek-prefix (car elem)) (cdr elem) (concat "Greek letter " (car elem))))
+  ;;   swtf/greek-alphabet))
 
   (setq wtf/english-alphabet
         '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
@@ -1602,9 +1733,13 @@
       :ensure nil
       :hook
       ((python-mode
+        python-ts-mode
         c-mode
+        c-ts-mode
         c++-mode
+        c++-ts-mode
         tex-mode
+        LaTeX-mode
         ) . (lambda () (progn
                          (eglot-ensure)
                          (add-hook 'before-save-hook 'eglot-format nil 'local))))
@@ -1822,44 +1957,80 @@
     (add-to-list 'load-path mu4epath)))
 
 (use-package mu4e
-    :ensure nil
-    ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
-    ;;:defer 20 ; Wait until 20 seconds after startup
-    :config
+  :ensure nil
+  ;; :load-path "/usr/share/emacs/site-lisp/mu4e/"
+  ;;:defer 20 ; Wait until 20 seconds after startup
+  :config
 
-    ;; This is set to 't' to avoid mail syncing issues when using mbsync
-    (setq send-mail-function 'sendmail-send-it)
-    (setq mu4e-change-filenames-when-moving t)
-    (setq mu4e-mu-binary (executable-find "mu"))
+  ;; This is set to 't' to avoid mail syncing issues when using mbsync
+  (setq send-mail-function 'sendmail-send-it)
+  (setq mu4e-change-filenames-when-moving t)
+  (setq mu4e-mu-binary (executable-find "mu"))
 
-    (setq mu4e-update-interval 180)
-    (setq mu4e-get-mail-command "mbsync -a")
-    (setq mu4e-maildir "~/Mail")
+  (setq mu4e-update-interval 180)
+  (setq mu4e-get-mail-command "mbsync -a")
+  (setq mu4e-maildir "~/Mail")
 
-    ;; enable inline images
-    (setq mu4e-view-show-images t)
-    ;; use imagemagick, if available
-    (when (fboundp 'imagemagick-register-types)
-      (imagemagick-register-types))
+  ;; enable inline images
+  (setq mu4e-view-show-images t)
+  ;; use imagemagick, if available
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
 
-    (setq mu4e-drafts-folder "/Drafts")
-    (setq mu4e-sent-folder   "/Sent Mail")
-    (setq mu4e-refile-folder "/All Mail")
-    (setq mu4e-trash-folder  "/Trash")
+  (setq mu4e-drafts-folder "/Drafts")
+  (setq mu4e-sent-folder   "/Sent Mail")
+  (setq mu4e-refile-folder "/All Mail")
+  (setq mu4e-trash-folder  "/Trash")
 
-    (setq mu4e-maildir-shortcuts
-          '((:maildir "/leon/Inbox"    :key ?1)
-            (:maildir "/nautilus/Inbox" :key ?2)
-            (:maildir "/mrswarsel/Inbox"     :key ?3)
-            (:maildir "/Sent Mail"     :key ?s)
-            (:maildir "/Trash"     :key ?t)
-            (:maildir "/Drafts"     :key ?d)
-            (:maildir "/All Mail"     :key ?a))))
+  (setq mu4e-maildir-shortcuts
+        '((:maildir "/leon/Inbox"    :key ?1)
+          (:maildir "/nautilus/Inbox" :key ?2)
+          (:maildir "/mrswarsel/Inbox"     :key ?3)
+          (:maildir "/Sent Mail"     :key ?s)
+          (:maildir "/Trash"     :key ?t)
+          (:maildir "/Drafts"     :key ?d)
+          (:maildir "/All Mail"     :key ?a))))
 
-  (setq user-mail-address "leon.schwarzaeugl@gmail.com"
-        user-full-name "Leon Schwarzäugl")
+(setq user-mail-address "leon@swarsel.win"
+      user-full-name "Leon Schwarzäugl")
 
 (setq mu4e-hide-index-messages t)
+
+(setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com))
+
+(defun swarsel/mu4e-switch-account ()
+  (interactive)
+  (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
+    (setq user-mail-address account)))
+
+(defun swarsel/mu4e-rfs--matching-address ()
+  (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
+           for to-email = (pcase to-data
+                            (`(_ . email) email)
+                            (x (mu4e-contact-email x)))
+           for to-name =  (pcase to-data
+                            (`(_ . name) name)
+                            (x (mu4e-contact-name x)))
+           when (mu4e-user-mail-address-p to-email)
+           return (list to-name to-email)))
+
+(defun swarsel/mu4e-send-from-correct-address ()
+  (when mu4e-compose-parent-message
+    (save-excursion
+      (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
+        (cl-destructuring-bind (from-user from-addr) dest
+          (setq user-mail-address from-addr)
+          (message-position-on-field "From")
+          (message-beginning-of-line)
+          (delete-region (point) (line-end-position))
+          (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
+
+(defun swarsel/mu4e-restore-default ()
+  (setq user-mail-address "leon@swarsel.win"
+        user-full-name "Leon Schwarzäugl"))
+
+(add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)
+(add-hook 'mu4e-compose-post-hook #'swarsel/mu4e-restore-default)
 
 (use-package mu4e-alert)
 (mu4e-alert-set-default-style 'libnotify)

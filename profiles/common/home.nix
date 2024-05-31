@@ -288,6 +288,7 @@ sops.validateSopsFiles = false;
 sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
 sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
 sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
+sops.secrets.swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
 sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
 # sops.secrets.leon = { };
 # sops.secrets.nautilus = { };
@@ -794,6 +795,28 @@ accounts.email = {
         };
       };
     };
+  };
+
+  accounts.swarsel = {
+    address = "leon@swarsel.win";
+    userName = "8227dc594dd515ce232eda1471cb9a19";
+    realName = "Leon Schwarzäugl";
+    passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+    smtp = {
+      host = "in-v3.mailjet.com";
+      port = 587;
+      tls = {
+        enable = true;
+        useStartTls = true;
+      };
+    };
+    mu.enable = false;
+    msmtp = {
+      enable = true;
+    };
+    mbsync = {
+      enable = false;
+      };
   };
 
   accounts.nautilus = {
@@ -1545,6 +1568,7 @@ wayland.windowManager.sway = {
       "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
       "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
       "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
+      "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
       "${modifier}+Shift+F12" = "move scratchpad";
       "${modifier}+F12" = "scratchpad show";
       "${modifier}+c" = "exec qalculate-gtk";
