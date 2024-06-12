@@ -36,7 +36,7 @@ Have fun!
 Sadly all things nix feel a bit underdocumented (even though it mostly is not). Below is a small list of tips that I thought could be helpful if you are new to the nix ecosystem:
 
 - Once you have the experimental feature `nix-command` enabled, you can temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
-  - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix 
+  - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
 - These links are your best friends:
   - https://search.nixos.org/packages
   - https://search.nixos.org/options
@@ -50,49 +50,30 @@ Below is a rough general guide to setup this system on a new NixOS host. **Again
 
 For a pure Home-Manager configuration, you need a few different steps. The biggest change is that you then want to call `home-manager --flake .#<your-username>@<your-hostname> switch` as the last step instead of `nixos-rebuild [...]`. A complete general guide for that case cannot really be given since you are most likely setting up the flake on a existing machine that already has a lot of configuration. If you are setting up a new system, I would recommend to use NixOS unless circumstances force you to use something else.
 
-
 ###### To do that:
-1) adapt [flake.nix](../flake.nix):
-  - Copy either one of the nixosSystem or homeManagerConfiguration blocks depending on what configuration you are going to be using.
-  - Adapt all lines referencing the host- and username to the names chosen for your system.
-  - Also adapt the file paths to reference the files where you want your specific configuration to be stored.
-  - If using home-manager on the host, consider the settings for `home-manager.useGlobalPkgs` and `home-manager.useUserPackages` - in this repo they are moved to the general NixOS section to reduce code duplication.
-2) adapt [Nix.org](../Nix.org)
-  - Make a copy of "System Specific Configurations/TEMPLATE".
-  - Adapt all references to TEMPLATE to your host- and usernames etc (make sure to also create that directory where it is to be tangled to).
-  - Add the settings needed for your specific machine.
-  - Make sure Nix.org was actually tangled.
-  - **Beware:** This assumes you have access to a way of tangling an .org file (for most people this will mean having a working Emacs). If you do not have that, see below.
-3) Add your changes to your fork of the repository.
+1) adapt [Nix.org](../.dotfiles/Nix.org)
+    1) adapt system specific options:
+        - Make a copy of "System Specific Configurations/TEMPLATE".
+        - Adapt all references to TEMPLATE to your host- and usernames etc - pay special attention to the header lines in each nix source block, i.e. the "#+begin_src nix [...] :tangle profiles/TEMPLATE/[...]" lines.
+
+        - Add the settings needed for your specific machine.
+    2) adapt flake:
+        - add a configuration block to "Noweb-Ref blocks/flake.nix/nixosConfigurations" (for example, you can copy one of the other blocks),
+            - adapt the paths to the files you chose to tangle to.
+            - adjust the "Inputs & Inputs@Outputs" and "let" sections if needed.
+        - (Use "[...]/homeConfigurations" instead if adding a home-manager config.)
+2) Make sure Nix.org was actually tangled.
+- **Beware:** This assumes you have access to a way of tangling an .org file (for most people this will mean having a working Emacs). If you do not have that, see below.
 ###### If you have no way of tangling .org files
-In that case make a copy of the /.dotfiles/profiles/TEMPLATE folder and adapt each file manually according to the above.
-##### Actual system setup
-0) Make sure you have an internet connection (ethernet or for Wi-Fi e.g. call `nmtui`)
-1) `sudo nano /etc/nixos/configuration.nix`
-- add the following packages to `environment.systemPackages`: 
-	- `git `
-	- `gnupg`
-	- `ssh-to-age`
-- add
-```nix
-nix = {
-  package = pkgs.nixFlakes;
-  extraOptions = ''
-    experimental-features = nix-command flakes
-  '';
-};
-```
-2) `sudo nixos-rebuild switch`
-###### Host SSH key setup for use with sops-nix (only needed if you want to use sops-nix for secrets management)
-3) `ssh-keygen -t ed25519 -C "<YOUR_HOSTNAME> sops"`, use e.g. "sops" as name for `<SOPS_KEY>`
-4) `cd ~/.dotfiles`
-5) `cat ~/<SOPS_KEY>.pub | ssh-to-age >> ~/.dotfiles/.sops.yaml`
-6) `nano .sops.yaml` - add last line to keys and make a new &system_<xxx> entry, make sure to remove that last line
-7) `cp ~/<SOPS_KEY>.pub ~/.dotfiles/secrets/keys/<YOUR_HOSTNAME>.pub`
-8) move `<SOPS_KEY>` to where you want to store your host private key
-9) update entry for `sops.age.sshKeyPaths` in Nix.org to the location that you have just moved the private key to (or manually edit `.dotfiles/profiles/<YOUR_HOSTNAME>/home.nix`)
-###### Switching to the configuration
-10) `cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/profiles/<YOUR_HOSTNAME>`
-11) `sudo nixos-rebuild --flake .#<YOUR_HOSTNAME> switch`
+In that case make a copy of the /.dotfiles/profiles/TEMPLATE folder and adapt each file manually according to the above, then edit the /.dotfiles/flake.nix manually.
+##### Basic system setup
+0) Make sure you have an internet connection (ethernet or for Wi-Fi e.g. call `nmcli`/`nmtui`)
+1) `nix --experimental-features 'nix-command flakes' shell nixpkgs#git`
+2) `git clone https://github.com/Swarsel/dotfiles.git`
+3) `cp /etc/nixos/hardware-configuration.nix ~/.dotfiles/profiles/<YOUR_HOSTNAME>`
+4) `git -C ~/.dotfiles add ~/dotfiles/profiles/<YOUR_HOSTNAME>`
+5) `sudo nixos-rebuild --flake ~/.dotfiles/#<YOUR_HOSTNAME> boot`
+6) Reboot.
   - This build will take a while (mostly because it fully builds Emacs), so do not worry too much :)
-  - In case you get a dependency error for some of the `firefox-addons`, just comment out those specific extensions and try to uncomment them again a few days later. Sometimes when these packages are updated, the old .xpi file is deleted by the addon developer and the download link breaks. It is usually updated swiftly. If you do not want to wait, you can also package the addon yourself - there is one example in the files how this is generally done.
+  - If you want to use sops-nix for secrets management, you need to provide your own key as well as a key for each host you are going to create. Then you need to adapt `.sops.yaml` to account for these keys and the directory where you are going to store the secrets. You can edit the secrets using `sops` using your key for authentication. You also need to edit the respective sections of the configuration to account for these locations.
+  - In case you get a dependency error for some of the `firefox-addons`, just comment out those specific extensions and try to uncomment them again a few days later. Sometimes when these packages are updated, the old .xpi file is deleted by the addon developer and the download link breaks. It is usually updated swiftly. If you do not want to wait, you can also package the addon yourself - there is one example in the files how this is done in general.

@@ -24,12 +24,15 @@
     util-linux
     nmap
 
+    # local file sharing
+    wormhole-rs
+
     # b2 backup @backblaze
     restic
 
     # "big" programs
-    filebot
     gimp
+    inkscape
     zoom-us
     # nomacs
     libreoffice-qt
