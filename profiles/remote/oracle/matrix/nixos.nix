@@ -4,7 +4,7 @@ in {
 
   imports = [
     ./hardware-configuration.nix
-    (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+    # (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix") # no longer needed; mautrix-signal was added to nixpkgs
   ];
 
   environment.systemPackages = with pkgs; [
@@ -283,6 +283,7 @@ in {
 
   services.mautrix-signal = {
     enable = true;
+    registerToSynapse = false; # this has the same effect as registering to app_service_config_file above
     # environmentFile = config.sops.templates.mautrixwhatsapp.path;
     settings = {
       homeserver = {

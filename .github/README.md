@@ -44,6 +44,7 @@ Sadly all things nix feel a bit underdocumented (even though it mostly is not). 
 - Also useful is the [NixOS wiki](https://nixos.wiki/wiki/Main_Page), but some pages are outdated, so use with some care
 - When you are trying to setup a new configuration part, GitHub code search can really help you to find a working configuration.
 - getting packages not maintained in a standard repository can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
+- I have gathered some configuration snippets here: [Wiki.org](../Wiki.org). I will update this whenever I come across an interesting bit.
 
 ### Deployment
 Below is a rough general guide to setup this system on a new NixOS host. **Again**, this is not recommended as this is a personal configuration. This also might not be the most efficient way to deploy a new Nix system, but it should work in the general case.
@@ -51,7 +52,7 @@ Below is a rough general guide to setup this system on a new NixOS host. **Again
 For a pure Home-Manager configuration, you need a few different steps. The biggest change is that you then want to call `home-manager --flake .#<your-username>@<your-hostname> switch` as the last step instead of `nixos-rebuild [...]`. A complete general guide for that case cannot really be given since you are most likely setting up the flake on a existing machine that already has a lot of configuration. If you are setting up a new system, I would recommend to use NixOS unless circumstances force you to use something else.
 
 ###### To do that:
-1) adapt [Nix.org](../.dotfiles/Nix.org)
+1) adapt [Nix.org](../Nix.org)
     1) adapt system specific options:
         - Make a copy of "System Specific Configurations/TEMPLATE".
         - Adapt all references to TEMPLATE to your host- and usernames etc - pay special attention to the header lines in each nix source block, i.e. the "#+begin_src nix [...] :tangle profiles/TEMPLATE/[...]" lines.

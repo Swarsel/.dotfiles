@@ -1900,7 +1900,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 *** [Manual steps required] Calibre
 
 This machine requires manual setup:
-1) Set up calibre-web:
+1) (obsolete for now) Set up calibre-web:
    - Create metadata.db with 664 permissions, make sure parent directory is writeable
    - Login @ books.swarsel.win using initial creds:
      - user: admin
@@ -3093,8 +3093,51 @@ Make sure to also do this for doublepuppet.yaml
 
 #+end_src
 
-*** Swatrix
+*** [Manual steps required] Swatrix
 **** NixOS
+
+The files mentioned by
+
+#+begin_src nix
+
+    settings.app_service_config_files = [
+        "/var/lib/matrix-synapse/telegram-registration.yaml"
+        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+        "/var/lib/matrix-synapse/signal-registration.yaml"
+        "/var/lib/matrix-synapse/doublepuppet.yaml"
+      ]
+
+#+end_src
+
+need to be moved to the corresponding location. The below files are created as soon as the appservice is run once. This means that matrix will crash on the first startup; afterwards run these commands and restart the service.
+
+#+begin_src shell
+
+  cp /var/lib/mautrix-telegram/telegram-registration.yaml /var/lib/matrix-synapse/
+  chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/telegram-registration.yaml
+  cp /var/lib/mautrix-signal/signal-registration.yaml /var/lib/matrix-synapse/
+  chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/signal-registration.yaml
+  cp /var/lib/mautrix-whatsapp/whatsapp-registration.yaml /var/lib/matrix-synapse/
+  chown matrix-synapse:matrix-synapse /var/lib/matrix-synapse/whatsapp-registration.yaml
+
+#+end_src
+
+as for the contents of doublepuppet.yaml:
+
+#+begin_src yaml doublepuppet.yaml
+id: doublepuppet
+url:
+as_token: doublepuppet
+hs_token: notused
+sender_localpart: notused
+rate_limited: false
+namespaces:
+  users:
+  - regex: '@.*:matrix2\.swarsel\.win'
+    exclusive: false
+#+end_src
+
+Lastly, the machine that runs matrix needs to regularly update, as otherwise you will lose connectivity to the bridges.
 
 #+begin_src nix :tangle profiles/remote/oracle/matrix/nixos.nix
 
@@ -3104,7 +3147,7 @@ Make sure to also do this for doublepuppet.yaml
 
     imports = [
       ./hardware-configuration.nix
-      (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+      # (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix") # no longer needed; mautrix-signal was added to nixpkgs
     ];
 
     environment.systemPackages = with pkgs; [
@@ -3383,6 +3426,7 @@ Make sure to also do this for doublepuppet.yaml
 
     services.mautrix-signal = {
       enable = true;
+      registerToSynapse = false; # this has the same effect as registering to app_service_config_file above
       # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
