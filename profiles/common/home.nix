@@ -23,6 +23,7 @@
     # utilities
     util-linux
     nmap
+    lsof
 
     # local file sharing
     wormhole-rs
@@ -274,7 +275,41 @@
      '';
     })
 
-  ];
+    (pkgs.writeShellApplication {
+      name = "cdw";
+      runtimeInputs = [ pkgs.fzf ];
+      text = ''
+    cd "$(git worktree list | fzf | awk '{print $1}')"
+    '';
+    })
+
+    (pkgs.writeShellApplication {
+      name = "cdb";
+      runtimeInputs = [ pkgs.fzf ];
+      text = ''
+    git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
+    '';
+    })
+
+    # (pkgs.writeShellApplication {
+    #   name = "cdr";
+    #   runtimeInputs = [ pkgs.fzf ];
+    #   text = ''
+    #   cdr () {
+    # cd "$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )"
+    # }
+    # cdr
+    # '';
+    # })
+
+    (pkgs.writeShellApplication {
+      name = "bak";
+      text = ''
+      cp "$1"{,.bak}
+    '';
+    })
+
+];
 
 
   #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
@@ -724,6 +759,8 @@ programs.zsh = {
     passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
     passpull = "cd ~/.local/share/password-store; git pull; cd -;";
     hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
+    cd="z";
+    cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
   };
   autosuggestion.enable = true;
   enableCompletion = true;
@@ -736,6 +773,7 @@ programs.zsh = {
   defaultKeymap = "emacs";
   dirHashes = {
     dl    = "$HOME/Downloads";
+    gh    = "$HOME/Documents/GitHub";
   };
   history = {
     expireDuplicatesFirst = true;
@@ -744,6 +782,12 @@ programs.zsh = {
     size = 10000;
   };
   historySubstringSearch.enable = true;
+  plugins = [
+    {
+      name = "fzf-tab";
+      src = pkgs.zsh-fzf-tab;
+    }
+  ];
   initExtra = ''
     bindkey "^[[1;5D" backward-word
     bindkey "^[[1;5C" forward-word
@@ -1647,8 +1691,7 @@ wayland.windowManager.sway = {
       titlebar = false;
     };
     assigns = {
-      # disabled, this is too annoying to be of use
-      # "1:一" = [{ app_id = "^firefox$"; }];
+      "1:一" = [{ app_id = "firefox"; }];
     };
     colors = {
       focused = {

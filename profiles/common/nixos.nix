@@ -63,6 +63,12 @@
     driSupport32Bit = true;
   };
 
+  # systemd
+  systemd.extraConfig = ''
+  DefaultTimeoutStartSec=60s
+  DefaultTimeoutStopSec=15s
+'';
+
   # audio
   sound.enable = true;
   # nixpkgs.config.pulseaudio = true;

@@ -4490,6 +4490,12 @@ Section for all settings that are not really deserving of their own section.
       driSupport32Bit = true;
     };
 
+    # systemd
+    systemd.extraConfig = ''
+    DefaultTimeoutStartSec=60s
+    DefaultTimeoutStopSec=15s
+  '';
+
     # audio
     sound.enable = true;
     # nixpkgs.config.pulseaudio = true;
@@ -4769,6 +4775,7 @@ Also, I define some useful shell scripts here.
       # utilities
       util-linux
       nmap
+      lsof
 
       # local file sharing
       wormhole-rs
@@ -5020,7 +5027,41 @@ Also, I define some useful shell scripts here.
        '';
       })
 
-    ];
+      (pkgs.writeShellApplication {
+        name = "cdw";
+        runtimeInputs = [ pkgs.fzf ];
+        text = ''
+      cd "$(git worktree list | fzf | awk '{print $1}')"
+      '';
+      })
+
+      (pkgs.writeShellApplication {
+        name = "cdb";
+        runtimeInputs = [ pkgs.fzf ];
+        text = ''
+      git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
+      '';
+      })
+
+      # (pkgs.writeShellApplication {
+      #   name = "cdr";
+      #   runtimeInputs = [ pkgs.fzf ];
+      #   text = ''
+      #   cdr () {
+      # cd "$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )"
+      # }
+      # cdr
+      # '';
+      # })
+
+      (pkgs.writeShellApplication {
+        name = "bak";
+        text = ''
+        cp "$1"{,.bak}
+      '';
+      })
+
+  ];
 
 
     #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
@@ -5557,6 +5598,8 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
       passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
       passpull = "cd ~/.local/share/password-store; git pull; cd -;";
       hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
+      cd="z";
+      cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
     };
     autosuggestion.enable = true;
     enableCompletion = true;
@@ -5569,6 +5612,7 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
     defaultKeymap = "emacs";
     dirHashes = {
       dl    = "$HOME/Downloads";
+      gh    = "$HOME/Documents/GitHub";
     };
     history = {
       expireDuplicatesFirst = true;
@@ -5577,6 +5621,12 @@ zsh is clearly the most convenient shell for me and it happens to be super neat 
       size = 10000;
     };
     historySubstringSearch.enable = true;
+    plugins = [
+      {
+        name = "fzf-tab";
+        src = pkgs.zsh-fzf-tab;
+      }
+    ];
     initExtra = ''
       bindkey "^[[1;5D" backward-word
       bindkey "^[[1;5C" forward-word
@@ -6537,8 +6587,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
         titlebar = false;
       };
       assigns = {
-        # disabled, this is too annoying to be of use
-        # "1:一" = [{ app_id = "^firefox$"; }];
+        "1:一" = [{ app_id = "firefox"; }];
       };
       colors = {
         focused = {

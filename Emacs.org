@@ -197,7 +197,7 @@ By default, emacs scrolls half a page when reaching the bottom of the buffer. Th
         make-pointer-invisible t
         mouse-wheel-progressive-speed t
         mouse-wheel-follow-mouse t)
-  
+
   (setq-default scroll-preserve-screen-position t
                 scroll-conservatively 1
                 scroll-margin 0
@@ -250,6 +250,13 @@ This function will check if a directory for which a file we want to open exists;
       (evil-mode 1)
       (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state) ; alternative for exiting insert mode
       (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join) ; dont show help but instead do normal vim delete backwards
+      (define-key evil-normal-state-map (kbd "C-z") nil)
+      (define-key evil-insert-state-map (kbd "C-z") nil)
+      (define-key evil-visual-state-map (kbd "C-z") nil)
+      (define-key evil-motion-state-map (kbd "C-z") nil)
+      (define-key evil-operator-state-map (kbd "C-z") nil)
+      (define-key evil-replace-state-map (kbd "C-z") nil)
+      (define-key global-map (kbd "C-z") nil)
 
       ;; evil undo system
       (evil-set-undo-system 'undo-tree)
@@ -388,6 +395,26 @@ Base emacs undo logic is very useful, but not easy to understand. I prefer undo-
 
 #+end_src
 
+** Move up one directory for find-file
+
+I find it very annoying that the standard behavior for M-DEL only deletes one word when using find-file. This function makes it so that we always go up by one directory level instead.
+
+#+begin_src emacs-lisp
+
+  (defun up-directory (path)
+    "Move up a directory in PATH without affecting the kill buffer."
+    (interactive "p")
+    (if (string-match-p "/." (minibuffer-contents))
+        (let ((end (point)))
+          (re-search-backward "/.")
+          (forward-char)
+          (delete-region (point) end))))
+
+  (define-key minibuffer-local-filename-completion-map
+              [C-backspace] #'up-directory)
+
+#+end_src
+
 * Custom Keybindings
 #+begin_src emacs-lisp
 
@@ -405,6 +432,7 @@ Base emacs undo logic is very useful, but not easy to understand. I prefer undo-
     (swarsel/leader-keys
       "t"  '(:ignore t :which-key "toggles")
       "ts" '(hydra-text-scale/body :which-key "scale text")
+      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
       "tl" '(display-line-numbers-mode :which-key "line numbers")
       "tp" '(evil-cleverparens-mode :wk "cleverparens")
       "to" '(olivetti-mode :wk "olivetti")
@@ -477,6 +505,12 @@ Base emacs undo logic is very useful, but not easy to understand. I prefer undo-
    "M-o" 'avy-goto-char-timer
    "C-<f9>" 'my-python-shell-run
    )
+
+(defun swarsel/toggle-evil-state ()
+  (interactive)
+  (if (or (evil-emacs-state-p) (evil-insert-state-p))
+      (evil-normal-state)
+    (evil-emacs-state)))
 
 #+end_src
 
@@ -643,8 +677,8 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
         :after vertico
         :bind (:map vertico-map
                     ("RET" . vertico-directory-enter)
-                    ("DEL" . vertico-directory-delete-word)
-                    ("M-DEL" . vertico-directory-delete-char))
+                    ("C-DEL" . vertico-directory-delete-word)
+                    ("DEL" . vertico-directory-delete-char))
         ;; Tidy shadowed file names
         :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -658,14 +692,17 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
         :config
         (setq consult-fontify-max-size 1024)
         :bind
-        ("C-x b" . consult-buffer)
+        (("C-x b" . consult-buffer)
         ("C-c <C-m>" . consult-global-mark)
         ("C-c C-a" . consult-org-agenda)
-        ("C-x O" . consult-outline)
+        ("C-x O" . consult-org-heading)
         ("M-g M-g" . consult-goto-line)
         ("M-g i" . consult-imenu)
         ("M-s s" . consult-line)
-        ("M-s M-s" . consult-line-multi))
+        ("M-s M-s" . consult-line-multi)
+  :map minibuffer-local-map
+        ("C-j" . next-line)
+        ("C-k" . previous-line)))
 
       (use-package embark
         :bind
@@ -776,14 +813,13 @@ Soon I want to try out this new hot stuff - just at the moment there is too much
   ;;   ([remap describe-key] . helpful-key))
 
   (use-package helpful
-    :custom
-    (help-select-window t)
     :bind
     (("C-h f" . helpful-callable)
      ("C-h v" . helpful-variable)
      ("C-h k" . helpful-key)
-     ("C-h C-." . helpful-at-point)))
-
+     ("C-h C-." . helpful-at-point))
+    :config
+    (setq help-window-select nil))
 #+end_src
 
 ** Text Scaling
@@ -1624,7 +1660,7 @@ In order to update the language grammars, run the next command below.
   (use-package projectile
     :diminish projectile-mode
     :config (projectile-mode)
-    :custom ((projectile-completion-system 'ivy)) ;; integrate ivy into completion system
+    :custom ((projectile-completion-system 'auto)) ;; integrate ivy into completion system
     :bind-keymap
     ("C-c p" . projectile-command-map) ; all projectile commands under this
     :init
@@ -1660,17 +1696,19 @@ In order to update the language grammars, run the next command below.
 
 #+begin_src emacs-lisp
 
-  (use-package magit
-    :config
-    (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
-                                         (,swarsel-emacs-directory . 0)
-                                         (,swarsel-obsidian-directory . 0)))
-    :custom
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
+      (use-package magit
+        :config
+        (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
+                                             (,swarsel-emacs-directory . 0)
+                                             (,swarsel-obsidian-directory . 0)
+                                             ("~/.dotfiles/" . 0)))
+        :custom
+        (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
 
-  ;; yubikey support for pushing commits
-  ;; commiting is enabled through nixos gpg-agent config
-  (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+      ;; yubikey support for pushing commits
+      ;; commiting is enabled through nixos gpg-agent config
+    (setq epg-pinentry-mode 'loopback)
+      (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 #+end_src
 
 ** Forge
@@ -1852,23 +1890,23 @@ Currently unused
       ;; Bind dedicated completion commands
       ;; Alternative prefix keys: C-c p, M-p, M-+, ...
       :bind
-      ("C-c p p" . completion-at-point) ;; capf
-      ("C-c p t" . complete-tag)        ;; etags
-      ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-      ("C-c p h" . cape-history)
-      ("C-c p f" . cape-file)
-      ("C-c p k" . cape-keyword)
-      ("C-c p s" . cape-elisp-symbol)
-      ("C-c p e" . cape-elisp-block)
-      ("C-c p a" . cape-abbrev)
-      ("C-c p l" . cape-line)
-      ("C-c p w" . cape-dict)
-      ("C-c p :" . cape-emoji)
-      ("C-c p \\" . cape-tex)
-      ("C-c p _" . cape-tex)
-      ("C-c p ^" . cape-tex)
-      ("C-c p &" . cape-sgml)
-      ("C-c p r" . cape-rfc1345)
+      ("C-z p" . completion-at-point) ;; capf
+      ("C-z t" . complete-tag)        ;; etags
+      ("C-z d" . cape-dabbrev)        ;; or dabbrev-completion
+      ("C-z h" . cape-history)
+      ("C-z f" . cape-file)
+      ("C-z k" . cape-keyword)
+      ("C-z s" . cape-elisp-symbol)
+      ("C-z e" . cape-elisp-block)
+      ("C-z a" . cape-abbrev)
+      ("C-z l" . cape-line)
+      ("C-z w" . cape-dict)
+      ("C-z :" . cape-emoji)
+      ("C-z \\" . cape-tex)
+      ("C-z _" . cape-tex)
+      ("C-z ^" . cape-tex)
+      ("C-z &" . cape-sgml)
+      ("C-z r" . cape-rfc1345)
       ;; Add to the global default value of `completion-at-point-functions' which is
       ;; used by `completion-at-point'.  The order of the functions matters, the
       ;; first function returning a result wins.  Note that the list of buffer-local
@@ -1886,6 +1924,8 @@ Currently unused
       ;; (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
       ;; (add-to-list 'completion-at-point-functions #'cape-line)
     )
+
+
 
 #+end_src
 
@@ -2025,7 +2065,7 @@ Currently unused
                ((prog-mode
                  org-mode) . diff-hl-mode)
                :init
-               (diff-fl-flydiff-mode)
+               (diff-hl-flydiff-mode)
                (diff-hl-margin-mode)
                (diff-hl-show-hunk-mouse-mode))
 
@@ -2152,17 +2192,15 @@ The following block is 100% stolen from Dominik :P
             ("u" . "\\cup")
             ("0" . "\\emptyset")))
 
-
-    (yas-define-snippets
-     'latex-mode
-     (mapcar
-      (lambda (elem)
-        (let ((key (car elem))
-              (value (cdr elem)))
-          (list (concat wtf/latex-math-prefix key) value (concat "Math symbol " value))))
-      swtf/latex-math-symbols))
-    )
-
+    ;; (yas-define-snippets
+    ;;  'latex-mode
+    ;;  (mapcar
+    ;;   (lambda (elem)
+    ;;     (let ((key (car elem))
+    ;;           (value (cdr elem)))
+    ;;       (list (concat wtf/latex-math-prefix key) value (concat "Math symbol " value))))
+    ;; swtf/latex-math-symbols))
+ )
 
 
 #+end_src
@@ -2754,6 +2792,7 @@ Yep, none currently.
           dashboard-image-banner-max-height 300
           dashboard-startup-banner "~/.dotfiles/wallpaper/swarsel.png"
           dashboard-projects-backend 'projectile
+          dashboard-projects-switch-function 'magit-status
           dashboard-set-navigator t
           dashboard-startupify-list '(dashboard-insert-banner
                                       dashboard-insert-newline
@@ -2795,7 +2834,6 @@ Yep, none currently.
               (lambda (&rest _) (browse-url "swarsel.win")))
              )
             )))
-    (setq dashboard-projects-switch-function 'project-switch-project)
 
 
 #+end_src

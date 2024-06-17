@@ -7,7 +7,7 @@ if [ "$STR" == "" ]; then
 else
     VAR="0"
 fi
-emacsclient -c -a "" "$@"
+emacsclient -c -a "" "$@" # open emacs in a new frame, start new daemon if it is dead and open arg
 if [ "$VAR" == "1" ]
 then
     swaymsg '[title="kittyterm"]' scratchpad show

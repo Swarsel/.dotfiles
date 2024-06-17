@@ -163,6 +163,13 @@
     (evil-mode 1)
     (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state) ; alternative for exiting insert mode
     (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join) ; dont show help but instead do normal vim delete backwards
+    (define-key evil-normal-state-map (kbd "C-z") nil)
+    (define-key evil-insert-state-map (kbd "C-z") nil)
+    (define-key evil-visual-state-map (kbd "C-z") nil)
+    (define-key evil-motion-state-map (kbd "C-z") nil)
+    (define-key evil-operator-state-map (kbd "C-z") nil)
+    (define-key evil-replace-state-map (kbd "C-z") nil)
+    (define-key global-map (kbd "C-z") nil)
 
     ;; evil undo system
     (evil-set-undo-system 'undo-tree)
@@ -271,92 +278,111 @@
       kept-new-versions 5    ; keep some new versions
       kept-old-versions 2)   ; and some old ones, too
 
+(defun up-directory (path)
+  "Move up a directory in PATH without affecting the kill buffer."
+  (interactive "p")
+  (if (string-match-p "/." (minibuffer-contents))
+      (let ((end (point)))
+        (re-search-backward "/.")
+        (forward-char)
+        (delete-region (point) end))))
+
+(define-key minibuffer-local-filename-completion-map
+            [C-backspace] #'up-directory)
+
 ;; Make ESC quit prompts
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-;; Set up general keybindings
-(use-package general
-  :config
-  (general-create-definer swarsel/leader-keys
-    :keymaps '(normal insert visual emacs)
-    :prefix "SPC"
-    :global-prefix "C-SPC")
+  ;; Set up general keybindings
+  (use-package general
+    :config
+    (general-create-definer swarsel/leader-keys
+      :keymaps '(normal insert visual emacs)
+      :prefix "SPC"
+      :global-prefix "C-SPC")
 
-  (swarsel/leader-keys
-    "t"  '(:ignore t :which-key "toggles")
-    "ts" '(hydra-text-scale/body :which-key "scale text")
-    "tl" '(display-line-numbers-mode :which-key "line numbers")
-    "tp" '(evil-cleverparens-mode :wk "cleverparens")
-    "to" '(olivetti-mode :wk "olivetti")
-    "td" '(darkroom-tentative-mode :wk "darkroom")
-    "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
-    "m"  '(:ignore m :which-key "modes/programs")
-    "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
-    "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-    "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
-    "mp" '(popper-toggle :which-key "popper")
-    "md" '(dirvish :which-key "dirvish")
-    "o"  '(:ignore o :which-key "org")
-    "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
-    ;; "c"  '(:ignore c :which-key "capture")
-    ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-    ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
-    "l"  '(:ignore l :which-key "links")
-    "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
-    "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
-    "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-    ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-    "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
-    "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
-    "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-    ;; "a"   '(:ignore a :which-key "anki")
-    ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
-    ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-    ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
-    "h"   '(:ignore h :which-key "help")
-    "hy"  '(yas-describe-tables :which-key "yas tables")
-    "hb"  '(embark-bindings :which-key "current key bindings")
-    "h"   '(:ignore t :which-key "describe")
-    "he"  'view-echo-area-messages
-    "hf"  'describe-function
-    "hF"  'describe-face
-    "hl"  '(view-lossage :which-key "show command keypresses")
-    "hL"  'find-library
-    "hm"  'describe-mode
-    "ho"  'describe-symbol
-    "hk"  'describe-key
-    "hK"  'describe-keymap
-    "hp"  'describe-package
-    "hv"  'describe-variable
-    "hd"  'devdocs-lookup
-    "w"   '(:ignore t :which-key "window")
-    "wl"  'windmove-right
-    "wh"  'windmove-left
-    "wk"  'windmove-up
-    "wj"  'windmove-down
-    "wr"  'winner-redo
-    "wd"  'delete-window
-    "w="  'balance-windows-area
-    "wD"  'kill-buffer-and-window
-    "wu"  'winner-undo
-    "wr"  'winner-redo
-    "w/"  'evil-window-vsplit
-    "w-"  'evil-window-split
-    "wm"  '(delete-other-windows :wk "maximize")
-    ))
+    (swarsel/leader-keys
+      "t"  '(:ignore t :which-key "toggles")
+      "ts" '(hydra-text-scale/body :which-key "scale text")
+      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+      "tl" '(display-line-numbers-mode :which-key "line numbers")
+      "tp" '(evil-cleverparens-mode :wk "cleverparens")
+      "to" '(olivetti-mode :wk "olivetti")
+      "td" '(darkroom-tentative-mode :wk "darkroom")
+      "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
+      "m"  '(:ignore m :which-key "modes/programs")
+      "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
+      "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+      "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
+      "mp" '(popper-toggle :which-key "popper")
+      "md" '(dirvish :which-key "dirvish")
+      "o"  '(:ignore o :which-key "org")
+      "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+      ;; "c"  '(:ignore c :which-key "capture")
+      ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+      ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
+      "l"  '(:ignore l :which-key "links")
+      "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
+      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
+      "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
+      ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
+      "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
+      "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
+      "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
+      ;; "a"   '(:ignore a :which-key "anki")
+      ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
+      ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
+      ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
+      "h"   '(:ignore h :which-key "help")
+      "hy"  '(yas-describe-tables :which-key "yas tables")
+      "hb"  '(embark-bindings :which-key "current key bindings")
+      "h"   '(:ignore t :which-key "describe")
+      "he"  'view-echo-area-messages
+      "hf"  'describe-function
+      "hF"  'describe-face
+      "hl"  '(view-lossage :which-key "show command keypresses")
+      "hL"  'find-library
+      "hm"  'describe-mode
+      "ho"  'describe-symbol
+      "hk"  'describe-key
+      "hK"  'describe-keymap
+      "hp"  'describe-package
+      "hv"  'describe-variable
+      "hd"  'devdocs-lookup
+      "w"   '(:ignore t :which-key "window")
+      "wl"  'windmove-right
+      "wh"  'windmove-left
+      "wk"  'windmove-up
+      "wj"  'windmove-down
+      "wr"  'winner-redo
+      "wd"  'delete-window
+      "w="  'balance-windows-area
+      "wD"  'kill-buffer-and-window
+      "wu"  'winner-undo
+      "wr"  'winner-redo
+      "w/"  'evil-window-vsplit
+      "w-"  'evil-window-split
+      "wm"  '(delete-other-windows :wk "maximize")
+      ))
 
-;; General often used hotkeys
-(general-define-key
- "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
- ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
- ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
- ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
- "C-c d" 'duplicate-line ; duplicate line on CURSOR
- "C-M-j" 'consult-buffer
- "C-s" 'consult-line
- "M-o" 'avy-goto-char-timer
- "C-<f9>" 'my-python-shell-run
- )
+  ;; General often used hotkeys
+  (general-define-key
+   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+   ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
+   ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
+   ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
+   "C-c d" 'duplicate-line ; duplicate line on CURSOR
+   "C-M-j" 'consult-buffer
+   "C-s" 'consult-line
+   "M-o" 'avy-goto-char-timer
+   "C-<f9>" 'my-python-shell-run
+   )
+
+(defun swarsel/toggle-evil-state ()
+  (interactive)
+  (if (or (evil-emacs-state-p) (evil-insert-state-p))
+      (evil-normal-state)
+    (evil-emacs-state)))
 
 (setq inhibit-startup-message t)
 
@@ -467,8 +493,8 @@
       :after vertico
       :bind (:map vertico-map
                   ("RET" . vertico-directory-enter)
-                  ("DEL" . vertico-directory-delete-word)
-                  ("M-DEL" . vertico-directory-delete-char))
+                  ("C-DEL" . vertico-directory-delete-word)
+                  ("DEL" . vertico-directory-delete-char))
       ;; Tidy shadowed file names
       :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -482,14 +508,17 @@
       :config
       (setq consult-fontify-max-size 1024)
       :bind
-      ("C-x b" . consult-buffer)
+      (("C-x b" . consult-buffer)
       ("C-c <C-m>" . consult-global-mark)
       ("C-c C-a" . consult-org-agenda)
-      ("C-x O" . consult-outline)
+      ("C-x O" . consult-org-heading)
       ("M-g M-g" . consult-goto-line)
       ("M-g i" . consult-imenu)
       ("M-s s" . consult-line)
-      ("M-s M-s" . consult-line-multi))
+      ("M-s M-s" . consult-line-multi)
+:map minibuffer-local-map
+      ("C-j" . next-line)
+      ("C-k" . previous-line)))
 
     (use-package embark
       :bind
@@ -587,13 +616,13 @@
 ;;   ([remap describe-key] . helpful-key))
 
 (use-package helpful
-  :custom
-  (help-select-window t)
   :bind
   (("C-h f" . helpful-callable)
    ("C-h v" . helpful-variable)
    ("C-h k" . helpful-key)
-   ("C-h C-." . helpful-at-point)))
+   ("C-h C-." . helpful-at-point))
+  :config
+  (setq help-window-select nil))
 
 (use-package hydra)
 
@@ -1223,7 +1252,7 @@
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy)) ;; integrate ivy into completion system
+  :custom ((projectile-completion-system 'auto)) ;; integrate ivy into completion system
   :bind-keymap
   ("C-c p" . projectile-command-map) ; all projectile commands under this
   :init
@@ -1245,16 +1274,18 @@
 ;;   (add-to-list 'project-switch-commands '(magit-project-status "Magit" "m")))
 
 (use-package magit
-  :config
-  (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
-                                       (,swarsel-emacs-directory . 0)
-                                       (,swarsel-obsidian-directory . 0)))
-  :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
+    :config
+    (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
+                                         (,swarsel-emacs-directory . 0)
+                                         (,swarsel-obsidian-directory . 0)
+                                         ("~/.dotfiles/" . 0)))
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
 
-;; yubikey support for pushing commits
-;; commiting is enabled through nixos gpg-agent config
-(setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+  ;; yubikey support for pushing commits
+  ;; commiting is enabled through nixos gpg-agent config
+(setq epg-pinentry-mode 'loopback)
+  (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 
 (use-package forge
     :after magit)
@@ -1382,23 +1413,23 @@
   ;; Bind dedicated completion commands
   ;; Alternative prefix keys: C-c p, M-p, M-+, ...
   :bind
-  ("C-c p p" . completion-at-point) ;; capf
-  ("C-c p t" . complete-tag)        ;; etags
-  ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-  ("C-c p h" . cape-history)
-  ("C-c p f" . cape-file)
-  ("C-c p k" . cape-keyword)
-  ("C-c p s" . cape-elisp-symbol)
-  ("C-c p e" . cape-elisp-block)
-  ("C-c p a" . cape-abbrev)
-  ("C-c p l" . cape-line)
-  ("C-c p w" . cape-dict)
-  ("C-c p :" . cape-emoji)
-  ("C-c p \\" . cape-tex)
-  ("C-c p _" . cape-tex)
-  ("C-c p ^" . cape-tex)
-  ("C-c p &" . cape-sgml)
-  ("C-c p r" . cape-rfc1345)
+  ("C-z p" . completion-at-point) ;; capf
+  ("C-z t" . complete-tag)        ;; etags
+  ("C-z d" . cape-dabbrev)        ;; or dabbrev-completion
+  ("C-z h" . cape-history)
+  ("C-z f" . cape-file)
+  ("C-z k" . cape-keyword)
+  ("C-z s" . cape-elisp-symbol)
+  ("C-z e" . cape-elisp-block)
+  ("C-z a" . cape-abbrev)
+  ("C-z l" . cape-line)
+  ("C-z w" . cape-dict)
+  ("C-z :" . cape-emoji)
+  ("C-z \\" . cape-tex)
+  ("C-z _" . cape-tex)
+  ("C-z ^" . cape-tex)
+  ("C-z &" . cape-sgml)
+  ("C-z r" . cape-rfc1345)
   ;; Add to the global default value of `completion-at-point-functions' which is
   ;; used by `completion-at-point'.  The order of the functions matters, the
   ;; first function returning a result wins.  Note that the list of buffer-local
@@ -1521,7 +1552,7 @@
   ((prog-mode
     org-mode) . diff-hl-mode)
   :init
-  (diff-fl-flydiff-mode)
+  (diff-hl-flydiff-mode)
   (diff-hl-margin-mode)
   (diff-hl-show-hunk-mouse-mode))
 
@@ -1537,109 +1568,108 @@
       ;; (use-package yasnippet-snippets)
 
 ;; (setq wtf/latex-greek-prefix "'")
-;; (setq wtf/latex-math-prefix "`")
-(setq wtf/latex-mathbb-prefix "''")
-(setq swarsel/latex-mathcal-prefix "``")
+ ;; (setq wtf/latex-math-prefix "`")
+ (setq wtf/latex-mathbb-prefix "''")
+ (setq swarsel/latex-mathcal-prefix "``")
 
-(use-package yasnippet
-  :config
-  ;; (setq swtf/greek-alphabet
-  ;;       '(("a" . "\\alpha")
-  ;;         ("b" . "\\beta" )
-  ;;         ("g" . "\\gamma")
-  ;;         ("d" . "\\delta")
-  ;;         ("e" . "\\epsilon")
-  ;;         ("z" . "\\zeta")
-  ;;         ("h" . "\\eta")
-  ;;         ("th" . "\\theta")
-  ;;         ("i" . "\\iota")
-  ;;         ("k" . "\\kappa")
-  ;;         ("l" . "\\lambda")
-  ;;         ("m" . "\\mu")
-  ;;         ("n" . "\\nu")
-  ;;         ("x" . "\\xi")
-  ;;         ("p" . "\\pi")
-  ;;         ("r" . "\\rho")
-  ;;         ("s" . "\\sigma")
-  ;;         ("t" . "\\tau")
-  ;;         ("u" . "\\upsilon")
-  ;;         ("f" . "\\phi")
-  ;;         ("c" . "\\chi")
-  ;;         ("v" . "\\psi")
-  ;;         ("o" . "\\omega")))
-
-
-  ;; The same for capitalized letters
-  ;; (dolist (elem swtf/greek-alphabet)
-  ;;   (let ((key (car elem))
-  ;;         (value (cdr elem)))
-  ;;     (when (string-equal key (downcase key))
-  ;;       (add-to-list 'swtf/greek-alphabet
-  ;;                    (cons
-  ;;                     (capitalize (car elem))
-  ;;                     (concat
-  ;;                      (substring value 0 1)
-  ;;                      (capitalize (substring value 1 2))
-  ;;                      (substring value 2)))))))
-
-  ;; (yas-define-snippets
-  ;;  'latex-mode
-  ;;  (mapcar
-  ;;   (lambda (elem)
-  ;;     (list (concat wtf/latex-greek-prefix (car elem)) (cdr elem) (concat "Greek letter " (car elem))))
-  ;;   swtf/greek-alphabet))
-
-  (setq wtf/english-alphabet
-        '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
-
-  (dolist (elem wtf/english-alphabet)
-    (when (string-equal elem (downcase elem))
-      (add-to-list 'wtf/english-alphabet (upcase elem))))
+ (use-package yasnippet
+   :config
+   ;; (setq swtf/greek-alphabet
+   ;;       '(("a" . "\\alpha")
+   ;;         ("b" . "\\beta" )
+   ;;         ("g" . "\\gamma")
+   ;;         ("d" . "\\delta")
+   ;;         ("e" . "\\epsilon")
+   ;;         ("z" . "\\zeta")
+   ;;         ("h" . "\\eta")
+   ;;         ("th" . "\\theta")
+   ;;         ("i" . "\\iota")
+   ;;         ("k" . "\\kappa")
+   ;;         ("l" . "\\lambda")
+   ;;         ("m" . "\\mu")
+   ;;         ("n" . "\\nu")
+   ;;         ("x" . "\\xi")
+   ;;         ("p" . "\\pi")
+   ;;         ("r" . "\\rho")
+   ;;         ("s" . "\\sigma")
+   ;;         ("t" . "\\tau")
+   ;;         ("u" . "\\upsilon")
+   ;;         ("f" . "\\phi")
+   ;;         ("c" . "\\chi")
+   ;;         ("v" . "\\psi")
+   ;;         ("o" . "\\omega")))
 
 
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (list (concat wtf/latex-mathbb-prefix elem) (concat "\\mathbb{" elem "}") (concat "Mathbb letter " elem)))
-    wtf/english-alphabet))
+   ;; The same for capitalized letters
+   ;; (dolist (elem swtf/greek-alphabet)
+   ;;   (let ((key (car elem))
+   ;;         (value (cdr elem)))
+   ;;     (when (string-equal key (downcase key))
+   ;;       (add-to-list 'swtf/greek-alphabet
+   ;;                    (cons
+   ;;                     (capitalize (car elem))
+   ;;                     (concat
+   ;;                      (substring value 0 1)
+   ;;                      (capitalize (substring value 1 2))
+   ;;                      (substring value 2)))))))
 
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (list (concat swarsel/latex-mathcal-prefix elem) (concat "\\mathcal{" elem "}") (concat "Mathcal letter " elem)))
-    wtf/english-alphabet))
+   ;; (yas-define-snippets
+   ;;  'latex-mode
+   ;;  (mapcar
+   ;;   (lambda (elem)
+   ;;     (list (concat wtf/latex-greek-prefix (car elem)) (cdr elem) (concat "Greek letter " (car elem))))
+   ;;   swtf/greek-alphabet))
 
-  (setq swtf/latex-math-symbols
-        '(("x" . "\\times")
-          ("*" . "\\cdot")
-          ("." . "\\ldots")
-          ("op" . "\\operatorname{$1}$0")
-          ("o" . "\\circ")
-          ("V" . "\\forall")
-          ("v" . "\\vee")
-          ("w" . "\\wedge")
-          ("q" . "\\quad")
-          ("f" . "\\frac{$1}{$2}$0")
-          ("s" . "\\sum_{$1}^{$2}$0")
-          ("p" . "\\prod_{$1}^{$2}$0")
-          ("e" . "\\exists")
-          ("i" . "\\int_{$1}^{$2}$0")
-          ("c" . "\\cap")
-          ("u" . "\\cup")
-          ("0" . "\\emptyset")))
+   (setq wtf/english-alphabet
+         '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
+
+   (dolist (elem wtf/english-alphabet)
+     (when (string-equal elem (downcase elem))
+       (add-to-list 'wtf/english-alphabet (upcase elem))))
 
 
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (let ((key (car elem))
-            (value (cdr elem)))
-        (list (concat wtf/latex-math-prefix key) value (concat "Math symbol " value))))
-    swtf/latex-math-symbols))
-  )
+   (yas-define-snippets
+    'latex-mode
+    (mapcar
+     (lambda (elem)
+       (list (concat wtf/latex-mathbb-prefix elem) (concat "\\mathbb{" elem "}") (concat "Mathbb letter " elem)))
+     wtf/english-alphabet))
+
+   (yas-define-snippets
+    'latex-mode
+    (mapcar
+     (lambda (elem)
+       (list (concat swarsel/latex-mathcal-prefix elem) (concat "\\mathcal{" elem "}") (concat "Mathcal letter " elem)))
+     wtf/english-alphabet))
+
+   (setq swtf/latex-math-symbols
+         '(("x" . "\\times")
+           ("*" . "\\cdot")
+           ("." . "\\ldots")
+           ("op" . "\\operatorname{$1}$0")
+           ("o" . "\\circ")
+           ("V" . "\\forall")
+           ("v" . "\\vee")
+           ("w" . "\\wedge")
+           ("q" . "\\quad")
+           ("f" . "\\frac{$1}{$2}$0")
+           ("s" . "\\sum_{$1}^{$2}$0")
+           ("p" . "\\prod_{$1}^{$2}$0")
+           ("e" . "\\exists")
+           ("i" . "\\int_{$1}^{$2}$0")
+           ("c" . "\\cap")
+           ("u" . "\\cup")
+           ("0" . "\\emptyset")))
+
+   ;; (yas-define-snippets
+   ;;  'latex-mode
+   ;;  (mapcar
+   ;;   (lambda (elem)
+   ;;     (let ((key (car elem))
+   ;;           (value (cdr elem)))
+   ;;       (list (concat wtf/latex-math-prefix key) value (concat "Math symbol " value))))
+   ;; swtf/latex-math-symbols))
+)
 
 (defun duplicate-line (arg)
   "Duplicate current line, leaving point in lower line."
@@ -2106,6 +2136,7 @@
         dashboard-image-banner-max-height 300
         dashboard-startup-banner "~/.dotfiles/wallpaper/swarsel.png"
         dashboard-projects-backend 'projectile
+        dashboard-projects-switch-function 'magit-status
         dashboard-set-navigator t
         dashboard-startupify-list '(dashboard-insert-banner
                                     dashboard-insert-newline
@@ -2147,7 +2178,6 @@
             (lambda (&rest _) (browse-url "swarsel.win")))
            )
           )))
-  (setq dashboard-projects-switch-function 'project-switch-project)
 
 (setq gc-cons-threshold (* 800 1000 ))
 (fset 'epg-wait-for-status 'ignore)
