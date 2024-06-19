@@ -1,12 +1,340 @@
-;; The default is 800 kilobytes.  Measured in bytes.
+(defun swarsel/toggle-evil-state ()
+  (interactive)
+  (if (or (evil-emacs-state-p) (evil-insert-state-p))
+      (evil-normal-state)
+    (evil-emacs-state)))
 
-;; use UTF-8 everywhere
-(set-language-environment "UTF-8")
+(defun swarsel/last-buffer () (interactive) (switch-to-buffer nil))
 
-;; set default font size
-(defvar swarsel/default-font-size 130)
-(setq swarsel-standard-font "FiraCode Nerd Font Mono"
-      swarsel-alt-font "FiraCode Nerd Font Mono")
+(defun swarsel/mu4e-switch-account ()
+  (interactive)
+  (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
+    (setq user-mail-address account)))
+
+(defun swarsel/mu4e-rfs--matching-address ()
+  (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
+           for to-email = (pcase to-data
+                            (`(_ . email) email)
+                            (x (mu4e-contact-email x)))
+           for to-name =  (pcase to-data
+                            (`(_ . name) name)
+                            (x (mu4e-contact-name x)))
+           when (mu4e-user-mail-address-p to-email)
+           return (list to-name to-email)))
+
+(defun swarsel/mu4e-send-from-correct-address ()
+  (when mu4e-compose-parent-message
+    (save-excursion
+      (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
+        (cl-destructuring-bind (from-user from-addr) dest
+          (setq user-mail-address from-addr)
+          (message-position-on-field "From")
+          (message-beginning-of-line)
+          (delete-region (point) (line-end-position))
+          (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
+
+(defun swarsel/mu4e-restore-default ()
+  (setq user-mail-address "leon@swarsel.win"
+        user-full-name "Leon Schwarzäugl"))
+
+(defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
+  (let ((parent-directory (file-name-directory buffer-file-name)))
+    (when (and (not (file-exists-p parent-directory))
+               (y-or-n-p (format "Directory `%s' does not exist! Create it? " parent-directory)))
+      (make-directory parent-directory t))))
+
+(add-to-list 'find-file-not-found-functions #'swarsel/with-buffer-name-prompt-and-make-subdirs)
+
+(defun crux-get-positions-of-line-or-region ()
+  "Return positions (beg . end) of the current line or region."
+  (let (beg end)
+    (if (and mark-active (> (point) (mark)))
+        (exchange-point-and-mark))
+    (setq beg (line-beginning-position))
+    (if mark-active
+        (exchange-point-and-mark))
+    (setq end (line-end-position))
+    (cons beg end)))
+
+(defun crux-duplicate-current-line-or-region (arg)
+    "Duplicates the current line or region ARG times.
+  If there's no region, the current line will be duplicated.  However, if
+  there's a region, all lines that region covers will be duplicated."
+    (interactive "p")
+    (pcase-let* ((origin (point))
+                 (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+                 (region (buffer-substring-no-properties beg end)))
+      (dotimes (_i arg)
+        (goto-char end)
+        (newline)
+        (insert region)
+        (setq end (point)))
+      (goto-char (+ origin (* (length region) arg) arg))))
+
+(defun crux-duplicate-and-comment-current-line-or-region (arg)
+  "Duplicates and comments the current line or region ARG times.
+If there's no region, the current line will be duplicated.  However, if
+there's a region, all lines that region covers will be duplicated."
+  (interactive "p")
+  (pcase-let* ((origin (point))
+               (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+               (region (buffer-substring-no-properties beg end)))
+    (comment-or-uncomment-region beg end)
+    (setq end (line-end-position))
+    (dotimes (_ arg)
+      (goto-char end)
+      (newline)
+      (insert region)
+      (setq end (point)))
+    (goto-char (+ origin (* (length region) arg) arg))))
+
+(defun prot-org--id-get ()
+  "Get the CUSTOM_ID of the current entry.
+If the entry already has a CUSTOM_ID, return it as-is, else
+create a new one."
+  (let* ((pos (point))
+         (id (org-entry-get pos "CUSTOM_ID")))
+    (if (and id (stringp id) (string-match-p "\\S-" id))
+        id
+      (setq id (org-id-new "h"))
+      (org-entry-put pos "CUSTOM_ID" id)
+      id)))
+
+(declare-function org-map-entries "org")
+
+(defun prot-org-id-headlines ()
+  "Add missing CUSTOM_ID to all headlines in current file."
+  (interactive)
+  (org-map-entries
+   (lambda () (prot-org--id-get))))
+
+(defun prot-org-id-headline ()
+  "Add missing CUSTOM_ID to headline at point."
+  (interactive)
+  (prot-org--id-get))
+
+(defun suppress-messages (old-fun &rest args)
+  (cl-flet ((silence (&rest args1) (ignore)))
+    (advice-add 'message :around #'silence)
+    (unwind-protect
+        (apply old-fun args)
+      (advice-remove 'message #'silence))))
+
+(advice-add 'pixel-scroll-precision :around #'suppress-messages)
+(advice-add 'mu4e--server-filter :around #'suppress-messages)
+(advice-add 'org-unlogged-message :around #'suppress-messages)
+(advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
+(advice-add 'push-mark  :around #'suppress-messages)
+
+;; to reenable
+;; (advice-remove 'timer-event-handler #'suppress-messages)
+
+(defun who-called-me? (old-fun format &rest args)
+  (let ((trace nil) (n 1) (frame nil))
+    (while (setf frame (backtrace-frame n))
+      (setf n     (1+ n)
+            trace (cons (cadr frame) trace)) )
+    (apply old-fun (concat "<<%S>>\n" format) (cons trace args))))
+
+;; enable to get message backtrace, the first function shown in backtrace calls the other functions
+;; (advice-add 'message :around #'who-called-me?)
+
+;; disable to stop receiving backtrace
+(advice-remove 'message #'who-called-me?)
+
+(defun up-directory (path)
+  "Move up a directory in PATH without affecting the kill buffer."
+  (interactive "p")
+  (if (string-match-p "/." (minibuffer-contents))
+      (let ((end (point)))
+        (re-search-backward "/.")
+        (forward-char)
+        (delete-region (point) end))))
+
+(define-key minibuffer-local-filename-completion-map
+            [C-backspace] #'up-directory)
+
+(defun swarsel/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  ;;(auto-fill-mode 0)
+  (setq display-line-numbers-type 'relative
+        display-line-numbers-current-absolute 1
+        display-line-numbers-width-start nil
+        display-line-numbers-width 6
+        display-line-numbers-grow-only 1)
+  (add-hook 'org-tab-first-hook 'org-end-of-line)
+  (visual-line-mode 1))
+
+(defun swarsel/org-mode-visual-fill ()
+  (setq visual-fill-column-width 150
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(defun swarsel/org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      swarsel-emacs-org-filepath)
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-html-export-to-html)
+      (org-babel-tangle)))
+  (when (string-equal (buffer-file-name)
+                      swarsel-nix-org-filepath)
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(setq org-html-htmlize-output-type nil)
+
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+
+(defun org-fold-outer ()
+  (interactive)
+  (org-beginning-of-line)
+  (if (string-match "^*+" (thing-at-point 'line t))
+      (outline-up-heading 1))
+  (outline-hide-subtree)
+  )
+
+(defun swarsel/corfu-normal-return (&optional arg)
+  (interactive)
+  (corfu-quit)
+  (newline)
+  )
+
+(defun swarsel/corfu-quit-and-up (&optional arg)
+  (interactive)
+  (corfu-quit)
+  (evil-previous-visual-line))
+
+(defun swarsel/corfu-quit-and-down (&optional arg)
+  (interactive)
+  (corfu-quit)
+  (evil-next-visual-line))
+
+;; run the python inferior shell immediately upon entering a python buffer
+    ;; (add-hook 'python-mode-hook 'swarsel/run-python)
+
+  ;; (defun swarsel/run-python ()
+  ;;   (save-selected-window
+  ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+
+;; reload python shell automatically
+(defun my-python-shell-run ()
+  (interactive)
+  (when (get-buffer-process "*Python*")
+     (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
+     (kill-process (get-buffer-process "*Python*"))
+     ;; Uncomment If you want to clean the buffer too.
+     ;;(kill-buffer "*Python*")
+     ;; Not so fast!
+     (sleep-for 0.5))
+  (run-python (python-shell-parse-command) nil nil)
+  (python-shell-send-buffer)
+  ;; Pop new window only if shell isnt visible
+  ;; in any frame.
+  (unless (get-buffer-window "*Python*" t)
+    (python-shell-switch-to-shell)))
+
+(defun my-python-shell-run-region ()
+  (interactive)
+  (python-shell-send-region (region-beginning) (region-end))
+  (python-shell-switch-to-shell))
+
+;; Make ESC quit prompts
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
+;; Set up general keybindings
+(use-package general
+  :config
+  (general-create-definer swarsel/leader-keys
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-SPC")
+
+  (swarsel/leader-keys
+    "e"  '(:ignore e :which-key "evil")
+    "eo" '(evil-jump-backward :which-key "cursor jump backwards")
+    "eO" '(evil-jump-forward :which-key "cursor jump forwards")
+    "t"  '(:ignore t :which-key "toggles")
+    "ts" '(hydra-text-scale/body :which-key "scale text")
+    "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+    "tl" '(display-line-numbers-mode :which-key "line numbers")
+    "tp" '(evil-cleverparens-mode :wk "cleverparens")
+    "to" '(olivetti-mode :wk "olivetti")
+    "td" '(darkroom-tentative-mode :wk "darkroom")
+    "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
+    "m"  '(:ignore m :which-key "modes/programs")
+    "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
+    "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+    "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
+    "mp" '(popper-toggle :which-key "popper")
+    "md" '(dirvish :which-key "dirvish")
+    "o"  '(:ignore o :which-key "org")
+    "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+    "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
+    "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
+    "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
+    "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
+    ;; "c"  '(:ignore c :which-key "capture")
+    ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+    ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
+    "l"  '(:ignore l :which-key "links")
+    "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
+    "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
+    "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
+    ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
+    "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
+    "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
+    "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
+    ;; "a"   '(:ignore a :which-key "anki")
+    ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
+    ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
+    ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
+    "h"   '(:ignore h :which-key "help")
+    "hy"  '(yas-describe-tables :which-key "yas tables")
+    "hb"  '(embark-bindings :which-key "current key bindings")
+    "h"   '(:ignore t :which-key "describe")
+    "he"  'view-echo-area-messages
+    "hf"  'describe-function
+    "hF"  'describe-face
+    "hl"  '(view-lossage :which-key "show command keypresses")
+    "hL"  'find-library
+    "hm"  'describe-mode
+    "ho"  'describe-symbol
+    "hk"  'describe-key
+    "hK"  'describe-keymap
+    "hp"  'describe-package
+    "hv"  'describe-variable
+    "hd"  'devdocs-lookup
+    "w"   '(:ignore t :which-key "window")
+    "wl"  'windmove-right
+    "wh"  'windmove-left
+    "wk"  'windmove-up
+    "wj"  'windmove-down
+    "wr"  'winner-redo
+    "wd"  'delete-window
+    "w="  'balance-windows-area
+    "wD"  'kill-buffer-and-window
+    "wu"  'winner-undo
+    "wr"  'winner-redo
+    "w/"  'evil-window-vsplit
+    "w-"  'evil-window-split
+    "wm"  '(delete-other-windows :wk "maximize")
+    ))
+
+;; General often used hotkeys
+(general-define-key
+ "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+ ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
+ ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
+ ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
+ "C-c d" 'crux-duplicate-current-line-or-region
+ "C-c D" 'crux-duplicate-and-comment-current-line-or-region
+ "<DUMMY-m>" 'swarsel/last-buffer
+ "M-\\" 'indent-region
+ "C-<f9>" 'my-python-shell-run
+ )
 
 ;; set Nextcloud directory for journals etc.
 (setq swarsel-sync-directory "~/Nextcloud"
@@ -23,7 +351,7 @@
       swarsel-anki-org-file "Anki.org"
       swarsel-tasks-org-file "Tasks.org"
       swarsel-archive-org-file "Archive.org"
-      swarsel-org-folder-name "org"
+      swarsel-org-folder-name "Org"
       swarsel-obsidian-daily-folder-name "⭐ Personal/Journal"
       swarsel-obsidian-folder-name "Obsidian"
       swarsel-obsidian-vault-name "Main")
@@ -45,74 +373,99 @@
 (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
       auth-source-cache-expiry nil) ; default is 2h
 
-;; set pandoc for markdown compilation
-(setq markdown-command "pandoc")
-
-;; set org-caldav-sync-initalization
-(setq swarsel-caldav-synced 0)
-
 ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs/")
       url-history-file (expand-file-name "url/history" user-emacs-directory))
 
 ;; Use no-littering to automatically set common paths to the new user-emacs-directory
 (use-package no-littering)
-(setq custom-file (expand-file-name "programs/emacs/custom.el" swarsel-dotfiles-directory))
+(setq custom-file (make-temp-file "emacs-custom-"))
 (load custom-file t)
 
-(defalias 'yes-or-no-p 'y-or-n-p)
- ;;(setq-default show-trailing-whitespace t)
- (add-hook 'before-save-hook 'delete-trailing-whitespace)
- (global-hl-line-mode 1)
- ;; (setq redisplay-dont-pause t) ;; obsolete
- (setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
- (setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
- (delete-selection-mode 1)
- (setq vc-follow-symlinks t)
- (setq require-final-newline t)
- (winner-mode 1)
- ;; less noise when compiling elisp
- (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
- (setq native-comp-async-report-warnings-errors nil)
- (setq load-prefer-newer t)
+(let ((backup-dir "~/tmp/emacs/backups")
+      (auto-saves-dir "~/tmp/emacs/auto-saves/"))
+  (dolist (dir (list backup-dir auto-saves-dir))
+    (when (not (file-directory-p dir))
+      (make-directory dir t)))
+  (setq backup-directory-alist `(("." . ,backup-dir))
+        auto-save-file-name-transforms `((".*" ,auto-saves-dir t))
+        auto-save-list-file-prefix (concat auto-saves-dir ".saves-")
+        tramp-backup-directory-alist `((".*" . ,backup-dir))
+        tramp-auto-save-directory auto-saves-dir))
 
+(setq backup-by-copying t    ; Don't delink hardlinks
+      delete-old-versions t  ; Clean up the backups
+      version-control t      ; Use version numbers on backups,
+      kept-new-versions 5    ; keep some new versions
+      kept-old-versions 2)   ; and some old ones, too
+
+;; use UTF-8 everywhere
+(set-language-environment "UTF-8")
+
+;; set default font size
+(defvar swarsel/default-font-size 130)
+(setq swarsel-standard-font "FiraCode Nerd Font Mono"
+      swarsel-alt-font "FiraCode Nerd Font Mono")
+
+;; (defalias 'yes-or-no-p 'y-or-n-p)
+;;(setq-default show-trailing-whitespace t)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(global-hl-line-mode 1)
+;; (setq redisplay-dont-pause t) ;; obsolete
+(setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
+(global-subword-mode 1) ; Iterate through CamelCase words
+(setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
+(delete-selection-mode 1)
+(setq vc-follow-symlinks t)
+(setq require-final-newline t)
+(winner-mode 1)
+(setq load-prefer-newer t)
+
+(setq undo-limit 80000000
+      evil-want-fine-undo t
+      auto-save-default t
+      password-cache-expiry nil
+      )
 (setq browse-url-browser-function 'browse-url-firefox)
- ;; disable a keybind that does more harm than good
- (global-set-key [remap suspend-frame]
-                 (lambda ()
-                   (interactive)
-                   (message "This keybinding is disabled (was 'suspend-frame')")))
+;; disable a keybind that does more harm than good
+(global-set-key [remap suspend-frame]
+                (lambda ()
+                  (interactive)
+                  (message "This keybinding is disabled (was 'suspend-frame')")))
 
-;; (scroll-bar-mode -1)
-;; (tool-bar-mode -1)
-;; (tooltip-mode -1)
-;; (menu-bar-mode -1)
 (setq visible-bell nil)
 (setq initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
+
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'text-mode-hook 'display-line-numbers-mode)
+
+(setq custom-safe-themes t)
+
+(setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+;; Make native compilation silent and prune its cache.
+(when (native-comp-available-p)
+  (setq native-comp-async-report-warnings-errors 'silent) ; Emacs 28 with native compilation
+  (setq native-compile-prune-cache t)) ; Emacs 29
 
 (setq-default indent-tabs-mode nil
               tab-width 2)
 
 (setq tab-always-indent 'complete)
-;; dont send nag when creating python files
 (setq python-indent-guess-indent-offset-verbose nil)
 
 (use-package highlight-indent-guides
   :hook (prog-mode . highlight-indent-guides-mode)
   :init
   (setq highlight-indent-guides-method 'column)
-  ;; (setq highlight-indent-guides-method 'character)
-  ;; (setq highlight-indent-guides-character ?|)
   (setq highlight-indent-guides-responsive 'top)
   )
-;;(set-face--background 'highlight-indent-guides-odd-face "dark slate gray")
-;;(set-face-background 'highlight-indent-guides-even-face "steel blue")
-;;(set-face-foreground 'highlight-indent-guides-character-face "dark violet")
 
-;; (setq scroll-step 1
-  ;;       scroll-margin 4
-  ;;       scroll-conservatively 101)
+(with-eval-after-load 'highlight-indent-guides
+  (set-face-attribute 'highlight-indent-guides-even-face nil :background "gray10")
+  (set-face-attribute 'highlight-indent-guides-odd-face nil :background "gray20")
+  (set-face-attribute 'highlight-indent-guides-stack-even-face nil :background "gray40")
+  (set-face-attribute 'highlight-indent-guides-stack-odd-face nil :background "gray50"))
 
 (setq mouse-wheel-scroll-amount
       '(1
@@ -128,74 +481,48 @@
               scroll-conservatively 1
               scroll-margin 0
               next-screen-context-lines 0)
-  ;; (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-  ;; (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
-  ;; (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
-  (pixel-scroll-precision-mode 1)
-
-  ;; (use-package fast-scroll
-  ;;   :ensure nil
-  ;;   :init (fast-scroll-mode 1))
-
-(defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
-  (let ((parent-directory (file-name-directory buffer-file-name)))
-    (when (and (not (file-exists-p parent-directory))
-               (y-or-n-p (format "Directory `%s' does not exist! Create it? " parent-directory)))
-      (make-directory parent-directory t))))
-
-(add-to-list 'find-file-not-found-functions #'swarsel/with-buffer-name-prompt-and-make-subdirs)
+(pixel-scroll-precision-mode 1)
 
 ;; Emulate vim in emacs
-  (use-package evil
-    :init
-    (setq evil-want-integration t) ; loads evil
-    (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
-    (setq evil-want-C-u-scroll t) ; scrolling using C-u
-    (setq evil-want-C-i-jump nil) ; jumping with C-i
-    (setq evil-want-Y-yank-to-eol t) ; give Y some utility
-    (setq evil-shift-width 2) ; uniform indent
-    (setq evil-respect-visual-line-mode t) ; i am torn on this one
-                                          ; sane splitting
-    (setq evil-split-window-below t)
-    (setq evil-vsplit-window-right t)
-    :config
-    (evil-mode 1)
-    (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state) ; alternative for exiting insert mode
-    (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join) ; dont show help but instead do normal vim delete backwards
-    (define-key evil-normal-state-map (kbd "C-z") nil)
-    (define-key evil-insert-state-map (kbd "C-z") nil)
-    (define-key evil-visual-state-map (kbd "C-z") nil)
-    (define-key evil-motion-state-map (kbd "C-z") nil)
-    (define-key evil-operator-state-map (kbd "C-z") nil)
-    (define-key evil-replace-state-map (kbd "C-z") nil)
-    (define-key global-map (kbd "C-z") nil)
+(use-package evil
+  :init
+  (setq evil-want-integration t) ; loads evil
+  (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
+  (setq evil-want-C-u-scroll t) ; scrolling using C-u
+  (setq evil-want-C-i-jump nil) ; jumping with C-i
+  (setq evil-want-Y-yank-to-eol t) ; give Y some utility
+  (setq evil-shift-width 2) ; uniform indent
+  (setq evil-respect-visual-line-mode t) ; i am torn on this one
+  (setq evil-split-window-below t)
+  (setq evil-vsplit-window-right t)
+  :config
+  (evil-mode 1)
+  (define-key evil-normal-state-map (kbd "C-z") nil)
+  (define-key evil-insert-state-map (kbd "C-z") nil)
+  (define-key evil-visual-state-map (kbd "C-z") nil)
+  (define-key evil-motion-state-map (kbd "C-z") nil)
+  (define-key evil-operator-state-map (kbd "C-z") nil)
+  (define-key evil-replace-state-map (kbd "C-z") nil)
+  (define-key global-map (kbd "C-z") nil)
+  (evil-set-undo-system 'undo-tree)
 
-    ;; evil undo system
-    (evil-set-undo-system 'undo-tree)
-    ;; Use visual line motions even outside of visual-line-mode buffers
-    ;; (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-    ;; (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+  ;; Don't use evil-mode in these contexts, or use it in a specific mode
+  (evil-set-initial-state 'messages-buffer-mode 'emacs)
+  (evil-set-initial-state 'dashboard-mode 'emacs)
+  (evil-set-initial-state 'dired-mode 'emacs)
+  (evil-set-initial-state 'cfw:details-mode 'emacs)
+  (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
+  (evil-set-initial-state 'mu4e-headers-mode 'normal)
+  (evil-set-initial-state 'python-inferior-mode 'normal)
+  (add-hook 'org-capture-mode-hook 'evil-insert-state)
+  (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
 
-    ;; Don't use evil-mode in these contexts, or use it in a specific mode
-    (evil-set-initial-state 'messages-buffer-mode 'emacs)
-    (evil-set-initial-state 'dashboard-mode 'emacs)
-    (evil-set-initial-state 'dired-mode 'emacs)
-    (evil-set-initial-state 'cfw:details-mode 'emacs)
-    (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
-
-                                          ; require a specific evil state
-    (evil-set-initial-state 'mu4e-headers-mode 'normal)
-    (evil-set-initial-state 'python-inferior-mode 'normal)
-    (add-hook 'org-capture-mode-hook 'evil-insert-state)
-    (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
-
-  ;; Evil configuration for different modes
-  (use-package evil-collection
-    :after evil
-    :config
-    (evil-collection-init)
-    (setq forge-add-default-bindings nil))
+(use-package evil-collection
+  :after evil
+  :config
+  (evil-collection-init)
+  (setq forge-add-default-bindings nil))
 
 ;; enables 2-char inline search
   (use-package evil-snipe
@@ -217,239 +544,35 @@
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
 
-(defun suppress-messages (old-fun &rest args)
-  (cl-flet ((silence (&rest args1) (ignore)))
-    (advice-add 'message :around #'silence)
-    (unwind-protect
-         (apply old-fun args)
-      (advice-remove 'message #'silence))))
-
-(advice-add 'pixel-scroll-precision :around #'suppress-messages)
-(advice-add 'mu4e--server-filter :around #'suppress-messages)
-(advice-add 'org-unlogged-message :around #'suppress-messages)
-(advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
-(advice-add 'push-mark  :around #'suppress-messages)
-
-;; to reenable
-;; (advice-remove 'timer-event-handler #'suppress-messages)
-
-(defun who-called-me? (old-fun format &rest args)
-(let ((trace nil) (n 1) (frame nil))
-    (while (setf frame (backtrace-frame n))
-      (setf n     (1+ n)
-            trace (cons (cadr frame) trace)) )
-    (apply old-fun (concat "<<%S>>\n" format) (cons trace args))))
-
-;; enable to get message backtrace, the first function shown in backtrace calls the other functions
-;; (advice-add 'message :around #'who-called-me?)
-
-;; disable to stop receiving backtrace
-(advice-remove 'message #'who-called-me?)
-
-(use-package undo-tree
-  ;; :init (global-undo-tree-mode)
-  :bind (:map undo-tree-visualizer-mode-map
-              ("h" . undo-tree-visualize-switch-branch-left)
-              ("l" . undo-tree-visualize-switch-branch-left)
-              ("j" . undo-tree-visualize-redo)
-              ("k" . undo-tree-visualize-undo))
-  :config
-  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
-  )
-(add-hook 'prog-mode-hook 'undo-tree-mode)
-(add-hook 'text-mode-hook 'undo-tree-mode)
-(add-hook 'org-mode-hook 'undo-tree-mode)
-(add-hook 'latex-mode-hook 'undo-tree-mode)
-
-(let ((backup-dir "~/tmp/emacs/backups")
-      (auto-saves-dir "~/tmp/emacs/auto-saves/"))
-  (dolist (dir (list backup-dir auto-saves-dir))
-    (when (not (file-directory-p dir))
-      (make-directory dir t)))
-  (setq backup-directory-alist `(("." . ,backup-dir))
-        auto-save-file-name-transforms `((".*" ,auto-saves-dir t))
-        auto-save-list-file-prefix (concat auto-saves-dir ".saves-")
-        tramp-backup-directory-alist `((".*" . ,backup-dir))
-        tramp-auto-save-directory auto-saves-dir))
-
-(setq backup-by-copying t    ; Don't delink hardlinks
-      delete-old-versions t  ; Clean up the backups
-      version-control t      ; Use version numbers on backups,
-      kept-new-versions 5    ; keep some new versions
-      kept-old-versions 2)   ; and some old ones, too
-
-(defun up-directory (path)
-  "Move up a directory in PATH without affecting the kill buffer."
-  (interactive "p")
-  (if (string-match-p "/." (minibuffer-contents))
-      (let ((end (point)))
-        (re-search-backward "/.")
-        (forward-char)
-        (delete-region (point) end))))
-
-(define-key minibuffer-local-filename-completion-map
-            [C-backspace] #'up-directory)
-
-;; Make ESC quit prompts
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-
-  ;; Set up general keybindings
-  (use-package general
-    :config
-    (general-create-definer swarsel/leader-keys
-      :keymaps '(normal insert visual emacs)
-      :prefix "SPC"
-      :global-prefix "C-SPC")
-
-    (swarsel/leader-keys
-      "t"  '(:ignore t :which-key "toggles")
-      "ts" '(hydra-text-scale/body :which-key "scale text")
-      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
-      "tl" '(display-line-numbers-mode :which-key "line numbers")
-      "tp" '(evil-cleverparens-mode :wk "cleverparens")
-      "to" '(olivetti-mode :wk "olivetti")
-      "td" '(darkroom-tentative-mode :wk "darkroom")
-      "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
-      "m"  '(:ignore m :which-key "modes/programs")
-      "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
-      "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-      "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
-      "mp" '(popper-toggle :which-key "popper")
-      "md" '(dirvish :which-key "dirvish")
-      "o"  '(:ignore o :which-key "org")
-      "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
-      ;; "c"  '(:ignore c :which-key "capture")
-      ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-      ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
-      "l"  '(:ignore l :which-key "links")
-      "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
-      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
-      "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-      ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-      "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
-      "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
-      "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-      ;; "a"   '(:ignore a :which-key "anki")
-      ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
-      ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-      ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
-      "h"   '(:ignore h :which-key "help")
-      "hy"  '(yas-describe-tables :which-key "yas tables")
-      "hb"  '(embark-bindings :which-key "current key bindings")
-      "h"   '(:ignore t :which-key "describe")
-      "he"  'view-echo-area-messages
-      "hf"  'describe-function
-      "hF"  'describe-face
-      "hl"  '(view-lossage :which-key "show command keypresses")
-      "hL"  'find-library
-      "hm"  'describe-mode
-      "ho"  'describe-symbol
-      "hk"  'describe-key
-      "hK"  'describe-keymap
-      "hp"  'describe-package
-      "hv"  'describe-variable
-      "hd"  'devdocs-lookup
-      "w"   '(:ignore t :which-key "window")
-      "wl"  'windmove-right
-      "wh"  'windmove-left
-      "wk"  'windmove-up
-      "wj"  'windmove-down
-      "wr"  'winner-redo
-      "wd"  'delete-window
-      "w="  'balance-windows-area
-      "wD"  'kill-buffer-and-window
-      "wu"  'winner-undo
-      "wr"  'winner-redo
-      "w/"  'evil-window-vsplit
-      "w-"  'evil-window-split
-      "wm"  '(delete-other-windows :wk "maximize")
-      ))
-
-  ;; General often used hotkeys
-  (general-define-key
-   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
-   ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
-   ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
-   ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
-   "C-c d" 'duplicate-line ; duplicate line on CURSOR
-   "C-M-j" 'consult-buffer
-   "C-s" 'consult-line
-   "M-o" 'avy-goto-char-timer
-   "C-<f9>" 'my-python-shell-run
-   )
-
-(defun swarsel/toggle-evil-state ()
-  (interactive)
-  (if (or (evil-emacs-state-p) (evil-insert-state-p))
-      (evil-normal-state)
-    (evil-emacs-state)))
-
-(setq inhibit-startup-message t)
-
-;; (set-fringe-mode nil) ; Give some breathing room
-
-;; Increase undo limit and allow for more fine grained undo, base emacs deletes way too much on undo
-(setq undo-limit 80000000
-      evil-want-fine-undo t
-      auto-save-default t
-      password-cache-expiry nil
-      )
-
-;; (display-time-mode 1)
-(global-subword-mode 1) ; Iterate through CamelCase words
-
-(use-package rainbow-mode
-  :config (rainbow-mode))
-
-
-
-(add-hook 'prog-mode-hook 'display-line-numbers-mode)
-(add-hook 'text-mode-hook 'display-line-numbers-mode)
-
-;; (defun swarsel/font-setup (frame)
-  ;;   (set-face-attribute 'default nil :font swarsel-standard-font :height swarsel/default-font-size)
-  ;;   ;; Set the fixed pitch face - basically normal text
-  ;;   (set-face-attribute 'fixed-pitch nil :font swarsel-standard-font  :height 140)
-  ;;   ;; Set the variable pitch face - basically headers etc
-  ;;   (set-face-attribute 'variable-pitch nil :font swarsel-alt-font :height 100 :weight 'regular)
-  ;;   (set-face-attribute 'region nil :foreground "cyan" :background "gray40" :weight 'bold)
-  ;;   ;; (remove-hook 'after-make-frame-functions #'swarsel/font-setup)
-  ;;   )
-
-  ;; (add-hook 'after-make-frame-functions #'swarsel/font-setup)
-
-;; (defun swarsel/font-setup (frame)
 (dolist (face '(default fixed-pitch))
-    (set-face-attribute face nil
-                        :font "FiraCode Nerd Font Mono"))
-  (add-to-list 'default-frame-alist '(font . "FiraCode Nerd Font Mono"))
+  (set-face-attribute face nil
+                      :font "FiraCode Nerd Font Mono"))
+(add-to-list 'default-frame-alist '(font . "FiraCode Nerd Font Mono"))
 
-  (set-face-attribute 'default nil :height 100)
-  (set-face-attribute 'fixed-pitch nil :height 1.0)
+(set-face-attribute 'default nil :height 100)
+(set-face-attribute 'fixed-pitch nil :height 1.0)
 
-  (set-face-attribute 'variable-pitch nil
-                      :family "IBM Plex Sans"
-                      :weight 'regular
-                      :height 1.06)
-  ;; (enable-theme 'doom-city-lights)
-  ;; )
+(set-face-attribute 'variable-pitch nil
+                    :family "IBM Plex Sans"
+                    :weight 'regular
+                    :height 1.06)
 
-  ;; (add-hook 'after-make-frame-functions #'swarsel/font-setup)
+;; these settings used to be in custom.el
 
 (use-package solaire-mode
-  :defer t
-  :custom (solaire-global-mode +1))
+  :custom
+  (solaire-global-mode +1))
 
 (use-package doom-themes
-  :defer t
-  :hook (server-after-make-frame . (lambda () (load-theme
-                                               'doom-city-lights t)))
-  )
+  :hook
+  (server-after-make-frame . (lambda () (load-theme
+                                         'doom-city-lights t)))
+  :config
+  (load-theme 'doom-city-lights t)
+  (doom-themes-treemacs-config)
+  (doom-themes-org-config))
 
-;; (set-frame-parameter (selected-frame) 'alpha '(95 . 95))
-;; (add-to-list 'default-frame-alist '(alpha . (95 . 95)))
-;; (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
-;; (add-to-list 'default-frame-alist '(fullscreen . maximized))
+(use-package nerd-icons)
 
 (use-package mixed-pitch
   :custom
@@ -458,21 +581,14 @@
   :hook
   (text-mode . mixed-pitch-mode))
 
-(use-package nerd-icons)
-
-;; Adds a more beautiful modeline with less clutter
 (use-package doom-modeline
-  :init (doom-modeline-mode)
+  :init
+  (doom-modeline-mode)
+  (column-number-mode)
   :custom
   ((doom-modeline-height 22)
    (doom-modeline-indent-info nil)
    (doom-modeline-buffer-encoding nil)))
-
-;; Generally show line numbers
-(column-number-mode)
-
-;; (unless (string-match-p "^Power N/A" (battery))   ; On laptops...
-;;   (display-battery-mode 1))
 
 (setq read-buffer-completion-ignore-case t
       read-file-name-completion-ignore-case t
@@ -488,132 +604,79 @@
   (vertico-mode)
   (vertico-mouse-mode))
 
-    (use-package vertico-directory
-      :ensure nil
-      :after vertico
-      :bind (:map vertico-map
-                  ("RET" . vertico-directory-enter)
-                  ("C-DEL" . vertico-directory-delete-word)
-                  ("DEL" . vertico-directory-delete-char))
-      ;; Tidy shadowed file names
-      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+(use-package vertico-directory
+  :ensure nil
+  :after vertico
+  :bind (:map vertico-map
+              ("RET" . vertico-directory-enter)
+              ("C-DEL" . vertico-directory-delete-word)
+              ("DEL" . vertico-directory-delete-char))
+  ;; Tidy shadowed file names
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
-    (use-package orderless
-      :custom
-      (completion-styles '(orderless flex basic))
-      (completion-category-overrides '((file (styles . (partial-completion)))
-                                       (eglot (styles orderless)))))
+(use-package orderless
+  :custom
+  (completion-styles '(orderless flex basic))
+  (completion-category-overrides '((file (styles . (partial-completion)))
+                                   (eglot (styles orderless)))))
 
-    (use-package consult
-      :config
-      (setq consult-fontify-max-size 1024)
-      :bind
-      (("C-x b" . consult-buffer)
-      ("C-c <C-m>" . consult-global-mark)
-      ("C-c C-a" . consult-org-agenda)
-      ("C-x O" . consult-org-heading)
-      ("M-g M-g" . consult-goto-line)
-      ("M-g i" . consult-imenu)
-      ("M-s s" . consult-line)
-      ("M-s M-s" . consult-line-multi)
-:map minibuffer-local-map
-      ("C-j" . next-line)
-      ("C-k" . previous-line)))
+(use-package consult
+  :config
+  (setq consult-fontify-max-size 1024)
+  :bind
+  (("C-x b" . consult-buffer)
+   ("C-c <C-m>" . consult-global-mark)
+   ("C-c C-a" . consult-org-agenda)
+   ("C-x O" . consult-org-heading)
+   ("C-M-j" . consult-buffer)
+   ("C-s" . consult-line)
+   ("M-g M-g" . consult-goto-line)
+   ("M-g i" . consult-imenu)
+   ("M-s M-s" . consult-line-multi)
+   :map minibuffer-local-map
+   ("C-j" . next-line)
+   ("C-k" . previous-line)))
 
-    (use-package embark
-      :bind
-      (("C-." . embark-act)
-       ("M-." . embark-dwim)
-       ("C-h B" . embark-bindings))
-      :custom
-      (prefix-help-command #'embark-prefix-help-command)
-      (embark-quit-after-action '((t . nil)))
-      :config
-      (add-to-list 'display-buffer-alist
-                   '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                     nil
-                     (window-parameters (mode-line-format . none)))))
+(use-package embark
+  :bind
+  (("C-." . embark-act)
+   ("M-." . embark-dwim)
+   ("C-h B" . embark-bindings)
+   ("C-c c" . embark-collect))
+  :custom
+  (prefix-help-command #'embark-prefix-help-command)
+  (embark-quit-after-action '((t . nil)))
+  :config
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
 
-    (use-package embark-consult
-      :after (embark consult)
-      :demand t ; only necessary if you have the hook below
-      ;; if you want to have consult previews as you move around an
-      ;; auto-updating embark collect buffer
-      :hook
-      (embark-collect-mode . consult-preview-at-point-mode))
+(use-package embark-consult
+  :after (embark consult)
+  :demand t ; only necessary if you have the hook below
+  ;; if you want to have consult previews as you move around an
+  ;; auto-updating embark collect buffer
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
 
-    (use-package marginalia
-      :after vertico
-      :init
-      (marginalia-mode)
-      (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+(use-package marginalia
+  :after vertico
+  :init
+  (marginalia-mode)
+  (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
 
-  (use-package nerd-icons-completion
-    :after (marginalia nerd-icons)
-    :hook (marginalia-mode . nerd-icons-completion-marginalia-setup)
-    :init
-    (nerd-icons-completion-mode))
-
-;; (use-package ivy
-;;   :init (ivy-mode 1)
-;;   :diminish
-;;   :bind (("C-s" . swiper)  ; call swiper (find tool)
-;;          :map ivy-minibuffer-map
-;;                                         ;("TAB" . ivy-alt-done)	; autocomplete
-;;          ("C-l" . ivy-alt-done)
-;;          ("C-<right>" . ivy-alt-done) ; for kyria
-;;          ("C-h" . counsel-up-directory) ; for kyria
-;;          ("C-<left>" . counsel-up-directory) ; for kyria
-;;          ("C-j" . ivy-next-line) ; go up and down in ivy using vim keys
-;;          ("C-<down>" . ivy-next-line) ; for kyria
-;;          ("C-k" . ivy-previous-line)
-;;          ("C-<up>" . ivy-previous-line) ; for kyria
-;;          :map ivy-switch-buffer-map
-;;          ("C-k" . ivy-previous-line)
-;;          ("C-<up>" . ivy-previous-line) ; for kyria
-;;          ("C-l" . ivy-done)
-;;          ("C-<right>" . ivy-done) ; for kyria
-;;          ("C-d" . ivy-switch-buffer-kill)
-;;          :map ivy-reverse-i-search-map
-;;          ("C-k" . ivy-previous-line)
-;;          ("C-<up>" . ivy-previous-line) ; for kyria
-;;          ("C-d" . ivy-reverse-i-search-kill))
-;;   :config
-;;   (setq ivy-use-virtual-buffers t)
-;;   (setq ivy-count-format "(%d/%d) ")
-;;   (setq ivy-wrap t))
-
-;; ;; More information about functions in ivy-mode
-;; (use-package ivy-rich
-;;   :init
-;;   (ivy-rich-mode 1))
-
-;; (use-package counsel
-;;   :init (counsel-mode 1)
-;;   :bind (("C-M-j" . counsel-switch-buffer)
-;;          ("M-x" . counsel-M-x)
-;;          ("C-x b" . counsel-ibuffer)
-;;          ("C-x C-f" . counsel-find-file)
-;;          :map minibuffer-local-map
-;;          ("C-r" . 'counsel-minibuffer-history))
-;;   :config
-;;   (setq ivy-initial-inputs-alist nil))
+(use-package nerd-icons-completion
+  :after (marginalia nerd-icons)
+  :hook (marginalia-mode . nerd-icons-completion-marginalia-setup)
+  :init
+  (nerd-icons-completion-mode))
 
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.3))
-
-;; (use-package helpful
-;;   :custom
-;;   (counsel-describe-function-function #'helpful-callable)
-;;   (counsel-describe-variable-function #'helpful-variable)
-;;   :bind
-;;   ([remap describe-function] . counsel-describe-function)
-;;   ([remap describe-command] . helpful-command)
-;;   ([remap describe-variable] . counsel-describe-variable)
-;;   ([remap describe-key] . helpful-key))
 
 (use-package helpful
   :bind
@@ -624,16 +687,9 @@
   :config
   (setq help-window-select nil))
 
-(use-package hydra)
-
-;; change the text size of the current buffer
-(defhydra hydra-text-scale (:timeout 4)
-  "scale text"
-  ("j" text-scale-increase "in")
-  ("k" text-scale-decrease "out")
-  ("f" nil "finished" :exit t))
-
 (use-package ligature
+  :init
+  (global-ligature-mode t)
   :config
   (ligature-set-ligatures 'prog-mode
                           '("|||>" "<|||" "<==>" "<!--" "####" "~~>" "***" "||=" "||>"
@@ -648,72 +704,55 @@
                             "<$" "<=" "<>" "<-" "<<" "<+" "</" "#{" "#[" "#:" "#=" "#!"
                             "##" "#(" "#?" "#_" "%%" ".=" ".." ".?" "+>" "++" "?:" "?="
                             "?." "??" "/*" "/=" "/>" "//" "__" "~~" "(*" "*)" "\\\\"
-                            "://" ";;"))
-  (global-ligature-mode t))
+                            "://" ";;")))
 
 (use-package popper
-:bind (("M-["   . popper-toggle))
-:init
-(setq popper-reference-buffers
-      '("\\*Messages\\*"
-      ("\\*Warnings\\*" . hide)
-        "Output\\*$"
-        "\\*Async Shell Command\\*"
-        "\\*Async-native-compile-log\\*"
-        help-mode
-        helpful-mode
-        "*Occur*"
-        "*scratch*"
-        "*julia*"
-        "*Python*"
-        ;; ("*tex-shell*" . hide)
-        (compilation-mode . hide)))
-(popper-mode +1)
-(popper-echo-mode +1))
+  :bind (("M-["   . popper-toggle))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          ("\\*Warnings\\*" . hide)
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          "\\*Async-native-compile-log\\*"
+          help-mode
+          helpful-mode
+          "*Occur*"
+          "*scratch*"
+          "*julia*"
+          "*Python*"
+          ;; ("*tex-shell*" . hide)
+          (compilation-mode . hide)))
+  (popper-mode +1)
+  (popper-echo-mode +1))
 
 (use-package shackle
-:config
-(setq shackle-rules '(("*Messages*" :select t :popup t :align right :size 0.3)
-                      ("*Warnings*" :ignore t :popup t :align right :size 0.3)
-                      ("*Occur*" :select t :popup t :align below :size 0.2)
-                      ("*scratch*" :select t :popup t :align below :size 0.2)
-                      ("*Python*" :select t :popup t :align below :size 0.2)
-                      ("*tex-shell*" :ignore t :popup t :align below :size 0.2)
-                      (helpful-mode :select t :popup t :align right :size 0.35)
-                      (help-mode :select t :popup t :align right :size 0.4)))
-(shackle-mode 1))
+  :config
+  (setq shackle-rules '(("*Messages*" :select t :popup t :align right :size 0.3)
+                        ("*Warnings*" :ignore t :popup t :align right :size 0.3)
+                        ("*Occur*" :select t :popup t :align below :size 0.2)
+                        ("*scratch*" :select t :popup t :align below :size 0.2)
+                        ("*Python*" :select t :popup t :align below :size 0.2)
+                        ("*tex-shell*" :ignore t :popup t :align below :size 0.2)
+                        (helpful-mode :select t :popup t :align right :size 0.35)
+                        (help-mode :select t :popup t :align right :size 0.4)))
+  (shackle-mode 1))
 
 (setq-default indicate-buffer-boundaries t)
-
-(defun swarsel/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  ;;(auto-fill-mode 0)
-  (setq display-line-numbers-type 'relative
-        display-line-numbers-current-absolute 1
-        display-line-numbers-width-start nil
-        display-line-numbers-width 6
-        display-line-numbers-grow-only 1)
-  (add-hook 'org-tab-first-hook 'org-end-of-line)
-  (visual-line-mode 1))
-;; (setq evil-auto-indent nil)
-;;(diminish org-indent-mode)
-
-;; (defun swarsel/org-font-setup ()
-;;   ;; Replace list hyphen with dot
-;;   (font-lock-add-keywords 'org-mode
-;;                           '(("^ *\\([-]\\) "
-;;                              (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•")))))))
 
 (use-package org
   ;;:diminish (org-indent-mode)
   :hook (org-mode . swarsel/org-mode-setup)
-  :bind ("C-<tab>" . org-fold-outer)
+  :bind
+  (("C-<tab>" . org-fold-outer)
+  ("C-c s" . org-store-link))
   :config
   (setq org-ellipsis " ⤵"
+        org-link-descriptive t
         org-hide-emphasis-markers t)
   (setq org-startup-folded t)
   (setq org-support-shift-select t)
+
   ;; (setq org-agenda-start-with-log-mode t)
   ;; (setq org-log-done 'time)
   ;; (setq org-log-into-drawer t)
@@ -721,99 +760,80 @@
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
-  ;; (setq org-agenda-files
-  ;;       '(swarsel-org-tasks-filepath
-  ;;         swarsel-org-archive-filepath
-  ;;         swarsel-org-anki-filepath))
-  (setq org-agenda-files '("/home/swarsel/Calendars/leon_cal.org"))
+(setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
+                         "/home/swarsel/Nextcloud/Org/Archive.org"
+                         "/home/swarsel/Nextcloud/Org/Anki.org"
+                         "/home/swarsel/Calendars/leon_cal.org"))
+
+(setq org-refile-targets
+      '((swarsel-archive-org-file :maxlevel . 1)
+        (swarsel-anki-org-file :maxlevel . 1)
+        (swarsel-tasks-org-file :maxlevel . 1)))
+
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+        (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
 
-  ;; (require 'org-habit)
-  ;; (add-to-list 'org-modules 'org-habit)
-  ;; (setq org-habit-graph-column 60)
+;; Configure custom agenda views
+(setq org-agenda-custom-commands
+      '(("d" "Dashboard"
+         ((agenda "" ((org-deadline-warning-days 7)))
+          (todo "NEXT"
+                ((org-agenda-overriding-header "Next Tasks")))
+          (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
 
-  ;; (setq org-todo-keywords
-  ;;       '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-  ;;         (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
+        ("n" "Next Tasks"
+         ((todo "NEXT"
+                ((org-agenda-overriding-header "Next Tasks")))))
 
-  ;; (setq org-refile-targets
-  ;;       '((swarsel-archive-org-file :maxlevel . 1)
-  ;;         (swarsel-anki-org-file :maxlevel . 1)
-  ;;         (swarsel-tasks-org-file :maxlevel . 1)))
+        ("W" "Work Tasks" tags-todo "+work-email")
 
-  ;; ;; Configure custom agenda views
-  ;; (setq org-agenda-custom-commands
-  ;;       '(("d" "Dashboard"
-  ;;          ((agenda "" ((org-deadline-warning-days 7)))
-  ;;           (todo "NEXT"
-  ;;                 ((org-agenda-overriding-header "Next Tasks")))
-  ;;           (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
 
-  ;;         ("n" "Next Tasks"
-  ;;          ((todo "NEXT"
-  ;;                 ((org-agenda-overriding-header "Next Tasks")))))
+        ("w" "Workflow Status"
+         ((todo "WAIT"
+                ((org-agenda-overriding-header "Waiting on External")
+                 (org-agenda-files org-agenda-files)))
+          (todo "REVIEW"
+                ((org-agenda-overriding-header "In Review")
+                 (org-agenda-files org-agenda-files)))
+          (todo "PLAN"
+                ((org-agenda-overriding-header "In Planning")
+                 (org-agenda-todo-list-sublevels nil)
+                 (org-agenda-files org-agenda-files)))
+          (todo "BACKLOG"
+                ((org-agenda-overriding-header "Project Backlog")
+                 (org-agenda-todo-list-sublevels nil)
+                 (org-agenda-files org-agenda-files)))
+          (todo "READY"
+                ((org-agenda-overriding-header "Ready for Work")
+                 (org-agenda-files org-agenda-files)))
+          (todo "ACTIVE"
+                ((org-agenda-overriding-header "Active Projects")
+                 (org-agenda-files org-agenda-files)))
+          (todo "COMPLETED"
+                ((org-agenda-overriding-header "Completed Projects")
+                 (org-agenda-files org-agenda-files)))
+          (todo "CANC"
+                ((org-agenda-overriding-header "Cancelled Projects")
+                 (org-agenda-files org-agenda-files)))))))
 
-  ;;         ("W" "Work Tasks" tags-todo "+work-email")
+(setq org-capture-templates
+      `(
+        ("a" "Anki basic"
+         entry
+         (file+headline swarsel-org-anki-filepath "Dispatch")
+         (function swarsel-anki-make-template-string))
 
-  ;;         ;; Low-effort next actions
-  ;;         ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-  ;;          ((org-agenda-overriding-header "Low Effort Tasks")
-  ;;           (org-agenda-max-todos 20)
-  ;;           (org-agenda-files org-agenda-files)))
-
-  ;;         ("w" "Workflow Status"
-  ;;          ((todo "WAIT"
-  ;;                 ((org-agenda-overriding-header "Waiting on External")
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "REVIEW"
-  ;;                 ((org-agenda-overriding-header "In Review")
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "PLAN"
-  ;;                 ((org-agenda-overriding-header "In Planning")
-  ;;                  (org-agenda-todo-list-sublevels nil)
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "BACKLOG"
-  ;;                 ((org-agenda-overriding-header "Project Backlog")
-  ;;                  (org-agenda-todo-list-sublevels nil)
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "READY"
-  ;;                 ((org-agenda-overriding-header "Ready for Work")
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "ACTIVE"
-  ;;                 ((org-agenda-overriding-header "Active Projects")
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "COMPLETED"
-  ;;                 ((org-agenda-overriding-header "Completed Projects")
-  ;;                  (org-agenda-files org-agenda-files)))
-  ;;           (todo "CANC"
-  ;;                 ((org-agenda-overriding-header "Cancelled Projects")
-  ;;                  (org-agenda-files org-agenda-files)))))))
-
-  ;; (setq org-capture-templates
-  ;;       `(
-  ;;         ("a" "Anki basic"
-  ;;          entry
-  ;;          (file+headline swarsel-org-anki-filepath "Dispatch")
-  ;;          (function swarsel-anki-make-template-string))
-
-  ;;         ("A" "Anki cloze"
-  ;;          entry
-  ;;          (file+headline org-swarsel-anki-file "Dispatch")
-  ;;          "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
-  ;;         ("t" "Tasks / Projects")
-  ;;         ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
-  ;;          "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
-
-  ;;         ("j" "Journal Entries")
-  ;;         ("jj" "Journal" entry
-  ;;          (file+olp+datetree swarsel-org-journal-filepath)
-  ;;          "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
-  ;;          ;; ,(dw/read-file-as-string "~/Notes/Templates/Daily.org")
-  ;;          :clock-in :clock-resume
-  ;;          :empty-lines 1)))
-
-  ;; (swarsel/org-font-setup)
-  )
+        ("A" "Anki cloze"
+         entry
+         (file+headline org-swarsel-anki-file "Dispatch")
+         "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
+        ("t" "Tasks / Projects")
+        ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
+         "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
+        ))
+)
 
 ;; Set faces for heading levels
 (with-eval-after-load 'org-faces  (dolist (face '((org-level-1 . 1.1)
@@ -836,24 +856,13 @@
                       (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
                       (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
-;; Show hidden emphasis markers
-;; (use-package org-appear
-;;   :hook (org-mode . org-appear-mode)
-;;   :init
-;;   (setq org-appear-autolinks t)
-;;   (setq org-appear-autosubmarkers t)
-  ;; )
-
-;; (use-package org-bullets
-;;   :after org
-;;   :hook (org-mode . org-bullets-mode)
-;;   :custom
-;;   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-(defun swarsel/org-mode-visual-fill ()
-  (setq visual-fill-column-width 150
-        visual-fill-column-center-text t)
-  (visual-fill-column-mode 1))
+(use-package org-appear
+  :hook (org-mode . org-appear-mode)
+  :init
+  (setq org-appear-autolinks t)
+  (setq org-appear-autokeywords t)
+  (setq org-appear-autoentities t)
+  (setq org-appear-autosubmarkers t))
 
 (use-package visual-fill-column
   :hook (org-mode . swarsel/org-mode-visual-fill))
@@ -874,20 +883,6 @@
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
 (add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
-
-(defun swarsel/org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      swarsel-emacs-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle)))
-  (when (string-equal (buffer-file-name)
-                      swarsel-nix-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
-
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 (use-package auctex)
 (setq TeX-auto-save t)
@@ -922,14 +917,6 @@
 (use-package org-fragtog)
 (add-hook 'org-mode-hook 'org-fragtog-mode)
 (add-hook 'markdown-mode-hook 'org-fragtog-mode)
-
-(defun org-fold-outer ()
-  (interactive)
-  (org-beginning-of-line)
-  (if (string-match "^*+" (thing-at-point 'line t))
-      (outline-up-heading 1))
-  (outline-hide-subtree)
-  )
 
 (use-package org-modern
   :config (setq org-modern-block-name
@@ -1042,124 +1029,14 @@
 (use-package nix-mode
   :mode "\\.nix\\'")
 
+(setq markdown-command "pandoc")
+
 (use-package markdown-mode
   :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown")
   :bind (:map markdown-mode-map
-         ("C-c C-e" . markdown-do)))
-
-;; https://github.com/mooreryan/markdown-dnd-images
-;; (add-to-list 'load-path "~/.emacs.d/packages")
-;; (require 'markdown-dnd-images)
-;; (setq dnd-save-directory "images")
-
-;; (setq dnd-save-buffer-name nil)
-
-;; (setq dnd-view-inline t)
-
-;; (setq dnd-capture-source nil)
-
-;; these next lines provide an interface for org-download in markdown mode for use with obsidian
-
-;; (defvar org-download-markdown-link-format
-;;   "![[./%s]]\n"
-;;   "Format of the file link to insert.")
-
-;; (defcustom org-download-markdown-link-format-function #'org-download-markdown-link-format-function-default
-;;   "Function that takes FILENAME and returns a org link."
-;;   :type 'function)
-
-;; (defun org-download-markdown-link-format-function-default (filename)
-;;   "The default function of `org-download-link-format-function'."
-;;   (if (and (>= (string-to-number org-version) 9.3)
-;;            (eq org-download-method 'attach))
-;;       (format "[[attachment:%s]]\n"
-;;               (org-link-escape
-;;                (file-relative-name filename (org-attach-dir))))
-;;     (format org-download-markdown-link-format
-;;             (org-link-escape
-;;              (funcall org-download-abbreviate-filename-function filename)))))
-
-;; (defun org-download-markdown-image (link)
-;;   "Save image at address LINK to `org-download--dir'."
-;;   (interactive "sUrl: ")
-;;   (let* ((link-and-ext (org-download--parse-link link))
-;;          (filename
-;;           (cond ((and (derived-mode-p 'org-mode)
-;;                       (eq org-download-method 'attach))
-;;                  (let ((org-download-image-dir (org-attach-dir t))
-;;                        org-download-heading-lvl)
-;;                    (apply #'org-download--fullname link-and-ext)))
-;;                 ((fboundp org-download-method)
-;;                  (funcall org-download-method link))
-;;                 (t
-;;                  (apply #'org-download--fullname link-and-ext)))))
-;;     (setq org-download-path-last-file filename)
-;;     (org-download--image link filename)
-;;     (when (org-download-org-mode-p)
-;;       (when (eq org-download-method 'attach)
-;;         (org-attach-attach filename nil 'none))
-;;       (org-download-markdown-insert-link link filename))
-;;     (when (and (eq org-download-delete-image-after-download t)
-;;                (not (url-handler-file-remote-p (current-kill 0))))
-;;       (delete-file link delete-by-moving-to-trash))))
-
-;; (defun org-download-markdown-screenshot (&optional basename)
-;;   "Capture screenshot and insert the resulting file.
-;;   The screenshot tool is determined by `org-download-screenshot-method'."
-;;   (interactive)
-;;   (let* ((screenshot-dir (file-name-directory org-download-screenshot-file))
-;;          (org-download-screenshot-file
-;;           (if basename
-;;               (concat screenshot-dir basename) org-download-screenshot-file)))
-;;     (make-directory screenshot-dir t)
-;;     (if (functionp org-download-screenshot-method)
-;;         (funcall org-download-screenshot-method
-;;                  org-download-screenshot-file)
-;;       (shell-command-to-string
-;;        (format org-download-screenshot-method
-;;                org-download-screenshot-file)))
-;;     (when (file-exists-p org-download-screenshot-file)
-;;       (org-download-markdown-image org-download-screenshot-file)
-;;       (delete-file org-download-screenshot-file))))
-
-
-;; (defun org-download-markdown-insert-link (link filename)
-;;   (let* ((beg (point))
-;;          (line-beg (line-beginning-position))
-;;          (indent (- beg line-beg))
-;;          (in-item-p (org-in-item-p))
-;;          str)
-;;     (if (looking-back "^[ \t]+" line-beg)
-;;         (delete-region (match-beginning 0) (match-end 0))
-;;       (newline))
-;;     (insert (funcall org-download-annotate-function link))
-;;     (dolist (attr org-download-image-attr-list)
-;;       (insert attr "\n"))
-;;     (insert (if (= org-download-image-html-width 0)
-;;                 ""
-;;               (format "#+attr_html: :width %dpx\n" org-download-image-html-width)))
-;;     (insert (if (= org-download-image-latex-width 0)
-;;                 ""
-;;               (format "#+attr_latex: :width %dcm\n" org-download-image-latex-width)))
-;;     (insert (if (= org-download-image-org-width 0)
-;;                 ""
-;;               (format "#+attr_org: :width %dpx\n" org-download-image-org-width)))
-;;     (insert (funcall org-download-markdown-link-format-function filename))
-;;     (org-download--display-inline-images)
-;;     (setq str (buffer-substring-no-properties line-beg (point)))
-;;     (when in-item-p
-;;       (indent-region line-beg (point) indent))
-;;     str))
-
-;; (defun markdown-download-screenshot ()
-;;   (interactive)
-;;   (org-mode)
-;;   (org-download-markdown-screenshot)
-;;   (markdown-mode))
-
-;;(add-hook 'markdown-mode-hook (lambda () (org-display-inline-images)))
+              ("C-c C-e" . markdown-do)))
 
 (add-hook 'markdown-mode-hook
           (lambda ()
@@ -1177,30 +1054,6 @@
   (setq darkroom-text-scale-increase 3))
 
 (use-package rg)
-
-;;   (setq treesit-language-source-alist
-;;      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-;;        (cmake "https://github.com/uyha/tree-sitter-cmake")
-;;        (c "https://github.com/tree-sitter/tree-sitter-c")
-;;        (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
-;;        (css "https://github.com/tree-sitter/tree-sitter-css")
-;;        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-;;        (go "https://github.com/tree-sitter/tree-sitter-go")
-;;        (html "https://github.com/tree-sitter/tree-sitter-html")
-;;        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-;;        (json "https://github.com/tree-sitter/tree-sitter-json")
-;;        (make "https://github.com/alemuller/tree-sitter-make")
-;;        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-;;        (python "https://github.com/tree-sitter/tree-sitter-python")
-;;        (toml "https://github.com/tree-sitter/tree-sitter-toml")
-;;        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-;;        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-;;        (rust "https://github.com/tree-sitter/tree-sitter-rust")
-;;        (sql "https://github.com/m-novikov/tree-sitter-sql")
-;;        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
-
-;;   (add-hook 'rustic-mode-hook  'tree-sitter-mode)
-;;   (add-hook 'rustic-mode-hook  'tree-sitter-hl-mode)
 
 (use-package emacs
   :ensure nil
@@ -1226,9 +1079,8 @@
           (rust . ("https://github.com/tree-sitter/tree-sitter-rust"))
           (sql . ("https://github.com/m-novikov/tree-sitter-sql"))
           (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
+          (tsx  . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
           (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))))
-  ;; :hook (((rustic-mode) . tree-sitter-mode)
-  ;;        ((rustic-mode) . tree-sitter-hl-mode))
   )
 
 (use-package treesit-auto
@@ -1237,17 +1089,35 @@
   (setq treesit-auto-install 'prompt))
 
 (use-package direnv
-  ;; :init (add-hook 'prog-mode-hook #'direnv-update-environment)
   :custom (direnv-always-show-summary nil)
   :config (direnv-mode))
 
 (use-package avy
+  :bind
+  (("M-o" . avy-goto-char-timer))
   :config
   (setq avy-all-windows 'all-frames))
 
 (use-package crdt)
 
 (use-package devdocs)
+
+(add-hook 'python-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+(add-hook 'python-ts-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+
+(add-hook 'c-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("c"))))
+(add-hook 'c-ts-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("c"))))
+
+(add-hook 'c++-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("cpp"))))
+(add-hook 'c++-ts-mode-hook
+        (lambda () (setq-local devdocs-current-docs '("cpp"))))
+
+(devdocs-update-all)
 
 (use-package projectile
   :diminish projectile-mode
@@ -1259,36 +1129,24 @@
   ;; NOTE: Set this to the folder where you keep your Git repos!
   (when (file-directory-p swarsel-projects-directory)
     (setq projectile-project-search-path (list swarsel-projects-directory)))
-                                        ;(setq projectile-switch-project-action #'projectile-dired) ;list files
-  (setq projectile-switch-project-action #'magit-status))
-
-;; (use-package counsel-projectile
-;;   :config (counsel-projectile-mode))
-
-;; (use-package project
-;;   :ensure nil
-;;   :bind
-;;   (:map project-prefix-map
-;;         ("v" . magit-project-status))
-;;   :config
-;;   (add-to-list 'project-switch-commands '(magit-project-status "Magit" "m")))
+(setq projectile-switch-project-action #'magit-status))
 
 (use-package magit
-    :config
-    (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
-                                         (,swarsel-emacs-directory . 0)
-                                         (,swarsel-obsidian-directory . 0)
-                                         ("~/.dotfiles/" . 0)))
-    :custom
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
+  :config
+  (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
+                                       (,swarsel-emacs-directory . 0)
+                                       (,swarsel-obsidian-directory . 0)
+                                       ("~/.dotfiles/" . 0)))
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
 
-  ;; yubikey support for pushing commits
-  ;; commiting is enabled through nixos gpg-agent config
+;; yubikey support for pushing commits
+;; commiting is enabled through nixos gpg-agent config
 (setq epg-pinentry-mode 'loopback)
-  (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
+(setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 
 (use-package forge
-    :after magit)
+  :after magit)
 
 (with-eval-after-load 'forge
   (add-to-list 'forge-alist
@@ -1299,8 +1157,7 @@
 
 (use-package git-timemachine
    :hook (git-time-machine-mode . evil-normalize-keymaps)
-   :init (setq git-timemachine-show-minibuffer-details t)
-)
+   :init (setq git-timemachine-show-minibuffer-details t))
 
 (use-package rainbow-delimiters
     :hook (prog-mode . rainbow-delimiters-mode))
@@ -1324,94 +1181,57 @@
                    `(lambda (c)
                   (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
-;; (use-package company
-;;   :after lsp-mode
-;;   :hook (lsp-mode . company-mode)
-;;   :bind (:map company-active-map
-;;               ("<tab>" . company-complete-selection))
-;;   (:map lsp-mode-map
-;;         ("<tab>" . company-indent-or-complete-common))
-;;   :custom
-;;   (company-minimum-prefix-length 1)
-;;   (company-idle-delay 0.7))
-
-;; (use-package company-box
-;;   :hook (company-mode . company-box-mode))
+(use-package rainbow-mode
+  :config (rainbow-mode))
 
 ;; (use-package corfu
-    ;;   :custom
-    ;;   (corfu-cycle t)
-    ;;   :init
-    ;;   (global-corfu-mode))
+;;   :custom
+;;   (corfu-cycle t)
+;;   :init
+;;   (global-corfu-mode))
 
-    (use-package corfu
-      :init
-      (global-corfu-mode)
-      (corfu-history-mode)
-      (corfu-popupinfo-mode) ; Popup completion info
-      :custom
-      (corfu-auto t)
-      (corfu-auto-prefix 3)
-      (corfu-auto-delay 0.3)
-      (corfu-cycle t)
-      (corfu-quit-no-match 'separator)
-      (corfu-separator ?\s)
-      ;; (corfu-quit-no-match t)
-      (corfu-popupinfo-max-height 70)
-      (corfu-popupinfo-delay '(0.5 . 0.2))
-      ;; (corfu-preview-current 'insert) ; insert previewed candidate
-      (corfu-preselect 'prompt)
-      (corfu-on-exact-match nil)      ; Don't auto expand tempel snippets
-      ;; Optionally use TAB for cycling, default is `corfu-complete'.
-      :bind (:map corfu-map
-                  ("M-SPC"      . corfu-insert-separator)
-                  ("<return>" . swarsel/corfu-normal-return)
-                  ;; ("C-<return>" . swarsel/corfu-complete)
-                  ("S-<up>" . corfu-popupinfo-scroll-down)
-                  ("S-<down>" . corfu-popupinfo-scroll-up)
-                  ("C-<up>" . corfu-previous)
-                  ("C-<down>" . corfu-next)
-                  ("<insert-state> <up>"      . swarsel/corfu-quit-and-up)
-                  ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
-      )
+(use-package corfu
+  :init
+  (global-corfu-mode)
+  (corfu-history-mode)
+  (corfu-popupinfo-mode) ; Popup completion info
+  :custom
+  (corfu-auto t)
+  (corfu-auto-prefix 3)
+  (corfu-auto-delay 0.3)
+  (corfu-cycle t)
+  (corfu-quit-no-match 'separator)
+  (corfu-separator ?\s)
+  ;; (corfu-quit-no-match t)
+  (corfu-popupinfo-max-height 70)
+  (corfu-popupinfo-delay '(0.5 . 0.2))
+  ;; (corfu-preview-current 'insert) ; insert previewed candidate
+  (corfu-preselect 'prompt)
+  (corfu-on-exact-match nil)      ; Don't auto expand tempel snippets
+  ;; Optionally use TAB for cycling, default is `corfu-complete'.
+  :bind (:map corfu-map
+              ("M-SPC"      . corfu-insert-separator)
+              ("<return>" . swarsel/corfu-normal-return)
+              ;; ("C-<return>" . swarsel/corfu-complete)
+              ("S-<up>" . corfu-popupinfo-scroll-down)
+              ("S-<down>" . corfu-popupinfo-scroll-up)
+              ("C-<up>" . corfu-previous)
+              ("C-<down>" . corfu-next)
+              ("<insert-state> <up>"      . swarsel/corfu-quit-and-up)
+              ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
+  )
 
+(use-package nerd-icons-corfu)
 
-  ;; dont disrupt file navigation with completions
-  (defun swarsel/corfu-normal-return (&optional arg)
-    (interactive)
-    (corfu-quit)
-    (newline)
-    )
+(add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
 
-  ;; (defun swarsel/corfu-complete (&optional arg)
-  ;;   (interactive)
-  ;;   (corfu-complete)
-  ;;   (newline)
-  ;;   )
-
-  (defun swarsel/corfu-quit-and-up (&optional arg)
-    (interactive)
-    (corfu-quit)
-    (evil-previous-visual-line))
-
-  (defun swarsel/corfu-quit-and-down (&optional arg)
-    (interactive)
-    (corfu-quit)
-    (evil-next-visual-line))
-
-    (use-package nerd-icons-corfu)
-
-    (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
-
-    (setq nerd-icons-corfu-mapping
-          '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
-            (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
-            ;; ...
-            (t :style "cod" :icon "code" :face font-lock-warning-face)))
+(setq nerd-icons-corfu-mapping
+      '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
+        (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
+        ;; ...
+        (t :style "cod" :icon "code" :face font-lock-warning-face)))
 
 (use-package cape
-  ;; Bind dedicated completion commands
-  ;; Alternative prefix keys: C-c p, M-p, M-+, ...
   :bind
   ("C-z p" . completion-at-point) ;; capf
   ("C-z t" . complete-tag)        ;; etags
@@ -1488,44 +1308,6 @@
   (setq rustic-lsp-client 'eglot)
   :mode ("\\.rs" . rustic-mode))
 
-;; run the python inferior shell immediately upon entering a python buffer
-    ;; (add-hook 'python-mode-hook 'swarsel/run-python)
-
-  ;; (defun swarsel/run-python ()
-  ;;   (save-selected-window
-  ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
-
-;; reload python shell automatically
-(defun my-python-shell-run ()
-  (interactive)
-  (when (get-buffer-process "*Python*")
-     (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
-     (kill-process (get-buffer-process "*Python*"))
-     ;; Uncomment If you want to clean the buffer too.
-     ;;(kill-buffer "*Python*")
-     ;; Not so fast!
-     (sleep-for 0.5))
-  (run-python (python-shell-parse-command) nil nil)
-  (python-shell-send-buffer)
-  ;; Pop new window only if shell isnt visible
-  ;; in any frame.
-  (unless (get-buffer-window "*Python*" t)
-    (python-shell-switch-to-shell)))
-
-(defun my-python-shell-run-region ()
-  (interactive)
-  (python-shell-send-region (region-beginning) (region-end))
-  (python-shell-switch-to-shell))
-
-;; (use-package cuda-mode)
-
-;; ;; add path manually;
-;; (add-hook 'cuda-mode-hook
-;;           (lambda ()
-;;             ( setq c-basic-offset              4
-;;               flycheck-cuda-include-path (list "."))
-;;             ))
-
 (use-package tramp
   :init
   (setq vc-ignore-dir-regexp
@@ -1562,274 +1344,90 @@
 (use-package yasnippet
   :init (yas-global-mode 1)
   :config
-  (yas-reload-all)
-        )
+  (yas-reload-all))
 
-      ;; (use-package yasnippet-snippets)
+(setq wtf/latex-mathbb-prefix "''")
+(setq swarsel/latex-mathcal-prefix "``")
 
-;; (setq wtf/latex-greek-prefix "'")
- ;; (setq wtf/latex-math-prefix "`")
- (setq wtf/latex-mathbb-prefix "''")
- (setq swarsel/latex-mathcal-prefix "``")
+(use-package yasnippet
+  :config
 
- (use-package yasnippet
-   :config
-   ;; (setq swtf/greek-alphabet
-   ;;       '(("a" . "\\alpha")
-   ;;         ("b" . "\\beta" )
-   ;;         ("g" . "\\gamma")
-   ;;         ("d" . "\\delta")
-   ;;         ("e" . "\\epsilon")
-   ;;         ("z" . "\\zeta")
-   ;;         ("h" . "\\eta")
-   ;;         ("th" . "\\theta")
-   ;;         ("i" . "\\iota")
-   ;;         ("k" . "\\kappa")
-   ;;         ("l" . "\\lambda")
-   ;;         ("m" . "\\mu")
-   ;;         ("n" . "\\nu")
-   ;;         ("x" . "\\xi")
-   ;;         ("p" . "\\pi")
-   ;;         ("r" . "\\rho")
-   ;;         ("s" . "\\sigma")
-   ;;         ("t" . "\\tau")
-   ;;         ("u" . "\\upsilon")
-   ;;         ("f" . "\\phi")
-   ;;         ("c" . "\\chi")
-   ;;         ("v" . "\\psi")
-   ;;         ("o" . "\\omega")))
+  (setq wtf/english-alphabet
+        '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
+
+  (dolist (elem wtf/english-alphabet)
+    (when (string-equal elem (downcase elem))
+      (add-to-list 'wtf/english-alphabet (upcase elem))))
 
 
-   ;; The same for capitalized letters
-   ;; (dolist (elem swtf/greek-alphabet)
-   ;;   (let ((key (car elem))
-   ;;         (value (cdr elem)))
-   ;;     (when (string-equal key (downcase key))
-   ;;       (add-to-list 'swtf/greek-alphabet
-   ;;                    (cons
-   ;;                     (capitalize (car elem))
-   ;;                     (concat
-   ;;                      (substring value 0 1)
-   ;;                      (capitalize (substring value 1 2))
-   ;;                      (substring value 2)))))))
+  (yas-define-snippets
+   'latex-mode
+   (mapcar
+    (lambda (elem)
+      (list (concat wtf/latex-mathbb-prefix elem) (concat "\\mathbb{" elem "}") (concat "Mathbb letter " elem)))
+    wtf/english-alphabet))
 
-   ;; (yas-define-snippets
-   ;;  'latex-mode
-   ;;  (mapcar
-   ;;   (lambda (elem)
-   ;;     (list (concat wtf/latex-greek-prefix (car elem)) (cdr elem) (concat "Greek letter " (car elem))))
-   ;;   swtf/greek-alphabet))
+  (yas-define-snippets
+   'latex-mode
+   (mapcar
+    (lambda (elem)
+      (list (concat swarsel/latex-mathcal-prefix elem) (concat "\\mathcal{" elem "}") (concat "Mathcal letter " elem)))
+    wtf/english-alphabet))
 
-   (setq wtf/english-alphabet
-         '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
+  (setq swtf/latex-math-symbols
+        '(("x" . "\\times")
+          ("*" . "\\cdot")
+          ("." . "\\ldots")
+          ("op" . "\\operatorname{$1}$0")
+          ("o" . "\\circ")
+          ("V" . "\\forall")
+          ("v" . "\\vee")
+          ("w" . "\\wedge")
+          ("q" . "\\quad")
+          ("f" . "\\frac{$1}{$2}$0")
+          ("s" . "\\sum_{$1}^{$2}$0")
+          ("p" . "\\prod_{$1}^{$2}$0")
+          ("e" . "\\exists")
+          ("i" . "\\int_{$1}^{$2}$0")
+          ("c" . "\\cap")
+          ("u" . "\\cup")
+          ("0" . "\\emptyset")))
 
-   (dolist (elem wtf/english-alphabet)
-     (when (string-equal elem (downcase elem))
-       (add-to-list 'wtf/english-alphabet (upcase elem))))
-
-
-   (yas-define-snippets
-    'latex-mode
-    (mapcar
-     (lambda (elem)
-       (list (concat wtf/latex-mathbb-prefix elem) (concat "\\mathbb{" elem "}") (concat "Mathbb letter " elem)))
-     wtf/english-alphabet))
-
-   (yas-define-snippets
-    'latex-mode
-    (mapcar
-     (lambda (elem)
-       (list (concat swarsel/latex-mathcal-prefix elem) (concat "\\mathcal{" elem "}") (concat "Mathcal letter " elem)))
-     wtf/english-alphabet))
-
-   (setq swtf/latex-math-symbols
-         '(("x" . "\\times")
-           ("*" . "\\cdot")
-           ("." . "\\ldots")
-           ("op" . "\\operatorname{$1}$0")
-           ("o" . "\\circ")
-           ("V" . "\\forall")
-           ("v" . "\\vee")
-           ("w" . "\\wedge")
-           ("q" . "\\quad")
-           ("f" . "\\frac{$1}{$2}$0")
-           ("s" . "\\sum_{$1}^{$2}$0")
-           ("p" . "\\prod_{$1}^{$2}$0")
-           ("e" . "\\exists")
-           ("i" . "\\int_{$1}^{$2}$0")
-           ("c" . "\\cap")
-           ("u" . "\\cup")
-           ("0" . "\\emptyset")))
-
-   ;; (yas-define-snippets
-   ;;  'latex-mode
-   ;;  (mapcar
-   ;;   (lambda (elem)
-   ;;     (let ((key (car elem))
-   ;;           (value (cdr elem)))
-   ;;       (list (concat wtf/latex-math-prefix key) value (concat "Math symbol " value))))
-   ;; swtf/latex-math-symbols))
-)
-
-(defun duplicate-line (arg)
-  "Duplicate current line, leaving point in lower line."
-  (interactive "*p")
-
-  ;; save the point for undo
-  (setq buffer-undo-list (cons (point) buffer-undo-list))
-
-  ;; local variables for start and end of line
-  (let ((bol (save-excursion (beginning-of-line) (point)))
-        eol)
-    (save-excursion
-
-      ;; don't use forward-line for this, because you would have
-      ;; to check whether you are at the end of the buffer
-      (end-of-line)
-      (setq eol (point))
-
-      ;; store the line and disable the recording of undo information
-      (let ((line (buffer-substring bol eol))
-            (buffer-undo-list t)
-            (count arg))
-        ;; insert the line arg times
-        (while (> count 0)
-          (newline)         ;; because there is no newline in 'line'
-          (insert line)
-          (setq count (1- count)))
-        )
-
-      ;; create the undo information
-      (setq buffer-undo-list (cons (cons eol (point)) buffer-undo-list)))
-   ) ; end-of-let
-
-  ;; put the point in the lowest line and return
-  (next-line arg))
-
-;; (use-package lsp-mode
-  ;;   :ensure t
-  ;;   :init
-  ;;   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  ;;   (setq lsp-keymap-prefix "C-c l")
-  ;;   :hook (;; replace XXX-mode with concrete major-mode(e. g. python-mode)
-  ;;          (python-mode . lsp)
-  ;;          (c++-mode . lsp)
-  ;;          (c-mode . lsp)
-  ;;          (cuda-mode . lsp)
-  ;;          (rustic-mode . lsp)
-  ;;          ;; if you want which-key integration
-  ;;          (lsp-mode . lsp-enable-which-key-integration))
-  ;;   :commands lsp)
-
-  ;; (use-package lsp-ui
-  ;;   :config
-  ;;   (setq lsp-ui-doc-enable t
-  ;;         lsp-ui-doc-show-with-cursor t
-  ;;         lsp-ui-doc-delay 0.5
-  ;;         lsp-ui-doc-max-height 70)
-  ;;   )
-
-  ;; optionally if you want to use debugger
-  ;; (use-package dap-mode)
-
-;; (use-package lsp-treemacs
-;;   :after lsp)
-
-;; ;; currently there is a bug with the double click behavior that was recently added. Fixed by this
-;; (autoload 'treemacs-define-doubleclick-action "treemacs-mouse-interface" nil nil)
-
-;; ;; (use-package flycheck
-;;   :hook
-;;   ((lsp-mode text-mode) . flycheck-mode)
-;;   :config
-;;   (define-key flycheck-mode-map flycheck-keymap-prefix nil)
-;;   ;;(setq flycheck-keymap-prefix (kbd my-flycheck-prefix))
-;;   (define-key flycheck-mode-map flycheck-keymap-prefix
-;;               flycheck-command-map))
-
-;; ;; (use-package flycheck-posframe
-;;   :ensure t
-;;   :after flycheck
-;;   :config (add-hook 'flycheck-mode-hook #'flycheck-posframe-mode)
-;;   :init
-;;   (setq
-;;    flycheck-posframe-position 'point-top-left-corner
-;;    flycheck-posframe-error-prefix "❌ "
-;;    flycheck-posframe-info-prefix "ℹ️️️ "
-;;    flycheck-posframe-warning-prefix "⚠️ "
-;;    flycheck-posframe-prefix "💬 "))
+  )
 
 (use-package eglot
-      :ensure nil
-      :hook
-      ((python-mode
-        python-ts-mode
-        c-mode
-        c-ts-mode
-        c++-mode
-        c++-ts-mode
-        tex-mode
-        LaTeX-mode
-        ) . (lambda () (progn
-                         (eglot-ensure)
-                         (add-hook 'before-save-hook 'eglot-format nil 'local))))
-      :custom
-      (eldoc-echo-area-use-multiline-p nil)
-      (completion-category-defaults nil)
-      :config
-      ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
-      (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
-      (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
-      ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
-      ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
-      :bind (:map eglot-mode-map
-                  ("M-(" . flymake-goto-next-error)
-                  ("C-c ," . eglot-code-actions)))
+  :ensure nil
+  :hook
+  ((python-mode
+    python-ts-mode
+    c-mode
+    c-ts-mode
+    c++-mode
+    c++-ts-mode
+    tex-mode
+    LaTeX-mode
+    ) . (lambda () (progn
+                     (eglot-ensure)
+                     (add-hook 'before-save-hook 'eglot-format nil 'local))))
+  :custom
+  (eldoc-echo-area-use-multiline-p nil)
+  (completion-category-defaults nil)
+  :config
+  ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
+  (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
+  (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
+  ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
+  ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
+  :bind (:map eglot-mode-map
+              ("M-(" . flymake-goto-next-error)
+              ("C-c ," . eglot-code-actions)))
 
 (defalias 'start-lsp-server #'eglot)
 
-  (use-package breadcrumb
-    :config (breadcrumb-mode))
-
-;; (use-package lsp-bridge
-;;   :ensure nil
-;;   :init
-;;   (global-lsp-bridge-mode)
-;;   :config
-;;   (setq lsp-bridge-enable-debug nil
-;;         lsp-bridge-enable-auto-format-code 0
-;;         lsp-bridge-python-lsp-server 'pylsp
-;;         lsp-bridge-disable-backup nil
-;;         lsp-bridge-enable-org-babel 1
-;;         acm-enable-search-file-words 0
-;;         lsp-bridge-enable-hover-diagnostic 1)
-;;   )
+(use-package breadcrumb
+  :config (breadcrumb-mode))
 
 (setq backup-by-copying-when-linked t)
-
-;; (use-package dired
-;;   :ensure nil
-;;   :commands (dired dired-jump)
-;;   :bind (("C-x C-j" . dired-jump))
-;;   :custom ((dired-listing-switches "-agho --group-directories-first"))
-;;   :config
-;;   (evil-collection-define-key 'normal 'dired-mode-map
-;;     "h" 'dired-single-up-directory
-;;     "l" 'dired-single-buffer))
-
-;; (use-package dired-single)
-
-;; (use-package nerd-icons-dired
-;;   :hook
-;;   (dired-mode . nerd-icons-dired-mode))
-;; (use-package nerd-icons-completion
-;;   :after nerd-icons)
-;; (use-package nerd-icons-ivy-rich)
-;; (use-package nerd-icons-ibuffer)
-;; ;; more colorful dired
-;; (use-package diredfl
-;;   :hook
-;;   (dired-mode . diredfl-mode))
 
 (use-package dirvish
   :init
@@ -1837,6 +1435,12 @@
   :config
   (dirvish-peek-mode)
   (dirvish-side-follow-mode)
+  (setq dirvish-open-with-programs
+        (append dirvish-open-with-programs '(
+                                             (("xlsx" "docx" "doc" "odt" "ods") "libreoffice" "%f")
+                                             (("jpg" "jpeg" "png")              "imv" "%f")
+                                             (("pdf")                           "sioyek" "%f")
+                                             (("xopp")                          "xournalpp" "%f"))))
   :custom
   (delete-by-moving-to-trash t)
   (dired-listing-switches
@@ -1851,7 +1455,7 @@
      ("p" "~/Documents/GitHub/"  "Projects")
      ("/" "/"               "Root")))
   :bind
-  (("<C-i> d" . 'dirvish)
+  (("<DUMMY-i> d" . 'dirvish)
    ("C-=" . 'dirvish-side)
    :map dirvish-mode-map
    ("h"   . dired-up-directory)
@@ -1865,6 +1469,7 @@
    ("z"   . dirvish-history-last)
    ("J"   . dirvish-history-jump)
    ("y"   . dirvish-yank-menu)
+   ("/"   . dirvish-narrow)
    ("TAB" . dirvish-subtree-toggle)
    ("M-f" . dirvish-history-go-forward)
    ("M-b" . dirvish-history-go-backward)
@@ -1881,13 +1486,31 @@
       (pdf-tools-install))
   :mode ("\\.pdf" . pdf-view-mode))
 
-(use-package openwith)
-(openwith-mode t)
-;; (setq openwith-associations '(("\\.pdf\\'" "evince" (file)) ("\\.xopp\\'" "xournalpp" (file))))
-(setq openwith-associations '(("\\.xopp\\'" "xournalpp" (file))))
-                                        ;(setq openwith-associations '(("\\.xopp\\'" "xournalpp" (file))))
-
 (use-package ein)
+
+(use-package undo-tree
+  ;; :init (global-undo-tree-mode)
+  :bind (:map undo-tree-visualizer-mode-map
+              ("h" . undo-tree-visualize-switch-branch-left)
+              ("l" . undo-tree-visualize-switch-branch-left)
+              ("j" . undo-tree-visualize-redo)
+              ("k" . undo-tree-visualize-undo))
+  :config
+  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo"))))
+
+(add-hook 'prog-mode-hook 'undo-tree-mode)
+(add-hook 'text-mode-hook 'undo-tree-mode)
+(add-hook 'org-mode-hook 'undo-tree-mode)
+(add-hook 'latex-mode-hook 'undo-tree-mode)
+
+(use-package hydra)
+
+;; change the text size of the current buffer
+(defhydra hydra-text-scale (:timeout 4)
+  "scale text"
+  ("j" text-scale-increase "in")
+  ("k" text-scale-decrease "out")
+  ("f" nil "finished" :exit t))
 
 ;; (use-package obsidian
 ;;   :ensure t
@@ -1975,16 +1598,16 @@
 ;;     )
 ;;   (find-file (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
 
-(let ((mu4epath
-       (concat
-        (f-dirname
-         (file-truename
-          (executable-find "mu")))
-        "/../share/emacs/site-lisp/mu4e")))
-  (when (and
-         (string-prefix-p "/nix/store/" mu4epath)
-         (file-directory-p mu4epath))
-    (add-to-list 'load-path mu4epath)))
+;; (let ((mu4epath
+;;        (concat
+;;         (f-dirname
+;;          (file-truename
+;;           (executable-find "mu")))
+;;         "/../share/emacs/site-lisp/mu4e")))
+;;   (when (and
+;;          (string-prefix-p "/nix/store/" mu4epath)
+;;          (file-directory-p mu4epath))
+;;     (add-to-list 'load-path mu4epath)))
 
 (use-package mu4e
   :ensure nil
@@ -1996,6 +1619,7 @@
   (setq send-mail-function 'sendmail-send-it)
   (setq mu4e-change-filenames-when-moving t)
   (setq mu4e-mu-binary (executable-find "mu"))
+  (setq mu4e-hide-index-messages t)
 
   (setq mu4e-update-interval 180)
   (setq mu4e-get-mail-command "mbsync -a")
@@ -2019,58 +1643,30 @@
           (:maildir "/Sent Mail"     :key ?s)
           (:maildir "/Trash"     :key ?t)
           (:maildir "/Drafts"     :key ?d)
-          (:maildir "/All Mail"     :key ?a))))
+          (:maildir "/All Mail"     :key ?a)))
 
 (setq user-mail-address "leon@swarsel.win"
       user-full-name "Leon Schwarzäugl")
 
-(setq mu4e-hide-index-messages t)
 
-(setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com))
+(setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
 
-(defun swarsel/mu4e-switch-account ()
-  (interactive)
-  (let ((account (completing-read "Select account: " mu4e-user-mail-address-list)))
-    (setq user-mail-address account)))
-
-(defun swarsel/mu4e-rfs--matching-address ()
-  (cl-loop for to-data in (mu4e-message-field mu4e-compose-parent-message :to)
-           for to-email = (pcase to-data
-                            (`(_ . email) email)
-                            (x (mu4e-contact-email x)))
-           for to-name =  (pcase to-data
-                            (`(_ . name) name)
-                            (x (mu4e-contact-name x)))
-           when (mu4e-user-mail-address-p to-email)
-           return (list to-name to-email)))
-
-(defun swarsel/mu4e-send-from-correct-address ()
-  (when mu4e-compose-parent-message
-    (save-excursion
-      (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
-        (cl-destructuring-bind (from-user from-addr) dest
-          (setq user-mail-address from-addr)
-          (message-position-on-field "From")
-          (message-beginning-of-line)
-          (delete-region (point) (line-end-position))
-          (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
-
-(defun swarsel/mu4e-restore-default ()
-  (setq user-mail-address "leon@swarsel.win"
-        user-full-name "Leon Schwarzäugl"))
 
 (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)
 (add-hook 'mu4e-compose-post-hook #'swarsel/mu4e-restore-default)
 
-(use-package mu4e-alert)
-(mu4e-alert-set-default-style 'libnotify)
+(use-package mu4e-alert
+:config
+(setq mu4e-alert-set-default-style 'libnotify))
+
 (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 
 (mu4e t)
 
 (use-package org-caldav
   :init
-
+  ;; set org-caldav-sync-initalization
+  (setq swarsel-caldav-synced 0)
   (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsele")
   (setq org-caldav-calendars
         '((:calendar-id "personal"
@@ -2116,9 +1712,6 @@
    (list
     (cfw:org-create-source "Purple")  ; orgmode source
     (cfw:ical-create-source "TISS" "https://tiss.tuwien.ac.at/events/rest/calendar/personal?locale=de&token=4463bf7a-87a3-490a-b54c-99b4a65192f3" "Cyan"))))
-
-;;show mail
-  ;;(mu4e)
 
 (use-package dashboard
   :ensure t
@@ -2178,6 +1771,3 @@
             (lambda (&rest _) (browse-url "swarsel.win")))
            )
           )))
-
-(setq gc-cons-threshold (* 800 1000 ))
-(fset 'epg-wait-for-status 'ignore)

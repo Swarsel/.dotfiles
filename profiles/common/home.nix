@@ -544,6 +544,10 @@ home.file = {
     source = ../../programs/config/.aspell.conf;
     target = ".aspell.conf";
   };
+  ".gitmessage" = {
+    source = ../../programs/git/.gitmessage;
+    target = ".gitmessage";
+  };
 };
 
 home.sessionVariables = {
@@ -606,6 +610,20 @@ programs.git = {
   };
   userEmail = "leon.schwarzaeugl@gmail.com";
   userName = "Swarsel";
+  difftastic.enable = true;
+  lfs.enable = true;
+  includes = [
+    {
+      contents = {
+        github = {
+          user = "Swarsel";
+        };
+        commit = {
+          template = "~/.gitmessage";
+        };
+      };
+    }
+  ];
 };
 
 programs.fuzzel = {
