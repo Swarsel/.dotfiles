@@ -5,25 +5,14 @@
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
 
-  # login keymap
-  services.xserver = {
-    xkb.layout = "us";
-    xkb.variant = "altgr-intl";
-  };
+services.xserver = {
+  xkb.layout = "us";
+  xkb.variant = "altgr-intl";
+};
 
-  # mount NAS drive
-  # works only at home, but w/e
-  # fileSystems."/mnt/smb" = {
-  #   device = "//192.168.1.3/Eternor";
-  #   fsType = "cifs";
-  #   options = let
-  #     # this line prevents hanging on network split
-  #     automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-  #   in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-  # };
+nix.settings.experimental-features = ["nix-command" "flakes"];
 
-  # # enable flakes - urgent line!!
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+# use ozone for wayland - chromium apps
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   # wordlist for look
@@ -36,121 +25,107 @@
     gst-libav
   ]);
 
-  # correct time between linux and windows
-  time.hardwareClockInLocalTime = true;
+time.hardwareClockInLocalTime = true;
 
-  # dont style GRUB with stylix
-  stylix.targets.grub.enable = false; # the styling makes grub more ugly
+# dont style GRUB with stylix
+stylix.targets.grub.enable = false; # the styling makes grub more ugly
 
-  # cura fix
-  # xdg.portal = {
-  #   enable = true;
-  #   extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-  #   wlr.enable = true;
-  #   config = {
-  #     common = {
-  #       default = [
-  #         "*"
-  #       ];
-  #     };
-  #   };
-  # };
-  # wayland-related
-  security.polkit.enable = true;
-  hardware.opengl = {
-    enable = true;
-    driSupport = true;
-    driSupport32Bit = true;
-  };
+security.polkit.enable = true;
 
-  # systemd
+# systemd
   systemd.extraConfig = ''
   DefaultTimeoutStartSec=60s
   DefaultTimeoutStopSec=15s
 '';
 
-  # audio
-  sound.enable = true;
-  # nixpkgs.config.pulseaudio = true;
-  hardware.pulseaudio= {
-    enable = true;
-    package = pkgs.pulseaudioFull;
-  };
-  hardware.enableAllFirmware = true;
-  hardware.bluetooth.powerOnBoot = true;
-  hardware.bluetooth.settings = {
-    General = {
-      Enable = "Source,Sink,Media,Socket";
-    };
-  };
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  networking.networkmanager.enable = true;
+hardware.opengl = {
+  enable = true;
+  driSupport = true;
+  driSupport32Bit = true;
+};
 
-  time.timeZone = "Europe/Vienna";
+sound.enable = true;
+hardware.pulseaudio= {
+  enable = true;
+  package = pkgs.pulseaudioFull;
+};
 
-  i18n.defaultLocale = "en_US.UTF-8";
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "de_AT.UTF-8";
-    LC_IDENTIFICATION = "de_AT.UTF-8";
-    LC_MEASUREMENT = "de_AT.UTF-8";
-    LC_MONETARY = "de_AT.UTF-8";
-    LC_NAME = "de_AT.UTF-8";
-    LC_NUMERIC = "de_AT.UTF-8";
-    LC_PAPER = "de_AT.UTF-8";
-    LC_TELEPHONE = "de_AT.UTF-8";
-    LC_TIME = "de_AT.UTF-8";
+hardware.enableAllFirmware = true;
+
+hardware.bluetooth.powerOnBoot = true;
+hardware.bluetooth.settings = {
+  General = {
+    Enable = "Source,Sink,Media,Socket";
   };
+};
+
+networking.networkmanager.enable = true;
+
+time.timeZone = "Europe/Vienna";
+
+i18n.defaultLocale = "en_US.UTF-8";
+i18n.extraLocaleSettings = {
+  LC_ADDRESS = "de_AT.UTF-8";
+  LC_IDENTIFICATION = "de_AT.UTF-8";
+  LC_MEASUREMENT = "de_AT.UTF-8";
+  LC_MONETARY = "de_AT.UTF-8";
+  LC_NAME = "de_AT.UTF-8";
+  LC_NUMERIC = "de_AT.UTF-8";
+  LC_PAPER = "de_AT.UTF-8";
+  LC_TELEPHONE = "de_AT.UTF-8";
+  LC_TIME = "de_AT.UTF-8";
+};
 
 environment.systemPackages = with pkgs; [
-    # yubikey packages
-    gnupg
-    yubikey-personalization
-    yubikey-personalization-gui
-    yubico-pam
-    # yubioath-flutter
-    # yubikey-manager
-    # yubikey-manager-qt
-    yubico-piv-tool
-    # pinentry
+  # yubikey packages
+  gnupg
+  yubikey-personalization
+  yubikey-personalization-gui
+  yubico-pam
+  # yubioath-flutter
+  # yubikey-manager
+  # yubikey-manager-qt
+  yubico-piv-tool
+  # pinentry
 
-    # theme related
-    gnome.adwaita-icon-theme
+  # theme related
+  gnome.adwaita-icon-theme
 
-    # kde-connect
-    xdg-desktop-portal
+  # kde-connect
+  xdg-desktop-portal
 
-    # bluetooth
-    bluez
+  # bluetooth
+  bluez
 
-    # lsp-related -------------------------------
-    # nix
-    # latex
-    texlab
-    ghostscript_headless
-    # wireguard
-    wireguard-tools
-    # rust
-    rust-analyzer
-    clippy
-    rustfmt
-    # cpp
-    clang-tools
-    # + cuda
-    cudatoolkit
-    #lsp-bridge / python
-    gcc
-    gdb
-    (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-    # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-    # --------------------------------------------
+  # lsp-related -------------------------------
+  # nix
+  # latex
+  texlab
+  ghostscript_headless
+  # wireguard
+  wireguard-tools
+  # rust
+  rust-analyzer
+  clippy
+  rustfmt
+  # cpp
+  clang-tools
+  # + cuda
+  cudatoolkit
+  #lsp-bridge / python
+  gcc
+  gdb
+  (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+  # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+  # --------------------------------------------
 
-(stdenv.mkDerivation {
+  (stdenv.mkDerivation {
     name = "oama";
 
     src = pkgs.fetchurl {
-        name = "oama";
-        url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-        sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+      name = "oama";
+      url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+      sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
     };
 
     phases = [
@@ -163,12 +138,9 @@ environment.systemPackages = with pkgs; [
     mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
     '';
 
-})
+  })
 
-
-
-
-  ];
+];
 
 programs.dconf.enable = true;
 programs.evince.enable = true;
@@ -184,13 +156,13 @@ environment.pathsToLink = [ "/share/zsh" ];
 
 services.blueman.enable = true;
 
-  # enable scanners over network
-  hardware.sane = {
-    enable = true;
-    extraBackends = [ pkgs.sane-airscan ];
-  };
+# enable scanners over network
+hardware.sane = {
+  enable = true;
+  extraBackends = [ pkgs.sane-airscan ];
+};
 
-  # enable discovery and usage of network devices (esp. printers)
+# enable discovery and usage of network devices (esp. printers)
   services.printing.enable = true;
   services.printing.drivers = [
     pkgs.gutenprint
@@ -210,33 +182,32 @@ BrowseProtocols all
     openFirewall = true;
   };
 
-  # nautilus file manager
-  services.gvfs.enable = true;
+services.gvfs.enable = true;
 
-  # Make CAPS work as a dual function ESC/CTRL key
-  services.interception-tools = {
-    enable = true;
-    udevmonConfig = let
-      dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-        TIMING:
-          TAP_MILLISEC: 200
-          DOUBLE_TAP_MILLISEC: 0
+# Make CAPS work as a dual function ESC/CTRL key
+services.interception-tools = {
+  enable = true;
+  udevmonConfig = let
+    dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+      TIMING:
+        TAP_MILLISEC: 200
+        DOUBLE_TAP_MILLISEC: 0
 
-        MAPPINGS:
-          - KEY: KEY_CAPSLOCK
-            TAP: KEY_ESC
-            HOLD: KEY_LEFTCTRL
-      '';
-    in ''
-      - JOB: |
-          ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-            | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-            | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-        DEVICE:
-          EVENTS:
-            EV_KEY: [KEY_CAPSLOCK]
+      MAPPINGS:
+        - KEY: KEY_CAPSLOCK
+          TAP: KEY_ESC
+          HOLD: KEY_LEFTCTRL
     '';
-  };
+  in ''
+    - JOB: |
+        ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+          | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+          | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+      DEVICE:
+        EVENTS:
+          EV_KEY: [KEY_CAPSLOCK]
+  '';
+};
 
 programs.ssh.startAgent = false;
 

@@ -153,7 +153,7 @@
     noto-fonts
     noto-fonts-cjk-sans
 
-    # cura
+# cura
     (let cura5 = appimageTools.wrapType2 rec {
            name = "cura5";
            version = "5.4.0";
@@ -291,17 +291,6 @@
     '';
     })
 
-    # (pkgs.writeShellApplication {
-    #   name = "cdr";
-    #   runtimeInputs = [ pkgs.fzf ];
-    #   text = ''
-    #   cdr () {
-    # cd "$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )"
-    # }
-    # cdr
-    # '';
-    # })
-
     (pkgs.writeShellApplication {
       name = "bak";
       text = ''
@@ -311,26 +300,15 @@
 
 ];
 
-
-  #  MIGHT NEED TO ENABLE THIS ON SURFACE!!
-
 sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 sops.validateSopsFiles = false;
 
-# sops.age.keyFile = "${config.home.homeDirectory}/.ssh/key.txt";
-# This will generate a new key if the key specified above does not exist
-# sops.age.generateKey = true;
-
-# sops.gnupg.home = "/home/swarsel/.dotfiles/secrets/keys";
 # since we are using the home-manager implementation, we need to specify the runtime path for each secret
 sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
 sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
 sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
 sops.secrets.swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
 sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
-# sops.secrets.leon = { };
-# sops.secrets.nautilus = { };
-# sops.secrets.mrswarsel = { };
 
 programs.ssh= {
   enable = true;
@@ -465,33 +443,6 @@ programs.ssh= {
 
 stylix.targets.emacs.enable = false;
 
-  # fonts.fontconfig.enable = true;
-  # gtk = {
-  #   enable = true;
-
-  #   theme = {
-  #     name = "Arc-Dark";
-  #     package = pkgs.arc-theme;
-  #   };
-
-  #   cursorTheme = {
-  #     name = "capitaine-cursors";
-  #     package = pkgs.capitaine-cursors;
-  #   };
-
-  #   gtk3.extraConfig = {
-  #     Settings = ''
-  #    gtk-application-prefer-dark-theme=1
-  #    '';
-  #   };
-
-  #   gtk4.extraConfig = {
-  #     Settings = ''
-  #    gtk-application-prefer-dark-theme=1
-  #    '';
-  #   };
-  # };
-
 xdg.desktopEntries = {
 
   cura = {
@@ -518,8 +469,6 @@ xdg.desktopEntries = {
   #   categories = [ "Application"];
   # };
 
-  # currently unused but kept for possible future use-case
-  # not needed as long as schildichat is working properly
   element = {
     name = "Element Matrix Client";
     genericName = "Element";
@@ -552,14 +501,8 @@ home.file = {
 
 home.sessionVariables = {
   EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
-  EDITORBAK = "bash ~/.dotfiles/scripts/editor.sh";
-  # GTK_THEME = "Arc-Dark";
 };
 
-programs.password-store = {
-  enable = true;
-  package = pkgs.pass.withExtensions (exts: [exts.pass-otp]);
-};
 # zsh Integration is enabled by default for these
 programs.bottom.enable = true;
 programs.imv.enable = true;
@@ -575,11 +518,18 @@ programs.nix-index.enable = true;
 programs.ripgrep.enable = true;
 programs.pandoc.enable = true;
 programs.fzf.enable = true;
+programs.zoxide.enable = true;
+
+programs.password-store = {
+  enable = true;
+  package = pkgs.pass.withExtensions (exts: [exts.pass-otp]);
+};
+
 programs.direnv = {
   enable = true;
   nix-direnv.enable = true;
   };
-programs.zoxide.enable = true;
+
 programs.eza = {
   enable = true;
   icons = true;
@@ -589,6 +539,7 @@ programs.eza = {
     "--group-directories-first"
   ];
 };
+
 programs.git = {
   enable = true;
   aliases = {
@@ -631,18 +582,8 @@ programs.fuzzel = {
   settings = {
     main = {
       layer = "overlay";
-      # font = "Monospace:size=8";
       lines = "10";
       width = "40";
-    };
-    colors = {
-      # background="293744dd";
-      # text="f8f8f2ff";
-      # match="8be9fdff";
-      # selection-match="8be9fdff";
-      # selection="44475add";
-      # selection-text="f8f8f2ff";
-      # border="ffd700ff";
     };
     border.radius = "0";
   };
@@ -760,7 +701,6 @@ programs.kitty = {
     "ctrl+shift+home" = "no_op";
     "ctrl+shift+end" = "no_op";
   };
-  # theme = "citylights";
 };
 
 programs.zsh = {
@@ -945,7 +885,7 @@ accounts.email = {
 programs.emacs = {
   enable = true;
   package = (pkgs.emacsWithPackagesFromUsePackage {
-    config = ../../Emacs.org; # tangling my Emacs.org file here instead of directly putting init.el allows avoidance of automatically installing packages in blocks using UTF-8 characters, which would break the nix evaluation happening in this line. This line is also the reason why (for now) the Emacs configuration lives in a different .org file
+    config = ../../programs/emacs/init.el;
     package = pkgs.emacs-pgtk;
     alwaysEnsure = true;
     alwaysTangle = true;
@@ -1451,13 +1391,6 @@ programs.firefox = {
       don-t-fuck-with-paste
       plasma-integration
 
-      # build the rest of my firefox addons myself
-      # app id can be found in the manifest.json file of the .xpi
-      # (.xpi is just a normal archive)
-      # url can be found by copy url of the "add extension" button on the addon page
-      # the rest of the information is also found in the manifest.json, but might not be
-      # needed
-
   #     (let version = "3.4.5.0";
   #                             in buildFirefoxXpiAddon {
   # pname = "bypass-paywalls-clean";
@@ -1474,7 +1407,6 @@ programs.firefox = {
   #   platforms = platforms.all;
   # };
   # })
-
 
       (buildFirefoxXpiAddon {
         pname = ":emoji:";
@@ -1542,13 +1474,6 @@ programs.firefox = {
   };
 };
 
-# programs.browserpass = {
-#   enable = true;
-#   browsers = [
-#     "firefox"
-#     ];
-#   };
-
 services.gnome-keyring = {
   enable = true;
 };
@@ -1556,7 +1481,6 @@ services.gnome-keyring = {
 services.mbsync = {
   enable = true;
 };
-
 
 services.kdeconnect = {
   enable = true;
@@ -1570,7 +1494,6 @@ services.syncthing = {
   };
 };
 
-# this enables the emacs server
 services.emacs = {
   enable = true;
   # socketActivation.enable = false;
@@ -1764,12 +1687,6 @@ wayland.windowManager.sway = {
           };
         }
         {
-          command = "opacity 0.95";
-          criteria = {
-            app_id = ".*";
-          };
-        }
-        {
           command = "opacity 1";
           criteria = {
             app_id = "Gimp-2.10";
@@ -1790,13 +1707,13 @@ wayland.windowManager.sway = {
         {
           command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
           criteria = {
-            title="kittyterm";
+            title="^kittyterm$";
           };
         }
         {
           command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
           criteria = {
-            title="spotifytui";
+            title="^spotifytui$";
           };
         }
         # {

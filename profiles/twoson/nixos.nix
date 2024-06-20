@@ -32,7 +32,6 @@
 
   stylix.image = ../../wallpaper/t14swp.png;
   
-  
   stylix = {
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";

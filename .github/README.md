@@ -23,10 +23,10 @@ That being said, there is a lot of general configuration that you *probably* can
 
 The files that are possibly of biggest interest are found here:
 
+- [SwarselSystems.org](../SwarselSystems.org)
 - [flake.nix](../flake.nix)
-- [Nix.org](../Nix.org)
 - [early-init.el](../programs/emacs/early-init.el)
-- [Emacs.org](../Emacs.org)
+- [init](../programs/emacs/init.el)
 
 This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager machines, also using some overlays etc. There even is a configuration for an Android build. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located. early-init.el is not tangled for the reason that adding it would break the emacs-overlay parsing.
 
@@ -52,9 +52,9 @@ Below is a rough general guide to setup this system on a new NixOS host. **Again
 For a pure Home-Manager configuration, you need a few different steps. The biggest change is that you then want to call `home-manager --flake .#<your-username>@<your-hostname> switch` as the last step instead of `nixos-rebuild [...]`. A complete general guide for that case cannot really be given since you are most likely setting up the flake on a existing machine that already has a lot of configuration. If you are setting up a new system, I would recommend to use NixOS unless circumstances force you to use something else.
 
 ###### To do that:
-1) adapt [Nix.org](../Nix.org)
+1) adapt [SwarselSystems.org](../SwarselSystems.org)
     1) adapt system specific options:
-        - Make a copy of "System Specific Configurations/TEMPLATE".
+        - Make a copy of "System/System Specific Configurations/TEMPLATE".
         - Adapt all references to TEMPLATE to your host- and usernames etc - pay special attention to the header lines in each nix source block, i.e. the "#+begin_src nix [...] :tangle profiles/TEMPLATE/[...]" lines.
 
         - Add the settings needed for your specific machine.

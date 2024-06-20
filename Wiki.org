@@ -62,6 +62,9 @@ This requires changes in multiple locations. As an example we will use an early 
 
 * Build a firefox addon
 
+1) app id can be found in the manifest.json file of the .xpi (.xpi is just a normal archive)
+2) url can be found by copy url of the "add extension" button on the addon page
+3) the rest of the information is also found in the manifest.json, but might not be needed
 
 #+begin_src nix configuration.nix
   programs.firefox = {
@@ -159,3 +162,28 @@ This requires changes in multiple locations. As an example we will use an early 
 
 * Patch a utilty for nix paths:
 See https://drakerossman.com/blog/how-to-patch-a-package-source-on-nixos
+* let-block for overriding a package in nixpkgs (here: replacing airsonic with airsonic-advanced)
+
+This can be useful if a module does not let you use your own package yourself.
+
+#+begin_src nix :tangle no
+
+  pkgs = import nixpkgs { inherit system;
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
+                                       (self: super: {
+                                         airsonic = super.airsonic.overrideAttrs (_: rec {
+                                           version = "11.0.2-kagemomiji";
+                                           name = "airsonic-advanced-${version}";
+                                           src = super.fetchurl {
+                                             url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
+                                             sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
+                                           };
+                                         });
+                                       })
+                                     ];
+                          config.allowUnfree = true;
+                        };
+
+#+end_src

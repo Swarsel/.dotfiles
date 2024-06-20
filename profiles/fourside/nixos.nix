@@ -55,7 +55,6 @@
 
   stylix.image = ../../wallpaper/lenovowp.png;
   
-  
   stylix = {
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";

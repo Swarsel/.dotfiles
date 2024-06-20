@@ -26,7 +26,7 @@
     # provides GL to non-NixOS hosts
     nixgl.url = github:guibou/nixGL;
     
-    # manages all themeing using Home-Manager
+    # manages all theming using Home-Manager
     stylix.url = github:danth/stylix;
     
     # nix secrets management
@@ -44,12 +44,6 @@
     # generate NixOS images
     nixos-generators = {
       url = github:nix-community/nixos-generators;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    
-    # privateinternetaccess nixos integration - not sure if I will keep using
-    pia = {
-      url = "git+https://git.sr.ht/~rprospero/nixos-pia?ref=development";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
@@ -88,7 +82,6 @@
       stylix,
       sops-nix,
       lanzaboote,
-      pia,
       nixpkgs-mautrix-signal,
       nix-gaming,
       nixos-hardware,
@@ -255,7 +248,6 @@
         specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
-          pia.nixosModule
           ./profiles/server1/transmission/nixos.nix
         ];
       };
@@ -344,14 +336,6 @@
     };
 
     packages.x86_64-linux = {
-      
-      proxmox-lxc = nixos-generators.nixosGenerate {
-        inherit system;
-        modules = [
-           ./profiles/server1/TEMPLATE/nixos.nix
-        ];
-        format = "proxmox-lxc";
-      };
       
     };
 

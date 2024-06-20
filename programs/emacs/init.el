@@ -173,6 +173,12 @@ create a new one."
 
 (defun swarsel/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
+                      swarsel-swarsel-org-filepath)
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-html-export-to-html)
+      (org-babel-tangle)))
+  (when (string-equal (buffer-file-name)
                       swarsel-emacs-org-filepath)
     ;; Dynamic scoping to the rescue
     (let ((org-confirm-babel-evaluate nil))
@@ -280,11 +286,13 @@ create a new one."
     ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
     ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
     "l"  '(:ignore l :which-key "links")
-    "le" '((lambda () (interactive) (find-file swarsel-emacs-org-filepath)) :which-key "Emacs.org")
+    "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
+    "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+    "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
     "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
     "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
     ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-    "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
+    ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
     "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
     "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
     ;; "a"   '(:ignore a :which-key "anki")
@@ -343,7 +351,9 @@ create a new one."
       swarsel-projects-directory "~/Documents/GitHub")
 
 (setq swarsel-emacs-org-filepath (expand-file-name "Emacs.org" swarsel-dotfiles-directory)
-      swarsel-nix-org-filepath (expand-file-name "Nix.org" swarsel-dotfiles-directory))
+      swarsel-nix-org-filepath (expand-file-name "Nix.org" swarsel-dotfiles-directory)
+      swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
+      )
 
 
 ;; set Emacs main configuration .org names
@@ -367,11 +377,6 @@ create a new one."
 (setq swarsel-org-anki-filepath (expand-file-name swarsel-anki-org-file swarsel-org-directory) ; path to anki export file
       swarsel-org-tasks-filepath (expand-file-name swarsel-tasks-org-file swarsel-org-directory)
       swarsel-org-archive-filepath (expand-file-name swarsel-archive-org-file swarsel-org-directory))
-
-;; set paths to authentication files (forge)
-;; (setq auth-source-pass-filename "~/.local/share/password-store"
-(setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
-      auth-source-cache-expiry nil) ; default is 2h
 
 ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs/")
@@ -740,6 +745,9 @@ create a new one."
 
 (setq-default indicate-buffer-boundaries t)
 
+(setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
+      auth-source-cache-expiry nil) ; default is 2h
+
 (use-package org
   ;;:diminish (org-indent-mode)
   :hook (org-mode . swarsel/org-mode-setup)
@@ -873,6 +881,7 @@ create a new one."
  'org-babel-load-languages
  '((emacs-lisp . t)
    (python . t)
+   (js . t)
    (shell . t)
    ))
 
