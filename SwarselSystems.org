@@ -1537,6 +1537,10 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
           ];
         };
         bluetooth.enable = true;
+        trackpoint = {
+          enable = true;
+          device = "TPPS/2 Elan TrackPoint";
+        };
       };
 
     programs.steam = {
@@ -4774,6 +4778,12 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     rust-analyzer
     clippy
     rustfmt
+    # go
+    go
+    gopls
+    # zig
+    zig
+    zls
     # cpp
     clang-tools
     # + cuda
@@ -8104,6 +8114,7 @@ Here I set up some things that are too minor to put under other categories.
 
   (add-hook 'prog-mode-hook 'display-line-numbers-mode)
   (add-hook 'text-mode-hook 'display-line-numbers-mode)
+  (global-visual-line-mode 1)
 
 #+end_src
 
@@ -8692,6 +8703,8 @@ The popper package allows to declare different buffers as 'popup-type', which so
             "*scratch*"
             "*julia*"
             "*Python*"
+            "*rustic-compilation*"
+            "*cargo-run*"
             ;; ("*tex-shell*" . hide)
             (compilation-mode . hide)))
     (popper-mode +1)
@@ -8704,6 +8717,8 @@ The popper package allows to declare different buffers as 'popup-type', which so
                           ("*Occur*" :select t :popup t :align below :size 0.2)
                           ("*scratch*" :select t :popup t :align below :size 0.2)
                           ("*Python*" :select t :popup t :align below :size 0.2)
+                          ("*rustic-compilation*" :select t :popup t :align below :size 0.4)
+                          ("*cargo-run*" :select t :popup t :align below :size 0.2)
                           ("*tex-shell*" :ignore t :popup t :align below :size 0.2)
                           (helpful-mode :select t :popup t :align right :size 0.35)
                           (help-mode :select t :popup t :align right :size 0.4)))
@@ -9361,7 +9376,7 @@ In order to update the language grammars, run the next command below.
 
 #+end_src
 
-*** direnv
+*** direnv (envrc)
 :PROPERTIES:
 :CUSTOM_ID: h:82ddeef2-99f8-465b-ba36-07c3eaad717b
 :END:
@@ -9698,45 +9713,13 @@ I leave the commented out alist extensions here in case I want to try them out a
 :CUSTOM_ID: h:3aa20438-edf6-4b13-a90d-3d5c51239c44
 :END:
 
-This is supposed to setup a rust-lsp - however, this has not worked nicely in the past and this configuration section is just a ruin really. I need to check what works and clean this up.
+This sets up rustic-mode with tree-sitter support - there is still one issue to iron out with automatic adding of dependency crates, but everything else works fine now.
 
 #+begin_src emacs-lisp
 
-    ;; (use-package rustic
-    ;;   :ensure
-    ;;   :bind (:map rustic-mode-map
-    ;;               ("M-j" . lsp-ui-imenu)
-    ;;               ("M-?" . lsp-find-references)
-    ;;               ("C-c C-c l" . flycheck-list-errors)
-    ;;               ("C-c C-c a" . lsp-execute-code-action)
-    ;;               ("C-c C-c r" . lsp-rename)
-    ;;               ("C-c C-c q" . lsp-workspace-restart)
-    ;;               ("C-c C-c Q" . lsp-workspace-shutdown)
-    ;;               ("C-c C-c s" . lsp-rust-analyzer-status))
-    ;;   :config
-
-    ;;   (setq rustic-format-on-save t)
-    ;;   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
-
-  ;;   (defun rk/rustic-mode-hook ()
-  ;;     ;; so that run C-c C-c C-r works without having to confirm, but don't try to
-  ;;     ;; save rust buffers that are not file visiting. Once
-  ;;     ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
-  ;;     ;; no longer be necessary.
-  ;;     (when buffer-file-name
-  ;;       (setq-local buffer-save-without-query t))
-  ;;     (add-hook 'before-save-hook 'lsp-format-buffer nil t))
-
-  ;; (use-package rustic
-  ;;   :config
-  ;;   (setq rustic-format-on-save t)
-  ;;   (setq rustic-lsp-client 'eglot)
-  ;;   :custom
-  ;;   (lsp-rust-analyzer-cargo-watch-command "clippy")
-  ;;   (lsp-rust-analyzer-server-display-inlay-hints t)
-  ;;   :mode ("\\.rs" . rustic-mode))
-
   (use-package rustic
+    :init
+    (setq rust-mode-treesitter-derive t)
     :config
     (setq rustic-format-on-save t)
     (setq rustic-lsp-client 'eglot)
@@ -9899,7 +9882,7 @@ The following block is mostly inspired from [[https://code.kulupu.party/thesuess
 :CUSTOM_ID: h:316857e7-4df8-4ec5-b22e-6dac918fa937
 :END:
 
-After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say that =eglot= feels the most clean and fast to me. Rust-modes need a little extra care to get working here.
+After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say that =eglot= feels the most clean and fast to me.
 
 :PROPERTIES:
 :CUSTOM_ID: h:424fbc62-84e2-42c7-a1ca-e43ea04c43e5
@@ -9916,6 +9899,8 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
       c-ts-mode
       c++-mode
       c++-ts-mode
+      rustic-mode
+      rust-ts-mode
       tex-mode
       LaTeX-mode
       ) . (lambda () (progn
@@ -9924,12 +9909,6 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
     :custom
     (eldoc-echo-area-use-multiline-p nil)
     (completion-category-defaults nil)
-    :config
-    ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
-    (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
-    (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
-    ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
-    ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
     :bind (:map eglot-mode-map
                 ("M-(" . flymake-goto-next-error)
                 ("C-c ," . eglot-code-actions)))

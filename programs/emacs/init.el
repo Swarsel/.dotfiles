@@ -444,6 +444,7 @@ create a new one."
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 (add-hook 'text-mode-hook 'display-line-numbers-mode)
+(global-visual-line-mode 1)
 
 (setq custom-safe-themes t)
 
@@ -726,6 +727,8 @@ create a new one."
           "*scratch*"
           "*julia*"
           "*Python*"
+          "*rustic-compilation*"
+          "*cargo-run*"
           ;; ("*tex-shell*" . hide)
           (compilation-mode . hide)))
   (popper-mode +1)
@@ -738,6 +741,8 @@ create a new one."
                         ("*Occur*" :select t :popup t :align below :size 0.2)
                         ("*scratch*" :select t :popup t :align below :size 0.2)
                         ("*Python*" :select t :popup t :align below :size 0.2)
+                        ("*rustic-compilation*" :select t :popup t :align below :size 0.4)
+                        ("*cargo-run*" :select t :popup t :align below :size 0.2)
                         ("*tex-shell*" :ignore t :popup t :align below :size 0.2)
                         (helpful-mode :select t :popup t :align right :size 0.35)
                         (help-mode :select t :popup t :align right :size 0.4)))
@@ -1277,41 +1282,9 @@ create a new one."
   ;; (add-to-list 'completion-at-point-functions #'cape-line)
 )
 
-;; (use-package rustic
-  ;;   :ensure
-  ;;   :bind (:map rustic-mode-map
-  ;;               ("M-j" . lsp-ui-imenu)
-  ;;               ("M-?" . lsp-find-references)
-  ;;               ("C-c C-c l" . flycheck-list-errors)
-  ;;               ("C-c C-c a" . lsp-execute-code-action)
-  ;;               ("C-c C-c r" . lsp-rename)
-  ;;               ("C-c C-c q" . lsp-workspace-restart)
-  ;;               ("C-c C-c Q" . lsp-workspace-shutdown)
-  ;;               ("C-c C-c s" . lsp-rust-analyzer-status))
-  ;;   :config
-
-  ;;   (setq rustic-format-on-save t)
-  ;;   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
-
-;;   (defun rk/rustic-mode-hook ()
-;;     ;; so that run C-c C-c C-r works without having to confirm, but don't try to
-;;     ;; save rust buffers that are not file visiting. Once
-;;     ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
-;;     ;; no longer be necessary.
-;;     (when buffer-file-name
-;;       (setq-local buffer-save-without-query t))
-;;     (add-hook 'before-save-hook 'lsp-format-buffer nil t))
-
-;; (use-package rustic
-;;   :config
-;;   (setq rustic-format-on-save t)
-;;   (setq rustic-lsp-client 'eglot)
-;;   :custom
-;;   (lsp-rust-analyzer-cargo-watch-command "clippy")
-;;   (lsp-rust-analyzer-server-display-inlay-hints t)
-;;   :mode ("\\.rs" . rustic-mode))
-
 (use-package rustic
+  :init
+  (setq rust-mode-treesitter-derive t)
   :config
   (setq rustic-format-on-save t)
   (setq rustic-lsp-client 'eglot)
@@ -1413,6 +1386,8 @@ create a new one."
     c-ts-mode
     c++-mode
     c++-ts-mode
+    rustic-mode
+    rust-ts-mode
     tex-mode
     LaTeX-mode
     ) . (lambda () (progn
@@ -1421,12 +1396,6 @@ create a new one."
   :custom
   (eldoc-echo-area-use-multiline-p nil)
   (completion-category-defaults nil)
-  :config
-  ;; (push '(rustic-ts-mode . eglot-rust-analyzer) eglot-server-programs)
-  (push '(rustic-mode . eglot-rust-analyzer) eglot-server-programs)
-  (add-to-list 'eglot-server-programs '((rust-mode) . (eglot-rust-analyzer "rust-analyzer")))
-  ;; (add-to-list 'eglot-server-programs '((python-mode) . ("pylsp")))
-  ;; (add-to-list 'eglot-server-programs '((c-mode) . ("clangd")))
   :bind (:map eglot-mode-map
               ("M-(" . flymake-goto-next-error)
               ("C-c ," . eglot-code-actions)))

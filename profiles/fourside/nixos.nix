@@ -115,6 +115,10 @@
         ];
       };
       bluetooth.enable = true;
+      trackpoint = {
+        enable = true;
+        device = "TPPS/2 Elan TrackPoint";
+      };
     };
 
   programs.steam = {

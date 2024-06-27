@@ -108,6 +108,12 @@ environment.systemPackages = with pkgs; [
   rust-analyzer
   clippy
   rustfmt
+  # go
+  go
+  gopls
+  # zig
+  zig
+  zls
   # cpp
   clang-tools
   # + cuda
