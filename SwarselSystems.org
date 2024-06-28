@@ -7859,102 +7859,104 @@ I also define some keybinds to some combinations directly. Those are used mostly
 
 #+begin_src emacs-lisp
 
-     ;; Make ESC quit prompts
-     (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+  ;; Make ESC quit prompts
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-     ;; Set up general keybindings
-     (use-package general
-       :config
-       (general-create-definer swarsel/leader-keys
-         :keymaps '(normal insert visual emacs)
-         :prefix "SPC"
-         :global-prefix "C-SPC")
+  ;; Set up general keybindings
+  (use-package general
+    :config
+    (general-create-definer swarsel/leader-keys
+      :keymaps '(normal insert visual emacs)
+      :prefix "SPC"
+      :global-prefix "C-SPC")
 
-       (swarsel/leader-keys
-         "e"  '(:ignore e :which-key "evil")
-         "eo" '(evil-jump-backward :which-key "cursor jump backwards")
-         "eO" '(evil-jump-forward :which-key "cursor jump forwards")
-         "t"  '(:ignore t :which-key "toggles")
-         "ts" '(hydra-text-scale/body :which-key "scale text")
-         "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
-         "tl" '(display-line-numbers-mode :which-key "line numbers")
-         "tp" '(evil-cleverparens-mode :wk "cleverparens")
-         "to" '(olivetti-mode :wk "olivetti")
-         "td" '(darkroom-tentative-mode :wk "darkroom")
-         "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
-         "m"  '(:ignore m :which-key "modes/programs")
-         "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
-         "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-         "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
-         "mp" '(popper-toggle :which-key "popper")
-         "md" '(dirvish :which-key "dirvish")
-         "o"  '(:ignore o :which-key "org")
-         "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
-         "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
-         "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
-         "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
-         "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-         ;; "c"  '(:ignore c :which-key "capture")
-         ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-         ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
-         "l"  '(:ignore l :which-key "links")
-         "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
-         "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
-         "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
-         "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
-         "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-         ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-         ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
-         "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
-         "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-         ;; "a"   '(:ignore a :which-key "anki")
-         ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
-         ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-         ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
-         "h"   '(:ignore h :which-key "help")
-         "hy"  '(yas-describe-tables :which-key "yas tables")
-         "hb"  '(embark-bindings :which-key "current key bindings")
-         "h"   '(:ignore t :which-key "describe")
-         "he"  'view-echo-area-messages
-         "hf"  'describe-function
-         "hF"  'describe-face
-         "hl"  '(view-lossage :which-key "show command keypresses")
-         "hL"  'find-library
-         "hm"  'describe-mode
-         "ho"  'describe-symbol
-         "hk"  'describe-key
-         "hK"  'describe-keymap
-         "hp"  'describe-package
-         "hv"  'describe-variable
-         "hd"  'devdocs-lookup
-         "w"   '(:ignore t :which-key "window")
-         "wl"  'windmove-right
-         "wh"  'windmove-left
-         "wk"  'windmove-up
-         "wj"  'windmove-down
-         "wr"  'winner-redo
-         "wd"  'delete-window
-         "w="  'balance-windows-area
-         "wD"  'kill-buffer-and-window
-         "wu"  'winner-undo
-         "wr"  'winner-redo
-         "w/"  'evil-window-vsplit
-         "w-"  'evil-window-split
-         "wm"  '(delete-other-windows :wk "maximize")
-         ))
+    (swarsel/leader-keys
+      "e"  '(:ignore e :which-key "evil")
+      "eo" '(evil-jump-backward :which-key "cursor jump backwards")
+      "eO" '(evil-jump-forward :which-key "cursor jump forwards")
+      "t"  '(:ignore t :which-key "toggles")
+      "ts" '(hydra-text-scale/body :which-key "scale text")
+      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+      "tl" '(display-line-numbers-mode :which-key "line numbers")
+      "tp" '(evil-cleverparens-mode :wk "cleverparens")
+      "to" '(olivetti-mode :wk "olivetti")
+      "td" '(darkroom-tentative-mode :wk "darkroom")
+      "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
+      "m"  '(:ignore m :which-key "modes/programs")
+      "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
+      "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+      "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
+      "mp" '(popper-toggle :which-key "popper")
+      "md" '(dirvish :which-key "dirvish")
+      "o"  '(:ignore o :which-key "org")
+      "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+      "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
+      "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
+      "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
+      "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
+      ;; "c"  '(:ignore c :which-key "capture")
+      ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+      ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
+      "l"  '(:ignore l :which-key "links")
+      "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
+      "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+      "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
+      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
+      "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
+      ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
+      ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
+      "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
+      "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
+      ;; "a"   '(:ignore a :which-key "anki")
+      ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
+      ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
+      ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
+      "h"   '(:ignore h :which-key "help")
+      "hy"  '(yas-describe-tables :which-key "yas tables")
+      "hb"  '(embark-bindings :which-key "current key bindings")
+      "h"   '(:ignore t :which-key "describe")
+      "he"  'view-echo-area-messages
+      "hf"  'describe-function
+      "hF"  'describe-face
+      "hl"  '(view-lossage :which-key "show command keypresses")
+      "hL"  'find-library
+      "hm"  'describe-mode
+      "ho"  'describe-symbol
+      "hk"  'describe-key
+      "hK"  'describe-keymap
+      "hp"  'describe-package
+      "hv"  'describe-variable
+      "hd"  'devdocs-lookup
+      "w"   '(:ignore t :which-key "window")
+      "wl"  'windmove-right
+      "wh"  'windmove-left
+      "wk"  'windmove-up
+      "wj"  'windmove-down
+      "wr"  'winner-redo
+      "wd"  'delete-window
+      "w="  'balance-windows-area
+      "wD"  'kill-buffer-and-window
+      "wu"  'winner-undo
+      "wr"  'winner-redo
+      "w/"  'evil-window-vsplit
+      "w-"  'evil-window-split
+      "wm"  '(delete-other-windows :wk "maximize")
+      "<right>" 'up-list
+      "<left>" 'down-list
+      ))
 
-     ;; General often used hotkeys
-     (general-define-key
-      "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
-      ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
-      ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
-      ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
-      "C-c d" 'crux-duplicate-current-line-or-region
-      "C-c D" 'crux-duplicate-and-comment-current-line-or-region
-      "<DUMMY-m>" 'swarsel/last-buffer
-      "M-\\" 'indent-region
-      "C-<f9>" 'my-python-shell-run
-      )
+  ;; General often used hotkeys
+  (general-define-key
+   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+   ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
+   ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
+   ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
+   "C-c d" 'crux-duplicate-current-line-or-region
+   "C-c D" 'crux-duplicate-and-comment-current-line-or-region
+   "<DUMMY-m>" 'swarsel/last-buffer
+   "M-\\" 'indent-region
+   "C-<f9>" 'my-python-shell-run
+   )
 
 #+end_src
 *** Directory setup / File structure
@@ -9558,27 +9560,29 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
 
 #+begin_src emacs-lisp
 
-    (use-package rainbow-delimiters
-      :hook (prog-mode . rainbow-delimiters-mode))
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
 
-    (use-package highlight-parentheses
-      :config
-      (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
-      (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
-      (global-highlight-parentheses-mode t))
+  (use-package highlight-parentheses
+    :config
+    (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
+    (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
+    (global-highlight-parentheses-mode t))
 
-    (electric-pair-mode 1)
-    (setq electric-pair-preserve-balance nil)
-    ;; don't try to be overly smart
-    (setq electric-pair-delete-adjacent-pairs nil)
-    ;; don't skip newline when auto-pairing parenthesis
-    (setq electric-pair-skip-whitespace-chars '(9 32))
+  (electric-pair-mode 1)
+  (setq electric-pair-preserve-balance t)
+  (setq electric-pair-skip-self nil)
+  (setq electric-pair-delete-adjacent-pairs t)
+  ;; don't skip newline when auto-pairing parenthesis
+  (setq electric-pair-skip-whitespace-chars '(9 32))
 
-    ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
+  ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
   (add-hook 'org-mode-hook (lambda ()
-             (setq-local electric-pair-inhibit-predicate
-                     `(lambda (c)
-                    (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+                             (setq-local electric-pair-inhibit-predicate
+                                         `(lambda (c)
+                                            (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+
+
 
 #+end_src
 

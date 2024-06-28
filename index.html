@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-06-28 Fr 00:09 -->
+<!-- 2024-06-28 Fr 22:14 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -369,7 +369,7 @@
 </div>
 </div>
 <p>
-<b>This file has 40441 words spanning 10468 lines and was last revised on 2024-06-28 00:09:44 +0200.</b>
+<b>This file has 40447 words spanning 10472 lines and was last revised on 2024-06-28 22:13:57 +0200.</b>
 </p>
 
 <p>
@@ -419,7 +419,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-06-28 00:09:44 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-06-28 22:13:57 +0200)
 </p></li>
 </ul>
 
@@ -9687,6 +9687,8 @@ I also define some keybinds to some combinations directly. Those are used mostly
     "w/"  'evil-window-vsplit
     "w-"  'evil-window-split
     "wm"  '(delete-other-windows :wk "maximize")
+    "&lt;right&gt;" 'up-list
+    "&lt;left&gt;" 'down-list
     ))
 
 ;; General often used hotkeys
@@ -11521,27 +11523,29 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-  (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
-  (use-package highlight-parentheses
-    :config
-    (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
-    (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
-    (global-highlight-parentheses-mode t))
+(use-package highlight-parentheses
+  :config
+  (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
+  (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
+  (global-highlight-parentheses-mode t))
 
-  (electric-pair-mode 1)
-  (setq electric-pair-preserve-balance nil)
-  ;; don't try to be overly smart
-  (setq electric-pair-delete-adjacent-pairs nil)
-  ;; don't skip newline when auto-pairing parenthesis
-  (setq electric-pair-skip-whitespace-chars '(9 32))
+(electric-pair-mode 1)
+(setq electric-pair-preserve-balance t)
+(setq electric-pair-skip-self nil)
+(setq electric-pair-delete-adjacent-pairs t)
+;; don't skip newline when auto-pairing parenthesis
+(setq electric-pair-skip-whitespace-chars '(9 32))
 
-  ;; in org-mode buffers, do not pair &lt; and &gt; in order not to interfere with org-tempo
+;; in org-mode buffers, do not pair &lt; and &gt; in order not to interfere with org-tempo
 (add-hook 'org-mode-hook (lambda ()
-           (setq-local electric-pair-inhibit-predicate
-                   `(lambda (c)
-                  (if (char-equal c ?&lt;) t (,electric-pair-inhibit-predicate c))))))
+                           (setq-local electric-pair-inhibit-predicate
+                                       `(lambda (c)
+                                          (if (char-equal c ?&lt;) t (,electric-pair-inhibit-predicate c))))))
+
+
 
 </pre>
 </div>
@@ -12546,7 +12550,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-06-28 Fr 00:09</p>
+<p class="date">Created: 2024-06-28 Fr 22:14</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

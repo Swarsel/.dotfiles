@@ -329,6 +329,8 @@ create a new one."
     "w/"  'evil-window-vsplit
     "w-"  'evil-window-split
     "wm"  '(delete-other-windows :wk "maximize")
+    "<right>" 'up-list
+    "<left>" 'down-list
     ))
 
 ;; General often used hotkeys
@@ -1174,26 +1176,26 @@ create a new one."
    :init (setq git-timemachine-show-minibuffer-details t))
 
 (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
+  :hook (prog-mode . rainbow-delimiters-mode))
 
-  (use-package highlight-parentheses
-    :config
-    (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
-    (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
-    (global-highlight-parentheses-mode t))
+(use-package highlight-parentheses
+  :config
+  (setq highlight-parentheses-colors '("black" "white" "black" "black" "black" "black" "black"))
+  (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
+  (global-highlight-parentheses-mode t))
 
-  (electric-pair-mode 1)
-  (setq electric-pair-preserve-balance nil)
-  ;; don't try to be overly smart
-  (setq electric-pair-delete-adjacent-pairs nil)
-  ;; don't skip newline when auto-pairing parenthesis
-  (setq electric-pair-skip-whitespace-chars '(9 32))
+(electric-pair-mode 1)
+(setq electric-pair-preserve-balance t)
+(setq electric-pair-skip-self nil)
+(setq electric-pair-delete-adjacent-pairs t)
+;; don't skip newline when auto-pairing parenthesis
+(setq electric-pair-skip-whitespace-chars '(9 32))
 
-  ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
+;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
 (add-hook 'org-mode-hook (lambda ()
-           (setq-local electric-pair-inhibit-predicate
-                   `(lambda (c)
-                  (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+                           (setq-local electric-pair-inhibit-predicate
+                                       `(lambda (c)
+                                          (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
 (use-package rainbow-mode
   :config (rainbow-mode))
