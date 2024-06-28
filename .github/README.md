@@ -1,6 +1,6 @@
 ###### Disclaimer
 
-You probably do not want to use this setup verbatim. This is made to fit my specific use cases, with some strings hardcoded and some niche settings that are not needed on most hosts. Also, nothing is ever stable here and changes are made on a daily basis.
+You probably do not want to use this setup verbatim. This is made to fit my specific use cases, some of these settings will not make sense on other hosts. Also, nothing is ever stable here and changes are made on a daily basis.
 
 That being said, there is a lot of general configuration that you *probably* can use without changes; if you only want to use this repository as a starting point for your own configuration, you should be fine. See below for more information. Also, if you see something that can be done more efficiently or better in general, please let me know! :)
 
@@ -26,9 +26,9 @@ The files that are possibly of biggest interest are found here:
 - [SwarselSystems.org](../SwarselSystems.org)
 - [flake.nix](../flake.nix)
 - [early-init.el](../programs/emacs/early-init.el)
-- [init](../programs/emacs/init.el)
+- [init.el](../programs/emacs/init.el)
 
-This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager machines, also using some overlays etc. There even is a configuration for an Android build. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located. early-init.el is not tangled for the reason that adding it would break the emacs-overlay parsing.
+This is a nix flakes based setup that manages multiple hosts, including mixed (NixOS with home-manager as a submodule) as well as standalone home-manager configurations, also using some overlays etc. There even is a configuration for an Android build. It is all wrapped in literal configuration .org files, because that allows me to have easy access without actually having to remember where the specific configuration files are all located.
 
 Have fun!
 
