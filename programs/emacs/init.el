@@ -1133,7 +1133,7 @@ create a new one."
 (add-hook 'c++-ts-mode-hook
         (lambda () (setq-local devdocs-current-docs '("cpp"))))
 
-(devdocs-update-all)
+; (devdocs-update-all)
 
 (use-package projectile
   :diminish projectile-mode

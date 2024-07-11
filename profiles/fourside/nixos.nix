@@ -32,6 +32,7 @@
     firewall = {
       enable = true;
       allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
       allowedTCPPortRanges = [
         {from = 27015; to = 27030;} # barotrauma
         {from = 27036; to = 27037;} # barotrauma

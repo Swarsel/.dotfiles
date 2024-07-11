@@ -91,7 +91,6 @@ window.addEventListener('load', addDarkmodeWidget);
 #+end_export
 
 
-
 * Noweb-Ref blocks
 :PROPERTIES:
 :CUSTOM_ID: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4
@@ -1501,6 +1500,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       firewall = {
         enable = true;
         allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+        allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
         allowedTCPPortRanges = [
           {from = 27015; to = 27030;} # barotrauma
           {from = 27036; to = 27037;} # barotrauma
@@ -9489,7 +9489,7 @@ To install a documentation, use the =devdocs=install= command and select the app
   (add-hook 'c++-ts-mode-hook
           (lambda () (setq-local devdocs-current-docs '("cpp"))))
 
-  (devdocs-update-all)
+  ; (devdocs-update-all)
 
 #+end_src
 
