@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-11 Do 10:18 -->
+<!-- 2024-07-11 Do 18:36 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -206,7 +206,7 @@
 <ul>
 <li><a href="#h:237b9f25-1fa3-484e-952e-99175dbb91c5">2.1. Non-NixOS</a>
 <ul>
-<li><a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">2.1.1. Theme</a></li>
+<li><a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">2.1.1. Theme (stylix)</a></li>
 <li><a href="#h:f3cf9bdc-6826-4d8e-ba5a-253ef098a9b8">2.1.2. Waybar items - LAPTOPS</a></li>
 <li><a href="#h:47749e76-3f25-485a-9e98-c7ce3a4ad444">2.1.3. Waybar items - PC</a></li>
 <li><a href="#h:515cfeb6-3b16-4fb2-9222-3557555a6cc1">2.1.4. Sway Startup commands</a></li>
@@ -338,29 +338,37 @@
 <li><a href="#h:d9a6cb44-736e-4608-951f-e928e1b757c0">4.4.11. devdocs</a></li>
 <li><a href="#h:5cde5032-251e-4cc4-9202-b4ce996f92c2">4.4.12. Projectile</a></li>
 <li><a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">4.4.13. Magit</a></li>
-<li><a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">4.4.14. Forge</a></li>
-<li><a href="#h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">4.4.15. git-timemachine</a></li>
-<li><a href="#h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">4.4.16. Delimiters (brackets): rainbow-delimiters, highlight-parentheses</a></li>
-<li><a href="#h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">4.4.17. rainbow-mode</a></li>
-<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">4.4.18. Corfu</a></li>
-<li><a href="#h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">4.4.19. cape</a></li>
-<li><a href="#h:3aa20438-edf6-4b13-a90d-3d5c51239c44">4.4.20. rust</a></li>
-<li><a href="#h:b9b27a88-06f3-470b-a604-a20b2079bc26">4.4.21. Tramp</a></li>
-<li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">4.4.22. diff-hl</a></li>
-<li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">4.4.23. Commenting</a></li>
-<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">4.4.24. yasnippet</a></li>
-<li><a href="#h:316857e7-4df8-4ec5-b22e-6dac918fa937">4.4.25. eglot</a></li>
-<li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">4.4.26. Breadcrumb</a></li>
-<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.27. Prevent breaking of hardlinks</a></li>
-<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.28. Dirvish</a></li>
-<li><a href="#h:b108dd3e-f34d-4ed3-98df-0bf9de055889">4.4.29. pdf-tools: pdf-viewer and support for dirvish</a></li>
-<li><a href="#h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">4.4.30. Jupyter</a></li>
-<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">4.4.31. undo-tree</a></li>
-<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">4.4.32. Hydra</a></li>
-<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">4.4.33. External Applications</a></li>
-<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.34. Email</a></li>
-<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.35. Calendar</a></li>
-<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.36. Dashboard: emacs startup screen</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org74b17fa">5. Yubikey support</a>
+<ul>
+<li>
+<ul>
+<li><a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">5.0.1. Forge</a></li>
+<li><a href="#h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">5.0.2. git-timemachine</a></li>
+<li><a href="#h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">5.0.3. Delimiters (brackets): rainbow-delimiters, highlight-parentheses</a></li>
+<li><a href="#h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">5.0.4. rainbow-mode</a></li>
+<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">5.0.5. Corfu</a></li>
+<li><a href="#h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">5.0.6. cape</a></li>
+<li><a href="#h:3aa20438-edf6-4b13-a90d-3d5c51239c44">5.0.7. rust</a></li>
+<li><a href="#h:b9b27a88-06f3-470b-a604-a20b2079bc26">5.0.8. Tramp</a></li>
+<li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">5.0.9. diff-hl</a></li>
+<li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">5.0.10. Commenting</a></li>
+<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">5.0.11. yasnippet</a></li>
+<li><a href="#h:316857e7-4df8-4ec5-b22e-6dac918fa937">5.0.12. eglot</a></li>
+<li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">5.0.13. Breadcrumb</a></li>
+<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">5.0.14. Prevent breaking of hardlinks</a></li>
+<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">5.0.15. Dirvish</a></li>
+<li><a href="#h:b108dd3e-f34d-4ed3-98df-0bf9de055889">5.0.16. pdf-tools: pdf-viewer and support for dirvish</a></li>
+<li><a href="#h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">5.0.17. Jupyter</a></li>
+<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">5.0.18. undo-tree</a></li>
+<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">5.0.19. Hydra</a></li>
+<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">5.0.20. External Applications</a></li>
+<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">5.0.21. Email</a></li>
+<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">5.0.22. Calendar</a></li>
+<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">5.0.23. Dashboard: emacs startup screen</a></li>
 </ul>
 </li>
 </ul>
@@ -369,7 +377,7 @@
 </div>
 </div>
 <p>
-<b>This file has 40741 words spanning 10531 lines and was last revised on 2024-07-11 10:18:39 +0200.</b>
+<b>This file has 40302 words spanning 10289 lines and was last revised on 2024-07-11 18:36:06 +0200.</b>
 </p>
 
 <p>
@@ -419,7 +427,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-11 10:18:39 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-11 18:36:06 +0200)
 </p></li>
 </ul>
 
@@ -431,7 +439,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/lymgpfqr5dp1wc0khbcbhhjnxq8ccsy9-emacs-pgtk-20240521.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/y5vn4lfxjh26r0pglhq102zg6gzx1hwm-emacs-pgtk-20240711.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -483,8 +491,6 @@ window.addEventListener('load', addDarkmodeWidget);
 </script>
 </div>
 </div>
-
-
 <div id="outline-container-h:d39b8dfb-536d-414f-9fc0-7d67df48cee4" class="outline-2">
 <h2 id="h:d39b8dfb-536d-414f-9fc0-7d67df48cee4"><span class="section-number-2">2.</span> Noweb-Ref blocks</h2>
 <div class="outline-text-2" id="text-h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">
@@ -492,7 +498,6 @@ window.addEventListener('load', addDarkmodeWidget);
 These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS. This serves to reduce code duplication.
 </p>
 </div>
-
 <div id="outline-container-h:237b9f25-1fa3-484e-952e-99175dbb91c5" class="outline-3">
 <h3 id="h:237b9f25-1fa3-484e-952e-99175dbb91c5"><span class="section-number-3">2.1.</span> Non-NixOS</h3>
 <div class="outline-text-3" id="text-h:237b9f25-1fa3-484e-952e-99175dbb91c5">
@@ -500,9 +505,8 @@ These blocks are used in several places throughout the configurations, but not o
 These blocks are to be used on systems that are not running NixOS. For example, one such system would be a Fedora system running home manager, where the respective NixOS features might not be available.
 </p>
 </div>
-
 <div id="outline-container-h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78" class="outline-4">
-<h4 id="h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78"><span class="section-number-4">2.1.1.</span> Theme</h4>
+<h4 id="h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78"><span class="section-number-4">2.1.1.</span> Theme (stylix)</h4>
 <div class="outline-text-4" id="text-h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">
 <p>
 This is where the theme for the whole OS is defined. This noweb-ref section cannot be copied to the general NixOS config for now since they are on different folder structure levels in the config, which would make the flake impure.
@@ -515,6 +519,7 @@ For styling, I am using the <a href="https://github.com/danth/stylix">stylix</a>
 <div class="org-src-container">
 <pre class="src src-nix">
 stylix = {
+  enable = true;
   base16Scheme = ../../wallpaper/swarsel.yaml;
   # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
   polarity = "dark";
@@ -673,7 +678,6 @@ Do not that <code>syncthingtray</code> is also not mentioned here. It is install
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103" class="outline-4">
 <h4 id="h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103"><span class="section-number-4">2.1.5.</span> gpg-agent</h4>
 <div class="outline-text-4" id="text-h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103">
@@ -695,10 +699,12 @@ services.gpg-agent = {
   enable = true;
   enableSshSupport = true;
   enableExtraSocket = true;
-  pinentryPackage = pkgs.pinentry-gtk2;
+  pinentryPackage = pkgs.pinentry.gtk2;
+  defaultCacheTtl = 600;
+  maxCacheTtl = 7200;
   extraConfig = ''
-  allow-emacs-pinentry
   allow-loopback-pinentry
+  allow-emacs-pinentry
   '';
   };
 
@@ -707,7 +713,6 @@ services.gpg-agent = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:996e9c5f-ed65-4f4f-b043-5a901ed74358" class="outline-3">
 <h3 id="h:996e9c5f-ed65-4f4f-b043-5a901ed74358"><span class="section-number-3">2.2.</span> NixOS</h3>
 <div class="outline-text-3" id="text-h:996e9c5f-ed65-4f4f-b043-5a901ed74358">
@@ -715,7 +720,6 @@ services.gpg-agent = {
 These settings are to be used only on full NixOS setups.
 </p>
 </div>
-
 <div id="outline-container-h:4ae8b4ed-47a8-4d79-a12c-894118ea57e1" class="outline-4">
 <h4 id="h:4ae8b4ed-47a8-4d79-a12c-894118ea57e1"><span class="section-number-4">2.2.1.</span> Wrap with hardware-configuration</h4>
 <div class="outline-text-4" id="text-h:4ae8b4ed-47a8-4d79-a12c-894118ea57e1">
@@ -738,7 +742,6 @@ imports =
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:a4585ec3-8fa0-472c-a0db-1b34917591ea" class="outline-4">
 <h4 id="h:a4585ec3-8fa0-472c-a0db-1b34917591ea"><span class="section-number-4">2.2.2.</span> Virtual hosts init</h4>
 <div class="outline-text-4" id="text-h:a4585ec3-8fa0-472c-a0db-1b34917591ea">
@@ -825,7 +828,6 @@ environment.shellAliases = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:c7588c0d-2528-485d-b2df-04d6336428d7" class="outline-3">
 <h3 id="h:c7588c0d-2528-485d-b2df-04d6336428d7"><span class="section-number-3">2.3.</span> flake.nix</h3>
 <div class="outline-text-3" id="text-h:c7588c0d-2528-485d-b2df-04d6336428d7">
@@ -837,7 +839,6 @@ Handling the flake.nix file used to be a bit of a chore, since it felt like writ
 These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">flake.nix template</a>. Adding new flake inputs is very easy, you just add them to <a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">Inputs &amp; Inputs@Outputs</a> first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in <a href="#h:df0072bc-853f-438f-bd85-bfc869501015">let</a>, and the specific setup is done in either <a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">nixosConfigurations</a> (for NixOS systems), <a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">homeConfigurations</a> (for home-manager systems), or <a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">nixOnDroidConfigurations</a> (for Nix on Android). There is also the <a href="#h:6a08495a-8566-4bb5-9fac-b03df01f6c81">nixos-generators</a> section that currently just defines a Proxmox LXC image.
 </p>
 </div>
-
 <div id="outline-container-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2" class="outline-4">
 <h4 id="h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2"><span class="section-number-4">2.3.1.</span> Inputs &amp; Inputs@Outputs</h4>
 <div class="outline-text-4" id="text-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">
@@ -856,6 +857,7 @@ Mind the comma at the end. You need this because the <code>...</code> is being p
 <div class="org-src-container">
 <pre class="src src-nix">
 nixpkgs,
+nixpkgs-stable,
 home-manager,
 nix-on-droid,
 nixos-generators,
@@ -865,7 +867,6 @@ nixgl,
 stylix,
 sops-nix,
 lanzaboote,
-nixpkgs-mautrix-signal,
 nix-gaming,
 nixos-hardware,
 nix-alien,
@@ -910,6 +911,7 @@ This is supposed to allow me to run unpatched libraries directly without a need 
 <pre class="src src-nix">
 nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
 
+nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
 
 # user-level configuration
 home-manager = {
@@ -950,11 +952,6 @@ nix-on-droid = {
 nixos-generators = {
   url = github:nix-community/nixos-generators;
   inputs.nixpkgs.follows = "nixpkgs";
-};
-
-# provides expressions for mautrix-signal
-nixpkgs-mautrix-signal ={
-  url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
 };
 
 # patches for gaming on nix
@@ -998,6 +995,11 @@ pkgs = import nixpkgs { inherit system;
                         overlays = [ emacs-overlay.overlay
                                      nur.overlay
                                      nixgl.overlay
+                                     (final: _prev: {
+                                       stable = import nixpkgs-stable {
+                                         inherit (final) system config;
+                                       };
+                                     })
                                    ];
                         config.allowUnfree = true;
                       };
@@ -1011,9 +1013,6 @@ armpkgs = import nixpkgs { system = "aarch64-linux";
                         config.allowUnfree = true;
                       };
 
-pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
-                        config.allowUnfree = true;
-                      };
 
 # NixOS modules that can only be used on NixOS systems
 nixModules = [ stylix.nixosModules.stylix
@@ -1063,8 +1062,7 @@ onett = nixpkgs.lib.nixosSystem {
 };
 
 sandbox = nixpkgs.lib.nixosSystem {
-  pkgs = pkgsmautrix;
-  specialArgs.unstable = nixpkgs-mautrix-signal;
+  specialArgs = {inherit inputs pkgs; };
   modules = [
     sops-nix.nixosModules.sops
     ./profiles/sandbox/nixos.nix
@@ -1158,11 +1156,9 @@ transmission = nixpkgs.lib.nixosSystem {
 };
 
 matrix = nixpkgs.lib.nixosSystem {
-  # specialArgs = {inherit pkgsmautrix; };
-  pkgs = pkgsmautrix;
+  specialArgs = {inherit inputs pkgs; };
   # this is to import a service module that is not on nixpkgs
   # this way avoids infinite recursion errors
-  specialArgs.unstable = nixpkgs-mautrix-signal;
   modules = [
     sops-nix.nixosModules.sops
     ./profiles/server1/matrix/nixos.nix
@@ -1204,11 +1200,7 @@ sync = nixpkgs.lib.nixosSystem {
 
 #ovm swarsel
 swatrix = nixpkgs.lib.nixosSystem {
-  # specialArgs = {inherit pkgsmautrix; };
-  pkgs = pkgsmautrix;
-  # this is to import a service module that is not on nixpkgs
-  # this way avoids infinite recursion errors
-  specialArgs.unstable = nixpkgs-mautrix-signal;
+  specialArgs = {inherit inputs pkgs; };
   modules = [
     sops-nix.nixosModules.sops
     ./profiles/remote/oracle/matrix/nixos.nix
@@ -1238,7 +1230,6 @@ In contrast, this defines home-manager systems, which I only have one of.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:5f6ef553-59f9-4239-b6f3-63d33b57f335" class="outline-4">
 <h4 id="h:5f6ef553-59f9-4239-b6f3-63d33b57f335"><span class="section-number-4">2.3.5.</span> nixOnDroidConfigurations</h4>
 <div class="outline-text-4" id="text-h:5f6ef553-59f9-4239-b6f3-63d33b57f335">
@@ -1258,7 +1249,6 @@ default = nix-on-droid.lib.nixOnDroidConfiguration {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:6a08495a-8566-4bb5-9fac-b03df01f6c81" class="outline-4">
 <h4 id="h:6a08495a-8566-4bb5-9fac-b03df01f6c81"><span class="section-number-4">2.3.6.</span> nixos-generators</h4>
 <div class="outline-text-4" id="text-h:6a08495a-8566-4bb5-9fac-b03df01f6c81">
@@ -1297,12 +1287,10 @@ proxmox-lxc = nixos-generators.nixosGenerate {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:02cd20be-1ffa-4904-9d5a-da5a89ba1421" class="outline-2">
 <h2 id="h:02cd20be-1ffa-4904-9d5a-da5a89ba1421"><span class="section-number-2">3.</span> System</h2>
 <div class="outline-text-2" id="text-h:02cd20be-1ffa-4904-9d5a-da5a89ba1421">
 </div>
-
 <div id="outline-container-h:88bf4b90-e94b-46fb-aaf1-a381a512860d" class="outline-3">
 <h3 id="h:88bf4b90-e94b-46fb-aaf1-a381a512860d"><span class="section-number-3">3.1.</span> System specific configuration</h3>
 <div class="outline-text-3" id="text-h:88bf4b90-e94b-46fb-aaf1-a381a512860d">
@@ -1314,7 +1302,6 @@ This section mainly exists house different `configuration.nix` files for system 
 Important: Think about if a settings really needs to go into this area - chances are that the settings can also go to the general settings, which is to be preferred in order to reduce code duplication.
 </p>
 </div>
-
 <div id="outline-container-h:29a3066d-4da6-4f61-b835-5e4a43e2d34d" class="outline-4">
 <h4 id="h:29a3066d-4da6-4f61-b835-5e4a43e2d34d"><span class="section-number-4">3.1.1.</span> Template (for new machines)</h4>
 <div class="outline-text-4" id="text-h:29a3066d-4da6-4f61-b835-5e4a43e2d34d">
@@ -1330,7 +1317,6 @@ If a non-NixOS host must be used, check the Surface configuration for pointers. 
 No matter what you do, check the initial /etc/nixos/configuration.nix for notable changes that might emerge in future versions of nix.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:91c428e5-f56e-4d36-b08f-7819b2979b23"></a>NixOS<br />
 <div class="outline-text-5" id="text-h:91c428e5-f56e-4d36-b08f-7819b2979b23">
@@ -1371,6 +1357,7 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
   stylix.image = ../../wallpaper/TEMPLATEwp.png;
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -1442,7 +1429,6 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 </div>
 </div>
 </li>
-
 <li><a id="h:a08e51ee-88eb-4241-917d-68b4bdbcf171"></a>Home Manager<br />
 <div class="outline-text-5" id="text-h:a08e51ee-88eb-4241-917d-68b4bdbcf171">
 <div class="org-src-container">
@@ -1456,10 +1442,12 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
 
@@ -1592,7 +1580,6 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:58dc6384-0d19-4f71-9043-4014bd033ba2" class="outline-4">
 <h4 id="h:58dc6384-0d19-4f71-9043-4014bd033ba2"><span class="section-number-4">3.1.2.</span> Physical hosts</h4>
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
@@ -1604,7 +1591,6 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 My Surface Pro 3, only used for on-the-go university work. Be careful when pushing large changes to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:42e45181-9d78-4266-a9a0-9621032f38b0"></a>Channel setup<br />
 <div class="outline-text-6" id="text-h:42e45181-9d78-4266-a9a0-9621032f38b0">
@@ -1631,7 +1617,6 @@ This is needed in order to use EGL. Prefix programs that use it with `nixGL`
 </p>
 </div>
 </li>
-
 <li><a id="h:929d56f5-e16f-4341-901c-24e8a8450398"></a>Home manager<br />
 <div class="outline-text-6" id="text-h:929d56f5-e16f-4341-901c-24e8a8450398">
 <p>
@@ -1652,6 +1637,7 @@ Special things to note here: We are running xcape to allow <code>CAPS</code> to 
    stylix.image = ../../wallpaper/surfacewp.png;
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -1823,14 +1809,12 @@ gpgconf --launch gpg-agent
 </li>
 </ol>
 </li>
-
 <li><a id="h:6bc7b9c7-ccfd-42d7-982a-97907aa28b80"></a>Onett (Lenovo Y510P)<br />
 <div class="outline-text-5" id="text-h:6bc7b9c7-ccfd-42d7-982a-97907aa28b80">
 <p>
 My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:20fc100c-045d-468a-9bf2-824037e6785b"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:20fc100c-045d-468a-9bf2-824037e6785b">
@@ -1873,6 +1857,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
   stylix.image = ../../wallpaper/lenovowp.png;
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -1948,7 +1933,6 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 </div>
 </li>
-
 <li><a id="h:d35847ae-2207-4417-9858-b0ea7e2b1a0b"></a>Home Manager<br />
 <div class="outline-text-6" id="text-h:d35847ae-2207-4417-9858-b0ea7e2b1a0b">
 <div class="org-src-container">
@@ -1962,10 +1946,12 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
 
@@ -2090,14 +2076,12 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </li>
 </ol>
 </li>
-
 <li><a id="h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4"></a>Threed (Surface Pro 3)<br />
 <div class="outline-text-5" id="text-h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4">
 <p>
 New setup for the SP3, this time using NixOS - another machine will take over the HM-only config for compatibility in the future.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:980f1aca-28b3-4ed7-ae7f-6d8cdc28dea1"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:980f1aca-28b3-4ed7-ae7f-6d8cdc28dea1">
@@ -2142,6 +2126,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
   stylix.image = ../../wallpaper/surfacewp.png;
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -2207,7 +2192,6 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 </div>
 </div>
 </li>
-
 <li><a id="h:449c20d8-338a-483c-a6f0-9a164a6071d6"></a>Home Manager<br />
 <div class="outline-text-6" id="text-h:449c20d8-338a-483c-a6f0-9a164a6071d6">
 <div class="org-src-container">
@@ -2221,10 +2205,12 @@ New setup for the SP3, this time using NixOS - another machine will take over th
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
 
@@ -2328,14 +2314,12 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 </li>
 </ol>
 </li>
-
 <li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Fourside (Lenovo Thinkpad P14s Gen2)<br />
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
 My new main machine.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:ab6fefc4-aabd-456c-8a21-5fcb20c02869"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:ab6fefc4-aabd-456c-8a21-5fcb20c02869">
@@ -2405,6 +2389,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
   stylix.image = ../../wallpaper/lenovowp.png;
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -2453,10 +2438,9 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 
   hardware = {
-      opengl = {
+      graphics = {
         enable = true;
-        driSupport = true;
-        driSupport32Bit = true;
+        enable32Bit = true;
         extraPackages = with pkgs; [
           vulkan-loader
           vulkan-validation-layers
@@ -2510,7 +2494,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 </div>
 </div>
 </li>
-
 <li><a id="h:85f7110c-2f25-4506-b64a-fce29f29d0d0"></a>Home Manager<br />
 <div class="outline-text-6" id="text-h:85f7110c-2f25-4506-b64a-fce29f29d0d0">
 <p>
@@ -2528,10 +2511,12 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
 
@@ -2614,6 +2599,7 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
         { output = "HDMI-A-1"; workspace = "2:二";}
       ];
 
+
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
       in {
@@ -2654,7 +2640,6 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:4dc59747-9598-4029-aa7d-92bf186d6c06" class="outline-4">
 <h4 id="h:4dc59747-9598-4029-aa7d-92bf186d6c06"><span class="section-number-4">3.1.3.</span> Virtual hosts</h4>
 <div class="outline-text-4" id="text-h:4dc59747-9598-4029-aa7d-92bf186d6c06">
@@ -2666,7 +2651,6 @@ My server setup is built on Proxmox VE; back when I started, I created all kinds
 In the long run, I am thinking about a transition to kubernetes or using just a server running NixOS and using the built-in container functionality. For now however, I like the network management provided by Proxmox, as I am a bit intimidated by doing that from scratch.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:292c583e-0b67-4456-bdba-a72d4e53ce66"></a>TEMPLATE<br />
 <div class="outline-text-5" id="text-h:292c583e-0b67-4456-bdba-a72d4e53ce66">
@@ -2720,7 +2704,6 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 </li>
 </ol>
 </li>
-
 <li><a id="h:90340ea4-5ef0-4466-92cf-12d8ece805ba"></a>NGINX<br />
 <div class="outline-text-5" id="text-h:90340ea4-5ef0-4466-92cf-12d8ece805ba">
 </div>
@@ -2938,7 +2921,6 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 </li>
 </ol>
 </li>
-
 <li><a id="h:12152533-a000-4e7e-8038-43f8e501cedd"></a>[Manual steps required] Calibre<br />
 <div class="outline-text-5" id="text-h:12152533-a000-4e7e-8038-43f8e501cedd">
 <p>
@@ -2969,7 +2951,6 @@ This machine requires manual setup:
 In general, I am not amazed by this setup; Kavita is the reader of choice, calibre-web mostly is there to have a convenient way to fullfill the opinionated folder structure when uploading ebooks (calibre-web does not work on its own since it forces sqlite which does not work nicely with my NFS book store). I hope that in the future Kavita will implement ebook upload, or that calibre-web will ditch the sqlite constraints.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:0094ccd0-36e4-46cb-a422-6f1aefb786d6"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:0094ccd0-36e4-46cb-a422-6f1aefb786d6">
@@ -3083,7 +3064,6 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
 </li>
 </ol>
 </li>
-
 <li><a id="h:4a194546-9a9e-47c4-8d03-8d2428d45d30"></a>Jellyfin<br />
 <div class="outline-text-5" id="text-h:4a194546-9a9e-47c4-8d03-8d2428d45d30">
 </div>
@@ -3152,7 +3132,7 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
    nixpkgs.config.packageOverrides = pkgs: {
      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
    };
-   hardware.opengl = {
+   hardware.graphics = {
      enable = true;
      extraPackages = with pkgs; [
        intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -3176,14 +3156,12 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
 </li>
 </ol>
 </li>
-
 <li><a id="h:dffc1243-8d6a-4cac-8a5d-3a27d4546235"></a>[WIP/Incomplete/Untested] Transmission<br />
 <div class="outline-text-5" id="text-h:dffc1243-8d6a-4cac-8a5d-3a27d4546235">
 <p>
 This stuff just does not work, I seem to be unable to create a working VPN Split Tunneling on NixOS. Maybe this is introduced by the wonky Proxmox-NixOS container interaction, I am not sure. For now, this machine does not work at all and I am stuck with my Debian Container that does this for me &#x2026;
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:2a2ebf94-b262-4e83-ab86-d8b1ebec492d"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:2a2ebf94-b262-4e83-ab86-d8b1ebec492d">
@@ -3554,7 +3532,6 @@ This stuff just does not work, I seem to be unable to create a working VPN Split
 </li>
 </ol>
 </li>
-
 <li><a id="h:1d6221c4-1f48-4f83-b262-5298ed99218e"></a>[Manual steps needed] Matrix<br />
 <div class="outline-text-5" id="text-h:1d6221c4-1f48-4f83-b262-5298ed99218e">
 <ol class="org-ol">
@@ -3580,7 +3557,6 @@ Make sure to also do this for doublepuppet.yaml
 <li>Restart postgresql.service, matrix-synapse.service, mautrix-whatsapp.service, mautrix-telegram.service</li>
 </ol>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:a0b2d610-7258-4875-adb4-9ec4afe05b02"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:a0b2d610-7258-4875-adb4-9ec4afe05b02">
@@ -3624,7 +3600,6 @@ in {
     ./hardware-configuration.nix
     # we import here a service that is not available yet on normal nixpkgs
     # this module is hence not in the modules list, we add it ourselves
-    (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
   ];
 
   networking.hostName = "matrix"; # Define your hostname.
@@ -3889,7 +3864,6 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:b36415bf-77fa-4d51-842c-8cde0e46b844"></a>Sound<br />
 <div class="outline-text-5" id="text-h:b36415bf-77fa-4d51-842c-8cde0e46b844">
 </div>
@@ -4036,7 +4010,6 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:23032961-346c-4141-97b9-a4d5469dc7d8"></a>Spotifyd<br />
 <div class="outline-text-5" id="text-h:23032961-346c-4141-97b9-a4d5469dc7d8">
 </div>
@@ -4137,7 +4110,6 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"></a>Sync<br />
 <div class="outline-text-5" id="text-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">
 </div>
@@ -4313,7 +4285,6 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:39553a9c-7095-4db8-b0df-bf47d91cb937"></a>[Manual steps required] Swatrix<br />
 <div class="outline-text-5" id="text-h:39553a9c-7095-4db8-b0df-bf47d91cb937">
 </div>
@@ -4724,7 +4695,6 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:17b9ba9d-94c9-44d5-99dd-776174d4bcc9"></a>Paperless<br />
 <div class="outline-text-5" id="text-h:17b9ba9d-94c9-44d5-99dd-776174d4bcc9">
 </div>
@@ -4820,14 +4790,12 @@ in {
 </li>
 </ol>
 </li>
-
 <li><a id="h:60cf171f-2ec9-418f-8f67-85d159efe9d0"></a>Sandbox (Lenovo Y510P)<br />
 <div class="outline-text-5" id="text-h:60cf171f-2ec9-418f-8f67-85d159efe9d0">
 <p>
 My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:23b0f629-343c-42fa-bf9b-70bea341c0d2"></a>NixOS<br />
 <div class="outline-text-6" id="text-h:23b0f629-343c-42fa-bf9b-70bea341c0d2">
@@ -5072,7 +5040,7 @@ networking.hostId = "8a8ad84a";
      #   vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
      # };
 
-     hardware.opengl = {
+     hardware.graphics = {
        enable = true;
        extraPackages = with pkgs; [
          intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -5717,12 +5685,10 @@ networking.hostId = "8a8ad84a";
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 </p>
 </div>
-
 <div id="outline-container-h:5a114da6-ef8d-404d-b31b-b51472908e77" class="outline-4">
 <h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.2.1.</span> General</h4>
 <div class="outline-text-4" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
 </div>
-
 <ol class="org-ol">
 <li><a id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"></a>Enable home-manager module<br />
 <div class="outline-text-5" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
@@ -5742,7 +5708,6 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
 </div>
 </div>
 </li>
-
 <li><a id="h:7248f338-8cad-4443-9060-deae7955b26f"></a>Setup login keymap<br />
 <div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
@@ -5759,7 +5724,6 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </div>
 </div>
 </li>
-
 <li><a id="h:f9718641-adf7-4e5b-9e07-5b9413224971"></a>Enable flakes and nix-command<br />
 <div class="outline-text-5" id="text-h:f9718641-adf7-4e5b-9e07-5b9413224971">
 <p>
@@ -5774,7 +5738,6 @@ nix.settings.experimental-features = ["nix-command" "flakes"];
 </div>
 </div>
 </li>
-
 <li><a id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"></a>Environment setup<br />
 <div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
@@ -5800,7 +5763,6 @@ Next, we will setup some environment variables that need to be set on the system
 </div>
 </div>
 </li>
-
 <li><a id="h:c31f7900-f8b7-46aa-b501-c245ab889578"></a>Make sure time is consistent in windows dualboot<br />
 <div class="outline-text-5" id="text-h:c31f7900-f8b7-46aa-b501-c245ab889578">
 <p>
@@ -5815,7 +5777,6 @@ time.hardwareClockInLocalTime = true;
 </div>
 </div>
 </li>
-
 <li><a id="h:b09c2bb6-86b7-46f4-a855-ac21dd9988b2"></a>Disallow stylix from styling grub<br />
 <div class="outline-text-5" id="text-h:b09c2bb6-86b7-46f4-a855-ac21dd9988b2">
 <p>
@@ -5831,7 +5792,6 @@ stylix.targets.grub.enable = false; # the styling makes grub more ugly
 </div>
 </div>
 </li>
-
 <li><a id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"></a>Enable PolicyKit<br />
 <div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
@@ -5846,8 +5806,7 @@ security.polkit.enable = true;
 </div>
 </div>
 </li>
-
-<li><a id="org7bcef3e"></a>Enable automatic garbage collection<br />
+<li><a id="orgae611ea"></a>Enable automatic garbage collection<br />
 <div class="outline-text-5" id="text-3-2-1-8">
 <p>
 The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
@@ -5866,8 +5825,7 @@ nix.gc = {
 </div>
 </div>
 </li>
-
-<li><a id="org2d696f5"></a>Enable automatic store optimisation<br />
+<li><a id="orgadc7017"></a>Enable automatic store optimisation<br />
 <div class="outline-text-5" id="text-3-2-1-9">
 <p>
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
@@ -5884,7 +5842,6 @@ nix.optimise = {
 </div>
 </div>
 </li>
-
 <li><a id="h:12858442-c129-4aa1-9c9c-a0916e36b302"></a>Reduce systemd timeouts<br />
 <div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
 <p>
@@ -5904,7 +5861,6 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </div>
 </div>
 </li>
-
 <li><a id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"></a>Hardware settings<br />
 <div class="outline-text-5" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
 <p>
@@ -5913,10 +5869,9 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-hardware.opengl = {
+hardware.graphics = {
   enable = true;
-  driSupport = true;
-  driSupport32Bit = true;
+  enable32Bit = true;
 };
 
 sound.enable = true;
@@ -5938,7 +5893,6 @@ hardware.bluetooth.settings = {
 </div>
 </div>
 </li>
-
 <li><a id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"></a>Common network settings<br />
 <div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
@@ -5953,7 +5907,6 @@ networking.networkmanager.enable = true;
 </div>
 </div>
 </li>
-
 <li><a id="h:852d59ab-63c3-4831-993d-b5e23b877796"></a>Locale settings<br />
 <div class="outline-text-5" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
 <p>
@@ -5983,7 +5936,6 @@ i18n.extraLocaleSettings = {
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-4">
 <h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.2.2.</span> System Packages</h4>
 <div class="outline-text-4" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
@@ -5999,14 +5951,17 @@ environment.systemPackages = with pkgs; [
   yubikey-personalization
   yubikey-personalization-gui
   yubico-pam
-  # yubioath-flutter
-  # yubikey-manager
-  # yubikey-manager-qt
+  yubioath-flutter
+  yubikey-manager
+  yubikey-manager-qt
   yubico-piv-tool
+  cfssl
+  pcsctools
+  pcscliteWithPolkit.out
   # pinentry
 
   # theme related
-  gnome.adwaita-icon-theme
+  adwaita-icon-theme
 
   # kde-connect
   xdg-desktop-portal
@@ -6069,7 +6024,6 @@ environment.systemPackages = with pkgs; [
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-4">
 <h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.2.3.</span> Programs (including zsh setup)</h4>
 <div class="outline-text-4" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
@@ -6095,7 +6049,6 @@ environment.pathsToLink = [ "/share/zsh" ];
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
 <h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.2.4.</span> Services</h4>
 <div class="outline-text-4" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
@@ -6103,7 +6056,6 @@ environment.pathsToLink = [ "/share/zsh" ];
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:b91df05b-113d-4d09-93d1-b271e5b76810"></a>blueman<br />
 <div class="outline-text-5" id="text-h:b91df05b-113d-4d09-93d1-b271e5b76810">
@@ -6119,7 +6071,6 @@ services.blueman.enable = true;
 </div>
 </div>
 </li>
-
 <li><a id="h:fae5939e-22ac-4532-a10e-0b86013d20ce"></a>Detect Scanners over network<br />
 <div class="outline-text-5" id="text-h:fae5939e-22ac-4532-a10e-0b86013d20ce">
 <p>
@@ -6138,7 +6089,6 @@ hardware.sane = {
 </div>
 </div>
 </li>
-
 <li><a id="h:8c13df62-c6d9-4a0a-83be-d77e71628f0b"></a>Detect Printers over network<br />
 <div class="outline-text-5" id="text-h:8c13df62-c6d9-4a0a-83be-d77e71628f0b">
 <p>
@@ -6172,7 +6122,6 @@ BrowseProtocols all
 </div>
 </div>
 </li>
-
 <li><a id="h:f101daa2-604d-4553-99e2-f64b9c207f51"></a>enable GVfs<br />
 <div class="outline-text-5" id="text-h:f101daa2-604d-4553-99e2-f64b9c207f51">
 <p>
@@ -6187,7 +6136,6 @@ services.gvfs.enable = true;
 </div>
 </div>
 </li>
-
 <li><a id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"></a>interception-tools: Make CAPS work as ESC/CTRL<br />
 <div class="outline-text-5" id="text-h:08d213d5-a9f4-4309-8635-ba557b01dc7d">
 <p>
@@ -6227,7 +6175,6 @@ services.interception-tools = {
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-4">
 <h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.2.5.</span> Yubikey settings</h4>
 <div class="outline-text-4" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
@@ -6266,7 +6213,6 @@ services.udev.packages = with pkgs; [
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-4">
 <h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.2.6.</span> System Login</h4>
 <div class="outline-text-4" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
@@ -6300,7 +6246,6 @@ environment.etc."greetd/environments".text = ''
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-3">
 <h3 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-3">3.3.</span> Common Home-Manager</h3>
 <div class="outline-text-3" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
@@ -6320,7 +6265,6 @@ Also, I define some useful shell scripts here.
 Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">System Packages</a>
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75"></a>Packaged<br />
 <div class="outline-text-5" id="text-h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75">
@@ -6337,13 +6281,13 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     ffmpeg_5-full
     flac
     mediainfo
-    picard
+    picard-tools
     audacity
     sox
 
     # printing
     cups
-    gnome.simple-scan
+    simple-scan
 
     # dict
     (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -6369,11 +6313,11 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     obsidian
     spotify
     discord
-    nextcloud-client
+    stable.nextcloud-client
     spotify-player
     element-desktop-wayland
     nicotine-plus
-    transmission
+    stable.transmission
     mktorrent
     hexchat
     hugo
@@ -6432,7 +6376,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     unzip
 
     #nautilus
-    gnome.nautilus
+    nautilus
     xfce.tumbler
     libgsf
 
@@ -6458,7 +6402,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     #keychain
     qalculate-gtk
     gcr # needed for gnome-secrets to work
-    gnome.seahorse
+    seahorse
 
     # sops-related
     sops
@@ -6485,7 +6429,6 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </div>
 </div>
 </li>
-
 <li><a id="h:96cbea91-ff13-4120-b8a9-496b2fa96e70"></a>Self-defined<br />
 <div class="outline-text-5" id="text-h:96cbea91-ff13-4120-b8a9-496b2fa96e70">
 <div class="org-src-container">
@@ -6643,7 +6586,6 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
 <h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.2.</span> sops</h4>
 <div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
@@ -6673,7 +6615,6 @@ sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08" class="outline-4">
 <h4 id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"><span class="section-number-4">3.3.3.</span> SSH Machines</h4>
 <div class="outline-text-4" id="text-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">
@@ -6818,7 +6759,6 @@ programs.ssh= {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:a92318cd-413e-4e78-a478-e63b09df019c" class="outline-4">
 <h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.3.4.</span> Fonts + Theme</h4>
 <div class="outline-text-4" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
@@ -6838,7 +6778,6 @@ stylix.targets.emacs.enable = false;
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:867556e6-5a24-4c43-9d47-3edca2f16488" class="outline-4">
 <h4 id="h:867556e6-5a24-4c43-9d47-3edca2f16488"><span class="section-number-4">3.3.5.</span> Desktop Entries</h4>
 <div class="outline-text-4" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
@@ -6892,7 +6831,6 @@ xdg.desktopEntries = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:5ef03803-e150-41bc-b603-e80d60d96efc" class="outline-4">
 <h4 id="h:5ef03803-e150-41bc-b603-e80d60d96efc"><span class="section-number-4">3.3.6.</span> Linking dotfiles</h4>
 <div class="outline-text-4" id="text-h:5ef03803-e150-41bc-b603-e80d60d96efc">
@@ -6944,7 +6882,6 @@ xdg.configFile = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:4486b02f-4fb8-432b-bfa2-2e786206341d" class="outline-4">
 <h4 id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"><span class="section-number-4">3.3.7.</span> Sourcing environment variables</h4>
 <div class="outline-text-4" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
@@ -6958,7 +6895,6 @@ home.sessionVariables = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:070a75ce-e209-4cda-aa25-e979bbf75d47" class="outline-4">
 <h4 id="h:070a75ce-e209-4cda-aa25-e979bbf75d47"><span class="section-number-4">3.3.8.</span> Programs</h4>
 <div class="outline-text-4" id="text-h:070a75ce-e209-4cda-aa25-e979bbf75d47">
@@ -6966,7 +6902,6 @@ home.sessionVariables = {
 This houses the configurations for all programs managed by home-manager.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"></a>General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf<br />
 <div class="outline-text-5" id="text-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">
@@ -6999,7 +6934,6 @@ programs.zoxide.enable = true;
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-4">
 <h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.3.9.</span> password-store</h4>
 <div class="outline-text-4" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
@@ -7018,7 +6952,6 @@ programs.password-store = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-4">
 <h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.3.10.</span> direnv</h4>
 <div class="outline-text-4" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
@@ -7037,7 +6970,6 @@ programs.direnv = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-4">
 <h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.3.11.</span> eza</h4>
 <div class="outline-text-4" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
@@ -7061,7 +6993,6 @@ programs.eza = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-4">
 <h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.3.12.</span> git</h4>
 <div class="outline-text-4" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
@@ -7112,7 +7043,6 @@ programs.git = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-4">
 <h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.3.13.</span> Fuzzel</h4>
 <div class="outline-text-4" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
@@ -7138,7 +7068,6 @@ programs.fuzzel = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-4">
 <h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.3.14.</span> Starship</h4>
 <div class="outline-text-4" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
@@ -7256,7 +7185,6 @@ programs.starship = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-4">
 <h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.3.15.</span> Kitty</h4>
 <div class="outline-text-4" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
@@ -7284,7 +7212,6 @@ programs.kitty = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-4">
 <h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.3.16.</span> zsh</h4>
 <div class="outline-text-4" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
@@ -7351,7 +7278,6 @@ programs.zsh = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-4">
 <h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.3.17.</span> Mail</h4>
 <div class="outline-text-4" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
@@ -7493,7 +7419,6 @@ accounts.email = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-4">
 <h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.3.18.</span> Home-manager: Emacs</h4>
 <div class="outline-text-4" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
@@ -7519,7 +7444,7 @@ programs.emacs = {
     extraEmacsPackages = epkgs: [
       epkgs.mu4e
       epkgs.use-package
-      epkgs.lsp-bridge
+      # epkgs.lsp-bridge
       epkgs.doom-themes
 
       # build the rest of the packages myself
@@ -7557,7 +7482,6 @@ programs.emacs = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-4">
 <h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.3.19.</span> Waybar</h4>
 <div class="outline-text-4" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
@@ -7691,7 +7615,6 @@ programs.waybar = {
         tooltip-format= "&lt;big&gt;{:%Y %B}&lt;/big&gt;\n&lt;tt&gt;&lt;small&gt;{calendar}&lt;/small&gt;&lt;/tt&gt;";
       };
 
-
       pulseaudio= {
         format= "{icon} {volume:2}%";
         format-bluetooth= "{icon} {volume}%";
@@ -7764,244 +7687,13 @@ programs.waybar = {
       };
     };
   };
-
-  style = ''
-  @define-color foreground #fdf6e3;
-  @define-color background #1a1a1a;
-  @define-color background-alt #292b2e;
-  @define-color foreground-warning #268bd2;
-  @define-color background-warning @background;
-  @define-color foreground-error red;
-  @define-color background-error @background;
-  @define-color foreground-critical gold;
-  @define-color background-critical blue;
-
-
-  * {
-      border: none;
-      border-radius: 0;
-      font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
-      font-size: 14px;
-      min-height: 0;
-      margin: -1px 0px;
-  }
-
-  window#waybar {
-          background: transparent;
-          color: @foreground;
-          transition-duration: .5s;
-  }
-
-  window#waybar.hidden {
-      opacity: 0.2;
-  }
-
-
-  #mpris {
-      padding: 0 10px;
-      background-color: transparent;
-      color: #1DB954;
-      font-family: Monospace;
-      font-size: 12px;
-  }
-
-  #custom-right-arrow-dark,
-  #custom-left-arrow-dark {
-          color: @background;
-          background: @background-alt;
-          font-size: 24px;
-  }
-
-  #window {
-          font-size: 12px;
-          padding: 0 20px;
-  }
-
-  #mode {
-      background: @background-critical;
-      color: @foreground-critical;
-      padding: 0 3px;
-  }
-
-  #custom-configwarn {
-      color: black;
-      padding: 0 3px;
-      animation-name: configblink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-
-  #custom-outer-right-arrow-dark,
-  #custom-outer-left-arrow-dark {
-          color: @background;
-          font-size: 24px;
-  }
-
-  #custom-outer-left-arrow-dark,
-  #custom-left-arrow-dark,
-  #custom-left-arrow-light {
-          margin: 0 -1px;
-  }
-
-  #custom-right-arrow-light,
-  #custom-left-arrow-light {
-          color: @background-alt;
-          background: @background;
-          font-size: 24px;
-  }
-
-  #workspaces,
-  #clock.1,
-  #clock.2,
-  #clock.3,
-  #pulseaudio,
-  #memory,
-  #cpu,
-  #temperature,
-  #power-profiles-daemon,
-  #mpris,
-  #tray {
-          background: @background;
-  }
-
-  #network,
-  #clock.2,
-  #battery,
-  #cpu,
-  #custom-pseudobat,
-  #disk {
-          background: @background-alt;
-  }
-
-
-  #workspaces button {
-          padding: 0 2px;
-          color: #fdf6e3;
-  }
-  #workspaces button.focused {
-          color: @foreground-warning;
-  }
-
-  #workspaces button:hover {
-      background: @foreground;
-      color: @background;
-          border: @foreground;
-          padding: 0 2px;
-          box-shadow: inherit;
-          text-shadow: inherit;
-  }
-
-  #workspaces button.urgent {
-      color: @background-critical;
-      background: @foreground-critical;
-  }
-
-  #network {
-      color: #cc99c9;
-  }
-
-  #temperature,
-  #power-profiles-daemon {
-      color: #9ec1cf;
-  }
-
-  #disk {
-      /*color: #b58900;*/
-      color: #9ee09e;
-  }
-
-  #disk.warning {
-      color:            @foreground-error;
-      background-color: @background-error;
-  }
-  #disk.critical,
-  #temperature.critical {
-      color:            @foreground-critical;
-      background-color: @background-critical;
-      animation-name: blink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-  #pulseaudio.muted {
-      color: @foreground-error;
-  }
-  #memory {
-          /*color: #2aa198;*/
-          color: #fdfd97;
-  }
-  #cpu {
-      /*color: #6c71c4;*/
-      color: #feb144;
-  }
-
-  #pulseaudio {
-      /*color: #268bd2;*/
-      color: #ff6663;
-  }
-
-  #battery,
-  #custom-pseudobat {
-          color: cyan;
-  }
-  #battery.discharging {
-      color:      #859900;
-  }
-
-  @keyframes blink {
-      to {
-          color:            @foreground-error;
-          background-color: @background-error;
-      }
-  }
-  @keyframes configblink {
-      to {
-          color:            @foreground-error;
-          background-color: transparent;
-      }
-  }
-
-  #battery.critical:not(.charging) {
-      color:            @foreground-critical;
-      background-color: @background-critical;
-      animation-name: blink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-
-  #clock.1,
-  #clock.2,
-  #clock.3 {
-      font-family: Monospace;
-  }
-
-  #clock,
-  #pulseaudio,
-  #memory,
-  #cpu,
-  #tray,
-  #temperature,
-  #power-profiles-daemon,
-  #network,
-  #mpris,
-  #battery,
-  #custom-pseudobat,
-  #disk {
-          padding: 0 3px;
-  }
-      '';
+  style = (builtins.readFile ../../programs/waybar/style.css);
 };
 
 </pre>
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-4">
 <h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.3.20.</span> Firefox</h4>
 <div class="outline-text-4" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
@@ -8154,7 +7846,6 @@ programs.firefox = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-4">
 <h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.3.21.</span> Services</h4>
 <div class="outline-text-4" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
@@ -8162,7 +7853,6 @@ programs.firefox = {
 Services that can be defined through home-manager should be defined here.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"></a>gnome-keyring<br />
 <div class="outline-text-5" id="text-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">
@@ -8180,7 +7870,6 @@ services.gnome-keyring = {
 </div>
 </div>
 </li>
-
 <li><a id="h:06d34282-5c75-4c21-a857-604f129ce911"></a>mbsync<br />
 <div class="outline-text-5" id="text-h:06d34282-5c75-4c21-a857-604f129ce911">
 <p>
@@ -8197,7 +7886,6 @@ services.mbsync = {
 </div>
 </div>
 </li>
-
 <li><a id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"></a>KDE Connect<br />
 <div class="outline-text-5" id="text-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">
 <p>
@@ -8215,7 +7903,6 @@ services.kdeconnect = {
 </div>
 </div>
 </li>
-
 <li><a id="h:a17df4b8-1044-4569-b1b9-6c99ae354654"></a>syncthing<br />
 <div class="outline-text-5" id="text-h:a17df4b8-1044-4569-b1b9-6c99ae354654">
 <p>
@@ -8235,7 +7922,6 @@ services.syncthing = {
 </div>
 </div>
 </li>
-
 <li><a id="h:1f5a04de-0898-41ba-8134-741e4aeb0f79"></a>Emacs server<br />
 <div class="outline-text-5" id="text-h:1f5a04de-0898-41ba-8134-741e4aeb0f79">
 <p>
@@ -8253,7 +7939,6 @@ services.emacs = {
 </div>
 </div>
 </li>
-
 <li><a id="h:99d05729-df35-4958-9940-3319d6a41359"></a>Mako<br />
 <div class="outline-text-5" id="text-h:99d05729-df35-4958-9940-3319d6a41359">
 <p>
@@ -8300,7 +7985,6 @@ group-by=category
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-4">
 <h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.3.22.</span> Sway</h4>
 <div class="outline-text-4" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
@@ -8419,22 +8103,6 @@ wayland.windowManager.sway = {
     };
     assigns = {
       "1:一" = [{ app_id = "firefox"; }];
-    };
-    colors = {
-      focused = {
-        # background = "#080808";
-        # border = "#80a0ff";
-        # childBorder = "#80a0ff";
-        # indicator = "#080808";
-        # text = "#ffd700";
-      };
-      unfocused = {
-        # background = "#080808";
-        # border = "#80a0ff";
-        # childBorder = "#303030";
-        # indicator = "#80a0ff";
-        # text = "#c6c6c6";
-      };
     };
     floating = {
       border = 1;
@@ -8597,7 +8265,6 @@ wayland.windowManager.sway = {
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b" class="outline-3">
 <h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">3.4.</span> flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</h3>
 <div class="outline-text-3" id="text-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">
@@ -8609,7 +8276,6 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
 Here we also close the opening parenthesis of modules/common.nix (home-manager) and profiles/common.nix (NixOS):
 </p>
 </div>
-
 <div id="outline-container-h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f" class="outline-4">
 <h4 id="h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f"><span class="section-number-4">3.4.1.</span> Closing parentheses for common/home.nix and common/nixos.nix</h4>
 <div class="outline-text-4" id="text-h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f">
@@ -8628,7 +8294,6 @@ Here we also close the opening parenthesis of modules/common.nix (home-manager) 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:4f89db68-a21c-415d-87a5-21c66f2b6ded" class="outline-4">
 <h4 id="h:4f89db68-a21c-415d-87a5-21c66f2b6ded"><span class="section-number-4">3.4.2.</span> flake.nix</h4>
 <div class="outline-text-4" id="text-h:4f89db68-a21c-415d-87a5-21c66f2b6ded">
@@ -8645,6 +8310,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
     nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
 
+    nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
 
     # user-level configuration
     home-manager = {
@@ -8687,11 +8353,6 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # provides expressions for mautrix-signal
-    nixpkgs-mautrix-signal ={
-      url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
-    };
-
     # patches for gaming on nix
     nix-gaming = {
       url = github:fufexan/nix-gaming;
@@ -8713,6 +8374,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     self,
 
       nixpkgs,
+      nixpkgs-stable,
       home-manager,
       nix-on-droid,
       nixos-generators,
@@ -8722,7 +8384,6 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       stylix,
       sops-nix,
       lanzaboote,
-      nixpkgs-mautrix-signal,
       nix-gaming,
       nixos-hardware,
       nix-alien,
@@ -8735,6 +8396,11 @@ This tangles the flake.nix file; This block only needs to be touched when updati
                             overlays = [ emacs-overlay.overlay
                                          nur.overlay
                                          nixgl.overlay
+                                         (final: _prev: {
+                                           stable = import nixpkgs-stable {
+                                             inherit (final) system config;
+                                           };
+                                         })
                                        ];
                             config.allowUnfree = true;
                           };
@@ -8748,9 +8414,6 @@ This tangles the flake.nix file; This block only needs to be touched when updati
                             config.allowUnfree = true;
                           };
 
-    pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
-                            config.allowUnfree = true;
-                          };
 
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
@@ -8798,8 +8461,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       };
 
       sandbox = nixpkgs.lib.nixosSystem {
-        pkgs = pkgsmautrix;
-        specialArgs.unstable = nixpkgs-mautrix-signal;
+        specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/sandbox/nixos.nix
@@ -8893,11 +8555,9 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       };
 
       matrix = nixpkgs.lib.nixosSystem {
-        # specialArgs = {inherit pkgsmautrix; };
-        pkgs = pkgsmautrix;
+        specialArgs = {inherit inputs pkgs; };
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
-        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/server1/matrix/nixos.nix
@@ -8939,11 +8599,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
       #ovm swarsel
       swatrix = nixpkgs.lib.nixosSystem {
-        # specialArgs = {inherit pkgsmautrix; };
-        pkgs = pkgsmautrix;
-        # this is to import a service module that is not on nixpkgs
-        # this way avoids infinite recursion errors
-        specialArgs.unstable = nixpkgs-mautrix-signal;
+        specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/remote/oracle/matrix/nixos.nix
@@ -8999,7 +8655,6 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 In this section I handle my early init file; it takes care of frame-setup for emacsclient buffers.
 </p>
 </div>
-
 <div id="outline-container-h:38e03b65-9dfc-4547-b27d-236664d7dc15" class="outline-4">
 <h4 id="h:38e03b65-9dfc-4547-b27d-236664d7dc15"><span class="section-number-4">4.1.1.</span> Increase startup performance</h4>
 <div class="outline-text-4" id="text-h:38e03b65-9dfc-4547-b27d-236664d7dc15">
@@ -9142,7 +8797,6 @@ NOTE: To use these keybinds, you need to enclose the binding in angled brackets 
 This section is used to define my own functions, own variables, and own keybindings.
 </p>
 </div>
-
 <div id="outline-container-h:b7b5976a-db2b-493d-8794-1924a0e12aec" class="outline-4">
 <h4 id="h:b7b5976a-db2b-493d-8794-1924a0e12aec"><span class="section-number-4">4.2.1.</span> Custom functions</h4>
 <div class="outline-text-4" id="text-h:b7b5976a-db2b-493d-8794-1924a0e12aec">
@@ -9150,7 +8804,6 @@ This section is used to define my own functions, own variables, and own keybindi
 In this section I define extra functions that I need. Some of these functions I wrote myself, some I found after internet reseach. For functions I found on the internet, I will link the original source I found it in.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c"></a>Emacs/Evil state toggle<br />
 <div class="outline-text-5" id="text-h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c">
@@ -9170,7 +8823,6 @@ Since I am rebinding the <code>C-z</code> hotkey for emacs-evil-state toggling, 
 </div>
 </div>
 </li>
-
 <li><a id="h:1e0ee570-e509-4ecb-a3af-b75543731bb0"></a>Switching to last used buffer<br />
 <div class="outline-text-5" id="text-h:1e0ee570-e509-4ecb-a3af-b75543731bb0">
 <p>
@@ -9508,7 +9160,6 @@ Used in: <a href="#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">Centered org-mode Buf
 </div>
 </div>
 </li>
-
 <li><a id="h:59d4306e-9b73-4b2c-b039-6a6518c357fc"></a>org-mode: Auto-tangle and export Configuration Files<br />
 <div class="outline-text-5" id="text-h:59d4306e-9b73-4b2c-b039-6a6518c357fc">
 <p>
@@ -9548,7 +9199,6 @@ This section automatically tangles all configuration blocks in this file to the 
 </div>
 </div>
 </li>
-
 <li><a id="h:dfa66e78-5748-45e3-a975-db3da104bb3a"></a>org-mode: Fold current heading<br />
 <div class="outline-text-5" id="text-h:dfa66e78-5748-45e3-a975-db3da104bb3a">
 <p>
@@ -9579,7 +9229,6 @@ However, I want to be able to fold a single heading consistently.
 </div>
 </div>
 </li>
-
 <li><a id="h:a1802f9b-bb71-4fd5-86fa-945da18e8b81"></a>corfu: Do not interrupt navigation<br />
 <div class="outline-text-5" id="text-h:a1802f9b-bb71-4fd5-86fa-945da18e8b81">
 <p>
@@ -9612,7 +9261,6 @@ These functions are used here: <a href="#h:5653d693-ecca-4c95-9633-66b9e3241070"
 </div>
 </div>
 </li>
-
 <li><a id="h:291e43d9-eae2-4e23-8e38-160e223bf314"></a>python shell reloading<br />
 <div class="outline-text-5" id="text-h:291e43d9-eae2-4e23-8e38-160e223bf314">
 <p>
@@ -9656,7 +9304,6 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5" class="outline-4">
 <h4 id="h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5"><span class="section-number-4">4.2.2.</span> Custom Keybindings</h4>
 <div class="outline-text-4" id="text-h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">
@@ -9822,7 +9469,6 @@ In this section I setup some aliases that I use for various directories on my sy
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:0cf30b76-91d9-41da-a10b-74199bc36d40" class="outline-4">
 <h4 id="h:0cf30b76-91d9-41da-a10b-74199bc36d40"><span class="section-number-4">4.2.4.</span> Unclutter .emacs.d</h4>
 <div class="outline-text-4" id="text-h:0cf30b76-91d9-41da-a10b-74199bc36d40">
@@ -9849,7 +9495,6 @@ This section also sets the emacs directory to the <code>~/.cache/</code> directo
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:329f529a-ef9f-4787-b311-1c485e05b754" class="outline-4">
 <h4 id="h:329f529a-ef9f-4787-b311-1c485e05b754"><span class="section-number-4">4.2.5.</span> Move backup files to another location</h4>
 <div class="outline-text-4" id="text-h:329f529a-ef9f-4787-b311-1c485e05b754">
@@ -9888,7 +9533,6 @@ Many people dislike the Emacs backup files; I do enjoy them, but have to admit t
 In this general section I have settings that I either consider to be integral to my experience when using emacs or have no other section that I feel they belong to.
 </p>
 </div>
-
 <div id="outline-container-h:76a5bd78-a20d-4068-bea8-a38fdb26428e" class="outline-4">
 <h4 id="h:76a5bd78-a20d-4068-bea8-a38fdb26428e"><span class="section-number-4">4.3.1.</span> General setup</h4>
 <div class="outline-text-4" id="text-h:76a5bd78-a20d-4068-bea8-a38fdb26428e">
@@ -9951,7 +9595,6 @@ Here I set up some things that are too minor to put under other categories.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:0debe8fd-b319-4ab7-a92c-784fa7896b75" class="outline-4">
 <h4 id="h:0debe8fd-b319-4ab7-a92c-784fa7896b75"><span class="section-number-4">4.3.2.</span> Mark all themes as safe</h4>
 <div class="outline-text-4" id="text-h:0debe8fd-b319-4ab7-a92c-784fa7896b75">
@@ -9986,7 +9629,6 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:6527b3ce-b76d-431a-9960-a57da7c53e1b" class="outline-4">
 <h4 id="h:6527b3ce-b76d-431a-9960-a57da7c53e1b"><span class="section-number-4">4.3.4.</span> Indentation</h4>
 <div class="outline-text-4" id="text-h:6527b3ce-b76d-431a-9960-a57da7c53e1b">
@@ -10026,7 +9668,6 @@ Lastly, I load the <code>highlight-indent-guides</code> package. This adds a nea
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90" class="outline-4">
 <h4 id="h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90"><span class="section-number-4">4.3.5.</span> Scrolling</h4>
 <div class="outline-text-4" id="text-h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90">
@@ -10057,12 +9698,10 @@ By default, emacs scrolls half a page when reaching the bottom of the buffer. Th
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:5bf9f014-ee96-42da-b285-7b34f04e6bb1" class="outline-4">
 <h4 id="h:5bf9f014-ee96-42da-b285-7b34f04e6bb1"><span class="section-number-4">4.3.6.</span> Evil</h4>
 <div class="outline-text-4" id="text-h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">
 </div>
-
 <ol class="org-ol">
 <li><a id="h:218376e8-086b-46bf-91b3-78295d5d440f"></a>General evil<br />
 <div class="outline-text-5" id="text-h:218376e8-086b-46bf-91b3-78295d5d440f">
@@ -10150,7 +9789,6 @@ This package changes the char-search commands like <code>f</code> by showing the
 </div>
 </div>
 </li>
-
 <li><a id="h:b06a378d-5248-4451-8eee-e65a3a768b1d"></a>evil-cleverparens<br />
 <div class="outline-text-5" id="text-h:b06a378d-5248-4451-8eee-e65a3a768b1d">
 <p>
@@ -10165,7 +9803,6 @@ This helps keeping parentheses balanced which is useful when writing in language
 </div>
 </div>
 </li>
-
 <li><a id="h:aac82e5e-d882-4870-b644-ebdd0a2daae3"></a>evil-surround<br />
 <div class="outline-text-5" id="text-h:aac82e5e-d882-4870-b644-ebdd0a2daae3">
 <p>
@@ -10185,7 +9822,6 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:e888d7a7-1755-4109-af11-5358b8cf140e" class="outline-4">
 <h4 id="h:e888d7a7-1755-4109-af11-5358b8cf140e"><span class="section-number-4">4.3.7.</span> ispell</h4>
 <div class="outline-text-4" id="text-h:e888d7a7-1755-4109-af11-5358b8cf140e">
@@ -10202,7 +9838,6 @@ This should setup a wordlist that can be used as a dictionary. However, for some
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:60f87342-0491-4c56-8057-6f075cf35753" class="outline-4">
 <h4 id="h:60f87342-0491-4c56-8057-6f075cf35753"><span class="section-number-4">4.3.8.</span> Font Configuration</h4>
 <div class="outline-text-4" id="text-h:60f87342-0491-4c56-8057-6f075cf35753">
@@ -10231,7 +9866,6 @@ Here I define my fonts to be used. Honestly I do not understand the face-attribu
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:72a9704b-83d2-4b74-a1f6-d333203f62db" class="outline-4">
 <h4 id="h:72a9704b-83d2-4b74-a1f6-d333203f62db"><span class="section-number-4">4.3.9.</span> Theme</h4>
 <div class="outline-text-4" id="text-h:72a9704b-83d2-4b74-a1f6-d333203f62db">
@@ -10258,7 +9892,6 @@ I have grown to love the <code>doom-citylights</code> theme and have modeled my 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:eb0ea526-a83a-4664-b3a1-2b40d3a31493" class="outline-4">
 <h4 id="h:eb0ea526-a83a-4664-b3a1-2b40d3a31493"><span class="section-number-4">4.3.10.</span> Icons</h4>
 <div class="outline-text-4" id="text-h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">
@@ -10282,7 +9915,6 @@ Used in:
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:455ed7ac-ee7f-4f94-b857-f2c58b2282d0" class="outline-4">
 <h4 id="h:455ed7ac-ee7f-4f94-b857-f2c58b2282d0"><span class="section-number-4">4.3.11.</span> Variable Pitch Mode</h4>
 <div class="outline-text-4" id="text-h:455ed7ac-ee7f-4f94-b857-f2c58b2282d0">
@@ -10304,7 +9936,6 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:ed585848-875a-4673-910c-d2e1901dd95b" class="outline-4">
 <h4 id="h:ed585848-875a-4673-910c-d2e1901dd95b"><span class="section-number-4">4.3.12.</span> Modeline</h4>
 <div class="outline-text-4" id="text-h:ed585848-875a-4673-910c-d2e1901dd95b">
@@ -10328,7 +9959,6 @@ Here I set up the modeline with some information that I find useful. Specficiall
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:39ae01e9-8053-4f76-aa77-8cbbbcff9652" class="outline-4">
 <h4 id="h:39ae01e9-8053-4f76-aa77-8cbbbcff9652"><span class="section-number-4">4.3.13.</span> Helper Modes</h4>
 <div class="outline-text-4" id="text-h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">
@@ -10352,7 +9982,6 @@ This set of packages uses the default emacs completion framework and works toget
 Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">Icons</a>
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"></a>vertico<br />
 <div class="outline-text-6" id="text-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">
@@ -10375,7 +10004,6 @@ Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d
 </div>
 </div>
 </li>
-
 <li><a id="h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4"></a>vertico-directory<br />
 <div class="outline-text-6" id="text-h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">
 <p>
@@ -10397,7 +10025,6 @@ This package allows for <code>Ido</code>-like directory navigation.
 </div>
 </div>
 </li>
-
 <li><a id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"></a>orderless<br />
 <div class="outline-text-6" id="text-h:211fc0bd-0d64-4577-97d8-6abc94435f04">
 <p>
@@ -10416,7 +10043,6 @@ The completion styles that I chose here can possibly still be improved. I need t
 </div>
 </div>
 </li>
-
 <li><a id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"></a>consult<br />
 <div class="outline-text-6" id="text-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">
 <p>
@@ -10530,7 +10156,6 @@ As stated above, this simply provides nerd-icons to the completion framework.
 </li>
 </ol>
 </li>
-
 <li><a id="h:cbf6bd48-2503-489a-89da-e3359564e989"></a>Helpful + which-key: Better help defaults<br />
 <div class="outline-text-5" id="text-h:cbf6bd48-2503-489a-89da-e3359564e989">
 <p>
@@ -10559,7 +10184,6 @@ This pair of packages provides information on keybinds in addition to function n
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1" class="outline-4">
 <h4 id="h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1"><span class="section-number-4">4.3.14.</span> Ligatures</h4>
 <div class="outline-text-4" id="text-h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1">
@@ -10592,7 +10216,6 @@ Personally, I think ligatures are fancy. With this mode, they stay 'cursorable'.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:e9d40e63-0e1f-47df-98f7-5427992588a4" class="outline-4">
 <h4 id="h:e9d40e63-0e1f-47df-98f7-5427992588a4"><span class="section-number-4">4.3.15.</span> Popup (popper) + Shackle Buffers</h4>
 <div class="outline-text-4" id="text-h:e9d40e63-0e1f-47df-98f7-5427992588a4">
@@ -10689,7 +10312,6 @@ This section houses all configuration bits that are related to a specific packag
 At some point this will receive further sorting, but for now this is good enough.
 </p>
 </div>
-
 <div id="outline-container-h:99544398-72af-4382-b8e1-01b2221baff4" class="outline-4">
 <h4 id="h:99544398-72af-4382-b8e1-01b2221baff4"><span class="section-number-4">4.4.1.</span> Org Mode</h4>
 <div class="outline-text-4" id="text-h:99544398-72af-4382-b8e1-01b2221baff4">
@@ -10701,7 +10323,6 @@ org-mode is probably my most-used mode in Emcas. It acts as my organizer, config
 Note that nearly all headings within the <code>Org-mode</code> heading are coded within the <code>use-package</code> setup, so be very careful about moving stuff about here.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:877c9401-a354-4e44-a235-db1a90d19e00"></a>General org-mode<br />
 <div class="outline-text-5" id="text-h:877c9401-a354-4e44-a235-db1a90d19e00">
@@ -10836,7 +10457,6 @@ I wrote these capture templates to allow myself to quickly create Anki cards fro
 </div>
 </div>
 </li>
-
 <li><a id="h:40528f5a-c8cd-471b-b862-4088e8e61860"></a>Font Faces<br />
 <div class="outline-text-5" id="text-h:40528f5a-c8cd-471b-b862-4088e8e61860">
 <p>
@@ -10872,7 +10492,6 @@ Again, my understanding of the font-faces in Emacs is limited. This is mostly ju
 </div>
 </div>
 </li>
-
 <li><a id="h:62829574-a069-44b8-afb3-401a268d2747"></a>org-appear<br />
 <div class="outline-text-5" id="text-h:62829574-a069-44b8-afb3-401a268d2747">
 <p>
@@ -10893,7 +10512,6 @@ This package makes emphasis-markers appear when the cursor moves over them. Very
 </div>
 </div>
 </li>
-
 <li><a id="h:bbcfa895-4d46-4b1d-b84e-f634e982c46e"></a>Centered org-mode Buffers<br />
 <div class="outline-text-5" id="text-h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">
 <p>
@@ -10913,7 +10531,6 @@ Function definition in: <a href="#h:fa710375-2efe-49b4-af6a-a875aca6e4a2">Visual
 </div>
 </div>
 </li>
-
 <li><a id="h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8"></a>Fix headings not folding sometimes<br />
 <div class="outline-text-5" id="text-h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8">
 <p>
@@ -10928,7 +10545,6 @@ There is a weird bug in org-mode that makes it so that headings were not folding
 </div>
 </div>
 </li>
-
 <li><a id="h:3e0b6da3-0497-4080-bb49-bab949c03bc4"></a>Babel<br />
 <div class="outline-text-5" id="text-h:3e0b6da3-0497-4080-bb49-bab949c03bc4">
 <p>
@@ -10939,7 +10555,6 @@ org-babel allows to run blocks in other programming languages within an org-mode
 It also offers a very useful utility of exporting org-mode buffers to different formats; the feature I enjoy most is what makes this file useful: the tangling functionality.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c"></a>Language Configuration<br />
 <div class="outline-text-6" id="text-h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c">
@@ -10963,7 +10578,6 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 </div>
 </div>
 </li>
-
 <li><a id="h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9"></a>old easy structure templates<br />
 <div class="outline-text-6" id="text-h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">
 <ul class="org-ul">
@@ -10990,7 +10604,6 @@ Usage: Type <code>&lt;</code>, followed by one of the below keywords and press <
 </li>
 </ol>
 </li>
-
 <li><a id="h:4696e2fc-3296-47dc-8fc3-66912c329d4c"></a>aucTex<br />
 <div class="outline-text-5" id="text-h:4696e2fc-3296-47dc-8fc3-66912c329d4c">
 <p>
@@ -11018,7 +10631,6 @@ This provides several utilities for LaTeX in Emacs, including many completions a
 </div>
 </div>
 </li>
-
 <li><a id="h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b"></a>org-download<br />
 <div class="outline-text-5" id="text-h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b">
 <p>
@@ -11046,7 +10658,6 @@ This package allows to download and copy images into org-mode buffers. Sadly it 
 </div>
 </div>
 </li>
-
 <li><a id="h:a02b1162-3e19-46f1-8efc-9f375971645c"></a>org-fragtog<br />
 <div class="outline-text-5" id="text-h:a02b1162-3e19-46f1-8efc-9f375971645c">
 <p>
@@ -11063,7 +10674,6 @@ This package automatically toggles LaTeX-fragments in org-files. It seems to als
 </div>
 </div>
 </li>
-
 <li><a id="h:95b42e77-767c-4461-9ba8-b1c1cd18266c"></a>org-modern<br />
 <div class="outline-text-5" id="text-h:95b42e77-767c-4461-9ba8-b1c1cd18266c">
 <p>
@@ -11082,7 +10692,6 @@ This just makes org-mode a little bit more beautiful, mostly by making the <code
 </div>
 </div>
 </li>
-
 <li><a id="h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425"></a>Presentations<br />
 <div class="outline-text-5" id="text-h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">
 <p>
@@ -11215,7 +10824,6 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:50327461-a11b-4e81-830a-90febc720cfa" class="outline-4">
 <h4 id="h:50327461-a11b-4e81-830a-90febc720cfa"><span class="section-number-4">4.4.3.</span> Markdown Mode</h4>
 <div class="outline-text-4" id="text-h:50327461-a11b-4e81-830a-90febc720cfa">
@@ -11238,7 +10846,6 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </li>
-
 <li><a id="h:8d90fe51-0b32-423a-a159-4f853bc29b68"></a>LaTeX in Markdown<br />
 <div class="outline-text-5" id="text-h:8d90fe51-0b32-423a-a159-4f853bc29b68">
 <div class="org-src-container">
@@ -11255,7 +10862,6 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6" class="outline-4">
 <h4 id="h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6"><span class="section-number-4">4.4.4.</span> Olivetti</h4>
 <div class="outline-text-4" id="text-h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">
@@ -11278,7 +10884,6 @@ This mode is not automatically activated anywhere because I only rarely need it.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f" class="outline-4">
 <h4 id="h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f"><span class="section-number-4">4.4.5.</span> darkroom</h4>
 <div class="outline-text-4" id="text-h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">
@@ -11297,7 +10902,6 @@ This mode is not automatically activated anywhere because I only rarely need it.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:87453f1c-8ea5-4d0a-862d-8973d5bc5405" class="outline-4">
 <h4 id="h:87453f1c-8ea5-4d0a-862d-8973d5bc5405"><span class="section-number-4">4.4.6.</span> Ripgrep</h4>
 <div class="outline-text-4" id="text-h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">
@@ -11371,7 +10975,6 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:82ddeef2-99f8-465b-ba36-07c3eaad717b" class="outline-4">
 <h4 id="h:82ddeef2-99f8-465b-ba36-07c3eaad717b"><span class="section-number-4">4.4.8.</span> direnv (envrc)</h4>
 <div class="outline-text-4" id="text-h:82ddeef2-99f8-465b-ba36-07c3eaad717b">
@@ -11385,7 +10988,6 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:efb3f0fd-e846-4df9-ba48-2e45d776f68f" class="outline-4">
 <h4 id="h:efb3f0fd-e846-4df9-ba48-2e45d776f68f"><span class="section-number-4">4.4.9.</span> avy</h4>
 <div class="outline-text-4" id="text-h:efb3f0fd-e846-4df9-ba48-2e45d776f68f">
@@ -11405,7 +11007,6 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668" class="outline-4">
 <h4 id="h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668"><span class="section-number-4">4.4.10.</span> crdt (Collaborative Editing)</h4>
 <div class="outline-text-4" id="text-h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668">
@@ -11421,7 +11022,6 @@ With this it is possible to work on the same file collaboratively. I have never 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:d9a6cb44-736e-4608-951f-e928e1b757c0" class="outline-4">
 <h4 id="h:d9a6cb44-736e-4608-951f-e928e1b757c0"><span class="section-number-4">4.4.11.</span> devdocs</h4>
 <div class="outline-text-4" id="text-h:d9a6cb44-736e-4608-951f-e928e1b757c0">
@@ -11458,7 +11058,6 @@ To install a documentation, use the <code>devdocs=install</code> command and sel
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:5cde5032-251e-4cc4-9202-b4ce996f92c2" class="outline-4">
 <h4 id="h:5cde5032-251e-4cc4-9202-b4ce996f92c2"><span class="section-number-4">4.4.12.</span> Projectile</h4>
 <div class="outline-text-4" id="text-h:5cde5032-251e-4cc4-9202-b4ce996f92c2">
@@ -11484,7 +11083,6 @@ projectile is useful for keeping track of your git projects within Emacs. I most
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5" class="outline-4">
 <h4 id="h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5"><span class="section-number-4">4.4.13.</span> Magit</h4>
 <div class="outline-text-4" id="text-h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">
@@ -11506,18 +11104,33 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
                                        ("~/.dotfiles/" . 0)))
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org74b17fa" class="outline-2">
+<h2 id="org74b17fa"><span class="section-number-2">5.</span> Yubikey support</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
 
 ;; yubikey support for pushing commits
 ;; commiting is enabled through nixos gpg-agent config
+(use-package pinentry)
+(pinentry-start)
 (setq epg-pinentry-mode 'loopback)
 (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 </pre>
 </div>
 </div>
-</div>
-
 <div id="outline-container-h:1a8585ed-d9f2-478f-a132-440ada1cde2c" class="outline-4">
-<h4 id="h:1a8585ed-d9f2-478f-a132-440ada1cde2c"><span class="section-number-4">4.4.14.</span> Forge</h4>
+<h4 id="h:1a8585ed-d9f2-478f-a132-440ada1cde2c"><span class="section-number-4">5.0.1.</span> Forge</h4>
 <div class="outline-text-4" id="text-h:1a8585ed-d9f2-478f-a132-440ada1cde2c">
 <p>
 NOTE: Make sure to configure a GitHub token before using this package!
@@ -11554,9 +11167,8 @@ NOTE: Make sure to configure a GitHub token before using this package!
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4" class="outline-4">
-<h4 id="h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4"><span class="section-number-4">4.4.15.</span> git-timemachine</h4>
+<h4 id="h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4"><span class="section-number-4">5.0.2.</span> git-timemachine</h4>
 <div class="outline-text-4" id="text-h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">
 <p>
 This is just a nice utility to browse different versions of a file of a git project within Emacs.
@@ -11572,9 +11184,8 @@ This is just a nice utility to browse different versions of a file of a git proj
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a" class="outline-4">
-<h4 id="h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a"><span class="section-number-4">4.4.16.</span> Delimiters (brackets): rainbow-delimiters, highlight-parentheses</h4>
+<h4 id="h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a"><span class="section-number-4">5.0.3.</span> Delimiters (brackets): rainbow-delimiters, highlight-parentheses</h4>
 <div class="outline-text-4" id="text-h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">
 <ul class="org-ul">
 <li>rainbow-delimiters colors all delimiters, also ones not in current selection</li>
@@ -11616,9 +11227,8 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94" class="outline-4">
-<h4 id="h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94"><span class="section-number-4">4.4.17.</span> rainbow-mode</h4>
+<h4 id="h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94"><span class="section-number-4">5.0.4.</span> rainbow-mode</h4>
 <div class="outline-text-4" id="text-h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">
 <p>
 Complimentary to the delimiters-packages above, this package sets the background color of the delimiters, which makes it easier to see at a glance where we are in a delimiter-tree.
@@ -11634,7 +11244,7 @@ Complimentary to the delimiters-packages above, this package sets the background
 </div>
 </div>
 <div id="outline-container-h:5653d693-ecca-4c95-9633-66b9e3241070" class="outline-4">
-<h4 id="h:5653d693-ecca-4c95-9633-66b9e3241070"><span class="section-number-4">4.4.18.</span> Corfu</h4>
+<h4 id="h:5653d693-ecca-4c95-9633-66b9e3241070"><span class="section-number-4">5.0.5.</span> Corfu</h4>
 <div class="outline-text-4" id="text-h:5653d693-ecca-4c95-9633-66b9e3241070">
 <p>
 This is the company equivalent to the vertico gang.
@@ -11702,9 +11312,8 @@ Navigation functions defined here: <a href="#h:a1802f9b-bb71-4fd5-86fa-945da18e8
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:c3cc1c12-3ab8-42b7-be07-63f54eac397f" class="outline-4">
-<h4 id="h:c3cc1c12-3ab8-42b7-be07-63f54eac397f"><span class="section-number-4">4.4.19.</span> cape</h4>
+<h4 id="h:c3cc1c12-3ab8-42b7-be07-63f54eac397f"><span class="section-number-4">5.0.6.</span> cape</h4>
 <div class="outline-text-4" id="text-h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">
 <p>
 cape adds even more completion capabilities by adding a lot of completion logic that is exposed as separate functions. I tried out adding these to the <code>completion-at-points-functions</code> alist, but I felt like it cluttered my suggestions too much. Hence I now just call the respective functions when I need them. For this I setup the <code>C-z</code> keybinding in <a href="#h:218376e8-086b-46bf-91b3-78295d5d440f">General evil</a>.
@@ -11757,9 +11366,8 @@ I leave the commented out alist extensions here in case I want to try them out a
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:3aa20438-edf6-4b13-a90d-3d5c51239c44" class="outline-4">
-<h4 id="h:3aa20438-edf6-4b13-a90d-3d5c51239c44"><span class="section-number-4">4.4.20.</span> rust</h4>
+<h4 id="h:3aa20438-edf6-4b13-a90d-3d5c51239c44"><span class="section-number-4">5.0.7.</span> rust</h4>
 <div class="outline-text-4" id="text-h:3aa20438-edf6-4b13-a90d-3d5c51239c44">
 <p>
 This sets up rustic-mode with tree-sitter support - there is still one issue to iron out with automatic adding of dependency crates, but everything else works fine now.
@@ -11785,9 +11393,8 @@ This sets up rustic-mode with tree-sitter support - there is still one issue to 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:b9b27a88-06f3-470b-a604-a20b2079bc26" class="outline-4">
-<h4 id="h:b9b27a88-06f3-470b-a604-a20b2079bc26"><span class="section-number-4">4.4.21.</span> Tramp</h4>
+<h4 id="h:b9b27a88-06f3-470b-a604-a20b2079bc26"><span class="section-number-4">5.0.8.</span> Tramp</h4>
 <div class="outline-text-4" id="text-h:b9b27a88-06f3-470b-a604-a20b2079bc26">
 <p>
 Tramp allows for SSH access of files over Emacs. I have no ideas what the options here mean, but this is a recommended configuration that I found (sadly I lost the link). I need to research more what these options really do.
@@ -11824,9 +11431,8 @@ Tramp allows for SSH access of files over Emacs. I have no ideas what the option
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:58415e95-8a7a-4517-acbb-5f1bb1028603" class="outline-4">
-<h4 id="h:58415e95-8a7a-4517-acbb-5f1bb1028603"><span class="section-number-4">4.4.22.</span> diff-hl</h4>
+<h4 id="h:58415e95-8a7a-4517-acbb-5f1bb1028603"><span class="section-number-4">5.0.9.</span> diff-hl</h4>
 <div class="outline-text-4" id="text-h:58415e95-8a7a-4517-acbb-5f1bb1028603">
 <p>
 This is a simple highlighting utility that uses the margin to visually show the differences since the last git commit.
@@ -11848,7 +11454,7 @@ This is a simple highlighting utility that uses the margin to visually show the 
 </div>
 </div>
 <div id="outline-container-h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5" class="outline-4">
-<h4 id="h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5"><span class="section-number-4">4.4.23.</span> Commenting</h4>
+<h4 id="h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5"><span class="section-number-4">5.0.10.</span> Commenting</h4>
 <div class="outline-text-4" id="text-h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">
 <p>
 This package allows for swift commenting out and in of code snippets. For some reason, it is a bit broken in my config, as it sometimes comments out too much, sometimes too little, and sometimes it splits lines during commenting. Also, in org-mode when inside a src-block, it often times jumps to the top of the block.
@@ -11867,9 +11473,8 @@ Still, this is avery convenient package.
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:9ec11ee4-2250-414a-87b5-73ee680a3a4a" class="outline-4">
-<h4 id="h:9ec11ee4-2250-414a-87b5-73ee680a3a4a"><span class="section-number-4">4.4.24.</span> yasnippet</h4>
+<h4 id="h:9ec11ee4-2250-414a-87b5-73ee680a3a4a"><span class="section-number-4">5.0.11.</span> yasnippet</h4>
 <div class="outline-text-4" id="text-h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">
 <p>
 yasnippet allows to define snippets that can be quickly expanded by hitting the <code>TAB</code> key after inputting a keyword.
@@ -11889,7 +11494,6 @@ I used to run this together with the <code>yasnippet-snippets</code> package, bu
 </pre>
 </div>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:af0a78a5-17c2-4e13-b64a-772c27c4dee2"></a>yasnippet math-snippets<br />
 <div class="outline-text-6" id="text-h:af0a78a5-17c2-4e13-b64a-772c27c4dee2">
@@ -11956,9 +11560,8 @@ The following block is mostly inspired from <a href="https://code.kulupu.party/t
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:316857e7-4df8-4ec5-b22e-6dac918fa937" class="outline-4">
-<h4 id="h:316857e7-4df8-4ec5-b22e-6dac918fa937"><span class="section-number-4">4.4.25.</span> eglot</h4>
+<h4 id="h:316857e7-4df8-4ec5-b22e-6dac918fa937"><span class="section-number-4">5.0.12.</span> eglot</h4>
 <div class="outline-text-4" id="text-h:316857e7-4df8-4ec5-b22e-6dac918fa937">
 <p>
 After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a while each, I must say that <code>eglot</code> feels the most clean and fast to me.
@@ -11999,9 +11602,8 @@ After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a w
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:1de35f27-335d-4cbd-beb6-f85cf5496173" class="outline-4">
-<h4 id="h:1de35f27-335d-4cbd-beb6-f85cf5496173"><span class="section-number-4">4.4.26.</span> Breadcrumb</h4>
+<h4 id="h:1de35f27-335d-4cbd-beb6-f85cf5496173"><span class="section-number-4">5.0.13.</span> Breadcrumb</h4>
 <div class="outline-text-4" id="text-h:1de35f27-335d-4cbd-beb6-f85cf5496173">
 <p>
 This simple shows the path to the current file on the top of the buffer - I just think it looks kind of neat, even though it is not extremely useful :)
@@ -12016,9 +11618,8 @@ This simple shows the path to the current file on the top of the buffer - I just
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53" class="outline-4">
-<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">4.4.27.</span> Prevent breaking of hardlinks</h4>
+<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">5.0.14.</span> Prevent breaking of hardlinks</h4>
 <div class="outline-text-4" id="text-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">
 <p>
 This setting ensures that hard links are preserved during the backup process, which is useful for maintaining the integrity of files that are linked in multiple locations.
@@ -12032,9 +11633,8 @@ This setting ensures that hard links are preserved during the backup process, wh
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:0918557a-8463-430c-b8df-6546dea9abd0" class="outline-4">
-<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">4.4.28.</span> Dirvish</h4>
+<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">5.0.15.</span> Dirvish</h4>
 <div class="outline-text-4" id="text-h:0918557a-8463-430c-b8df-6546dea9abd0">
 <p>
 Dirvish is an improvement upon the dired-framework and has more features like file preview etc. Sadly it has an incompatibility with <code>openwith</code> which is why I have disabled that package.
@@ -12098,7 +11698,7 @@ Dirvish is an improvement upon the dired-framework and has more features like fi
 </div>
 </div>
 <div id="outline-container-h:b108dd3e-f34d-4ed3-98df-0bf9de055889" class="outline-4">
-<h4 id="h:b108dd3e-f34d-4ed3-98df-0bf9de055889"><span class="section-number-4">4.4.29.</span> pdf-tools: pdf-viewer and support for dirvish</h4>
+<h4 id="h:b108dd3e-f34d-4ed3-98df-0bf9de055889"><span class="section-number-4">5.0.16.</span> pdf-tools: pdf-viewer and support for dirvish</h4>
 <div class="outline-text-4" id="text-h:b108dd3e-f34d-4ed3-98df-0bf9de055889">
 <p>
 This enables pdf-previewing in dirvish and gives a much better pdf-viewer than is shipped normally by emacs.
@@ -12116,9 +11716,8 @@ This enables pdf-previewing in dirvish and gives a much better pdf-viewer than i
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8" class="outline-4">
-<h4 id="h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8"><span class="section-number-4">4.4.30.</span> Jupyter</h4>
+<h4 id="h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8"><span class="section-number-4">5.0.17.</span> Jupyter</h4>
 <div class="outline-text-4" id="text-h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">
 <p>
 This is a jupyter client. Using it is a bit cumbersome though, so I have not fully explored all features.
@@ -12132,9 +11731,8 @@ This is a jupyter client. Using it is a bit cumbersome though, so I have not ful
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8" class="outline-4">
-<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">4.4.31.</span> undo-tree</h4>
+<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">5.0.18.</span> undo-tree</h4>
 <div class="outline-text-4" id="text-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">
 <p>
 Base emacs undo logic is very useful, but not easy to understand for me. I prefer undo-tree, which makes switching between branches easier and also allows quickly switching back to a much older state using the visualizer.
@@ -12173,7 +11771,7 @@ While we are at it, we are also setting up a persistent undo-file for every file
 </div>
 </div>
 <div id="outline-container-h:b6c18dd0-3377-47ea-80c3-ac1486454e18" class="outline-4">
-<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">4.4.32.</span> Hydra</h4>
+<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">5.0.19.</span> Hydra</h4>
 <div class="outline-text-4" id="text-h:b6c18dd0-3377-47ea-80c3-ac1486454e18">
 <p>
 Hydra allows for the writing of macro-style functions. I have not yet looked into this all too much, but it seems to be a potent feature.
@@ -12186,7 +11784,6 @@ Hydra allows for the writing of macro-style functions. I have not yet looked int
 </pre>
 </div>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:c5681884-7040-4b55-ab1b-5777631a0514"></a>Text scaling<br />
 <div class="outline-text-5" id="text-h:c5681884-7040-4b55-ab1b-5777631a0514">
@@ -12211,7 +11808,7 @@ I only wrote this in order to try out hydra; rarely do I really need this. Howev
 </ol>
 </div>
 <div id="outline-container-h:fff816a0-6d70-4bda-abab-833345e51100" class="outline-4">
-<h4 id="h:fff816a0-6d70-4bda-abab-833345e51100"><span class="section-number-4">4.4.33.</span> External Applications</h4>
+<h4 id="h:fff816a0-6d70-4bda-abab-833345e51100"><span class="section-number-4">5.0.20.</span> External Applications</h4>
 <div class="outline-text-4" id="text-h:fff816a0-6d70-4bda-abab-833345e51100">
 </div>
 <ol class="org-ol">
@@ -12260,14 +11857,12 @@ I hope that this package will improve, then I will come back to it one day.
 </div>
 </div>
 </li>
-
 <li><a id="h:5854c9a6-1319-4961-a112-75b1bf2e1f69"></a>Anki<br />
 <div class="outline-text-5" id="text-h:5854c9a6-1319-4961-a112-75b1bf2e1f69">
 <p>
 This section is here to make Anki usable from within Emacs - an endeavour that I have mostly given up on.
 </p>
 </div>
-
 <ol class="org-ol">
 <li><a id="h:d20559ed-7ada-4fea-a964-33bfd64b4549"></a>Basic Anki setup<br />
 <div class="outline-text-6" id="text-h:d20559ed-7ada-4fea-a964-33bfd64b4549">
@@ -12315,7 +11910,6 @@ This section is here to make Anki usable from within Emacs - an endeavour that I
 </div>
 </div>
 </li>
-
 <li><a id="h:64242e95-6454-4330-bcb9-15353083bade"></a>Own Anki functions<br />
 <div class="outline-text-6" id="text-h:64242e95-6454-4330-bcb9-15353083bade">
 <ul class="org-ul">
@@ -12362,9 +11956,8 @@ This section is here to make Anki usable from within Emacs - an endeavour that I
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:2f333330-b19d-4f64-85ea-146ff28667e8" class="outline-4">
-<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">4.4.34.</span> Email</h4>
+<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">5.0.21.</span> Email</h4>
 <div class="outline-text-4" id="text-h:2f333330-b19d-4f64-85ea-146ff28667e8">
 </div>
 <ol class="org-ol">
@@ -12391,7 +11984,6 @@ This seems not to be needed - I do not yet dare to delete it though.
 </div>
 </div>
 </li>
-
 <li><a id="h:b92a18cf-eec3-4605-a8c2-37133ade3574"></a>mu4e<br />
 <div class="outline-text-5" id="text-h:b92a18cf-eec3-4605-a8c2-37133ade3574">
 <p>
@@ -12453,7 +12045,6 @@ The hook functions are defined here: <a href="#h:34506761-06b9-43b5-a818-506d9b3
 </div>
 </div>
 </li>
-
 <li><a id="h:43209eeb-5d46-472e-b7c2-58a3fb465199"></a>mu4e-alert<br />
 <div class="outline-text-5" id="text-h:43209eeb-5d46-472e-b7c2-58a3fb465199">
 <p>
@@ -12475,9 +12066,8 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </li>
 </ol>
 </div>
-
 <div id="outline-container-h:c760f04e-622f-4b3e-8916-53ca8cce6edc" class="outline-4">
-<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.35.</span> Calendar</h4>
+<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">5.0.22.</span> Calendar</h4>
 <div class="outline-text-4" id="text-h:c760f04e-622f-4b3e-8916-53ca8cce6edc">
 <p>
 This provides a beautiful calender to emacs.
@@ -12543,9 +12133,8 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
 </div>
 </div>
 </div>
-
 <div id="outline-container-h:48f5be2b-b3d2-4276-bd49-2630733f23d5" class="outline-4">
-<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">4.4.36.</span> Dashboard: emacs startup screen</h4>
+<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">5.0.23.</span> Dashboard: emacs startup screen</h4>
 <div class="outline-text-4" id="text-h:48f5be2b-b3d2-4276-bd49-2630733f23d5">
 <p>
 This sets up the <code>dashboard</code>, which is really quite useless. But, it looks cool and makes me happy whenever I start an emacsclient without a file name as argument :)
@@ -12619,10 +12208,9 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
-</div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-11 Do 10:18</p>
+<p class="date">Created: 2024-07-11 Do 18:36</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

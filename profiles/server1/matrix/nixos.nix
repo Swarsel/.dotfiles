@@ -36,7 +36,6 @@ in {
     ./hardware-configuration.nix
     # we import here a service that is not available yet on normal nixpkgs
     # this module is hence not in the modules list, we add it ourselves
-    (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
   ];
 
   networking.hostName = "matrix"; # Define your hostname.

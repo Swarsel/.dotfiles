@@ -105,7 +105,7 @@ These blocks are used in several places throughout the configurations, but not o
 
 These blocks are to be used on systems that are not running NixOS. For example, one such system would be a Fedora system running home manager, where the respective NixOS features might not be available.
 
-*** Theme
+*** Theme (stylix)
 :PROPERTIES:
 :CUSTOM_ID: h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78
 :END:
@@ -270,10 +270,12 @@ I also enable the extra socket here for ssh agent forwarding. But I have not ful
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
 
@@ -4782,14 +4784,17 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     yubikey-personalization
     yubikey-personalization-gui
     yubico-pam
-    # yubioath-flutter
-    # yubikey-manager
-    # yubikey-manager-qt
+    yubioath-flutter
+    yubikey-manager
+    yubikey-manager-qt
     yubico-piv-tool
+    cfssl
+    pcsctools
+    pcscliteWithPolkit.out
     # pinentry
 
     # theme related
-    gnome.adwaita-icon-theme
+    adwaita-icon-theme
 
     # kde-connect
     xdg-desktop-portal
@@ -6359,7 +6364,6 @@ The rest of this configuration is found here:
            # on-click-right= "gnome-clocks";
            tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
          };
-
 
          pulseaudio= {
            format= "{icon} {volume:2}%";
@@ -9291,9 +9295,19 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
                                          ("~/.dotfiles/" . 0)))
     :custom
     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
+#+end_src
+
+* Yubikey support
+
+The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
+
+#+begin_src emacs-lisp
+
 
   ;; yubikey support for pushing commits
   ;; commiting is enabled through nixos gpg-agent config
+  (use-package pinentry)
+  (pinentry-start)
   (setq epg-pinentry-mode 'loopback)
   (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 #+end_src

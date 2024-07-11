@@ -50,10 +50,9 @@ nix.optimise = {
   DefaultTimeoutStopSec=15s
 '';
 
-hardware.opengl = {
+hardware.graphics = {
   enable = true;
-  driSupport = true;
-  driSupport32Bit = true;
+  enable32Bit = true;
 };
 
 sound.enable = true;
@@ -94,14 +93,17 @@ environment.systemPackages = with pkgs; [
   yubikey-personalization
   yubikey-personalization-gui
   yubico-pam
-  # yubioath-flutter
-  # yubikey-manager
-  # yubikey-manager-qt
+  yubioath-flutter
+  yubikey-manager
+  yubikey-manager-qt
   yubico-piv-tool
+  cfssl
+  pcsctools
+  pcscliteWithPolkit.out
   # pinentry
 
   # theme related
-  gnome.adwaita-icon-theme
+  adwaita-icon-theme
 
   # kde-connect
   xdg-desktop-portal

@@ -22,7 +22,19 @@ bind d composite tabprev; tabclose #
 bind D tabclose
 bind c hint
 bindurl ^http(s)?://www\.google\.com c hint -Jc [class="LC20lb MBeuO DKV0Md"],[class="YmvwI"],[class="YyVfkd"],[class="fl"]
+bindurl ^http(s)?://news\.ycombinator\.com c hint -Jc [class="titleline"],[class="age"]
+bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label"]
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
+
+" Search in page
+set findcase smart
+bind / fillcmdline find
+bind ? fillcmdline find -?
+bind n findnext 1
+bind N findnext -1
+
+" some pages like github break on the tridactyl quick search. have this as a fallback
+unbind <C-f>
 
 " Subconfig Settings
 seturl www.google.com followpagepatterns.next Next

@@ -9,13 +9,13 @@
     ffmpeg_5-full
     flac
     mediainfo
-    picard
+    picard-tools
     audacity
     sox
 
     # printing
     cups
-    gnome.simple-scan
+    simple-scan
 
     # dict
     (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -41,11 +41,11 @@
     obsidian
     spotify
     discord
-    nextcloud-client
+    stable.nextcloud-client
     spotify-player
     element-desktop-wayland
     nicotine-plus
-    transmission
+    stable.transmission
     mktorrent
     hexchat
     hugo
@@ -104,7 +104,7 @@
     unzip
 
     #nautilus
-    gnome.nautilus
+    nautilus
     xfce.tumbler
     libgsf
 
@@ -130,7 +130,7 @@
     #keychain
     qalculate-gtk
     gcr # needed for gnome-secrets to work
-    gnome.seahorse
+    seahorse
 
     # sops-related
     sops
@@ -897,7 +897,7 @@ programs.emacs = {
     extraEmacsPackages = epkgs: [
       epkgs.mu4e
       epkgs.use-package
-      epkgs.lsp-bridge
+      # epkgs.lsp-bridge
       epkgs.doom-themes
 
       # build the rest of the packages myself
@@ -1047,7 +1047,6 @@ programs.waybar = {
         tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
       };
 
-
       pulseaudio= {
         format= "{icon} {volume:2}%";
         format-bluetooth= "{icon} {volume}%";
@@ -1120,237 +1119,7 @@ programs.waybar = {
       };
     };
   };
-
-  style = ''
-  @define-color foreground #fdf6e3;
-  @define-color background #1a1a1a;
-  @define-color background-alt #292b2e;
-  @define-color foreground-warning #268bd2;
-  @define-color background-warning @background;
-  @define-color foreground-error red;
-  @define-color background-error @background;
-  @define-color foreground-critical gold;
-  @define-color background-critical blue;
-
-
-  * {
-      border: none;
-      border-radius: 0;
-      font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
-      font-size: 14px;
-      min-height: 0;
-      margin: -1px 0px;
-  }
-
-  window#waybar {
-          background: transparent;
-          color: @foreground;
-          transition-duration: .5s;
-  }
-
-  window#waybar.hidden {
-      opacity: 0.2;
-  }
-
-
-  #mpris {
-      padding: 0 10px;
-      background-color: transparent;
-      color: #1DB954;
-      font-family: Monospace;
-      font-size: 12px;
-  }
-
-  #custom-right-arrow-dark,
-  #custom-left-arrow-dark {
-          color: @background;
-          background: @background-alt;
-          font-size: 24px;
-  }
-
-  #window {
-          font-size: 12px;
-          padding: 0 20px;
-  }
-
-  #mode {
-      background: @background-critical;
-      color: @foreground-critical;
-      padding: 0 3px;
-  }
-
-  #custom-configwarn {
-      color: black;
-      padding: 0 3px;
-      animation-name: configblink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-
-  #custom-outer-right-arrow-dark,
-  #custom-outer-left-arrow-dark {
-          color: @background;
-          font-size: 24px;
-  }
-
-  #custom-outer-left-arrow-dark,
-  #custom-left-arrow-dark,
-  #custom-left-arrow-light {
-          margin: 0 -1px;
-  }
-
-  #custom-right-arrow-light,
-  #custom-left-arrow-light {
-          color: @background-alt;
-          background: @background;
-          font-size: 24px;
-  }
-
-  #workspaces,
-  #clock.1,
-  #clock.2,
-  #clock.3,
-  #pulseaudio,
-  #memory,
-  #cpu,
-  #temperature,
-  #power-profiles-daemon,
-  #mpris,
-  #tray {
-          background: @background;
-  }
-
-  #network,
-  #clock.2,
-  #battery,
-  #cpu,
-  #custom-pseudobat,
-  #disk {
-          background: @background-alt;
-  }
-
-
-  #workspaces button {
-          padding: 0 2px;
-          color: #fdf6e3;
-  }
-  #workspaces button.focused {
-          color: @foreground-warning;
-  }
-
-  #workspaces button:hover {
-      background: @foreground;
-      color: @background;
-          border: @foreground;
-          padding: 0 2px;
-          box-shadow: inherit;
-          text-shadow: inherit;
-  }
-
-  #workspaces button.urgent {
-      color: @background-critical;
-      background: @foreground-critical;
-  }
-
-  #network {
-      color: #cc99c9;
-  }
-
-  #temperature,
-  #power-profiles-daemon {
-      color: #9ec1cf;
-  }
-
-  #disk {
-      /*color: #b58900;*/
-      color: #9ee09e;
-  }
-
-  #disk.warning {
-      color:            @foreground-error;
-      background-color: @background-error;
-  }
-  #disk.critical,
-  #temperature.critical {
-      color:            @foreground-critical;
-      background-color: @background-critical;
-      animation-name: blink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-  #pulseaudio.muted {
-      color: @foreground-error;
-  }
-  #memory {
-          /*color: #2aa198;*/
-          color: #fdfd97;
-  }
-  #cpu {
-      /*color: #6c71c4;*/
-      color: #feb144;
-  }
-
-  #pulseaudio {
-      /*color: #268bd2;*/
-      color: #ff6663;
-  }
-
-  #battery,
-  #custom-pseudobat {
-          color: cyan;
-  }
-  #battery.discharging {
-      color:      #859900;
-  }
-
-  @keyframes blink {
-      to {
-          color:            @foreground-error;
-          background-color: @background-error;
-      }
-  }
-  @keyframes configblink {
-      to {
-          color:            @foreground-error;
-          background-color: transparent;
-      }
-  }
-
-  #battery.critical:not(.charging) {
-      color:            @foreground-critical;
-      background-color: @background-critical;
-      animation-name: blink;
-      animation-duration: 0.5s;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      animation-direction: alternate;
-  }
-
-  #clock.1,
-  #clock.2,
-  #clock.3 {
-      font-family: Monospace;
-  }
-
-  #clock,
-  #pulseaudio,
-  #memory,
-  #cpu,
-  #tray,
-  #temperature,
-  #power-profiles-daemon,
-  #network,
-  #mpris,
-  #battery,
-  #custom-pseudobat,
-  #disk {
-          padding: 0 3px;
-  }
-      '';
+  style = (builtins.readFile ../../programs/waybar/style.css);
 };
 
 programs.firefox = {
@@ -1639,22 +1408,6 @@ wayland.windowManager.sway = {
     };
     assigns = {
       "1:一" = [{ app_id = "firefox"; }];
-    };
-    colors = {
-      focused = {
-        # background = "#080808";
-        # border = "#80a0ff";
-        # childBorder = "#80a0ff";
-        # indicator = "#080808";
-        # text = "#ffd700";
-      };
-      unfocused = {
-        # background = "#080808";
-        # border = "#80a0ff";
-        # childBorder = "#303030";
-        # indicator = "#80a0ff";
-        # text = "#c6c6c6";
-      };
     };
     floating = {
       border = 1;

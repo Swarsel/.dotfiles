@@ -1158,6 +1158,8 @@ create a new one."
 
 ;; yubikey support for pushing commits
 ;; commiting is enabled through nixos gpg-agent config
+(use-package pinentry)
+(pinentry-start)
 (setq epg-pinentry-mode 'loopback)
 (setenv "SSH_AUTH_SOCK" (string-chop-newline (shell-command-to-string "gpgconf --list-dirs agent-ssh-socket")))
 

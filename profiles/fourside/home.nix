@@ -7,10 +7,12 @@
     enable = true;
     enableSshSupport = true;
     enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry-gtk2;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
     extraConfig = ''
-    allow-emacs-pinentry
     allow-loopback-pinentry
+    allow-emacs-pinentry
     '';
     };
   
@@ -92,6 +94,7 @@
         { output = "eDP-1"; workspace = "1:一";}
         { output = "HDMI-A-1"; workspace = "2:二";}
       ];
+
 
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
