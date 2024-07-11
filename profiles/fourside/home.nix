@@ -74,12 +74,24 @@
       };
 
       output = {
-        DP-1 = {
-          mode = "2560x1440"; # TEMPLATE
+        eDP-1 = {
+          mode = "1920x1080"; # TEMPLATE
           scale = "1";
-          #bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          position = "1920,0";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+        };
+        HDMI-A-1 = {
+          mode = "2560x1440";
+          scale = "1";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          position = "0,0";
         };
       };
+
+      workspaceOutputAssign = [
+        { output = "eDP-1"; workspace = "1:一";}
+        { output = "HDMI-A-1"; workspace = "2:二";}
+      ];
 
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
