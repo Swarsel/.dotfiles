@@ -499,6 +499,11 @@ home.file = {
   };
 };
 
+xdg.configFile = {
+  "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
+  "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+  };
+
 home.sessionVariables = {
   EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
 };
@@ -1370,6 +1375,7 @@ programs.firefox = {
       };
   profiles.default = {
     isDefault = true;
+    userChrome = (builtins.readFile ../../programs/firefox/chrome/userChrome.css);
     extensions = with pkgs.nur.repos.rycee.firefox-addons; [
       tridactyl
       browserpass

@@ -5660,6 +5660,17 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 #+end_src
 
+Also, we link some files to the users XDG configuration home:
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  xdg.configFile = {
+    "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
+    "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+    };
+
+#+end_src
+
 *** Sourcing environment variables
 :PROPERTIES:
 :CUSTOM_ID: h:4486b02f-4fb8-432b-bfa2-2e786206341d
@@ -6704,6 +6715,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
         };
     profiles.default = {
       isDefault = true;
+      userChrome = (builtins.readFile ../../programs/firefox/chrome/userChrome.css);
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
         browserpass
