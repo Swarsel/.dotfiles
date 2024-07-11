@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-06-28 Fr 22:14 -->
+<!-- 2024-07-11 Do 10:18 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -369,7 +369,7 @@
 </div>
 </div>
 <p>
-<b>This file has 40447 words spanning 10472 lines and was last revised on 2024-06-28 22:13:57 +0200.</b>
+<b>This file has 40741 words spanning 10531 lines and was last revised on 2024-07-11 10:18:39 +0200.</b>
 </p>
 
 <p>
@@ -419,7 +419,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-06-28 22:13:57 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-11 10:18:39 +0200)
 </p></li>
 </ul>
 
@@ -483,7 +483,6 @@ window.addEventListener('load', addDarkmodeWidget);
 </script>
 </div>
 </div>
-
 
 
 <div id="outline-container-h:d39b8dfb-536d-414f-9fc0-7d67df48cee4" class="outline-2">
@@ -2380,6 +2379,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     firewall = {
       enable = true;
       allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
       allowedTCPPortRanges = [
         {from = 27015; to = 27030;} # barotrauma
         {from = 27036; to = 27037;} # barotrauma
@@ -2396,8 +2396,9 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     enable = true;
     enableExtensionPack = true;
     };
+    # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
     guest = {
-      enable = true;
+      enable = false;
       };
     };
 
@@ -2594,12 +2595,24 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
       };
 
       output = {
-        DP-1 = {
-          mode = "2560x1440"; # TEMPLATE
+        eDP-1 = {
+          mode = "1920x1080"; # TEMPLATE
           scale = "1";
-          #bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          position = "1920,0";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+        };
+        HDMI-A-1 = {
+          mode = "2560x1440";
+          scale = "1";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          position = "0,0";
         };
       };
+
+      workspaceOutputAssign = [
+        { output = "eDP-1"; workspace = "1:一";}
+        { output = "HDMI-A-1"; workspace = "2:二";}
+      ];
 
       keybindings = let
         modifier = config.wayland.windowManager.sway.config.modifier;
@@ -5834,6 +5847,43 @@ security.polkit.enable = true;
 </div>
 </li>
 
+<li><a id="org7bcef3e"></a>Enable automatic garbage collection<br />
+<div class="outline-text-5" id="text-3-2-1-8">
+<p>
+The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+nix.gc = {
+  automatic = true;
+  randomizedDelaySec = "14m";
+  dates = "weekly";
+  options = "--delete-older-than 10d";
+};
+
+</pre>
+</div>
+</div>
+</li>
+
+<li><a id="org2d696f5"></a>Enable automatic store optimisation<br />
+<div class="outline-text-5" id="text-3-2-1-9">
+<p>
+This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+nix.optimise = {
+  automatic = true;
+  dates = [ "weekly" ];
+};
+
+</pre>
+</div>
+</div>
+</li>
 
 <li><a id="h:12858442-c129-4aa1-9c9c-a0916e36b302"></a>Reduce systemd timeouts<br />
 <div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
@@ -6875,6 +6925,20 @@ home.file = {
     target = ".gitmessage";
   };
 };
+
+</pre>
+</div>
+
+<p>
+Also, we link some files to the users XDG configuration home:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+xdg.configFile = {
+  "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
+  "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+  };
 
 </pre>
 </div>
@@ -7981,6 +8045,7 @@ programs.firefox = {
       };
   profiles.default = {
     isDefault = true;
+    userChrome = (builtins.readFile ../../programs/firefox/chrome/userChrome.css);
     extensions = with pkgs.nur.repos.rycee.firefox-addons; [
       tridactyl
       browserpass
@@ -11387,7 +11452,7 @@ To install a documentation, use the <code>devdocs=install</code> command and sel
 (add-hook 'c++-ts-mode-hook
         (lambda () (setq-local devdocs-current-docs '("cpp"))))
 
-(devdocs-update-all)
+; (devdocs-update-all)
 
 </pre>
 </div>
@@ -11706,9 +11771,16 @@ This sets up rustic-mode with tree-sitter support - there is still one issue to 
   :init
   (setq rust-mode-treesitter-derive t)
   :config
+  (define-key rust-ts-mode-map (kbd "C-c C-c C-r") 'rustic-cargo-run)
+  (define-key rust-ts-mode-map (kbd "C-c C-c C-b") 'rustic-cargo-build)
+  (define-key rust-ts-mode-map (kbd "C-c C-c C-k") 'rustic-cargo-check)
+  (define-key rust-ts-mode-map (kbd "C-c C-c d") 'rustic-cargo-doc)
+  (define-key rust-ts-mode-map (kbd "C-c C-c a") 'rustic-cargo-add)
   (setq rustic-format-on-save t)
   (setq rustic-lsp-client 'eglot)
   :mode ("\\.rs" . rustic-mode))
+
+
 </pre>
 </div>
 </div>
@@ -11907,8 +11979,8 @@ After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a w
     c-ts-mode
     c++-mode
     c++-ts-mode
-    rustic-mode
     rust-ts-mode
+    rustic-mode
     tex-mode
     LaTeX-mode
     ) . (lambda () (progn
@@ -12550,7 +12622,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-06-28 Fr 22:14</p>
+<p class="date">Created: 2024-07-11 Do 10:18</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
