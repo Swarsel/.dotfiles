@@ -32,6 +32,18 @@ stylix.targets.grub.enable = false; # the styling makes grub more ugly
 
 security.polkit.enable = true;
 
+nix.gc = {
+  automatic = true;
+  randomizedDelaySec = "14m";
+  dates = "weekly";
+  options = "--delete-older-than 10d";
+};
+
+nix.optimise = {
+  automatic = true;
+  dates = [ "weekly" ];
+};
+
 # systemd
   systemd.extraConfig = ''
   DefaultTimeoutStartSec=60s

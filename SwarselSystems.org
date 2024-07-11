@@ -4660,6 +4660,33 @@ Needed for control over system-wide privileges etc.
 
 #+end_src
 
+**** Enable automatic garbage collection
+
+The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  nix.gc = {
+    automatic = true;
+    randomizedDelaySec = "14m";
+    dates = "weekly";
+    options = "--delete-older-than 10d";
+  };
+
+#+end_src
+
+**** Enable automatic store optimisation
+
+This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  nix.optimise = {
+    automatic = true;
+    dates = [ "weekly" ];
+  };
+
+#+end_src
 
 **** Reduce systemd timeouts
 :PROPERTIES:
