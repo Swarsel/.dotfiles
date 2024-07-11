@@ -117,6 +117,7 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
 #+begin_src nix :tangle no :noweb-ref theme
 
   stylix = {
+    enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
@@ -378,6 +379,7 @@ Mind the comma at the end. You need this because the =...= is being passed as th
 #+begin_src nix :tangle no :noweb-ref flakeinputsatoutputs
 
   nixpkgs,
+  nixpkgs-stable,
   home-manager,
   nix-on-droid,
   nixos-generators,
@@ -387,7 +389,6 @@ Mind the comma at the end. You need this because the =...= is being passed as th
   stylix,
   sops-nix,
   lanzaboote,
-  nixpkgs-mautrix-signal,
   nix-gaming,
   nixos-hardware,
   nix-alien,
@@ -425,69 +426,65 @@ A short overview over each input and what it does:
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
-  nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
 
+    nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
 
-  # user-level configuration
-  home-manager = {
-    url = github:nix-community/home-manager;
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
+    # user-level configuration
+    home-manager = {
+      url = github:nix-community/home-manager;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-  # overlay to access bleeding edge emacs
-  emacs-overlay = {
-    url = github:nix-community/emacs-overlay;
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
+    # overlay to access bleeding edge emacs
+    emacs-overlay = {
+      url = github:nix-community/emacs-overlay;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-  # nix user repository
-  # i use this mainly to not have to build all firefox extensions
-  # myself as well as for the emacs-init package (tbd)
-  nur.url = github:nix-community/NUR;
+    # nix user repository
+    # i use this mainly to not have to build all firefox extensions
+    # myself as well as for the emacs-init package (tbd)
+    nur.url = github:nix-community/NUR;
 
-  # provides GL to non-NixOS hosts
-  nixgl.url = github:guibou/nixGL;
+    # provides GL to non-NixOS hosts
+    nixgl.url = github:guibou/nixGL;
 
-  # manages all theming using Home-Manager
-  stylix.url = github:danth/stylix;
+    # manages all theming using Home-Manager
+    stylix.url = github:danth/stylix;
 
-  # nix secrets management
-  sops-nix.url = github:Mic92/sops-nix;
+    # nix secrets management
+    sops-nix.url = github:Mic92/sops-nix;
 
-  # enable secure boot on NixOS
-  lanzaboote.url = github:nix-community/lanzaboote;
+    # enable secure boot on NixOS
+    lanzaboote.url = github:nix-community/lanzaboote;
 
-  # nix for android
-  nix-on-droid = {
-    url = github:t184256/nix-on-droid/release-23.05;
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
+    # nix for android
+    nix-on-droid = {
+      url = github:t184256/nix-on-droid/release-23.05;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-  # generate NixOS images
-  nixos-generators = {
-    url = github:nix-community/nixos-generators;
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
+    # generate NixOS images
+    nixos-generators = {
+      url = github:nix-community/nixos-generators;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-  # provides expressions for mautrix-signal
-  nixpkgs-mautrix-signal ={
-    url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
-  };
+    # patches for gaming on nix
+    nix-gaming = {
+      url = github:fufexan/nix-gaming;
+    };
 
-  # patches for gaming on nix
-  nix-gaming = {
-    url = github:fufexan/nix-gaming;
-  };
+    # hardware quirks on nix
+    nixos-hardware = {
+      url = github:NixOS/nixos-hardware/master;
+    };
 
-  # hardware quirks on nix
-  nixos-hardware = {
-    url = github:NixOS/nixos-hardware/master;
-  };
-
-  # dynamic library loading
-  nix-alien = {
-    url = github:thiagokokada/nix-alien;
-  };
+    # dynamic library loading
+    nix-alien = {
+      url = github:thiagokokada/nix-alien;
+    };
 
 #+end_src
 *** let
@@ -508,6 +505,11 @@ Lastly I define some common module lists that I can simply load depending on the
                           overlays = [ emacs-overlay.overlay
                                        nur.overlay
                                        nixgl.overlay
+                                       (final: _prev: {
+                                         stable = import nixpkgs-stable {
+                                           inherit (final) system config;
+                                         };
+                                       })
                                      ];
                           config.allowUnfree = true;
                         };
@@ -521,9 +523,6 @@ Lastly I define some common module lists that I can simply load depending on the
                           config.allowUnfree = true;
                         };
 
-  pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
-                          config.allowUnfree = true;
-                        };
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
@@ -570,8 +569,7 @@ This section is the biggest pain point of the configuration. For every system, I
     };
 
     sandbox = nixpkgs.lib.nixosSystem {
-      pkgs = pkgsmautrix;
-      specialArgs.unstable = nixpkgs-mautrix-signal;
+      specialArgs = {inherit inputs pkgs; };
       modules = [
         sops-nix.nixosModules.sops
         ./profiles/sandbox/nixos.nix
@@ -665,11 +663,9 @@ This section is the biggest pain point of the configuration. For every system, I
     };
 
     matrix = nixpkgs.lib.nixosSystem {
-      # specialArgs = {inherit pkgsmautrix; };
-      pkgs = pkgsmautrix;
+      specialArgs = {inherit inputs pkgs; };
       # this is to import a service module that is not on nixpkgs
       # this way avoids infinite recursion errors
-      specialArgs.unstable = nixpkgs-mautrix-signal;
       modules = [
         sops-nix.nixosModules.sops
         ./profiles/server1/matrix/nixos.nix
@@ -711,11 +707,7 @@ This section is the biggest pain point of the configuration. For every system, I
 
     #ovm swarsel
     swatrix = nixpkgs.lib.nixosSystem {
-      # specialArgs = {inherit pkgsmautrix; };
-      pkgs = pkgsmautrix;
-      # this is to import a service module that is not on nixpkgs
-      # this way avoids infinite recursion errors
-      specialArgs.unstable = nixpkgs-mautrix-signal;
+      specialArgs = {inherit inputs pkgs; };
       modules = [
         sops-nix.nixosModules.sops
         ./profiles/remote/oracle/matrix/nixos.nix
@@ -1527,10 +1519,9 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     <<theme>>
 
     hardware = {
-        opengl = {
+        graphics = {
           enable = true;
-          driSupport = true;
-          driSupport32Bit = true;
+          enable32Bit = true;
           extraPackages = with pkgs; [
             vulkan-loader
             vulkan-validation-layers
@@ -1657,6 +1648,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
           { output = "eDP-1"; workspace = "1:一";}
           { output = "HDMI-A-1"; workspace = "2:二";}
         ];
+
 
         keybindings = let
           modifier = config.wayland.windowManager.sway.config.modifier;
@@ -2164,7 +2156,7 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
      nixpkgs.config.packageOverrides = pkgs: {
        vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
      };
-     hardware.opengl = {
+     hardware.graphics = {
        enable = true;
        extraPackages = with pkgs; [
          intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -2590,7 +2582,6 @@ Make sure to also do this for doublepuppet.yaml
       ./hardware-configuration.nix
       # we import here a service that is not available yet on normal nixpkgs
       # this module is hence not in the modules list, we add it ourselves
-      (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
     ];
 
     networking.hostName = "matrix"; # Define your hostname.
@@ -3909,7 +3900,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
        #   vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
        # };
 
-       hardware.opengl = {
+       hardware.graphics = {
          enable = true;
          extraPackages = with pkgs; [
            intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -4715,10 +4706,9 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
     #+begin_src nix :tangle profiles/common/nixos.nix
 
-      hardware.opengl = {
+      hardware.graphics = {
         enable = true;
-        driSupport = true;
-        driSupport32Bit = true;
+        enable32Bit = true;
       };
 
       sound.enable = true;
@@ -5094,13 +5084,13 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       ffmpeg_5-full
       flac
       mediainfo
-      picard
+      picard-tools
       audacity
       sox
 
       # printing
       cups
-      gnome.simple-scan
+      simple-scan
 
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -5126,11 +5116,11 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       obsidian
       spotify
       discord
-      nextcloud-client
+      stable.nextcloud-client
       spotify-player
       element-desktop-wayland
       nicotine-plus
-      transmission
+      stable.transmission
       mktorrent
       hexchat
       hugo
@@ -5189,7 +5179,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       unzip
 
       #nautilus
-      gnome.nautilus
+      nautilus
       xfce.tumbler
       libgsf
 
@@ -5215,7 +5205,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       #keychain
       qalculate-gtk
       gcr # needed for gnome-secrets to work
-      gnome.seahorse
+      seahorse
 
       # sops-related
       sops
@@ -6205,7 +6195,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
         extraEmacsPackages = epkgs: [
           epkgs.mu4e
           epkgs.use-package
-          epkgs.lsp-bridge
+          # epkgs.lsp-bridge
           epkgs.doom-themes
 
           # build the rest of the packages myself
@@ -7066,22 +7056,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       };
       assigns = {
         "1:一" = [{ app_id = "firefox"; }];
-      };
-      colors = {
-        focused = {
-          # background = "#080808";
-          # border = "#80a0ff";
-          # childBorder = "#80a0ff";
-          # indicator = "#080808";
-          # text = "#ffd700";
-        };
-        unfocused = {
-          # background = "#080808";
-          # border = "#80a0ff";
-          # childBorder = "#303030";
-          # indicator = "#80a0ff";
-          # text = "#c6c6c6";
-        };
       };
       floating = {
         border = 1;

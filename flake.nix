@@ -5,6 +5,7 @@
     
     nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
     
+    nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
     
     # user-level configuration
     home-manager = {
@@ -47,11 +48,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
-    # provides expressions for mautrix-signal
-    nixpkgs-mautrix-signal ={
-      url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
-    };
-    
     # patches for gaming on nix
     nix-gaming = {
       url = github:fufexan/nix-gaming;
@@ -73,6 +69,7 @@
     self,
       
       nixpkgs,
+      nixpkgs-stable,
       home-manager,
       nix-on-droid,
       nixos-generators,
@@ -82,7 +79,6 @@
       stylix,
       sops-nix,
       lanzaboote,
-      nixpkgs-mautrix-signal,
       nix-gaming,
       nixos-hardware,
       nix-alien,
@@ -95,6 +91,11 @@
                             overlays = [ emacs-overlay.overlay
                                          nur.overlay
                                          nixgl.overlay
+                                         (final: _prev: {
+                                           stable = import nixpkgs-stable {
+                                             inherit (final) system config;
+                                           };
+                                         })
                                        ];
                             config.allowUnfree = true;
                           };
@@ -108,9 +109,6 @@
                             config.allowUnfree = true;
                           };
     
-    pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
-                            config.allowUnfree = true;
-                          };
     
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
@@ -158,8 +156,7 @@
       };
       
       sandbox = nixpkgs.lib.nixosSystem {
-        pkgs = pkgsmautrix;
-        specialArgs.unstable = nixpkgs-mautrix-signal;
+        specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/sandbox/nixos.nix
@@ -253,11 +250,9 @@
       };
       
       matrix = nixpkgs.lib.nixosSystem {
-        # specialArgs = {inherit pkgsmautrix; };
-        pkgs = pkgsmautrix;
+        specialArgs = {inherit inputs pkgs; };
         # this is to import a service module that is not on nixpkgs
         # this way avoids infinite recursion errors
-        specialArgs.unstable = nixpkgs-mautrix-signal;
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/server1/matrix/nixos.nix
@@ -299,11 +294,7 @@
       
       #ovm swarsel
       swatrix = nixpkgs.lib.nixosSystem {
-        # specialArgs = {inherit pkgsmautrix; };
-        pkgs = pkgsmautrix;
-        # this is to import a service module that is not on nixpkgs
-        # this way avoids infinite recursion errors
-        specialArgs.unstable = nixpkgs-mautrix-signal;
+        specialArgs = {inherit inputs pkgs; };
         modules = [
           sops-nix.nixosModules.sops
           ./profiles/remote/oracle/matrix/nixos.nix
