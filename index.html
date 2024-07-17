@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-17 Mi 04:32 -->
+<!-- 2024-07-17 Mi 12:38 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -387,7 +387,7 @@
 </div>
 </div>
 <p>
-<b>This file has 42235 words spanning 11010 lines and was last revised on 2024-07-17 04:32:19 +0200.</b>
+<b>This file has 42349 words spanning 11030 lines and was last revised on 2024-07-17 12:38:46 +0200.</b>
 </p>
 
 <p>
@@ -437,7 +437,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-17 04:32:19 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-17 12:38:46 +0200)
 </p></li>
 </ul>
 
@@ -6934,6 +6934,15 @@ xdg.desktopEntries = {
     categories = [ "Application"];
   };
 
+  emacsclient-newframe = {
+    name = "Emacs (Client, New Frame)";
+    genericName = "Emacs (Client, New Frame)";
+    exec = "emacsclient -r %u";
+    icon = "emacs";
+    terminal = false;
+    categories = [ "Development" "TextEditor"];
+  };
+
 };
 
 </pre>
@@ -7807,7 +7816,7 @@ programs.waybar = {
 <h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.3.20.</span> Firefox</h4>
 <div class="outline-text-4" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
-Setting up firefox along with some policies that are important to me (mostlu disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
+Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
 </p>
 
 <p>
@@ -10152,16 +10161,27 @@ This package allows for <code>Ido</code>-like directory navigation.
 <li><a id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"></a>orderless<br />
 <div class="outline-text-6" id="text-h:211fc0bd-0d64-4577-97d8-6abc94435f04">
 <p>
-The completion styles that I chose here can possibly still be improved. I need to spend more time on this.
+When first installing orderless, I often times faced the problem, that when editing long files and calling <code>consult-line</code>, Emacs would hang when changing a search term in the middle (e.g. from <code>servicse.xserver</code> to <code>servic.xserver</code> in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package orderless
-  :custom
-  (completion-styles '(orderless flex basic))
-  (completion-category-overrides '((file (styles . (partial-completion)))
-                                   (eglot (styles orderless)))))
+  :config
+  (orderless-define-completion-style orderless+initialism
+    (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides
+        '((file (styles partial-completion orderless+initialism))
+          (buffer (styles orderless+initialism))
+          (consult-multi (styles orderless+initialism))
+          (command (styles orderless+initialism))
+          (eglot (styles orderless+initialism))
+          (variable (styles orderless+initialism))
+          (symbol (styles orderless+initialism)))
+        orderless-matching-styles '(orderless-literal orderless-regexp)))
+
 
 </pre>
 </div>
@@ -12949,7 +12969,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-17 Mi 04:32</p>
+<p class="date">Created: 2024-07-17 Mi 12:38</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

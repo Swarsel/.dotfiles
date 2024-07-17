@@ -477,6 +477,15 @@ xdg.desktopEntries = {
     categories = [ "Application"];
   };
 
+  emacsclient-newframe = {
+    name = "Emacs (Client, New Frame)";
+    genericName = "Emacs (Client, New Frame)";
+    exec = "emacsclient -r %u";
+    icon = "emacs";
+    terminal = false;
+    categories = [ "Development" "TextEditor"];
+  };
+
 };
 
 home.file = {
