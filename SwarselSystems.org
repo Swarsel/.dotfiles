@@ -1369,7 +1369,7 @@ My work machine.
 
 Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
 
-#+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
+#+begin_src nix :noweb yes :tangle profiles/winters/nixos.nix
 
   { config, lib, pkgs, inputs, ... }:
 
@@ -1389,25 +1389,21 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
-      # kernelPackages = pkgs.linuxPackages_latest;
+      kernelPackages = pkgs.linuxPackages_latest;
     };
 
     networking = {
-      hostName = "fourside"; # Define your hostname.
+      hostName = "winters"; # Define your hostname.
       nftables.enable = true;
-      enableIPv6 = false;
-      firewall.checkReversePath = false;
+      enableIPv6 = true;
+      firewall.checkReversePath = "strict";
       firewall = {
         enable = true;
-        allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-        allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+        allowedUDPPorts = [ ];
+        allowedTCPPorts = [ ];
         allowedTCPPortRanges = [
-          {from = 27015; to = 27030;} # barotrauma
-          {from = 27036; to = 27037;} # barotrauma
         ];
         allowedUDPPortRanges = [
-          {from = 27000; to = 27031;} # barotrauma
-          {from = 58962; to = 58964;} # barotrauma
         ];
       };
     };
@@ -1431,16 +1427,9 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
           enable = true;
           enable32Bit = true;
           extraPackages = with pkgs; [
-            vulkan-loader
-            vulkan-validation-layers
-            vulkan-extension-layer
           ];
         };
         bluetooth.enable = true;
-        trackpoint = {
-          enable = true;
-          device = "TPPS/2 Elan TrackPoint";
-        };
       };
 
     programs.steam = {
@@ -1450,11 +1439,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       ];
     };
 
-      # Configure keymap in X11 (only used for login)
-
-    services.thinkfan = {
-      enable = false;
-    };
     services.power-profiles-daemon.enable = true;
 
     users.users.swarsel = {
@@ -1465,13 +1449,14 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     };
 
     environment.systemPackages = with pkgs; [
-        # gog games installing
-        heroic
-        # minecraft
-        temurin-bin-17
-        (prismlauncher.override {
-          glfw = pkgs.glfw-wayland-minecraft;
-        })
+      sbctl
+      # gog games installing
+      heroic
+      # minecraft
+      temurin-bin-17
+      (prismlauncher.override {
+        glfw = pkgs.glfw-wayland-minecraft;
+      })
     ];
 
     system.stateVersion = "23.05";
@@ -1481,14 +1466,14 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 #+end_src
 
-***** Home Manager
+***** TODO Home Manager
 :PROPERTIES:
 :CUSTOM_ID: h:85f7110c-2f25-4506-b64a-fce29f29d0d0
 :END:
 
-This is basically just adjusted to the core count, path to the =hwmon= (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
+TODO: Adjust =hwmon= path, I/O modules and XF86 keys once laptop arrives.
 
-#+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
+#+begin_src nix :noweb yes :tangle profiles/winters/home.nix
 
   { config, pkgs, lib, fetchFromGitHub, ... }:
 
@@ -1508,7 +1493,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
     # waybar config - TEMPLATE - update for cores and temp
     programs.waybar.settings.mainBar = {
       cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-      # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
+
       temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
       temperature.input-filename = "temp1_input";
     };
@@ -1544,6 +1529,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
             position = "1920,0";
             # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
           };
+          # external monitor
           HDMI-A-1 = {
             mode = "2560x1440";
             scale = "1";
@@ -1561,19 +1547,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
         keybindings = let
           modifier = config.wayland.windowManager.sway.config.modifier;
         in {
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-          "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
-          "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
-          "XF86Display" = "exec wl-mirror eDP-1";
-          # these are left open to use
-          # "XF86WLAN" = "exec wl-mirror eDP-1";
-          # "XF86Messenger" = "exec wl-mirror eDP-1";
-          # "XF86Go" = "exec wl-mirror eDP-1";
-          # "XF86Favorites" = "exec wl-mirror eDP-1";
-          # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-          # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-          # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-          "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
+
         };
 
         startup = [

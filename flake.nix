@@ -205,6 +205,20 @@
         ];
       };
       
+      winters = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = nixModules ++ [
+          nixos-hardware.nixosModules.framework-16-inch-7040-amd
+          ./profiles/winters/nixos.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.users.swarsel.imports = mixedModules ++ [
+              ./profiles/winters/home.nix
+            ];
+          }
+        ];
+      };
+      
       stand = nixpkgs.lib.nixosSystem {
         specialArgs = {inherit inputs pkgs; };
         modules = nixModules ++ [
