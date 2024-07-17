@@ -4469,6 +4469,16 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 
 #+end_src
 
+**** Make users non-mutable
+
+This ensures that all user-configuration happens here in the config file.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  users.mutableUsers = false;
+
+#+end_src
+
 **** Environment setup
 :PROPERTIES:
 :CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
