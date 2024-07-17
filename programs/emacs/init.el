@@ -623,10 +623,20 @@ create a new one."
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
 (use-package orderless
-  :custom
-  (completion-styles '(orderless flex basic))
-  (completion-category-overrides '((file (styles . (partial-completion)))
-                                   (eglot (styles orderless)))))
+  :config
+  (orderless-define-completion-style orderless+initialism
+    (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides
+        '((file (styles partial-completion orderless+initialism))
+          (buffer (styles orderless+initialism))
+          (consult-multi (styles orderless+initialism))
+          (command (styles orderless+initialism))
+          (eglot (styles orderless+initialism))
+          (variable (styles orderless+initialism))
+          (symbol (styles orderless+initialism)))
+        orderless-matching-styles '(orderless-literal orderless-regexp)))
 
 (use-package consult
   :config

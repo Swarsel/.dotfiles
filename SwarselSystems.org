@@ -6601,7 +6601,7 @@ The rest of this configuration is found here:
 :CUSTOM_ID: h:fbec0bd4-690b-4f79-8b2b-a40263760a96
 :END:
 
-Setting up firefox along with some policies that are important to me (mostlu disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely =tridactyl= and =browserpass=.
+Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely =tridactyl= and =browserpass=.
 
 Also, using NUR with rycee's firefox addons, it is very convenient for me to add firefox addons here that will be automatically installed.
 
@@ -8464,15 +8464,26 @@ This package allows for =Ido=-like directory navigation.
 :CUSTOM_ID: h:211fc0bd-0d64-4577-97d8-6abc94435f04
 :END:
 
-The completion styles that I chose here can possibly still be improved. I need to spend more time on this.
+When first installing orderless, I often times faced the problem, that when editing long files and calling =consult-line=, Emacs would hang when changing a search term in the middle (e.g. from =servicse.xserver= to =servic.xserver= in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
 
 #+begin_src emacs-lisp
 
   (use-package orderless
-    :custom
-    (completion-styles '(orderless flex basic))
-    (completion-category-overrides '((file (styles . (partial-completion)))
-                                     (eglot (styles orderless)))))
+    :config
+    (orderless-define-completion-style orderless+initialism
+      (orderless-matching-styles '(orderless-initialism orderless-literal orderless-regexp)))
+    (setq completion-styles '(orderless)
+          completion-category-defaults nil
+          completion-category-overrides
+          '((file (styles partial-completion orderless+initialism))
+            (buffer (styles orderless+initialism))
+            (consult-multi (styles orderless+initialism))
+            (command (styles orderless+initialism))
+            (eglot (styles orderless+initialism))
+            (variable (styles orderless+initialism))
+            (symbol (styles orderless+initialism)))
+          orderless-matching-styles '(orderless-literal orderless-regexp)))
+
 
 #+end_src
 
