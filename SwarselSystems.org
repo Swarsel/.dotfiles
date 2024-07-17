@@ -4929,6 +4929,10 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     cfssl
     pcsctools
     pcscliteWithPolkit.out
+
+    # ledger packages
+    ledger-live-desktop
+
     # pinentry
 
     # theme related
@@ -5134,7 +5138,7 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 
 #+end_src
 
-*** Yubikey settings
+*** Hardware compatibility settings (Yubikey, Ledger)
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
 :END:
@@ -5153,12 +5157,15 @@ The rest of the gpg-agent related settings are here: [[#h:66fd578f-d4a0-4e17-bf3
 
   services.pcscd.enable = true;
 
+  hardware.ledger.enable = true;
+
   # environment.systemPackages = with pkgs; [
   # --- IN SYSTEM PACKAGES SECTION ---
   # ];
 
   services.udev.packages = with pkgs; [
     yubikey-personalization
+    ledger-udev-rules
   ];
 
 
