@@ -187,3 +187,350 @@ This can be useful if a module does not let you use your own package yourself.
                         };
 
 #+end_src
+
+* Reference configurations
+
+Configurations that I have retired or are there for the general study.
+
+** non-nixos
+:PROPERTIES:
+:CUSTOM_ID: h:42339b42-c64b-4d0c-a80c-5c44d3423fce
+:END:
+
+My Surface Pro 3, only used for on-the-go university work. Be careful when pushing large changes to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
+
+**** Channel setup
+:PROPERTIES:
+:CUSTOM_ID: h:42e45181-9d78-4266-a9a0-9621032f38b0
+:END:
+
+This installs nixGL, which is needed to run GL apps installed through home-manager, since this machine is not using NixOS.
+
+This is not super clean (because it is not fully replicative), but I do not really care.
+
+1) Install nixGL:
+
+#+begin_src nix :tangle no
+  nix-channel --add https://github.com/guibou/nixGL/archive/main.tar.gz nixgl && nix-channel --update
+    nix-env -iA nixgl.auto.nixGLDefault   # or replace `nixGLDefault` with your desired wrapper
+#+end_src
+
+This is needed in order to use EGL. Prefix programs that use it with `nixGL`
+
+**** Home manager
+:PROPERTIES:
+:CUSTOM_ID: h:929d56f5-e16f-4341-901c-24e8a8450398
+:END:
+
+Special things to note here: We are running xcape to allow =CAPS= to act as =CTRL= and =ESC=. Also we are using =nixGL= in most places.
+
+#+begin_src nix :noweb yes :tangle profiles/surface/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+    programs.home-manager.enable = true;
+    home.username = "leons";
+    home.homeDirectory = "/home/leons";
+
+    home.stateVersion = "23.05"; # Please read the comment before changing.
+
+     stylix.image = ../../wallpaper/surfacewp.png;
+    <<theme>>
+
+    nixpkgs = {
+      config = {
+        allowUnfree = true;
+        allowUnfreePredicate = (_: true);
+      };
+    };
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+    #keyboard config
+    home.keyboard.layout = "us";
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config
+    programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+
+    programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
+                                                      "network"
+                                                      "custom/left-arrow-dark"
+                                                      "pulseaudio"
+                                                      "custom/left-arrow-light"
+                                                      "battery"
+                                                      "custom/left-arrow-dark"
+                                                      "temperature"
+                                                      "custom/left-arrow-light"
+                                                      "disk"
+                                                      "custom/left-arrow-dark"
+                                                      "memory"
+                                                      "custom/left-arrow-light"
+                                                      "cpu"
+                                                      "custom/left-arrow-dark"
+                                                      "tray"
+                                                      "custom/left-arrow-light"
+                                                      "clock#2"
+                                                      "custom/left-arrow-dark"
+                                                      "clock#1" ];
+    services.blueman-applet.enable = true;
+    home.packages = with pkgs; [
+      # nixgl.auto.nixGLDefault
+      evince
+      # nodejs_20
+
+      # messaging
+      # we use gomuks for RAM preservation, but keep schildi around for files and images
+    ];
+
+    programs.zsh.initExtra = "
+  export GPG_TTY=\"$(tty)\"
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+        ";
+
+    # sway config
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "*" = {
+            xkb_layout = "us";
+            xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "2160x1440@59.955Hz";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
+          "${modifier}+Ctrl+p" = "exec nixGL wl-mirror eDP-1";
+          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
+          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
+        };
+
+        startup = [
+          { command = "sleep 60 && nixGL nextcloud --background";}
+          # { command = "sleep 60 && nixGL spotify";}
+          { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+          # { command = "sleep 60 && nixGL schildichat-desktop --hidden";}
+          { command = "sleep 60 && nixGL syncthingtray --wait"; }
+          { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki";}
+          { command = "nm-applet --indicator";}
+          { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+        ];
+
+        keycodebindings = {
+          "124" = "exec systemctl suspend";
+        };
+      };
+
+      extraConfig = "
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
+      ";
+    };
+  }
+
+#+end_src
+** nixos
+**** Onett (Lenovo Y510P)
+:PROPERTIES:
+:CUSTOM_ID: h:6bc7b9c7-ccfd-42d7-982a-97907aa28b80
+:END:
+
+My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
+
+***** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:20fc100c-045d-468a-9bf2-824037e6785b
+:END:
+
+#+begin_src nix :noweb yes :tangle profiles/onett/nixos.nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      greetd.settings.initial_session.user ="swarsel";
+      xserver.videoDrivers = ["nvidia"];
+    };
+
+
+    hardware = {
+      nvidia = {
+        modesetting.enable = true;
+        powerManagement.enable = true;
+        prime = {
+          intelBusId = "PCI:0:2:0";
+          nvidiaBusId = "PCI:1:0:0";
+          sync.enable = true;
+        };
+      };
+      pulseaudio.configFile = pkgs.runCommand "default.pa" {} ''
+                   sed 's/module-udev-detect$/module-udev-detect tsched=0/' \
+                     ${pkgs.pulseaudio}/etc/pulse/default.pa > $out
+                   '';
+      bluetooth.enable = true;
+    };
+
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
+
+    boot.loader.grub = {
+      enable = true;
+      device = "/dev/sda";
+      useOSProber = true;
+    };
+
+    networking.hostName = "onett"; # Define your hostname.
+    networking.enableIPv6 = false;
+
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp"];
+      packages = with pkgs; [];
+    };
+
+    system.stateVersion = "23.05"; # Did you read the comment?
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+
+  }
+
+#+end_src
+
+***** Home Manager
+:PROPERTIES:
+:CUSTOM_ID: h:d35847ae-2207-4417-9858-b0ea7e2b1a0b
+:END:
+
+#+begin_src nix :noweb yes :tangle profiles/onett/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgagent>>
+
+    home = {
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "de";
+      packages = with pkgs; [
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # # waybar config
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    };
+    <<waybarlaptop>>
+
+    services.blueman-applet.enable = true;
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "1:1:AT_Translated_Set_2_keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "2362:33538:ipad_keyboard_Keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "altwin:swap_lalt_lwin,ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "colemak_dh";
+          };
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "1920,0";
+          };
+          VGA-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "0,0";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
+          "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
+          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
+          "XF86HomePage" = "exec wtype -P Escape -p Escape";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+        keycodebindings = {
+          "94" = "exec wtype c";
+          "Shift+94" = "exec wtype C";
+          "Ctrl+94" = "exec wtype -M ctrl c -m ctrl";
+          "Ctrl+Shift+94" = "exec wtype -M ctrl -M shift c -m ctrl -m shift";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+
+      extraConfig = "
+   ";
+    };
+  }
+
+#+end_src
