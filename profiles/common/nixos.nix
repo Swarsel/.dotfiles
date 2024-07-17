@@ -57,7 +57,6 @@ hardware.graphics = {
   enable32Bit = true;
 };
 
-sound.enable = true;
 hardware.pulseaudio= {
   enable = true;
   package = pkgs.pulseaudioFull;
