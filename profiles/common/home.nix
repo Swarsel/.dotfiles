@@ -721,7 +721,7 @@ programs.zsh = {
     c="git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
     passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
     passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-    hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
+    hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
     cd="z";
     cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
   };

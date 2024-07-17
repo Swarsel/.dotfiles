@@ -24,6 +24,8 @@
     # kernelPackages = pkgs.linuxPackages_latest;
   };
 
+  sops.age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+
   networking = {
     hostName = "fourside"; # Define your hostname.
     nftables.enable = true;
@@ -136,10 +138,12 @@
     enable = false;
   };
   services.power-profiles-daemon.enable = true;
+  services.fprintd.enable = true;
 
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
+    hashedPasswordFile = config.sops.secrets.swarseluser.path;
     extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
     packages = with pkgs; [];
   };

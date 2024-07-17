@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-11 Do 18:36 -->
+<!-- 2024-07-17 Mi 02:28 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -243,11 +243,12 @@
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.2. Common NixOS</a>
 <ul>
 <li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.2.1. General</a></li>
-<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.2.2. System Packages</a></li>
-<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.2.3. Programs (including zsh setup)</a></li>
-<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.2.4. Services</a></li>
-<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.2.5. Yubikey settings</a></li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.2.6. System Login</a></li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.2.2. sops</a></li>
+<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.2.3. System Packages</a></li>
+<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.2.4. Programs (including zsh setup)</a></li>
+<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.2.5. Services</a></li>
+<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.2.6. Hardware compatibility settings (Yubikey, Ledger)</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.2.7. System Login</a></li>
 </ul>
 </li>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.3. Common Home-Manager</a>
@@ -342,7 +343,7 @@
 </li>
 </ul>
 </li>
-<li><a href="#org74b17fa">5. Yubikey support</a>
+<li><a href="#orgbae7e5e">5. Yubikey support</a>
 <ul>
 <li>
 <ul>
@@ -377,7 +378,7 @@
 </div>
 </div>
 <p>
-<b>This file has 40302 words spanning 10289 lines and was last revised on 2024-07-11 18:36:06 +0200.</b>
+<b>This file has 40289 words spanning 10434 lines and was last revised on 2024-07-17 02:28:18 +0200.</b>
 </p>
 
 <p>
@@ -427,7 +428,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-11 18:36:06 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-17 02:28:18 +0200)
 </p></li>
 </ul>
 
@@ -1016,6 +1017,7 @@ armpkgs = import nixpkgs { system = "aarch64-linux";
 
 # NixOS modules that can only be used on NixOS systems
 nixModules = [ stylix.nixosModules.stylix
+               sops-nix.nixosModules.sops
                ./profiles/common/nixos.nix
                # dynamic library loading
                ({ self, system, ... }: {
@@ -1105,6 +1107,20 @@ fourside = nixpkgs.lib.nixosSystem {
     {
       home-manager.users.swarsel.imports = mixedModules ++ [
         ./profiles/fourside/home.nix
+      ];
+    }
+  ];
+};
+
+winters = nixpkgs.lib.nixosSystem {
+  specialArgs = {inherit inputs pkgs; };
+  modules = nixModules ++ [
+    nixos-hardware.nixosModules.framework-16-inch-7040-amd
+    ./profiles/winters/nixos.nix
+    home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = mixedModules ++ [
+        ./profiles/winters/home.nix
       ];
     }
   ];
@@ -1585,497 +1601,6 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
 </div>
 <ol class="org-ol">
-<li><a id="h:42339b42-c64b-4d0c-a80c-5c44d3423fce"></a>Surface<br />
-<div class="outline-text-5" id="text-h:42339b42-c64b-4d0c-a80c-5c44d3423fce">
-<p>
-My Surface Pro 3, only used for on-the-go university work. Be careful when pushing large changes to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
-</p>
-</div>
-<ol class="org-ol">
-<li><a id="h:42e45181-9d78-4266-a9a0-9621032f38b0"></a>Channel setup<br />
-<div class="outline-text-6" id="text-h:42e45181-9d78-4266-a9a0-9621032f38b0">
-<p>
-This installs nixGL, which is needed to run GL apps installed through home-manager, since this machine is not using NixOS.
-</p>
-
-<p>
-This is not super clean (because it is not fully replicative), but I do not really care.
-</p>
-
-<ol class="org-ol">
-<li>Install nixGL:</li>
-</ol>
-
-<div class="org-src-container">
-<pre class="src src-nix">nix-channel --add https://github.com/guibou/nixGL/archive/main.tar.gz nixgl &amp;&amp; nix-channel --update
-  nix-env -iA nixgl.auto.nixGLDefault   # or replace `nixGLDefault` with your desired wrapper
-</pre>
-</div>
-
-<p>
-This is needed in order to use EGL. Prefix programs that use it with `nixGL`
-</p>
-</div>
-</li>
-<li><a id="h:929d56f5-e16f-4341-901c-24e8a8450398"></a>Home manager<br />
-<div class="outline-text-6" id="text-h:929d56f5-e16f-4341-901c-24e8a8450398">
-<p>
-Special things to note here: We are running xcape to allow <code>CAPS</code> to act as <code>CTRL</code> and <code>ESC</code>. Also we are using <code>nixGL</code> in most places.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">
-{ config, pkgs, lib, fetchFromGitHub, ... }:
-
-{
-  programs.home-manager.enable = true;
-  home.username = "leons";
-  home.homeDirectory = "/home/leons";
-
-  home.stateVersion = "23.05"; # Please read the comment before changing.
-
-   stylix.image = ../../wallpaper/surfacewp.png;
-
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
-    };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      monospace = {
-        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
-        name = "FiraCode Nerd Font Mono";
-      };
-
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
-    };
-  };
-
-
-
-
-  nixpkgs = {
-    config = {
-      allowUnfree = true;
-      allowUnfreePredicate = (_: true);
-    };
-  };
-  services.xcape = {
-    enable = true;
-    mapExpression = {
-      Control_L = "Escape";
-    };
-  };
-  #keyboard config
-  home.keyboard.layout = "us";
-
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # waybar config
-  programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-
-  programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
-  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
-                                                    "network"
-                                                    "custom/left-arrow-dark"
-                                                    "pulseaudio"
-                                                    "custom/left-arrow-light"
-                                                    "battery"
-                                                    "custom/left-arrow-dark"
-                                                    "temperature"
-                                                    "custom/left-arrow-light"
-                                                    "disk"
-                                                    "custom/left-arrow-dark"
-                                                    "memory"
-                                                    "custom/left-arrow-light"
-                                                    "cpu"
-                                                    "custom/left-arrow-dark"
-                                                    "tray"
-                                                    "custom/left-arrow-light"
-                                                    "clock#2"
-                                                    "custom/left-arrow-dark"
-                                                    "clock#1" ];
-  services.blueman-applet.enable = true;
-  home.packages = with pkgs; [
-    # nixgl.auto.nixGLDefault
-    evince
-    # nodejs_20
-
-    # messaging
-    # we use gomuks for RAM preservation, but keep schildi around for files and images
-  ];
-
-  programs.zsh.initExtra = "
-export GPG_TTY=\"$(tty)\"
-export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-gpgconf --launch gpg-agent
-      ";
-
-  # sway config
-  wayland.windowManager.sway= {
-    config = rec {
-      input = {
-        "*" = {
-          xkb_layout = "us";
-          xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-      };
-
-      output = {
-        eDP-1 = {
-          mode = "2160x1440@59.955Hz";
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
-        };
-      };
-
-      keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
-      in {
-        "${modifier}+F2"  = "exec brightnessctl set +5%";
-        "${modifier}+F1"= "exec brightnessctl set 5%-";
-        "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
-        "${modifier}+Ctrl+p" = "exec nixGL wl-mirror eDP-1";
-        "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
-        "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
-      };
-
-      startup = [
-        { command = "sleep 60 &amp;&amp; nixGL nextcloud --background";}
-        # { command = "sleep 60 &amp;&amp; nixGL spotify";}
-        { command = "sleep 60 &amp;&amp; nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
-        # { command = "sleep 60 &amp;&amp; nixGL schildichat-desktop --hidden";}
-        { command = "sleep 60 &amp;&amp; nixGL syncthingtray --wait"; }
-        { command = "sleep 60 &amp;&amp; ANKI_WAYLAND=1 nixGL anki";}
-        { command = "nm-applet --indicator";}
-        { command = "sleep 60 &amp;&amp; OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland";}
-      ];
-
-      keycodebindings = {
-        "124" = "exec systemctl suspend";
-      };
-    };
-
-    extraConfig = "
-    exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
-    exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
-    ";
-  };
-}
-
-</pre>
-</div>
-</div>
-</li>
-</ol>
-</li>
-<li><a id="h:6bc7b9c7-ccfd-42d7-982a-97907aa28b80"></a>Onett (Lenovo Y510P)<br />
-<div class="outline-text-5" id="text-h:6bc7b9c7-ccfd-42d7-982a-97907aa28b80">
-<p>
-My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
-</p>
-</div>
-<ol class="org-ol">
-<li><a id="h:20fc100c-045d-468a-9bf2-824037e6785b"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:20fc100c-045d-468a-9bf2-824037e6785b">
-<div class="org-src-container">
-<pre class="src src-nix">
-{ config, lib, pkgs, inputs, ... }:
-
-{
-
-
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-
-
-  services = {
-    greetd.settings.initial_session.user ="swarsel";
-    xserver.videoDrivers = ["nvidia"];
-  };
-
-
-  hardware = {
-    nvidia = {
-      modesetting.enable = true;
-      powerManagement.enable = true;
-      prime = {
-        intelBusId = "PCI:0:2:0";
-        nvidiaBusId = "PCI:1:0:0";
-        sync.enable = true;
-      };
-    };
-    pulseaudio.configFile = pkgs.runCommand "default.pa" {} ''
-                 sed 's/module-udev-detect$/module-udev-detect tsched=0/' \
-                   ${pkgs.pulseaudio}/etc/pulse/default.pa &gt; $out
-                 '';
-    bluetooth.enable = true;
-  };
-
-  stylix.image = ../../wallpaper/lenovowp.png;
-
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
-    };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      monospace = {
-        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
-        name = "FiraCode Nerd Font Mono";
-      };
-
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
-    };
-  };
-
-
-
-
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/sda";
-    useOSProber = true;
-  };
-
-  networking.hostName = "onett"; # Define your hostname.
-  networking.enableIPv6 = false;
-
-  users.users.swarsel = {
-    isNormalUser = true;
-    description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp"];
-    packages = with pkgs; [];
-  };
-
-  system.stateVersion = "23.05"; # Did you read the comment?
-
-  environment.systemPackages = with pkgs; [
-  ];
-
-
-}
-
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:d35847ae-2207-4417-9858-b0ea7e2b1a0b"></a>Home Manager<br />
-<div class="outline-text-6" id="text-h:d35847ae-2207-4417-9858-b0ea7e2b1a0b">
-<div class="org-src-container">
-<pre class="src src-nix">
-{ config, pkgs, lib, fetchFromGitHub, ... }:
-
-{
-
-
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = true;
-    enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry.gtk2;
-    defaultCacheTtl = 600;
-    maxCacheTtl = 7200;
-    extraConfig = ''
-    allow-loopback-pinentry
-    allow-emacs-pinentry
-    '';
-    };
-
-
-  home = {
-    username = "swarsel";
-    homeDirectory = "/home/swarsel";
-    stateVersion = "23.05"; # Please read the comment before changing.
-    keyboard.layout = "de";
-    packages = with pkgs; [
-    ];
-  };
-
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # # waybar config
-  programs.waybar.settings.mainBar = {
-    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-    temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
-  };
-
-  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark"
-                                                    "mpris"
-                                                    "custom/left-arrow-light"
-                                                    "network"
-                                                    "custom/left-arrow-dark"
-                                                    "pulseaudio"
-                                                    "custom/left-arrow-light"
-                                                    "custom/pseudobat"
-                                                    "battery"
-                                                    "custom/left-arrow-dark"
-                                                    "group/hardware"
-                                                    "custom/left-arrow-light"
-                                                    "clock#2"
-                                                    "custom/left-arrow-dark"
-                                                    "clock#1"
-                                                   ];
-
-
-  services.blueman-applet.enable = true;
-
-  wayland.windowManager.sway= {
-    config = rec {
-      input = {
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "2362:33538:ipad_keyboard_Keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "altwin:swap_lalt_lwin,ctrl:nocaps,grp:win_space_toggle";
-          xkb_variant = "colemak_dh";
-        };
-        "36125:53060:splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-      };
-
-      output = {
-        eDP-1 = {
-          mode = "1920x1080";
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          position = "1920,0";
-        };
-        VGA-1 = {
-          mode = "1920x1080";
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          position = "0,0";
-        };
-      };
-
-      keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
-      in {
-        "${modifier}+F2"  = "exec brightnessctl set +5%";
-        "${modifier}+F1"= "exec brightnessctl set 5%-";
-        "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
-        "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
-        "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
-        "XF86HomePage" = "exec wtype -P Escape -p Escape";
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-      };
-      keycodebindings = {
-        "94" = "exec wtype c";
-        "Shift+94" = "exec wtype C";
-        "Ctrl+94" = "exec wtype -M ctrl c -m ctrl";
-        "Ctrl+Shift+94" = "exec wtype -M ctrl -M shift c -m ctrl -m shift";
-      };
-
-      startup = [
-
-        { command = "nextcloud --background";}
-        { command = "discord --start-minimized";}
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
-        { command = "ANKI_WAYLAND=1 anki";}
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
-        { command = "nm-applet";}
-
-      ];
-    };
-
-    extraConfig = "
- ";
-  };
-}
-
-</pre>
-</div>
-</div>
-</li>
-</ol>
-</li>
 <li><a id="h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4"></a>Threed (Surface Pro 3)<br />
 <div class="outline-text-5" id="text-h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4">
 <p>
@@ -2355,6 +1880,8 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     # kernelPackages = pkgs.linuxPackages_latest;
   };
 
+  sops.age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+
   networking = {
     hostName = "fourside"; # Define your hostname.
     nftables.enable = true;
@@ -2467,10 +1994,12 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     enable = false;
   };
   services.power-profiles-daemon.enable = true;
+  services.fprintd.enable = true;
 
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
+    hashedPasswordFile = config.sops.secrets.swarseluser.path;
     extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
     packages = with pkgs; [];
   };
@@ -2616,6 +2145,304 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
         # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
         # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
         "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
+      };
+
+      startup = [
+
+        { command = "nextcloud --background";}
+        { command = "discord --start-minimized";}
+        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
+        { command = "ANKI_WAYLAND=1 anki";}
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
+        { command = "nm-applet";}
+
+      ];
+    };
+  };
+}
+
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</li>
+<li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Winters (Framwork Laptop 16)<br />
+<div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
+<p>
+My work machine.
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="h:ab6fefc4-aabd-456c-8a21-5fcb20c02869"></a>NixOS<br />
+<div class="outline-text-6" id="text-h:ab6fefc4-aabd-456c-8a21-5fcb20c02869">
+<p>
+Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+{ config, lib, pkgs, inputs, ... }:
+
+{
+
+  # 
+  # imports =
+  #   [
+  #     ./hardware-configuration.nix
+  #   ];
+  # 
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
+  services = {
+    getty.autologinUser = "swarsel";
+    greetd.settings.initial_session.user="swarsel";
+  };
+
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
+  };
+
+  networking = {
+    hostName = "winters"; # Define your hostname.
+    nftables.enable = true;
+    enableIPv6 = true;
+    firewall.checkReversePath = "strict";
+    firewall = {
+      enable = true;
+      allowedUDPPorts = [ ];
+      allowedTCPPorts = [ ];
+      allowedTCPPortRanges = [
+      ];
+      allowedUDPPortRanges = [
+      ];
+    };
+  };
+
+  virtualisation.virtualbox = {
+    host = {
+    enable = true;
+    enableExtensionPack = true;
+    };
+    # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+    guest = {
+      enable = false;
+      };
+    };
+
+  stylix.image = ../../wallpaper/lenovowp.png;
+
+  stylix = {
+    enable = true;
+    base16Scheme = ../../wallpaper/swarsel.yaml;
+    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    polarity = "dark";
+    opacity.popups = 0.5;
+    cursor = {
+      package = pkgs.capitaine-cursors;
+      name = "capitaine-cursors";
+      size = 16;
+    };
+    fonts = {
+      sizes = {
+        terminal = 10;
+        applications = 11;
+      };
+      serif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      sansSerif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      monospace = {
+        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
+        name = "FiraCode Nerd Font Mono";
+      };
+
+      emoji = {
+        package = pkgs.noto-fonts-emoji;
+        name = "Noto Color Emoji";
+      };
+    };
+  };
+
+
+
+
+  hardware = {
+      graphics = {
+        enable = true;
+        enable32Bit = true;
+        extraPackages = with pkgs; [
+        ];
+      };
+      bluetooth.enable = true;
+    };
+
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [
+      pkgs.proton-ge-bin
+    ];
+  };
+
+  services.power-profiles-daemon.enable = true;
+
+  users.users.swarsel = {
+    isNormalUser = true;
+    description = "Leon S";
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+    packages = with pkgs; [];
+  };
+
+  environment.systemPackages = with pkgs; [
+    sbctl
+    # gog games installing
+    heroic
+    # minecraft
+    temurin-bin-17
+    (prismlauncher.override {
+      glfw = pkgs.glfw-wayland-minecraft;
+    })
+  ];
+
+  system.stateVersion = "23.05";
+
+
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="h:85f7110c-2f25-4506-b64a-fce29f29d0d0"></a><span class="todo TODO">TODO</span> Home Manager<br />
+<div class="outline-text-6" id="text-h:85f7110c-2f25-4506-b64a-fce29f29d0d0">
+<p>
+TODO: Adjust <code>hwmon</code> path, I/O modules and XF86 keys once laptop arrives.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+{ config, pkgs, lib, fetchFromGitHub, ... }:
+
+{
+
+
+  services.gpg-agent = {
+    enable = true;
+    enableSshSupport = true;
+    enableExtraSocket = true;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
+    extraConfig = ''
+    allow-loopback-pinentry
+    allow-emacs-pinentry
+    '';
+    };
+
+  home = {
+    username = "swarsel";
+    homeDirectory = "/home/swarsel";
+    stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
+    keyboard.layout = "us"; # TEMPLATE
+    packages = with pkgs; [
+    ];
+  };
+  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+  # waybar config - TEMPLATE - update for cores and temp
+  programs.waybar.settings.mainBar = {
+    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+
+    temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+    temperature.input-filename = "temp1_input";
+  };
+
+
+  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark"
+                                                    "mpris"
+                                                    "custom/left-arrow-light"
+                                                    "network"
+                                                    "custom/left-arrow-dark"
+                                                    "pulseaudio"
+                                                    "custom/left-arrow-light"
+                                                    "custom/pseudobat"
+                                                    "battery"
+                                                    "custom/left-arrow-dark"
+                                                    "group/hardware"
+                                                    "custom/left-arrow-light"
+                                                    "clock#2"
+                                                    "custom/left-arrow-dark"
+                                                    "clock#1"
+                                                   ];
+
+
+  wayland.windowManager.sway= {
+    config = rec {
+      # update for actual inputs here,
+      input = {
+        "36125:53060:splitkb.com_Kyria_rev3" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        "1:1:AT_Translated_Set_2_keyboard" = { # TEMPLATE
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+        "type:touchpad" = {
+          dwt = "enabled";
+          tap = "enabled";
+          natural_scroll = "enabled";
+          middle_emulation = "enabled";
+        };
+
+      };
+
+      output = {
+        eDP-1 = {
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "1920,0";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+        };
+        # external monitor
+        HDMI-A-1 = {
+          mode = "2560x1440";
+          scale = "1";
+          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+          position = "0,0";
+        };
+      };
+
+      workspaceOutputAssign = [
+        { output = "eDP-1"; workspace = "1:一";}
+        { output = "HDMI-A-1"; workspace = "2:二";}
+      ];
+
+
+      keybindings = let
+        modifier = config.wayland.windowManager.sway.config.modifier;
+      in {
+
       };
 
       startup = [
@@ -5738,6 +5565,20 @@ nix.settings.experimental-features = ["nix-command" "flakes"];
 </div>
 </div>
 </li>
+<li><a id="org210277b"></a>Make users non-mutable<br />
+<div class="outline-text-5" id="text-3-2-1-4">
+<p>
+This ensures that all user-configuration happens here in the config file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+users.mutableUsers = false;
+
+</pre>
+</div>
+</div>
+</li>
 <li><a id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"></a>Environment setup<br />
 <div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
@@ -5806,8 +5647,8 @@ security.polkit.enable = true;
 </div>
 </div>
 </li>
-<li><a id="orgae611ea"></a>Enable automatic garbage collection<br />
-<div class="outline-text-5" id="text-3-2-1-8">
+<li><a id="org6e4fb07"></a>Enable automatic garbage collection<br />
+<div class="outline-text-5" id="text-3-2-1-9">
 <p>
 The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
 </p>
@@ -5825,8 +5666,8 @@ nix.gc = {
 </div>
 </div>
 </li>
-<li><a id="orgadc7017"></a>Enable automatic store optimisation<br />
-<div class="outline-text-5" id="text-3-2-1-9">
+<li><a id="orgd957c4b"></a>Enable automatic store optimisation<br />
+<div class="outline-text-5" id="text-3-2-1-10">
 <p>
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 </p>
@@ -5901,7 +5742,210 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 
 <div class="org-src-container">
 <pre class="src src-nix">
-networking.networkmanager.enable = true;
+networking.networkmanager = {
+  enable = true;
+  ensureProfiles = {
+    environmentFiles = [
+      "${config.sops.templates."network-manager.env".path}"
+    ];
+    profiles = {
+      "Ernest Routerford" = {
+        connection = {
+          id = "Ernest Routerford";
+          permissions = "";
+          type = "wifi";
+        };
+        ipv4 = {
+          dns-search = "";
+          method = "auto";
+        };
+        ipv6 = {
+          addr-gen-mode = "stable-privacy";
+          dns-search = "";
+          method = "auto";
+        };
+        wifi = {
+          mac-address-blacklist = "";
+          mode = "infrastructure";
+          ssid = "Ernest Routerford";
+        };
+        wifi-security = {
+          auth-alg = "open";
+          key-mgmt = "wpa-psk";
+          psk = "$ERNEST";
+        };
+      };
+
+      LAN-Party = {
+        connection = {
+          autoconnect = "false";
+          id = "LAN-Party";
+          type = "ethernet";
+        };
+        ethernet = {
+          auto-negotiate = "true";
+          cloned-mac-address = "preserve";
+          mac-address = "90:2E:16:D0:A1:87";
+        };
+        ipv4 = { method = "shared"; };
+        ipv6 = {
+          addr-gen-mode = "stable-privacy";
+          method = "auto";
+        };
+        proxy = { };
+      };
+
+      eduroam = {
+        "802-1x" = {
+          eap = "ttls;";
+          identity = "$EDUID";
+          password = "$EDUPASS";
+          phase2-auth = "mschapv2";
+        };
+        connection = {
+          id = "eduroam";
+          type = "wifi";
+        };
+        ipv4 = { method = "auto"; };
+        ipv6 = {
+          addr-gen-mode = "default";
+          method = "auto";
+        };
+        proxy = { };
+        wifi = {
+          mode = "infrastructure";
+          ssid = "eduroam";
+        };
+        wifi-security = {
+          auth-alg = "open";
+          key-mgmt = "wpa-eap";
+        };
+      };
+
+      local = {
+        connection = {
+          autoconnect = "false";
+          id = "local";
+          type = "ethernet";
+        };
+        ethernet = { };
+        ipv4 = {
+          address1 = "10.42.1.1/24";
+          method = "shared";
+        };
+        ipv6 = {
+          addr-gen-mode = "stable-privacy";
+          method = "auto";
+        };
+        proxy = { };
+      };
+
+      HH40V_39F5 = {
+        connection = {
+          id = "HH40V_39F5";
+          type = "wifi";
+        };
+        ipv4 = { method = "auto"; };
+        ipv6 = {
+          addr-gen-mode = "stable-privacy";
+          method = "auto";
+        };
+        proxy = { };
+        wifi = {
+          band = "bg";
+          mode = "infrastructure";
+          ssid = "HH40V_39F5";
+        };
+        wifi-security = {
+          key-mgmt = "wpa-psk";
+          psk = "$FRAUNS";
+        };
+      };
+
+      magicant = {
+        connection = {
+          id = "magicant";
+          type = "wifi";
+        };
+        ipv4 = { method = "auto"; };
+        ipv6 = {
+          addr-gen-mode = "default";
+          method = "auto";
+        };
+        proxy = { };
+        wifi = {
+          mode = "infrastructure";
+          ssid = "magicant";
+        };
+        wifi-security = {
+          auth-alg = "open";
+          key-mgmt = "wpa-psk";
+          psk = "$HANDYHOTSPOT";
+        };
+      };
+
+      "sweden-aes-128-cbc-udp-dns" = {
+        connection = {
+          autoconnect = "false";
+          id = "PIA Sweden";
+          type = "vpn";
+        };
+        ipv4 = { method = "auto"; };
+        ipv6 = {
+          addr-gen-mode = "stable-privacy";
+          method = "auto";
+        };
+        proxy = { };
+        vpn = {
+          auth = "sha1";
+          ca =
+            "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
+          challenge-response-flags = "2";
+          cipher = "aes-128-cbc";
+          compress = "yes";
+          connection-type = "password";
+          crl-verify-file = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-crl-verify.pem";
+          dev = "tun";
+          password-flags = "0";
+          remote = "sweden.privacy.network:1198";
+          remote-cert-tls = "server";
+          reneg-seconds = "0";
+          service-type = "org.freedesktop.NetworkManager.openvpn";
+          username = "$VPNUSER";
+        };
+        vpn-secrets = { password = "$VPNPASS"; };
+      };
+
+      Hotspot = {
+        connection = {
+          autoconnect = "false";
+          id = "Hotspot";
+          type = "wifi";
+        };
+        ipv4 = { method = "shared"; };
+        ipv6 = {
+          addr-gen-mode = "default";
+          method = "ignore";
+        };
+        proxy = { };
+        wifi = {
+          mode = "ap";
+          ssid = "Hotspot-fourside";
+        };
+        wifi-security = {
+          group = "ccmp;";
+          key-mgmt = "wpa-psk";
+          pairwise = "ccmp;";
+          proto = "rsn;";
+          psk = "$HOTSPOT";
+        };
+      };
+
+    };
+  };
+};
+
+systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
 
 </pre>
 </div>
@@ -5936,8 +5980,57 @@ i18n.extraLocaleSettings = {
 </li>
 </ol>
 </div>
+<div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
+<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.2.2.</span> sops</h4>
+<div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
+<p>
+I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
+</p>
+<ul class="org-ul">
+<li>`ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"</li>
+<li>cat ~/.ssh/sops.pub | ssh-to-age | wl-copy</li>
+<li>add the output to .sops.yaml</li>
+<li>cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub</li>
+<li>update entry for sops.age.sshKeyPaths</li>
+</ul>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+sops = {
+
+  defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+  validateSopsFiles = false;
+
+  secrets = {
+    swarseluser = {neededForUsers = true;};
+    ernest = {};
+    frauns = {};
+    hotspot = {};
+    eduid = {};
+    edupass = {};
+    handyhotspot = {};
+    vpnuser = {};
+    vpnpass = {};
+  };
+  templates = {
+    "network-manager.env".content = ''
+  ERNEST=${config.sops.placeholder.ernest}
+  FRAUNS=${config.sops.placeholder.frauns}
+  HOTSPOT=${config.sops.placeholder.hotspot}
+  EDUID=${config.sops.placeholder.eduid}
+  EDUPASS=${config.sops.placeholder.edupass}
+  HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+  VPNUSER=${config.sops.placeholder.vpnuser}
+  VPNPASS=${config.sops.placeholder.vpnpass}
+  '';
+  };
+};
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-4">
-<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.2.2.</span> System Packages</h4>
+<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.2.3.</span> System Packages</h4>
 <div class="outline-text-4" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
@@ -5958,6 +6051,10 @@ environment.systemPackages = with pkgs; [
   cfssl
   pcsctools
   pcscliteWithPolkit.out
+
+  # ledger packages
+  ledger-live-desktop
+
   # pinentry
 
   # theme related
@@ -6025,7 +6122,7 @@ environment.systemPackages = with pkgs; [
 </div>
 </div>
 <div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-4">
-<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.2.3.</span> Programs (including zsh setup)</h4>
+<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.2.4.</span> Programs (including zsh setup)</h4>
 <div class="outline-text-4" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
@@ -6050,7 +6147,7 @@ environment.pathsToLink = [ "/share/zsh" ];
 </div>
 </div>
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
-<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.2.4.</span> Services</h4>
+<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.2.5.</span> Services</h4>
 <div class="outline-text-4" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
@@ -6176,7 +6273,7 @@ services.interception-tools = {
 </ol>
 </div>
 <div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-4">
-<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.2.5.</span> Yubikey settings</h4>
+<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.2.6.</span> Hardware compatibility settings (Yubikey, Ledger)</h4>
 <div class="outline-text-4" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -6200,12 +6297,15 @@ programs.ssh.startAgent = false;
 
 services.pcscd.enable = true;
 
+hardware.ledger.enable = true;
+
 # environment.systemPackages = with pkgs; [
 # --- IN SYSTEM PACKAGES SECTION ---
 # ];
 
 services.udev.packages = with pkgs; [
   yubikey-personalization
+  ledger-udev-rules
 ];
 
 
@@ -6214,7 +6314,7 @@ services.udev.packages = with pkgs; [
 </div>
 </div>
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-4">
-<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.2.6.</span> System Login</h4>
+<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.2.7.</span> System Login</h4>
 <div class="outline-text-4" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -7238,7 +7338,7 @@ programs.zsh = {
     c="git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
     passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
     passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-    hotspot = "nmcli connection up local; nmcli device wifi hotspot password 12345678;";
+    hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
     cd="z";
     cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 &amp;&amp; echo /home/swarsel/.dotfiles) | fzf )\"";
   };
@@ -8417,6 +8517,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
+                   sops-nix.nixosModules.sops
                    ./profiles/common/nixos.nix
                    # dynamic library loading
                    ({ self, system, ... }: {
@@ -8504,6 +8605,20 @@ This tangles the flake.nix file; This block only needs to be touched when updati
           {
             home-manager.users.swarsel.imports = mixedModules ++ [
               ./profiles/fourside/home.nix
+            ];
+          }
+        ];
+      };
+
+      winters = nixpkgs.lib.nixosSystem {
+        specialArgs = {inherit inputs pkgs; };
+        modules = nixModules ++ [
+          nixos-hardware.nixosModules.framework-16-inch-7040-amd
+          ./profiles/winters/nixos.nix
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.users.swarsel.imports = mixedModules ++ [
+              ./profiles/winters/home.nix
             ];
           }
         ];
@@ -11110,8 +11225,8 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 </div>
 </div>
 </div>
-<div id="outline-container-org74b17fa" class="outline-2">
-<h2 id="org74b17fa"><span class="section-number-2">5.</span> Yubikey support</h2>
+<div id="outline-container-orgbae7e5e" class="outline-2">
+<h2 id="orgbae7e5e"><span class="section-number-2">5.</span> Yubikey support</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
@@ -12210,7 +12325,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-11 Do 18:36</p>
+<p class="date">Created: 2024-07-17 Mi 02:28</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
