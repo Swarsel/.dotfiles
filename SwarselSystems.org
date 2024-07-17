@@ -528,6 +528,7 @@ Lastly I define some common module lists that I can simply load depending on the
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
+                 sops-nix.nixosModules.sops
                  ./profiles/common/nixos.nix
                  # dynamic library loading
                  ({ self, system, ... }: {
@@ -557,164 +558,178 @@ This section is the biggest pain point of the configuration. For every system, I
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
-    onett = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = nixModules ++ [
-        ./profiles/onett/nixos.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.users.swarsel.imports = mixedModules ++ [
-            ./profiles/onett/home.nix
-          ];
-        }
-      ];
-    };
+  onett = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      ./profiles/onett/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/onett/home.nix
+        ];
+      }
+    ];
+  };
 
-    sandbox = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/sandbox/nixos.nix
-      ];
-    };
+  sandbox = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/sandbox/nixos.nix
+    ];
+  };
 
-    twoson = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = nixModules ++ [
-        ./profiles/twoson/nixos.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.users.swarsel.imports = mixedModules ++ [
-            ./profiles/twoson/home.nix
-          ];
-        }
-      ];
-    };
+  twoson = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      ./profiles/twoson/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/twoson/home.nix
+        ];
+      }
+    ];
+  };
 
-    threed = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = nixModules ++ [
-        lanzaboote.nixosModules.lanzaboote
-        ./profiles/threed/nixos.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.users.swarsel.imports = mixedModules ++ [
-            ./profiles/threed/home.nix
-          ];
-        }
-      ];
-    };
+  threed = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      lanzaboote.nixosModules.lanzaboote
+      ./profiles/threed/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/threed/home.nix
+        ];
+      }
+    ];
+  };
 
-    fourside = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = nixModules ++ [
-        nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
-        ./profiles/fourside/nixos.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.users.swarsel.imports = mixedModules ++ [
-            ./profiles/fourside/home.nix
-          ];
-        }
-      ];
-    };
+  fourside = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+      ./profiles/fourside/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/fourside/home.nix
+        ];
+      }
+    ];
+  };
 
-    stand = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = nixModules ++ [
-        ./profiles/stand/nixos.nix
-        home-manager.nixosModules.home-manager
-        {
-          home-manager.users.homelen.imports = mixedModules ++ [
-            ./profiles/stand/home.nix
-          ];
-        }
-      ];
-    };
+  winters = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      nixos-hardware.nixosModules.framework-16-inch-7040-amd
+      ./profiles/winters/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/winters/home.nix
+        ];
+      }
+    ];
+  };
 
-    nginx = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/nginx/nixos.nix
-      ];
-    };
+  stand = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = nixModules ++ [
+      ./profiles/stand/nixos.nix
+      home-manager.nixosModules.home-manager
+      {
+        home-manager.users.homelen.imports = mixedModules ++ [
+          ./profiles/stand/home.nix
+        ];
+      }
+    ];
+  };
 
-    calibre = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/calibre/nixos.nix
-      ];
-    };
+  nginx = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/nginx/nixos.nix
+    ];
+  };
 
-    jellyfin = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        # sops-nix.nixosModules.sops
-        ./profiles/server1/jellyfin/nixos.nix
-      ];
-    };
+  calibre = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/calibre/nixos.nix
+    ];
+  };
 
-    transmission = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/transmission/nixos.nix
-      ];
-    };
+  jellyfin = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      # sops-nix.nixosModules.sops
+      ./profiles/server1/jellyfin/nixos.nix
+    ];
+  };
 
-    matrix = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      # this is to import a service module that is not on nixpkgs
-      # this way avoids infinite recursion errors
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/matrix/nixos.nix
-      ];
-    };
+  transmission = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/transmission/nixos.nix
+    ];
+  };
 
-    sound = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/sound/nixos.nix
-      ];
-    };
+  matrix = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    # this is to import a service module that is not on nixpkgs
+    # this way avoids infinite recursion errors
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/matrix/nixos.nix
+    ];
+  };
 
-    spotifyd = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/spotifyd/nixos.nix
-      ];
-    };
+  sound = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/sound/nixos.nix
+    ];
+  };
 
-    paperless = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/server1/paperless/nixos.nix
-      ];
-    };
+  spotifyd = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/spotifyd/nixos.nix
+    ];
+  };
 
-    #ovm swarsel
-    sync = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/remote/oracle/sync/nixos.nix
-      ];
-    };
+  paperless = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/server1/paperless/nixos.nix
+    ];
+  };
 
-    #ovm swarsel
-    swatrix = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs pkgs; };
-      modules = [
-        sops-nix.nixosModules.sops
-        ./profiles/remote/oracle/matrix/nixos.nix
-      ];
-    };
+  #ovm swarsel
+  sync = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/remote/oracle/sync/nixos.nix
+    ];
+  };
+
+  #ovm swarsel
+  swatrix = nixpkgs.lib.nixosSystem {
+    specialArgs = {inherit inputs pkgs; };
+    modules = [
+      sops-nix.nixosModules.sops
+      ./profiles/remote/oracle/matrix/nixos.nix
+    ];
+  };
 #+end_src
 *** homeConfigurations
 :PROPERTIES:
@@ -4767,6 +4782,51 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
         LC_TIME = "de_AT.UTF-8";
       };
 
+#+end_src
+
+*** sops
+:PROPERTIES:
+:CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
+:END:
+
+I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
+- `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
+- cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
+- add the output to .sops.yaml
+- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
+- update entry for sops.age.sshKeyPaths
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+        sops = {
+
+          defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+          validateSopsFiles = false;
+
+          secrets = {
+            swarseluser = {neededForUsers = true;};
+            ernest = {};
+            frauns = {};
+            hotspot = {};
+            eduid = {};
+            edupass = {};
+            handyhotspot = {};
+            vpnuser = {};
+            vpnpass = {};
+          };
+          templates = {
+            "network-manager.env".content = ''
+          ERNEST=${config.sops.placeholder.ernest}
+          FRAUNS=${config.sops.placeholder.frauns}
+          HOTSPOT=${config.sops.placeholder.hotspot}
+          EDUID=${config.sops.placeholder.eduid}
+          EDUPASS=${config.sops.placeholder.edupass}
+          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+          VPNUSER=${config.sops.placeholder.vpnuser}
+          VPNPASS=${config.sops.placeholder.vpnpass}
+          '';
+          };
+        };
 #+end_src
 
 *** System Packages

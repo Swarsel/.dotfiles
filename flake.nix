@@ -112,6 +112,7 @@
     
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
+                   sops-nix.nixosModules.sops
                    ./profiles/common/nixos.nix
                    # dynamic library loading
                    ({ self, system, ... }: {

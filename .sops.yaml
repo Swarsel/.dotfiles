@@ -28,6 +28,16 @@ creation_rules:
       - *server_surface
       - *server_stand
       - *server_fourside
+  - path_regex: secrets/certs/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_nixos
+      - *server_surface
+      - *server_stand
+      - *server_fourside
+      - *server_transmiss
   - path_regex: secrets/surface/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
