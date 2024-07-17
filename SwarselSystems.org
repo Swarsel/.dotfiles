@@ -974,6 +974,889 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 :PROPERTIES:
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
 :END:
+**** Sandbox (Lenovo Y510P)
+:PROPERTIES:
+:CUSTOM_ID: h:60cf171f-2ec9-418f-8f67-85d159efe9d0
+:END:
+
+My old laptop, replaced by a new one, since most basic functions have stopped to work lately. However, it is still good as a dummy server for testing things out before having them go live.
+
+***** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:23b0f629-343c-42fa-bf9b-70bea341c0d2
+:END:
+
+#+begin_src nix :noweb yes :tangle profiles/sandbox/nixos.nix
+
+      { config, pkgs, modulesPath, unstable, sops, ... }: let
+      matrixDomain = "swatrix.swarsel.win";
+    in {
+
+      imports = [
+        ./hardware-configuration.nix
+        # we import here a service that is not available yet on normal nixpkgs
+        # this module is hence not in the modules list, we add it ourselves
+        (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+      ];
+
+        boot.loader.grub = {
+          enable = true;
+          device = "/dev/sda";
+          useOSProber = true;
+        };
+
+        users.users.swarsel = {
+          isNormalUser = true;
+          description = "Leon S";
+          extraGroups = [ "networkmanager" "wheel" "lp"];
+          packages = with pkgs; [];
+        };
+
+    # actual config starts here
+
+      fileSystems."/mnt/Eternor" = {
+        device = "//192.168.1.3/Eternor";
+        fsType = "cifs";
+        options = let
+          # this line prevents hanging on network split
+          automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+        in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+      };
+
+        environment.systemPackages = with pkgs; [
+        git
+        gnupg
+        ssh-to-age
+        lego
+        nginx
+        calibre
+        openvpn
+        jq
+        iptables
+        busybox
+        wireguard-tools
+        matrix-synapse
+        lottieconverter
+        ffmpeg
+        pciutils
+        alsa-utils
+        mpv
+        zfs
+        ];
+
+        services.xserver = {
+          layout = "us";
+          xkbVariant = "altgr-intl";
+        };
+
+        nix.settings.experimental-features = ["nix-command" "flakes"];
+
+        services.openssh = {
+          enable = true;
+          settings.PermitRootLogin = "yes";
+          listenAddresses = [{
+            port = 22;
+            addr = "0.0.0.0";
+          }];
+        };
+        users.users.root.openssh.authorizedKeys.keyFiles = [
+          ../../secrets/keys/authorized_keys
+        ];
+
+        system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+        environment.shellAliases = {
+          nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+        };
+
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.zfs.forceImportRoot = false;
+  networking.hostId = "8a8ad84a";
+
+        networking.hostName = "sandbox"; # Define your hostname.
+        networking.enableIPv6 = true;
+        networking.firewall.enable = false;
+
+        documentation = {
+          enable = false;
+        };
+
+      sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      sops.defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
+      sops.validateSopsFiles = false;
+      sops.secrets.dnstokenfull = {owner="acme";};
+      sops.templates."certs.secret".content = ''
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      '';
+
+      security.acme = {
+        acceptTerms = true;
+        preliminarySelfsigned = false;
+        defaults.email = "mrswarsel@gmail.com";
+        defaults.dnsProvider = "cloudflare";
+        defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+      };
+
+      services.nginx = {
+        enable = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        recommendedOptimisation = true;
+        recommendedGzipSettings = true;
+        virtualHosts = {
+
+          "stash.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://192.168.1.5";
+                extraConfig = ''
+                client_max_body_size 0;
+                '';
+              };
+              # "/push/" = {
+                # proxyPass = "http://192.168.2.5:7867";
+              # };
+              "/.well-known/carddav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+              "/.well-known/caldav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+            };
+          };
+
+          "swatrix.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "~ ^(/_matrix|/_synapse/client)" = {
+                proxyPass = "http://127.0.0.1:8008";
+                extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+              };
+            };
+          };
+
+
+            "sound.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://127.0.0.1:4040";
+                  proxyWebsockets = true;
+                  extraConfig = ''
+                    proxy_redirect          http:// https://;
+                    proxy_read_timeout      600s;
+                    proxy_send_timeout      600s;
+                    proxy_buffering         off;
+                    proxy_request_buffering off;
+                    client_max_body_size    0;
+                  '';
+                };
+              };
+            };
+
+            "scan.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://127.0.0.1:28981";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "screen.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://127.0.0.1:8096";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+            "scroll.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://127.0.0.1:8080";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+              };
+            };
+
+
+          };
+        };
+
+
+      sops.secrets.kavita = { owner = "kavita";};
+
+      services.kavita = {
+        enable = true;
+        user = "kavita";
+        port = 8080;
+        tokenKeyFile = config.sops.secrets.kavita.path;
+      };
+
+      users.users.jellyfin = {
+        extraGroups  = [ "video" "render" ];
+      };
+
+       # nixpkgs.config.packageOverrides = pkgs: {
+       #   vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+       # };
+
+       hardware.graphics = {
+         enable = true;
+         extraPackages = with pkgs; [
+           intel-media-driver # LIBVA_DRIVER_NAME=iHD
+           vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+           vaapiVdpau
+           libvdpau-va-gl
+         ];
+       };
+
+      services.jellyfin = {
+        enable = true;
+        user = "jellyfin";
+        # openFirewall = true; # this works only for the default ports
+      };
+
+                  users.groups.vpn = {};
+
+                  users.users.vpn = {
+                    isNormalUser = true;
+                    group = "vpn";
+                    home = "/home/vpn";
+                  };
+
+                  boot.kernelModules = [ "tun" ];
+
+                  services.radarr = {
+                    enable = true;
+                  };
+
+                  services.readarr = {
+                    enable = true;
+                  };
+                  services.sonarr = {
+                    enable = true;
+                  };
+                  services.lidarr = {
+                    enable = true;
+                  };
+                  services.prowlarr = {
+                    enable = true;
+                  };
+
+                  networking.firewall.extraCommands = ''
+                  sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+                  '';
+                  networking.iproute2 = {
+                    enable = true;
+                    rttablesExtraConfig = ''
+                    200     vpn
+                    '';
+                  };
+                  boot.kernel.sysctl = {
+                    "net.ipv4.conf.all.rp_filter" = 2;
+                    "net.ipv4.conf.default.rp_filter" = 2;
+                    "net.ipv4.conf.enp7s0.rp_filter" = 2;
+                  };
+                  environment.etc = {
+                    "openvpn/iptables.sh" =
+                      { source = ../../scripts/server1/iptables.sh;
+                        mode = "0755";
+                      };
+                    "openvpn/update-resolv-conf" =
+                      { source = ../../scripts/server1/update-resolv-conf;
+                        mode = "0755";
+                      };
+                    "openvpn/routing.sh" =
+                      { source = ../../scripts/server1/routing.sh;
+                        mode = "0755";
+                      };
+                    "openvpn/ca.rsa.2048.crt" =
+                      { source = ../../secrets/certs/ca.rsa.2048.crt;
+                        mode = "0644";
+                      };
+                    "openvpn/crl.rsa.2048.pem" =
+                      { source = ../../secrets/certs/crl.rsa.2048.pem;
+                        mode = "0644";
+                      };
+                  };
+
+                  sops.secrets.vpnuser = {};
+                  sops.secrets.rpcuser = {owner="vpn";};
+                  sops.secrets.vpnpass = {};
+                  sops.secrets.rpcpass = {owner="vpn";};
+                  sops.secrets.vpnprot = {};
+                  sops.secrets.vpnloc = {};
+                  # sops.secrets.crlpem = {};
+                  # sops.secrets.capem = {};
+                  sops.templates."transmission-rpc".owner = "vpn";
+                  sops.templates."transmission-rpc".content = builtins.toJSON {
+                    rpc-username = config.sops.placeholder.rpcuser;
+                    rpc-password = config.sops.placeholder.rpcpass;
+                  };
+
+                  sops.templates.pia.content = ''
+                  ${config.sops.placeholder.vpnuser}
+                  ${config.sops.placeholder.vpnpass}
+                  '';
+
+                  sops.templates.vpn.content = ''
+                    client
+                    dev tun
+                    proto ${config.sops.placeholder.vpnprot}
+                    remote ${config.sops.placeholder.vpnloc}
+                    resolv-retry infinite
+                    nobind
+                    persist-key
+                    persist-tun
+                    cipher aes-128-cbc
+                    auth sha1
+                    tls-client
+                    remote-cert-tls server
+
+                    auth-user-pass ${config.sops.templates.pia.path}
+                    compress
+                    verb 1
+                    reneg-sec 0
+
+                    crl-verify /etc/openvpn/crl.rsa.2048.pem
+                    ca /etc/openvpn/ca.rsa.2048.crt
+
+                    disable-occ
+                  '';
+
+              services.openvpn.servers = {
+                pia = {
+                  autoStart = true;
+                  updateResolvConf = false;
+                  config = "config ${config.sops.templates.vpn.path}";
+                };
+              };
+
+            services.transmission = {
+              enable = true;
+              credentialsFile = config.sops.templates."transmission-rpc".path;
+              user = "vpn";
+              settings = {
+
+              alt-speed-down= 8000;
+              alt-speed-enabled= false;
+              alt-speed-time-begin= 0;
+              alt-speed-time-day= 127;
+              alt-speed-time-enabled= true;
+              alt-speed-time-end= 360;
+              alt-speed-up= 2000;
+              bind-address-ipv4= "0.0.0.0";
+              bind-address-ipv6= "::";
+              blocklist-enabled= false;
+              blocklist-url= "http://www.example.com/blocklist";
+              cache-size-mb= 256;
+              dht-enabled= false;
+              download-dir= "/test";
+              download-limit= 100;
+              download-limit-enabled= 0;
+              download-queue-enabled= true;
+              download-queue-size= 5;
+              encryption= 2;
+              idle-seeding-limit= 30;
+              idle-seeding-limit-enabled= false;
+              incomplete-dir= "/var/lib/transmission-daemon/Downloads";
+              incomplete-dir-enabled= false;
+              lpd-enabled= false;
+              max-peers-global= 200;
+              message-level= 1;
+              peer-congestion-algorithm= "";
+              peer-id-ttl-hours= 6;
+              peer-limit-global= 100;
+              peer-limit-per-torrent= 40;
+              peer-port= 22371;
+              peer-port-random-high= 65535;
+              peer-port-random-low= 49152;
+              peer-port-random-on-start= false;
+              peer-socket-tos= "default";
+              pex-enabled= false;
+              port-forwarding-enabled= false;
+              preallocation= 1;
+              prefetch-enabled= true;
+              queue-stalled-enabled= true;
+              queue-stalled-minutes= 30;
+              ratio-limit= 2;
+              ratio-limit-enabled= false;
+              rename-partial-files= true;
+              rpc-authentication-required= true;
+              rpc-bind-address= "0.0.0.0";
+              rpc-enabled= true;
+              rpc-host-whitelist= "";
+              rpc-host-whitelist-enabled= true;
+              rpc-port= 9091;
+              rpc-url= "/transmission/";
+              rpc-whitelist= "127.0.0.1,192.168.3.2";
+              rpc-whitelist-enabled= true;
+              scrape-paused-torrents-enabled= true;
+              script-torrent-done-enabled= false;
+              seed-queue-enabled= false;
+              seed-queue-size= 10;
+              speed-limit-down= 6000;
+              speed-limit-down-enabled= true;
+              speed-limit-up= 500;
+              speed-limit-up-enabled= true;
+              start-added-torrents= true;
+              trash-original-torrent-files= false;
+              umask= 2;
+              upload-limit= 100;
+              upload-limit-enabled= 0;
+              upload-slots-per-torrent= 14;
+              utp-enabled= false;
+              };
+            };
+
+          # services.nginx = {
+          #       enable = true;
+          #       virtualHosts = {
+
+          #         "192.168.1.192" = {
+          #           locations = {
+          #             "/transmission" = {
+          #               proxyPass = "http://127.0.0.1:9091";
+          #               extraConfig = ''
+          #               proxy_set_header Host $host;
+          #               proxy_set_header X-Real-IP $remote_addr;
+          #               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          #               '';
+          #             };
+          #           };
+          #         };
+          #       };
+          # };
+
+
+      # sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
+      # sops.templates."matrix_user_register.sh".content = ''
+      # register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+      # '';
+      # sops.templates.matrixshared.owner = "matrix-synapse";
+      # sops.templates.matrixshared.content = ''
+      # registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+      # '';
+      # sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
+      # sops.templates.mautrixtelegram.owner = "matrix-synapse";
+      # sops.templates.mautrixtelegram.content = ''
+      # MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+      # MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+      # MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+      # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+      # '';
+
+
+
+
+      # ----------------
+      # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
+      # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
+      # sops.templates.mautrixwhatsapp.content = ''
+      # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
+      # '';
+
+      services.postgresql.enable = true;
+      services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
+        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+      '';
+
+      services.matrix-synapse = {
+        settings.app_service_config_files = [
+          "/var/lib/matrix-synapse/telegram-registration.yaml"
+          "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+          "/var/lib/matrix-synapse/signal-registration.yaml"
+          "/var/lib/matrix-synapse/doublepuppet.yaml"
+        ];
+        enable = false;
+        settings.server_name = matrixDomain;
+        settings.public_baseurl = "https://${matrixDomain}";
+        extraConfigFiles = [
+          config.sops.templates.matrixshared.path
+        ];
+        settings.listeners = [
+          { port = 8008;
+            bind_addresses = [ "0.0.0.0" ];
+            type = "http";
+            tls = false;
+            x_forwarded = true;
+            resources = [
+              {
+                names = [ "client" "federation" ];
+                compress = true;
+              }
+            ];
+          }
+        ];
+      };
+
+      services.mautrix-telegram = {
+        enable = false;
+        environmentFile = config.sops.templates.mautrixtelegram.path;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
+          };
+          appservice = {
+            address= "http://localhost:29317";
+            hostname = "0.0.0.0";
+            port = "29317";
+            provisioning.enabled = true;
+            id = "telegram";
+            # ephemeral_events = true; # not needed due to double puppeting
+            public = {
+              enabled = false;
+            };
+            database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+          };
+          bridge = {
+            # login_shared_secret_map = {
+              # matrixDomain = "as_token:doublepuppet";
+            # };
+            relaybot.authless_portals = true;
+            allow_avatar_remove = true;
+            allow_contact_info = true;
+            sync_channel_members = true;
+            startup_sync = true;
+            sync_create_limit = 0;
+            sync_direct_chats = true;
+            telegram_link_preview = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
+            # Animated stickers conversion requires additional packages in the
+            # service's path.
+            # If this isn't a fresh installation, clearing the bridge's uploaded
+            # file cache might be necessary (make a database backup first!):
+            # delete from telegram_file where \
+            #   mime_type in ('application/gzip', 'application/octet-stream')
+            animated_sticker = {
+              target = "gif";
+              args = {
+                width = 256;
+                height = 256;
+                fps = 30;               # only for webm
+                background = "020202";  # only for gif, transparency not supported
+              };
+            };
+          };
+        };
+      };
+      # systemd.services.mautrix-telegram.path = with pkgs; [
+        # lottieconverter  # for animated stickers conversion, unfree package
+        # ffmpeg           # if converting animated stickers to webm (very slow!)
+      # ];
+
+      services.mautrix-whatsapp = {
+        enable = false;
+        # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
+          };
+          appservice = {
+            address= "http://localhost:29318";
+            hostname = "0.0.0.0";
+            port = 29318;
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+            };
+          };
+          bridge = {
+            displayname_template = "{{or .FullName .PushName .JID}} (WA)";
+            history_sync = {
+              backfill = true;
+              max_initial_conversations = -1;
+              message_count = -1;
+              request_full_sync = true;
+              full_sync_config = {
+                days_limit = 900;
+                size_mb_limit = 5000;
+                storage_quota_mb = 5000;
+              };
+            };
+            login_shared_secret_map = {
+              matrixDomain = "as_token:doublepuppet";
+            };
+            sync_manual_marked_unread = true;
+            send_presence_on_typing = true;
+            parallel_member_sync = true;
+            url_previews = true;
+            caption_in_message = true;
+            extev_polls = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
+          };
+        };
+      };
+
+      services.mautrix-signal = {
+        enable = false;
+        # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
+          };
+          appservice = {
+
+            address= "http://localhost:29328";
+            hostname = "0.0.0.0";
+            port = 29328;
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+            };
+          };
+          bridge = {
+            displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
+            login_shared_secret_map = {
+              matrixDomain = "as_token:doublepuppet";
+            };
+            caption_in_message = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
+          };
+        };
+      };
+
+      # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+      # messages out after a while.
+
+      systemd.timers."restart-bridges" = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "1d";
+          OnUnitActiveSec = "1d";
+          Unit = "restart-bridges.service";
+        };
+      };
+
+      systemd.services."restart-bridges" = {
+        script = ''
+        systemctl restart mautrix-whatsapp.service
+        systemctl restart mautrix-signal.service
+        systemctl restart mautrix-telegram.service
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          User = "root";
+        };
+      };
+
+
+      users.groups.navidrome = {
+        gid = 61593;
+      };
+
+      users.groups.mpd = {};
+
+      users.users.navidrome = {
+        isSystemUser = true;
+        uid = 61593;
+        group = "navidrome";
+        extraGroups  = [ "audio" "utmp" ];
+      };
+
+      users.users.mpd = {
+        isSystemUser = true;
+        group = "mpd";
+        extraGroups  = [ "audio" "utmp" ];
+      };
+
+      sound = {
+        enable = true;
+      };
+
+      hardware.enableAllFirmware = true;
+
+      sops.secrets.mpdpass = { owner = "mpd";};
+
+      services.navidrome = {
+        enable = true;
+        settings = {
+          Address = "0.0.0.0";
+          Port = 4040;
+          MusicFolder = "/mnt/";
+          EnableSharing = true;
+          EnableTranscodingConfig = true;
+          Scanner.GroupAlbumReleases = true;
+          ScanSchedule = "@every 24h";
+          # Insert these values locally as sops-nix does not work for them
+          # LastFM.ApiKey = TEMPLATE;
+          # LastFM.Secret = TEMPLATE;
+          # Spotify.ID = TEMPLATE;
+          # Spotify.Secret = TEMPLATE;
+          UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
+          UIWelcomeMessage = "~SwarselSound~";
+        };
+      };
+      services.mpd = {
+        enable = true;
+        musicDirectory = "/mnt/Eternor/Musik";
+        user = "mpd";
+        group = "mpd";
+        network = {
+          port = 3254;
+          listenAddress = "any";
+        };
+        credentials = [
+          {
+            passwordFile = config.sops.secrets.mpdpass.path;
+            permissions = [
+              "read"
+              "add"
+              "control"
+              "admin"
+            ];
+          }
+        ];
+      };
+
+
+      users.groups.spotifyd = {
+        gid = 65136;
+      };
+
+      users.users.spotifyd = {
+        isSystemUser = true;
+        uid = 65136;
+        group = "spotifyd";
+        extraGroups  = [ "audio" "utmp" ];
+      };
+
+      services.spotifyd = {
+        enable = true;
+        settings = {
+          global = {
+            dbus_type = "session";
+            use_mpris = false;
+            device = "default:CARD=PCH";
+            device_name = "SwarselSpot";
+            mixer = "alsa";
+            zeroconf_port = 1025;
+          };
+        };
+      };
+
+        # Network shares
+        # add a user with sudo smbpasswd -a <user>
+        services.samba = {
+          package = pkgs.samba4Full;
+          extraConfig = ''
+          workgroup = WORKGROUP
+          server role = standalone server
+          dns proxy = no
+
+          pam password change = yes
+          map to guest = bad user
+          create mask = 0664
+          force create mode = 0664
+          directory mask = 0775
+          force directory mode = 0775
+          follow symlinks = yes
+          '';
+
+          # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
+          # Required for samba to register mDNS records for auto discovery
+          # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
+          enable = true;
+          # openFirewall = true;
+          shares.test = {
+            browseable = "yes";
+            "read only" = "no";
+            "guest ok" = "no";
+            path = "/test2";
+            writable = "true";
+            comment = "Eternor";
+            "valid users" = "@smbtest2";
+          };
+        };
+
+
+        services.avahi = {
+          publish.enable = true;
+          publish.userServices = true;
+          # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+          nssmdns = true;
+          # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
+    enable = true;
+        };
+
+        services.samba-wsdd = {
+        # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
+          enable = true;
+        };
+
+
+
+
+
+
+
+
+
+
+      }
+
+#+end_src
 **** Threed (Surface Pro 3)
 :PROPERTIES:
 :CUSTOM_ID: h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4
@@ -3529,889 +4412,6 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
 #+end_src
 
-**** Sandbox (Lenovo Y510P)
-:PROPERTIES:
-:CUSTOM_ID: h:60cf171f-2ec9-418f-8f67-85d159efe9d0
-:END:
-
-My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
-
-***** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:23b0f629-343c-42fa-bf9b-70bea341c0d2
-:END:
-
-#+begin_src nix :noweb yes :tangle profiles/sandbox/nixos.nix
-
-      { config, pkgs, modulesPath, unstable, sops, ... }: let
-      matrixDomain = "swatrix.swarsel.win";
-    in {
-
-      imports = [
-        ./hardware-configuration.nix
-        # we import here a service that is not available yet on normal nixpkgs
-        # this module is hence not in the modules list, we add it ourselves
-        (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
-      ];
-
-        boot.loader.grub = {
-          enable = true;
-          device = "/dev/sda";
-          useOSProber = true;
-        };
-
-        users.users.swarsel = {
-          isNormalUser = true;
-          description = "Leon S";
-          extraGroups = [ "networkmanager" "wheel" "lp"];
-          packages = with pkgs; [];
-        };
-
-    # actual config starts here
-
-      fileSystems."/mnt/Eternor" = {
-        device = "//192.168.1.3/Eternor";
-        fsType = "cifs";
-        options = let
-          # this line prevents hanging on network split
-          automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-        in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
-      };
-
-        environment.systemPackages = with pkgs; [
-        git
-        gnupg
-        ssh-to-age
-        lego
-        nginx
-        calibre
-        openvpn
-        jq
-        iptables
-        busybox
-        wireguard-tools
-        matrix-synapse
-        lottieconverter
-        ffmpeg
-        pciutils
-        alsa-utils
-        mpv
-        zfs
-        ];
-
-        services.xserver = {
-          layout = "us";
-          xkbVariant = "altgr-intl";
-        };
-
-        nix.settings.experimental-features = ["nix-command" "flakes"];
-
-        services.openssh = {
-          enable = true;
-          settings.PermitRootLogin = "yes";
-          listenAddresses = [{
-            port = 22;
-            addr = "0.0.0.0";
-          }];
-        };
-        users.users.root.openssh.authorizedKeys.keyFiles = [
-          ../../secrets/keys/authorized_keys
-        ];
-
-        system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-        environment.shellAliases = {
-          nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        };
-
-  boot.supportedFilesystems = [ "zfs" ];
-  boot.zfs.forceImportRoot = false;
-  networking.hostId = "8a8ad84a";
-
-        networking.hostName = "sandbox"; # Define your hostname.
-        networking.enableIPv6 = true;
-        networking.firewall.enable = false;
-
-        documentation = {
-          enable = false;
-        };
-
-      sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-      sops.defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
-      sops.validateSopsFiles = false;
-      sops.secrets.dnstokenfull = {owner="acme";};
-      sops.templates."certs.secret".content = ''
-      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-      '';
-
-      security.acme = {
-        acceptTerms = true;
-        preliminarySelfsigned = false;
-        defaults.email = "mrswarsel@gmail.com";
-        defaults.dnsProvider = "cloudflare";
-        defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
-      };
-
-      services.nginx = {
-        enable = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        recommendedOptimisation = true;
-        recommendedGzipSettings = true;
-        virtualHosts = {
-
-          "stash.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "https://192.168.1.5";
-                extraConfig = ''
-                client_max_body_size 0;
-                '';
-              };
-              # "/push/" = {
-                # proxyPass = "http://192.168.2.5:7867";
-              # };
-              "/.well-known/carddav" = {
-                return = "301 $scheme://$host/remote.php/dav";
-              };
-              "/.well-known/caldav" = {
-                return = "301 $scheme://$host/remote.php/dav";
-              };
-            };
-          };
-
-          "swatrix.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "~ ^(/_matrix|/_synapse/client)" = {
-                proxyPass = "http://127.0.0.1:8008";
-                extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-              };
-            };
-          };
-
-
-            "sound.swarsel.win" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://127.0.0.1:4040";
-                  proxyWebsockets = true;
-                  extraConfig = ''
-                    proxy_redirect          http:// https://;
-                    proxy_read_timeout      600s;
-                    proxy_send_timeout      600s;
-                    proxy_buffering         off;
-                    proxy_request_buffering off;
-                    client_max_body_size    0;
-                  '';
-                };
-              };
-            };
-
-            "scan.swarsel.win" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://127.0.0.1:28981";
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
-              };
-            };
-
-            "screen.swarsel.win" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://127.0.0.1:8096";
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
-              };
-            };
-
-            "scroll.swarsel.win" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://127.0.0.1:8080";
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
-              };
-            };
-
-
-          };
-        };
-
-
-      sops.secrets.kavita = { owner = "kavita";};
-
-      services.kavita = {
-        enable = true;
-        user = "kavita";
-        port = 8080;
-        tokenKeyFile = config.sops.secrets.kavita.path;
-      };
-
-      users.users.jellyfin = {
-        extraGroups  = [ "video" "render" ];
-      };
-
-       # nixpkgs.config.packageOverrides = pkgs: {
-       #   vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-       # };
-
-       hardware.graphics = {
-         enable = true;
-         extraPackages = with pkgs; [
-           intel-media-driver # LIBVA_DRIVER_NAME=iHD
-           vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-           vaapiVdpau
-           libvdpau-va-gl
-         ];
-       };
-
-      services.jellyfin = {
-        enable = true;
-        user = "jellyfin";
-        # openFirewall = true; # this works only for the default ports
-      };
-
-                  users.groups.vpn = {};
-
-                  users.users.vpn = {
-                    isNormalUser = true;
-                    group = "vpn";
-                    home = "/home/vpn";
-                  };
-
-                  boot.kernelModules = [ "tun" ];
-
-                  services.radarr = {
-                    enable = true;
-                  };
-
-                  services.readarr = {
-                    enable = true;
-                  };
-                  services.sonarr = {
-                    enable = true;
-                  };
-                  services.lidarr = {
-                    enable = true;
-                  };
-                  services.prowlarr = {
-                    enable = true;
-                  };
-
-                  networking.firewall.extraCommands = ''
-                  sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-                  '';
-                  networking.iproute2 = {
-                    enable = true;
-                    rttablesExtraConfig = ''
-                    200     vpn
-                    '';
-                  };
-                  boot.kernel.sysctl = {
-                    "net.ipv4.conf.all.rp_filter" = 2;
-                    "net.ipv4.conf.default.rp_filter" = 2;
-                    "net.ipv4.conf.enp7s0.rp_filter" = 2;
-                  };
-                  environment.etc = {
-                    "openvpn/iptables.sh" =
-                      { source = ../../scripts/server1/iptables.sh;
-                        mode = "0755";
-                      };
-                    "openvpn/update-resolv-conf" =
-                      { source = ../../scripts/server1/update-resolv-conf;
-                        mode = "0755";
-                      };
-                    "openvpn/routing.sh" =
-                      { source = ../../scripts/server1/routing.sh;
-                        mode = "0755";
-                      };
-                    "openvpn/ca.rsa.2048.crt" =
-                      { source = ../../secrets/certs/ca.rsa.2048.crt;
-                        mode = "0644";
-                      };
-                    "openvpn/crl.rsa.2048.pem" =
-                      { source = ../../secrets/certs/crl.rsa.2048.pem;
-                        mode = "0644";
-                      };
-                  };
-
-                  sops.secrets.vpnuser = {};
-                  sops.secrets.rpcuser = {owner="vpn";};
-                  sops.secrets.vpnpass = {};
-                  sops.secrets.rpcpass = {owner="vpn";};
-                  sops.secrets.vpnprot = {};
-                  sops.secrets.vpnloc = {};
-                  # sops.secrets.crlpem = {};
-                  # sops.secrets.capem = {};
-                  sops.templates."transmission-rpc".owner = "vpn";
-                  sops.templates."transmission-rpc".content = builtins.toJSON {
-                    rpc-username = config.sops.placeholder.rpcuser;
-                    rpc-password = config.sops.placeholder.rpcpass;
-                  };
-
-                  sops.templates.pia.content = ''
-                  ${config.sops.placeholder.vpnuser}
-                  ${config.sops.placeholder.vpnpass}
-                  '';
-
-                  sops.templates.vpn.content = ''
-                    client
-                    dev tun
-                    proto ${config.sops.placeholder.vpnprot}
-                    remote ${config.sops.placeholder.vpnloc}
-                    resolv-retry infinite
-                    nobind
-                    persist-key
-                    persist-tun
-                    cipher aes-128-cbc
-                    auth sha1
-                    tls-client
-                    remote-cert-tls server
-
-                    auth-user-pass ${config.sops.templates.pia.path}
-                    compress
-                    verb 1
-                    reneg-sec 0
-
-                    crl-verify /etc/openvpn/crl.rsa.2048.pem
-                    ca /etc/openvpn/ca.rsa.2048.crt
-
-                    disable-occ
-                  '';
-
-              services.openvpn.servers = {
-                pia = {
-                  autoStart = true;
-                  updateResolvConf = false;
-                  config = "config ${config.sops.templates.vpn.path}";
-                };
-              };
-
-            services.transmission = {
-              enable = true;
-              credentialsFile = config.sops.templates."transmission-rpc".path;
-              user = "vpn";
-              settings = {
-
-              alt-speed-down= 8000;
-              alt-speed-enabled= false;
-              alt-speed-time-begin= 0;
-              alt-speed-time-day= 127;
-              alt-speed-time-enabled= true;
-              alt-speed-time-end= 360;
-              alt-speed-up= 2000;
-              bind-address-ipv4= "0.0.0.0";
-              bind-address-ipv6= "::";
-              blocklist-enabled= false;
-              blocklist-url= "http://www.example.com/blocklist";
-              cache-size-mb= 256;
-              dht-enabled= false;
-              download-dir= "/test";
-              download-limit= 100;
-              download-limit-enabled= 0;
-              download-queue-enabled= true;
-              download-queue-size= 5;
-              encryption= 2;
-              idle-seeding-limit= 30;
-              idle-seeding-limit-enabled= false;
-              incomplete-dir= "/var/lib/transmission-daemon/Downloads";
-              incomplete-dir-enabled= false;
-              lpd-enabled= false;
-              max-peers-global= 200;
-              message-level= 1;
-              peer-congestion-algorithm= "";
-              peer-id-ttl-hours= 6;
-              peer-limit-global= 100;
-              peer-limit-per-torrent= 40;
-              peer-port= 22371;
-              peer-port-random-high= 65535;
-              peer-port-random-low= 49152;
-              peer-port-random-on-start= false;
-              peer-socket-tos= "default";
-              pex-enabled= false;
-              port-forwarding-enabled= false;
-              preallocation= 1;
-              prefetch-enabled= true;
-              queue-stalled-enabled= true;
-              queue-stalled-minutes= 30;
-              ratio-limit= 2;
-              ratio-limit-enabled= false;
-              rename-partial-files= true;
-              rpc-authentication-required= true;
-              rpc-bind-address= "0.0.0.0";
-              rpc-enabled= true;
-              rpc-host-whitelist= "";
-              rpc-host-whitelist-enabled= true;
-              rpc-port= 9091;
-              rpc-url= "/transmission/";
-              rpc-whitelist= "127.0.0.1,192.168.3.2";
-              rpc-whitelist-enabled= true;
-              scrape-paused-torrents-enabled= true;
-              script-torrent-done-enabled= false;
-              seed-queue-enabled= false;
-              seed-queue-size= 10;
-              speed-limit-down= 6000;
-              speed-limit-down-enabled= true;
-              speed-limit-up= 500;
-              speed-limit-up-enabled= true;
-              start-added-torrents= true;
-              trash-original-torrent-files= false;
-              umask= 2;
-              upload-limit= 100;
-              upload-limit-enabled= 0;
-              upload-slots-per-torrent= 14;
-              utp-enabled= false;
-              };
-            };
-
-          # services.nginx = {
-          #       enable = true;
-          #       virtualHosts = {
-
-          #         "192.168.1.192" = {
-          #           locations = {
-          #             "/transmission" = {
-          #               proxyPass = "http://127.0.0.1:9091";
-          #               extraConfig = ''
-          #               proxy_set_header Host $host;
-          #               proxy_set_header X-Real-IP $remote_addr;
-          #               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          #               '';
-          #             };
-          #           };
-          #         };
-          #       };
-          # };
-
-
-      # sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-      # sops.templates."matrix_user_register.sh".content = ''
-      # register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-      # '';
-      # sops.templates.matrixshared.owner = "matrix-synapse";
-      # sops.templates.matrixshared.content = ''
-      # registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-      # '';
-      # sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-      # sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-      # sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-      # sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-      # sops.templates.mautrixtelegram.owner = "matrix-synapse";
-      # sops.templates.mautrixtelegram.content = ''
-      # MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-      # MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-      # MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-      # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-      # '';
-
-
-
-
-      # ----------------
-      # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-      # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-      # sops.templates.mautrixwhatsapp.content = ''
-      # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-      # '';
-
-      services.postgresql.enable = true;
-      services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
-        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-      '';
-
-      services.matrix-synapse = {
-        settings.app_service_config_files = [
-          "/var/lib/matrix-synapse/telegram-registration.yaml"
-          "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-          "/var/lib/matrix-synapse/signal-registration.yaml"
-          "/var/lib/matrix-synapse/doublepuppet.yaml"
-        ];
-        enable = false;
-        settings.server_name = matrixDomain;
-        settings.public_baseurl = "https://${matrixDomain}";
-        extraConfigFiles = [
-          config.sops.templates.matrixshared.path
-        ];
-        settings.listeners = [
-          { port = 8008;
-            bind_addresses = [ "0.0.0.0" ];
-            type = "http";
-            tls = false;
-            x_forwarded = true;
-            resources = [
-              {
-                names = [ "client" "federation" ];
-                compress = true;
-              }
-            ];
-          }
-        ];
-      };
-
-      services.mautrix-telegram = {
-        enable = false;
-        environmentFile = config.sops.templates.mautrixtelegram.path;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-            address= "http://localhost:29317";
-            hostname = "0.0.0.0";
-            port = "29317";
-            provisioning.enabled = true;
-            id = "telegram";
-            # ephemeral_events = true; # not needed due to double puppeting
-            public = {
-              enabled = false;
-            };
-            database = "postgresql:///mautrix-telegram?host=/run/postgresql";
-          };
-          bridge = {
-            # login_shared_secret_map = {
-              # matrixDomain = "as_token:doublepuppet";
-            # };
-            relaybot.authless_portals = true;
-            allow_avatar_remove = true;
-            allow_contact_info = true;
-            sync_channel_members = true;
-            startup_sync = true;
-            sync_create_limit = 0;
-            sync_direct_chats = true;
-            telegram_link_preview = true;
-            permissions = {
-              "*" = "relaybot";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-            # Animated stickers conversion requires additional packages in the
-            # service's path.
-            # If this isn't a fresh installation, clearing the bridge's uploaded
-            # file cache might be necessary (make a database backup first!):
-            # delete from telegram_file where \
-            #   mime_type in ('application/gzip', 'application/octet-stream')
-            animated_sticker = {
-              target = "gif";
-              args = {
-                width = 256;
-                height = 256;
-                fps = 30;               # only for webm
-                background = "020202";  # only for gif, transparency not supported
-              };
-            };
-          };
-        };
-      };
-      # systemd.services.mautrix-telegram.path = with pkgs; [
-        # lottieconverter  # for animated stickers conversion, unfree package
-        # ffmpeg           # if converting animated stickers to webm (very slow!)
-      # ];
-
-      services.mautrix-whatsapp = {
-        enable = false;
-        # environmentFile = config.sops.templates.mautrixwhatsapp.path;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-            address= "http://localhost:29318";
-            hostname = "0.0.0.0";
-            port = 29318;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-            };
-          };
-          bridge = {
-            displayname_template = "{{or .FullName .PushName .JID}} (WA)";
-            history_sync = {
-              backfill = true;
-              max_initial_conversations = -1;
-              message_count = -1;
-              request_full_sync = true;
-              full_sync_config = {
-                days_limit = 900;
-                size_mb_limit = 5000;
-                storage_quota_mb = 5000;
-              };
-            };
-            login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
-            };
-            sync_manual_marked_unread = true;
-            send_presence_on_typing = true;
-            parallel_member_sync = true;
-            url_previews = true;
-            caption_in_message = true;
-            extev_polls = true;
-            permissions = {
-              "*" = "relaybot";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-          };
-        };
-      };
-
-      services.mautrix-signal = {
-        enable = false;
-        # environmentFile = config.sops.templates.mautrixwhatsapp.path;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-
-            address= "http://localhost:29328";
-            hostname = "0.0.0.0";
-            port = 29328;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-            };
-          };
-          bridge = {
-            displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
-            login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
-            };
-            caption_in_message = true;
-            permissions = {
-              "*" = "relaybot";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-          };
-        };
-      };
-
-      # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
-      # messages out after a while.
-
-      systemd.timers."restart-bridges" = {
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnBootSec = "1d";
-          OnUnitActiveSec = "1d";
-          Unit = "restart-bridges.service";
-        };
-      };
-
-      systemd.services."restart-bridges" = {
-        script = ''
-        systemctl restart mautrix-whatsapp.service
-        systemctl restart mautrix-signal.service
-        systemctl restart mautrix-telegram.service
-        '';
-        serviceConfig = {
-          Type = "oneshot";
-          User = "root";
-        };
-      };
-
-
-      users.groups.navidrome = {
-        gid = 61593;
-      };
-
-      users.groups.mpd = {};
-
-      users.users.navidrome = {
-        isSystemUser = true;
-        uid = 61593;
-        group = "navidrome";
-        extraGroups  = [ "audio" "utmp" ];
-      };
-
-      users.users.mpd = {
-        isSystemUser = true;
-        group = "mpd";
-        extraGroups  = [ "audio" "utmp" ];
-      };
-
-      sound = {
-        enable = true;
-      };
-
-      hardware.enableAllFirmware = true;
-
-      sops.secrets.mpdpass = { owner = "mpd";};
-
-      services.navidrome = {
-        enable = true;
-        settings = {
-          Address = "0.0.0.0";
-          Port = 4040;
-          MusicFolder = "/mnt/";
-          EnableSharing = true;
-          EnableTranscodingConfig = true;
-          Scanner.GroupAlbumReleases = true;
-          ScanSchedule = "@every 24h";
-          # Insert these values locally as sops-nix does not work for them
-          # LastFM.ApiKey = TEMPLATE;
-          # LastFM.Secret = TEMPLATE;
-          # Spotify.ID = TEMPLATE;
-          # Spotify.Secret = TEMPLATE;
-          UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
-          UIWelcomeMessage = "~SwarselSound~";
-        };
-      };
-      services.mpd = {
-        enable = true;
-        musicDirectory = "/mnt/Eternor/Musik";
-        user = "mpd";
-        group = "mpd";
-        network = {
-          port = 3254;
-          listenAddress = "any";
-        };
-        credentials = [
-          {
-            passwordFile = config.sops.secrets.mpdpass.path;
-            permissions = [
-              "read"
-              "add"
-              "control"
-              "admin"
-            ];
-          }
-        ];
-      };
-
-
-      users.groups.spotifyd = {
-        gid = 65136;
-      };
-
-      users.users.spotifyd = {
-        isSystemUser = true;
-        uid = 65136;
-        group = "spotifyd";
-        extraGroups  = [ "audio" "utmp" ];
-      };
-
-      services.spotifyd = {
-        enable = true;
-        settings = {
-          global = {
-            dbus_type = "session";
-            use_mpris = false;
-            device = "default:CARD=PCH";
-            device_name = "SwarselSpot";
-            mixer = "alsa";
-            zeroconf_port = 1025;
-          };
-        };
-      };
-
-        # Network shares
-        # add a user with sudo smbpasswd -a <user>
-        services.samba = {
-          package = pkgs.samba4Full;
-          extraConfig = ''
-          workgroup = WORKGROUP
-          server role = standalone server
-          dns proxy = no
-
-          pam password change = yes
-          map to guest = bad user
-          create mask = 0664
-          force create mode = 0664
-          directory mask = 0775
-          force directory mode = 0775
-          follow symlinks = yes
-          '';
-
-          # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
-          # Required for samba to register mDNS records for auto discovery
-          # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
-          enable = true;
-          # openFirewall = true;
-          shares.test = {
-            browseable = "yes";
-            "read only" = "no";
-            "guest ok" = "no";
-            path = "/test2";
-            writable = "true";
-            comment = "Eternor";
-            "valid users" = "@smbtest2";
-          };
-        };
-
-
-        services.avahi = {
-          publish.enable = true;
-          publish.userServices = true;
-          # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
-          nssmdns = true;
-          # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
-    enable = true;
-        };
-
-        services.samba-wsdd = {
-        # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
-          enable = true;
-        };
-
-
-
-
-
-
-
-
-
-
-      }
-
-#+end_src
 ** Common NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
@@ -4470,6 +4470,9 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 #+end_src
 
 **** Make users non-mutable
+:PROPERTIES:
+:CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
+:END:
 
 This ensures that all user-configuration happens here in the config file.
 
@@ -4544,6 +4547,9 @@ Needed for control over system-wide privileges etc.
 #+end_src
 
 **** Enable automatic garbage collection
+:PROPERTIES:
+:CUSTOM_ID: h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee
+:END:
 
 The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
 
@@ -4559,6 +4565,9 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
 #+end_src
 
 **** Enable automatic store optimisation
+:PROPERTIES:
+:CUSTOM_ID: h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8
+:END:
 
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 
@@ -9442,7 +9451,10 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
 #+end_src
 
-* Yubikey support
+*** Yubikey support
+:PROPERTIES:
+:CUSTOM_ID: h:d78709dd-4f79-441c-9166-76f61f90359a
+:END:
 
 The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
 
@@ -10430,5 +10442,569 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
              )
             )))
 
+
+#+end_src
+* Wiki
+:PROPERTIES:
+:CUSTOM_ID: h:c4c37b94-0760-4bff-9917-f1b0f023f6c3
+:END:
+
+This  houses a few configuration snippets that might be useful if you are new to the nix ecosystem. It will be infrequently updated as I come across things that I deem to be interesting to such a reader. Also, interesting configuration tricks will move here if I happen to obsolete them in my main configuration.
+
+** Importing a NixOS module that is not in nixpkgs
+:PROPERTIES:
+:CUSTOM_ID: h:b917d84e-5549-4966-8817-f1d947083ab9
+:END:
+
+This requires changes in multiple locations. As an example we will use an early version of the mautrix-signal module by Niklas Korz.
+
+1) Add the module source to =flake.nix=:
+
+   #+begin_src nix
+     {
+       inputs = {
+         [...]
+           # provides expressions for mautrix-signal
+           nixpkgs-mautrix-signal ={
+           url = github:niklaskorz/nixpkgs/nixos-23.11-mautrix-signal;
+         };
+         [...]
+       };
+
+       outputs = inputs@{
+         self,
+           [...]
+             nixpkgs-mautrix-signal,
+           [...]
+       }: let
+         [...]
+           pkgsmautrix = import nixpkgs-mautrix-signal { inherit system;
+                                                         config.allowUnfree = true;
+                                                       };
+         [...]
+       in {
+         nixosConfigurations = {
+           matrix = nixpkgs.lib.nixosSystem {
+             pkgs = pkgsmautrix;
+             # this is to import a service module that is not on nixpkgs
+             # this way avoids infinite recursion errors
+             specialArgs.unstable = nixpkgs-mautrix-signal;
+             modules = [
+               [...]
+             ];
+           };
+         };
+       }
+     }
+
+   #+end_src
+
+2) Import the module in the configuration (=configuration.nix=)
+
+   #+begin_src nix
+
+     [...]
+       imports = [
+       [...]
+       (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix")
+     ];
+
+     [...]
+   #+end_src
+** Build a firefox addon
+:PROPERTIES:
+:CUSTOM_ID: h:0ea4318a-ef11-4d9a-bef4-e994c5020989
+:END:
+
+1) app id can be found in the manifest.json file of the .xpi (.xpi is just a normal archive)
+2) url can be found by copy url of the "add extension" button on the addon page
+3) the rest of the information is also found in the manifest.json, but might not be needed
+
+   In =configuration.nix=:
+
+#+begin_src nix
+  programs.firefox = {
+    [...]
+     profiles.default = {
+       [...]
+       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+         [...]
+         (buildFirefoxXpiAddon {
+           pname = ":emoji:";
+           version = "0.1.3";
+           addonId = "gonelf@gmail.com";
+           url = "https://addons.mozilla.org/firefox/downloads/file/3365324/emojidots-0.1.3.xpi";
+           sha256 = "4f7cc25c478fe52eb82f37c9ff4978dcaa3f95020398c5b184e517f6efa2c201";
+           meta = with lib;
+             {
+               description = "emoji autocomplete anywhere on the internet";
+               mozPermissions = [ "https://gist.githubusercontent.com/gonelf/d8ae3ccb7902b501c4a5dd625d4089da/raw/5eeda197ba92f8c8139e846a1225d5640077e06f/emoji_pretty.json" "tabs" "storage"];
+               platforms = platforms.all;
+             };
+         })
+   [...]
+#+end_src
+** Define shell utility as package
+:PROPERTIES:
+:CUSTOM_ID: h:ce7a2467-72e0-4a13-89c0-61e3b3dbb6e7
+:END:
+
+In =configuration.nix= (or =home.nix=):
+
+#+begin_src nix
+
+  home.packages = with pkgs; [ # or for NixOS environment.systemPackages = with pkgs; [
+    [...]
+    (pkgs.writeShellApplication {
+        name = "pass-fuzzel";
+        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+        text = ''
+         shopt -s nullglob globstar
+
+         typeit=0
+         if [[ $# -ge 1 && $1 == "--type" ]]; then
+           typeit=1
+           shift
+         fi
+
+         export PASSWORD_STORE_DIR=~/.local/share/password-store
+         prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+         password_files=( "$prefix"/**/*.gpg )
+         password_files=( "''${password_files[@]#"$prefix"/}" )
+         password_files=( "''${password_files[@]%.gpg}" )
+
+         password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+         [[ -n $password ]] || exit
+
+         if [[ $typeit -eq 0 ]]; then
+           pass show -c "$password" &>/tmp/pass-fuzzel
+         else
+           pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+         fi
+         notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+       '';
+      })
+
+    [...]
+
+#+end_src
+** Add program with prebuild binaries to nix store
+:PROPERTIES:
+:CUSTOM_ID: h:f98faf13-1e3b-4ba4-9e76-cc4b98f1c308
+:END:
+
+In =configuration.nix=:
+
+#+begin_src nix
+
+  home.packages = with pkgs; [ # or for NixOS environment.systemPackages = with pkgs; [
+    [...]
+     (stdenv.mkDerivation {
+      name = "oama";
+
+      src = pkgs.fetchurl {
+          name = "oama";
+          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+      };
+
+      phases = [
+        "unpackPhase"
+      ];
+
+      unpackPhase = ''
+      mkdir -p $out/bin
+      tar xvf $src -C $out/
+      mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+      '';
+
+  })
+
+    [...]
+  #+end_src
+** Patch a utilty for nix paths:
+:PROPERTIES:
+:CUSTOM_ID: h:fceba848-f065-40e0-ad3f-d16e48c24db5
+:END:
+See https://drakerossman.com/blog/how-to-patch-a-package-source-on-nixos
+** let-block for overriding a package in nixpkgs (here: replacing airsonic with airsonic-advanced)
+:PROPERTIES:
+:CUSTOM_ID: h:f87f511f-f2be-486d-8297-4361eee6a0d8
+:END:
+
+This can be useful if a module does not let you use your own package yourself.
+
+In =flake.nix=:
+
+#+begin_src nix
+
+  pkgs = import nixpkgs { inherit system;
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
+                                       (self: super: {
+                                         airsonic = super.airsonic.overrideAttrs (_: rec {
+                                           version = "11.0.2-kagemomiji";
+                                           name = "airsonic-advanced-${version}";
+                                           src = super.fetchurl {
+                                             url = "https://github.com/kagemomiji/airsonic-advanced/releases/download/11.0.2/airsonic.war";
+                                             sha256 = "PgErtEizHraZgoWHs5jYJJ5NsliDd9VulQfS64ackFo=";
+                                           };
+                                         });
+                                       })
+                                     ];
+                          config.allowUnfree = true;
+                        };
+
+#+end_src
+** Reference configurations
+:PROPERTIES:
+:CUSTOM_ID: h:236b7d18-d97b-4714-805f-2ca4d8b1c3c2
+:END:
+
+Configurations that I have retired or are there for the general study.
+
+*** non-nixos
+:PROPERTIES:
+:CUSTOM_ID: h:60bd347b-81c5-47b2-82f7-2e6a0c888d3e
+:END:
+My Surface Pro 3, only used for on-the-go university work. Be careful when pushing large changes to this machine, as it easily runs out of memory on large switches. At the moment the only machine running non-NixOS, so special care must be taken not to break this one during updates.
+
+***** Channel setup
+:PROPERTIES:
+:CUSTOM_ID: h:63e6e03a-8c1e-45f4-aec2-7ca351eccd35
+:END:
+
+This installs nixGL, which is needed to run GL apps installed through home-manager, since this machine is not using NixOS.
+
+This is not super clean (because it is not fully replicative), but I do not really care.
+
+1) Install nixGL:
+
+#+begin_src nix
+  nix-channel --add https://github.com/guibou/nixGL/archive/main.tar.gz nixgl && nix-channel --update
+    nix-env -iA nixgl.auto.nixGLDefault   # or replace `nixGLDefault` with your desired wrapper
+#+end_src
+
+This is needed in order to use EGL. Prefix programs that use it with `nixGL`
+
+***** Home manager
+:PROPERTIES:
+:CUSTOM_ID: h:483a26b5-5a40-4417-9ffb-67cc2cf07161
+:END:
+
+Special things to note here: We are running xcape to allow =CAPS= to act as =CTRL= and =ESC=. Also we are using =nixGL= in most places.
+
+#+begin_src nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+    programs.home-manager.enable = true;
+    home.username = "leons";
+    home.homeDirectory = "/home/leons";
+
+    home.stateVersion = "23.05"; # Please read the comment before changing.
+
+     stylix.image = ../../wallpaper/surfacewp.png;
+    <<theme>>
+
+    nixpkgs = {
+      config = {
+        allowUnfree = true;
+        allowUnfreePredicate = (_: true);
+      };
+    };
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+    #keyboard config
+    home.keyboard.layout = "us";
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config
+    programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+
+    programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
+                                                      "network"
+                                                      "custom/left-arrow-dark"
+                                                      "pulseaudio"
+                                                      "custom/left-arrow-light"
+                                                      "battery"
+                                                      "custom/left-arrow-dark"
+                                                      "temperature"
+                                                      "custom/left-arrow-light"
+                                                      "disk"
+                                                      "custom/left-arrow-dark"
+                                                      "memory"
+                                                      "custom/left-arrow-light"
+                                                      "cpu"
+                                                      "custom/left-arrow-dark"
+                                                      "tray"
+                                                      "custom/left-arrow-light"
+                                                      "clock#2"
+                                                      "custom/left-arrow-dark"
+                                                      "clock#1" ];
+    services.blueman-applet.enable = true;
+    home.packages = with pkgs; [
+      # nixgl.auto.nixGLDefault
+      evince
+      # nodejs_20
+
+      # messaging
+      # we use gomuks for RAM preservation, but keep schildi around for files and images
+    ];
+
+    programs.zsh.initExtra = "
+  export GPG_TTY=\"$(tty)\"
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+        ";
+
+    # sway config
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "*" = {
+            xkb_layout = "us";
+            xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "2160x1440@59.955Hz";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
+          "${modifier}+Ctrl+p" = "exec nixGL wl-mirror eDP-1";
+          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
+          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
+        };
+
+        startup = [
+          { command = "sleep 60 && nixGL nextcloud --background";}
+          # { command = "sleep 60 && nixGL spotify";}
+          { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+          # { command = "sleep 60 && nixGL schildichat-desktop --hidden";}
+          { command = "sleep 60 && nixGL syncthingtray --wait"; }
+          { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki";}
+          { command = "nm-applet --indicator";}
+          { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+        ];
+
+        keycodebindings = {
+          "124" = "exec systemctl suspend";
+        };
+      };
+
+      extraConfig = "
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
+      ";
+    };
+  }
+
+#+end_src
+*** nixos
+:PROPERTIES:
+:CUSTOM_ID: h:3f747cb3-bf83-4cb6-8fe4-6a4865472eeb
+:END:
+***** Onett (Lenovo Y510P)
+:PROPERTIES:
+:CUSTOM_ID: h:80753b6b-667e-4b04-a260-a3b5c73fb624
+:END:
+
+My laptop, sadly soon to be replaced by a new one, since most basic functions are stopping to work lately.
+
+****** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:6f3fe0dc-a857-440a-b4bd-c32fd9024b8b
+:END:
+
+#+begin_src nix
+
+  { config, lib, pkgs, inputs, ... }:
+
+  {
+
+    <<wrap>>
+
+    services = {
+      greetd.settings.initial_session.user ="swarsel";
+      xserver.videoDrivers = ["nvidia"];
+    };
+
+
+    hardware = {
+      nvidia = {
+        modesetting.enable = true;
+        powerManagement.enable = true;
+        prime = {
+          intelBusId = "PCI:0:2:0";
+          nvidiaBusId = "PCI:1:0:0";
+          sync.enable = true;
+        };
+      };
+      pulseaudio.configFile = pkgs.runCommand "default.pa" {} ''
+                   sed 's/module-udev-detect$/module-udev-detect tsched=0/' \
+                     ${pkgs.pulseaudio}/etc/pulse/default.pa > $out
+                   '';
+      bluetooth.enable = true;
+    };
+
+    stylix.image = ../../wallpaper/lenovowp.png;
+    <<theme>>
+
+    boot.loader.grub = {
+      enable = true;
+      device = "/dev/sda";
+      useOSProber = true;
+    };
+
+    networking.hostName = "onett"; # Define your hostname.
+    networking.enableIPv6 = false;
+
+    users.users.swarsel = {
+      isNormalUser = true;
+      description = "Leon S";
+      extraGroups = [ "networkmanager" "wheel" "lp"];
+      packages = with pkgs; [];
+    };
+
+    system.stateVersion = "23.05"; # Did you read the comment?
+
+    environment.systemPackages = with pkgs; [
+    ];
+
+
+  }
+
+#+end_src
+****** Home Manager
+:PROPERTIES:
+:CUSTOM_ID: h:7b76c914-c9b2-47b5-ba89-c501d6391110
+:END:
+
+#+begin_src nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+
+    <<gpgagent>>
+
+    home = {
+      username = "swarsel";
+      homeDirectory = "/home/swarsel";
+      stateVersion = "23.05"; # Please read the comment before changing.
+      keyboard.layout = "de";
+      packages = with pkgs; [
+      ];
+    };
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # # waybar config
+    programs.waybar.settings.mainBar = {
+      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    };
+    <<waybarlaptop>>
+
+    services.blueman-applet.enable = true;
+
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "1:1:AT_Translated_Set_2_keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "2362:33538:ipad_keyboard_Keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "altwin:swap_lalt_lwin,ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "colemak_dh";
+          };
+          "36125:53060:splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "1920,0";
+          };
+          VGA-1 = {
+            mode = "1920x1080";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
+            position = "0,0";
+          };
+        };
+
+        keybindings = let
+          modifier = config.wayland.windowManager.sway.config.modifier;
+        in {
+          "${modifier}+F2"  = "exec brightnessctl set +5%";
+          "${modifier}+F1"= "exec brightnessctl set 5%-";
+          "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
+          "XF86MonBrightnessDown"= "exec brightnessctl set 5%-";
+          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
+          "XF86HomePage" = "exec wtype -P Escape -p Escape";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
+        keycodebindings = {
+          "94" = "exec wtype c";
+          "Shift+94" = "exec wtype C";
+          "Ctrl+94" = "exec wtype -M ctrl c -m ctrl";
+          "Ctrl+Shift+94" = "exec wtype -M ctrl -M shift c -m ctrl -m shift";
+        };
+
+        startup = [
+          <<startupnixos>>
+        ];
+      };
+
+      extraConfig = "
+   ";
+    };
+  }
 
 #+end_src
