@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-18 Do 23:05 -->
+<!-- 2024-07-18 Do 23:36 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -387,7 +387,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41177 words spanning 10930 lines and was last revised on 2024-07-18 23:05:07 +0200.</b>
+<b>This file has 41177 words spanning 10930 lines and was last revised on 2024-07-18 23:36:22 +0200.</b>
 </p>
 
 <p>
@@ -437,7 +437,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-18 23:05:07 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-18 23:36:22 +0200)
 </p></li>
 </ul>
 
@@ -7548,7 +7548,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
 # also read init.el file and install use-package packages
 programs.emacs = {
   enable = true;
-  package = (pkgs.emacsWithPackagesFromUsePackage {
+  package = pkgs.emacsWithPackagesFromUsePackage {
     config = ../../programs/emacs/init.el;
     package = pkgs.emacs-pgtk;
     alwaysEnsure = true;
@@ -7587,7 +7587,7 @@ programs.emacs = {
       })
 
     ];
-  });
+  };
 };
 
 </pre>
@@ -7799,7 +7799,7 @@ programs.waybar = {
       };
     };
   };
-  style = (builtins.readFile ../../programs/waybar/style.css);
+  style = builtins.readFile ../../programs/waybar/style.css;
 };
 
 </pre>
@@ -12925,7 +12925,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-18 Do 23:05</p>
+<p class="date">Created: 2024-07-18 Do 23:36</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

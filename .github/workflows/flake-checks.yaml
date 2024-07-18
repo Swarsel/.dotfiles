@@ -1,0 +1,20 @@
+name: Flake check
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    name: Check flake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v3
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Check for dead code
+        run: git ls-files '*.nix' | nix run nixpkgs#deadnix
+      - name: Check for lints
+        run: nix run nixpkgs#statix -- check

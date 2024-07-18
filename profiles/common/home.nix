@@ -902,7 +902,7 @@ accounts.email = {
 # also read init.el file and install use-package packages
 programs.emacs = {
   enable = true;
-  package = (pkgs.emacsWithPackagesFromUsePackage {
+  package = pkgs.emacsWithPackagesFromUsePackage {
     config = ../../programs/emacs/init.el;
     package = pkgs.emacs-pgtk;
     alwaysEnsure = true;
@@ -941,7 +941,7 @@ programs.emacs = {
       })
 
     ];
-  });
+  };
 };
 
 programs.waybar = {
@@ -1132,7 +1132,7 @@ programs.waybar = {
       };
     };
   };
-  style = (builtins.readFile ../../programs/waybar/style.css);
+  style = builtins.readFile ../../programs/waybar/style.css;
 };
 
 programs.firefox = {

@@ -6288,7 +6288,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
   # also read init.el file and install use-package packages
   programs.emacs = {
     enable = true;
-    package = (pkgs.emacsWithPackagesFromUsePackage {
+    package = pkgs.emacsWithPackagesFromUsePackage {
       config = ../../programs/emacs/init.el;
       package = pkgs.emacs-pgtk;
       alwaysEnsure = true;
@@ -6327,7 +6327,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
         })
 
       ];
-    });
+    };
   };
 
 #+end_src
@@ -6533,7 +6533,7 @@ The rest of this configuration is found here:
         };
       };
     };
-    style = (builtins.readFile ../../programs/waybar/style.css);
+    style = builtins.readFile ../../programs/waybar/style.css;
   };
 
 #+end_src
