@@ -394,6 +394,7 @@ Mind the comma at the end. You need this because the =...= is being passed as th
   nix-gaming,
   nixos-hardware,
   nix-alien,
+  nswitch-rcm-nix,
 
 #+end_src
 
@@ -428,65 +429,70 @@ A short overview over each input and what it does:
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
-    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+  nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
 
-    nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
+  nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
 
-    # user-level configuration
-    home-manager = {
-      url = github:nix-community/home-manager;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+  # user-level configuration
+  home-manager = {
+    url = github:nix-community/home-manager;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-    # overlay to access bleeding edge emacs
-    emacs-overlay = {
-      url = github:nix-community/emacs-overlay;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+  # overlay to access bleeding edge emacs
+  emacs-overlay = {
+    url = github:nix-community/emacs-overlay;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-    # nix user repository
-    # i use this mainly to not have to build all firefox extensions
-    # myself as well as for the emacs-init package (tbd)
-    nur.url = github:nix-community/NUR;
+  # nix user repository
+  # i use this mainly to not have to build all firefox extensions
+  # myself as well as for the emacs-init package (tbd)
+  nur.url = github:nix-community/NUR;
 
-    # provides GL to non-NixOS hosts
-    nixgl.url = github:guibou/nixGL;
+  # provides GL to non-NixOS hosts
+  nixgl.url = github:guibou/nixGL;
 
-    # manages all theming using Home-Manager
-    stylix.url = github:danth/stylix;
+  # manages all theming using Home-Manager
+  stylix.url = github:danth/stylix;
 
-    # nix secrets management
-    sops-nix.url = github:Mic92/sops-nix;
+  # nix secrets management
+  sops-nix.url = github:Mic92/sops-nix;
 
-    # enable secure boot on NixOS
-    lanzaboote.url = github:nix-community/lanzaboote;
+  # enable secure boot on NixOS
+  lanzaboote.url = github:nix-community/lanzaboote;
 
-    # nix for android
-    nix-on-droid = {
-      url = github:t184256/nix-on-droid/release-23.05;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+  # nix for android
+  nix-on-droid = {
+    url = github:t184256/nix-on-droid/release-23.05;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-    # generate NixOS images
-    nixos-generators = {
-      url = github:nix-community/nixos-generators;
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+  # generate NixOS images
+  nixos-generators = {
+    url = github:nix-community/nixos-generators;
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-    # patches for gaming on nix
-    nix-gaming = {
-      url = github:fufexan/nix-gaming;
-    };
+  # patches for gaming on nix
+  nix-gaming = {
+    url = github:fufexan/nix-gaming;
+  };
 
-    # hardware quirks on nix
-    nixos-hardware = {
-      url = github:NixOS/nixos-hardware/master;
-    };
+  # hardware quirks on nix
+  nixos-hardware = {
+    url = github:NixOS/nixos-hardware/master;
+  };
 
-    # dynamic library loading
-    nix-alien = {
-      url = github:thiagokokada/nix-alien;
-    };
+  # dynamic library loading
+  nix-alien = {
+    url = github:thiagokokada/nix-alien;
+  };
+
+  # automatic nintendo switch payload injection
+  nswitch-rcm-nix = {
+    url = github:Swarsel/nswitch-rcm-nix;
+  };
 
 #+end_src
 *** let
@@ -529,6 +535,7 @@ Lastly I define some common module lists that I can simply load depending on the
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
                  sops-nix.nixosModules.sops
+                 nswitch-rcm-nix.nixosModules.nswitch-rcm
                  ./profiles/common/nixos.nix
                  # dynamic library loading
                  ({ self, system, ... }: {
@@ -2108,6 +2115,14 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     };
     services.power-profiles-daemon.enable = true;
     services.fprintd.enable = true;
+
+    services.nswitch-rcm = {
+      enable = true;
+      package =  (pkgs.fetchurl {
+        url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
+        hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
+      });
+    };
 
     users.users.swarsel = {
       isNormalUser = true;
@@ -5299,6 +5314,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       gamescope
       vulkan-tools
       moonlight-qt
+      ns-usbloader
 
       # firefox related
       tridactyl-native

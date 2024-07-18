@@ -63,6 +63,11 @@
       url = github:thiagokokada/nix-alien;
     };
     
+    # automatic nintendo switch payload injection
+    nswitch-rcm-nix = {
+      url = github:Swarsel/nswitch-rcm-nix;
+    };
+    
   };
 
   outputs = inputs@{
@@ -82,6 +87,7 @@
       nix-gaming,
       nixos-hardware,
       nix-alien,
+      nswitch-rcm-nix,
       
       ...
   }: let
@@ -113,6 +119,7 @@
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix
                    sops-nix.nixosModules.sops
+                   nswitch-rcm-nix.nixosModules.nswitch-rcm
                    ./profiles/common/nixos.nix
                    # dynamic library loading
                    ({ self, system, ... }: {

@@ -66,6 +66,7 @@
     gamescope
     vulkan-tools
     moonlight-qt
+    ns-usbloader
 
     # firefox related
     tridactyl-native
