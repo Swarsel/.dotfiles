@@ -1,3 +1,6 @@
+[![nixos-unstable](https://img.shields.io/badge/unstable-nixos?style=flat&logo=nixos&logoColor=cdd6f4&label=NixOS&labelColor=11111b&color=b4befe)](https://github.com/NixOS/nixpkgs)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&style=flat&labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
+
 ###### Disclaimer
 
 You probably do not want to use this setup verbatim. This is made to fit my specific use cases, some of these settings will not make sense on other hosts. Also, nothing is ever stable here and changes are made on a daily basis.
