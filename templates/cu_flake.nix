@@ -8,7 +8,6 @@
   outputs = {nixpkgs, ...}: let
     system = "x86_64-linux";
     pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
-    llvm = pkgs.llvmPackages_latest;
   in {
     devShells.${system}.default = pkgs.mkShell {
 

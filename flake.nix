@@ -3,93 +3,90 @@
 
   inputs = {
     
-    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     
-    nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
     
     # user-level configuration
     home-manager = {
-      url = github:nix-community/home-manager;
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # overlay to access bleeding edge emacs
     emacs-overlay = {
-      url = github:nix-community/emacs-overlay;
+      url = "github:nix-community/emacs-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # nix user repository
     # i use this mainly to not have to build all firefox extensions
     # myself as well as for the emacs-init package (tbd)
-    nur.url = github:nix-community/NUR;
+    nur.url = "github:nix-community/NUR";
     
     # provides GL to non-NixOS hosts
-    nixgl.url = github:guibou/nixGL;
+    nixgl.url = "github:guibou/nixGL";
     
     # manages all theming using Home-Manager
-    stylix.url = github:danth/stylix;
+    stylix.url = "github:danth/stylix";
     
     # nix secrets management
-    sops-nix.url = github:Mic92/sops-nix;
+    sops-nix.url = "github:Mic92/sops-nix";
     
     # enable secure boot on NixOS
-    lanzaboote.url = github:nix-community/lanzaboote;
+    lanzaboote.url = "github:nix-community/lanzaboote";
     
     # nix for android
     nix-on-droid = {
-      url = github:t184256/nix-on-droid/release-23.05;
+      url = "github:t184256/nix-on-droid/release-23.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # generate NixOS images
     nixos-generators = {
-      url = github:nix-community/nixos-generators;
+      url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     
     # patches for gaming on nix
     nix-gaming = {
-      url = github:fufexan/nix-gaming;
+      url = "github:fufexan/nix-gaming";
     };
     
     # hardware quirks on nix
     nixos-hardware = {
-      url = github:NixOS/nixos-hardware/master;
+      url = "github:NixOS/nixos-hardware/master";
     };
     
     # dynamic library loading
     nix-alien = {
-      url = github:thiagokokada/nix-alien;
+      url = "github:thiagokokada/nix-alien";
     };
     
     # automatic nintendo switch payload injection
     nswitch-rcm-nix = {
-      url = github:Swarsel/nswitch-rcm-nix;
+      url = "github:Swarsel/nswitch-rcm-nix";
     };
     
   };
 
   outputs = inputs@{
-    self,
-      
-      nixpkgs,
-      nixpkgs-stable,
-      home-manager,
-      nix-on-droid,
-      nixos-generators,
-      emacs-overlay,
-      nur,
-      nixgl,
-      stylix,
-      sops-nix,
-      lanzaboote,
-      nix-gaming,
-      nixos-hardware,
-      nix-alien,
-      nswitch-rcm-nix,
-      
-      ...
+    
+    nixpkgs,
+    nixpkgs-stable,
+    home-manager,
+    nix-on-droid,
+    emacs-overlay,
+    nur,
+    nixgl,
+    stylix,
+    sops-nix,
+    lanzaboote,
+    nixos-hardware,
+    nix-alien,
+    nswitch-rcm-nix,
+    
+    ...
   }: let
     
     system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
@@ -105,16 +102,6 @@
                                        ];
                             config.allowUnfree = true;
                           };
-    
-    # for ovm arm hosts
-    armpkgs = import nixpkgs { system = "aarch64-linux";
-                            overlays = [ emacs-overlay.overlay
-                                         nur.overlay
-                                         nixgl.overlay
-                                       ];
-                            config.allowUnfree = true;
-                          };
-    
     
     # NixOS modules that can only be used on NixOS systems
     nixModules = [ stylix.nixosModules.stylix

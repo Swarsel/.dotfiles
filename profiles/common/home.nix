@@ -155,15 +155,15 @@
     noto-fonts-cjk-sans
 
 # cura
-    (let cura5 = appimageTools.wrapType2 rec {
-           name = "cura5";
-           version = "5.4.0";
-           src = fetchurl {
-             url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-             hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-           };
-           extraPkgs = pkgs: with pkgs; [ ];
-         }; in writeScriptBin "cura" ''
+(let cura5 = appimageTools.wrapType2 rec {
+       name = "cura5";
+       version = "5.4.0";
+       src = fetchurl {
+         url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+         hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+       };
+       extraPkgs = pkgs: with pkgs; [ ];
+     }; in writeScriptBin "cura" ''
           #! ${pkgs.bash}/bin/bash
           # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
           # So we convert each of the files passed as argument to an absolute path.
@@ -178,15 +178,15 @@
           exec "${cura5}/bin/cura5" "''${args[@]}"
           '')
 
-    #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-    (pkgs.writeShellScriptBin "e" ''
+  #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
+  (pkgs.writeShellScriptBin "e" ''
        bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
        '')
-    (pkgs.writeShellScriptBin "timer" ''
+  (pkgs.writeShellScriptBin "timer" ''
        sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
        '')
 
-    (pkgs.writeScriptBin "project" ''
+  (pkgs.writeScriptBin "project" ''
  #! ${pkgs.bash}/bin/bash
  if [ "$1" == "rust" ]; then
  cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
@@ -214,10 +214,10 @@
  direnv allow
  '')
 
-    (pkgs.writeShellApplication {
-      name = "pass-fuzzel";
-      runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-      text = ''
+  (pkgs.writeShellApplication {
+    name = "pass-fuzzel";
+    runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+    text = ''
        shopt -s nullglob globstar
 
        typeit=0
@@ -243,12 +243,12 @@
        fi
        notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
      '';
-    })
+  })
 
-    (pkgs.writeShellApplication {
-      name = "pass-fuzzel-otp";
-      runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
-      text = ''
+  (pkgs.writeShellApplication {
+    name = "pass-fuzzel-otp";
+    runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
+    text = ''
        shopt -s nullglob globstar
 
        typeit=0
@@ -274,42 +274,44 @@
        fi
        notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
      '';
-    })
+  })
 
-    (pkgs.writeShellApplication {
-      name = "cdw";
-      runtimeInputs = [ pkgs.fzf ];
-      text = ''
+  (pkgs.writeShellApplication {
+    name = "cdw";
+    runtimeInputs = [ pkgs.fzf ];
+    text = ''
     cd "$(git worktree list | fzf | awk '{print $1}')"
     '';
-    })
+  })
 
-    (pkgs.writeShellApplication {
-      name = "cdb";
-      runtimeInputs = [ pkgs.fzf ];
-      text = ''
+  (pkgs.writeShellApplication {
+    name = "cdb";
+    runtimeInputs = [ pkgs.fzf ];
+    text = ''
     git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
     '';
-    })
+  })
 
-    (pkgs.writeShellApplication {
-      name = "bak";
-      text = ''
+  (pkgs.writeShellApplication {
+    name = "bak";
+    text = ''
       cp "$1"{,.bak}
     '';
-    })
+  })
 
 ];
 
-sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-sops.validateSopsFiles = false;
-
-# since we are using the home-manager implementation, we need to specify the runtime path for each secret
-sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
-sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
-sops.secrets.swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
-sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+sops = {
+  defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+  validateSopsFiles = false;
+  secrets = {
+    mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
+    nautilus = {path = "/run/user/1000/secrets/nautilus";};
+    leon = {path = "/run/user/1000/secrets/leon";};
+    swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
+    caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+  };
+};
 
 programs.ssh= {
   enable = true;
@@ -512,28 +514,29 @@ home.file = {
 xdg.configFile = {
   "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
   "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
-  };
+};
 
 home.sessionVariables = {
   EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
 };
 
-# zsh Integration is enabled by default for these
-programs.bottom.enable = true;
-programs.imv.enable = true;
-programs.sioyek.enable = true;
-programs.bat.enable = true;
-programs.carapace.enable = true;
-programs.wlogout.enable = true;
-programs.swayr.enable = true;
-programs.yt-dlp.enable = true;
-programs.mpv.enable = true;
-programs.jq.enable = true;
-programs.nix-index.enable = true;
-programs.ripgrep.enable = true;
-programs.pandoc.enable = true;
-programs.fzf.enable = true;
-programs.zoxide.enable = true;
+programs = {
+  bottom.enable = true;
+  imv.enable = true;
+  sioyek.enable = true;
+  bat.enable = true;
+  carapace.enable = true;
+  wlogout.enable = true;
+  swayr.enable = true;
+  yt-dlp.enable = true;
+  mpv.enable = true;
+  jq.enable = true;
+  nix-index.enable = true;
+  ripgrep.enable = true;
+  pandoc.enable = true;
+  fzf.enable = true;
+  zoxide.enable = true;
+};
 
 programs.password-store = {
   enable = true;
@@ -543,7 +546,7 @@ programs.password-store = {
 programs.direnv = {
   enable = true;
   nix-direnv.enable = true;
-  };
+};
 
 programs.eza = {
   enable = true;
@@ -836,7 +839,7 @@ accounts.email = {
     };
     mbsync = {
       enable = false;
-      };
+    };
   };
 
   accounts.nautilus = {
@@ -913,7 +916,7 @@ programs.emacs = {
       # build the rest of the packages myself
       # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
       # build the package from the haji-ali fork, which is well-maintained
-       (epkgs.trivialBuild rec {
+      (epkgs.trivialBuild rec {
         pname = "calfw";
         version = "1.0.0-20231002";
         src = pkgs.fetchFromGitHub {
@@ -925,7 +928,7 @@ programs.emacs = {
         packageRequires = [ epkgs.howm ];
       })
 
-       (epkgs.trivialBuild rec {
+      (epkgs.trivialBuild rec {
         pname = "fast-scroll";
         version = "1.0.0-20191016";
         src = pkgs.fetchFromGitHub {
@@ -1142,19 +1145,19 @@ programs.firefox = {
     ];
   };
   policies = {
-      CaptivePortal = false;
-      DisableFirefoxStudies = true;
-      DisablePocket = true;
-      DisableTelemetry = true;
-      DisableFirefoxAccounts = false;
-      NoDefaultBookmarks = true;
-      OfferToSaveLogins = false;
-      OfferToSaveLoginsDefault = false;
-      EnableTrackingProtection = true;
-      };
+    CaptivePortal = false;
+    DisableFirefoxStudies = true;
+    DisablePocket = true;
+    DisableTelemetry = true;
+    DisableFirefoxAccounts = false;
+    NoDefaultBookmarks = true;
+    OfferToSaveLogins = false;
+    OfferToSaveLoginsDefault = false;
+    EnableTrackingProtection = true;
+  };
   profiles.default = {
     isDefault = true;
-    userChrome = (builtins.readFile ../../programs/firefox/chrome/userChrome.css);
+    userChrome = builtins.readFile ../../programs/firefox/chrome/userChrome.css;
     extensions = with pkgs.nur.repos.rycee.firefox-addons; [
       tridactyl
       browserpass
@@ -1172,42 +1175,10 @@ programs.firefox = {
       widegithub
       enhanced-github
       unpaywall
-      # fastforwardteam
       don-t-fuck-with-paste
       plasma-integration
-
-  #     (let version = "3.4.5.0";
-  #                             in buildFirefoxXpiAddon {
-  # pname = "bypass-paywalls-clean";
-  # inherit version;
-  # addonId = "magnolia@12.34";
-  # url =
-  #   "https://gitlab.com/magnolia1234/bpc-uploads/-/raw/master/bypass_paywalls_clean-3.4.5.0.xpi";
-  # sha256 = "703d30c15b88291bd0305cc59013693aea5f75a40ea98fb8e252d1c7bfb43514";
-  # meta = with lib; {
-  #   homepage =
-  #     "https://gitlab.com/magnolia1234/bypass-paywalls-firefox-clean";
-  #   description = "Bypass Paywalls of (custom) news sites";
-  #   license = licenses.mit;
-  #   platforms = platforms.all;
-  # };
-  # })
-
-      (buildFirefoxXpiAddon {
-        pname = ":emoji:";
-        version = "0.1.3";
-        addonId = "gonelf@gmail.com";
-        url = "https://addons.mozilla.org/firefox/downloads/file/3365324/emojidots-0.1.3.xpi";
-        sha256 = "4f7cc25c478fe52eb82f37c9ff4978dcaa3f95020398c5b184e517f6efa2c201";
-        meta = with lib;
-          {
-            description = "emoji autocomplete anywhere on the internet";
-            mozPermissions = [ "https://gist.githubusercontent.com/gonelf/d8ae3ccb7902b501c4a5dd625d4089da/raw/5eeda197ba92f8c8139e846a1225d5640077e06f/emoji_pretty.json" "tabs" "storage"];
-            platforms = platforms.all;
-          };
-      })
-
     ];
+
     search.engines = {
       "Nix Packages" = {
         urls = [{
@@ -1317,9 +1288,10 @@ wayland.windowManager.sway = {
   enable = true;
   checkConfig = false; # delete this line once SwayFX is fixed upstream
   package = pkgs.swayfx;
-  # package = pkgs.sway;
-  systemd.enable = true;
-  systemd.xdgAutostart = true;
+  systemd = {
+    enable = true;
+    xdgAutostart = true;
+  };
   wrapperFeatures.gtk = true;
   config = rec {
     modifier = "Mod4";
@@ -1327,7 +1299,7 @@ wayland.windowManager.sway = {
     menu = "fuzzel";
     bars = [{ command = "waybar";}];
     keybindings = let
-      modifier = config.wayland.windowManager.sway.config.modifier;
+      inherit (config.wayland.windowManager.sway.config) modifier;
     in {
       "${modifier}+q" = "kill";
       "${modifier}+f" = "exec firefox";
@@ -1490,7 +1462,7 @@ wayland.windowManager.sway = {
         #   criteria = {
         #     app_id="^$";
         #     class="^$";
-          # };
+        # };
         # }
         {
 
@@ -1539,7 +1511,7 @@ wayland.windowManager.sway = {
   # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
   # ";
   extraConfig =let
-    modifier = config.wayland.windowManager.sway.config.modifier;
+    inherit (config.wayland.windowManager.sway.config) modifier;
     swayfxSettings = "
         blur enable
         blur_xray disable
@@ -1550,7 +1522,6 @@ wayland.windowManager.sway = {
         titlebar_separator disable
         default_dim_inactive 0.02
     ";
-    swayfxSettingsOff = "";
   in "
       exec_always autotiling
       set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"

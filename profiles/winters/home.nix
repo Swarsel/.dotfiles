@@ -1,4 +1,4 @@
-{ config, pkgs, lib, fetchFromGitHub, ... }:
+{ config, pkgs, ... }:
 
 {
 
@@ -97,11 +97,11 @@
       ];
 
 
-      keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
-      in {
+      # keybindings = let
+      # inherit (config.wayland.windowManager.sway.config) modifier;
+      # in {
 
-      };
+      # };
 
       startup = [
         

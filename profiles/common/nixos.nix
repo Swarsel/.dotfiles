@@ -1,31 +1,35 @@
-{ config, lib, pkgs, inputs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
-
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+  };
 
 services.xserver = {
-  xkb.layout = "us";
-  xkb.variant = "altgr-intl";
+  xkb = {
+    layout = "us";
+    variant = "altgr-intl";
+  };
 };
 
 nix.settings.experimental-features = ["nix-command" "flakes"];
 
 users.mutableUsers = false;
 
-# use ozone for wayland - chromium apps
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
-
-  # wordlist for look
-  environment.wordlist.enable = true;
-  # gstreamer plugins for nautilus (used for file metadata)
-  environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
-    gst-plugins-good
-    gst-plugins-bad
-    gst-plugins-ugly
-    gst-libav
-  ]);
+environment = {
+  wordlist.enable = true;
+  sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+      gst-plugins-good
+      gst-plugins-bad
+      gst-plugins-ugly
+      gst-libav
+    ]);
+  };
+};
+# gstreamer plugins for nautilus (used for file metadata)
 
 time.hardwareClockInLocalTime = true;
 
@@ -47,27 +51,31 @@ nix.optimise = {
 };
 
 # systemd
-  systemd.extraConfig = ''
+systemd.extraConfig = ''
   DefaultTimeoutStartSec=60s
   DefaultTimeoutStopSec=15s
 '';
 
-hardware.graphics = {
-  enable = true;
-  enable32Bit = true;
-};
+hardware = {
+  graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
 
-hardware.pulseaudio= {
-  enable = true;
-  package = pkgs.pulseaudioFull;
-};
+  pulseaudio= {
+    enable = true;
+    package = pkgs.pulseaudioFull;
+  };
 
-hardware.enableAllFirmware = true;
+  enableAllFirmware = true;
 
-hardware.bluetooth.powerOnBoot = true;
-hardware.bluetooth.settings = {
-  General = {
-    Enable = "Source,Sink,Media,Socket";
+  bluetooth = {
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Enable = "Source,Sink,Media,Socket";
+      };
+    };
   };
 };
 
@@ -278,17 +286,19 @@ systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.servic
 
 time.timeZone = "Europe/Vienna";
 
-i18n.defaultLocale = "en_US.UTF-8";
-i18n.extraLocaleSettings = {
-  LC_ADDRESS = "de_AT.UTF-8";
-  LC_IDENTIFICATION = "de_AT.UTF-8";
-  LC_MEASUREMENT = "de_AT.UTF-8";
-  LC_MONETARY = "de_AT.UTF-8";
-  LC_NAME = "de_AT.UTF-8";
-  LC_NUMERIC = "de_AT.UTF-8";
-  LC_PAPER = "de_AT.UTF-8";
-  LC_TELEPHONE = "de_AT.UTF-8";
-  LC_TIME = "de_AT.UTF-8";
+i18n = {
+  defaultLocale = "en_US.UTF-8";
+  extraLocaleSettings = {
+    LC_ADDRESS = "de_AT.UTF-8";
+    LC_IDENTIFICATION = "de_AT.UTF-8";
+    LC_MEASUREMENT = "de_AT.UTF-8";
+    LC_MONETARY = "de_AT.UTF-8";
+    LC_NAME = "de_AT.UTF-8";
+    LC_NUMERIC = "de_AT.UTF-8";
+    LC_PAPER = "de_AT.UTF-8";
+    LC_TELEPHONE = "de_AT.UTF-8";
+    LC_TIME = "de_AT.UTF-8";
+  };
 };
 
 sops = {
@@ -400,17 +410,16 @@ environment.systemPackages = with pkgs; [
 
 ];
 
-programs.dconf.enable = true;
-programs.evince.enable = true;
-programs.kdeconnect.enable = true;
+programs = {
+  dconf.enable = true;
+  evince.enable = true;
+  kdeconnect.enable = true;
+};
 
-
-# zsh section, do not delete ------
 programs.zsh.enable = true;
 users.defaultUserShell = pkgs.zsh;
 environment.shells = with pkgs; [ zsh ];
 environment.pathsToLink = [ "/share/zsh" ];
-# ---------------------------------
 
 services.blueman.enable = true;
 
@@ -421,24 +430,26 @@ hardware.sane = {
 };
 
 # enable discovery and usage of network devices (esp. printers)
-  services.printing.enable = true;
-  services.printing.drivers = [
+services.printing = {
+  enable = true;
+  drivers = [
     pkgs.gutenprint
     pkgs.gutenprintBin
   ];
-  services.printing.browsedConf = ''
+  browsedConf = ''
 BrowseDNSSDSubTypes _cups,_print
 BrowseLocalProtocols all
 BrowseRemoteProtocols all
 CreateIPPPrinterQueues All
-
 BrowseProtocols all
     '';
-  services.avahi = {
-    enable = true;
-    nssmdns4 = true;
-    openFirewall = true;
-  };
+};
+
+services.avahi = {
+  enable = true;
+  nssmdns4 = true;
+  openFirewall = true;
+};
 
 services.gvfs.enable = true;
 
@@ -472,10 +483,6 @@ programs.ssh.startAgent = false;
 services.pcscd.enable = true;
 
 hardware.ledger.enable = true;
-
-# environment.systemPackages = with pkgs; [
-# --- IN SYSTEM PACKAGES SECTION ---
-# ];
 
 services.udev.packages = with pkgs; [
   yubikey-personalization

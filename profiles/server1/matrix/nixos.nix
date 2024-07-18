@@ -1,25 +1,35 @@
-{ config, pkgs, modulesPath, unstable, sops, ... }: let
+{ config, pkgs, modulesPath, sops, ... }: let
   matrixDomain = "matrix2.swarsel.win";
 in {
   
   
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
+  services = {
+    xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+    openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
+    };
   };
+  
   nix.settings.experimental-features = ["nix-command" "flakes"];
-  proxmoxLXC.manageNetwork = true; # manage network myself
-  proxmoxLXC.manageHostName = false; # manage hostname myself
-  networking.useDHCP = true;
-  networking.enableIPv6 = false;
-  services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "yes";
-    listenAddresses = [{
-      port = 22;
-      addr = "0.0.0.0";
-    }];
+  
+  proxmoxLXC = {
+    manageNetwork = true; # manage network myself
+    manageHostName = false; # manage hostname myself
   };
+  
+  networking = {
+    useDHCP = true;
+    enableIPv6 = false;
+  };
+  
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
   ];
@@ -38,8 +48,10 @@ in {
     # this module is hence not in the modules list, we add it ourselves
   ];
 
-  networking.hostName = "matrix"; # Define your hostname.
-  networking.firewall.enable = false;
+  networking = {
+    hostName = "matrix"; # Define your hostname.
+    firewall.enable = false;
+  };
   environment.systemPackages = with pkgs; [
     git
     gnupg
@@ -49,84 +61,93 @@ in {
     ffmpeg
   ];
 
-  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
-  sops.validateSopsFiles = false;
-  sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-  sops.templates."matrix_user_register.sh".content = ''
-  register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-  '';
-  sops.templates.matrixshared.owner = "matrix-synapse";
-  sops.templates.matrixshared.content = ''
-  registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-  '';
-  sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-  sops.templates.mautrixtelegram.owner = "matrix-synapse";
-  sops.templates.mautrixtelegram.content = ''
-  MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-  MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-  MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-  MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-  '';
-  # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-  # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-  # sops.templates.mautrixwhatsapp.content = ''
-  # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-  # '';
+  sops = {
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
+    validateSopsFiles = false;
+    secrets = {
+      matrixsharedsecret = {owner="matrix-synapse";};
+      mautrixtelegram_as = {owner="matrix-synapse";};
+      mautrixtelegram_hs = {owner="matrix-synapse";};
+      mautrixtelegram_api_id = {owner="matrix-synapse";};
+      mautrixtelegram_api_hash = {owner="matrix-synapse";};
+    };
+    templates = {
+      "matrix_user_register.sh".content = ''
+          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+          '';
+      matrixshared = {
+        owner = "matrix-synapse";
+        content = ''
+          registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+          '';
+      };
+      mautrixtelegram = {
+        owner = "matrix-synapse";
+        content = ''
+          MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+          MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+          MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+          MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+          '';
+      };
+    };
+  };
 
-  services.postgresql.enable = true;
-  services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
-    CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-    CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-    CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-    CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-    CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-  '';
+  services.postgresql = {
+    enable = true;
+    initialScript = pkgs.writeText "synapse-init.sql" ''
+            CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+            CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+            CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+            CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+            CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+          '';
+  };
 
   services.matrix-synapse = {
-    settings.app_service_config_files = [
-      "/var/lib/matrix-synapse/telegram-registration.yaml"
-      "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-      "/var/lib/matrix-synapse/signal-registration.yaml"
-      "/var/lib/matrix-synapse/doublepuppet.yaml"
-    ];
     enable = true;
-    settings.server_name = matrixDomain;
-    settings.public_baseurl = "https://${matrixDomain}";
+    settings = {
+      app_service_config_files = [
+        "/var/lib/matrix-synapse/telegram-registration.yaml"
+        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+        "/var/lib/matrix-synapse/signal-registration.yaml"
+        "/var/lib/matrix-synapse/doublepuppet.yaml"
+      ];
+      server_name = matrixDomain;
+      public_baseurl = "https://${matrixDomain}";
+      listeners = [
+        { port = 8008;
+          bind_addresses = [ "0.0.0.0" ];
+          type = "http";
+          tls = false;
+          x_forwarded = true;
+          resources = [
+            {
+              names = [ "client" "federation" ];
+              compress = true;
+            }
+          ];
+        }
+      ];
+    };
     extraConfigFiles = [
       config.sops.templates.matrixshared.path
-    ];
-    settings.listeners = [
-      { port = 8008;
-        bind_addresses = [ "0.0.0.0" ];
-        type = "http";
-        tls = false;
-        x_forwarded = true;
-        resources = [
-          {
-            names = [ "client" "federation" ];
-            compress = true;
-          }
-        ];
-      }
     ];
   };
 
@@ -151,9 +172,6 @@ in {
         database = "postgresql:///mautrix-telegram?host=/run/postgresql";
       };
       bridge = {
-        # login_shared_secret_map = {
-          # matrixDomain = "as_token:doublepuppet";
-        # };
         relaybot.authless_portals = true;
         allow_avatar_remove = true;
         allow_contact_info = true;
@@ -166,12 +184,6 @@ in {
           "*" = "relaybot";
           "@swarsel:${matrixDomain}" = "admin";
         };
-        # Animated stickers conversion requires additional packages in the
-        # service's path.
-        # If this isn't a fresh installation, clearing the bridge's uploaded
-        # file cache might be necessary (make a database backup first!):
-        # delete from telegram_file where \
-        #   mime_type in ('application/gzip', 'application/octet-stream')
         animated_sticker = {
           target = "gif";
           args = {
@@ -191,7 +203,6 @@ in {
 
   services.mautrix-whatsapp = {
     enable = true;
-    # environmentFile = config.sops.templates.mautrixwhatsapp.path;
     settings = {
       homeserver = {
         address = "http://localhost:8008";
@@ -238,7 +249,6 @@ in {
 
   services.mautrix-signal = {
     enable = true;
-    # environmentFile = config.sops.templates.mautrixwhatsapp.path;
     settings = {
       homeserver = {
         address = "http://localhost:8008";
@@ -282,10 +292,10 @@ in {
 
   systemd.services."restart-bridges" = {
     script = ''
-    systemctl restart mautrix-whatsapp.service
-    systemctl restart mautrix-signal.service
-    systemctl restart mautrix-telegram.service
-    '';
+            systemctl restart mautrix-whatsapp.service
+            systemctl restart mautrix-signal.service
+            systemctl restart mautrix-telegram.service
+            '';
     serviceConfig = {
       Type = "oneshot";
       User = "root";

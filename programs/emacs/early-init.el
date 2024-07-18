@@ -38,23 +38,23 @@
               right-margin-width 1)
 
 (setq-default default-frame-alist
-      (append
-       (list
-        '(undecorated . t) ; no title bar, borders etc.
-        '(background-color . "#1D252C") ; load doom-citylight colors to avoid white flash
-        '(foreground-color . "#A0B3C5") ; load doom-citylight colors to avoid white flash
-        '(vertical-scroll-bars . nil)
-        '(horizontal-scroll-bars . nil)
-        '(internal-border-width . 5)
-        '(tool-bar-lines . 0)
-        '(menu-bar-lines . 0))))
+              (append
+               (list
+                '(undecorated . t) ; no title bar, borders etc.
+                '(background-color . "#1D252C") ; load doom-citylight colors to avoid white flash
+                '(foreground-color . "#A0B3C5") ; load doom-citylight colors to avoid white flash
+                '(vertical-scroll-bars . nil)
+                '(horizontal-scroll-bars . nil)
+                '(internal-border-width . 5)
+                '(tool-bar-lines . 0)
+                '(menu-bar-lines . 0))))
 
 (add-hook
-    'after-make-frame-functions
-    (lambda (frame)
-      (with-selected-frame frame
-        (when (display-graphic-p)
-          (define-key input-decode-map (kbd "C-i") [DUMMY-i])
-          (define-key input-decode-map (kbd "C-[") [DUMMY-lsb])
-          (define-key input-decode-map (kbd "C-m") [DUMMY-m])
-          ))))
+ 'after-make-frame-functions
+ (lambda (frame)
+   (with-selected-frame frame
+     (when (display-graphic-p)
+       (define-key input-decode-map (kbd "C-i") [DUMMY-i])
+       (define-key input-decode-map (kbd "C-[") [DUMMY-lsb])
+       (define-key input-decode-map (kbd "C-m") [DUMMY-m])
+       ))))

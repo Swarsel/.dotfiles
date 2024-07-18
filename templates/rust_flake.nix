@@ -5,7 +5,7 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = {self, nixpkgs, rust-overlay, ...}: let
+  outputs = { nixpkgs, rust-overlay, ...}: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;

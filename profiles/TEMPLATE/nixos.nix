@@ -1,4 +1,4 @@
-{ config, lib, pkgs, inputs, ... }:
+{ pkgs, ... }:
 
 {
 
@@ -67,7 +67,7 @@
       };
   
       monospace = {
-        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode"]; };
         name = "FiraCode Nerd Font Mono";
       };
   

@@ -9,23 +9,33 @@
   
   
   
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
+  services = {
+    xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+    openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
+    };
   };
+  
   nix.settings.experimental-features = ["nix-command" "flakes"];
-  proxmoxLXC.manageNetwork = true; # manage network myself
-  proxmoxLXC.manageHostName = false; # manage hostname myself
-  networking.useDHCP = true;
-  networking.enableIPv6 = false;
-  services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "yes";
-    listenAddresses = [{
-      port = 22;
-      addr = "0.0.0.0";
-    }];
+  
+  proxmoxLXC = {
+    manageNetwork = true; # manage network myself
+    manageHostName = false; # manage hostname myself
   };
+  
+  networking = {
+    useDHCP = true;
+    enableIPv6 = false;
+  };
+  
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
   ];
@@ -40,32 +50,38 @@
 
   proxmoxLXC.privileged = true; # manage hostname myself
 
-  users.groups.lxc_pshares = {
-    gid = 110000;
-    members = [
-      "navidrome"
-      "mpd"
-      "root"
-    ];
-  };
+  users = {
+    groups = {
+      lxc_pshares = {
+        gid = 110000;
+        members = [
+          "navidrome"
+          "mpd"
+          "root"
+        ];
+      };
 
-  users.groups.navidrome = {
-    gid = 61593;
-  };
+      navidrome = {
+        gid = 61593;
+      };
 
-  users.groups.mpd = {};
+      mpd = {};
+    };
 
-  users.users.navidrome = {
-    isSystemUser = true;
-    uid = 61593;
-    group = "navidrome";
-    extraGroups  = [ "audio" "utmp" ];
-  };
+    users = {
+      navidrome = {
+        isSystemUser = true;
+        uid = 61593;
+        group = "navidrome";
+        extraGroups  = [ "audio" "utmp" ];
+      };
 
-  users.users.mpd = {
-    isSystemUser = true;
-    group = "mpd";
-    extraGroups  = [ "audio" "utmp" ];
+      mpd = {
+        isSystemUser = true;
+        group = "mpd";
+        extraGroups  = [ "audio" "utmp" ];
+      };
+    };
   };
 
   sound = {
@@ -73,8 +89,10 @@
   };
 
   hardware.enableAllFirmware = true;
-  networking.hostName = "sound"; # Define your hostname.
-  networking.firewall.enable = false;
+  networking = {
+    hostName = "sound"; # Define your hostname.
+    firewall.enable = false;
+  };
   environment.systemPackages = with pkgs; [
     git
     gnupg
@@ -84,10 +102,12 @@
     mpv
   ];
 
-  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
-  sops.validateSopsFiles = false;
-  sops.secrets.mpdpass = { owner = "mpd";};
+  sops = {
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
+    validateSopsFiles = false;
+    secrets.mpdpass = { owner = "mpd";};
+  };
 
   services.navidrome = {
     enable = true;

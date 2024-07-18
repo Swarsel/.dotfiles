@@ -151,7 +151,7 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
       };
 
       monospace = {
-        package = (pkgs.nerdfonts.override { fonts = [ "FiraCode"]; });
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode"]; };
         name = "FiraCode Nerd Font Mono";
       };
 
@@ -316,16 +316,12 @@ This sections is for common NixoS settings that I use for my NixoS LXC images th
 #+begin_src nix :tangle no :noweb-ref vminitbare
 
 
-    services.xserver = {
+  services = {
+    xserver = {
       layout = "us";
       xkbVariant = "altgr-intl";
     };
-    nix.settings.experimental-features = ["nix-command" "flakes"];
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    services.openssh = {
+    openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
       listenAddresses = [{
@@ -333,15 +329,29 @@ This sections is for common NixoS settings that I use for my NixoS LXC images th
         addr = "0.0.0.0";
       }];
     };
-    users.users.root.openssh.authorizedKeys.keyFiles = [
-      ../../../secrets/keys/authorized_keys
-    ];
+  };
 
-    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    environment.shellAliases = {
-      nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
+  proxmoxLXC = {
+    manageNetwork = true; # manage network myself
+    manageHostName = false; # manage hostname myself
+  };
+
+  networking = {
+    useDHCP = true;
+    enableIPv6 = false;
+  };
+
+  users.users.root.openssh.authorizedKeys.keyFiles = [
+    ../../../secrets/keys/authorized_keys
+  ];
+
+  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+  environment.shellAliases = {
+    nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+  };
 
 #+end_src
 
@@ -384,14 +394,12 @@ Mind the comma at the end. You need this because the =...= is being passed as th
   nixpkgs-stable,
   home-manager,
   nix-on-droid,
-  nixos-generators,
   emacs-overlay,
   nur,
   nixgl,
   stylix,
   sops-nix,
   lanzaboote,
-  nix-gaming,
   nixos-hardware,
   nix-alien,
   nswitch-rcm-nix,
@@ -417,81 +425,78 @@ A short overview over each input and what it does:
   Provides secure boot for NixOS. Needed for my Surface Pro 3.
 - [[https://github.com/nix-community/nix-on-droid][nix-on-droid]]
   This brings nix to android in an app that is similar to tmux! Of course most of the configuration does not apply to this, but it is still neat to have!
-- [[https://github.com/nix-community/nixos-generators][nixos-generators]]
-  Provides me with images that I can use to create LXCs on Proxmox.
-- [[https://github.com/fufexan/nix-gaming][nix-gaming]]
-  Provides some gaming related tweaks for NixOS
 - [[https://github.com/NixOS/nixos-hardware][nixos-hardware]]
   Provides specific hardware setting for some hardware configurations. For example, this sets some better defaults for my Lenovo Thinkpad P14s Gen2.
 - [[https://github.com/thiagokokada/nix-alien][nix-alien]]
   This is supposed to allow me to run unpatched libraries directly without a need for ELF patching or resorting to =steam-run=. However, I have not yet gotten this to work.
-
+- nswitch-rcm-nix
+  Allows auto injection of payloads upon connecting a Nintendo Switch.
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
-  nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+  nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-  nixpkgs-stable.url = github:NixOS/nixpkgs/nixos-24.05;
+  nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
 
   # user-level configuration
   home-manager = {
-    url = github:nix-community/home-manager;
+    url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # overlay to access bleeding edge emacs
   emacs-overlay = {
-    url = github:nix-community/emacs-overlay;
+    url = "github:nix-community/emacs-overlay";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # nix user repository
   # i use this mainly to not have to build all firefox extensions
   # myself as well as for the emacs-init package (tbd)
-  nur.url = github:nix-community/NUR;
+  nur.url = "github:nix-community/NUR";
 
   # provides GL to non-NixOS hosts
-  nixgl.url = github:guibou/nixGL;
+  nixgl.url = "github:guibou/nixGL";
 
   # manages all theming using Home-Manager
-  stylix.url = github:danth/stylix;
+  stylix.url = "github:danth/stylix";
 
   # nix secrets management
-  sops-nix.url = github:Mic92/sops-nix;
+  sops-nix.url = "github:Mic92/sops-nix";
 
   # enable secure boot on NixOS
-  lanzaboote.url = github:nix-community/lanzaboote;
+  lanzaboote.url = "github:nix-community/lanzaboote";
 
   # nix for android
   nix-on-droid = {
-    url = github:t184256/nix-on-droid/release-23.05;
+    url = "github:t184256/nix-on-droid/release-23.05";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # generate NixOS images
   nixos-generators = {
-    url = github:nix-community/nixos-generators;
+    url = "github:nix-community/nixos-generators";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # patches for gaming on nix
   nix-gaming = {
-    url = github:fufexan/nix-gaming;
+    url = "github:fufexan/nix-gaming";
   };
 
   # hardware quirks on nix
   nixos-hardware = {
-    url = github:NixOS/nixos-hardware/master;
+    url = "github:NixOS/nixos-hardware/master";
   };
 
   # dynamic library loading
   nix-alien = {
-    url = github:thiagokokada/nix-alien;
+    url = "github:thiagokokada/nix-alien";
   };
 
   # automatic nintendo switch payload injection
   nswitch-rcm-nix = {
-    url = github:Swarsel/nswitch-rcm-nix;
+    url = "github:Swarsel/nswitch-rcm-nix";
   };
 
 #+end_src
@@ -501,8 +506,6 @@ A short overview over each input and what it does:
 :END:
 
 Here I define a few variables that I need for my system specifications. First and foremost, =pkgs=, which gets passed the emacs-overlay, nur, and nixgl modules to it. With this, I can grab all these packages by referencing =pkgs.<name>= instead of having to put e.g. =nixgl.auto.nixGLDefault=.
-
-I also define =armpkgs=, which are simply built for ARM hosts, i.e. my virtual machines that I have in the Oracle Cloud.
 
 Lastly I define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS).
 
@@ -521,16 +524,6 @@ Lastly I define some common module lists that I can simply load depending on the
                                      ];
                           config.allowUnfree = true;
                         };
-
-  # for ovm arm hosts
-  armpkgs = import nixpkgs { system = "aarch64-linux";
-                          overlays = [ emacs-overlay.overlay
-                                       nur.overlay
-                                       nixgl.overlay
-                                     ];
-                          config.allowUnfree = true;
-                        };
-
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [ stylix.nixosModules.stylix
@@ -834,7 +827,7 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 
 #+begin_src nix :noweb yes :tangle profiles/TEMPLATE/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+  { pkgs, ... }:
 
   {
 
@@ -892,7 +885,7 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 :END:
 #+begin_src nix :noweb yes :tangle profiles/TEMPLATE/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub, ... }:
+  { config, pkgs, ... }:
 
   {
 
@@ -961,7 +954,7 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
         };
 
         keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
+          inherit (config.wayland.windowManager.sway.config) modifier;
         in {
           # TEMPLATE
           "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
@@ -995,7 +988,7 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 
 #+begin_src nix :noweb yes :tangle profiles/sandbox/nixos.nix
 
-      { config, pkgs, modulesPath, unstable, sops, ... }: let
+      { config, pkgs, unstable, sops, ... }: let
       matrixDomain = "swatrix.swarsel.win";
     in {
 
@@ -1878,7 +1871,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 #+begin_src nix :noweb yes :tangle profiles/threed/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+  { lib, pkgs, ... }:
 
   {
     <<wrap>>
@@ -1934,7 +1927,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 :END:
 #+begin_src nix :noweb yes :tangle profiles/threed/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub, ... }:
+  { config, pkgs, ... }:
 
   {
 
@@ -1982,7 +1975,7 @@ New setup for the SP3, this time using NixOS - another machine will take over th
         };
 
         keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
+          inherit (config.wayland.windowManager.sway.config) modifier;
         in {
           "${modifier}+F2"  = "exec brightnessctl set +5%";
           "${modifier}+F1"= "exec brightnessctl set 5%-";
@@ -2027,7 +2020,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+  { config, pkgs, ... }:
 
   {
 
@@ -2119,10 +2112,10 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
     services.nswitch-rcm = {
       enable = true;
-      package =  (pkgs.fetchurl {
+      package =  pkgs.fetchurl {
         url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
         hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
-      });
+      };
     };
 
     users.users.swarsel = {
@@ -2159,7 +2152,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub, ... }:
+  { config, pkgs, ... }:
 
   {
 
@@ -2228,7 +2221,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
 
         keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
+          inherit (config.wayland.windowManager.sway.config) modifier;
         in {
           "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
           "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
@@ -2270,7 +2263,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 #+begin_src nix :noweb yes :tangle profiles/winters/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+  { pkgs, ... }:
 
   {
 
@@ -2374,7 +2367,7 @@ TODO: Adjust =hwmon= path, I/O modules and XF86 keys once laptop arrives.
 
 #+begin_src nix :noweb yes :tangle profiles/winters/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub, ... }:
+  { config, pkgs, ... }:
 
   {
 
@@ -2443,11 +2436,11 @@ TODO: Adjust =hwmon= path, I/O modules and XF86 keys once laptop arrives.
         ];
 
 
-        keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
-        in {
+        # keybindings = let
+        # inherit (config.wayland.windowManager.sway.config) modifier;
+        # in {
 
-        };
+        # };
 
         startup = [
           <<startupnixos>>
@@ -2498,12 +2491,16 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "TEMPLATE"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
+    proxmoxLXC = {
+manageNetwork = true; # manage network myself
+manageHostName = false; # manage hostname myself
+};
+    networking = {
+hostName = "TEMPLATE"; # Define your hostname.
+useDHCP = true;
+enableIPv6 = false;
+firewall.enable = false;
+};
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -2551,19 +2548,25 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.dnstokenfull = {owner="acme";};
-    sops.templates."certs.secret".content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-    '';
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "nginx"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
+      validateSopsFiles = false;
+      secrets.dnstokenfull = {owner="acme";};
+      templates."certs.secret".content = ''
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      '';
+    };
+    proxmoxLXC = {
+      manageNetwork = true; # manage network myself
+      manageHostName = false; # manage hostname myself
+    };
+    networking = {
+      hostName = "nginx"; # Define your hostname.
+      useDHCP = true;
+      enableIPv6 = false;
+      firewall.enable = false;
+    };
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -2603,11 +2606,11 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             "/" = {
               proxyPass = "https://192.168.1.5";
               extraConfig = ''
-              client_max_body_size 0;
-              '';
+                client_max_body_size 0;
+                '';
             };
             # "/push/" = {
-              # proxyPass = "http://192.168.2.5:7867";
+            # proxyPass = "http://192.168.2.5:7867";
             # };
             "/.well-known/carddav" = {
               return = "301 $scheme://$host/remote.php/dav";
@@ -2626,109 +2629,105 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
             "~ ^(/_matrix|/_synapse/client)" = {
               proxyPass = "http://192.168.1.23:8008";
               extraConfig = ''
-                  client_max_body_size 0;
-                '';
+                    client_max_body_size 0;
+                  '';
             };
           };
         };
 
 
-          "sound.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.1.13:4040";
-                proxyWebsockets = true;
-                extraConfig = ''
-                  proxy_redirect          http:// https://;
-                  proxy_read_timeout      600s;
-                  proxy_send_timeout      600s;
-                  proxy_buffering         off;
-                  proxy_request_buffering off;
-                  client_max_body_size    0;
-                '';
-              };
+        "sound.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.13:4040";
+              proxyWebsockets = true;
+              extraConfig = ''
+                    proxy_redirect          http:// https://;
+                    proxy_read_timeout      600s;
+                    proxy_send_timeout      600s;
+                    proxy_buffering         off;
+                    proxy_request_buffering off;
+                    client_max_body_size    0;
+                  '';
             };
           };
-
-          "scan.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.1.24:28981";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "screen.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.1.16:8096";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "matrix.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "~ ^(/_matrix|/_synapse/client)" = {
-                proxyPass = "http://192.168.1.20:8008";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "scroll.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://192.168.1.22:8080";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
-          "blog.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "https://192.168.1.7";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-
         };
+
+        "scan.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.24:28981";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+            };
+          };
+        };
+
+        "screen.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.16:8096";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+            };
+          };
+        };
+
+        "matrix.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "~ ^(/_matrix|/_synapse/client)" = {
+              proxyPass = "http://192.168.1.20:8008";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+            };
+          };
+        };
+
+        "scroll.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.22:8080";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+            };
+          };
+        };
+
+        "blog.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "https://192.168.1.7";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+            };
+          };
+        };
+
       };
-
-
-
-
+    };
 
   }
 
@@ -2793,24 +2792,22 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.kavita = { owner = "kavita";};
-    # sops.secrets.smbuser = { };
-    # sops.secrets.smbpassword = { };
-    # sops.secrets.smbdomain = { };
-    # sops.templates."smb.cred".content = ''
-    # user=${config.sops.placeholder.smbuser}
-    # password=${config.sops.placeholder.smbpassword}
-    # domain=${config.sops.placeholder.smbdomain}
-    # '';
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "calibre"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
+    sops = {
+age.sshKeyPaths = [ "/etc/ssh/sops" ];
+defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
+validateSopsFiles = false;
+secrets.kavita = { owner = "kavita";};
+};
+    proxmoxLXC = {
+manageNetwork = true; # manage network myself
+manageHostName = false; # manage hostname myself
+};
+    networking = {
+hostName = "calibre"; # Define your hostname.
+useDHCP = true;
+enableIPv6 = false;
+firewall.enable = false;
+};
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -2824,35 +2821,6 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
     environment.shellAliases = {
       nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     };
-
-
-      # services.calibre-server = {
-      # enable = true;
-      # user = "calibre-server";
-      # auth.enable = true;
-      # auth.userDb = "/srv/calibre/users.sqlite";
-      # libraries = [
-      #   /media/Books/main
-      #   /media/Books/diverse
-      #   /media/Books/language
-      #   /media/Books/science
-      #   /media/Books/sport
-      #   /media/Books/novels
-      # ];
-    # };
-
-    # services.calibre-web = {
-    #   enable = true;
-    #   user = "calibre-web";
-    #   group = "calibre-web";
-    #   listen.port = 8083;
-    #   listen.ip = "0.0.0.0";
-    #   options = {
-    #     enableBookUploading = true;
-    #     enableKepubify = true;
-    #     enableBookConversion = true;
-    #   };
-    # };
 
     services.kavita = {
       enable = true;
@@ -2910,16 +2878,16 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    # sops.defaultSopsFile = "/.dotfiles/secrets/jellyfin/secrets.yaml";
-    # sops.validateSopsFiles = false;
-
-    proxmoxLXC.manageNetwork = true; # manage network myself
-    proxmoxLXC.manageHostName = false; # manage hostname myself
-    networking.hostName = "jellyfin"; # Define your hostname.
-    networking.useDHCP = true;
-    networking.enableIPv6 = false;
-    networking.firewall.enable = false;
+    proxmoxLXC = {
+      manageNetwork = true; # manage network myself
+      manageHostName = false; # manage hostname myself
+    };
+    networking = {
+      hostName = "jellyfin"; # Define your hostname.
+      useDHCP = true;
+      enableIPv6 = false;
+      firewall.enable = false;
+    };
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -2934,18 +2902,18 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
       nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     };
 
-     nixpkgs.config.packageOverrides = pkgs: {
-       vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-     };
-     hardware.graphics = {
-       enable = true;
-       extraPackages = with pkgs; [
-         intel-media-driver # LIBVA_DRIVER_NAME=iHD
-         vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-         vaapiVdpau
-         libvdpau-va-gl
-       ];
-     };
+    nixpkgs.config.packageOverrides = pkgs: {
+      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    };
+    hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver # LIBVA_DRIVER_NAME=iHD
+        vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+    };
 
     services.jellyfin = {
       enable = true;
@@ -2971,364 +2939,276 @@ This stuff just does not work, I seem to be unable to create a working VPN Split
 
 #+begin_src nix :tangle profiles/server1/transmission/nixos.nix
 
-              { config, pkgs, modulesPath, ... }:
+  { config, pkgs, modulesPath, ... }:
 
-              {
-                imports = [
-                  (modulesPath + "/virtualisation/proxmox-lxc.nix")
-                  ./hardware-configuration.nix
-                  # ./openvpn.nix #this file holds the vpn login data
-                ];
+  {
+    imports = [
+      (modulesPath + "/virtualisation/proxmox-lxc.nix")
+      ./hardware-configuration.nix
+      # ./openvpn.nix #this file holds the vpn login data
+    ];
 
-                environment.systemPackages = with pkgs; [
-                  git
-                  gnupg
-                  ssh-to-age
-                  openvpn
-                  jq
-                  iptables
-                  busybox
-                  wireguard-tools
-                ];
+    environment.systemPackages = with pkgs; [
+      git
+      gnupg
+      ssh-to-age
+      openvpn
+      jq
+      iptables
+      busybox
+      wireguard-tools
+    ];
 
-                users.groups.lxc_shares = {
-                  gid = 10000;
-                  members = [
-                    "vpn"
-                    "radarr"
-                    "sonarr"
-                    "lidarr"
-                    "readarr"
-                    "root"
-                  ];
-                };
-                users.groups.vpn = {};
+    users.groups.lxc_shares = {
+      gid = 10000;
+      members = [
+        "vpn"
+        "radarr"
+        "sonarr"
+        "lidarr"
+        "readarr"
+        "root"
+      ];
+    };
+    users.groups.vpn = {};
 
-                users.users.vpn = {
-                  isNormalUser = true;
-                  group = "vpn";
-                  home = "/home/vpn";
-                };
+    users.users.vpn = {
+      isNormalUser = true;
+      group = "vpn";
+      home = "/home/vpn";
+    };
 
-                services.xserver = {
-                  layout = "us";
-                  xkbVariant = "altgr-intl";
-                };
+    services.xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
 
-                nix.settings.experimental-features = ["nix-command" "flakes"];
+    nix.settings.experimental-features = ["nix-command" "flakes"];
 
-                sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-                sops.defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
-                sops.validateSopsFiles = false;
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
+      validateSopsFiles = false;
+    };
 
-                boot.kernelModules = [ "tun" ];
-                proxmoxLXC.manageNetwork = true; # manage network myself
-                proxmoxLXC.manageHostName = false; # manage hostname myself
-                networking.hostName = "transmission"; # Define your hostname.
-                networking.useDHCP = true;
-                networking.enableIPv6 = false;
-                networking.firewall.enable = false;
+    boot.kernelModules = [ "tun" ];
+    proxmoxLXC = {
+      manageNetwork = true; # manage network myself
+      manageHostName = false; # manage hostname myself
+    };
+    networking = {
+      hostName = "transmission"; # Define your hostname.
+      useDHCP = true;
+      enableIPv6 = false;
+      firewall.enable = false;
+    };
 
-                services.radarr = {
-                  enable = true;
-                };
+    services = {
+      radarr = {
+        enable = true;
+      };
+      readarr = {
+        enable = true;
+      };
+      sonarr = {
+        enable = true;
+      };
+      lidarr = {
+        enable = true;
+      };
+      prowlarr = {
+        enable = true;
+      };
+    };
 
-                services.readarr = {
-                  enable = true;
-                };
-                services.sonarr = {
-                  enable = true;
-                };
-                services.lidarr = {
-                  enable = true;
-                };
-                services.prowlarr = {
-                  enable = true;
-                };
+    networking.iproute2 = {
+      enable = true;
+      rttablesExtraConfig = ''
+                      200     vpn
+                      '';
+    };
+    environment.etc = {
+      "openvpn/iptables.sh" =
+        { source = ../../../scripts/server1/iptables.sh;
+          mode = "0755";
+        };
+      "openvpn/update-resolv-conf" =
+        { source = ../../../scripts/server1/update-resolv-conf;
+          mode = "0755";
+        };
+      "openvpn/routing.sh" =
+        { source = ../../../scripts/server1/routing.sh;
+          mode = "0755";
+        };
+      "openvpn/ca.rsa.2048.crt" =
+        { source = ../../../secrets/certs/ca.rsa.2048.crt;
+          mode = "0644";
+        };
+      "openvpn/crl.rsa.2048.pem" =
+        { source = ../../../secrets/certs/crl.rsa.2048.pem;
+          mode = "0644";
+        };
+    };
+    services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
+    };
+    users.users.root.openssh.authorizedKeys.keyFiles = [
+      ../../../secrets/keys/authorized_keys
+    ];
 
-                # networking.interfaces = {
-                    # lo = {
-                      # useDHCP = false;
-                      # ipv4.addresses = [
-                        # { address = "127.0.0.1"; prefixLength = 8; }
-                      # ];
-                    # };
-                #
-                    # eth0 = {
-                      # useDHCP = true;
-                    # };
-                  # };
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+    # users.users.root.password = "TEMPLATE";
 
-                # networking.firewall.extraCommands = ''
-                # sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-                # '';
-                networking.iproute2 = {
-                  enable = true;
-                  rttablesExtraConfig = ''
-                  200     vpn
-                  '';
-                };
-                # boot.kernel.sysctl = {
-                #   "net.ipv4.conf.all.rp_filter" = 2;
-                #   "net.ipv4.conf.default.rp_filter" = 2;
-                #   "net.ipv4.conf.eth0.rp_filter" = 2;
-                # };
-                environment.etc = {
-                  "openvpn/iptables.sh" =
-                    { source = ../../../scripts/server1/iptables.sh;
-                      mode = "0755";
-                    };
-                  "openvpn/update-resolv-conf" =
-                    { source = ../../../scripts/server1/update-resolv-conf;
-                      mode = "0755";
-                    };
-                  "openvpn/routing.sh" =
-                    { source = ../../../scripts/server1/routing.sh;
-                      mode = "0755";
-                    };
-                  "openvpn/ca.rsa.2048.crt" =
-                    { source = ../../../secrets/certs/ca.rsa.2048.crt;
-                      mode = "0644";
-                    };
-                  "openvpn/crl.rsa.2048.pem" =
-                    { source = ../../../secrets/certs/crl.rsa.2048.pem;
-                      mode = "0644";
-                    };
-                };
-                services.openssh = {
-                  enable = true;
-                  settings.PermitRootLogin = "yes";
-                  listenAddresses = [{
-                                     port = 22;
-                                     addr = "0.0.0.0";
-                                   }];
-                };
-                users.users.root.openssh.authorizedKeys.keyFiles = [
-                  ../../../secrets/keys/authorized_keys
-                ];
+    environment.shellAliases = {
+      nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    };
 
-                system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-                # users.users.root.password = "TEMPLATE";
-
-                environment.shellAliases = {
-                  nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-                };
-
-                sops.secrets.vpnuser = {};
-                sops.secrets.rpcuser = {owner="vpn";};
-                sops.secrets.vpnpass = {};
-                sops.secrets.rpcpass = {owner="vpn";};
-                sops.secrets.vpnprot = {};
-                sops.secrets.vpnloc = {};
-                # sops.secrets.crlpem = {};
-                # sops.secrets.capem = {};
-                sops.templates."transmission-rpc".owner = "vpn";
-                sops.templates."transmission-rpc".content = builtins.toJSON {
-                  rpc-username = config.sops.placeholder.rpcuser;
-                  rpc-password = config.sops.placeholder.rpcpass;
-                };
-
-                sops.templates.pia.content = ''
-                ${config.sops.placeholder.vpnuser}
-                ${config.sops.placeholder.vpnpass}
-                '';
-
-                sops.templates.vpn.content = ''
-                  client
-                  dev tun
-                  proto ${config.sops.placeholder.vpnprot}
-                  remote ${config.sops.placeholder.vpnloc}
-                  resolv-retry infinite
-                  nobind
-                  persist-key
-                  persist-tun
-                  cipher aes-128-cbc
-                  auth sha1
-                  tls-client
-                  remote-cert-tls server
-
-                  auth-user-pass ${config.sops.templates.pia.path}
-                  compress
-                  verb 1
-                  reneg-sec 0
-
-                  crl-verify /etc/openvpn/crl.rsa.2048.pem
-                  ca /etc/openvpn/ca.rsa.2048.crt
-
-                  disable-occ
-                  dhcp-option DNS 209.222.18.222
-                  dhcp-option DNS 209.222.18.218
-                  dhcp-option DNS 8.8.8.8
-                  route-noexec
-                '';
-
-                # services.pia.enable = true;
-                # services.pia.authUserPass.username = "na";
-                # services.pia.authUserPass.password = "na";
-
-
-              #     systemd.services.openvpn-vpn = {
-              # wantedBy = [ "multi-user.target" ];
-              # after = [ "network.target" ];
-              # description = "OpenVPN connection to pia";
-              # serviceConfig = {
-              #   Type = "forking";
-              #   RuntimeDirectory="openvpn";
-              #   PrivateTmp=true;
-              #   KillMode="mixed";
-              #   ExecStart = ''@${pkgs.openvpn}/sbin/openvpn openvpn --daemon ovpn-pia --status /run/openvpn/pia.status 10 --cd /etc/openvpn --script-security 2 --config ${config.sops.templates.vpn.path} --writepid /run/openvpn/pia.pid'';
-              #   PIDFile=''/run/openvpn/pia.pid'';
-              #   ExecReload=''/run/current-system/sw/bin/kill -HUP $MAINPID'';
-              #   WorkingDirectory="/etc/openvpn";
-              #   Restart="on-failure";
-              #   RestartSec=30;
-              #   ProtectSystem="yes";
-              #   DeviceAllow=["/dev/null rw" "/dev/net/tun rw"];
-              # };
-           # };
-            services.openvpn.servers = {
-              pia = {
-                autoStart = false;
-                updateResolvConf = true;
-  #               up = ''
-  # export INTERFACE="tun0"
-  # export VPNUSER="vpn"
-  # export LOCALIP="192.168.1.191"
-  # export NETIF="eth0"
-  # export VPNIF="tun0"
-  # export GATEWAYIP=$(ifconfig $VPNIF | egrep -o '([0-9]{1,3}\.){3}[0-9]{1,3}' | egrep -v '255|(127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})' | tail -n1)
-  # iptables -F -t nat
-  # iptables -F -t mangle
-  # iptables -F -t filter
-  # iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
-  # iptables -t mangle -A OUTPUT ! --dest $LOCALIP -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p udp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT --dest $LOCALIP -p tcp --dport 53 -m owner --uid-owner $VPNUSER -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT ! --src $LOCALIP -j MARK --set-mark 0x1
-  # iptables -t mangle -A OUTPUT -j CONNMARK --save-mark
-  # iptables -A INPUT -i $INTERFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A INPUT -i $INTERFACE -j REJECT
-  # iptables -A OUTPUT -o lo -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -A OUTPUT -o $INTERFACE -m owner --uid-owner $VPNUSER -j ACCEPT
-  # iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE
-  # iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # iptables -A OUTPUT ! --src $LOCALIP -o $NETIF -j REJECT
-  # if [[ `ip rule list | grep -c 0x1` == 0 ]]; then
-  # ip rule add from all fwmark 0x1 lookup $VPNUSER
-  # fi
-  # ip route replace default via $GATEWAYIP table $VPNUSER
-  # ip route append default via 127.0.0.1 dev lo table $VPNUSER
-  # ip route flush cache
-                # '';
-                # down = "bash /etc/openvpn/update-resolv-conf";
-                # these are outsourced to a local file, I am not sure if it can be done with sops-nix
-                # authUserPass = {
-                  # username = "TODO:secrets";
-                  # password = "TODO:secrets";
-                # };
-                config = "config ${config.sops.templates.vpn.path}";
-              };
-            };
-
-          services.transmission = {
-            enable = true;
-            credentialsFile = config.sops.templates."transmission-rpc".path;
-            user = "vpn";
-            group = "lxc_shares";
-            settings = {
-
-            alt-speed-down= 8000;
-            alt-speed-enabled= false;
-            alt-speed-time-begin= 0;
-            alt-speed-time-day= 127;
-            alt-speed-time-enabled= true;
-            alt-speed-time-end= 360;
-            alt-speed-up= 2000;
-            bind-address-ipv4= "0.0.0.0";
-            bind-address-ipv6= "::";
-            blocklist-enabled= false;
-            blocklist-url= "http://www.example.com/blocklist";
-            cache-size-mb= 4;
-            dht-enabled= false;
-            download-dir= "/media/Eternor/New";
-            download-limit= 100;
-            download-limit-enabled= 0;
-            download-queue-enabled= true;
-            download-queue-size= 5;
-            encryption= 2;
-            idle-seeding-limit= 30;
-            idle-seeding-limit-enabled= false;
-            incomplete-dir= "/var/lib/transmission-daemon/Downloads";
-            incomplete-dir-enabled= false;
-            lpd-enabled= false;
-            max-peers-global= 200;
-            message-level= 1;
-            peer-congestion-algorithm= "";
-            peer-id-ttl-hours= 6;
-            peer-limit-global= 100;
-            peer-limit-per-torrent= 40;
-            peer-port= 22371;
-            peer-port-random-high= 65535;
-            peer-port-random-low= 49152;
-            peer-port-random-on-start= false;
-            peer-socket-tos= "default";
-            pex-enabled= false;
-            port-forwarding-enabled= false;
-            preallocation= 1;
-            prefetch-enabled= true;
-            queue-stalled-enabled= true;
-            queue-stalled-minutes= 30;
-            ratio-limit= 2;
-            ratio-limit-enabled= false;
-            rename-partial-files= true;
-            rpc-authentication-required= true;
-            rpc-bind-address= "0.0.0.0";
-            rpc-enabled= true;
-            rpc-host-whitelist= "";
-            rpc-host-whitelist-enabled= true;
-            rpc-port= 9091;
-            rpc-url= "/transmission/";
-            rpc-whitelist= "127.0.0.1,192.168.3.2";
-            rpc-whitelist-enabled= true;
-            scrape-paused-torrents-enabled= true;
-            script-torrent-done-enabled= false;
-            seed-queue-enabled= false;
-            seed-queue-size= 10;
-            speed-limit-down= 6000;
-            speed-limit-down-enabled= true;
-            speed-limit-up= 500;
-            speed-limit-up-enabled= true;
-            start-added-torrents= true;
-            trash-original-torrent-files= false;
-            umask= 2;
-            upload-limit= 100;
-            upload-limit-enabled= 0;
-            upload-slots-per-torrent= 14;
-            utp-enabled= false;
-            };
+    sops = {
+      templates = {
+        "transmission-rpc" = {
+          owner = "vpn";
+          content = builtins.toJSON {
+            rpc-username = config.sops.placeholder.rpcuser;
+            rpc-password = config.sops.placeholder.rpcpass;
           };
+        };
 
-        # services.nginx = {
-        #       enable = true;
-        #       virtualHosts = {
+        pia.content = ''
+                    ${config.sops.placeholder.vpnuser}
+                    ${config.sops.placeholder.vpnpass}
+                    '';
 
-        #         "192.168.1.192" = {
-        #           locations = {
-        #             "/transmission" = {
-        #               proxyPass = "http://127.0.0.1:9091";
-        #               extraConfig = ''
-        #               proxy_set_header Host $host;
-        #               proxy_set_header X-Real-IP $remote_addr;
-        #               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        #               '';
-        #             };
-        #           };
-        #         };
-        #       };
-        # };
+        vpn.content = ''
+                      client
+                      dev tun
+                      proto ${config.sops.placeholder.vpnprot}
+                      remote ${config.sops.placeholder.vpnloc}
+                      resolv-retry infinite
+                      nobind
+                      persist-key
+                      persist-tun
+                      cipher aes-128-cbc
+                      auth sha1
+                      tls-client
+                      remote-cert-tls server
+
+                      auth-user-pass ${config.sops.templates.pia.path}
+                      compress
+                      verb 1
+                      reneg-sec 0
+
+                      crl-verify /etc/openvpn/crl.rsa.2048.pem
+                      ca /etc/openvpn/ca.rsa.2048.crt
+
+                      disable-occ
+                      dhcp-option DNS 209.222.18.222
+                      dhcp-option DNS 209.222.18.218
+                      dhcp-option DNS 8.8.8.8
+                      route-noexec
+                    '';
+      };
+      secrets = {
+        vpnuser = {};
+        rpcuser = {owner="vpn";};
+        vpnpass = {};
+        rpcpass = {owner="vpn";};
+        vpnprot = {};
+        vpnloc = {};
+      };
+    };
+    services.openvpn.servers = {
+      pia = {
+        autoStart = false;
+        updateResolvConf = true;
+        config = "config ${config.sops.templates.vpn.path}";
+      };
+    };
+
+    services.transmission = {
+      enable = true;
+      credentialsFile = config.sops.templates."transmission-rpc".path;
+      user = "vpn";
+      group = "lxc_shares";
+      settings = {
+
+        alt-speed-down= 8000;
+        alt-speed-enabled= false;
+        alt-speed-time-begin= 0;
+        alt-speed-time-day= 127;
+        alt-speed-time-enabled= true;
+        alt-speed-time-end= 360;
+        alt-speed-up= 2000;
+        bind-address-ipv4= "0.0.0.0";
+        bind-address-ipv6= "::";
+        blocklist-enabled= false;
+        blocklist-url= "http://www.example.com/blocklist";
+        cache-size-mb= 4;
+        dht-enabled= false;
+        download-dir= "/media/Eternor/New";
+        download-limit= 100;
+        download-limit-enabled= 0;
+        download-queue-enabled= true;
+        download-queue-size= 5;
+        encryption= 2;
+        idle-seeding-limit= 30;
+        idle-seeding-limit-enabled= false;
+        incomplete-dir= "/var/lib/transmission-daemon/Downloads";
+        incomplete-dir-enabled= false;
+        lpd-enabled= false;
+        max-peers-global= 200;
+        message-level= 1;
+        peer-congestion-algorithm= "";
+        peer-id-ttl-hours= 6;
+        peer-limit-global= 100;
+        peer-limit-per-torrent= 40;
+        peer-port= 22371;
+        peer-port-random-high= 65535;
+        peer-port-random-low= 49152;
+        peer-port-random-on-start= false;
+        peer-socket-tos= "default";
+        pex-enabled= false;
+        port-forwarding-enabled= false;
+        preallocation= 1;
+        prefetch-enabled= true;
+        queue-stalled-enabled= true;
+        queue-stalled-minutes= 30;
+        ratio-limit= 2;
+        ratio-limit-enabled= false;
+        rename-partial-files= true;
+        rpc-authentication-required= true;
+        rpc-bind-address= "0.0.0.0";
+        rpc-enabled= true;
+        rpc-host-whitelist= "";
+        rpc-host-whitelist-enabled= true;
+        rpc-port= 9091;
+        rpc-url= "/transmission/";
+        rpc-whitelist= "127.0.0.1,192.168.3.2";
+        rpc-whitelist-enabled= true;
+        scrape-paused-torrents-enabled= true;
+        script-torrent-done-enabled= false;
+        seed-queue-enabled= false;
+        seed-queue-size= 10;
+        speed-limit-down= 6000;
+        speed-limit-down-enabled= true;
+        speed-limit-up= 500;
+        speed-limit-up-enabled= true;
+        start-added-torrents= true;
+        trash-original-torrent-files= false;
+        umask= 2;
+        upload-limit= 100;
+        upload-limit-enabled= 0;
+        upload-slots-per-torrent= 14;
+        utp-enabled= false;
+      };
+    };
 
 
-              }
+  }
 
 #+end_src
 
@@ -3353,7 +3233,7 @@ Make sure to also do this for doublepuppet.yaml
 
 #+begin_src nix :noweb yes :tangle profiles/server1/matrix/nixos.nix
 
-  { config, pkgs, modulesPath, unstable, sops, ... }: let
+  { config, pkgs, modulesPath, sops, ... }: let
     matrixDomain = "matrix2.swarsel.win";
   in {
     <<vminitbare>>
@@ -3365,8 +3245,10 @@ Make sure to also do this for doublepuppet.yaml
       # this module is hence not in the modules list, we add it ourselves
     ];
 
-    networking.hostName = "matrix"; # Define your hostname.
-    networking.firewall.enable = false;
+    networking = {
+      hostName = "matrix"; # Define your hostname.
+      firewall.enable = false;
+    };
     environment.systemPackages = with pkgs; [
       git
       gnupg
@@ -3376,84 +3258,93 @@ Make sure to also do this for doublepuppet.yaml
       ffmpeg
     ];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-    sops.templates."matrix_user_register.sh".content = ''
-    register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-    '';
-    sops.templates.matrixshared.owner = "matrix-synapse";
-    sops.templates.matrixshared.content = ''
-    registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-    '';
-    sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-    sops.templates.mautrixtelegram.owner = "matrix-synapse";
-    sops.templates.mautrixtelegram.content = ''
-    MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-    MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-    MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-    MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-    '';
-    # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-    # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-    # sops.templates.mautrixwhatsapp.content = ''
-    # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-    # '';
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
+      validateSopsFiles = false;
+      secrets = {
+        matrixsharedsecret = {owner="matrix-synapse";};
+        mautrixtelegram_as = {owner="matrix-synapse";};
+        mautrixtelegram_hs = {owner="matrix-synapse";};
+        mautrixtelegram_api_id = {owner="matrix-synapse";};
+        mautrixtelegram_api_hash = {owner="matrix-synapse";};
+      };
+      templates = {
+        "matrix_user_register.sh".content = ''
+            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+            '';
+        matrixshared = {
+          owner = "matrix-synapse";
+          content = ''
+            registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+            '';
+        };
+        mautrixtelegram = {
+          owner = "matrix-synapse";
+          content = ''
+            MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+            MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+            '';
+        };
+      };
+    };
 
-    services.postgresql.enable = true;
-    services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
-      CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-      CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-      CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-      CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-      CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-    '';
+    services.postgresql = {
+      enable = true;
+      initialScript = pkgs.writeText "synapse-init.sql" ''
+              CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+              CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+              CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+              CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+              CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+            '';
+    };
 
     services.matrix-synapse = {
-      settings.app_service_config_files = [
-        "/var/lib/matrix-synapse/telegram-registration.yaml"
-        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-        "/var/lib/matrix-synapse/signal-registration.yaml"
-        "/var/lib/matrix-synapse/doublepuppet.yaml"
-      ];
       enable = true;
-      settings.server_name = matrixDomain;
-      settings.public_baseurl = "https://${matrixDomain}";
+      settings = {
+        app_service_config_files = [
+          "/var/lib/matrix-synapse/telegram-registration.yaml"
+          "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+          "/var/lib/matrix-synapse/signal-registration.yaml"
+          "/var/lib/matrix-synapse/doublepuppet.yaml"
+        ];
+        server_name = matrixDomain;
+        public_baseurl = "https://${matrixDomain}";
+        listeners = [
+          { port = 8008;
+            bind_addresses = [ "0.0.0.0" ];
+            type = "http";
+            tls = false;
+            x_forwarded = true;
+            resources = [
+              {
+                names = [ "client" "federation" ];
+                compress = true;
+              }
+            ];
+          }
+        ];
+      };
       extraConfigFiles = [
         config.sops.templates.matrixshared.path
-      ];
-      settings.listeners = [
-        { port = 8008;
-          bind_addresses = [ "0.0.0.0" ];
-          type = "http";
-          tls = false;
-          x_forwarded = true;
-          resources = [
-            {
-              names = [ "client" "federation" ];
-              compress = true;
-            }
-          ];
-        }
       ];
     };
 
@@ -3478,9 +3369,6 @@ Make sure to also do this for doublepuppet.yaml
           database = "postgresql:///mautrix-telegram?host=/run/postgresql";
         };
         bridge = {
-          # login_shared_secret_map = {
-            # matrixDomain = "as_token:doublepuppet";
-          # };
           relaybot.authless_portals = true;
           allow_avatar_remove = true;
           allow_contact_info = true;
@@ -3493,12 +3381,6 @@ Make sure to also do this for doublepuppet.yaml
             "*" = "relaybot";
             "@swarsel:${matrixDomain}" = "admin";
           };
-          # Animated stickers conversion requires additional packages in the
-          # service's path.
-          # If this isn't a fresh installation, clearing the bridge's uploaded
-          # file cache might be necessary (make a database backup first!):
-          # delete from telegram_file where \
-          #   mime_type in ('application/gzip', 'application/octet-stream')
           animated_sticker = {
             target = "gif";
             args = {
@@ -3518,7 +3400,6 @@ Make sure to also do this for doublepuppet.yaml
 
     services.mautrix-whatsapp = {
       enable = true;
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -3565,7 +3446,6 @@ Make sure to also do this for doublepuppet.yaml
 
     services.mautrix-signal = {
       enable = true;
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -3609,10 +3489,10 @@ Make sure to also do this for doublepuppet.yaml
 
     systemd.services."restart-bridges" = {
       script = ''
-      systemctl restart mautrix-whatsapp.service
-      systemctl restart mautrix-signal.service
-      systemctl restart mautrix-telegram.service
-      '';
+              systemctl restart mautrix-whatsapp.service
+              systemctl restart mautrix-signal.service
+              systemctl restart mautrix-telegram.service
+              '';
       serviceConfig = {
         Type = "oneshot";
         User = "root";
@@ -3641,32 +3521,38 @@ Make sure to also do this for doublepuppet.yaml
 
     proxmoxLXC.privileged = true; # manage hostname myself
 
-    users.groups.lxc_pshares = {
-      gid = 110000;
-      members = [
-        "navidrome"
-        "mpd"
-        "root"
-      ];
-    };
+    users = {
+      groups = {
+        lxc_pshares = {
+          gid = 110000;
+          members = [
+            "navidrome"
+            "mpd"
+            "root"
+          ];
+        };
 
-    users.groups.navidrome = {
-      gid = 61593;
-    };
+        navidrome = {
+          gid = 61593;
+        };
 
-    users.groups.mpd = {};
+        mpd = {};
+      };
 
-    users.users.navidrome = {
-      isSystemUser = true;
-      uid = 61593;
-      group = "navidrome";
-      extraGroups  = [ "audio" "utmp" ];
-    };
+      users = {
+        navidrome = {
+          isSystemUser = true;
+          uid = 61593;
+          group = "navidrome";
+          extraGroups  = [ "audio" "utmp" ];
+        };
 
-    users.users.mpd = {
-      isSystemUser = true;
-      group = "mpd";
-      extraGroups  = [ "audio" "utmp" ];
+        mpd = {
+          isSystemUser = true;
+          group = "mpd";
+          extraGroups  = [ "audio" "utmp" ];
+        };
+      };
     };
 
     sound = {
@@ -3674,8 +3560,10 @@ Make sure to also do this for doublepuppet.yaml
     };
 
     hardware.enableAllFirmware = true;
-    networking.hostName = "sound"; # Define your hostname.
-    networking.firewall.enable = false;
+    networking = {
+      hostName = "sound"; # Define your hostname.
+      firewall.enable = false;
+    };
     environment.systemPackages = with pkgs; [
       git
       gnupg
@@ -3685,10 +3573,12 @@ Make sure to also do this for doublepuppet.yaml
       mpv
     ];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.mpdpass = { owner = "mpd";};
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
+      validateSopsFiles = false;
+      secrets.mpdpass = { owner = "mpd";};
+    };
 
     services.navidrome = {
       enable = true;
@@ -3744,7 +3634,7 @@ Make sure to also do this for doublepuppet.yaml
 
 #+begin_src nix :noweb yes :tangle profiles/server1/spotifyd/nixos.nix
 
-  { config, pkgs, modulesPath, ... }:
+  { pkgs, modulesPath, ... }:
 
   {
     <<vminit>>
@@ -3767,17 +3657,15 @@ Make sure to also do this for doublepuppet.yaml
     };
 
     hardware.enableAllFirmware = true;
-    networking.hostName = "spotifyd"; # Define your hostname.
-    networking.firewall.enable = false;
+    networking = {
+      hostName = "spotifyd"; # Define your hostname.
+      firewall.enable = false;
+    };
     environment.systemPackages = with pkgs; [
       git
       gnupg
       ssh-to-age
     ];
-
-    # sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    # sops.defaultSopsFile = "/.dotfiles/secrets/spotifyd/secrets.yaml";
-    # sops.validateSopsFiles = false;
 
     services.spotifyd = {
       enable = true;
@@ -3808,7 +3696,7 @@ Make sure to also do this for doublepuppet.yaml
 
 #+begin_src nix :tangle profiles/remote/oracle/sync/nixos.nix
 
-  { config, pkgs, modulesPath, ... }:
+  { config, pkgs, ... }:
 
   {
     imports = [
@@ -3828,14 +3716,16 @@ Make sure to also do this for doublepuppet.yaml
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/root/.dotfiles/secrets/sync/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.swarsel = { owner = "root";};
-    sops.secrets.dnstokenfull = {owner="acme";};
-    sops.templates."certs.secret".content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-    '';
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/root/.dotfiles/secrets/sync/secrets.yaml";
+      validateSopsFiles = false;
+      secrets.swarsel = { owner = "root";};
+      secrets.dnstokenfull = {owner="acme";};
+      templates."certs.secret".content = ''
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      '';
+    };
 
     security.acme = {
       acceptTerms = true;
@@ -3861,57 +3751,59 @@ Make sure to also do this for doublepuppet.yaml
             "/" = {
               proxyPass = "http://localhost:27701";
               extraConfig = ''
-                  client_max_body_size 0;
-                '';
+                    client_max_body_size 0;
+                  '';
             };
           };
         };
 
-          "sync.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:8384/";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
+        "sync.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://localhost:8384/";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
             };
           };
+        };
 
-          "swagit.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:3000";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
+        "swagit.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://localhost:3000";
+              extraConfig = ''
+                    client_max_body_size 0;
+                  '';
             };
           };
+        };
       };
     };
 
     boot.tmp.cleanOnBoot = true;
     zramSwap.enable = false;
-    networking.hostName = "sync";
-    networking.enableIPv6 = false;
-    networking.domain = "subnet03112148.vcn03112148.oraclevcn.com";
-    networking.firewall.extraCommands = ''
-    iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
-    '';
+    networking = {
+      hostName = "sync";
+      enableIPv6 = false;
+      domain = "subnet03112148.vcn03112148.oraclevcn.com";
+      firewall.extraCommands = ''
+      iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
+      '';
+    };
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -3935,8 +3827,8 @@ Make sure to also do this for doublepuppet.yaml
       openFirewall = true;
       users = [
         {
-        username = "Swarsel";
-        passwordFile = config.sops.secrets.swarsel.path;
+          username = "Swarsel";
+          passwordFile = config.sops.secrets.swarsel.path;
         }
       ];
     };
@@ -4025,7 +3917,7 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
 #+begin_src nix :tangle profiles/remote/oracle/matrix/nixos.nix
 
-  { config, pkgs, modulesPath, unstable, sops, ... }: let
+  { config, pkgs, sops, ... }: let
     matrixDomain = "swatrix.swarsel.win";
   in {
 
@@ -4050,13 +3942,42 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/root/.dotfiles/secrets/omatrix/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.dnstokenfull = {owner="acme";};
-    sops.templates."certs.secret".content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-    '';
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/root/.dotfiles/secrets/omatrix/secrets.yaml";
+      validateSopsFiles = false;
+      secrets = {
+        dnstokenfull = {owner="acme";};
+        matrixsharedsecret = {owner="matrix-synapse";};
+        mautrixtelegram_as = {owner="matrix-synapse";};
+        mautrixtelegram_hs = {owner="matrix-synapse";};
+        mautrixtelegram_api_id = {owner="matrix-synapse";};
+        mautrixtelegram_api_hash = {owner="matrix-synapse";};
+      };
+      templates = {
+        "certs.secret".content = ''
+            CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+            '';
+        "matrix_user_register.sh".content = ''
+            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+            '';
+        mautrixtelegram = {
+          owner = "matrix-synapse";
+          content = ''
+            MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+            MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+            '';
+        };
+        matrixshared = {
+          owner = "matrix-synapse";
+          content = ''
+            registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+            '';
+        };
+      };
+    };
 
     documentation = {
       enable = false;
@@ -4086,8 +4007,8 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
             "~ ^(/_matrix|/_synapse/client)" = {
               proxyPass = "http://localhost:8008";
               extraConfig = ''
-                  client_max_body_size 0;
-                '';
+                          client_max_body_size 0;
+                        '';
             };
           };
         };
@@ -4096,18 +4017,19 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
     boot.tmp.cleanOnBoot = true;
     zramSwap.enable = false;
-    networking.hostName = "swatrix";
-    networking.enableIPv6 = false;
-    # networking.domain = "subnet03112148.vcn03112148.oraclevcn.com";
-    networking.domain = "swarsel.win";
-    networking.firewall.extraCommands = ''
-    iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 8008 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 29317 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 29318 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 29328 -j ACCEPT
-    '';
+    networking = {
+      hostName = "swatrix";
+      enableIPv6 = false;
+      domain = "swarsel.win";
+      firewall.extraCommands = ''
+            iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+            iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+            iptables -I INPUT -m state --state NEW -p tcp --dport 8008 -j ACCEPT
+            iptables -I INPUT -m state --state NEW -p tcp --dport 29317 -j ACCEPT
+            iptables -I INPUT -m state --state NEW -p tcp --dport 29318 -j ACCEPT
+            iptables -I INPUT -m state --state NEW -p tcp --dport 29328 -j ACCEPT
+            '';
+    };
     services.openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
@@ -4124,55 +4046,31 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
     boot.loader.grub.device = "nodev";
 
-    sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-    sops.templates."matrix_user_register.sh".content = ''
-    register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-    '';
-    sops.templates.matrixshared.owner = "matrix-synapse";
-    sops.templates.matrixshared.content = ''
-    registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-    '';
-    sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-    sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-    sops.templates.mautrixtelegram.owner = "matrix-synapse";
-    sops.templates.mautrixtelegram.content = ''
-    MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-    MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-    MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-    MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-    '';
-    # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-    # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-    # sops.templates.mautrixwhatsapp.content = ''
-    # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-    # '';
-
-    services.postgresql.enable = true;
-    services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
-      CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-      CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-      CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-      CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-      CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-      CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-        TEMPLATE template0
-        LC_COLLATE = "C"
-        LC_CTYPE = "C";
-    '';
-
+    services.postgresql = {
+      enable = true;
+      initialScript = pkgs.writeText "synapse-init.sql" ''
+              CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+              CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+              CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+              CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+              CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+              CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+                TEMPLATE template0
+                LC_COLLATE = "C"
+                LC_CTYPE = "C";
+            '';
+    };
     services.matrix-synapse = {
       settings.app_service_config_files = [
         "/var/lib/matrix-synapse/telegram-registration.yaml"
@@ -4181,12 +4079,11 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
         "/var/lib/matrix-synapse/doublepuppet.yaml"
       ];
       enable = true;
-      settings.server_name = matrixDomain;
-      settings.public_baseurl = "https://${matrixDomain}";
-      extraConfigFiles = [
-        config.sops.templates.matrixshared.path
-      ];
-      settings.listeners = [
+      settings = {
+        server_name = matrixDomain;
+        public_baseurl = "https://${matrixDomain}";
+      };
+      listeners = [
         { port = 8008;
           bind_addresses = [ "0.0.0.0" ];
           type = "http";
@@ -4199,6 +4096,9 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
             }
           ];
         }
+      ];
+      extraConfigFiles = [
+        config.sops.templates.matrixshared.path
       ];
     };
 
@@ -4223,9 +4123,6 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
           database = "postgresql:///mautrix-telegram?host=/run/postgresql";
         };
         bridge = {
-          # login_shared_secret_map = {
-            # matrixDomain = "as_token:doublepuppet";
-          # };
           relaybot.authless_portals = true;
           allow_avatar_remove = true;
           allow_contact_info = true;
@@ -4238,12 +4135,6 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
             "*" = "relaybot";
             "@swarsel:${matrixDomain}" = "admin";
           };
-          # Animated stickers conversion requires additional packages in the
-          # service's path.
-          # If this isn't a fresh installation, clearing the bridge's uploaded
-          # file cache might be necessary (make a database backup first!):
-          # delete from telegram_file where \
-          #   mime_type in ('application/gzip', 'application/octet-stream')
           animated_sticker = {
             target = "gif";
             args = {
@@ -4263,7 +4154,6 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
     services.mautrix-whatsapp = {
       enable = true;
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -4311,7 +4201,6 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
     services.mautrix-signal = {
       enable = true;
       registerToSynapse = false; # this has the same effect as registering to app_service_config_file above
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -4355,10 +4244,10 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
     systemd.services."restart-bridges" = {
       script = ''
-      systemctl restart mautrix-whatsapp.service
-      systemctl restart mautrix-signal.service
-      systemctl restart mautrix-telegram.service
-      '';
+              systemctl restart mautrix-whatsapp.service
+              systemctl restart mautrix-signal.service
+              systemctl restart mautrix-telegram.service
+              '';
       serviceConfig = {
         Type = "oneshot";
         User = "root";
@@ -4399,13 +4288,17 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
       ssh-to-age
     ];
 
-    networking.hostName = "paperless"; # Define your hostname.
-    networking.firewall.enable = false;
+    networking = {
+      hostName = "paperless"; # Define your hostname.
+      firewall.enable = false;
+    };
 
-    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    sops.defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
-    sops.validateSopsFiles = false;
-    sops.secrets.admin = { owner = "paperless";};
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
+      validateSopsFiles = false;
+      secrets.admin = { owner = "paperless";};
+    };
 
     services.paperless = {
       enable = true;
@@ -4449,13 +4342,15 @@ First, we enable the use of =home-manager= as a NixoS module
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  { config, lib, pkgs, inputs, ... }:
+  { config, lib, pkgs, ... }:
 
   {
+    home-manager = {
+      useGlobalPkgs = true;
+      useUserPackages = true;
+    };
 
-    home-manager.useGlobalPkgs = true;
-    home-manager.useUserPackages = true;
-#+end_src
+  #+end_src
 
 **** Setup login keymap
 :PROPERTIES:
@@ -4465,12 +4360,14 @@ First, we enable the use of =home-manager= as a NixoS module
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
 
 #+begin_src nix :tangle profiles/common/nixos.nix
-    services.xserver = {
-      xkb.layout = "us";
-      xkb.variant = "altgr-intl";
+  services.xserver = {
+    xkb = {
+      layout = "us";
+      variant = "altgr-intl";
     };
+  };
 
-#+end_src
+  #+end_src
 
 **** Enable flakes and nix-command
 :PROPERTIES:
@@ -4481,7 +4378,7 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
 #+end_src
 
@@ -4507,18 +4404,19 @@ Next, we will setup some environment variables that need to be set on the system
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  # use ozone for wayland - chromium apps
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
-
-    # wordlist for look
-    environment.wordlist.enable = true;
-    # gstreamer plugins for nautilus (used for file metadata)
-    environment.sessionVariables.GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
-      gst-plugins-good
-      gst-plugins-bad
-      gst-plugins-ugly
-      gst-libav
-    ]);
+  environment = {
+    wordlist.enable = true;
+    sessionVariables = {
+      NIXOS_OZONE_WL = "1";
+      GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+        gst-plugins-good
+        gst-plugins-bad
+        gst-plugins-ugly
+        gst-libav
+      ]);
+    };
+  };
+  # gstreamer plugins for nautilus (used for file metadata)
 
 #+end_src
 
@@ -4531,7 +4429,7 @@ Windows/Linux dualboot has the quirk of ruining the system clock. Fix it on this
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    time.hardwareClockInLocalTime = true;
+  time.hardwareClockInLocalTime = true;
 
 #+end_src
 
@@ -4544,8 +4442,8 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    # dont style GRUB with stylix
-    stylix.targets.grub.enable = false; # the styling makes grub more ugly
+  # dont style GRUB with stylix
+  stylix.targets.grub.enable = false; # the styling makes grub more ugly
 
 #+end_src
 
@@ -4558,7 +4456,7 @@ Needed for control over system-wide privileges etc.
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    security.polkit.enable = true;
+  security.polkit.enable = true;
 
 #+end_src
 
@@ -4606,8 +4504,8 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 #+begin_src nix :tangle profiles/common/nixos.nix
 
 
-    # systemd
-    systemd.extraConfig = ''
+  # systemd
+  systemd.extraConfig = ''
     DefaultTimeoutStartSec=60s
     DefaultTimeoutStopSec=15s
   '';
@@ -4621,26 +4519,30 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 
 Enable OpenGL, Sound, Bluetooth and various drivers.
 
-    #+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos.nix
 
-      hardware.graphics = {
-        enable = true;
-        enable32Bit = true;
-      };
+  hardware = {
+    graphics = {
+      enable = true;
+      enable32Bit = true;
+    };
 
-      hardware.pulseaudio= {
-        enable = true;
-        package = pkgs.pulseaudioFull;
-      };
+    pulseaudio= {
+      enable = true;
+      package = pkgs.pulseaudioFull;
+    };
 
-      hardware.enableAllFirmware = true;
+    enableAllFirmware = true;
 
-      hardware.bluetooth.powerOnBoot = true;
-      hardware.bluetooth.settings = {
+    bluetooth = {
+      powerOnBoot = true;
+      settings = {
         General = {
           Enable = "Source,Sink,Media,Socket";
         };
       };
+    };
+  };
 
 #+end_src
 
@@ -4869,20 +4771,22 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-      time.timeZone = "Europe/Vienna";
+  time.timeZone = "Europe/Vienna";
 
-      i18n.defaultLocale = "en_US.UTF-8";
-      i18n.extraLocaleSettings = {
-        LC_ADDRESS = "de_AT.UTF-8";
-        LC_IDENTIFICATION = "de_AT.UTF-8";
-        LC_MEASUREMENT = "de_AT.UTF-8";
-        LC_MONETARY = "de_AT.UTF-8";
-        LC_NAME = "de_AT.UTF-8";
-        LC_NUMERIC = "de_AT.UTF-8";
-        LC_PAPER = "de_AT.UTF-8";
-        LC_TELEPHONE = "de_AT.UTF-8";
-        LC_TIME = "de_AT.UTF-8";
-      };
+  i18n = {
+    defaultLocale = "en_US.UTF-8";
+    extraLocaleSettings = {
+      LC_ADDRESS = "de_AT.UTF-8";
+      LC_IDENTIFICATION = "de_AT.UTF-8";
+      LC_MEASUREMENT = "de_AT.UTF-8";
+      LC_MONETARY = "de_AT.UTF-8";
+      LC_NAME = "de_AT.UTF-8";
+      LC_NUMERIC = "de_AT.UTF-8";
+      LC_PAPER = "de_AT.UTF-8";
+      LC_TELEPHONE = "de_AT.UTF-8";
+      LC_TIME = "de_AT.UTF-8";
+    };
+  };
 
 #+end_src
 
@@ -4900,35 +4804,35 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-        sops = {
+  sops = {
 
-          defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
-          validateSopsFiles = false;
+    defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+    validateSopsFiles = false;
 
-          secrets = {
-            swarseluser = {neededForUsers = true;};
-            ernest = {};
-            frauns = {};
-            hotspot = {};
-            eduid = {};
-            edupass = {};
-            handyhotspot = {};
-            vpnuser = {};
-            vpnpass = {};
-          };
-          templates = {
-            "network-manager.env".content = ''
-          ERNEST=${config.sops.placeholder.ernest}
-          FRAUNS=${config.sops.placeholder.frauns}
-          HOTSPOT=${config.sops.placeholder.hotspot}
-          EDUID=${config.sops.placeholder.eduid}
-          EDUPASS=${config.sops.placeholder.edupass}
-          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-          VPNUSER=${config.sops.placeholder.vpnuser}
-          VPNPASS=${config.sops.placeholder.vpnpass}
-          '';
-          };
-        };
+    secrets = {
+      swarseluser = {neededForUsers = true;};
+      ernest = {};
+      frauns = {};
+      hotspot = {};
+      eduid = {};
+      edupass = {};
+      handyhotspot = {};
+      vpnuser = {};
+      vpnpass = {};
+    };
+    templates = {
+      "network-manager.env".content = ''
+    ERNEST=${config.sops.placeholder.ernest}
+    FRAUNS=${config.sops.placeholder.frauns}
+    HOTSPOT=${config.sops.placeholder.hotspot}
+    EDUID=${config.sops.placeholder.eduid}
+    EDUPASS=${config.sops.placeholder.edupass}
+    HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+    VPNUSER=${config.sops.placeholder.vpnuser}
+    VPNPASS=${config.sops.placeholder.vpnpass}
+    '';
+    };
+  };
 #+end_src
 
 *** System Packages
@@ -5030,18 +4934,21 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  programs.dconf.enable = true;
-  programs.evince.enable = true;
-  programs.kdeconnect.enable = true;
+  programs = {
+    dconf.enable = true;
+    evince.enable = true;
+    kdeconnect.enable = true;
+  };
+#+end_src
 
+Also, we setup zsh. Do not touch this.
 
-  # zsh section, do not delete ------
+#+begin_src nix :tangle profiles/common/nixos.nix
+
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
   environment.shells = with pkgs; [ zsh ];
   environment.pathsToLink = [ "/share/zsh" ];
-  # ---------------------------------
-
 #+end_src
 
 *** Services
@@ -5060,7 +4967,7 @@ Enables the blueman service including the nice system tray icon.
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    services.blueman.enable = true;
+  services.blueman.enable = true;
 
 #+end_src
 
@@ -5073,11 +4980,11 @@ This allows me to use my big scanner/printer's scanning function over the networ
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    # enable scanners over network
-    hardware.sane = {
-      enable = true;
-      extraBackends = [ pkgs.sane-airscan ];
-    };
+  # enable scanners over network
+  hardware.sane = {
+    enable = true;
+    extraBackends = [ pkgs.sane-airscan ];
+  };
 
 #+end_src
 
@@ -5086,31 +4993,36 @@ This allows me to use my big scanner/printer's scanning function over the networ
 :CUSTOM_ID: h:8c13df62-c6d9-4a0a-83be-d77e71628f0b
 :END:
 
-This allows me to use my big scanner/printer's printing function over the network. Avahi is the service used for the network discovery, the rest of the settings are driver related.
-
+This allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-    # enable discovery and usage of network devices (esp. printers)
-    services.printing.enable = true;
-    services.printing.drivers = [
+  # enable discovery and usage of network devices (esp. printers)
+  services.printing = {
+    enable = true;
+    drivers = [
       pkgs.gutenprint
       pkgs.gutenprintBin
     ];
-    services.printing.browsedConf = ''
+    browsedConf = ''
   BrowseDNSSDSubTypes _cups,_print
   BrowseLocalProtocols all
   BrowseRemoteProtocols all
   CreateIPPPrinterQueues All
-
   BrowseProtocols all
       '';
-    services.avahi = {
-      enable = true;
-      nssmdns4 = true;
-      openFirewall = true;
-    };
+  };
+#+end_src
 
+Avahi is the service used for the network discovery
+
+#+begin_src nix :tangle profiles/common/nixos.nix
+
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
 #+end_src
 
 **** enable GVfs
@@ -5162,7 +5074,7 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 
 #+end_src
 
-*** Hardware compatibility settings (Yubikey, Ledger)
+*** Hardware compatibility settings (Yubikey, Ledger) - udev rules
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
 :END:
@@ -5182,16 +5094,16 @@ The rest of the gpg-agent related settings are here: [[#h:66fd578f-d4a0-4e17-bf3
   services.pcscd.enable = true;
 
   hardware.ledger.enable = true;
+#+end_src
 
-  # environment.systemPackages = with pkgs; [
-  # --- IN SYSTEM PACKAGES SECTION ---
-  # ];
+Also, this is a good place to setup the udev rules.
+
+#+begin_src nix :tangle profiles/common/nixos.nix
 
   services.udev.packages = with pkgs; [
     yubikey-personalization
     ledger-udev-rules
   ];
-
 
 #+end_src
 
@@ -5412,16 +5324,16 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-      # cura
-      (let cura5 = appimageTools.wrapType2 rec {
-             name = "cura5";
-             version = "5.4.0";
-             src = fetchurl {
-               url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-               hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-             };
-             extraPkgs = pkgs: with pkgs; [ ];
-           }; in writeScriptBin "cura" ''
+  # cura
+  (let cura5 = appimageTools.wrapType2 rec {
+         name = "cura5";
+         version = "5.4.0";
+         src = fetchurl {
+           url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+           hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+         };
+         extraPkgs = pkgs: with pkgs; [ ];
+       }; in writeScriptBin "cura" ''
             #! ${pkgs.bash}/bin/bash
             # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
             # So we convert each of the files passed as argument to an absolute path.
@@ -5436,15 +5348,15 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
             exec "${cura5}/bin/cura5" "''${args[@]}"
             '')
 
-      #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-      (pkgs.writeShellScriptBin "e" ''
+    #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
+    (pkgs.writeShellScriptBin "e" ''
          bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
          '')
-      (pkgs.writeShellScriptBin "timer" ''
+    (pkgs.writeShellScriptBin "timer" ''
          sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
          '')
 
-      (pkgs.writeScriptBin "project" ''
+    (pkgs.writeScriptBin "project" ''
    #! ${pkgs.bash}/bin/bash
    if [ "$1" == "rust" ]; then
    cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
@@ -5472,10 +5384,10 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
    direnv allow
    '')
 
-      (pkgs.writeShellApplication {
-        name = "pass-fuzzel";
-        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-        text = ''
+    (pkgs.writeShellApplication {
+      name = "pass-fuzzel";
+      runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+      text = ''
          shopt -s nullglob globstar
 
          typeit=0
@@ -5501,12 +5413,12 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
          fi
          notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
        '';
-      })
+    })
 
-      (pkgs.writeShellApplication {
-        name = "pass-fuzzel-otp";
-        runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
-        text = ''
+    (pkgs.writeShellApplication {
+      name = "pass-fuzzel-otp";
+      runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
+      text = ''
          shopt -s nullglob globstar
 
          typeit=0
@@ -5532,30 +5444,30 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
          fi
          notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
        '';
-      })
+    })
 
-      (pkgs.writeShellApplication {
-        name = "cdw";
-        runtimeInputs = [ pkgs.fzf ];
-        text = ''
+    (pkgs.writeShellApplication {
+      name = "cdw";
+      runtimeInputs = [ pkgs.fzf ];
+      text = ''
       cd "$(git worktree list | fzf | awk '{print $1}')"
       '';
-      })
+    })
 
-      (pkgs.writeShellApplication {
-        name = "cdb";
-        runtimeInputs = [ pkgs.fzf ];
-        text = ''
+    (pkgs.writeShellApplication {
+      name = "cdb";
+      runtimeInputs = [ pkgs.fzf ];
+      text = ''
       git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
       '';
-      })
+    })
 
-      (pkgs.writeShellApplication {
-        name = "bak";
-        text = ''
+    (pkgs.writeShellApplication {
+      name = "bak";
+      text = ''
         cp "$1"{,.bak}
       '';
-      })
+    })
 
   ];
 
@@ -5573,17 +5485,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
+ Since we are using the home-manager implementation here, we need to specify the runtime path.
+
 #+begin_src nix :tangle profiles/common/home.nix
 
-  sops.defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-  sops.validateSopsFiles = false;
-
-  # since we are using the home-manager implementation, we need to specify the runtime path for each secret
-  sops.secrets.mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-  sops.secrets.nautilus = {path = "/run/user/1000/secrets/nautilus";};
-  sops.secrets.leon = {path = "/run/user/1000/secrets/leon";};
-  sops.secrets.swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
-  sops.secrets.caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+  sops = {
+    defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+    validateSopsFiles = false;
+    secrets = {
+      mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
+      nautilus = {path = "/run/user/1000/secrets/nautilus";};
+      leon = {path = "/run/user/1000/secrets/leon";};
+      swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
+      caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+    };
+  };
 #+end_src
 
 *** SSH Machines
@@ -5841,7 +5757,7 @@ Also, we link some files to the users XDG configuration home:
   xdg.configFile = {
     "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
     "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
-    };
+  };
 
 #+end_src
 
@@ -5870,26 +5786,27 @@ This houses the configurations for all programs managed by home-manager.
 :CUSTOM_ID: h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde
 :END:
 
-This section is for programs that require no further configuration
+This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-  # zsh Integration is enabled by default for these
-  programs.bottom.enable = true;
-  programs.imv.enable = true;
-  programs.sioyek.enable = true;
-  programs.bat.enable = true;
-  programs.carapace.enable = true;
-  programs.wlogout.enable = true;
-  programs.swayr.enable = true;
-  programs.yt-dlp.enable = true;
-  programs.mpv.enable = true;
-  programs.jq.enable = true;
-  programs.nix-index.enable = true;
-  programs.ripgrep.enable = true;
-  programs.pandoc.enable = true;
-  programs.fzf.enable = true;
-  programs.zoxide.enable = true;
+  programs = {
+    bottom.enable = true;
+    imv.enable = true;
+    sioyek.enable = true;
+    bat.enable = true;
+    carapace.enable = true;
+    wlogout.enable = true;
+    swayr.enable = true;
+    yt-dlp.enable = true;
+    mpv.enable = true;
+    jq.enable = true;
+    nix-index.enable = true;
+    ripgrep.enable = true;
+    pandoc.enable = true;
+    fzf.enable = true;
+    zoxide.enable = true;
+  };
 
 #+end_src
 
@@ -5921,7 +5838,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
-    };
+  };
 
 #+end_src
 
@@ -5944,7 +5861,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
     ];
   };
 
-  #+end_src
+#+end_src
 
 *** git
 :PROPERTIES:
@@ -5953,7 +5870,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
-  #+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home.nix
 
   programs.git = {
     enable = true;
@@ -6295,7 +6212,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       };
       mbsync = {
         enable = false;
-        };
+      };
     };
 
     accounts.nautilus = {
@@ -6367,51 +6284,51 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-    # enable emacs overlay for bleeding edge features
-    # also read init.el file and install use-package packages
-    programs.emacs = {
-      enable = true;
-      package = (pkgs.emacsWithPackagesFromUsePackage {
-        config = ../../programs/emacs/init.el;
-        package = pkgs.emacs-pgtk;
-        alwaysEnsure = true;
-        alwaysTangle = true;
-        extraEmacsPackages = epkgs: [
-          epkgs.mu4e
-          epkgs.use-package
-          # epkgs.lsp-bridge
-          epkgs.doom-themes
+  # enable emacs overlay for bleeding edge features
+  # also read init.el file and install use-package packages
+  programs.emacs = {
+    enable = true;
+    package = (pkgs.emacsWithPackagesFromUsePackage {
+      config = ../../programs/emacs/init.el;
+      package = pkgs.emacs-pgtk;
+      alwaysEnsure = true;
+      alwaysTangle = true;
+      extraEmacsPackages = epkgs: [
+        epkgs.mu4e
+        epkgs.use-package
+        # epkgs.lsp-bridge
+        epkgs.doom-themes
 
-          # build the rest of the packages myself
-          # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
-          # build the package from the haji-ali fork, which is well-maintained
-           (epkgs.trivialBuild rec {
-            pname = "calfw";
-            version = "1.0.0-20231002";
-            src = pkgs.fetchFromGitHub {
-              owner = "haji-ali";
-              repo = "emacs-calfw";
-              rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-              hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-            };
-            packageRequires = [ epkgs.howm ];
-          })
+        # build the rest of the packages myself
+        # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
+        # build the package from the haji-ali fork, which is well-maintained
+        (epkgs.trivialBuild rec {
+          pname = "calfw";
+          version = "1.0.0-20231002";
+          src = pkgs.fetchFromGitHub {
+            owner = "haji-ali";
+            repo = "emacs-calfw";
+            rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+            hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+          };
+          packageRequires = [ epkgs.howm ];
+        })
 
-           (epkgs.trivialBuild rec {
-            pname = "fast-scroll";
-            version = "1.0.0-20191016";
-            src = pkgs.fetchFromGitHub {
-              owner = "ahungry";
-              repo = "fast-scroll";
-              rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
-              hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
-            };
-            packageRequires = [];
-          })
+        (epkgs.trivialBuild rec {
+          pname = "fast-scroll";
+          version = "1.0.0-20191016";
+          src = pkgs.fetchFromGitHub {
+            owner = "ahungry";
+            repo = "fast-scroll";
+            rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
+            hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
+          };
+          packageRequires = [];
+        })
 
-        ];
-      });
-    };
+      ];
+    });
+  };
 
 #+end_src
 
@@ -6428,196 +6345,196 @@ The rest of this configuration is found here:
 
 #+begin_src nix :tangle profiles/common/home.nix
 
-   programs.waybar = {
+  programs.waybar = {
 
-     enable = true;
-     # systemd.enable = true;
-     settings = {
-       mainBar = {
-         layer = "top";
-         position = "top";
-         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
-         modules-center = [ "sway/mode" "custom/configwarn" ];
-         "sway/mode" = {
-           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
-         };
+    enable = true;
+    # systemd.enable = true;
+    settings = {
+      mainBar = {
+        layer = "top";
+        position = "top";
+        modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
+        modules-center = [ "sway/mode" "custom/configwarn" ];
+        "sway/mode" = {
+          format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+        };
 
-         "custom/configwarn" = {
-           exec= "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
-           interval= 60;
-         };
+        "custom/configwarn" = {
+          exec= "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+          interval= 60;
+        };
 
-         "group/hardware" = {
-           orientation = "inherit";
-           drawer = {
-             "transition-left-to-right" = false;
-           };
-           modules = [
-             "tray"
-             "temperature"
-             "power-profiles-daemon"
-             "custom/left-arrow-light"
-             "disk"
-             "custom/left-arrow-dark"
-             "memory"
-             "custom/left-arrow-light"
-             "cpu"
-             "custom/left-arrow-dark"
-           ];
-         };
+        "group/hardware" = {
+          orientation = "inherit";
+          drawer = {
+            "transition-left-to-right" = false;
+          };
+          modules = [
+            "tray"
+            "temperature"
+            "power-profiles-daemon"
+            "custom/left-arrow-light"
+            "disk"
+            "custom/left-arrow-dark"
+            "memory"
+            "custom/left-arrow-light"
+            "cpu"
+            "custom/left-arrow-dark"
+          ];
+        };
 
-         power-profiles-daemon = {
-           format= "{icon}";
-           tooltip-format= "Power profile: {profile}\nDriver: {driver}";
-           tooltip= true;
-           format-icons= {
-             "default"= "";
-             "performance"= "";
-             "balanced"= "";
-             "power-saver"= "";
-           };
-         };
+        power-profiles-daemon = {
+          format= "{icon}";
+          tooltip-format= "Power profile: {profile}\nDriver: {driver}";
+          tooltip= true;
+          format-icons= {
+            "default"= "";
+            "performance"= "";
+            "balanced"= "";
+            "power-saver"= "";
+          };
+        };
 
-         temperature = {
-           critical-threshold = 80;
-           format-critical = " {temperatureC}°C";
-           format = " {temperatureC}°C";
+        temperature = {
+          critical-threshold = 80;
+          format-critical = " {temperatureC}°C";
+          format = " {temperatureC}°C";
 
-         };
+        };
 
-         mpris = {
-           format= "{player_icon} {title} <small>[{position}/{length}]</small>";
-           format-paused=  "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
-           player-icons=  {
-             "default" = "▶ ";
-             "mpv" = "🎵 ";
-             "spotify" = " ";
-           };
-           status-icons= {
-             "paused"= " ";
-           };
-           interval = 1;
-           title-len = 20;
-           artist-len = 20;
-           album-len = 10;
-         };
-         "custom/left-arrow-dark" = {
-           format = "";
-           tooltip = false;
-         };
-         "custom/outer-left-arrow-dark"= {
-           format = "";
-           tooltip = false;
-         };
-         "custom/left-arrow-light"= {
-           format= "";
-           tooltip= false;
-         };
-         "custom/right-arrow-dark"= {
-           format= "";
-           tooltip= false;
-         };
-         "custom/outer-right-arrow-dark"= {
-           format= "";
-           tooltip= false;
-         };
-         "custom/right-arrow-light"= {
-           format= "";
-           tooltip= false;
-         };
-         "sway/workspaces"= {
-           disable-scroll= true;
-           format= "{name}";
-         };
+        mpris = {
+          format= "{player_icon} {title} <small>[{position}/{length}]</small>";
+          format-paused=  "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+          player-icons=  {
+            "default" = "▶ ";
+            "mpv" = "🎵 ";
+            "spotify" = " ";
+          };
+          status-icons= {
+            "paused"= " ";
+          };
+          interval = 1;
+          title-len = 20;
+          artist-len = 20;
+          album-len = 10;
+        };
+        "custom/left-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/outer-left-arrow-dark"= {
+          format = "";
+          tooltip = false;
+        };
+        "custom/left-arrow-light"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/right-arrow-dark"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/outer-right-arrow-dark"= {
+          format= "";
+          tooltip= false;
+        };
+        "custom/right-arrow-light"= {
+          format= "";
+          tooltip= false;
+        };
+        "sway/workspaces"= {
+          disable-scroll= true;
+          format= "{name}";
+        };
 
-         "clock#1"= {
-           min-length= 8;
-           interval= 1;
-           format= "{:%H:%M:%S}";
-           # on-click-right= "gnome-clocks";
-           tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-         };
+        "clock#1"= {
+          min-length= 8;
+          interval= 1;
+          format= "{:%H:%M:%S}";
+          # on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        };
 
-         "clock#2"= {
-           format= "{:%d. %B %Y}";
-           # on-click-right= "gnome-clocks";
-           tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-         };
+        "clock#2"= {
+          format= "{:%d. %B %Y}";
+          # on-click-right= "gnome-clocks";
+          tooltip-format= "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        };
 
-         pulseaudio= {
-           format= "{icon} {volume:2}%";
-           format-bluetooth= "{icon} {volume}%";
-           format-muted= "MUTE";
-           format-icons= {
-             headphones= "";
-             default= [
-               ""
-               ""
-             ];
-           };
-           scroll-step= 1;
-           on-click= "pamixer -t";
-           on-click-right= "pavucontrol";
-         };
-         memory= {
-           interval= 5;
-           format= " {}%";
-           tooltip-format= "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
-         };
-         cpu= {
-           min-length= 6;
-           interval= 5;
-           format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
-           # on-click-right= "com.github.stsdc.monitor";
-           on-click-right= "kitty -o confirm_os_window_close=0 btm";
+        pulseaudio= {
+          format= "{icon} {volume:2}%";
+          format-bluetooth= "{icon} {volume}%";
+          format-muted= "MUTE";
+          format-icons= {
+            headphones= "";
+            default= [
+              ""
+              ""
+            ];
+          };
+          scroll-step= 1;
+          on-click= "pamixer -t";
+          on-click-right= "pavucontrol";
+        };
+        memory= {
+          interval= 5;
+          format= " {}%";
+          tooltip-format= "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
+        };
+        cpu= {
+          min-length= 6;
+          interval= 5;
+          format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
+          # on-click-right= "com.github.stsdc.monitor";
+          on-click-right= "kitty -o confirm_os_window_close=0 btm";
 
-         };
-         battery= {
-           states= {
-             "warning"= 60;
-             "error"= 30;
-             "critical"= 15;
-           };
-           interval=5;
-           format= "{icon} {capacity}%";
-           format-charging= "{capacity}% ";
-           format-plugged= "{capacity}% ";
-           format-icons= [
-             ""
-             ""
-             ""
-             ""
-             ""
-           ];
-           on-click-right= "wlogout -p layer-shell";
-         };
-         disk= {
-           interval= 30;
-           format= "Disk {percentage_used:2}%";
-           path= "/";
-           states= {
-             "warning"= 80;
-             "critical"= 90;
-           };
-           tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
-         };
-         tray= {
-           icon-size= 20;
-         };
-         network= {
-           interval = 5;
-           format-wifi= "{signalStrength}% ";
-           format-ethernet= "";
-           format-linked= "{ifname} (No IP) ";
-           format-disconnected= "Disconnected ⚠";
-           format-alt= "{ifname}: {ipaddr}/{cidr}";
-           tooltip-format-ethernet= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-           tooltip-format-wifi= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-         };
-       };
-     };
-     style = (builtins.readFile ../../programs/waybar/style.css);
-   };
+        };
+        battery= {
+          states= {
+            "warning"= 60;
+            "error"= 30;
+            "critical"= 15;
+          };
+          interval=5;
+          format= "{icon} {capacity}%";
+          format-charging= "{capacity}% ";
+          format-plugged= "{capacity}% ";
+          format-icons= [
+            ""
+            ""
+            ""
+            ""
+            ""
+          ];
+          on-click-right= "wlogout -p layer-shell";
+        };
+        disk= {
+          interval= 30;
+          format= "Disk {percentage_used:2}%";
+          path= "/";
+          states= {
+            "warning"= 80;
+            "critical"= 90;
+          };
+          tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
+        };
+        tray= {
+          icon-size= 20;
+        };
+        network= {
+          interval = 5;
+          format-wifi= "{signalStrength}% ";
+          format-ethernet= "";
+          format-linked= "{ifname} (No IP) ";
+          format-disconnected= "Disconnected ⚠";
+          format-alt= "{ifname}: {ipaddr}/{cidr}";
+          tooltip-format-ethernet= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+          tooltip-format-wifi= "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+        };
+      };
+    };
+    style = (builtins.readFile ../../programs/waybar/style.css);
+  };
 
 #+end_src
 
@@ -6646,19 +6563,19 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
       ];
     };
     policies = {
-        CaptivePortal = false;
-        DisableFirefoxStudies = true;
-        DisablePocket = true;
-        DisableTelemetry = true;
-        DisableFirefoxAccounts = false;
-        NoDefaultBookmarks = true;
-        OfferToSaveLogins = false;
-        OfferToSaveLoginsDefault = false;
-        EnableTrackingProtection = true;
-        };
+      CaptivePortal = false;
+      DisableFirefoxStudies = true;
+      DisablePocket = true;
+      DisableTelemetry = true;
+      DisableFirefoxAccounts = false;
+      NoDefaultBookmarks = true;
+      OfferToSaveLogins = false;
+      OfferToSaveLoginsDefault = false;
+      EnableTrackingProtection = true;
+    };
     profiles.default = {
       isDefault = true;
-      userChrome = (builtins.readFile ../../programs/firefox/chrome/userChrome.css);
+      userChrome = builtins.readFile ../../programs/firefox/chrome/userChrome.css;
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
         browserpass
@@ -6753,7 +6670,7 @@ Used for storing sessions in e.g. Nextcloud
     enable = true;
   };
 
-  #+end_src
+#+end_src
 
 **** mbsync
 :PROPERTIES:
@@ -6762,13 +6679,13 @@ Used for storing sessions in e.g. Nextcloud
 
 Used for syncing mail. This might be automatically enabled by my mail configuration, but I like to make sure.
 
-  #+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home.nix
 
-    services.mbsync = {
-      enable = true;
-    };
+  services.mbsync = {
+    enable = true;
+  };
 
-    #+end_src
+#+end_src
 
 **** KDE Connect
 :PROPERTIES:
@@ -6777,12 +6694,12 @@ Used for syncing mail. This might be automatically enabled by my mail configurat
 
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
 
-    #+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home.nix
 
-      services.kdeconnect = {
-        enable = true;
-        indicator = true;
-      };
+  services.kdeconnect = {
+    enable = true;
+    indicator = true;
+  };
 
 #+end_src
 
@@ -6876,9 +6793,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     enable = true;
     checkConfig = false; # delete this line once SwayFX is fixed upstream
     package = pkgs.swayfx;
-    # package = pkgs.sway;
-    systemd.enable = true;
-    systemd.xdgAutostart = true;
+    systemd = {
+      enable = true;
+      xdgAutostart = true;
+    };
     wrapperFeatures.gtk = true;
     config = rec {
       modifier = "Mod4";
@@ -6886,7 +6804,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       menu = "fuzzel";
       bars = [{ command = "waybar";}];
       keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
+        inherit (config.wayland.windowManager.sway.config) modifier;
       in {
         "${modifier}+q" = "kill";
         "${modifier}+f" = "exec firefox";
@@ -7049,7 +6967,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           #   criteria = {
           #     app_id="^$";
           #     class="^$";
-            # };
+          # };
           # }
           {
 
@@ -7098,7 +7016,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
     # ";
     extraConfig =let
-      modifier = config.wayland.windowManager.sway.config.modifier;
+      inherit (config.wayland.windowManager.sway.config) modifier;
       swayfxSettings = "
           blur enable
           blur_xray disable
@@ -7109,7 +7027,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           titlebar_separator disable
           default_dim_inactive 0.02
       ";
-      swayfxSettingsOff = "";
     in "
         exec_always autotiling
         set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
@@ -7171,7 +7088,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
 #+begin_src nix :noweb yes :tangle flake.nix
 
-    {
+  {
     description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
     inputs = {
@@ -7179,9 +7096,8 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     };
 
     outputs = inputs@{
-      self,
-        <<flakeinputsatoutputs>>
-        ...
+      <<flakeinputsatoutputs>>
+      ...
     }: let
       <<flakelet>>
     in {
@@ -7294,16 +7210,16 @@ For the =default-frame-alist=, I used to also set ='(right-divider-width . 4)= a
                 right-margin-width 1)
 
   (setq-default default-frame-alist
-        (append
-         (list
-          '(undecorated . t) ; no title bar, borders etc.
-          '(background-color . "#1D252C") ; load doom-citylight colors to avoid white flash
-          '(foreground-color . "#A0B3C5") ; load doom-citylight colors to avoid white flash
-          '(vertical-scroll-bars . nil)
-          '(horizontal-scroll-bars . nil)
-          '(internal-border-width . 5)
-          '(tool-bar-lines . 0)
-          '(menu-bar-lines . 0))))
+                (append
+                 (list
+                  '(undecorated . t) ; no title bar, borders etc.
+                  '(background-color . "#1D252C") ; load doom-citylight colors to avoid white flash
+                  '(foreground-color . "#A0B3C5") ; load doom-citylight colors to avoid white flash
+                  '(vertical-scroll-bars . nil)
+                  '(horizontal-scroll-bars . nil)
+                  '(internal-border-width . 5)
+                  '(tool-bar-lines . 0)
+                  '(menu-bar-lines . 0))))
 
 #+end_src
 *** Make C-i, C-m, C-[ available in graphic sessions
@@ -7323,14 +7239,14 @@ NOTE: To use these keybinds, you need to enclose the binding in angled brackets 
 #+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
 
   (add-hook
-      'after-make-frame-functions
-      (lambda (frame)
-        (with-selected-frame frame
-          (when (display-graphic-p)
-            (define-key input-decode-map (kbd "C-i") [DUMMY-i])
-            (define-key input-decode-map (kbd "C-[") [DUMMY-lsb])
-            (define-key input-decode-map (kbd "C-m") [DUMMY-m])
-            ))))
+   'after-make-frame-functions
+   (lambda (frame)
+     (with-selected-frame frame
+       (when (display-graphic-p)
+         (define-key input-decode-map (kbd "C-i") [DUMMY-i])
+         (define-key input-decode-map (kbd "C-[") [DUMMY-lsb])
+         (define-key input-decode-map (kbd "C-m") [DUMMY-m])
+         ))))
 
 
 
@@ -7459,48 +7375,48 @@ However, this function does not work on regions. Later, I found a solution imple
 
 #+begin_src emacs-lisp
 
-    (defun crux-get-positions-of-line-or-region ()
-      "Return positions (beg . end) of the current line or region."
-      (let (beg end)
-        (if (and mark-active (> (point) (mark)))
-            (exchange-point-and-mark))
-        (setq beg (line-beginning-position))
-        (if mark-active
-            (exchange-point-and-mark))
-        (setq end (line-end-position))
-        (cons beg end)))
+  (defun crux-get-positions-of-line-or-region ()
+    "Return positions (beg . end) of the current line or region."
+    (let (beg end)
+      (if (and mark-active (> (point) (mark)))
+          (exchange-point-and-mark))
+      (setq beg (line-beginning-position))
+      (if mark-active
+          (exchange-point-and-mark))
+      (setq end (line-end-position))
+      (cons beg end)))
 
-    (defun crux-duplicate-current-line-or-region (arg)
-        "Duplicates the current line or region ARG times.
-      If there's no region, the current line will be duplicated.  However, if
-      there's a region, all lines that region covers will be duplicated."
-        (interactive "p")
-        (pcase-let* ((origin (point))
-                     (`(,beg . ,end) (crux-get-positions-of-line-or-region))
-                     (region (buffer-substring-no-properties beg end)))
-          (dotimes (_i arg)
-            (goto-char end)
-            (newline)
-            (insert region)
-            (setq end (point)))
-          (goto-char (+ origin (* (length region) arg) arg))))
-
-    (defun crux-duplicate-and-comment-current-line-or-region (arg)
-      "Duplicates and comments the current line or region ARG times.
+  (defun crux-duplicate-current-line-or-region (arg)
+    "Duplicates the current line or region ARG times.
     If there's no region, the current line will be duplicated.  However, if
     there's a region, all lines that region covers will be duplicated."
-      (interactive "p")
-      (pcase-let* ((origin (point))
-                   (`(,beg . ,end) (crux-get-positions-of-line-or-region))
-                   (region (buffer-substring-no-properties beg end)))
-        (comment-or-uncomment-region beg end)
-        (setq end (line-end-position))
-        (dotimes (_ arg)
-          (goto-char end)
-          (newline)
-          (insert region)
-          (setq end (point)))
-        (goto-char (+ origin (* (length region) arg) arg))))
+    (interactive "p")
+    (pcase-let* ((origin (point))
+                 (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+                 (region (buffer-substring-no-properties beg end)))
+      (dotimes (_i arg)
+        (goto-char end)
+        (newline)
+        (insert region)
+        (setq end (point)))
+      (goto-char (+ origin (* (length region) arg) arg))))
+
+  (defun crux-duplicate-and-comment-current-line-or-region (arg)
+    "Duplicates and comments the current line or region ARG times.
+  If there's no region, the current line will be duplicated.  However, if
+  there's a region, all lines that region covers will be duplicated."
+    (interactive "p")
+    (pcase-let* ((origin (point))
+                 (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+                 (region (buffer-substring-no-properties beg end)))
+      (comment-or-uncomment-region beg end)
+      (setq end (line-end-position))
+      (dotimes (_ arg)
+        (goto-char end)
+        (newline)
+        (insert region)
+        (setq end (point)))
+      (goto-char (+ origin (* (length region) arg) arg))))
 
 #+end_src
 **** [prot] org-id-headings
@@ -7716,13 +7632,13 @@ However, I want to be able to fold a single heading consistently.
 
 #+begin_src emacs-lisp
 
-(defun org-fold-outer ()
-  (interactive)
-  (org-beginning-of-line)
-  (if (string-match "^*+" (thing-at-point 'line t))
-      (outline-up-heading 1))
-  (outline-hide-subtree)
-  )
+  (defun org-fold-outer ()
+    (interactive)
+    (org-beginning-of-line)
+    (if (string-match "^*+" (thing-at-point 'line t))
+        (outline-up-heading 1))
+    (outline-hide-subtree)
+    )
 
 #+end_src
 
@@ -7737,21 +7653,21 @@ These functions are used here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][Corfu]
 
 #+begin_src emacs-lisp
 
-    (defun swarsel/corfu-normal-return (&optional arg)
-      (interactive)
-      (corfu-quit)
-      (newline)
-      )
+  (defun swarsel/corfu-normal-return (&optional arg)
+    (interactive)
+    (corfu-quit)
+    (newline)
+    )
 
-    (defun swarsel/corfu-quit-and-up (&optional arg)
-      (interactive)
-      (corfu-quit)
-      (evil-previous-visual-line))
+  (defun swarsel/corfu-quit-and-up (&optional arg)
+    (interactive)
+    (corfu-quit)
+    (evil-previous-visual-line))
 
-    (defun swarsel/corfu-quit-and-down (&optional arg)
-      (interactive)
-      (corfu-quit)
-      (evil-next-visual-line))
+  (defun swarsel/corfu-quit-and-down (&optional arg)
+    (interactive)
+    (corfu-quit)
+    (evil-next-visual-line))
 
 #+end_src
 
@@ -7764,23 +7680,23 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 
 #+begin_src emacs-lisp
 
-      ;; run the python inferior shell immediately upon entering a python buffer
-      ;; (add-hook 'python-mode-hook 'swarsel/run-python)
+  ;; run the python inferior shell immediately upon entering a python buffer
+  ;; (add-hook 'python-mode-hook 'swarsel/run-python)
 
-    ;; (defun swarsel/run-python ()
-    ;;   (save-selected-window
-    ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+  ;; (defun swarsel/run-python ()
+  ;;   (save-selected-window
+  ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
 
   ;; reload python shell automatically
   (defun my-python-shell-run ()
     (interactive)
     (when (get-buffer-process "*Python*")
-       (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
-       (kill-process (get-buffer-process "*Python*"))
-       ;; Uncomment If you want to clean the buffer too.
-       ;;(kill-buffer "*Python*")
-       ;; Not so fast!
-       (sleep-for 0.5))
+      (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
+      (kill-process (get-buffer-process "*Python*"))
+      ;; Uncomment If you want to clean the buffer too.
+      ;;(kill-buffer "*Python*")
+      ;; Not so fast!
+      (sleep-for 0.5))
     (run-python (python-shell-parse-command) nil nil)
     (python-shell-send-buffer)
     ;; Pop new window only if shell isnt visible
@@ -7915,39 +7831,39 @@ In this section I setup some aliases that I use for various directories on my sy
 
 #+begin_src emacs-lisp
 
-    ;; set Nextcloud directory for journals etc.
-    (setq swarsel-sync-directory "~/Nextcloud"
-          swarsel-emacs-directory "~/.emacs.d"
-          swarsel-dotfiles-directory "~/.dotfiles"
-          swarsel-projects-directory "~/Documents/GitHub")
+  ;; set Nextcloud directory for journals etc.
+  (setq swarsel-sync-directory "~/Nextcloud"
+        swarsel-emacs-directory "~/.emacs.d"
+        swarsel-dotfiles-directory "~/.dotfiles"
+        swarsel-projects-directory "~/Documents/GitHub")
 
-    (setq swarsel-emacs-org-filepath (expand-file-name "Emacs.org" swarsel-dotfiles-directory)
-          swarsel-nix-org-filepath (expand-file-name "Nix.org" swarsel-dotfiles-directory)
-          swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
-          )
-
-
-    ;; set Emacs main configuration .org names
-    (setq swarsel-emacs-org-file "Emacs.org"
-          swarsel-anki-org-file "Anki.org"
-          swarsel-tasks-org-file "Tasks.org"
-          swarsel-archive-org-file "Archive.org"
-          swarsel-org-folder-name "Org"
-          swarsel-obsidian-daily-folder-name "⭐ Personal/Journal"
-          swarsel-obsidian-folder-name "Obsidian"
-          swarsel-obsidian-vault-name "Main")
+  (setq swarsel-emacs-org-filepath (expand-file-name "Emacs.org" swarsel-dotfiles-directory)
+        swarsel-nix-org-filepath (expand-file-name "Nix.org" swarsel-dotfiles-directory)
+        swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
+        )
 
 
-    ;; set directory paths
-    (setq swarsel-org-directory (expand-file-name swarsel-org-folder-name  swarsel-sync-directory)) ; path to org folder
-    (setq swarsel-obsidian-directory (expand-file-name swarsel-obsidian-folder-name swarsel-sync-directory)) ; path to obsidian
-    (setq swarsel-obsidian-vault-directory (expand-file-name swarsel-obsidian-vault-name swarsel-obsidian-directory)) ; path to obsidian vault
-    (setq swarsel-obsidian-daily-directory (expand-file-name swarsel-obsidian-daily-folder-name swarsel-obsidian-vault-directory)) ; path to obsidian daily folder
+  ;; set Emacs main configuration .org names
+  (setq swarsel-emacs-org-file "Emacs.org"
+        swarsel-anki-org-file "Anki.org"
+        swarsel-tasks-org-file "Tasks.org"
+        swarsel-archive-org-file "Archive.org"
+        swarsel-org-folder-name "Org"
+        swarsel-obsidian-daily-folder-name "⭐ Personal/Journal"
+        swarsel-obsidian-folder-name "Obsidian"
+        swarsel-obsidian-vault-name "Main")
 
-    ;; filepaths to certain documents
-    (setq swarsel-org-anki-filepath (expand-file-name swarsel-anki-org-file swarsel-org-directory) ; path to anki export file
-          swarsel-org-tasks-filepath (expand-file-name swarsel-tasks-org-file swarsel-org-directory)
-          swarsel-org-archive-filepath (expand-file-name swarsel-archive-org-file swarsel-org-directory))
+
+  ;; set directory paths
+  (setq swarsel-org-directory (expand-file-name swarsel-org-folder-name  swarsel-sync-directory)) ; path to org folder
+  (setq swarsel-obsidian-directory (expand-file-name swarsel-obsidian-folder-name swarsel-sync-directory)) ; path to obsidian
+  (setq swarsel-obsidian-vault-directory (expand-file-name swarsel-obsidian-vault-name swarsel-obsidian-directory)) ; path to obsidian vault
+  (setq swarsel-obsidian-daily-directory (expand-file-name swarsel-obsidian-daily-folder-name swarsel-obsidian-vault-directory)) ; path to obsidian daily folder
+
+  ;; filepaths to certain documents
+  (setq swarsel-org-anki-filepath (expand-file-name swarsel-anki-org-file swarsel-org-directory) ; path to anki export file
+        swarsel-org-tasks-filepath (expand-file-name swarsel-tasks-org-file swarsel-org-directory)
+        swarsel-org-archive-filepath (expand-file-name swarsel-archive-org-file swarsel-org-directory))
 
 
 
@@ -8173,39 +8089,39 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
 
 #+begin_src emacs-lisp
 
-    ;; Emulate vim in emacs
-    (use-package evil
-      :init
-      (setq evil-want-integration t) ; loads evil
-      (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
-      (setq evil-want-C-u-scroll t) ; scrolling using C-u
-      (setq evil-want-C-i-jump nil) ; jumping with C-i
-      (setq evil-want-Y-yank-to-eol t) ; give Y some utility
-      (setq evil-shift-width 2) ; uniform indent
-      (setq evil-respect-visual-line-mode t) ; i am torn on this one
-      (setq evil-split-window-below t)
-      (setq evil-vsplit-window-right t)
-      :config
-      (evil-mode 1)
-      (define-key evil-normal-state-map (kbd "C-z") nil)
-      (define-key evil-insert-state-map (kbd "C-z") nil)
-      (define-key evil-visual-state-map (kbd "C-z") nil)
-      (define-key evil-motion-state-map (kbd "C-z") nil)
-      (define-key evil-operator-state-map (kbd "C-z") nil)
-      (define-key evil-replace-state-map (kbd "C-z") nil)
-      (define-key global-map (kbd "C-z") nil)
-      (evil-set-undo-system 'undo-tree)
+  ;; Emulate vim in emacs
+  (use-package evil
+    :init
+    (setq evil-want-integration t) ; loads evil
+    (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
+    (setq evil-want-C-u-scroll t) ; scrolling using C-u
+    (setq evil-want-C-i-jump nil) ; jumping with C-i
+    (setq evil-want-Y-yank-to-eol t) ; give Y some utility
+    (setq evil-shift-width 2) ; uniform indent
+    (setq evil-respect-visual-line-mode t) ; i am torn on this one
+    (setq evil-split-window-below t)
+    (setq evil-vsplit-window-right t)
+    :config
+    (evil-mode 1)
+    (define-key evil-normal-state-map (kbd "C-z") nil)
+    (define-key evil-insert-state-map (kbd "C-z") nil)
+    (define-key evil-visual-state-map (kbd "C-z") nil)
+    (define-key evil-motion-state-map (kbd "C-z") nil)
+    (define-key evil-operator-state-map (kbd "C-z") nil)
+    (define-key evil-replace-state-map (kbd "C-z") nil)
+    (define-key global-map (kbd "C-z") nil)
+    (evil-set-undo-system 'undo-tree)
 
-      ;; Don't use evil-mode in these contexts, or use it in a specific mode
-      (evil-set-initial-state 'messages-buffer-mode 'emacs)
-      (evil-set-initial-state 'dashboard-mode 'emacs)
-      (evil-set-initial-state 'dired-mode 'emacs)
-      (evil-set-initial-state 'cfw:details-mode 'emacs)
-      (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
-      (evil-set-initial-state 'mu4e-headers-mode 'normal)
-      (evil-set-initial-state 'python-inferior-mode 'normal)
-      (add-hook 'org-capture-mode-hook 'evil-insert-state)
-      (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
+    ;; Don't use evil-mode in these contexts, or use it in a specific mode
+    (evil-set-initial-state 'messages-buffer-mode 'emacs)
+    (evil-set-initial-state 'dashboard-mode 'emacs)
+    (evil-set-initial-state 'dired-mode 'emacs)
+    (evil-set-initial-state 'cfw:details-mode 'emacs)
+    (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
+    (evil-set-initial-state 'mu4e-headers-mode 'normal)
+    (evil-set-initial-state 'python-inferior-mode 'normal)
+    (add-hook 'org-capture-mode-hook 'evil-insert-state)
+    (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
 
 #+end_src
 **** evil-collection
@@ -8217,11 +8133,11 @@ This gives support for many different modes, and works beautifully out of the bo
 
 #+begin_src emacs-lisp
 
-    (use-package evil-collection
-      :after evil
-      :config
-      (evil-collection-init)
-      (setq forge-add-default-bindings nil))
+  (use-package evil-collection
+    :after evil
+    :config
+    (evil-collection-init)
+    (setq forge-add-default-bindings nil))
 #+end_src
 **** evil-snipe
 :PROPERTIES:
@@ -8232,13 +8148,13 @@ This package changes the char-search commands like =f= by showing the results in
 
 #+begin_src emacs-lisp
   ;; enables 2-char inline search
-    (use-package evil-snipe
-      :after evil
-      :demand
-      :config
-      (evil-snipe-mode +1)
-      ;; replace 1-char searches (f&t) with this better UI
-      (evil-snipe-override-mode +1))
+  (use-package evil-snipe
+    :after evil
+    :demand
+    :config
+    (evil-snipe-mode +1)
+    ;; replace 1-char searches (f&t) with this better UI
+    (evil-snipe-override-mode +1))
 #+end_src
 
 **** evil-cleverparens
@@ -8279,8 +8195,8 @@ This should setup a wordlist that can be used as a dictionary. However, for some
 
 #+begin_src emacs-lisp
 
-   ;; set the NixOS wordlist by hand
-   (setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
+  ;; set the NixOS wordlist by hand
+  (setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
 
 #+end_src
 
@@ -8360,12 +8276,12 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 
 #+begin_src emacs-lisp
 
-(use-package mixed-pitch
-  :custom
-  (mixed-pitch-set-height nil)
-  (mixed-pitch-variable-pitch-cursor nil)
-  :hook
-  (text-mode . mixed-pitch-mode))
+  (use-package mixed-pitch
+    :custom
+    (mixed-pitch-set-height nil)
+    (mixed-pitch-variable-pitch-cursor nil)
+    :hook
+    (text-mode . mixed-pitch-mode))
 
 
 #+end_src
@@ -8694,7 +8610,7 @@ This places little angled indicators on the fringe of a window which indicate bu
 
 #+begin_src emacs-lisp
 
-(setq-default indicate-buffer-boundaries t)
+  (setq-default indicate-buffer-boundaries t)
 
 #+end_src
 *** Authentication
@@ -8706,8 +8622,8 @@ This defines the authentication sources used by =org-calfw= ([[#h:c760f04e-622f-
 
 #+begin_src emacs-lisp
 
-    (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
-          auth-source-cache-expiry nil) ; default is 2h
+  (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
+        auth-source-cache-expiry nil) ; default is 2h
 
 #+end_src
 ** Modules
@@ -8744,7 +8660,7 @@ This part of the configuration mostly makes some aesthetic changes, enables neat
     :hook (org-mode . swarsel/org-mode-setup)
     :bind
     (("C-<tab>" . org-fold-outer)
-    ("C-c s" . org-store-link))
+     ("C-c s" . org-store-link))
     :config
     (setq org-ellipsis " ⤵"
           org-link-descriptive t
@@ -8769,63 +8685,63 @@ Here I setup a plethora of keywords, keybinds and paths to give my org-agenda mo
 
 #+begin_src emacs-lisp
 
-    (setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
-                             "/home/swarsel/Nextcloud/Org/Archive.org"
-                             "/home/swarsel/Nextcloud/Org/Anki.org"
-                             "/home/swarsel/Calendars/leon_cal.org"))
+  (setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
+                           "/home/swarsel/Nextcloud/Org/Archive.org"
+                           "/home/swarsel/Nextcloud/Org/Anki.org"
+                           "/home/swarsel/Calendars/leon_cal.org"))
 
-    (setq org-refile-targets
-          '((swarsel-archive-org-file :maxlevel . 1)
-            (swarsel-anki-org-file :maxlevel . 1)
-            (swarsel-tasks-org-file :maxlevel . 1)))
+  (setq org-refile-targets
+        '((swarsel-archive-org-file :maxlevel . 1)
+          (swarsel-anki-org-file :maxlevel . 1)
+          (swarsel-tasks-org-file :maxlevel . 1)))
 
-    (setq org-todo-keywords
-          '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-            (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
-
-
-    ;; Configure custom agenda views
-    (setq org-agenda-custom-commands
-          '(("d" "Dashboard"
-             ((agenda "" ((org-deadline-warning-days 7)))
-              (todo "NEXT"
-                    ((org-agenda-overriding-header "Next Tasks")))
-              (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
-
-            ("n" "Next Tasks"
-             ((todo "NEXT"
-                    ((org-agenda-overriding-header "Next Tasks")))))
-
-            ("W" "Work Tasks" tags-todo "+work-email")
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+          (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
 
 
-            ("w" "Workflow Status"
-             ((todo "WAIT"
-                    ((org-agenda-overriding-header "Waiting on External")
-                     (org-agenda-files org-agenda-files)))
-              (todo "REVIEW"
-                    ((org-agenda-overriding-header "In Review")
-                     (org-agenda-files org-agenda-files)))
-              (todo "PLAN"
-                    ((org-agenda-overriding-header "In Planning")
-                     (org-agenda-todo-list-sublevels nil)
-                     (org-agenda-files org-agenda-files)))
-              (todo "BACKLOG"
-                    ((org-agenda-overriding-header "Project Backlog")
-                     (org-agenda-todo-list-sublevels nil)
-                     (org-agenda-files org-agenda-files)))
-              (todo "READY"
-                    ((org-agenda-overriding-header "Ready for Work")
-                     (org-agenda-files org-agenda-files)))
-              (todo "ACTIVE"
-                    ((org-agenda-overriding-header "Active Projects")
-                     (org-agenda-files org-agenda-files)))
-              (todo "COMPLETED"
-                    ((org-agenda-overriding-header "Completed Projects")
-                     (org-agenda-files org-agenda-files)))
-              (todo "CANC"
-                    ((org-agenda-overriding-header "Cancelled Projects")
-                     (org-agenda-files org-agenda-files)))))))
+  ;; Configure custom agenda views
+  (setq org-agenda-custom-commands
+        '(("d" "Dashboard"
+           ((agenda "" ((org-deadline-warning-days 7)))
+            (todo "NEXT"
+                  ((org-agenda-overriding-header "Next Tasks")))
+            (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
+
+          ("n" "Next Tasks"
+           ((todo "NEXT"
+                  ((org-agenda-overriding-header "Next Tasks")))))
+
+          ("W" "Work Tasks" tags-todo "+work-email")
+
+
+          ("w" "Workflow Status"
+           ((todo "WAIT"
+                  ((org-agenda-overriding-header "Waiting on External")
+                   (org-agenda-files org-agenda-files)))
+            (todo "REVIEW"
+                  ((org-agenda-overriding-header "In Review")
+                   (org-agenda-files org-agenda-files)))
+            (todo "PLAN"
+                  ((org-agenda-overriding-header "In Planning")
+                   (org-agenda-todo-list-sublevels nil)
+                   (org-agenda-files org-agenda-files)))
+            (todo "BACKLOG"
+                  ((org-agenda-overriding-header "Project Backlog")
+                   (org-agenda-todo-list-sublevels nil)
+                   (org-agenda-files org-agenda-files)))
+            (todo "READY"
+                  ((org-agenda-overriding-header "Ready for Work")
+                   (org-agenda-files org-agenda-files)))
+            (todo "ACTIVE"
+                  ((org-agenda-overriding-header "Active Projects")
+                   (org-agenda-files org-agenda-files)))
+            (todo "COMPLETED"
+                  ((org-agenda-overriding-header "Completed Projects")
+                   (org-agenda-files org-agenda-files)))
+            (todo "CANC"
+                  ((org-agenda-overriding-header "Cancelled Projects")
+                   (org-agenda-files org-agenda-files)))))))
 
 
 #+end_src
@@ -8956,15 +8872,15 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 
 #+begin_src emacs-lisp
 
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t)
-       (js . t)
-       (shell . t)
-       ))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (js . t)
+     (shell . t)
+     ))
 
-    (push '("conf-unix" . conf-unix) org-src-lang-modes)
+  (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
 #+end_src
 
@@ -9000,7 +8916,7 @@ This provides several utilities for LaTeX in Emacs, including many completions a
   (setq TeX-auto-save t)
   (setq TeX-save-query nil)
   (setq TeX-parse-self t)
-    (setq-default TeX-master nil)
+  (setq-default TeX-master nil)
 
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
@@ -9009,7 +8925,7 @@ This provides several utilities for LaTeX in Emacs, including many completions a
   (setq LaTeX-electric-left-right-brace t)
   (setq font-latex-fontify-script nil)
   (setq TeX-electric-sub-and-superscript t)
-    ;; (setq reftex-plug-into-AUCTeX t)
+  ;; (setq reftex-plug-into-AUCTeX t)
 
 #+end_src
 
@@ -9080,107 +8996,107 @@ Recently I have grown fond of holding presentations using Emacs :)
 
 #+begin_src emacs-lisp
 
-      (use-package org-present
-      :bind (:map org-present-mode-keymap
-             ("q" . org-present-quit)
-             ("<left>" . swarsel/org-present-prev)
-             ("<up>" . 'ignore)
-             ("<down>" . 'ignore)
-             ("<right>" . swarsel/org-present-next))
-      :hook ((org-present-mode . swarsel/org-present-start)
-             (org-present-mode-quit . swarsel/org-present-end))
-      )
+  (use-package org-present
+    :bind (:map org-present-mode-keymap
+                ("q" . org-present-quit)
+                ("<left>" . swarsel/org-present-prev)
+                ("<up>" . 'ignore)
+                ("<down>" . 'ignore)
+                ("<right>" . swarsel/org-present-next))
+    :hook ((org-present-mode . swarsel/org-present-start)
+           (org-present-mode-quit . swarsel/org-present-end))
+    )
 
 
-      (use-package hide-mode-line)
+  (use-package hide-mode-line)
 
-      (defun swarsel/org-present-start ()
-        (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
-                                           (header-line (:height 4.0) variable-pitch)
-                                           (org-document-title (:height 1.75) org-document-title)
-                                           (org-code (:height 1.55) org-code)
-                                           (org-verbatim (:height 1.55) org-verbatim)
-                                           (org-block (:height 1.25) org-block)
-                                           (org-block-begin-line (:height 0.7) org-block)
-                                           ))
-        (dolist (face '((org-level-1 . 1.1)
-                                                      (org-level-2 . 1.2)
-                                                      (org-level-3 . 1.2)
-                                                      (org-level-4 . 1.2)
-                                                      (org-level-5 . 1.2)
-                                                      (org-level-6 . 1.2)
-                                                      (org-level-7 . 1.2)
-                                                      (org-level-8 . 1.2)))
-                                        (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+  (defun swarsel/org-present-start ()
+    (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                       (header-line (:height 4.0) variable-pitch)
+                                       (org-document-title (:height 1.75) org-document-title)
+                                       (org-code (:height 1.55) org-code)
+                                       (org-verbatim (:height 1.55) org-verbatim)
+                                       (org-block (:height 1.25) org-block)
+                                       (org-block-begin-line (:height 0.7) org-block)
+                                       ))
+    (dolist (face '((org-level-1 . 1.1)
+                    (org-level-2 . 1.2)
+                    (org-level-3 . 1.2)
+                    (org-level-4 . 1.2)
+                    (org-level-5 . 1.2)
+                    (org-level-6 . 1.2)
+                    (org-level-7 . 1.2)
+                    (org-level-8 . 1.2)))
+      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
 
-        (setq header-line-format " ")
-        (setq visual-fill-column-width 90)
-        (setq indicate-buffer-boundaries nil)
-        (setq inhibit-message nil)
-        (breadcrumb-mode 0)
-        (org-display-inline-images)
-        (global-hl-line-mode 0)
-        (display-line-numbers-mode 0)
-        (org-modern-mode 0)
-        (evil-insert-state 1)
-        (beginning-of-buffer)
-        (org-present-read-only)
-        ;; (org-present-hide-cursor)
-        (swarsel/org-present-slide)
-        )
+    (setq header-line-format " ")
+    (setq visual-fill-column-width 90)
+    (setq indicate-buffer-boundaries nil)
+    (setq inhibit-message nil)
+    (breadcrumb-mode 0)
+    (org-display-inline-images)
+    (global-hl-line-mode 0)
+    (display-line-numbers-mode 0)
+    (org-modern-mode 0)
+    (evil-insert-state 1)
+    (beginning-of-buffer)
+    (org-present-read-only)
+    ;; (org-present-hide-cursor)
+    (swarsel/org-present-slide)
+    )
 
-      (defun swarsel/org-present-end ()
-             (setq-local face-remapping-alist '((default variable-pitch default)))
-             (dolist (face '((org-level-1 . 1.1)
-                                                      (org-level-2 . 0.9)
-                                                      (org-level-3 . 0.9)
-                                                      (org-level-4 . 0.9)
-                                                      (org-level-5 . 0.9)
-                                                      (org-level-6 . 0.9)
-                                                      (org-level-7 . 0.9)
-                                                      (org-level-8 . 0.9)))
-                                        (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
-             (setq header-line-format nil)
-             (setq visual-fill-column-width 150)
-             (setq indicate-buffer-boundaries t)
-             (setq inhibit-message nil)
-             (breadcrumb-mode 1)
-             (global-hl-line-mode 1)
-             (display-line-numbers-mode 1)
-             (org-remove-inline-images)
-             (org-modern-mode 1)
-             (evil-normal-state 1)
-             ;; (org-present-show-cursor)
-             )
+  (defun swarsel/org-present-end ()
+    (setq-local face-remapping-alist '((default variable-pitch default)))
+    (dolist (face '((org-level-1 . 1.1)
+                    (org-level-2 . 0.9)
+                    (org-level-3 . 0.9)
+                    (org-level-4 . 0.9)
+                    (org-level-5 . 0.9)
+                    (org-level-6 . 0.9)
+                    (org-level-7 . 0.9)
+                    (org-level-8 . 0.9)))
+      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+    (setq header-line-format nil)
+    (setq visual-fill-column-width 150)
+    (setq indicate-buffer-boundaries t)
+    (setq inhibit-message nil)
+    (breadcrumb-mode 1)
+    (global-hl-line-mode 1)
+    (display-line-numbers-mode 1)
+    (org-remove-inline-images)
+    (org-modern-mode 1)
+    (evil-normal-state 1)
+    ;; (org-present-show-cursor)
+    )
 
-    (defun swarsel/org-present-slide ()
-      (org-overview)
-      (org-show-entry)
-      (org-show-children)
-        )
+  (defun swarsel/org-present-slide ()
+    (org-overview)
+    (org-show-entry)
+    (org-show-children)
+    )
 
-    (defun swarsel/org-present-prev ()
-      (interactive)
-      (org-present-prev)
-      (swarsel/org-present-slide))
+  (defun swarsel/org-present-prev ()
+    (interactive)
+    (org-present-prev)
+    (swarsel/org-present-slide))
 
-    (defun swarsel/org-present-next ()
-      (interactive)
-      (unless (eobp)
+  (defun swarsel/org-present-next ()
+    (interactive)
+    (unless (eobp)
       (org-next-visible-heading 1)
       (org-fold-show-entry))
-      (when (eobp)
+    (when (eobp)
       (org-present-next)
       (swarsel/org-present-slide)
       ))
 
   (defun clojure-leave-clojure-mode-function ()
-   )
+    )
 
   (add-hook 'buffer-list-update-hook #'clojure-leave-clojure-mode-function)
-      (add-hook 'org-present-mode-hook 'swarsel/org-present-start)
-      (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
-      (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
+  (add-hook 'org-present-mode-hook 'swarsel/org-present-start)
+  (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
+  (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
 #+end_src
 *** Nix Mode
@@ -9262,9 +9178,9 @@ This mode is not automatically activated anywhere because I only rarely need it.
 
 #+begin_src emacs-lisp
 
-(use-package darkroom
-  :init
-  (setq darkroom-text-scale-increase 3))
+  (use-package darkroom
+    :init
+    (setq darkroom-text-scale-increase 3))
 
 #+end_src
 
@@ -9375,7 +9291,7 @@ With this it is possible to work on the same file collaboratively. I have never 
 
 #+begin_src emacs-lisp
 
-(use-package crdt)
+  (use-package crdt)
 
 #+end_src
 
@@ -9393,21 +9309,21 @@ To install a documentation, use the =devdocs=install= command and select the app
   (use-package devdocs)
 
   (add-hook 'python-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+            (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
   (add-hook 'python-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+            (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
 
   (add-hook 'c-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("c"))))
+            (lambda () (setq-local devdocs-current-docs '("c"))))
   (add-hook 'c-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("c"))))
+            (lambda () (setq-local devdocs-current-docs '("c"))))
 
   (add-hook 'c++-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("cpp"))))
+            (lambda () (setq-local devdocs-current-docs '("cpp"))))
   (add-hook 'c++-ts-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("cpp"))))
+            (lambda () (setq-local devdocs-current-docs '("cpp"))))
 
-  ; (devdocs-update-all)
+                                          ; (devdocs-update-all)
 
 #+end_src
 
@@ -9430,7 +9346,7 @@ projectile is useful for keeping track of your git projects within Emacs. I most
     ;; NOTE: Set this to the folder where you keep your Git repos!
     (when (file-directory-p swarsel-projects-directory)
       (setq projectile-project-search-path (list swarsel-projects-directory)))
-  (setq projectile-switch-project-action #'magit-status))
+    (setq projectile-switch-project-action #'magit-status))
 
 #+end_src
 
@@ -9484,11 +9400,11 @@ NOTE: Make sure to configure a GitHub token before using this package!
 - https://magit.vc/manual/ghub/Storing-a-Token.html
 - https://www.emacswiki.org/emacs/GnuPG
 
- (1) in practice: github -<> settings -<> developer option -<>
-     create classic token with repo; user; read:org permissions
- (2) install GnuGP (and add to PATH)
- (3) create ~/.authinfo.gpg with the following info scheme:
-     machine api.github.com login USERNAME^forge password 012345abcdef...
+  (1) in practice: github -<> settings -<> developer option -<>
+  create classic token with repo; user; read:org permissions
+  (2) install GnuGP (and add to PATH)
+  (3) create ~/.authinfo.gpg with the following info scheme:
+  machine api.github.com login USERNAME^forge password 012345abcdef...
 
 #+begin_src emacs-lisp
 
@@ -9512,7 +9428,7 @@ This is just a nice utility to browse different versions of a file of a git proj
 
 #+begin_src emacs-lisp
 
- (use-package git-timemachine
+  (use-package git-timemachine
     :hook (git-time-machine-mode . evil-normalize-keymaps)
     :init (setq git-timemachine-show-minibuffer-details t))
 
@@ -9584,52 +9500,52 @@ Navigation functions defined here: [[#h:a1802f9b-bb71-4fd5-86fa-945da18e8b81][co
 
 #+begin_src emacs-lisp
 
-      ;; (use-package corfu
-      ;;   :custom
-      ;;   (corfu-cycle t)
-      ;;   :init
-      ;;   (global-corfu-mode))
+  ;; (use-package corfu
+  ;;   :custom
+  ;;   (corfu-cycle t)
+  ;;   :init
+  ;;   (global-corfu-mode))
 
-      (use-package corfu
-        :init
-        (global-corfu-mode)
-        (corfu-history-mode)
-        (corfu-popupinfo-mode) ; Popup completion info
-        :custom
-        (corfu-auto t)
-        (corfu-auto-prefix 3)
-        (corfu-auto-delay 0.3)
-        (corfu-cycle t)
-        (corfu-quit-no-match 'separator)
-        (corfu-separator ?\s)
-        ;; (corfu-quit-no-match t)
-        (corfu-popupinfo-max-height 70)
-        (corfu-popupinfo-delay '(0.5 . 0.2))
-        ;; (corfu-preview-current 'insert) ; insert previewed candidate
-        (corfu-preselect 'prompt)
-        (corfu-on-exact-match nil)      ; Don't auto expand tempel snippets
-        ;; Optionally use TAB for cycling, default is `corfu-complete'.
-        :bind (:map corfu-map
-                    ("M-SPC"      . corfu-insert-separator)
-                    ("<return>" . swarsel/corfu-normal-return)
-                    ;; ("C-<return>" . swarsel/corfu-complete)
-                    ("S-<up>" . corfu-popupinfo-scroll-down)
-                    ("S-<down>" . corfu-popupinfo-scroll-up)
-                    ("C-<up>" . corfu-previous)
-                    ("C-<down>" . corfu-next)
-                    ("<insert-state> <up>"      . swarsel/corfu-quit-and-up)
-                    ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
-        )
+  (use-package corfu
+    :init
+    (global-corfu-mode)
+    (corfu-history-mode)
+    (corfu-popupinfo-mode) ; Popup completion info
+    :custom
+    (corfu-auto t)
+    (corfu-auto-prefix 3)
+    (corfu-auto-delay 0.3)
+    (corfu-cycle t)
+    (corfu-quit-no-match 'separator)
+    (corfu-separator ?\s)
+    ;; (corfu-quit-no-match t)
+    (corfu-popupinfo-max-height 70)
+    (corfu-popupinfo-delay '(0.5 . 0.2))
+    ;; (corfu-preview-current 'insert) ; insert previewed candidate
+    (corfu-preselect 'prompt)
+    (corfu-on-exact-match nil)      ; Don't auto expand tempel snippets
+    ;; Optionally use TAB for cycling, default is `corfu-complete'.
+    :bind (:map corfu-map
+                ("M-SPC"      . corfu-insert-separator)
+                ("<return>" . swarsel/corfu-normal-return)
+                ;; ("C-<return>" . swarsel/corfu-complete)
+                ("S-<up>" . corfu-popupinfo-scroll-down)
+                ("S-<down>" . corfu-popupinfo-scroll-up)
+                ("C-<up>" . corfu-previous)
+                ("C-<down>" . corfu-next)
+                ("<insert-state> <up>"      . swarsel/corfu-quit-and-up)
+                ("<insert-state> <down>"     . swarsel/corfu-quit-and-down))
+    )
 
-      (use-package nerd-icons-corfu)
+  (use-package nerd-icons-corfu)
 
-      (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter)
 
-      (setq nerd-icons-corfu-mapping
-            '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
-              (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
-              ;; ...
-              (t :style "cod" :icon "code" :face font-lock-warning-face)))
+  (setq nerd-icons-corfu-mapping
+        '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
+          (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
+          ;; ...
+          (t :style "cod" :icon "code" :face font-lock-warning-face)))
 
 #+end_src
 
@@ -9679,7 +9595,7 @@ I leave the commented out alist extensions here in case I want to try them out a
     ;; (add-to-list 'completion-at-point-functions #'cape-dict)
     ;; (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
     ;; (add-to-list 'completion-at-point-functions #'cape-line)
-  )
+    )
 
 #+end_src
 
@@ -9719,26 +9635,26 @@ Tramp allows for SSH access of files over Emacs. I have no ideas what the option
 
 
 
-(use-package tramp
-  :init
-  (setq vc-ignore-dir-regexp
-        (format "\\(%s\\)\\|\\(%s\\)"
-                vc-ignore-dir-regexp
-                tramp-file-name-regexp))
-  (setq tramp-default-method "ssh")
-  (setq tramp-auto-save-directory
-        (expand-file-name "tramp-auto-save" user-emacs-directory))
-  (setq tramp-persistency-file-name
-        (expand-file-name "tramp-connection-history" user-emacs-directory))
-  (setq password-cache-expiry nil)
-  (setq tramp-use-ssh-controlmaster-options nil)
-  (setq remote-file-name-inhibit-cache nil)
-  :config
-  (customize-set-variable 'tramp-ssh-controlmaster-options
-                          (concat
-                           "-o ControlPath=/tmp/ssh-tramp-%%r@%%h:%%p "
-                           "-o ControlMaster=auto -o ControlPersist=yes"))
-)
+  (use-package tramp
+    :init
+    (setq vc-ignore-dir-regexp
+          (format "\\(%s\\)\\|\\(%s\\)"
+                  vc-ignore-dir-regexp
+                  tramp-file-name-regexp))
+    (setq tramp-default-method "ssh")
+    (setq tramp-auto-save-directory
+          (expand-file-name "tramp-auto-save" user-emacs-directory))
+    (setq tramp-persistency-file-name
+          (expand-file-name "tramp-connection-history" user-emacs-directory))
+    (setq password-cache-expiry nil)
+    (setq tramp-use-ssh-controlmaster-options nil)
+    (setq remote-file-name-inhibit-cache nil)
+    :config
+    (customize-set-variable 'tramp-ssh-controlmaster-options
+                            (concat
+                             "-o ControlPath=/tmp/ssh-tramp-%%r@%%h:%%p "
+                             "-o ControlMaster=auto -o ControlPersist=yes"))
+    )
 
 
 
@@ -10286,11 +10202,11 @@ The hook functions are defined here: [[#h:34506761-06b9-43b5-a818-506d9b3faf28][
             (:maildir "/Drafts"     :key ?d)
             (:maildir "/All Mail"     :key ?a)))
 
-  (setq user-mail-address "leon@swarsel.win"
-        user-full-name "Leon Schwarzäugl")
+    (setq user-mail-address "leon@swarsel.win"
+          user-full-name "Leon Schwarzäugl")
 
 
-  (setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
+    (setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
 
 
   (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)
@@ -10307,8 +10223,8 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 #+begin_src emacs-lisp
 
   (use-package mu4e-alert
-  :config
-  (setq mu4e-alert-set-default-style 'libnotify))
+    :config
+    (setq mu4e-alert-set-default-style 'libnotify))
 
   (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 
@@ -10529,24 +10445,24 @@ This requires changes in multiple locations. As an example we will use an early 
 #+begin_src nix
   programs.firefox = {
     [...]
-     profiles.default = {
-       [...]
-       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-         [...]
-         (buildFirefoxXpiAddon {
-           pname = ":emoji:";
-           version = "0.1.3";
-           addonId = "gonelf@gmail.com";
-           url = "https://addons.mozilla.org/firefox/downloads/file/3365324/emojidots-0.1.3.xpi";
-           sha256 = "4f7cc25c478fe52eb82f37c9ff4978dcaa3f95020398c5b184e517f6efa2c201";
-           meta = with lib;
-             {
-               description = "emoji autocomplete anywhere on the internet";
-               mozPermissions = [ "https://gist.githubusercontent.com/gonelf/d8ae3ccb7902b501c4a5dd625d4089da/raw/5eeda197ba92f8c8139e846a1225d5640077e06f/emoji_pretty.json" "tabs" "storage"];
-               platforms = platforms.all;
-             };
-         })
-   [...]
+      profiles.default = {
+      [...]
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+        [...]
+        (buildFirefoxXpiAddon {
+          pname = ":emoji:";
+          version = "0.1.3";
+          addonId = "gonelf@gmail.com";
+          url = "https://addons.mozilla.org/firefox/downloads/file/3365324/emojidots-0.1.3.xpi";
+          sha256 = "4f7cc25c478fe52eb82f37c9ff4978dcaa3f95020398c5b184e517f6efa2c201";
+          meta = with lib;
+            {
+              description = "emoji autocomplete anywhere on the internet";
+              mozPermissions = [ "https://gist.githubusercontent.com/gonelf/d8ae3ccb7902b501c4a5dd625d4089da/raw/5eeda197ba92f8c8139e846a1225d5640077e06f/emoji_pretty.json" "tabs" "storage"];
+              platforms = platforms.all;
+            };
+        })
+        [...]
 #+end_src
 ** Define shell utility as package
 :PROPERTIES:
@@ -10560,9 +10476,9 @@ In =configuration.nix= (or =home.nix=):
   home.packages = with pkgs; [ # or for NixOS environment.systemPackages = with pkgs; [
     [...]
     (pkgs.writeShellApplication {
-        name = "pass-fuzzel";
-        runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-        text = ''
+      name = "pass-fuzzel";
+      runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
+      text = ''
          shopt -s nullglob globstar
 
          typeit=0
@@ -10588,7 +10504,7 @@ In =configuration.nix= (or =home.nix=):
          fi
          notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
        '';
-      })
+    })
 
     [...]
 
@@ -10604,13 +10520,13 @@ In =configuration.nix=:
 
   home.packages = with pkgs; [ # or for NixOS environment.systemPackages = with pkgs; [
     [...]
-     (stdenv.mkDerivation {
+    (stdenv.mkDerivation {
       name = "oama";
 
       src = pkgs.fetchurl {
-          name = "oama";
-          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+        name = "oama";
+        url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+        sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
       };
 
       phases = [
@@ -10623,10 +10539,10 @@ In =configuration.nix=:
       mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
       '';
 
-  })
+    })
 
     [...]
-  #+end_src
+#+end_src
 ** Patch a utilty for nix paths:
 :PROPERTIES:
 :CUSTOM_ID: h:fceba848-f065-40e0-ad3f-d16e48c24db5
@@ -10711,7 +10627,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
 
     home.stateVersion = "23.05"; # Please read the comment before changing.
 
-     stylix.image = ../../wallpaper/surfacewp.png;
+    stylix.image = ../../wallpaper/surfacewp.png;
     <<theme>>
 
     nixpkgs = {
@@ -10797,7 +10713,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
         };
 
         keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
+          inherit (config.wayland.windowManager.sway.config) modifier;
         in {
           "${modifier}+F2"  = "exec brightnessctl set +5%";
           "${modifier}+F1"= "exec brightnessctl set 5%-";
@@ -10984,7 +10900,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
         };
 
         keybindings = let
-          modifier = config.wayland.windowManager.sway.config.modifier;
+          inherit (config.wayland.windowManager.sway.config) modifier;
         in {
           "${modifier}+F2"  = "exec brightnessctl set +5%";
           "${modifier}+F1"= "exec brightnessctl set 5%-";

@@ -57,19 +57,19 @@
     (cons beg end)))
 
 (defun crux-duplicate-current-line-or-region (arg)
-    "Duplicates the current line or region ARG times.
+  "Duplicates the current line or region ARG times.
   If there's no region, the current line will be duplicated.  However, if
   there's a region, all lines that region covers will be duplicated."
-    (interactive "p")
-    (pcase-let* ((origin (point))
-                 (`(,beg . ,end) (crux-get-positions-of-line-or-region))
-                 (region (buffer-substring-no-properties beg end)))
-      (dotimes (_i arg)
-        (goto-char end)
-        (newline)
-        (insert region)
-        (setq end (point)))
-      (goto-char (+ origin (* (length region) arg) arg))))
+  (interactive "p")
+  (pcase-let* ((origin (point))
+               (`(,beg . ,end) (crux-get-positions-of-line-or-region))
+               (region (buffer-substring-no-properties beg end)))
+    (dotimes (_i arg)
+      (goto-char end)
+      (newline)
+      (insert region)
+      (setq end (point)))
+    (goto-char (+ origin (* (length region) arg) arg))))
 
 (defun crux-duplicate-and-comment-current-line-or-region (arg)
   "Duplicates and comments the current line or region ARG times.
@@ -219,22 +219,22 @@ create a new one."
   (evil-next-visual-line))
 
 ;; run the python inferior shell immediately upon entering a python buffer
-    ;; (add-hook 'python-mode-hook 'swarsel/run-python)
+;; (add-hook 'python-mode-hook 'swarsel/run-python)
 
-  ;; (defun swarsel/run-python ()
-  ;;   (save-selected-window
-  ;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
+;; (defun swarsel/run-python ()
+;;   (save-selected-window
+;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
 
 ;; reload python shell automatically
 (defun my-python-shell-run ()
   (interactive)
   (when (get-buffer-process "*Python*")
-     (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
-     (kill-process (get-buffer-process "*Python*"))
-     ;; Uncomment If you want to clean the buffer too.
-     ;;(kill-buffer "*Python*")
-     ;; Not so fast!
-     (sleep-for 0.5))
+    (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
+    (kill-process (get-buffer-process "*Python*"))
+    ;; Uncomment If you want to clean the buffer too.
+    ;;(kill-buffer "*Python*")
+    ;; Not so fast!
+    (sleep-for 0.5))
   (run-python (python-shell-parse-command) nil nil)
   (python-shell-send-buffer)
   ;; Pop new window only if shell isnt visible
@@ -533,13 +533,13 @@ create a new one."
   (setq forge-add-default-bindings nil))
 
 ;; enables 2-char inline search
-  (use-package evil-snipe
-    :after evil
-    :demand
-    :config
-    (evil-snipe-mode +1)
-    ;; replace 1-char searches (f&t) with this better UI
-    (evil-snipe-override-mode +1))
+(use-package evil-snipe
+  :after evil
+  :demand
+  :config
+  (evil-snipe-mode +1)
+  ;; replace 1-char searches (f&t) with this better UI
+  (evil-snipe-override-mode +1))
 
 ;; for parentheses-heavy languades modify evil commands to keep balance of parantheses
 (use-package evil-cleverparens)
@@ -770,7 +770,7 @@ create a new one."
   :hook (org-mode . swarsel/org-mode-setup)
   :bind
   (("C-<tab>" . org-fold-outer)
-  ("C-c s" . org-store-link))
+   ("C-c s" . org-store-link))
   :config
   (setq org-ellipsis " ⤵"
         org-link-descriptive t
@@ -914,7 +914,7 @@ create a new one."
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
-  (setq-default TeX-master nil)
+(setq-default TeX-master nil)
 
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
 (add-hook 'LaTeX-mode-hook 'flyspell-mode)
@@ -923,7 +923,7 @@ create a new one."
 (setq LaTeX-electric-left-right-brace t)
 (setq font-latex-fontify-script nil)
 (setq TeX-electric-sub-and-superscript t)
-  ;; (setq reftex-plug-into-AUCTeX t)
+;; (setq reftex-plug-into-AUCTeX t)
 
 (use-package org-download
   :after org
@@ -951,106 +951,106 @@ create a new one."
   :hook (org-mode . org-modern-mode))
 
 (use-package org-present
-    :bind (:map org-present-mode-keymap
-           ("q" . org-present-quit)
-           ("<left>" . swarsel/org-present-prev)
-           ("<up>" . 'ignore)
-           ("<down>" . 'ignore)
-           ("<right>" . swarsel/org-present-next))
-    :hook ((org-present-mode . swarsel/org-present-start)
-           (org-present-mode-quit . swarsel/org-present-end))
-    )
+  :bind (:map org-present-mode-keymap
+              ("q" . org-present-quit)
+              ("<left>" . swarsel/org-present-prev)
+              ("<up>" . 'ignore)
+              ("<down>" . 'ignore)
+              ("<right>" . swarsel/org-present-next))
+  :hook ((org-present-mode . swarsel/org-present-start)
+         (org-present-mode-quit . swarsel/org-present-end))
+  )
 
 
-    (use-package hide-mode-line)
+(use-package hide-mode-line)
 
-    (defun swarsel/org-present-start ()
-      (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
-                                         (header-line (:height 4.0) variable-pitch)
-                                         (org-document-title (:height 1.75) org-document-title)
-                                         (org-code (:height 1.55) org-code)
-                                         (org-verbatim (:height 1.55) org-verbatim)
-                                         (org-block (:height 1.25) org-block)
-                                         (org-block-begin-line (:height 0.7) org-block)
-                                         ))
-      (dolist (face '((org-level-1 . 1.1)
-                                                    (org-level-2 . 1.2)
-                                                    (org-level-3 . 1.2)
-                                                    (org-level-4 . 1.2)
-                                                    (org-level-5 . 1.2)
-                                                    (org-level-6 . 1.2)
-                                                    (org-level-7 . 1.2)
-                                                    (org-level-8 . 1.2)))
-                                      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+(defun swarsel/org-present-start ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.0) variable-pitch)
+                                     (org-document-title (:height 1.75) org-document-title)
+                                     (org-code (:height 1.55) org-code)
+                                     (org-verbatim (:height 1.55) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.7) org-block)
+                                     ))
+  (dolist (face '((org-level-1 . 1.1)
+                  (org-level-2 . 1.2)
+                  (org-level-3 . 1.2)
+                  (org-level-4 . 1.2)
+                  (org-level-5 . 1.2)
+                  (org-level-6 . 1.2)
+                  (org-level-7 . 1.2)
+                  (org-level-8 . 1.2)))
+    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
 
-      (setq header-line-format " ")
-      (setq visual-fill-column-width 90)
-      (setq indicate-buffer-boundaries nil)
-      (setq inhibit-message nil)
-      (breadcrumb-mode 0)
-      (org-display-inline-images)
-      (global-hl-line-mode 0)
-      (display-line-numbers-mode 0)
-      (org-modern-mode 0)
-      (evil-insert-state 1)
-      (beginning-of-buffer)
-      (org-present-read-only)
-      ;; (org-present-hide-cursor)
-      (swarsel/org-present-slide)
-      )
+  (setq header-line-format " ")
+  (setq visual-fill-column-width 90)
+  (setq indicate-buffer-boundaries nil)
+  (setq inhibit-message nil)
+  (breadcrumb-mode 0)
+  (org-display-inline-images)
+  (global-hl-line-mode 0)
+  (display-line-numbers-mode 0)
+  (org-modern-mode 0)
+  (evil-insert-state 1)
+  (beginning-of-buffer)
+  (org-present-read-only)
+  ;; (org-present-hide-cursor)
+  (swarsel/org-present-slide)
+  )
 
-    (defun swarsel/org-present-end ()
-           (setq-local face-remapping-alist '((default variable-pitch default)))
-           (dolist (face '((org-level-1 . 1.1)
-                                                    (org-level-2 . 0.9)
-                                                    (org-level-3 . 0.9)
-                                                    (org-level-4 . 0.9)
-                                                    (org-level-5 . 0.9)
-                                                    (org-level-6 . 0.9)
-                                                    (org-level-7 . 0.9)
-                                                    (org-level-8 . 0.9)))
-                                      (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
-           (setq header-line-format nil)
-           (setq visual-fill-column-width 150)
-           (setq indicate-buffer-boundaries t)
-           (setq inhibit-message nil)
-           (breadcrumb-mode 1)
-           (global-hl-line-mode 1)
-           (display-line-numbers-mode 1)
-           (org-remove-inline-images)
-           (org-modern-mode 1)
-           (evil-normal-state 1)
-           ;; (org-present-show-cursor)
-           )
+(defun swarsel/org-present-end ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
+  (dolist (face '((org-level-1 . 1.1)
+                  (org-level-2 . 0.9)
+                  (org-level-3 . 0.9)
+                  (org-level-4 . 0.9)
+                  (org-level-5 . 0.9)
+                  (org-level-6 . 0.9)
+                  (org-level-7 . 0.9)
+                  (org-level-8 . 0.9)))
+    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
+  (setq header-line-format nil)
+  (setq visual-fill-column-width 150)
+  (setq indicate-buffer-boundaries t)
+  (setq inhibit-message nil)
+  (breadcrumb-mode 1)
+  (global-hl-line-mode 1)
+  (display-line-numbers-mode 1)
+  (org-remove-inline-images)
+  (org-modern-mode 1)
+  (evil-normal-state 1)
+  ;; (org-present-show-cursor)
+  )
 
-  (defun swarsel/org-present-slide ()
-    (org-overview)
-    (org-show-entry)
-    (org-show-children)
-      )
+(defun swarsel/org-present-slide ()
+  (org-overview)
+  (org-show-entry)
+  (org-show-children)
+  )
 
-  (defun swarsel/org-present-prev ()
-    (interactive)
-    (org-present-prev)
-    (swarsel/org-present-slide))
+(defun swarsel/org-present-prev ()
+  (interactive)
+  (org-present-prev)
+  (swarsel/org-present-slide))
 
-  (defun swarsel/org-present-next ()
-    (interactive)
-    (unless (eobp)
+(defun swarsel/org-present-next ()
+  (interactive)
+  (unless (eobp)
     (org-next-visible-heading 1)
     (org-fold-show-entry))
-    (when (eobp)
+  (when (eobp)
     (org-present-next)
     (swarsel/org-present-slide)
     ))
 
 (defun clojure-leave-clojure-mode-function ()
- )
+  )
 
 (add-hook 'buffer-list-update-hook #'clojure-leave-clojure-mode-function)
-    (add-hook 'org-present-mode-hook 'swarsel/org-present-start)
-    (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
-    (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
+(add-hook 'org-present-mode-hook 'swarsel/org-present-start)
+(add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
+(add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
 (use-package nix-mode
   :mode "\\.nix\\'")
@@ -1129,21 +1129,21 @@ create a new one."
 (use-package devdocs)
 
 (add-hook 'python-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
 (add-hook 'python-ts-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
+          (lambda () (setq-local devdocs-current-docs '("python~3.12" "numpy~1.23" "matplotlib~3.7" "pandas~1"))))
 
 (add-hook 'c-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("c"))))
+          (lambda () (setq-local devdocs-current-docs '("c"))))
 (add-hook 'c-ts-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("c"))))
+          (lambda () (setq-local devdocs-current-docs '("c"))))
 
 (add-hook 'c++-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("cpp"))))
+          (lambda () (setq-local devdocs-current-docs '("cpp"))))
 (add-hook 'c++-ts-mode-hook
-        (lambda () (setq-local devdocs-current-docs '("cpp"))))
+          (lambda () (setq-local devdocs-current-docs '("cpp"))))
 
-; (devdocs-update-all)
+                                        ; (devdocs-update-all)
 
 (use-package projectile
   :diminish projectile-mode
@@ -1155,7 +1155,7 @@ create a new one."
   ;; NOTE: Set this to the folder where you keep your Git repos!
   (when (file-directory-p swarsel-projects-directory)
     (setq projectile-project-search-path (list swarsel-projects-directory)))
-(setq projectile-switch-project-action #'magit-status))
+  (setq projectile-switch-project-action #'magit-status))
 
 (use-package magit
   :config
@@ -1184,8 +1184,8 @@ create a new one."
                  forge-gitea-repository)))
 
 (use-package git-timemachine
-   :hook (git-time-machine-mode . evil-normalize-keymaps)
-   :init (setq git-timemachine-show-minibuffer-details t))
+  :hook (git-time-machine-mode . evil-normalize-keymaps)
+  :init (setq git-timemachine-show-minibuffer-details t))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -1294,7 +1294,7 @@ create a new one."
   ;; (add-to-list 'completion-at-point-functions #'cape-dict)
   ;; (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
   ;; (add-to-list 'completion-at-point-functions #'cape-line)
-)
+  )
 
 (use-package rustic
   :init
@@ -1328,7 +1328,7 @@ create a new one."
                           (concat
                            "-o ControlPath=/tmp/ssh-tramp-%%r@%%h:%%p "
                            "-o ControlMaster=auto -o ControlPersist=yes"))
-)
+  )
 
 (use-package diff-hl
   :hook
@@ -1642,19 +1642,19 @@ create a new one."
           (:maildir "/Drafts"     :key ?d)
           (:maildir "/All Mail"     :key ?a)))
 
-(setq user-mail-address "leon@swarsel.win"
-      user-full-name "Leon Schwarzäugl")
+  (setq user-mail-address "leon@swarsel.win"
+        user-full-name "Leon Schwarzäugl")
 
 
-(setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
+  (setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
 
 
 (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)
 (add-hook 'mu4e-compose-post-hook #'swarsel/mu4e-restore-default)
 
 (use-package mu4e-alert
-:config
-(setq mu4e-alert-set-default-style 'libnotify))
+  :config
+  (setq mu4e-alert-set-default-style 'libnotify))
 
 (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
 

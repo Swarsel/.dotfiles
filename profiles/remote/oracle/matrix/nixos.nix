@@ -1,4 +1,4 @@
-{ config, pkgs, modulesPath, unstable, sops, ... }: let
+{ config, pkgs, sops, ... }: let
   matrixDomain = "swatrix.swarsel.win";
 in {
 
@@ -23,13 +23,42 @@ in {
 
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
-  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/root/.dotfiles/secrets/omatrix/secrets.yaml";
-  sops.validateSopsFiles = false;
-  sops.secrets.dnstokenfull = {owner="acme";};
-  sops.templates."certs.secret".content = ''
-  CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-  '';
+  sops = {
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    defaultSopsFile = "/root/.dotfiles/secrets/omatrix/secrets.yaml";
+    validateSopsFiles = false;
+    secrets = {
+      dnstokenfull = {owner="acme";};
+      matrixsharedsecret = {owner="matrix-synapse";};
+      mautrixtelegram_as = {owner="matrix-synapse";};
+      mautrixtelegram_hs = {owner="matrix-synapse";};
+      mautrixtelegram_api_id = {owner="matrix-synapse";};
+      mautrixtelegram_api_hash = {owner="matrix-synapse";};
+    };
+    templates = {
+      "certs.secret".content = ''
+          CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+          '';
+      "matrix_user_register.sh".content = ''
+          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+          '';
+      mautrixtelegram = {
+        owner = "matrix-synapse";
+        content = ''
+          MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+          MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+          MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+          MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+          '';
+      };
+      matrixshared = {
+        owner = "matrix-synapse";
+        content = ''
+          registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+          '';
+      };
+    };
+  };
 
   documentation = {
     enable = false;
@@ -59,8 +88,8 @@ in {
           "~ ^(/_matrix|/_synapse/client)" = {
             proxyPass = "http://localhost:8008";
             extraConfig = ''
-                client_max_body_size 0;
-              '';
+                        client_max_body_size 0;
+                      '';
           };
         };
       };
@@ -69,18 +98,19 @@ in {
 
   boot.tmp.cleanOnBoot = true;
   zramSwap.enable = false;
-  networking.hostName = "swatrix";
-  networking.enableIPv6 = false;
-  # networking.domain = "subnet03112148.vcn03112148.oraclevcn.com";
-  networking.domain = "swarsel.win";
-  networking.firewall.extraCommands = ''
-  iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-  iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-  iptables -I INPUT -m state --state NEW -p tcp --dport 8008 -j ACCEPT
-  iptables -I INPUT -m state --state NEW -p tcp --dport 29317 -j ACCEPT
-  iptables -I INPUT -m state --state NEW -p tcp --dport 29318 -j ACCEPT
-  iptables -I INPUT -m state --state NEW -p tcp --dport 29328 -j ACCEPT
-  '';
+  networking = {
+    hostName = "swatrix";
+    enableIPv6 = false;
+    domain = "swarsel.win";
+    firewall.extraCommands = ''
+          iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 8008 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 29317 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 29318 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 29328 -j ACCEPT
+          '';
+  };
   services.openssh = {
     enable = true;
     settings.PermitRootLogin = "yes";
@@ -97,55 +127,31 @@ in {
 
   boot.loader.grub.device = "nodev";
 
-  sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-  sops.templates."matrix_user_register.sh".content = ''
-  register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-  '';
-  sops.templates.matrixshared.owner = "matrix-synapse";
-  sops.templates.matrixshared.content = ''
-  registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-  '';
-  sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-  sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-  sops.templates.mautrixtelegram.owner = "matrix-synapse";
-  sops.templates.mautrixtelegram.content = ''
-  MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-  MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-  MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-  MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-  '';
-  # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-  # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-  # sops.templates.mautrixwhatsapp.content = ''
-  # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-  # '';
-
-  services.postgresql.enable = true;
-  services.postgresql.initialScript = pkgs.writeText "synapse-init.sql" ''
-    CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-    CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-    CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-    CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-    CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-    CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-      TEMPLATE template0
-      LC_COLLATE = "C"
-      LC_CTYPE = "C";
-  '';
-
+  services.postgresql = {
+    enable = true;
+    initialScript = pkgs.writeText "synapse-init.sql" ''
+            CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+            CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+            CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+            CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+            CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+          '';
+  };
   services.matrix-synapse = {
     settings.app_service_config_files = [
       "/var/lib/matrix-synapse/telegram-registration.yaml"
@@ -154,12 +160,11 @@ in {
       "/var/lib/matrix-synapse/doublepuppet.yaml"
     ];
     enable = true;
-    settings.server_name = matrixDomain;
-    settings.public_baseurl = "https://${matrixDomain}";
-    extraConfigFiles = [
-      config.sops.templates.matrixshared.path
-    ];
-    settings.listeners = [
+    settings = {
+      server_name = matrixDomain;
+      public_baseurl = "https://${matrixDomain}";
+    };
+    listeners = [
       { port = 8008;
         bind_addresses = [ "0.0.0.0" ];
         type = "http";
@@ -172,6 +177,9 @@ in {
           }
         ];
       }
+    ];
+    extraConfigFiles = [
+      config.sops.templates.matrixshared.path
     ];
   };
 
@@ -196,9 +204,6 @@ in {
         database = "postgresql:///mautrix-telegram?host=/run/postgresql";
       };
       bridge = {
-        # login_shared_secret_map = {
-          # matrixDomain = "as_token:doublepuppet";
-        # };
         relaybot.authless_portals = true;
         allow_avatar_remove = true;
         allow_contact_info = true;
@@ -211,12 +216,6 @@ in {
           "*" = "relaybot";
           "@swarsel:${matrixDomain}" = "admin";
         };
-        # Animated stickers conversion requires additional packages in the
-        # service's path.
-        # If this isn't a fresh installation, clearing the bridge's uploaded
-        # file cache might be necessary (make a database backup first!):
-        # delete from telegram_file where \
-        #   mime_type in ('application/gzip', 'application/octet-stream')
         animated_sticker = {
           target = "gif";
           args = {
@@ -236,7 +235,6 @@ in {
 
   services.mautrix-whatsapp = {
     enable = true;
-    # environmentFile = config.sops.templates.mautrixwhatsapp.path;
     settings = {
       homeserver = {
         address = "http://localhost:8008";
@@ -284,7 +282,6 @@ in {
   services.mautrix-signal = {
     enable = true;
     registerToSynapse = false; # this has the same effect as registering to app_service_config_file above
-    # environmentFile = config.sops.templates.mautrixwhatsapp.path;
     settings = {
       homeserver = {
         address = "http://localhost:8008";
@@ -328,10 +325,10 @@ in {
 
   systemd.services."restart-bridges" = {
     script = ''
-    systemctl restart mautrix-whatsapp.service
-    systemctl restart mautrix-signal.service
-    systemctl restart mautrix-telegram.service
-    '';
+            systemctl restart mautrix-whatsapp.service
+            systemctl restart mautrix-signal.service
+            systemctl restart mautrix-telegram.service
+            '';
     serviceConfig = {
       Type = "oneshot";
       User = "root";

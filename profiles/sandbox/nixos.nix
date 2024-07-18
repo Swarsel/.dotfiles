@@ -1,4 +1,4 @@
-{ config, pkgs, modulesPath, unstable, sops, ... }: let
+{ config, pkgs, unstable, sops, ... }: let
     matrixDomain = "swatrix.swarsel.win";
   in {
 

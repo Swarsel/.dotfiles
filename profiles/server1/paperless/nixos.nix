@@ -9,23 +9,33 @@
   
   
   
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "altgr-intl";
+  services = {
+    xserver = {
+      layout = "us";
+      xkbVariant = "altgr-intl";
+    };
+    openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
+    };
   };
+  
   nix.settings.experimental-features = ["nix-command" "flakes"];
-  proxmoxLXC.manageNetwork = true; # manage network myself
-  proxmoxLXC.manageHostName = false; # manage hostname myself
-  networking.useDHCP = true;
-  networking.enableIPv6 = false;
-  services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "yes";
-    listenAddresses = [{
-      port = 22;
-      addr = "0.0.0.0";
-    }];
+  
+  proxmoxLXC = {
+    manageNetwork = true; # manage network myself
+    manageHostName = false; # manage hostname myself
   };
+  
+  networking = {
+    useDHCP = true;
+    enableIPv6 = false;
+  };
+  
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
   ];
@@ -52,13 +62,17 @@
     ssh-to-age
   ];
 
-  networking.hostName = "paperless"; # Define your hostname.
-  networking.firewall.enable = false;
+  networking = {
+    hostName = "paperless"; # Define your hostname.
+    firewall.enable = false;
+  };
 
-  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
-  sops.defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
-  sops.validateSopsFiles = false;
-  sops.secrets.admin = { owner = "paperless";};
+  sops = {
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
+    validateSopsFiles = false;
+    secrets.admin = { owner = "paperless";};
+  };
 
   services.paperless = {
     enable = true;

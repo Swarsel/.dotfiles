@@ -1,4 +1,4 @@
-{ config, pkgs, lib, fetchFromGitHub, ... }:
+{ config, pkgs, ... }:
 
 {
 
@@ -76,7 +76,7 @@
       };
 
       keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
+        inherit (config.wayland.windowManager.sway.config) modifier;
       in {
         "${modifier}+F2"  = "exec brightnessctl set +5%";
         "${modifier}+F1"= "exec brightnessctl set 5%-";

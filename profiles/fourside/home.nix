@@ -1,4 +1,4 @@
-{ config, pkgs, lib, fetchFromGitHub, ... }:
+{ config, pkgs, ... }:
 
 {
 
@@ -97,7 +97,7 @@
 
 
       keybindings = let
-        modifier = config.wayland.windowManager.sway.config.modifier;
+        inherit (config.wayland.windowManager.sway.config) modifier;
       in {
         "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
         "XF86MonBrightnessUp"  = "exec brightnessctl set +5%";
