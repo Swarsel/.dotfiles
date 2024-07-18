@@ -5,7 +5,11 @@
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { nixpkgs, rust-overlay, ...}: let
+  outputs = {
+    nixpkgs,
+    rust-overlay,
+    ...
+  }: let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
@@ -14,7 +18,6 @@
     toolchain = pkgs.rust-bin.fromRustupToolchainFile ./toolchain.toml;
   in {
     devShells.${system}.default = pkgs.mkShell {
-
       packages = with pkgs; [
         cargo
         clippy
@@ -27,10 +30,9 @@
       env = {
         RUST_BACKTRACE = "full";
       };
-        RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
+      RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
 
       # ...
-
     };
   };
 }

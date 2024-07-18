@@ -9,7 +9,6 @@
     pkgs = nixpkgs.legacyPackages.${system};
   in {
     devShells.${system}.default = pkgs.mkShell {
-
       packages = with pkgs; [
         # fill here
       ];

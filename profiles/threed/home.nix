@@ -1,8 +1,8 @@
-{ config, pkgs, ... }:
-
 {
-
-  
+  config,
+  pkgs,
+  ...
+}: {
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
@@ -11,11 +11,10 @@
     defaultCacheTtl = 600;
     maxCacheTtl = 7200;
     extraConfig = ''
-    allow-loopback-pinentry
-    allow-emacs-pinentry
+      allow-loopback-pinentry
+      allow-emacs-pinentry
     '';
-    };
-  
+  };
 
   home = {
     username = "swarsel";
@@ -26,32 +25,32 @@
     ];
   };
 
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+  sops.age.sshKeyPaths = ["${config.home.homeDirectory}/.ssh/sops"];
 
   programs.waybar.settings.mainBar = {
     cpu.format = "{icon0} {icon1} {icon2} {icon3}";
     temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
   };
-  
-  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark"
-                                                    "mpris"
-                                                    "custom/left-arrow-light"
-                                                    "network"
-                                                    "custom/left-arrow-dark"
-                                                    "pulseaudio"
-                                                    "custom/left-arrow-light"
-                                                    "custom/pseudobat"
-                                                    "battery"
-                                                    "custom/left-arrow-dark"
-                                                    "group/hardware"
-                                                    "custom/left-arrow-light"
-                                                    "clock#2"
-                                                    "custom/left-arrow-dark"
-                                                    "clock#1"
-                                                   ];
-  
 
-  wayland.windowManager.sway= {
+  programs.waybar.settings.mainBar.modules-right = [
+    "custom/outer-left-arrow-dark"
+    "mpris"
+    "custom/left-arrow-light"
+    "network"
+    "custom/left-arrow-dark"
+    "pulseaudio"
+    "custom/left-arrow-light"
+    "custom/pseudobat"
+    "battery"
+    "custom/left-arrow-dark"
+    "group/hardware"
+    "custom/left-arrow-light"
+    "clock#2"
+    "custom/left-arrow-dark"
+    "clock#1"
+  ];
+
+  wayland.windowManager.sway = {
     config = rec {
       input = {
         "*" = {
@@ -78,8 +77,8 @@
       keybindings = let
         inherit (config.wayland.windowManager.sway.config) modifier;
       in {
-        "${modifier}+F2"  = "exec brightnessctl set +5%";
-        "${modifier}+F1"= "exec brightnessctl set 5%-";
+        "${modifier}+F2" = "exec brightnessctl set +5%";
+        "${modifier}+F1" = "exec brightnessctl set 5%-";
         "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
         "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
         "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
@@ -89,14 +88,12 @@
       };
 
       startup = [
-        
-        { command = "nextcloud --background";}
-        { command = "discord --start-minimized";}
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
-        { command = "ANKI_WAYLAND=1 anki";}
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
-        { command = "nm-applet";}
-        
+        {command = "nextcloud --background";}
+        {command = "discord --start-minimized";}
+        {command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
+        {command = "ANKI_WAYLAND=1 anki";}
+        {command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
+        {command = "nm-applet";}
       ];
 
       keycodebindings = {

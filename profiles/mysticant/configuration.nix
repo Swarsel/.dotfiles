@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   environment.packages = with pkgs; [
     vim
     git
@@ -18,5 +16,4 @@
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
-
 }

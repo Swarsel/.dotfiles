@@ -1,5 +1,9 @@
-{ config, pkgs, modulesPath, ... }:
 {
+  config,
+  pkgs,
+  modulesPath,
+  ...
+}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -21,12 +25,12 @@
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    age.sshKeyPaths = ["/etc/ssh/sops"];
     defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
     validateSopsFiles = false;
-    secrets.dnstokenfull = {owner="acme";};
+    secrets.dnstokenfull = {owner = "acme";};
     templates."certs.secret".content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
     '';
   };
   proxmoxLXC = {
@@ -69,7 +73,6 @@
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     virtualHosts = {
-
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -79,7 +82,7 @@
             proxyPass = "https://192.168.1.5";
             extraConfig = ''
               client_max_body_size 0;
-              '';
+            '';
           };
           # "/push/" = {
           # proxyPass = "http://192.168.2.5:7867";
@@ -101,12 +104,11 @@
           "~ ^(/_matrix|/_synapse/client)" = {
             proxyPass = "http://192.168.1.23:8008";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
-
 
       "sound.swarsel.win" = {
         enableACME = true;
@@ -117,13 +119,13 @@
             proxyPass = "http://192.168.1.13:4040";
             proxyWebsockets = true;
             extraConfig = ''
-                  proxy_redirect          http:// https://;
-                  proxy_read_timeout      600s;
-                  proxy_send_timeout      600s;
-                  proxy_buffering         off;
-                  proxy_request_buffering off;
-                  client_max_body_size    0;
-                '';
+              proxy_redirect          http:// https://;
+              proxy_read_timeout      600s;
+              proxy_send_timeout      600s;
+              proxy_buffering         off;
+              proxy_request_buffering off;
+              client_max_body_size    0;
+            '';
           };
         };
       };
@@ -136,8 +138,8 @@
           "/" = {
             proxyPass = "http://192.168.1.24:28981";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -150,8 +152,8 @@
           "/" = {
             proxyPass = "http://192.168.1.16:8096";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -164,8 +166,8 @@
           "~ ^(/_matrix|/_synapse/client)" = {
             proxyPass = "http://192.168.1.20:8008";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -178,8 +180,8 @@
           "/" = {
             proxyPass = "http://192.168.1.22:8080";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -192,13 +194,11 @@
           "/" = {
             proxyPass = "https://192.168.1.7";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
-
     };
   };
-
 }

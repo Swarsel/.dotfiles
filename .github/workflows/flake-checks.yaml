@@ -14,7 +14,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v3
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Check for dead code
+      - name: Check for dead code in .nix files
         run: git ls-files '*.nix' | nix run nixpkgs#deadnix
-      - name: Check for lints
+      - name: Check for lints in .nix files
         run: nix run nixpkgs#statix -- check
+      - name: Check formatting in .nix files
+        run: git ls-files '*.nix' | xargs nix run nixpkgs#alejandra -- --check

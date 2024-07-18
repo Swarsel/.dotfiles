@@ -1,16 +1,15 @@
-{ lib, pkgs, ... }:
-
 {
-  
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-  
+  lib,
+  pkgs,
+  ...
+}: {
+  imports = [
+    ./hardware-configuration.nix
+  ];
 
   services = {
     getty.autologinUser = "swarsel";
-    greetd.settings.initial_session.user="swarsel";
+    greetd.settings.initial_session.user = "swarsel";
   };
 
   hardware.bluetooth.enable = true;
@@ -35,7 +34,7 @@
   };
 
   stylix.image = ../../wallpaper/surfacewp.png;
-  
+
   stylix = {
     enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
@@ -60,7 +59,7 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-  
+
       sansSerif = {
         # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
         package = pkgs.cantarell-fonts;
@@ -69,26 +68,23 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-  
+
       monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode"]; };
+        package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
         name = "FiraCode Nerd Font Mono";
       };
-  
+
       emoji = {
         package = pkgs.noto-fonts-emoji;
         name = "Noto Color Emoji";
       };
     };
   };
-  
-  
-  
 
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+    extraGroups = ["networkmanager" "wheel" "lp" "audio" "video"];
     packages = with pkgs; [];
   };
 
@@ -96,5 +92,4 @@
   ];
 
   system.stateVersion = "23.05";
-
 }

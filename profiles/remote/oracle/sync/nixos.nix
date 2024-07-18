@@ -1,6 +1,8 @@
-{ config, pkgs, ... }:
-
 {
+  config,
+  pkgs,
+  ...
+}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -19,13 +21,13 @@
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    age.sshKeyPaths = ["/etc/ssh/sops"];
     defaultSopsFile = "/root/.dotfiles/secrets/sync/secrets.yaml";
     validateSopsFiles = false;
-    secrets.swarsel = { owner = "root";};
-    secrets.dnstokenfull = {owner="acme";};
+    secrets.swarsel = {owner = "root";};
+    secrets.dnstokenfull = {owner = "acme";};
     templates."certs.secret".content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
     '';
   };
 
@@ -44,7 +46,6 @@
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     virtualHosts = {
-
       "synki.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -53,8 +54,8 @@
           "/" = {
             proxyPass = "http://localhost:27701";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -67,8 +68,8 @@
           "/" = {
             proxyPass = "http://localhost:8384/";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -81,8 +82,8 @@
           "/" = {
             proxyPass = "http://localhost:3000";
             extraConfig = ''
-                  client_max_body_size 0;
-                '';
+              client_max_body_size 0;
+            '';
           };
         };
       };
@@ -96,14 +97,14 @@
     enableIPv6 = false;
     domain = "subnet03112148.vcn03112148.oraclevcn.com";
     firewall.extraCommands = ''
-    iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
-    iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
     '';
   };
   services.openssh = {
@@ -160,5 +161,4 @@
       };
     };
   };
-
 }

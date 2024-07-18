@@ -9,7 +9,6 @@
     pkgs = nixpkgs.legacyPackages.${system};
   in {
     devShells.${system}.default = pkgs.mkShell {
-
       packages = [
         (pkgs.python3.withPackages (python-pkgs: [
           python-pkgs.numpy

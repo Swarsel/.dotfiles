@@ -1,17 +1,11 @@
-{ pkgs, ... }:
-
-{
-
-  
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-  
+{pkgs, ...}: {
+  imports = [
+    ./hardware-configuration.nix
+  ];
 
   services = {
     getty.autologinUser = "TEMPLATE";
-    greetd.settings.initial_session.user="TEMPLATE";
+    greetd.settings.initial_session.user = "TEMPLATE";
   };
 
   # Bootloader
@@ -37,7 +31,7 @@
   networking.hostName = "TEMPLATE"; # Define your hostname.
 
   stylix.image = ../../wallpaper/TEMPLATEwp.png;
-  
+
   stylix = {
     enable = true;
     base16Scheme = ../../wallpaper/swarsel.yaml;
@@ -62,7 +56,7 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-  
+
       sansSerif = {
         # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
         package = pkgs.cantarell-fonts;
@@ -71,21 +65,18 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-  
+
       monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode"]; };
+        package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
         name = "FiraCode Nerd Font Mono";
       };
-  
+
       emoji = {
         package = pkgs.noto-fonts-emoji;
         name = "Noto Color Emoji";
       };
     };
   };
-  
-  
-  
 
   # Configure keymap in X11 (only used for login)
   services.xserver = {
@@ -96,7 +87,7 @@
   users.users.TEMPLATE = {
     isNormalUser = true;
     description = "TEMPLATE";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+    extraGroups = ["networkmanager" "wheel" "lp" "audio" "video"];
     packages = with pkgs; [];
   };
 
@@ -104,5 +95,4 @@
   ];
 
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
 }

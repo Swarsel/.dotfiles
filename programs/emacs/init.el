@@ -171,28 +171,23 @@ create a new one."
         visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
-(defun swarsel/org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      swarsel-swarsel-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-html-export-to-html)
-      (org-babel-tangle)))
-  (when (string-equal (buffer-file-name)
-                      swarsel-emacs-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-html-export-to-html)
-      (org-babel-tangle)))
-  (when (string-equal (buffer-file-name)
-                      swarsel-nix-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
+(defun run-alejandra ()
+  (interactive)
+  (let ((default-directory (expand-file-name "~/.dotfiles")))
+    (shell-command "alejandra . -q")))
 
-(setq org-html-htmlize-output-type nil)
+  (defun swarsel/org-babel-tangle-config ()
+    (when (string-equal (buffer-file-name)
+                        swarsel-swarsel-org-filepath)
+      ;; Dynamic scoping to the rescue
+      (let ((org-confirm-babel-evaluate nil))
+        (org-html-export-to-html)
+        (org-babel-tangle)
+        (run-alejandra))))
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+  (setq org-html-htmlize-output-type nil)
+
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 (defun org-fold-outer ()
   (interactive)

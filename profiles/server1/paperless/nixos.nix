@@ -1,14 +1,14 @@
-{ config, pkgs, modulesPath, ... }:
-
 {
-  
+  config,
+  pkgs,
+  modulesPath,
+  ...
+}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
   ];
-  
-  
-  
+
   services = {
     xserver = {
       layout = "us";
@@ -17,36 +17,36 @@
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
+      listenAddresses = [
+        {
+          port = 22;
+          addr = "0.0.0.0";
+        }
+      ];
     };
   };
-  
+
   nix.settings.experimental-features = ["nix-command" "flakes"];
-  
+
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
     manageHostName = false; # manage hostname myself
   };
-  
+
   networking = {
     useDHCP = true;
     enableIPv6 = false;
   };
-  
+
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
   ];
-  
+
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-  
+
   environment.shellAliases = {
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
-  
-  
 
   users.groups.lxc_shares = {
     gid = 10000;
@@ -68,10 +68,10 @@
   };
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    age.sshKeyPaths = ["/etc/ssh/sops"];
     defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
     validateSopsFiles = false;
-    secrets.admin = { owner = "paperless";};
+    secrets.admin = {owner = "paperless";};
   };
 
   services.paperless = {
@@ -90,5 +90,4 @@
       };
     };
   };
-
 }

@@ -5131,6 +5131,11 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       nmap
       lsof
 
+      # nix
+      alejandra
+      deadnix
+      statix
+
       # local file sharing
       wormhole-rs
 
@@ -7524,41 +7529,37 @@ Used in: [[#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e][Centered org-mode Buffers]]
 
 #+end_src
 
-**** org-mode: Auto-tangle and export Configuration Files
+**** org-mode: Upon-save actions (Auto-tangle, export to html, formatting)
 :PROPERTIES:
 :CUSTOM_ID: h:59d4306e-9b73-4b2c-b039-6a6518c357fc
 :END:
 
-This section automatically tangles all configuration blocks in this file to the defined Emacs org-file. It also exports the configuration file as html.
+This section handles everything that shoudld happen when I save =SwarselSystems.org=. It:
 
+1) automatically tangles all configuration blocks in this file
+2) exports the configuration file as html for an easier reading experience with working links and index
+3) formats the generated =.nix= files in accordance to the =Alejandra=-style.
 
+We set a hook that runs everytime we save the file. It would be a bit more efficient to only export and format when we enter a magit window for instance (since especially the html export takes times), however, since I cannot be sure to only ever commit from magit (I do indeed sometimes use git from the command line), I prefer this approach.
 
 #+begin_src emacs-lisp
+    (defun run-alejandra ()
+      (interactive)
+      (let ((default-directory (expand-file-name "~/.dotfiles")))
+        (shell-command "alejandra . -q")))
 
-  (defun swarsel/org-babel-tangle-config ()
-    (when (string-equal (buffer-file-name)
-                        swarsel-swarsel-org-filepath)
-      ;; Dynamic scoping to the rescue
-      (let ((org-confirm-babel-evaluate nil))
-        (org-html-export-to-html)
-        (org-babel-tangle)))
-    (when (string-equal (buffer-file-name)
-                        swarsel-emacs-org-filepath)
-      ;; Dynamic scoping to the rescue
-      (let ((org-confirm-babel-evaluate nil))
-        (org-html-export-to-html)
-        (org-babel-tangle)))
-    (when (string-equal (buffer-file-name)
-                        swarsel-nix-org-filepath)
-      ;; Dynamic scoping to the rescue
-      (let ((org-confirm-babel-evaluate nil))
-        (org-babel-tangle))))
+      (defun swarsel/org-babel-tangle-config ()
+        (when (string-equal (buffer-file-name)
+                            swarsel-swarsel-org-filepath)
+          ;; Dynamic scoping to the rescue
+          (let ((org-confirm-babel-evaluate nil))
+            (org-html-export-to-html)
+            (org-babel-tangle)
+            (run-alejandra))))
 
-  (setq org-html-htmlize-output-type nil)
+      (setq org-html-htmlize-output-type nil)
 
-  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
-
-
+      (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 #+end_src
 

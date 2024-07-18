@@ -1,6 +1,9 @@
-{ config, pkgs, modulesPath, ... }:
-
 {
+  config,
+  pkgs,
+  modulesPath,
+  ...
+}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -21,7 +24,7 @@
   };
 
   users.users.jellyfin = {
-    extraGroups  = [ "video" "render" ];
+    extraGroups = ["video" "render"];
   };
 
   services.xserver = {
@@ -56,13 +59,13 @@
   };
 
   nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    vaapiIntel = pkgs.vaapiIntel.override {enableHybridCodec = true;};
   };
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
       vaapiVdpau
       libvdpau-va-gl
     ];
@@ -73,5 +76,4 @@
     user = "jellyfin";
     # openFirewall = true; # this works only for the default ports
   };
-
 }

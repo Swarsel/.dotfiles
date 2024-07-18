@@ -1,8 +1,12 @@
-{ config, pkgs, modulesPath, sops, ... }: let
+{
+  config,
+  pkgs,
+  modulesPath,
+  sops,
+  ...
+}: let
   matrixDomain = "matrix2.swarsel.win";
 in {
-  
-  
   services = {
     xserver = {
       layout = "us";
@@ -11,35 +15,36 @@ in {
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
+      listenAddresses = [
+        {
+          port = 22;
+          addr = "0.0.0.0";
+        }
+      ];
     };
   };
-  
+
   nix.settings.experimental-features = ["nix-command" "flakes"];
-  
+
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
     manageHostName = false; # manage hostname myself
   };
-  
+
   networking = {
     useDHCP = true;
     enableIPv6 = false;
   };
-  
+
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
   ];
-  
+
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-  
+
   environment.shellAliases = {
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
-  
 
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
@@ -62,25 +67,25 @@ in {
   ];
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    age.sshKeyPaths = ["/etc/ssh/sops"];
     defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      matrixsharedsecret = {owner="matrix-synapse";};
-      mautrixtelegram_as = {owner="matrix-synapse";};
-      mautrixtelegram_hs = {owner="matrix-synapse";};
-      mautrixtelegram_api_id = {owner="matrix-synapse";};
-      mautrixtelegram_api_hash = {owner="matrix-synapse";};
+      matrixsharedsecret = {owner = "matrix-synapse";};
+      mautrixtelegram_as = {owner = "matrix-synapse";};
+      mautrixtelegram_hs = {owner = "matrix-synapse";};
+      mautrixtelegram_api_id = {owner = "matrix-synapse";};
+      mautrixtelegram_api_hash = {owner = "matrix-synapse";};
     };
     templates = {
       "matrix_user_register.sh".content = ''
-          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-          '';
+        register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+      '';
       matrixshared = {
         owner = "matrix-synapse";
         content = ''
           registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-          '';
+        '';
       };
       mautrixtelegram = {
         owner = "matrix-synapse";
@@ -89,7 +94,7 @@ in {
           MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
           MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
           MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-          '';
+        '';
       };
     };
   };
@@ -97,27 +102,27 @@ in {
   services.postgresql = {
     enable = true;
     initialScript = pkgs.writeText "synapse-init.sql" ''
-            CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-            CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-              TEMPLATE template0
-              LC_COLLATE = "C"
-              LC_CTYPE = "C";
-            CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-            CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-              TEMPLATE template0
-              LC_COLLATE = "C"
-              LC_CTYPE = "C";
-            CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-            CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-              TEMPLATE template0
-              LC_COLLATE = "C"
-              LC_CTYPE = "C";
-            CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-            CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-              TEMPLATE template0
-              LC_COLLATE = "C"
-              LC_CTYPE = "C";
-          '';
+      CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+      CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+        TEMPLATE template0
+        LC_COLLATE = "C"
+        LC_CTYPE = "C";
+      CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+      CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+        TEMPLATE template0
+        LC_COLLATE = "C"
+        LC_CTYPE = "C";
+      CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+      CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+        TEMPLATE template0
+        LC_COLLATE = "C"
+        LC_CTYPE = "C";
+      CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+      CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+        TEMPLATE template0
+        LC_COLLATE = "C"
+        LC_CTYPE = "C";
+    '';
   };
 
   services.matrix-synapse = {
@@ -132,14 +137,15 @@ in {
       server_name = matrixDomain;
       public_baseurl = "https://${matrixDomain}";
       listeners = [
-        { port = 8008;
-          bind_addresses = [ "0.0.0.0" ];
+        {
+          port = 8008;
+          bind_addresses = ["0.0.0.0"];
           type = "http";
           tls = false;
           x_forwarded = true;
           resources = [
             {
-              names = [ "client" "federation" ];
+              names = ["client" "federation"];
               compress = true;
             }
           ];
@@ -160,7 +166,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
-        address= "http://localhost:29317";
+        address = "http://localhost:29317";
         hostname = "0.0.0.0";
         port = "29317";
         provisioning.enabled = true;
@@ -189,16 +195,16 @@ in {
           args = {
             width = 256;
             height = 256;
-            fps = 30;               # only for webm
-            background = "020202";  # only for gif, transparency not supported
+            fps = 30; # only for webm
+            background = "020202"; # only for gif, transparency not supported
           };
         };
       };
     };
   };
   systemd.services.mautrix-telegram.path = with pkgs; [
-    lottieconverter  # for animated stickers conversion, unfree package
-    ffmpeg           # if converting animated stickers to webm (very slow!)
+    lottieconverter # for animated stickers conversion, unfree package
+    ffmpeg # if converting animated stickers to webm (very slow!)
   ];
 
   services.mautrix-whatsapp = {
@@ -209,7 +215,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
-        address= "http://localhost:29318";
+        address = "http://localhost:29318";
         hostname = "0.0.0.0";
         port = 29318;
         database = {
@@ -255,8 +261,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
-
-        address= "http://localhost:29328";
+        address = "http://localhost:29328";
         hostname = "0.0.0.0";
         port = 29328;
         database = {
@@ -282,7 +287,7 @@ in {
   # messages out after a while.
 
   systemd.timers."restart-bridges" = {
-    wantedBy = [ "timers.target" ];
+    wantedBy = ["timers.target"];
     timerConfig = {
       OnBootSec = "1d";
       OnUnitActiveSec = "1d";
@@ -292,14 +297,13 @@ in {
 
   systemd.services."restart-bridges" = {
     script = ''
-            systemctl restart mautrix-whatsapp.service
-            systemctl restart mautrix-signal.service
-            systemctl restart mautrix-telegram.service
-            '';
+      systemctl restart mautrix-whatsapp.service
+      systemctl restart mautrix-signal.service
+      systemctl restart mautrix-telegram.service
+    '';
     serviceConfig = {
       Type = "oneshot";
       User = "root";
     };
   };
-
 }

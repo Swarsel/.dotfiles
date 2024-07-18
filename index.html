@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-19 Fr 00:29 -->
+<!-- 2024-07-19 Fr 00:52 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -387,7 +387,7 @@
 </div>
 </div>
 <p>
-<b>This file has 40971 words spanning 10908 lines and was last revised on 2024-07-19 00:29:02 +0200.</b>
+<b>This file has 41033 words spanning 10909 lines and was last revised on 2024-07-19 00:52:31 +0200.</b>
 </p>
 
 <p>
@@ -437,7 +437,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-19 00:29:02 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-19 00:52:31 +0200)
 </p></li>
 </ul>
 
@@ -6335,6 +6335,11 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     nmap
     lsof
 
+    # nix
+    alejandra
+    deadnix
+    statix
+
     # local file sharing
     wormhole-rs
 
@@ -9194,40 +9199,40 @@ Used in: <a href="#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">Centered org-mode Buf
 </div>
 </div>
 </li>
-<li><a id="h:59d4306e-9b73-4b2c-b039-6a6518c357fc"></a>org-mode: Auto-tangle and export Configuration Files<br />
+<li><a id="h:59d4306e-9b73-4b2c-b039-6a6518c357fc"></a>org-mode: Upon-save actions (Auto-tangle, export to html, formatting)<br />
 <div class="outline-text-5" id="text-h:59d4306e-9b73-4b2c-b039-6a6518c357fc">
 <p>
-This section automatically tangles all configuration blocks in this file to the defined Emacs org-file. It also exports the configuration file as html.
+This section handles everything that shoudld happen when I save <code>SwarselSystems.org</code>. It:
 </p>
 
+<ol class="org-ol">
+<li>automatically tangles all configuration blocks in this file</li>
+<li>exports the configuration file as html for an easier reading experience with working links and index</li>
+<li>formats the generated <code>.nix</code> files in accordance to the <code>Alejandra</code>-style.</li>
+</ol>
 
+<p>
+We set a hook that runs everytime we save the file. It would be a bit more efficient to only export and format when we enter a magit window for instance (since especially the html export takes times), however, since I cannot be sure to only ever commit from magit (I do indeed sometimes use git from the command line), I prefer this approach.
+</p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">
-(defun swarsel/org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      swarsel-swarsel-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-html-export-to-html)
-      (org-babel-tangle)))
-  (when (string-equal (buffer-file-name)
-                      swarsel-emacs-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-html-export-to-html)
-      (org-babel-tangle)))
-  (when (string-equal (buffer-file-name)
-                      swarsel-nix-org-filepath)
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
+<pre class="src src-emacs-lisp">(defun run-alejandra ()
+  (interactive)
+  (let ((default-directory (expand-file-name "~/.dotfiles")))
+    (shell-command "alejandra . -q")))
 
-(setq org-html-htmlize-output-type nil)
+  (defun swarsel/org-babel-tangle-config ()
+    (when (string-equal (buffer-file-name)
+                        swarsel-swarsel-org-filepath)
+      ;; Dynamic scoping to the rescue
+      (let ((org-confirm-babel-evaluate nil))
+        (org-html-export-to-html)
+        (org-babel-tangle)
+        (run-alejandra))))
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+  (setq org-html-htmlize-output-type nil)
 
-
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 </pre>
 </div>
@@ -9336,7 +9341,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org03da7a6"></a>Nix common prefix bracketer<br />
+<li><a id="orgbb564b1"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -12907,7 +12912,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-19 Fr 00:29</p>
+<p class="date">Created: 2024-07-19 Fr 00:52</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

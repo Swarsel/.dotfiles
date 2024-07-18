@@ -11,7 +11,6 @@
     llvm = pkgs.llvmPackages_latest;
   in {
     devShells.${system}.default = pkgs.mkShell {
-
       packages = with pkgs; [
         gcc
         #builder
@@ -29,10 +28,9 @@
       hardeningDisable = ["all"];
       # direnv does not allow aliases, use scripts as a workaround
       shellHook = ''
-      PATH_add ~/.dotfiles/scripts/devShell
+        PATH_add ~/.dotfiles/scripts/devShell
       '';
       # ...
-
     };
   };
 }

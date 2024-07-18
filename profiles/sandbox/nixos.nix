@@ -1,7 +1,11 @@
-{ config, pkgs, sops, ... }: let
+{
+  config,
+  pkgs,
+  sops,
+  ...
+}: let
   matrixDomain = "swatrix.swarsel.win";
 in {
-
   imports = [
     ./hardware-configuration.nix
   ];
@@ -10,9 +14,9 @@ in {
     enable = true;
     device = "/dev/sda";
     useOSProber = true;
-    supportedFilesystems = [ "zfs" ];
+    supportedFilesystems = ["zfs"];
     zfs.forceImportRoot = false;
-    kernelModules = [ "tun" ];
+    kernelModules = ["tun"];
     kernel.sysctl = {
       "net.ipv4.conf.all.rp_filter" = 2;
       "net.ipv4.conf.default.rp_filter" = 2;
@@ -26,13 +30,13 @@ in {
     enableIPv6 = true;
     firewall.enable = false;
     firewall.extraCommands = ''
-                          sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-                          '';
+      sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+    '';
     iproute2 = {
       enable = true;
       rttablesExtraConfig = ''
-                            200     vpn
-                            '';
+        200     vpn
+      '';
     };
   };
 
@@ -41,7 +45,7 @@ in {
     hardware.enableAllFirmware = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
       vaapiVdpau
       libvdpau-va-gl
     ];
@@ -64,7 +68,7 @@ in {
     };
     users = {
       jellyfin = {
-        extraGroups  = [ "video" "render" ];
+        extraGroups = ["video" "render"];
       };
       vpn = {
         isNormalUser = true;
@@ -75,23 +79,23 @@ in {
         isSystemUser = true;
         uid = 61593;
         group = "navidrome";
-        extraGroups  = [ "audio" "utmp" ];
+        extraGroups = ["audio" "utmp"];
       };
       spotifyd = {
         isSystemUser = true;
         uid = 65136;
         group = "spotifyd";
-        extraGroups  = [ "audio" "utmp" ];
+        extraGroups = ["audio" "utmp"];
       };
       mpd = {
         isSystemUser = true;
         group = "mpd";
-        extraGroups  = [ "audio" "utmp" ];
+        extraGroups = ["audio" "utmp"];
       };
       swarsel = {
         isNormalUser = true;
         description = "Leon S";
-        extraGroups = [ "networkmanager" "wheel" "lp"];
+        extraGroups = ["networkmanager" "wheel" "lp"];
         packages = with pkgs; [];
       };
       root = {
@@ -133,26 +137,26 @@ in {
       zfs
     ];
     etc = {
-      "openvpn/iptables.sh" =
-        { source = ../../scripts/server1/iptables.sh;
-          mode = "0755";
-        };
-      "openvpn/update-resolv-conf" =
-        { source = ../../scripts/server1/update-resolv-conf;
-          mode = "0755";
-        };
-      "openvpn/routing.sh" =
-        { source = ../../scripts/server1/routing.sh;
-          mode = "0755";
-        };
-      "openvpn/ca.rsa.2048.crt" =
-        { source = ../../secrets/certs/ca.rsa.2048.crt;
-          mode = "0644";
-        };
-      "openvpn/crl.rsa.2048.pem" =
-        { source = ../../secrets/certs/crl.rsa.2048.pem;
-          mode = "0644";
-        };
+      "openvpn/iptables.sh" = {
+        source = ../../scripts/server1/iptables.sh;
+        mode = "0755";
+      };
+      "openvpn/update-resolv-conf" = {
+        source = ../../scripts/server1/update-resolv-conf;
+        mode = "0755";
+      };
+      "openvpn/routing.sh" = {
+        source = ../../scripts/server1/routing.sh;
+        mode = "0755";
+      };
+      "openvpn/ca.rsa.2048.crt" = {
+        source = ../../secrets/certs/ca.rsa.2048.crt;
+        mode = "0644";
+      };
+      "openvpn/crl.rsa.2048.pem" = {
+        source = ../../secrets/certs/crl.rsa.2048.pem;
+        mode = "0644";
+      };
     };
     shellAliases = {
       nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
@@ -161,7 +165,7 @@ in {
 
   systemd = {
     timers."restart-bridges" = {
-      wantedBy = [ "timers.target" ];
+      wantedBy = ["timers.target"];
       timerConfig = {
         OnBootSec = "1d";
         OnUnitActiveSec = "1d";
@@ -171,10 +175,10 @@ in {
 
     services."restart-bridges" = {
       script = ''
-                systemctl restart mautrix-whatsapp.service
-                systemctl restart mautrix-signal.service
-                systemctl restart mautrix-telegram.service
-                '';
+        systemctl restart mautrix-whatsapp.service
+        systemctl restart mautrix-signal.service
+        systemctl restart mautrix-telegram.service
+      '';
       serviceConfig = {
         Type = "oneshot";
         User = "root";
@@ -190,19 +194,19 @@ in {
   };
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    age.sshKeyPaths = ["/etc/ssh/sops"];
     defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      dnstokenfull = {owner="acme";};
-      kavita = { owner = "kavita";};
+      dnstokenfull = {owner = "acme";};
+      kavita = {owner = "kavita";};
       vpnuser = {};
-      rpcuser = {owner="vpn";};
+      rpcuser = {owner = "vpn";};
       vpnpass = {};
-      rpcpass = {owner="vpn";};
+      rpcpass = {owner = "vpn";};
       vpnprot = {};
       vpnloc = {};
-      mpdpass = { owner = "mpd";};
+      mpdpass = {owner = "mpd";};
     };
     templates = {
       "transmission-rpc" = {
@@ -214,37 +218,37 @@ in {
       };
 
       pia.content = ''
-                          ${config.sops.placeholder.vpnuser}
-                          ${config.sops.placeholder.vpnpass}
-                          '';
+        ${config.sops.placeholder.vpnuser}
+        ${config.sops.placeholder.vpnpass}
+      '';
 
       vpn.content = ''
-                            client
-                            dev tun
-                            proto ${config.sops.placeholder.vpnprot}
-                            remote ${config.sops.placeholder.vpnloc}
-                            resolv-retry infinite
-                            nobind
-                            persist-key
-                            persist-tun
-                            cipher aes-128-cbc
-                            auth sha1
-                            tls-client
-                            remote-cert-tls server
+        client
+        dev tun
+        proto ${config.sops.placeholder.vpnprot}
+        remote ${config.sops.placeholder.vpnloc}
+        resolv-retry infinite
+        nobind
+        persist-key
+        persist-tun
+        cipher aes-128-cbc
+        auth sha1
+        tls-client
+        remote-cert-tls server
 
-                            auth-user-pass ${config.sops.templates.pia.path}
-                            compress
-                            verb 1
-                            reneg-sec 0
+        auth-user-pass ${config.sops.templates.pia.path}
+        compress
+        verb 1
+        reneg-sec 0
 
-                            crl-verify /etc/openvpn/crl.rsa.2048.pem
-                            ca /etc/openvpn/ca.rsa.2048.crt
+        crl-verify /etc/openvpn/crl.rsa.2048.pem
+        ca /etc/openvpn/ca.rsa.2048.crt
 
-                            disable-occ
-                          '';
+        disable-occ
+      '';
       "certs.secret".content = ''
-              CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-              '';
+        CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+      '';
     };
   };
 
@@ -265,10 +269,12 @@ in {
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
+      listenAddresses = [
+        {
+          port = 22;
+          addr = "0.0.0.0";
+        }
+      ];
     };
 
     nginx = {
@@ -278,7 +284,6 @@ in {
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
       virtualHosts = {
-
         "stash.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
@@ -287,8 +292,8 @@ in {
             "/" = {
               proxyPass = "https://192.168.1.5";
               extraConfig = ''
-                        client_max_body_size 0;
-                        '';
+                client_max_body_size 0;
+              '';
             };
             "/.well-known/carddav" = {
               return = "301 $scheme://$host/remote.php/dav";
@@ -307,12 +312,11 @@ in {
             "~ ^(/_matrix|/_synapse/client)" = {
               proxyPass = "http://127.0.0.1:8008";
               extraConfig = ''
-                            client_max_body_size 0;
-                          '';
+                client_max_body_size 0;
+              '';
             };
           };
         };
-
 
         "sound.swarsel.win" = {
           enableACME = true;
@@ -323,13 +327,13 @@ in {
               proxyPass = "http://127.0.0.1:4040";
               proxyWebsockets = true;
               extraConfig = ''
-                            proxy_redirect          http:// https://;
-                            proxy_read_timeout      600s;
-                            proxy_send_timeout      600s;
-                            proxy_buffering         off;
-                            proxy_request_buffering off;
-                            client_max_body_size    0;
-                          '';
+                proxy_redirect          http:// https://;
+                proxy_read_timeout      600s;
+                proxy_send_timeout      600s;
+                proxy_buffering         off;
+                proxy_request_buffering off;
+                client_max_body_size    0;
+              '';
             };
           };
         };
@@ -342,8 +346,8 @@ in {
             "/" = {
               proxyPass = "http://127.0.0.1:28981";
               extraConfig = ''
-                            client_max_body_size 0;
-                          '';
+                client_max_body_size 0;
+              '';
             };
           };
         };
@@ -356,8 +360,8 @@ in {
             "/" = {
               proxyPass = "http://127.0.0.1:8096";
               extraConfig = ''
-                            client_max_body_size 0;
-                          '';
+                client_max_body_size 0;
+              '';
             };
           };
         };
@@ -370,8 +374,8 @@ in {
             "/" = {
               proxyPass = "http://127.0.0.1:8080";
               extraConfig = ''
-                            client_max_body_size 0;
-                          '';
+                client_max_body_size 0;
+              '';
             };
           };
         };
@@ -417,74 +421,74 @@ in {
       credentialsFile = config.sops.templates."transmission-rpc".path;
       user = "vpn";
       settings = {
-        alt-speed-down= 8000;
-        alt-speed-enabled= false;
-        alt-speed-time-begin= 0;
-        alt-speed-time-day= 127;
-        alt-speed-time-enabled= true;
-        alt-speed-time-end= 360;
-        alt-speed-up= 2000;
-        bind-address-ipv4= "0.0.0.0";
-        bind-address-ipv6= "::";
-        blocklist-enabled= false;
-        blocklist-url= "http://www.example.com/blocklist";
-        cache-size-mb= 256;
-        dht-enabled= false;
-        download-dir= "/test";
-        download-limit= 100;
-        download-limit-enabled= 0;
-        download-queue-enabled= true;
-        download-queue-size= 5;
-        encryption= 2;
-        idle-seeding-limit= 30;
-        idle-seeding-limit-enabled= false;
-        incomplete-dir= "/var/lib/transmission-daemon/Downloads";
-        incomplete-dir-enabled= false;
-        lpd-enabled= false;
-        max-peers-global= 200;
-        message-level= 1;
-        peer-congestion-algorithm= "";
-        peer-id-ttl-hours= 6;
-        peer-limit-global= 100;
-        peer-limit-per-torrent= 40;
-        peer-port= 22371;
-        peer-port-random-high= 65535;
-        peer-port-random-low= 49152;
-        peer-port-random-on-start= false;
-        peer-socket-tos= "default";
-        pex-enabled= false;
-        port-forwarding-enabled= false;
-        preallocation= 1;
-        prefetch-enabled= true;
-        queue-stalled-enabled= true;
-        queue-stalled-minutes= 30;
-        ratio-limit= 2;
-        ratio-limit-enabled= false;
-        rename-partial-files= true;
-        rpc-authentication-required= true;
-        rpc-bind-address= "0.0.0.0";
-        rpc-enabled= true;
-        rpc-host-whitelist= "";
-        rpc-host-whitelist-enabled= true;
-        rpc-port= 9091;
-        rpc-url= "/transmission/";
-        rpc-whitelist= "127.0.0.1,192.168.3.2";
-        rpc-whitelist-enabled= true;
-        scrape-paused-torrents-enabled= true;
-        script-torrent-done-enabled= false;
-        seed-queue-enabled= false;
-        seed-queue-size= 10;
-        speed-limit-down= 6000;
-        speed-limit-down-enabled= true;
-        speed-limit-up= 500;
-        speed-limit-up-enabled= true;
-        start-added-torrents= true;
-        trash-original-torrent-files= false;
-        umask= 2;
-        upload-limit= 100;
-        upload-limit-enabled= 0;
-        upload-slots-per-torrent= 14;
-        utp-enabled= false;
+        alt-speed-down = 8000;
+        alt-speed-enabled = false;
+        alt-speed-time-begin = 0;
+        alt-speed-time-day = 127;
+        alt-speed-time-enabled = true;
+        alt-speed-time-end = 360;
+        alt-speed-up = 2000;
+        bind-address-ipv4 = "0.0.0.0";
+        bind-address-ipv6 = "::";
+        blocklist-enabled = false;
+        blocklist-url = "http://www.example.com/blocklist";
+        cache-size-mb = 256;
+        dht-enabled = false;
+        download-dir = "/test";
+        download-limit = 100;
+        download-limit-enabled = 0;
+        download-queue-enabled = true;
+        download-queue-size = 5;
+        encryption = 2;
+        idle-seeding-limit = 30;
+        idle-seeding-limit-enabled = false;
+        incomplete-dir = "/var/lib/transmission-daemon/Downloads";
+        incomplete-dir-enabled = false;
+        lpd-enabled = false;
+        max-peers-global = 200;
+        message-level = 1;
+        peer-congestion-algorithm = "";
+        peer-id-ttl-hours = 6;
+        peer-limit-global = 100;
+        peer-limit-per-torrent = 40;
+        peer-port = 22371;
+        peer-port-random-high = 65535;
+        peer-port-random-low = 49152;
+        peer-port-random-on-start = false;
+        peer-socket-tos = "default";
+        pex-enabled = false;
+        port-forwarding-enabled = false;
+        preallocation = 1;
+        prefetch-enabled = true;
+        queue-stalled-enabled = true;
+        queue-stalled-minutes = 30;
+        ratio-limit = 2;
+        ratio-limit-enabled = false;
+        rename-partial-files = true;
+        rpc-authentication-required = true;
+        rpc-bind-address = "0.0.0.0";
+        rpc-enabled = true;
+        rpc-host-whitelist = "";
+        rpc-host-whitelist-enabled = true;
+        rpc-port = 9091;
+        rpc-url = "/transmission/";
+        rpc-whitelist = "127.0.0.1,192.168.3.2";
+        rpc-whitelist-enabled = true;
+        scrape-paused-torrents-enabled = true;
+        script-torrent-done-enabled = false;
+        seed-queue-enabled = false;
+        seed-queue-size = 10;
+        speed-limit-down = 6000;
+        speed-limit-down-enabled = true;
+        speed-limit-up = 500;
+        speed-limit-up-enabled = true;
+        start-added-torrents = true;
+        trash-original-torrent-files = false;
+        umask = 2;
+        upload-limit = 100;
+        upload-limit-enabled = 0;
+        upload-slots-per-torrent = 14;
+        utp-enabled = false;
       };
     };
 
@@ -508,9 +512,6 @@ in {
     # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
     # '';
 
-
-
-
     # ----------------
     # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
     # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
@@ -521,27 +522,27 @@ in {
     postgresql = {
       enable = true;
       initialScript = pkgs.writeText "synapse-init.sql" ''
-                CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-                CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-                  TEMPLATE template0
-                  LC_COLLATE = "C"
-                  LC_CTYPE = "C";
-                CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-                CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-                  TEMPLATE template0
-                  LC_COLLATE = "C"
-                  LC_CTYPE = "C";
-                CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-                CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-                  TEMPLATE template0
-                  LC_COLLATE = "C"
-                  LC_CTYPE = "C";
-                CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-                CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-                  TEMPLATE template0
-                  LC_COLLATE = "C"
-                  LC_CTYPE = "C";
-              '';
+        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+      '';
     };
     matrix-synapse = {
       settings.app_service_config_files = [
@@ -557,14 +558,15 @@ in {
         config.sops.templates.matrixshared.path
       ];
       settings.listeners = [
-        { port = 8008;
-          bind_addresses = [ "0.0.0.0" ];
+        {
+          port = 8008;
+          bind_addresses = ["0.0.0.0"];
           type = "http";
           tls = false;
           x_forwarded = true;
           resources = [
             {
-              names = [ "client" "federation" ];
+              names = ["client" "federation"];
               compress = true;
             }
           ];
@@ -581,7 +583,7 @@ in {
           domain = matrixDomain;
         };
         appservice = {
-          address= "http://localhost:29317";
+          address = "http://localhost:29317";
           hostname = "0.0.0.0";
           port = "29317";
           provisioning.enabled = true;
@@ -613,8 +615,8 @@ in {
             args = {
               width = 256;
               height = 256;
-              fps = 30;               # only for webm
-              background = "020202";  # only for gif, transparency not supported
+              fps = 30; # only for webm
+              background = "020202"; # only for gif, transparency not supported
             };
           };
         };
@@ -630,7 +632,7 @@ in {
           domain = matrixDomain;
         };
         appservice = {
-          address= "http://localhost:29318";
+          address = "http://localhost:29318";
           hostname = "0.0.0.0";
           port = 29318;
           database = {
@@ -676,8 +678,7 @@ in {
           domain = matrixDomain;
         };
         appservice = {
-
-          address= "http://localhost:29328";
+          address = "http://localhost:29328";
           hostname = "0.0.0.0";
           port = 29328;
           database = {
@@ -740,7 +741,6 @@ in {
       ];
     };
 
-
     spotifyd = {
       enable = true;
       settings = {
@@ -760,18 +760,18 @@ in {
     samba = {
       package = pkgs.samba4Full;
       extraConfig = ''
-                  workgroup = WORKGROUP
-                  server role = standalone server
-                  dns proxy = no
+        workgroup = WORKGROUP
+        server role = standalone server
+        dns proxy = no
 
-                  pam password change = yes
-                  map to guest = bad user
-                  create mask = 0664
-                  force create mode = 0664
-                  directory mask = 0775
-                  force directory mode = 0775
-                  follow symlinks = yes
-                  '';
+        pam password change = yes
+        map to guest = bad user
+        create mask = 0664
+        force create mode = 0664
+        directory mask = 0775
+        force directory mode = 0775
+        follow symlinks = yes
+      '';
 
       # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
       # Required for samba to register mDNS records for auto discovery
@@ -788,7 +788,6 @@ in {
         "valid users" = "@smbtest2";
       };
     };
-
 
     avahi = {
       publish.enable = true;
