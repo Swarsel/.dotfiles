@@ -82,7 +82,7 @@
           position = "1920,0";
           # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
         };
-        HDMI-A-1 = {
+        DP-4 = {
           mode = "2560x1440";
           scale = "1";
           # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
@@ -92,7 +92,7 @@
 
       workspaceOutputAssign = [
         { output = "eDP-1"; workspace = "1:一";}
-        { output = "HDMI-A-1"; workspace = "2:二";}
+        { output = "DP-4"; workspace = "2:二";}
       ];
 
 
