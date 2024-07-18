@@ -139,6 +139,7 @@
   };
   services.power-profiles-daemon.enable = true;
   services.fprintd.enable = true;
+  services.fwupd.enable = true;
 
   services.nswitch-rcm = {
     enable = true;
