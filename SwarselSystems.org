@@ -7711,6 +7711,35 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 
 #+end_src
 
+**** Nix common prefix bracketer
+
+This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
+
+#+begin_src emacs-lisp
+
+(defun swarsel/prefix-block (start end)
+  (interactive "r")
+  (save-excursion
+    (goto-char start)
+    (setq start (line-beginning-position))
+    (goto-char end)
+    (setq end (line-end-position))
+    (let ((common-prefix (save-excursion
+                           (goto-char start)
+                           (if (re-search-forward "^\\([^.\n]+\\)\\." end t)
+                               (match-string 1)
+                             (error "No common prefix found")))))
+      (save-excursion
+        (goto-char start)
+        (insert common-prefix " = {\n")
+        (goto-char (+ end (length common-prefix) 6))
+        (insert "};\n")
+        (goto-char start)
+        (while (re-search-forward (concat "^" (regexp-quote common-prefix) "\\.") end t)
+          (replace-match ""))))))
+
+#+end_src
+
 *** Custom Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5
