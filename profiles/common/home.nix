@@ -1,4 +1,4 @@
-{ config, pkgs, lib, fetchFromGitHub , ... }:
+{ config, pkgs, fetchFromGitHub , ... }:
 
 {
   home.packages = with pkgs; [

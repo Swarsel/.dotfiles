@@ -247,6 +247,27 @@ create a new one."
   (python-shell-send-region (region-beginning) (region-end))
   (python-shell-switch-to-shell))
 
+(defun swarsel/prefix-block (start end)
+  (interactive "r")
+  (save-excursion
+    (goto-char start)
+    (setq start (line-beginning-position))
+    (goto-char end)
+    (setq end (line-end-position))
+    (let ((common-prefix (save-excursion
+                           (goto-char start)
+                           (if (re-search-forward "^\\([^.\n]+\\)\\." end t)
+                               (match-string 1)
+                             (error "No common prefix found")))))
+      (save-excursion
+        (goto-char start)
+        (insert common-prefix " = {\n")
+        (goto-char (+ end (length common-prefix) 6))
+        (insert "};\n")
+        (goto-char start)
+        (while (re-search-forward (concat "^" (regexp-quote common-prefix) "\\.") end t)
+          (replace-match ""))))))
+
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -474,6 +495,9 @@ create a new one."
   (set-face-attribute 'highlight-indent-guides-odd-face nil :background "gray20")
   (set-face-attribute 'highlight-indent-guides-stack-even-face nil :background "gray40")
   (set-face-attribute 'highlight-indent-guides-stack-odd-face nil :background "gray50"))
+
+(use-package aggressive-indent)
+(global-aggressive-indent-mode 1)
 
 (setq mouse-wheel-scroll-amount
       '(1

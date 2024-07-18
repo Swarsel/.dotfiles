@@ -15,17 +15,23 @@
   };
 
   # Bootloader
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-  boot.loader.grub.useOSProber = true;
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
+    useOSProber = true;
+  };
 
   # --------------------------------------
   # you might need a configuration like this instead:
   # Bootloader
-  # boot.loader.grub.enable = true;
-  # boot.loader.grub.devices = ["nodev" ];
-  # boot.loader.grub.useOSProber = true;
-  # boot.kernelPackages = pkgs.linuxPackages_latest;
+  # boot = {
+  #   kernelPackages = pkgs.linuxPackages_latest;
+  #   loader.grub = {
+  #     enable = true;
+  #     devices = ["nodev" ];
+  #     useOSProber = true;
+  #   };
+  # };
   # --------------------------------------
 
   networking.hostName = "TEMPLATE"; # Define your hostname.

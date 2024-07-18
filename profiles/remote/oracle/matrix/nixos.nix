@@ -4,7 +4,6 @@ in {
 
   imports = [
     ./hardware-configuration.nix
-    # (unstable + "/nixos/modules/services/matrix/mautrix-signal.nix") # no longer needed; mautrix-signal was added to nixpkgs
   ];
 
   environment.systemPackages = with pkgs; [
