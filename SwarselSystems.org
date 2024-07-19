@@ -7572,10 +7572,10 @@ This section handles everything that shoudld happen when I save =SwarselSystems.
 We set a hook that runs everytime we save the file. It would be a bit more efficient to only export and format when we enter a magit window for instance (since especially the html export takes times), however, since I cannot be sure to only ever commit from magit (I do indeed sometimes use git from the command line), I prefer this approach.
 
 #+begin_src emacs-lisp
-    (defun run-alejandra ()
+    (defun swarsel/run-formatting ()
       (interactive)
       (let ((default-directory (expand-file-name "~/.dotfiles")))
-        (shell-command "alejandra . -q")))
+        (shell-command "nixpkgs-fmt . > /dev/null")))
 
       (defun swarsel/org-babel-tangle-config ()
         (when (string-equal (buffer-file-name)
@@ -7584,7 +7584,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
           (let ((org-confirm-babel-evaluate nil))
             (org-html-export-to-html)
             (org-babel-tangle)
-            (run-alejandra))))
+            (swarsel/run-formatting))))
 
       (setq org-html-htmlize-output-type nil)
 
