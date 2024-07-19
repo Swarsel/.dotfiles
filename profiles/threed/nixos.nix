@@ -1,11 +1,12 @@
+{ lib, pkgs, ... }:
+
 {
-  lib,
-  pkgs,
-  ...
-}: {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
 
   services = {
     getty.autologinUser = "swarsel";
@@ -70,7 +71,7 @@
       };
 
       monospace = {
-        package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
         name = "FiraCode Nerd Font Mono";
       };
 
@@ -81,15 +82,17 @@
     };
   };
 
+
   users.users.swarsel = {
     isNormalUser = true;
     description = "Leon S";
-    extraGroups = ["networkmanager" "wheel" "lp" "audio" "video"];
-    packages = with pkgs; [];
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+    packages = with pkgs; [ ];
   };
 
   environment.systemPackages = with pkgs; [
   ];
 
   system.stateVersion = "23.05";
+
 }

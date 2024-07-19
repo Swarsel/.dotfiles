@@ -1,17 +1,17 @@
+{ config, pkgs, ... }:
+
 {
-  config,
-  pkgs,
-  ...
-}: {
-  #
+
+  # 
   # imports =
   #   [
   #     ./hardware-configuration.nix
   #   ];
-  #
-  imports = [
-    ./hardware-configuration.nix
-  ];
+  # 
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
 
   services = {
     getty.autologinUser = "swarsel";
@@ -24,7 +24,7 @@
     # kernelPackages = pkgs.linuxPackages_latest;
   };
 
-  sops.age.sshKeyPaths = ["${config.users.users.swarsel.home}/.ssh/sops"];
+  sops.age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
 
   networking = {
     hostName = "fourside"; # Define your hostname.
@@ -33,27 +33,15 @@
     firewall.checkReversePath = false;
     firewall = {
       enable = true;
-      allowedUDPPorts = [4380 27036 14242 34197 51820]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-      allowedTCPPorts = []; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
       allowedTCPPortRanges = [
-        {
-          from = 27015;
-          to = 27030;
-        } # barotrauma
-        {
-          from = 27036;
-          to = 27037;
-        } # barotrauma
+        { from = 27015; to = 27030; } # barotrauma
+        { from = 27036; to = 27037; } # barotrauma
       ];
       allowedUDPPortRanges = [
-        {
-          from = 27000;
-          to = 27031;
-        } # barotrauma
-        {
-          from = 58962;
-          to = 58964;
-        } # barotrauma
+        { from = 27000; to = 27031; } # barotrauma
+        { from = 58962; to = 58964; } # barotrauma
       ];
     };
   };
@@ -106,7 +94,7 @@
       };
 
       monospace = {
-        package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
         name = "FiraCode Nerd Font Mono";
       };
 
@@ -116,6 +104,7 @@
       };
     };
   };
+
 
   hardware = {
     graphics = {
@@ -162,8 +151,8 @@
     isNormalUser = true;
     description = "Leon S";
     hashedPasswordFile = config.sops.secrets.swarseluser.path;
-    extraGroups = ["networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner"];
-    packages = with pkgs; [];
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+    packages = with pkgs; [ ];
   };
 
   environment.systemPackages = with pkgs; [
@@ -177,4 +166,6 @@
   ];
 
   system.stateVersion = "23.05";
+
+
 }

@@ -1,11 +1,9 @@
-{
-  config,
-  pkgs,
-  sops,
-  ...
-}: let
+{ config, pkgs, sops, ... }:
+let
   matrixDomain = "swatrix.swarsel.win";
-in {
+in
+{
+
   imports = [
     ./hardware-configuration.nix
   ];
@@ -14,9 +12,9 @@ in {
     enable = true;
     device = "/dev/sda";
     useOSProber = true;
-    supportedFilesystems = ["zfs"];
+    supportedFilesystems = [ "zfs" ];
     zfs.forceImportRoot = false;
-    kernelModules = ["tun"];
+    kernelModules = [ "tun" ];
     kernel.sysctl = {
       "net.ipv4.conf.all.rp_filter" = 2;
       "net.ipv4.conf.default.rp_filter" = 2;
@@ -57,8 +55,8 @@ in {
 
   users = {
     groups = {
-      vpn = {};
-      mpd = {};
+      vpn = { };
+      mpd = { };
       navidrome = {
         gid = 61593;
       };
@@ -68,7 +66,7 @@ in {
     };
     users = {
       jellyfin = {
-        extraGroups = ["video" "render"];
+        extraGroups = [ "video" "render" ];
       };
       vpn = {
         isNormalUser = true;
@@ -79,24 +77,24 @@ in {
         isSystemUser = true;
         uid = 61593;
         group = "navidrome";
-        extraGroups = ["audio" "utmp"];
+        extraGroups = [ "audio" "utmp" ];
       };
       spotifyd = {
         isSystemUser = true;
         uid = 65136;
         group = "spotifyd";
-        extraGroups = ["audio" "utmp"];
+        extraGroups = [ "audio" "utmp" ];
       };
       mpd = {
         isSystemUser = true;
         group = "mpd";
-        extraGroups = ["audio" "utmp"];
+        extraGroups = [ "audio" "utmp" ];
       };
       swarsel = {
         isNormalUser = true;
         description = "Leon S";
-        extraGroups = ["networkmanager" "wheel" "lp"];
-        packages = with pkgs; [];
+        extraGroups = [ "networkmanager" "wheel" "lp" ];
+        packages = with pkgs; [ ];
       };
       root = {
         openssh.authorizedKeys.keyFiles = [
@@ -109,10 +107,12 @@ in {
   fileSystems."/mnt/Eternor" = {
     device = "//192.168.1.3/Eternor";
     fsType = "cifs";
-    options = let
-      # this line prevents hanging on network split
-      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-    in ["${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100"];
+    options =
+      let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+      in
+      [ "${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100" ];
   };
 
   environment = {
@@ -137,26 +137,31 @@ in {
       zfs
     ];
     etc = {
-      "openvpn/iptables.sh" = {
-        source = ../../scripts/server1/iptables.sh;
-        mode = "0755";
-      };
-      "openvpn/update-resolv-conf" = {
-        source = ../../scripts/server1/update-resolv-conf;
-        mode = "0755";
-      };
-      "openvpn/routing.sh" = {
-        source = ../../scripts/server1/routing.sh;
-        mode = "0755";
-      };
-      "openvpn/ca.rsa.2048.crt" = {
-        source = ../../secrets/certs/ca.rsa.2048.crt;
-        mode = "0644";
-      };
-      "openvpn/crl.rsa.2048.pem" = {
-        source = ../../secrets/certs/crl.rsa.2048.pem;
-        mode = "0644";
-      };
+      "openvpn/iptables.sh" =
+        {
+          source = ../../scripts/server1/iptables.sh;
+          mode = "0755";
+        };
+      "openvpn/update-resolv-conf" =
+        {
+          source = ../../scripts/server1/update-resolv-conf;
+          mode = "0755";
+        };
+      "openvpn/routing.sh" =
+        {
+          source = ../../scripts/server1/routing.sh;
+          mode = "0755";
+        };
+      "openvpn/ca.rsa.2048.crt" =
+        {
+          source = ../../secrets/certs/ca.rsa.2048.crt;
+          mode = "0644";
+        };
+      "openvpn/crl.rsa.2048.pem" =
+        {
+          source = ../../secrets/certs/crl.rsa.2048.pem;
+          mode = "0644";
+        };
     };
     shellAliases = {
       nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
@@ -165,7 +170,7 @@ in {
 
   systemd = {
     timers."restart-bridges" = {
-      wantedBy = ["timers.target"];
+      wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "1d";
         OnUnitActiveSec = "1d";
@@ -185,7 +190,7 @@ in {
       };
     };
   };
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
 
@@ -194,19 +199,19 @@ in {
   };
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      dnstokenfull = {owner = "acme";};
-      kavita = {owner = "kavita";};
-      vpnuser = {};
-      rpcuser = {owner = "vpn";};
-      vpnpass = {};
-      rpcpass = {owner = "vpn";};
-      vpnprot = {};
-      vpnloc = {};
-      mpdpass = {owner = "mpd";};
+      dnstokenfull = { owner = "acme"; };
+      kavita = { owner = "kavita"; };
+      vpnuser = { };
+      rpcuser = { owner = "vpn"; };
+      vpnpass = { };
+      rpcpass = { owner = "vpn"; };
+      vpnprot = { };
+      vpnloc = { };
+      mpdpass = { owner = "mpd"; };
     };
     templates = {
       "transmission-rpc" = {
@@ -269,12 +274,10 @@ in {
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [
-        {
-          port = 22;
-          addr = "0.0.0.0";
-        }
-      ];
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
     };
 
     nginx = {
@@ -284,6 +287,7 @@ in {
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
       virtualHosts = {
+
         "stash.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
@@ -317,6 +321,7 @@ in {
             };
           };
         };
+
 
         "sound.swarsel.win" = {
           enableACME = true;
@@ -512,6 +517,9 @@ in {
     # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
     # '';
 
+
+
+
     # ----------------
     # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
     # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
@@ -560,13 +568,13 @@ in {
       settings.listeners = [
         {
           port = 8008;
-          bind_addresses = ["0.0.0.0"];
+          bind_addresses = [ "0.0.0.0" ];
           type = "http";
           tls = false;
           x_forwarded = true;
           resources = [
             {
-              names = ["client" "federation"];
+              names = [ "client" "federation" ];
               compress = true;
             }
           ];
@@ -678,6 +686,7 @@ in {
           domain = matrixDomain;
         };
         appservice = {
+
           address = "http://localhost:29328";
           hostname = "0.0.0.0";
           port = 29328;
@@ -741,6 +750,7 @@ in {
       ];
     };
 
+
     spotifyd = {
       enable = true;
       settings = {
@@ -788,6 +798,7 @@ in {
         "valid users" = "@smbtest2";
       };
     };
+
 
     avahi = {
       publish.enable = true;

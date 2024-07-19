@@ -1,8 +1,8 @@
+{ config, pkgs, ... }:
+
 {
-  config,
-  pkgs,
-  ...
-}: {
+
+
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
@@ -24,7 +24,7 @@
     packages = with pkgs; [
     ];
   };
-  sops.age.sshKeyPaths = ["${config.home.homeDirectory}/.ssh/sops"];
+  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
   # waybar config - TEMPLATE - update for cores and temp
   programs.waybar.settings.mainBar = {
@@ -33,6 +33,7 @@
     temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
     temperature.input-filename = "temp1_input";
   };
+
 
   programs.waybar.settings.mainBar.modules-right = [
     "custom/outer-left-arrow-dark"
@@ -51,6 +52,7 @@
     "custom/left-arrow-dark"
     "clock#1"
   ];
+
 
   wayland.windowManager.sway = {
     config = rec {
@@ -72,6 +74,7 @@
           natural_scroll = "enabled";
           middle_emulation = "enabled";
         };
+
       };
 
       output = {
@@ -91,15 +94,10 @@
       };
 
       workspaceOutputAssign = [
-        {
-          output = "eDP-1";
-          workspace = "1:一";
-        }
-        {
-          output = "HDMI-A-1";
-          workspace = "2:二";
-        }
+        { output = "eDP-1"; workspace = "1:一"; }
+        { output = "HDMI-A-1"; workspace = "2:二"; }
       ];
+
 
       # keybindings = let
       # inherit (config.wayland.windowManager.sway.config) modifier;
@@ -108,12 +106,14 @@
       # };
 
       startup = [
-        {command = "nextcloud --background";}
-        {command = "discord --start-minimized";}
-        {command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
-        {command = "ANKI_WAYLAND=1 anki";}
-        {command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
-        {command = "nm-applet";}
+
+        { command = "nextcloud --background"; }
+        { command = "discord --start-minimized"; }
+        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+
       ];
     };
   };

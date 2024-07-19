@@ -1,13 +1,13 @@
+{ config, pkgs, modulesPath, ... }:
+
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
+
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
   ];
+
+
 
   services = {
     xserver = {
@@ -17,16 +17,14 @@
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [
-        {
-          port = 22;
-          addr = "0.0.0.0";
-        }
-      ];
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
     };
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
@@ -48,6 +46,8 @@
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
+
+
   proxmoxLXC.privileged = true; # manage hostname myself
 
   users = {
@@ -65,7 +65,7 @@
         gid = 61593;
       };
 
-      mpd = {};
+      mpd = { };
     };
 
     users = {
@@ -73,13 +73,13 @@
         isSystemUser = true;
         uid = 61593;
         group = "navidrome";
-        extraGroups = ["audio" "utmp"];
+        extraGroups = [ "audio" "utmp" ];
       };
 
       mpd = {
         isSystemUser = true;
         group = "mpd";
-        extraGroups = ["audio" "utmp"];
+        extraGroups = [ "audio" "utmp" ];
       };
     };
   };
@@ -103,10 +103,10 @@
   ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/.dotfiles/secrets/sound/secrets.yaml";
     validateSopsFiles = false;
-    secrets.mpdpass = {owner = "mpd";};
+    secrets.mpdpass = { owner = "mpd"; };
   };
 
   services.navidrome = {

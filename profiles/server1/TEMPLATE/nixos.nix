@@ -1,8 +1,6 @@
+{ pkgs, modulesPath, ... }:
+
 {
-  pkgs,
-  modulesPath,
-  ...
-}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
   ];
@@ -18,7 +16,7 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   proxmoxLXC = {
     manageNetwork = true; # manage network myself

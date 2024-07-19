@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-20 Sa 00:04 -->
+<!-- 2024-07-20 Sa 00:16 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -261,7 +261,7 @@
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.6. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.7. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.3.8. Programs</a></li>
-<li><a href="#org1d39a6e">3.3.9. nix-index</a></li>
+<li><a href="#org05cfe0c">3.3.9. nix-index</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.10. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.11. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.12. eza</a></li>
@@ -329,7 +329,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#org23b260b">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgc3f7bff">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -389,7 +389,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41226 words spanning 10979 lines and was last revised on 2024-07-20 00:04:46 +0200.</b>
+<b>This file has 41230 words spanning 10979 lines and was last revised on 2024-07-20 00:16:24 +0200.</b>
 </p>
 
 <p>
@@ -439,7 +439,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 00:04:46 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 00:16:24 +0200)
 </p></li>
 </ul>
 
@@ -6993,8 +6993,8 @@ programs = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org1d39a6e" class="outline-4">
-<h4 id="org1d39a6e"><span class="section-number-4">3.3.9.</span> nix-index</h4>
+<div id="outline-container-org05cfe0c" class="outline-4">
+<h4 id="org05cfe0c"><span class="section-number-4">3.3.9.</span> nix-index</h4>
 <div class="outline-text-4" id="text-3-3-9">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -9266,10 +9266,10 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(defun run-alejandra ()
+<pre class="src src-emacs-lisp">(defun swarsel/run-formatting ()
   (interactive)
   (let ((default-directory (expand-file-name "~/.dotfiles")))
-    (shell-command "alejandra . -q")))
+    (shell-command "nixpkgs-fmt . &gt; /dev/null")))
 
   (defun swarsel/org-babel-tangle-config ()
     (when (string-equal (buffer-file-name)
@@ -9278,7 +9278,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
       (let ((org-confirm-babel-evaluate nil))
         (org-html-export-to-html)
         (org-babel-tangle)
-        (run-alejandra))))
+        (swarsel/run-formatting))))
 
   (setq org-html-htmlize-output-type nil)
 
@@ -9391,7 +9391,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org58d332d"></a>Nix common prefix bracketer<br />
+<li><a id="org5914746"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9424,7 +9424,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orge56e7f4"></a>Nix formatters<br />
+<li><a id="orgd08d04a"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -10997,8 +10997,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-org23b260b" class="outline-4">
-<h4 id="org23b260b"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgc3f7bff" class="outline-4">
+<h4 id="orgc3f7bff"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13013,7 +13013,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-20 Sa 00:04</p>
+<p class="date">Created: 2024-07-20 Sa 00:16</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

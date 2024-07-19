@@ -1,8 +1,8 @@
+{ config, pkgs, ... }:
+
 {
-  config,
-  pkgs,
-  ...
-}: {
+
+
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
@@ -29,7 +29,7 @@
     ];
   };
   # update path if the sops private key is stored somewhere else
-  sops.age.sshKeyPaths = ["${config.home.homeDirectory}/.ssh/sops"];
+  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
   # waybar config - TEMPLATE - update for cores and temp
   programs.waybar.settings.mainBar = {
@@ -40,7 +40,7 @@
 
   # -----------------------------------------------------------------
   # is this machine always connected to power? If yes, use this block:
-  #
+  # 
   # programs.waybar.settings.mainBar."custom/pseudobat" = {
   #   format = "";
   #   on-click-right = "wlogout -p layer-shell";
@@ -62,7 +62,7 @@
   #   "custom/left-arrow-dark"
   #   "clock#1"
   # ];
-  #
+  # 
   # -----------------------------------------------------------------
 
   # -----------------------------------------------------------------
@@ -109,6 +109,7 @@
           natural_scroll = "enabled";
           middle_emulation = "enabled";
         };
+
       };
 
       output = {
@@ -119,21 +120,25 @@
         };
       };
 
-      keybindings = let
-        inherit (config.wayland.windowManager.sway.config) modifier;
-      in {
-        # TEMPLATE
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-        # "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-      };
+      keybindings =
+        let
+          inherit (config.wayland.windowManager.sway.config) modifier;
+        in
+        {
+          # TEMPLATE
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+          # "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+        };
 
       startup = [
-        {command = "nextcloud --background";}
-        {command = "discord --start-minimized";}
-        {command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
-        {command = "ANKI_WAYLAND=1 anki";}
-        {command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
-        {command = "nm-applet";}
+
+        { command = "nextcloud --background"; }
+        { command = "discord --start-minimized"; }
+        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+
       ];
     };
   };

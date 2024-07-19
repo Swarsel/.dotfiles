@@ -1,9 +1,6 @@
+{ config, pkgs, modulesPath, ... }:
+
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -32,7 +29,7 @@
       "root"
     ];
   };
-  users.groups.vpn = {};
+  users.groups.vpn = { };
 
   users.users.vpn = {
     isNormalUser = true;
@@ -45,15 +42,15 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/.dotfiles/secrets/transmission/secrets.yaml";
     validateSopsFiles = false;
   };
 
-  boot.kernelModules = ["tun"];
+  boot.kernelModules = [ "tun" ];
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
     manageHostName = false; # manage hostname myself
@@ -90,36 +87,39 @@
     '';
   };
   environment.etc = {
-    "openvpn/iptables.sh" = {
-      source = ../../../scripts/server1/iptables.sh;
-      mode = "0755";
-    };
-    "openvpn/update-resolv-conf" = {
-      source = ../../../scripts/server1/update-resolv-conf;
-      mode = "0755";
-    };
-    "openvpn/routing.sh" = {
-      source = ../../../scripts/server1/routing.sh;
-      mode = "0755";
-    };
-    "openvpn/ca.rsa.2048.crt" = {
-      source = ../../../secrets/certs/ca.rsa.2048.crt;
-      mode = "0644";
-    };
-    "openvpn/crl.rsa.2048.pem" = {
-      source = ../../../secrets/certs/crl.rsa.2048.pem;
-      mode = "0644";
-    };
+    "openvpn/iptables.sh" =
+      {
+        source = ../../../scripts/server1/iptables.sh;
+        mode = "0755";
+      };
+    "openvpn/update-resolv-conf" =
+      {
+        source = ../../../scripts/server1/update-resolv-conf;
+        mode = "0755";
+      };
+    "openvpn/routing.sh" =
+      {
+        source = ../../../scripts/server1/routing.sh;
+        mode = "0755";
+      };
+    "openvpn/ca.rsa.2048.crt" =
+      {
+        source = ../../../secrets/certs/ca.rsa.2048.crt;
+        mode = "0644";
+      };
+    "openvpn/crl.rsa.2048.pem" =
+      {
+        source = ../../../secrets/certs/crl.rsa.2048.pem;
+        mode = "0644";
+      };
   };
   services.openssh = {
     enable = true;
     settings.PermitRootLogin = "yes";
-    listenAddresses = [
-      {
-        port = 22;
-        addr = "0.0.0.0";
-      }
-    ];
+    listenAddresses = [{
+      port = 22;
+      addr = "0.0.0.0";
+    }];
   };
   users.users.root.openssh.authorizedKeys.keyFiles = [
     ../../../secrets/keys/authorized_keys
@@ -177,12 +177,12 @@
       '';
     };
     secrets = {
-      vpnuser = {};
-      rpcuser = {owner = "vpn";};
-      vpnpass = {};
-      rpcpass = {owner = "vpn";};
-      vpnprot = {};
-      vpnloc = {};
+      vpnuser = { };
+      rpcuser = { owner = "vpn"; };
+      vpnpass = { };
+      rpcpass = { owner = "vpn"; };
+      vpnprot = { };
+      vpnloc = { };
     };
   };
   services.openvpn.servers = {
@@ -199,6 +199,7 @@
     user = "vpn";
     group = "lxc_shares";
     settings = {
+
       alt-speed-down = 8000;
       alt-speed-enabled = false;
       alt-speed-time-begin = 0;
@@ -269,4 +270,6 @@
       utp-enabled = false;
     };
   };
+
+
 }

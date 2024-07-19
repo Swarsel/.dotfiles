@@ -1,10 +1,8 @@
+{ config, pkgs, fetchFromGitHub, ... }:
+
 {
-  config,
-  pkgs,
-  fetchFromGitHub,
-  ...
-}: {
   home.packages = with pkgs; [
+
     # audio stuff
     spek # spectrum analyzer
     losslessaudiochecker
@@ -20,7 +18,7 @@
     simple-scan
 
     # dict
-    (aspellWithDicts (dicts: with dicts; [de en en-computers en-science]))
+    (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
     # utilities
     util-linux
@@ -150,21 +148,13 @@
 
     # latex and related packages
     (pkgs.texlive.combine {
-      inherit
-        (pkgs.texlive)
-        scheme-full
-        dvisvgm
-        dvipng # for preview and export as html
-        wrapfig
-        amsmath
-        ulem
-        hyperref
-        capt-of
-        ;
+      inherit (pkgs.texlive) scheme-full
+        dvisvgm dvipng# for preview and export as html
+        wrapfig amsmath ulem hyperref capt-of;
     })
 
     # font stuff
-    (nerdfonts.override {fonts = ["FiraMono" "FiraCode" "NerdFontsSymbolsOnly"];})
+    (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ]; })
     noto-fonts-emoji
     font-awesome_5
     noto-fonts
@@ -180,23 +170,23 @@
             url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
             hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
           };
-          extraPkgs = pkgs: with pkgs; [];
+          extraPkgs = pkgs: with pkgs; [ ];
         };
       in
-        writeScriptBin "cura" ''
-          #! ${pkgs.bash}/bin/bash
-          # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-          # So we convert each of the files passed as argument to an absolute path.
-          # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-          args=()
-          for a in "$@"; do
-              if [ -e "$a" ]; then
-                 a="$(realpath "$a")"
-              fi
-              args+=("$a")
-          done
-          exec "${cura5}/bin/cura5" "''${args[@]}"
-        ''
+      writeScriptBin "cura" ''
+        #! ${pkgs.bash}/bin/bash
+        # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
+        # So we convert each of the files passed as argument to an absolute path.
+        # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+        args=()
+        for a in "$@"; do
+            if [ -e "$a" ]; then
+               a="$(realpath "$a")"
+            fi
+            args+=("$a")
+        done
+        exec "${cura5}/bin/cura5" "''${args[@]}"
+      ''
     )
 
     #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
@@ -237,7 +227,7 @@
 
     (pkgs.writeShellApplication {
       name = "pass-fuzzel";
-      runtimeInputs = [pkgs.pass pkgs.fuzzel];
+      runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
       text = ''
         shopt -s nullglob globstar
 
@@ -268,7 +258,7 @@
 
     (pkgs.writeShellApplication {
       name = "pass-fuzzel-otp";
-      runtimeInputs = [pkgs.fuzzel (pkgs.pass.withExtensions (exts: [exts.pass-otp]))];
+      runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [ exts.pass-otp ])) ];
       text = ''
         shopt -s nullglob globstar
 
@@ -299,7 +289,7 @@
 
     (pkgs.writeShellApplication {
       name = "cdw";
-      runtimeInputs = [pkgs.fzf];
+      runtimeInputs = [ pkgs.fzf ];
       text = ''
         cd "$(git worktree list | fzf | awk '{print $1}')"
       '';
@@ -307,7 +297,7 @@
 
     (pkgs.writeShellApplication {
       name = "cdb";
-      runtimeInputs = [pkgs.fzf];
+      runtimeInputs = [ pkgs.fzf ];
       text = ''
         git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
       '';
@@ -319,17 +309,18 @@
         cp "$1"{,.bak}
       '';
     })
+
   ];
 
   sops = {
     defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      mrswarsel = {path = "/run/user/1000/secrets/mrswarsel";};
-      nautilus = {path = "/run/user/1000/secrets/nautilus";};
-      leon = {path = "/run/user/1000/secrets/leon";};
-      swarselmail = {path = "/run/user/1000/secrets/swarselmail";};
-      caldav = {path = "${config.home.homeDirectory}/.emacs.d/.caldav";};
+      mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
+      nautilus = { path = "/run/user/1000/secrets/nautilus"; };
+      leon = { path = "/run/user/1000/secrets/leon"; };
+      swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
+      caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
     };
   };
 
@@ -431,12 +422,13 @@
   stylix.targets.emacs.enable = false;
 
   xdg.desktopEntries = {
+
     cura = {
       name = "Ultimaker Cura";
       genericName = "Cura";
       exec = "cura";
       terminal = false;
-      categories = ["Application"];
+      categories = [ "Application" ];
     };
 
     anki = {
@@ -444,7 +436,7 @@
       genericName = "Anki";
       exec = "anki";
       terminal = false;
-      categories = ["Application"];
+      categories = [ "Application" ];
     };
 
     # schlidichat = {
@@ -460,7 +452,7 @@
       genericName = "Element";
       exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
       terminal = false;
-      categories = ["Application"];
+      categories = [ "Application" ];
     };
 
     emacsclient-newframe = {
@@ -469,8 +461,9 @@
       exec = "emacsclient -r %u";
       icon = "emacs";
       terminal = false;
-      categories = ["Development" "TextEditor"];
+      categories = [ "Development" "TextEditor" ];
     };
+
   };
 
   home.file = {
@@ -519,25 +512,27 @@
     zoxide.enable = true;
   };
 
-  programs.nix-index = let
-    command-not-found = pkgs.runCommandLocal "command-not-found.sh" {} ''
-      mkdir -p $out/etc/profile.d
-      substitute ${../../scripts/command-not-found.sh}                  \
-        $out/etc/profile.d/command-not-found.sh             \
-        --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-        --replace @tput@ ${pkgs.ncurses}/bin/tput
-    '';
-  in {
-    enable = true;
-    package = pkgs.symlinkJoin {
-      name = "nix-index";
-      paths = [command-not-found];
+  programs.nix-index =
+    let
+      command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+        mkdir -p $out/etc/profile.d
+        substitute ${../../scripts/command-not-found.sh}                  \
+          $out/etc/profile.d/command-not-found.sh             \
+          --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+          --replace @tput@ ${pkgs.ncurses}/bin/tput
+      '';
+    in
+    {
+      enable = true;
+      package = pkgs.symlinkJoin {
+        name = "nix-index";
+        paths = [ command-not-found ];
+      };
     };
-  };
 
   programs.password-store = {
     enable = true;
-    package = pkgs.pass.withExtensions (exts: [exts.pass-otp]);
+    package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
   };
 
   programs.direnv = {
@@ -771,7 +766,7 @@
     enable = true;
   };
   # this is needed so that mbsync can use the passwords from sops
-  systemd.user.services.mbsync.Unit.After = ["sops-nix.service"];
+  systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
   programs.msmtp = {
     enable = true;
@@ -804,7 +799,7 @@
         enable = true;
         create = "maildir";
         expunge = "both";
-        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
         extraConfig = {
           channel = {
             Sync = "All";
@@ -854,7 +849,7 @@
         enable = true;
         create = "maildir";
         expunge = "both";
-        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
         extraConfig = {
           channel = {
             Sync = "All";
@@ -881,7 +876,7 @@
         enable = true;
         create = "maildir";
         expunge = "both";
-        patterns = ["*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail"];
+        patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
         extraConfig = {
           channel = {
             Sync = "All";
@@ -922,7 +917,7 @@
             rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
             hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
           };
-          packageRequires = [epkgs.howm];
+          packageRequires = [ epkgs.howm ];
         })
 
         (epkgs.trivialBuild rec {
@@ -934,21 +929,23 @@
             rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
             hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
           };
-          packageRequires = [];
+          packageRequires = [ ];
         })
+
       ];
     };
   };
 
   programs.waybar = {
+
     enable = true;
     # systemd.enable = true;
     settings = {
       mainBar = {
         layer = "top";
         position = "top";
-        modules-left = ["sway/workspaces" "custom/outer-right-arrow-dark" "sway/window"];
-        modules-center = ["sway/mode" "custom/configwarn"];
+        modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
+        modules-center = [ "sway/mode" "custom/configwarn" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
         };
@@ -993,6 +990,7 @@
           critical-threshold = 80;
           format-critical = " {temperatureC}°C";
           format = " {temperatureC}°C";
+
         };
 
         mpris = {
@@ -1077,9 +1075,10 @@
         cpu = {
           min-length = 6;
           interval = 5;
-          format-icons = ["▁" "▂" "▃" "▄" "▅" "▆" "▇" "█"];
+          format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
           # on-click-right= "com.github.stsdc.monitor";
           on-click-right = "kitty -o confirm_os_window_close=0 btm";
+
         };
         battery = {
           states = {
@@ -1174,68 +1173,48 @@
 
       search.engines = {
         "Nix Packages" = {
-          urls = [
-            {
-              template = "https://search.nixos.org/packages";
-              params = [
-                {
-                  name = "type";
-                  value = "packages";
-                }
-                {
-                  name = "query";
-                  value = "{searchTerms}";
-                }
-              ];
-            }
-          ];
+          urls = [{
+            template = "https://search.nixos.org/packages";
+            params = [
+              { name = "type"; value = "packages"; }
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
           icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = ["@np"];
+          definedAliases = [ "@np" ];
         };
 
         "NixOS Wiki" = {
-          urls = [
-            {
-              template = "https://nixos.wiki/index.php?search={searchTerms}";
-            }
-          ];
+          urls = [{
+            template = "https://nixos.wiki/index.php?search={searchTerms}";
+          }];
           iconUpdateURL = "https://nixos.wiki/favicon.png";
           updateInterval = 24 * 60 * 60 * 1000; # every day
-          definedAliases = ["@nw"];
+          definedAliases = [ "@nw" ];
         };
 
         "NixOS Options" = {
-          urls = [
-            {
-              template = "https://search.nixos.org/options";
-              params = [
-                {
-                  name = "query";
-                  value = "{searchTerms}";
-                }
-              ];
-            }
-          ];
+          urls = [{
+            template = "https://search.nixos.org/options";
+            params = [
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
 
           icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = ["@no"];
+          definedAliases = [ "@no" ];
         };
 
         "Home Manager Options" = {
-          urls = [
-            {
-              template = "https://home-manager-options.extranix.com/";
-              params = [
-                {
-                  name = "query";
-                  value = "{searchTerms}";
-                }
-              ];
-            }
-          ];
+          urls = [{
+            template = "https://home-manager-options.extranix.com/";
+            params = [
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
 
           icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = ["@hm" "@ho" "@hmo"];
+          definedAliases = [ "@hm" "@ho" "@hmo" ];
         };
 
         "Google".metaData.alias = "@g";
@@ -1311,78 +1290,80 @@ group-by=category
       modifier = "Mod4";
       terminal = "kitty";
       menu = "fuzzel";
-      bars = [{command = "waybar";}];
-      keybindings = let
-        inherit (config.wayland.windowManager.sway.config) modifier;
-      in {
-        "${modifier}+q" = "kill";
-        "${modifier}+f" = "exec firefox";
-        "${modifier}+Space" = "exec fuzzel";
-        "${modifier}+Shift+Space" = "floating toggle";
-        "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-        "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
-        "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-        "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
-        "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
-        "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
-        "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
-        "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
-        "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
-        "${modifier}+Shift+F12" = "move scratchpad";
-        "${modifier}+F12" = "scratchpad show";
-        "${modifier}+c" = "exec qalculate-gtk";
-        "${modifier}+p" = "exec pass-fuzzel";
-        "${modifier}+o" = "exec pass-fuzzel-otp";
-        "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-        "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
-        "${modifier}+Escape" = "mode $exit";
-        # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
-        "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-        "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
-        "${modifier}+1" = "workspace 1:一";
-        "${modifier}+Shift+1" = "move container to workspace 1:一";
-        "${modifier}+2" = "workspace 2:二";
-        "${modifier}+Shift+2" = "move container to workspace 2:二";
-        "${modifier}+3" = "workspace 3:三";
-        "${modifier}+Shift+3" = "move container to workspace 3:三";
-        "${modifier}+4" = "workspace 4:四";
-        "${modifier}+Shift+4" = "move container to workspace 4:四";
-        "${modifier}+5" = "workspace 5:五";
-        "${modifier}+Shift+5" = "move container to workspace 5:五";
-        "${modifier}+6" = "workspace 6:六";
-        "${modifier}+Shift+6" = "move container to workspace 6:六";
-        "${modifier}+7" = "workspace 7:七";
-        "${modifier}+Shift+7" = "move container to workspace 7:七";
-        "${modifier}+8" = "workspace 8:八";
-        "${modifier}+Shift+8" = "move container to workspace 8:八";
-        "${modifier}+9" = "workspace 9:九";
-        "${modifier}+Shift+9" = "move container to workspace 9:九";
-        "${modifier}+0" = "workspace 10:十";
-        "${modifier}+Shift+0" = "move container to workspace 10:十";
-        "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-        "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-        "${modifier}+Left" = "focus left";
-        "${modifier}+Right" = "focus right";
-        "${modifier}+Down" = "focus down";
-        "${modifier}+Up" = "focus up";
-        "${modifier}+Shift+Left" = "move left 40px";
-        "${modifier}+Shift+Right" = "move right 40px";
-        "${modifier}+Shift+Down" = "move down 40px";
-        "${modifier}+Shift+Up" = "move up 40px";
-        "${modifier}+h" = "focus left";
-        "${modifier}+l" = "focus right";
-        "${modifier}+j" = "focus down";
-        "${modifier}+k" = "focus up";
-        "${modifier}+Shift+h" = "move left 40px";
-        "${modifier}+Shift+l" = "move right 40px";
-        "${modifier}+Shift+j" = "move down 40px";
-        "${modifier}+Shift+k" = "move up 40px";
-        "${modifier}+Ctrl+Shift+c" = "reload";
-        "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-        "${modifier}+r" = "mode resize";
-        "${modifier}+Return" = "exec kitty";
-      };
+      bars = [{ command = "waybar"; }];
+      keybindings =
+        let
+          inherit (config.wayland.windowManager.sway.config) modifier;
+        in
+        {
+          "${modifier}+q" = "kill";
+          "${modifier}+f" = "exec firefox";
+          "${modifier}+Space" = "exec fuzzel";
+          "${modifier}+Shift+Space" = "floating toggle";
+          "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+          "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
+          "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
+          "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
+          "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
+          "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
+          "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
+          "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
+          "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
+          "${modifier}+Shift+F12" = "move scratchpad";
+          "${modifier}+F12" = "scratchpad show";
+          "${modifier}+c" = "exec qalculate-gtk";
+          "${modifier}+p" = "exec pass-fuzzel";
+          "${modifier}+o" = "exec pass-fuzzel-otp";
+          "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+          "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
+          "${modifier}+Escape" = "mode $exit";
+          # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
+          "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+          "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
+          "${modifier}+1" = "workspace 1:一";
+          "${modifier}+Shift+1" = "move container to workspace 1:一";
+          "${modifier}+2" = "workspace 2:二";
+          "${modifier}+Shift+2" = "move container to workspace 2:二";
+          "${modifier}+3" = "workspace 3:三";
+          "${modifier}+Shift+3" = "move container to workspace 3:三";
+          "${modifier}+4" = "workspace 4:四";
+          "${modifier}+Shift+4" = "move container to workspace 4:四";
+          "${modifier}+5" = "workspace 5:五";
+          "${modifier}+Shift+5" = "move container to workspace 5:五";
+          "${modifier}+6" = "workspace 6:六";
+          "${modifier}+Shift+6" = "move container to workspace 6:六";
+          "${modifier}+7" = "workspace 7:七";
+          "${modifier}+Shift+7" = "move container to workspace 7:七";
+          "${modifier}+8" = "workspace 8:八";
+          "${modifier}+Shift+8" = "move container to workspace 8:八";
+          "${modifier}+9" = "workspace 9:九";
+          "${modifier}+Shift+9" = "move container to workspace 9:九";
+          "${modifier}+0" = "workspace 10:十";
+          "${modifier}+Shift+0" = "move container to workspace 10:十";
+          "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+          "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+          "${modifier}+Left" = "focus left";
+          "${modifier}+Right" = "focus right";
+          "${modifier}+Down" = "focus down";
+          "${modifier}+Up" = "focus up";
+          "${modifier}+Shift+Left" = "move left 40px";
+          "${modifier}+Shift+Right" = "move right 40px";
+          "${modifier}+Shift+Down" = "move down 40px";
+          "${modifier}+Shift+Up" = "move up 40px";
+          "${modifier}+h" = "focus left";
+          "${modifier}+l" = "focus right";
+          "${modifier}+j" = "focus down";
+          "${modifier}+k" = "focus up";
+          "${modifier}+Shift+h" = "move left 40px";
+          "${modifier}+Shift+l" = "move right 40px";
+          "${modifier}+Shift+j" = "move down 40px";
+          "${modifier}+Shift+k" = "move up 40px";
+          "${modifier}+Ctrl+Shift+c" = "reload";
+          "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+          "${modifier}+r" = "mode resize";
+          "${modifier}+Return" = "exec kitty";
+        };
       modes = {
         resize = {
           Down = "resize grow height 10 px or 10 ppt";
@@ -1395,41 +1376,41 @@ group-by=category
       };
       defaultWorkspace = "workspace 1:一";
       startup = [
-        {command = "kitty -T kittyterm";}
-        {command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player";}
+        { command = "kitty -T kittyterm"; }
+        { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
       ];
       window = {
         border = 1;
         titlebar = false;
       };
       assigns = {
-        "1:一" = [{app_id = "firefox";}];
+        "1:一" = [{ app_id = "firefox"; }];
       };
       floating = {
         border = 1;
         criteria = [
-          {title = "^Picture-in-Picture$";}
-          {app_id = "qalculate-gtk";}
-          {app_id = "org.gnome.clocks";}
-          {app_id = "com.github.stsdc.monitor";}
-          {app_id = "blueman";}
-          {app_id = "pavucontrol";}
-          {app_id = "syncthingtray";}
-          {title = "Syncthing Tray";}
-          {app_id = "SchildiChat";}
-          {app_id = "Element";}
-          {app_id = "com.nextcloud.desktopclient.nextcloud";}
-          {app_id = "gnome-system-monitor";}
-          {title = "(?:Open|Save) (?:File|Folder|As)";}
-          {title = "^Add$";}
-          {title = "com-jgoodies-jdiskreport-JDiskReport";}
-          {app_id = "discord";}
-          {window_role = "pop-up";}
-          {window_role = "bubble";}
-          {window_role = "dialog";}
-          {window_role = "task_dialog";}
-          {window_role = "menu";}
-          {window_role = "Preferences";}
+          { title = "^Picture-in-Picture$"; }
+          { app_id = "qalculate-gtk"; }
+          { app_id = "org.gnome.clocks"; }
+          { app_id = "com.github.stsdc.monitor"; }
+          { app_id = "blueman"; }
+          { app_id = "pavucontrol"; }
+          { app_id = "syncthingtray"; }
+          { title = "Syncthing Tray"; }
+          { app_id = "SchildiChat"; }
+          { app_id = "Element"; }
+          { app_id = "com.nextcloud.desktopclient.nextcloud"; }
+          { app_id = "gnome-system-monitor"; }
+          { title = "(?:Open|Save) (?:File|Folder|As)"; }
+          { title = "^Add$"; }
+          { title = "com-jgoodies-jdiskreport-JDiskReport"; }
+          { app_id = "discord"; }
+          { window_role = "pop-up"; }
+          { window_role = "bubble"; }
+          { window_role = "dialog"; }
+          { window_role = "task_dialog"; }
+          { window_role = "menu"; }
+          { window_role = "Preferences"; }
         ];
         titlebar = false;
       };
@@ -1479,6 +1460,7 @@ group-by=category
           # };
           # }
           {
+
             command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
             criteria = {
               class = "Spotify";
@@ -1523,9 +1505,10 @@ group-by=category
     # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
     # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
     # ";
-    extraConfig = let
-      inherit (config.wayland.windowManager.sway.config) modifier;
-      swayfxSettings = "
+    extraConfig =
+      let
+        inherit (config.wayland.windowManager.sway.config) modifier;
+        swayfxSettings = "
         blur enable
         blur_xray disable
         blur_passes 1
@@ -1535,7 +1518,8 @@ group-by=category
         titlebar_separator disable
         default_dim_inactive 0.02
     ";
-    in "
+      in
+      "
       exec_always autotiling
       set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
       mode $exit {
@@ -1558,4 +1542,5 @@ group-by=category
 
       ";
   };
+
 }

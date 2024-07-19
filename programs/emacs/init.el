@@ -171,10 +171,10 @@ create a new one."
         visual-fill-column-center-text t)
   (visual-fill-column-mode 1))
 
-(defun run-alejandra ()
+(defun swarsel/run-formatting ()
   (interactive)
   (let ((default-directory (expand-file-name "~/.dotfiles")))
-    (shell-command "alejandra . -q")))
+    (shell-command "nixpkgs-fmt . > /dev/null")))
 
   (defun swarsel/org-babel-tangle-config ()
     (when (string-equal (buffer-file-name)
@@ -183,7 +183,7 @@ create a new one."
       (let ((org-confirm-babel-evaluate nil))
         (org-html-export-to-html)
         (org-babel-tangle)
-        (run-alejandra))))
+        (swarsel/run-formatting))))
 
   (setq org-html-htmlize-output-type nil)
 

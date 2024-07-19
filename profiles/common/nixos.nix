@@ -1,9 +1,6 @@
+{ config, lib, pkgs, ... }:
+
 {
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -16,7 +13,7 @@
     };
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   users.mutableUsers = false;
 
@@ -50,7 +47,7 @@
 
   nix.optimise = {
     automatic = true;
-    dates = ["weekly"];
+    dates = [ "weekly" ];
   };
 
   # systemd
@@ -127,12 +124,12 @@
             cloned-mac-address = "preserve";
             mac-address = "90:2E:16:D0:A1:87";
           };
-          ipv4 = {method = "shared";};
+          ipv4 = { method = "shared"; };
           ipv6 = {
             addr-gen-mode = "stable-privacy";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
         };
 
         eduroam = {
@@ -146,12 +143,12 @@
             id = "eduroam";
             type = "wifi";
           };
-          ipv4 = {method = "auto";};
+          ipv4 = { method = "auto"; };
           ipv6 = {
             addr-gen-mode = "default";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
           wifi = {
             mode = "infrastructure";
             ssid = "eduroam";
@@ -168,7 +165,7 @@
             id = "local";
             type = "ethernet";
           };
-          ethernet = {};
+          ethernet = { };
           ipv4 = {
             address1 = "10.42.1.1/24";
             method = "shared";
@@ -177,7 +174,7 @@
             addr-gen-mode = "stable-privacy";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
         };
 
         HH40V_39F5 = {
@@ -185,12 +182,12 @@
             id = "HH40V_39F5";
             type = "wifi";
           };
-          ipv4 = {method = "auto";};
+          ipv4 = { method = "auto"; };
           ipv6 = {
             addr-gen-mode = "stable-privacy";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
           wifi = {
             band = "bg";
             mode = "infrastructure";
@@ -207,12 +204,12 @@
             id = "magicant";
             type = "wifi";
           };
-          ipv4 = {method = "auto";};
+          ipv4 = { method = "auto"; };
           ipv6 = {
             addr-gen-mode = "default";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
           wifi = {
             mode = "infrastructure";
             ssid = "magicant";
@@ -230,15 +227,16 @@
             id = "PIA Sweden";
             type = "vpn";
           };
-          ipv4 = {method = "auto";};
+          ipv4 = { method = "auto"; };
           ipv6 = {
             addr-gen-mode = "stable-privacy";
             method = "auto";
           };
-          proxy = {};
+          proxy = { };
           vpn = {
             auth = "sha1";
-            ca = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
+            ca =
+              "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
             challenge-response-flags = "2";
             cipher = "aes-128-cbc";
             compress = "yes";
@@ -252,7 +250,7 @@
             service-type = "org.freedesktop.NetworkManager.openvpn";
             username = "$VPNUSER";
           };
-          vpn-secrets = {password = "$VPNPASS";};
+          vpn-secrets = { password = "$VPNPASS"; };
         };
 
         Hotspot = {
@@ -261,12 +259,12 @@
             id = "Hotspot";
             type = "wifi";
           };
-          ipv4 = {method = "shared";};
+          ipv4 = { method = "shared"; };
           ipv6 = {
             addr-gen-mode = "default";
             method = "ignore";
           };
-          proxy = {};
+          proxy = { };
           wifi = {
             mode = "ap";
             ssid = "Hotspot-fourside";
@@ -279,11 +277,12 @@
             psk = "$HOTSPOT";
           };
         };
+
       };
     };
   };
 
-  systemd.services.NetworkManager-ensure-profiles.after = ["NetworkManager.service"];
+  systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
 
   time.timeZone = "Europe/Vienna";
 
@@ -303,19 +302,20 @@
   };
 
   sops = {
+
     defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
     validateSopsFiles = false;
 
     secrets = {
-      swarseluser = {neededForUsers = true;};
-      ernest = {};
-      frauns = {};
-      hotspot = {};
-      eduid = {};
-      edupass = {};
-      handyhotspot = {};
-      vpnuser = {};
-      vpnpass = {};
+      swarseluser = { neededForUsers = true; };
+      ernest = { };
+      frauns = { };
+      hotspot = { };
+      eduid = { };
+      edupass = { };
+      handyhotspot = { };
+      vpnuser = { };
+      vpnpass = { };
     };
     templates = {
       "network-manager.env".content = ''
@@ -383,7 +383,7 @@
     #lsp-bridge / python
     gcc
     gdb
-    (python3.withPackages (ps: with ps; [jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+    (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
     # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
     # --------------------------------------------
 
@@ -405,7 +405,9 @@
         tar xvf $src -C $out/
         mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
       '';
+
     })
+
   ];
 
   programs = {
@@ -416,15 +418,15 @@
 
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;
-  environment.shells = with pkgs; [zsh];
-  environment.pathsToLink = ["/share/zsh"];
+  environment.shells = with pkgs; [ zsh ];
+  environment.pathsToLink = [ "/share/zsh" ];
 
   services.blueman.enable = true;
 
   # enable scanners over network
   hardware.sane = {
     enable = true;
-    extraBackends = [pkgs.sane-airscan];
+    extraBackends = [ pkgs.sane-airscan ];
   };
 
   # enable discovery and usage of network devices (esp. printers)
@@ -454,26 +456,28 @@
   # Make CAPS work as a dual function ESC/CTRL key
   services.interception-tools = {
     enable = true;
-    udevmonConfig = let
-      dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-        TIMING:
-          TAP_MILLISEC: 200
-          DOUBLE_TAP_MILLISEC: 0
+    udevmonConfig =
+      let
+        dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+          TIMING:
+            TAP_MILLISEC: 200
+            DOUBLE_TAP_MILLISEC: 0
 
-        MAPPINGS:
-          - KEY: KEY_CAPSLOCK
-            TAP: KEY_ESC
-            HOLD: KEY_LEFTCTRL
+          MAPPINGS:
+            - KEY: KEY_CAPSLOCK
+              TAP: KEY_ESC
+              HOLD: KEY_LEFTCTRL
+        '';
+      in
+      ''
+        - JOB: |
+            ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+              | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+              | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+          DEVICE:
+            EVENTS:
+              EV_KEY: [KEY_CAPSLOCK]
       '';
-    in ''
-      - JOB: |
-          ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-            | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-            | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-        DEVICE:
-          EVENTS:
-            EV_KEY: [KEY_CAPSLOCK]
-    '';
   };
 
   programs.ssh.startAgent = false;
@@ -505,4 +509,5 @@
   environment.etc."greetd/environments".text = ''
     sway
   '';
+
 }

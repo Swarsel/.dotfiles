@@ -1,8 +1,8 @@
+{ config, pkgs, ... }:
+
 {
-  config,
-  pkgs,
-  ...
-}: {
+
+
   services.gpg-agent = {
     enable = true;
     enableSshSupport = true;
@@ -16,6 +16,7 @@
     '';
   };
 
+
   home = {
     username = "swarsel";
     homeDirectory = "/home/swarsel";
@@ -25,7 +26,7 @@
     ];
   };
 
-  sops.age.sshKeyPaths = ["${config.home.homeDirectory}/.ssh/sops"];
+  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
   programs.waybar.settings.mainBar = {
     cpu.format = "{icon0} {icon1} {icon2} {icon3}";
@@ -49,6 +50,7 @@
     "custom/left-arrow-dark"
     "clock#1"
   ];
+
 
   wayland.windowManager.sway = {
     config = rec {
@@ -74,26 +76,30 @@
         };
       };
 
-      keybindings = let
-        inherit (config.wayland.windowManager.sway.config) modifier;
-      in {
-        "${modifier}+F2" = "exec brightnessctl set +5%";
-        "${modifier}+F1" = "exec brightnessctl set 5%-";
-        "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
-        "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
-        "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
-        "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-      };
+      keybindings =
+        let
+          inherit (config.wayland.windowManager.sway.config) modifier;
+        in
+        {
+          "${modifier}+F2" = "exec brightnessctl set +5%";
+          "${modifier}+F1" = "exec brightnessctl set 5%-";
+          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
+          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
+          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
+          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
+        };
 
       startup = [
-        {command = "nextcloud --background";}
-        {command = "discord --start-minimized";}
-        {command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";}
-        {command = "ANKI_WAYLAND=1 anki";}
-        {command = "OBSIDIAN_USE_WAYLAND=1 obsidian";}
-        {command = "nm-applet";}
+
+        { command = "nextcloud --background"; }
+        { command = "discord --start-minimized"; }
+        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+
       ];
 
       keycodebindings = {

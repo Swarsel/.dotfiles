@@ -1,13 +1,13 @@
+{ config, pkgs, modulesPath, ... }:
+
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
+
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
   ];
+
+
 
   services = {
     xserver = {
@@ -17,16 +17,14 @@
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [
-        {
-          port = 22;
-          addr = "0.0.0.0";
-        }
-      ];
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
     };
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
@@ -48,6 +46,8 @@
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
 
+
+
   users.groups.lxc_shares = {
     gid = 10000;
     members = [
@@ -68,10 +68,10 @@
   };
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/root/.dotfiles/secrets/paperless/secrets.yaml";
     validateSopsFiles = false;
-    secrets.admin = {owner = "paperless";};
+    secrets.admin = { owner = "paperless"; };
   };
 
   services.paperless = {
@@ -90,4 +90,5 @@
       };
     };
   };
+
 }

@@ -1,7 +1,13 @@
-{pkgs, ...}: {
-  imports = [
-    ./hardware-configuration.nix
-  ];
+{ pkgs, ... }:
+
+{
+
+
+  imports =
+    [
+      ./hardware-configuration.nix
+    ];
+
 
   services = {
     getty.autologinUser = "TEMPLATE";
@@ -67,7 +73,7 @@
       };
 
       monospace = {
-        package = pkgs.nerdfonts.override {fonts = ["FiraCode"];};
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
         name = "FiraCode Nerd Font Mono";
       };
 
@@ -78,6 +84,7 @@
     };
   };
 
+
   # Configure keymap in X11 (only used for login)
   services.xserver = {
     layout = "us";
@@ -87,12 +94,13 @@
   users.users.TEMPLATE = {
     isNormalUser = true;
     description = "TEMPLATE";
-    extraGroups = ["networkmanager" "wheel" "lp" "audio" "video"];
-    packages = with pkgs; [];
+    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
+    packages = with pkgs; [ ];
   };
 
   environment.systemPackages = with pkgs; [
   ];
 
   system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
 }

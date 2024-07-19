@@ -1,9 +1,6 @@
+{ config, pkgs, modulesPath, ... }:
+
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -30,13 +27,13 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/.dotfiles/secrets/calibre/secrets.yaml";
     validateSopsFiles = false;
-    secrets.kavita = {owner = "kavita";};
+    secrets.kavita = { owner = "kavita"; };
   };
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
@@ -68,4 +65,6 @@
     port = 8080;
     tokenKeyFile = config.sops.secrets.kavita.path;
   };
+
+
 }

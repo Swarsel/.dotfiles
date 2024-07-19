@@ -1,12 +1,10 @@
-{
-  config,
-  pkgs,
-  modulesPath,
-  sops,
-  ...
-}: let
+{ config, pkgs, modulesPath, sops, ... }:
+let
   matrixDomain = "matrix2.swarsel.win";
-in {
+in
+{
+
+
   services = {
     xserver = {
       layout = "us";
@@ -15,16 +13,14 @@ in {
     openssh = {
       enable = true;
       settings.PermitRootLogin = "yes";
-      listenAddresses = [
-        {
-          port = 22;
-          addr = "0.0.0.0";
-        }
-      ];
+      listenAddresses = [{
+        port = 22;
+        addr = "0.0.0.0";
+      }];
     };
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
@@ -45,6 +41,7 @@ in {
   environment.shellAliases = {
     nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
   };
+
 
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
@@ -67,15 +64,15 @@ in {
   ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/.dotfiles/secrets/matrix/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      matrixsharedsecret = {owner = "matrix-synapse";};
-      mautrixtelegram_as = {owner = "matrix-synapse";};
-      mautrixtelegram_hs = {owner = "matrix-synapse";};
-      mautrixtelegram_api_id = {owner = "matrix-synapse";};
-      mautrixtelegram_api_hash = {owner = "matrix-synapse";};
+      matrixsharedsecret = { owner = "matrix-synapse"; };
+      mautrixtelegram_as = { owner = "matrix-synapse"; };
+      mautrixtelegram_hs = { owner = "matrix-synapse"; };
+      mautrixtelegram_api_id = { owner = "matrix-synapse"; };
+      mautrixtelegram_api_hash = { owner = "matrix-synapse"; };
     };
     templates = {
       "matrix_user_register.sh".content = ''
@@ -139,13 +136,13 @@ in {
       listeners = [
         {
           port = 8008;
-          bind_addresses = ["0.0.0.0"];
+          bind_addresses = [ "0.0.0.0" ];
           type = "http";
           tls = false;
           x_forwarded = true;
           resources = [
             {
-              names = ["client" "federation"];
+              names = [ "client" "federation" ];
               compress = true;
             }
           ];
@@ -261,6 +258,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
+
         address = "http://localhost:29328";
         hostname = "0.0.0.0";
         port = 29328;
@@ -287,7 +285,7 @@ in {
   # messages out after a while.
 
   systemd.timers."restart-bridges" = {
-    wantedBy = ["timers.target"];
+    wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1d";
       OnUnitActiveSec = "1d";
@@ -306,4 +304,5 @@ in {
       User = "root";
     };
   };
+
 }

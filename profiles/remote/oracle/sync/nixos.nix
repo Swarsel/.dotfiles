@@ -1,8 +1,6 @@
+{ config, pkgs, ... }:
+
 {
-  config,
-  pkgs,
-  ...
-}: {
   imports = [
     ./hardware-configuration.nix
   ];
@@ -18,14 +16,14 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/root/.dotfiles/secrets/sync/secrets.yaml";
     validateSopsFiles = false;
-    secrets.swarsel = {owner = "root";};
-    secrets.dnstokenfull = {owner = "acme";};
+    secrets.swarsel = { owner = "root"; };
+    secrets.dnstokenfull = { owner = "acme"; };
     templates."certs.secret".content = ''
       CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
     '';
@@ -46,6 +44,7 @@
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     virtualHosts = {
+
       "synki.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -161,4 +160,5 @@
       };
     };
   };
+
 }

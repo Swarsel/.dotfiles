@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{ pkgs, ... }: {
   environment.packages = with pkgs; [
     vim
     git

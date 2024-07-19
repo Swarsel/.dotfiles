@@ -1,9 +1,5 @@
+{ config, pkgs, modulesPath, ... }:
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -22,13 +18,13 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/.dotfiles/secrets/nginx/secrets.yaml";
     validateSopsFiles = false;
-    secrets.dnstokenfull = {owner = "acme";};
+    secrets.dnstokenfull = { owner = "acme"; };
     templates."certs.secret".content = ''
       CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
     '';
@@ -73,6 +69,7 @@
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     virtualHosts = {
+
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -109,6 +106,7 @@
           };
         };
       };
+
 
       "sound.swarsel.win" = {
         enableACME = true;
@@ -199,6 +197,8 @@
           };
         };
       };
+
     };
   };
+
 }

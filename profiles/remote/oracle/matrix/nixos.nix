@@ -1,11 +1,9 @@
-{
-  config,
-  pkgs,
-  sops,
-  ...
-}: let
+{ config, pkgs, sops, ... }:
+let
   matrixDomain = "swatrix.swarsel.win";
-in {
+in
+{
+
   imports = [
     ./hardware-configuration.nix
   ];
@@ -24,19 +22,19 @@ in {
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   sops = {
-    age.sshKeyPaths = ["/etc/ssh/sops"];
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
     defaultSopsFile = "/root/.dotfiles/secrets/omatrix/secrets.yaml";
     validateSopsFiles = false;
     secrets = {
-      dnstokenfull = {owner = "acme";};
-      matrixsharedsecret = {owner = "matrix-synapse";};
-      mautrixtelegram_as = {owner = "matrix-synapse";};
-      mautrixtelegram_hs = {owner = "matrix-synapse";};
-      mautrixtelegram_api_id = {owner = "matrix-synapse";};
-      mautrixtelegram_api_hash = {owner = "matrix-synapse";};
+      dnstokenfull = { owner = "acme"; };
+      matrixsharedsecret = { owner = "matrix-synapse"; };
+      mautrixtelegram_as = { owner = "matrix-synapse"; };
+      mautrixtelegram_hs = { owner = "matrix-synapse"; };
+      mautrixtelegram_api_id = { owner = "matrix-synapse"; };
+      mautrixtelegram_api_hash = { owner = "matrix-synapse"; };
     };
     templates = {
       "certs.secret".content = ''
@@ -82,6 +80,7 @@ in {
     recommendedOptimisation = true;
     recommendedGzipSettings = true;
     virtualHosts = {
+
       "swatrix.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -169,13 +168,13 @@ in {
     listeners = [
       {
         port = 8008;
-        bind_addresses = ["0.0.0.0"];
+        bind_addresses = [ "0.0.0.0" ];
         type = "http";
         tls = false;
         x_forwarded = true;
         resources = [
           {
-            names = ["client" "federation"];
+            names = [ "client" "federation" ];
             compress = true;
           }
         ];
@@ -291,6 +290,7 @@ in {
         domain = matrixDomain;
       };
       appservice = {
+
         address = "http://localhost:29328";
         hostname = "0.0.0.0";
         port = 29328;
@@ -317,7 +317,7 @@ in {
   # messages out after a while.
 
   systemd.timers."restart-bridges" = {
-    wantedBy = ["timers.target"];
+    wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1d";
       OnUnitActiveSec = "1d";
@@ -336,4 +336,5 @@ in {
       User = "root";
     };
   };
+
 }

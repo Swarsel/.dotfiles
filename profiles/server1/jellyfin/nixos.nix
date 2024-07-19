@@ -1,9 +1,6 @@
+{ config, pkgs, modulesPath, ... }:
+
 {
-  config,
-  pkgs,
-  modulesPath,
-  ...
-}: {
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")
     ./hardware-configuration.nix
@@ -24,7 +21,7 @@
   };
 
   users.users.jellyfin = {
-    extraGroups = ["video" "render"];
+    extraGroups = [ "video" "render" ];
   };
 
   services.xserver = {
@@ -32,7 +29,7 @@
     xkbVariant = "altgr-intl";
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   proxmoxLXC = {
     manageNetwork = true; # manage network myself
@@ -59,7 +56,7 @@
   };
 
   nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override {enableHybridCodec = true;};
+    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
   };
   hardware.graphics = {
     enable = true;
@@ -76,4 +73,5 @@
     user = "jellyfin";
     # openFirewall = true; # this works only for the default ports
   };
+
 }
