@@ -403,6 +403,7 @@ Mind the comma at the end. You need this because the =...= is being passed as th
   nixos-hardware,
   nix-alien,
   nswitch-rcm-nix,
+  nix-index-database,
 
 #+end_src
 
@@ -429,8 +430,11 @@ A short overview over each input and what it does:
   Provides specific hardware setting for some hardware configurations. For example, this sets some better defaults for my Lenovo Thinkpad P14s Gen2.
 - [[https://github.com/thiagokokada/nix-alien][nix-alien]]
   This is supposed to allow me to run unpatched libraries directly without a need for ELF patching or resorting to =steam-run=. However, I have not yet gotten this to work.
-- nswitch-rcm-nix
+- [[https://github.com/Swarsel/nswitch-rcm-nix][nswitch-rcm-nix]]
   Allows auto injection of payloads upon connecting a Nintendo Switch.
+- [[https://github.com/nix-community/nix-index-database][nix-index-database]]
+  This provides a database for =nix-index= that is updated weekly. This allows for declarative management, without needing to run the =nix-index= command for database assembly.
+
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
@@ -499,6 +503,12 @@ A short overview over each input and what it does:
     url = "github:Swarsel/nswitch-rcm-nix";
   };
 
+  # weekly updated nix-index database
+  nix-index-database = {
+    url = "github:nix-community/nix-index-database";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
 #+end_src
 *** let
 :PROPERTIES:
@@ -545,6 +555,7 @@ Lastly I define some common module lists that I can simply load depending on the
                 ];
   # Home-Manager modules wanted on both NixOS and non-NixOS systems
   mixedModules = [ sops-nix.homeManagerModules.sops
+                   nix-index-database.hmModules.nix-index
                    ./profiles/common/home.nix
                  ];
 
@@ -5751,13 +5762,34 @@ This section is for programs that require no further configuration. zsh Integrat
     yt-dlp.enable = true;
     mpv.enable = true;
     jq.enable = true;
-    nix-index.enable = true;
     ripgrep.enable = true;
     pandoc.enable = true;
     fzf.enable = true;
     zoxide.enable = true;
-  };
+#+end_src
 
+*** nix-index
+
+nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
+
+#+begin_src nix :tangle profiles/common/home.nix
+
+  nix-index = let
+    command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+        mkdir -p $out/etc/profile.d
+        substitute ${../../scripts/command-not-found.sh}                  \
+          $out/etc/profile.d/command-not-found.sh             \
+          --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+          --replace @tput@ ${pkgs.ncurses}/bin/tput
+        '';
+  in {
+    enable = true;
+    package = pkgs.symlinkJoin {
+      name = "nix-index";
+      paths = [ command-not-found ];
+    };
+  };
+  };
 #+end_src
 
 *** password-store

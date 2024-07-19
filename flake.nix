@@ -66,6 +66,12 @@
     nswitch-rcm-nix = {
       url = "github:Swarsel/nswitch-rcm-nix";
     };
+
+    # weekly updated nix-index database
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {
@@ -82,6 +88,7 @@
     nixos-hardware,
     nix-alien,
     nswitch-rcm-nix,
+    nix-index-database,
     ...
   }: let
     system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
@@ -127,6 +134,7 @@
     # Home-Manager modules wanted on both NixOS and non-NixOS systems
     mixedModules = [
       sops-nix.homeManagerModules.sops
+      nix-index-database.hmModules.nix-index
       ./profiles/common/home.nix
     ];
   in {

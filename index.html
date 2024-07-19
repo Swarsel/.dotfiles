@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-19 Fr 00:52 -->
+<!-- 2024-07-19 Fr 14:29 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -261,20 +261,21 @@
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.6. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.7. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.3.8. Programs</a></li>
-<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.9. password-store</a></li>
-<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.10. direnv</a></li>
-<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.11. eza</a></li>
-<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.3.12. git</a></li>
-<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.3.13. Fuzzel</a></li>
-<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.14. Starship</a></li>
-<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.15. Kitty</a></li>
-<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.16. zsh</a></li>
-<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.3.17. Mail</a></li>
-<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.3.18. Home-manager: Emacs</a></li>
-<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.3.19. Waybar</a></li>
-<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.3.20. Firefox</a></li>
-<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.3.21. Services</a></li>
-<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.22. Sway</a></li>
+<li><a href="#org5609ccf">3.3.9. nix-index</a></li>
+<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.10. password-store</a></li>
+<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.11. direnv</a></li>
+<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.12. eza</a></li>
+<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.3.13. git</a></li>
+<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.3.14. Fuzzel</a></li>
+<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.15. Starship</a></li>
+<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.16. Kitty</a></li>
+<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.17. zsh</a></li>
+<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.3.18. Mail</a></li>
+<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.3.19. Home-manager: Emacs</a></li>
+<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.3.20. Waybar</a></li>
+<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.3.21. Firefox</a></li>
+<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.3.22. Services</a></li>
+<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.23. Sway</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.4. flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</a>
@@ -387,7 +388,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41033 words spanning 10909 lines and was last revised on 2024-07-19 00:52:31 +0200.</b>
+<b>This file has 41233 words spanning 10941 lines and was last revised on 2024-07-19 14:29:02 +0200.</b>
 </p>
 
 <p>
@@ -437,7 +438,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-19 00:52:31 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-19 14:29:02 +0200)
 </p></li>
 </ul>
 
@@ -899,6 +900,7 @@ lanzaboote,
 nixos-hardware,
 nix-alien,
 nswitch-rcm-nix,
+nix-index-database,
 
 </pre>
 </div>
@@ -929,9 +931,12 @@ This brings nix to android in an app that is similar to tmux! Of course most of 
 Provides specific hardware setting for some hardware configurations. For example, this sets some better defaults for my Lenovo Thinkpad P14s Gen2.</li>
 <li><a href="https://github.com/thiagokokada/nix-alien">nix-alien</a>
 This is supposed to allow me to run unpatched libraries directly without a need for ELF patching or resorting to <code>steam-run</code>. However, I have not yet gotten this to work.</li>
-<li>nswitch-rcm-nix
+<li><a href="https://github.com/Swarsel/nswitch-rcm-nix">nswitch-rcm-nix</a>
 Allows auto injection of payloads upon connecting a Nintendo Switch.</li>
+<li><a href="https://github.com/nix-community/nix-index-database">nix-index-database</a>
+This provides a database for <code>nix-index</code> that is updated weekly. This allows for declarative management, without needing to run the <code>nix-index</code> command for database assembly.</li>
 </ul>
+
 
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1000,6 +1005,12 @@ nswitch-rcm-nix = {
   url = "github:Swarsel/nswitch-rcm-nix";
 };
 
+# weekly updated nix-index database
+nix-index-database = {
+  url = "github:nix-community/nix-index-database";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+
 </pre>
 </div>
 </div>
@@ -1051,6 +1062,7 @@ homeModules = [ stylix.homeManagerModules.stylix
               ];
 # Home-Manager modules wanted on both NixOS and non-NixOS systems
 mixedModules = [ sops-nix.homeManagerModules.sops
+                 nix-index-database.hmModules.nix-index
                  ./profiles/common/home.nix
                ];
 
@@ -6983,21 +6995,47 @@ programs = {
   yt-dlp.enable = true;
   mpv.enable = true;
   jq.enable = true;
-  nix-index.enable = true;
   ripgrep.enable = true;
   pandoc.enable = true;
   fzf.enable = true;
   zoxide.enable = true;
-};
-
 </pre>
 </div>
 </div>
 </li>
 </ol>
 </div>
+<div id="outline-container-org5609ccf" class="outline-4">
+<h4 id="org5609ccf"><span class="section-number-4">3.3.9.</span> nix-index</h4>
+<div class="outline-text-4" id="text-3-3-9">
+<p>
+nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+nix-index = let
+  command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+      mkdir -p $out/etc/profile.d
+      substitute ${../../scripts/command-not-found.sh}                  \
+        $out/etc/profile.d/command-not-found.sh             \
+        --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+        --replace @tput@ ${pkgs.ncurses}/bin/tput
+      '';
+in {
+  enable = true;
+  package = pkgs.symlinkJoin {
+    name = "nix-index";
+    paths = [ command-not-found ];
+  };
+};
+};
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-4">
-<h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.3.9.</span> password-store</h4>
+<h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.3.10.</span> password-store</h4>
 <div class="outline-text-4" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
 <p>
 Enables password store with the <code>pass-otp</code> extension which allows me to store and generate one-time-passwords.
@@ -7015,7 +7053,7 @@ programs.password-store = {
 </div>
 </div>
 <div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-4">
-<h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.3.10.</span> direnv</h4>
+<h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.3.11.</span> direnv</h4>
 <div class="outline-text-4" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
 <p>
 Enables direnv, which I use for nearly all of my nix dev flakes.
@@ -7033,7 +7071,7 @@ programs.direnv = {
 </div>
 </div>
 <div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-4">
-<h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.3.11.</span> eza</h4>
+<h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.3.12.</span> eza</h4>
 <div class="outline-text-4" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
 <p>
 Eza provides me with a better <code>ls</code> command and some other useful aliases.
@@ -7056,7 +7094,7 @@ programs.eza = {
 </div>
 </div>
 <div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-4">
-<h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.3.12.</span> git</h4>
+<h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.3.13.</span> git</h4>
 <div class="outline-text-4" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
 <p>
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using <a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">Magit</a>) as well as a git template defined in <a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">Linking dotfiles</a>.
@@ -7106,7 +7144,7 @@ programs.git = {
 </div>
 </div>
 <div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-4">
-<h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.3.13.</span> Fuzzel</h4>
+<h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.3.14.</span> Fuzzel</h4>
 <div class="outline-text-4" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
 <p>
 Here I only need to set basic layout options - the rest is being managed by stylix.
@@ -7131,7 +7169,7 @@ programs.fuzzel = {
 </div>
 </div>
 <div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-4">
-<h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.3.14.</span> Starship</h4>
+<h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.3.15.</span> Starship</h4>
 <div class="outline-text-4" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
 <p>
 Starship makes my <code>zsh</code> look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
@@ -7248,7 +7286,7 @@ programs.starship = {
 </div>
 </div>
 <div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-4">
-<h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.3.15.</span> Kitty</h4>
+<h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.3.16.</span> Kitty</h4>
 <div class="outline-text-4" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
 <p>
 Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
@@ -7275,7 +7313,7 @@ programs.kitty = {
 </div>
 </div>
 <div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-4">
-<h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.3.16.</span> zsh</h4>
+<h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.3.17.</span> zsh</h4>
 <div class="outline-text-4" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
 <p>
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
@@ -7341,7 +7379,7 @@ programs.zsh = {
 </div>
 </div>
 <div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-4">
-<h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.3.17.</span> Mail</h4>
+<h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.3.18.</span> Mail</h4>
 <div class="outline-text-4" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
 <p>
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
@@ -7482,7 +7520,7 @@ accounts.email = {
 </div>
 </div>
 <div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-4">
-<h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.3.18.</span> Home-manager: Emacs</h4>
+<h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.3.19.</span> Home-manager: Emacs</h4>
 <div class="outline-text-4" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
 <p>
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my <code>init.el</code> file to the configuration which will then be parsed upon system rebuild, looking for <code>use-package</code> sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (<code>emacs-pgtk</code>). All of the nice options such as <code>tree-sitter</code> support are enabled by default, so I do not need to adjust the build process.
@@ -7545,7 +7583,7 @@ programs.emacs = {
 </div>
 </div>
 <div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-4">
-<h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.3.19.</span> Waybar</h4>
+<h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.3.20.</span> Waybar</h4>
 <div class="outline-text-4" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
 <p>
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
@@ -7757,7 +7795,7 @@ programs.waybar = {
 </div>
 </div>
 <div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-4">
-<h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.3.20.</span> Firefox</h4>
+<h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.3.21.</span> Firefox</h4>
 <div class="outline-text-4" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
 Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
@@ -7877,7 +7915,7 @@ programs.firefox = {
 </div>
 </div>
 <div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-4">
-<h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.3.21.</span> Services</h4>
+<h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.3.22.</span> Services</h4>
 <div class="outline-text-4" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
 <p>
 Services that can be defined through home-manager should be defined here.
@@ -8016,7 +8054,7 @@ group-by=category
 </ol>
 </div>
 <div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-4">
-<h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.3.22.</span> Sway</h4>
+<h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.3.23.</span> Sway</h4>
 <div class="outline-text-4" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
 <p>
 I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
@@ -8403,6 +8441,12 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       url = "github:Swarsel/nswitch-rcm-nix";
     };
 
+    # weekly updated nix-index database
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs = inputs@{
@@ -8420,6 +8464,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     nixos-hardware,
     nix-alien,
     nswitch-rcm-nix,
+    nix-index-database,
 
     ...
   }: let
@@ -8458,6 +8503,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
                   ];
     # Home-Manager modules wanted on both NixOS and non-NixOS systems
     mixedModules = [ sops-nix.homeManagerModules.sops
+                     nix-index-database.hmModules.nix-index
                      ./profiles/common/home.nix
                    ];
 
@@ -9341,7 +9387,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="orgbb564b1"></a>Nix common prefix bracketer<br />
+<li><a id="org3fc11ee"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -12912,7 +12958,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-19 Fr 00:52</p>
+<p class="date">Created: 2024-07-19 Fr 14:29</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
