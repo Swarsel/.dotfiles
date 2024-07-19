@@ -47,11 +47,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # patches for gaming on nix
-    nix-gaming = {
-      url = "github:fufexan/nix-gaming";
-    };
-
     # hardware quirks on nix
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
@@ -87,6 +82,7 @@
     lanzaboote,
     nixos-hardware,
     nix-alien,
+    nixos-generators,
     nswitch-rcm-nix,
     nix-index-database,
     ...
@@ -151,7 +147,7 @@
         modules =
           nixModules
           ++ [
-            ./profiles/onett/nixos.nix
+            ./profles/onett/nixos.nix
             home-manager.nixosModules.home-manager
             {
               home-manager.users.swarsel.imports =
@@ -368,6 +364,13 @@
     };
 
     packages.x86_64-linux = {
+      proxmox-lxc = nixos-generators.nixosGenerate {
+        inherit system;
+        modules = [
+          ./profiles/server1/TEMPLATE/nixos.nix
+        ];
+        format = "proxmox-lxc";
+      };
     };
   };
 }

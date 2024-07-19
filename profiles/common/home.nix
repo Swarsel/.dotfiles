@@ -29,6 +29,7 @@
 
     # nix
     alejandra
+    nixpkgs-fmt
     deadnix
     statix
 
@@ -170,31 +171,33 @@
     noto-fonts-cjk-sans
 
     # cura
-    (let
-      cura5 = appimageTools.wrapType2 rec {
-        name = "cura5";
-        version = "5.4.0";
-        src = fetchurl {
-          url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-          hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+    (
+      let
+        cura5 = appimageTools.wrapType2 rec {
+          name = "cura5";
+          version = "5.4.0";
+          src = fetchurl {
+            url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+            hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+          };
+          extraPkgs = pkgs: with pkgs; [];
         };
-        extraPkgs = pkgs: with pkgs; [];
-      };
-    in
-      writeScriptBin "cura" ''
-        #! ${pkgs.bash}/bin/bash
-        # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-        # So we convert each of the files passed as argument to an absolute path.
-        # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-        args=()
-        for a in "$@"; do
-            if [ -e "$a" ]; then
-               a="$(realpath "$a")"
-            fi
-            args+=("$a")
-        done
-        exec "${cura5}/bin/cura5" "''${args[@]}"
-      '')
+      in
+        writeScriptBin "cura" ''
+          #! ${pkgs.bash}/bin/bash
+          # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
+          # So we convert each of the files passed as argument to an absolute path.
+          # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+          args=()
+          for a in "$@"; do
+              if [ -e "$a" ]; then
+                 a="$(realpath "$a")"
+              fi
+              args+=("$a")
+          done
+          exec "${cura5}/bin/cura5" "''${args[@]}"
+        ''
+    )
 
     #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
     (pkgs.writeShellScriptBin "e" ''
@@ -332,7 +335,10 @@
 
   programs.ssh = {
     enable = true;
-    extraConfig = "SetEnv TERM=xterm-256color";
+    forwardAgent = true;
+    extraConfig = ''
+      SetEnv TERM=xterm-256color
+    '';
     matchBlocks = {
       "nginx" = {
         hostname = "192.168.1.14";
@@ -406,57 +412,18 @@
         hostname = "193.122.53.173";
         user = "root"; #this is a oracle vm server but needs root due to nixos-infect
       };
+      "songdiver" = {
+        hostname = "89.168.100.65";
+        user = "ubuntu";
+      };
       "pkv" = {
         hostname = "46.232.248.161";
         user = "root";
-      };
-      "nebula" = {
-        hostname = "128.131.171.15";
-        user = "amp23s56";
-        compression = true;
-        identityFile = "~/.ssh/id_ed25519";
-        proxyCommand = "ssh -p 1022 -i ~/.ssh/id_ed25519 -q -W %h:%p %r@venus.par.tuwien.ac.at";
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-        };
       };
       "efficient" = {
         hostname = "g0.complang.tuwien.ac.at";
         forwardAgent = true;
         user = "ep01427399";
-
-        # leaving the below lines in for future reference
-
-        # remoteForwards = [
-        #   {
-        #     bind.address = "/run/user/21217/gnupg/S.gpg-agent";
-        #     host.address = "/run/user/1000/gnupg/S.gpg-agent.extra";
-        #   }
-        #   {
-        #     bind.address = "/run/user/21217/gnupg/S.gpg-agent.ssh";
-        #     host.address = "/run/user/1000/gnupg/S.gpg-agent.ssh";
-        #   }
-        # ];
-        # extraOptions = {
-        # "RemoteForward" = "/run/user/21217/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra";
-        # "StreamLocalBindUnlink" = "yes";
-        # "RemoteForward" = "/run/user/21217/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh";
-        # };
-        # setEnv = {
-        #   "TERM" = "xterm";
-        # };
-      };
-      "hydra" = {
-        hostname = "128.131.171.215";
-        user = "hpc23w33";
-        compression = true;
-        forwardAgent = true;
-        # identityFile = "~/.ssh/id_tuwien_hpc";
-        # proxyCommand = "ssh -p 1022 -i ~/.ssh/id_tuwien_hpc -q -W %h:%p %r@venus.par.tuwien.ac.at";
-        proxyCommand = "ssh -p 1022 -q -W %h:%p %r@venus.par.tuwien.ac.at";
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-        };
       };
     };
   };
@@ -550,21 +517,21 @@
     pandoc.enable = true;
     fzf.enable = true;
     zoxide.enable = true;
+  };
 
-    nix-index = let
-      command-not-found = pkgs.runCommandLocal "command-not-found.sh" {} ''
-        mkdir -p $out/etc/profile.d
-        substitute ${../../scripts/command-not-found.sh}                  \
-          $out/etc/profile.d/command-not-found.sh             \
-          --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-          --replace @tput@ ${pkgs.ncurses}/bin/tput
-      '';
-    in {
-      enable = true;
-      package = pkgs.symlinkJoin {
-        name = "nix-index";
-        paths = [command-not-found];
-      };
+  programs.nix-index = let
+    command-not-found = pkgs.runCommandLocal "command-not-found.sh" {} ''
+      mkdir -p $out/etc/profile.d
+      substitute ${../../scripts/command-not-found.sh}                  \
+        $out/etc/profile.d/command-not-found.sh             \
+        --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+        --replace @tput@ ${pkgs.ncurses}/bin/tput
+    '';
+  in {
+    enable = true;
+    package = pkgs.symlinkJoin {
+      name = "nix-index";
+      paths = [command-not-found];
     };
   };
 

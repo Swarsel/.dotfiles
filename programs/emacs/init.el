@@ -263,6 +263,31 @@ create a new one."
         (while (re-search-forward (concat "^" (regexp-quote common-prefix) "\\.") end t)
           (replace-match ""))))))
 
+(defun swarsel/org-nixpkgs-fmt-block-lite ()
+  (interactive)
+  (org-babel-mark-block)
+  (call-interactively 'nixpkgs-fmt-region))
+
+
+  (defun swarsel/org-nixpkgs-fmt-block ()
+    (interactive)
+    (save-excursion
+      (let* ((element (org-element-at-point))
+             (begin (org-element-property :begin element))
+             (end (org-element-property :end element))
+             (lang (org-element-property :language element)))
+        (when lang
+          (goto-char begin)
+          (forward-line)
+          (insert "{")
+          (goto-char end)
+          (forward-line -1)
+          (beginning-of-line)
+          (forward-char -1)
+          (insert "}")
+          (org-babel-mark-block)
+          (call-interactively 'nixpkgs-fmt-region)))))
+
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -1073,6 +1098,8 @@ create a new one."
 
 (use-package nix-mode
   :mode "\\.nix\\'")
+
+(use-package nixpkgs-fmt)
 
 (setq markdown-command "pandoc")
 

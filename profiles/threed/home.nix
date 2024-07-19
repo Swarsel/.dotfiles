@@ -102,8 +102,8 @@
     };
 
     extraConfig = "
-    exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
-    exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
-    ";
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
+      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
+      ";
   };
 }
