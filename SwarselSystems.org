@@ -7682,6 +7682,38 @@ This function searches for common delimiters in region and removes them, summari
 
 #+end_src
 
+**** Nix formatters
+
+This formats the org code block at =point= in accordance to the =nixpkgs-fmt= formatter
+
+#+begin_src emacs-lisp
+
+  (defun swarsel/org-nixpkgs-fmt-block-lite ()
+    (interactive)
+    (org-babel-mark-block)
+    (call-interactively 'nixpkgs-fmt-region))
+
+
+    (defun swarsel/org-nixpkgs-fmt-block ()
+      (interactive)
+      (save-excursion
+        (let* ((element (org-element-at-point))
+               (begin (org-element-property :begin element))
+               (end (org-element-property :end element))
+               (lang (org-element-property :language element)))
+          (when lang
+            (goto-char begin)
+            (forward-line)
+            (insert "{")
+            (goto-char end)
+            (forward-line -1)
+            (beginning-of-line)
+            (forward-char -1)
+            (insert "}")
+            (org-babel-mark-block)
+            (call-interactively 'nixpkgs-fmt-region)))))
+#+end_src
+
 *** Custom Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5
@@ -9085,6 +9117,15 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 
   (use-package nix-mode
     :mode "\\.nix\\'")
+
+#+end_src
+*** nixpkgs-fmt
+
+Adds functions for formatting nix code.
+
+#+begin_src emacs-lisp
+
+  (use-package nixpkgs-fmt)
 
 #+end_src
 
