@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-20 Sa 00:16 -->
+<!-- 2024-07-20 Sa 11:04 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -261,7 +261,7 @@
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.6. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.7. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.3.8. Programs</a></li>
-<li><a href="#org05cfe0c">3.3.9. nix-index</a></li>
+<li><a href="#org5f31d24">3.3.9. nix-index</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.10. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.11. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.12. eza</a></li>
@@ -329,7 +329,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgc3f7bff">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgcbe00d5">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -389,7 +389,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41230 words spanning 10979 lines and was last revised on 2024-07-20 00:16:24 +0200.</b>
+<b>This file has 41361 words spanning 11031 lines and was last revised on 2024-07-20 11:04:39 +0200.</b>
 </p>
 
 <p>
@@ -439,7 +439,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 00:16:24 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 11:04:39 +0200)
 </p></li>
 </ul>
 
@@ -6083,9 +6083,12 @@ programs = {
 };
 </pre>
 </div>
-
+</div>
+<ol class="org-ol">
+<li><a id="org34cd140"></a>zsh<br />
+<div class="outline-text-5" id="text-3-2-4-1">
 <p>
-Also, we setup zsh. Do not touch this.
+Do not touch this.
 </p>
 
 <div class="org-src-container">
@@ -6098,6 +6101,59 @@ environment.pathsToLink = [ "/share/zsh" ];
 </pre>
 </div>
 </div>
+</li>
+<li><a id="orgffaef65"></a>syncthing<br />
+<div class="outline-text-5" id="text-3-2-4-2">
+<div class="org-src-container">
+<pre class="src src-nix">
+services.syncthing = {
+  enable = true;
+  user = "swarsel";
+  dataDir = "/home/swarsel";
+  configDir = "/home/swarsel/.config/syncthing";
+  openDefaultPorts = true;
+  settings = {
+    devices = {
+      "magicant" = {
+        id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
+      };
+      "sync (@oracle)" = {
+        id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
+      };
+      "server1" = {
+        id = "ZXWVC4X-IIARITZ-MERZPHN-HD55Y6G-QJM2GTB-6BWYXMR-DTO3TS2-QDBREQQ";
+      };
+    };
+    folders = {
+      "Default Folder" = {
+        path = "/home/swarsel/Sync";
+        devices = [ "sync (@oracle)" "magicant" ];
+        id = "default";
+      };
+      "Obsidian" = {
+        path = "/home/swarsel/Nextcloud/Obsidian";
+        devices = [ "sync (@oracle)" "magicant" ];
+        id = "yjvni-9eaa7";
+      };
+      "Org" = {
+        path = "/home/swarsel/Nextcloud/Org";
+        devices = [ "sync (@oracle)" "magicant" ];
+        id = "a7xnl-zjj3d";
+      };
+      "Vpn" = {
+        path = "/home/swarsel/Vpn";
+        devices = [ "sync (@oracle)" "magicant" ];
+        id = "hgp9s-fyq3p";
+      };
+    };
+  };
+};
+
+</pre>
+</div>
+</div>
+</li>
+</ol>
 </div>
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
 <h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.2.5.</span> Services</h4>
@@ -6993,8 +7049,8 @@ programs = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org05cfe0c" class="outline-4">
-<h4 id="org05cfe0c"><span class="section-number-4">3.3.9.</span> nix-index</h4>
+<div id="outline-container-org5f31d24" class="outline-4">
+<h4 id="org5f31d24"><span class="section-number-4">3.3.9.</span> nix-index</h4>
 <div class="outline-text-4" id="text-3-3-9">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -7971,7 +8027,7 @@ Enables the syncthing service which talks to my syncthing instance on the Oracle
 <div class="org-src-container">
 <pre class="src src-nix">
 services.syncthing = {
-  enable = true;
+  enable = false;
   tray = {
     enable = false; # we enable this by installing the syncthingtray package instead, it works better.
   };
@@ -9150,6 +9206,9 @@ Lastly, individual messages can be reenabled using the <code>(advice-remove '&lt
 (advice-add 'org-unlogged-message :around #'suppress-messages)
 (advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
 (advice-add 'push-mark  :around #'suppress-messages)
+(advice-add 'timer-event-handler  :around #'suppress-messages)
+(advice-add 'evil-insert  :around #'suppress-messages)
+(advice-add 'evil-visual-char  :around #'suppress-messages)
 
 ;; to reenable
 ;; (advice-remove 'timer-event-handler #'suppress-messages)
@@ -9391,7 +9450,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org5914746"></a>Nix common prefix bracketer<br />
+<li><a id="org6c1bb67"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9424,7 +9483,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orgd08d04a"></a>Nix formatters<br />
+<li><a id="org932d84d"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -10997,8 +11056,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgc3f7bff" class="outline-4">
-<h4 id="orgc3f7bff"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgcbe00d5" class="outline-4">
+<h4 id="orgcbe00d5"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13013,7 +13072,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-20 Sa 00:16</p>
+<p class="date">Created: 2024-07-20 Sa 11:04</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

@@ -1237,7 +1237,7 @@
   };
 
   services.syncthing = {
-    enable = true;
+    enable = false;
     tray = {
       enable = false; # we enable this by installing the syncthingtray package instead, it works better.
     };
