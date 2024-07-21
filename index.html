@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-21 So 15:56 -->
+<!-- 2024-07-21 So 18:21 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org673c997">2.3.3. General (outputs)</a></li>
+<li><a href="#orgb2c1fc5">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,10 +241,10 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#org1095185">3.2. Manual Overlays and packages</a>
+<li><a href="#orgaa89883">3.2. Manual Overlays and packages</a>
 <ul>
-<li><a href="#orgf8759c7">3.2.1. pkgs</a></li>
-<li><a href="#org8023fd9">3.2.2. Overlays</a></li>
+<li><a href="#orge759229">3.2.1. pkgs</a></li>
+<li><a href="#orgfeb8601">3.2.2. Overlays</a></li>
 </ul>
 </li>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3. Common NixOS</a>
@@ -268,7 +268,7 @@
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.4.6. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.4.7. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.4.8. Programs</a></li>
-<li><a href="#org0ebdd87">3.4.9. nix-index</a></li>
+<li><a href="#orgeafe6d4">3.4.9. nix-index</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.4.10. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.4.11. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.4.12. eza</a></li>
@@ -336,7 +336,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgb40c8fe">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgef13a0b">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -396,7 +396,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41470 words spanning 11046 lines and was last revised on 2024-07-21 15:56:32 +0200.</b>
+<b>This file has 41828 words spanning 11181 lines and was last revised on 2024-07-21 18:21:46 +0200.</b>
 </p>
 
 <p>
@@ -446,7 +446,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-21 15:56:32 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-21 18:21:46 +0200)
 </p></li>
 </ul>
 
@@ -1021,9 +1021,23 @@ forAllSystems = nixpkgs.lib.genAttrs [
       "x86_64-darwin"
     ];
 
+# pkgs for home-manager builds
+homepkgs = import nixpkgs { system = "x86_64-linux";
+                          overlays = [ emacs-overlay.overlay
+                                       nur.overlay
+                                       nixgl.overlay
+                                       (final: _prev: {
+                                         stable = import nixpkgs-stable {
+                                           inherit (final) system config;
+                                         };
+                                       })
+                                     ];
+                          config.allowUnfree = true;
+                        };
+
 # NixOS modules that can only be used on NixOS systems
 nixModules = [
-  ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+  (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
   ({ inputs, config, ... }: {
     nixpkgs = {
       overlays = [
@@ -1059,8 +1073,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org673c997" class="outline-4">
-<h4 id="org673c997"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-orgb2c1fc5" class="outline-4">
+<h4 id="orgb2c1fc5"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1240,9 +1254,10 @@ In contrast, this defines home-manager systems, which I only have one of.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-"leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
+"swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+ pkgs = homepkgs;
   modules = homeModules ++ mixedModules ++ [
-    ./profiles/surface/home.nix
+    ./profiles/home-manager/home.nix
   ];
 };
 
@@ -2437,6 +2452,175 @@ in
       # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
       enable = true;
     };
+  };
+}
+
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</li>
+<li><a id="org7ce69a2"></a>Home-manager only<br />
+<ol class="org-ol">
+<li><a id="h:483a26b5-5a40-4417-9ffb-67cc2cf07161"></a>Home manager<br />
+<div class="outline-text-6" id="text-h:483a26b5-5a40-4417-9ffb-67cc2cf07161">
+<p>
+Special things to note here: We are running xcape to allow <code>CAPS</code> to act as <code>CTRL</code> and <code>ESC</code>. Also we are using <code>nixGL</code> in most places.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">
+{ config, pkgs, lib, fetchFromGitHub, ... }:
+
+{
+  programs.home-manager.enable = true;
+  home.username = "swarsel";
+  home.homeDirectory = "/home/swarsel";
+
+  home.stateVersion = "23.05"; # Please read the comment before changing.
+
+  stylix.image = ../../wallpaper/surfacewp.png;
+
+  stylix = {
+    enable = true;
+    base16Scheme = ../../wallpaper/swarsel.yaml;
+    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    polarity = "dark";
+    opacity.popups = 0.5;
+    cursor = {
+      package = pkgs.capitaine-cursors;
+      name = "capitaine-cursors";
+      size = 16;
+    };
+    fonts = {
+      sizes = {
+        terminal = 10;
+        applications = 11;
+      };
+      serif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      sansSerif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      monospace = {
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+        name = "FiraCode Nerd Font Mono";
+      };
+
+      emoji = {
+        package = pkgs.noto-fonts-emoji;
+        name = "Noto Color Emoji";
+      };
+    };
+  };
+
+
+  nixpkgs = {
+    config = {
+      allowUnfree = true;
+      allowUnfreePredicate = _: true;
+    };
+  };
+  services.xcape = {
+    enable = true;
+    mapExpression = {
+      Control_L = "Escape";
+    };
+  };
+  #keyboard config
+  home.keyboard.layout = "us";
+
+  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+  # waybar config
+  programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+
+  programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
+                                                    "network"
+                                                    "custom/left-arrow-dark"
+                                                    "pulseaudio"
+                                                    "custom/left-arrow-light"
+                                                    "battery"
+                                                    "custom/left-arrow-dark"
+                                                    "temperature"
+                                                    "custom/left-arrow-light"
+                                                    "disk"
+                                                    "custom/left-arrow-dark"
+                                                    "memory"
+                                                    "custom/left-arrow-light"
+                                                    "cpu"
+                                                    "custom/left-arrow-dark"
+                                                    "tray"
+                                                    "custom/left-arrow-light"
+                                                    "clock#2"
+                                                    "custom/left-arrow-dark"
+                                                    "clock#1" ];
+  services.blueman-applet.enable = true;
+  home.packages = with pkgs; [
+    # nixgl.auto.nixGLDefault
+    evince
+    # nodejs_20
+
+    # messaging
+    # we use gomuks for RAM preservation, but keep schildi around for files and images
+  ];
+
+  programs.zsh.initExtra = "
+export GPG_TTY=\"$(tty)\"
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+gpgconf --launch gpg-agent
+      ";
+
+  # sway config
+  wayland.windowManager.sway= {
+    config = rec {
+      input = {
+        "*" = {
+          xkb_layout = "us";
+          xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+        "type:touchpad" = {
+          dwt = "enabled";
+          tap = "enabled";
+          natural_scroll = "enabled";
+          middle_emulation = "enabled";
+        };
+      };
+
+      output = {
+        eDP-1 = {
+          mode = "2160x1440@59.955Hz";
+          scale = "1";
+          bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+        };
+      };
+
+      keybindings = let
+        inherit (config.wayland.windowManager.sway.config) modifier;
+      in {
+      };
+
+      startup = [
+      ];
+
+    };
+
   };
 }
 
@@ -5411,8 +5595,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-org1095185" class="outline-3">
-<h3 id="org1095185"><span class="section-number-3">3.2.</span> Manual Overlays and packages</h3>
+<div id="outline-container-orgaa89883" class="outline-3">
+<h3 id="orgaa89883"><span class="section-number-3">3.2.</span> Manual Overlays and packages</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -5431,19 +5615,19 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-orgf8759c7" class="outline-4">
-<h4 id="orgf8759c7"><span class="section-number-4">3.2.1.</span> pkgs</h4>
+<div id="outline-container-orge759229" class="outline-4">
+<h4 id="orge759229"><span class="section-number-4">3.2.1.</span> pkgs</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }: { }
+_ : { }
 
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org8023fd9" class="outline-4">
-<h4 id="org8023fd9"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-orgfeb8601" class="outline-4">
+<h4 id="orgfeb8601"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -6123,7 +6307,7 @@ programs = {
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org42fbb24"></a>zsh<br />
+<li><a id="org1c71ec7"></a>zsh<br />
 <div class="outline-text-5" id="text-3-3-4-1">
 <p>
 Do not touch this.
@@ -6140,7 +6324,7 @@ environment.pathsToLink = [ "/share/zsh" ];
 </div>
 </div>
 </li>
-<li><a id="org65418e8"></a>syncthing<br />
+<li><a id="org1a581ec"></a>syncthing<br />
 <div class="outline-text-5" id="text-3-3-4-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -7087,8 +7271,8 @@ programs = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org0ebdd87" class="outline-4">
-<h4 id="org0ebdd87"><span class="section-number-4">3.4.9.</span> nix-index</h4>
+<div id="outline-container-orgeafe6d4" class="outline-4">
+<h4 id="orgeafe6d4"><span class="section-number-4">3.4.9.</span> nix-index</h4>
 <div class="outline-text-4" id="text-3-4-9">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -8548,9 +8732,23 @@ This tangles the flake.nix file; This block only needs to be touched when updati
             "x86_64-darwin"
           ];
 
+      # pkgs for home-manager builds
+      homepkgs = import nixpkgs { system = "x86_64-linux";
+                                overlays = [ emacs-overlay.overlay
+                                             nur.overlay
+                                             nixgl.overlay
+                                             (final: _prev: {
+                                               stable = import nixpkgs-stable {
+                                                 inherit (final) system config;
+                                               };
+                                             })
+                                           ];
+                                config.allowUnfree = true;
+                              };
+
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
-        ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+        (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
         ({ inputs, config, ... }: {
           nixpkgs = {
             overlays = [
@@ -8751,9 +8949,10 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
       homeConfigurations = {
 
-         "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
+         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = homepkgs;
            modules = homeModules ++ mixedModules ++ [
-             ./profiles/surface/home.nix
+             ./profiles/home-manager/home.nix
            ];
          };
 
@@ -9441,7 +9640,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org29ecb4f"></a>Nix common prefix bracketer<br />
+<li><a id="orgbbb7e9e"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9474,7 +9673,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orge46c5b3"></a>Nix formatters<br />
+<li><a id="org58684ba"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11047,8 +11246,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgb40c8fe" class="outline-4">
-<h4 id="orgb40c8fe"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgef13a0b" class="outline-4">
+<h4 id="orgef13a0b"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -12753,7 +12952,7 @@ Special things to note here: We are running xcape to allow <code>CAPS</code> to 
   nixpkgs = {
     config = {
       allowUnfree = true;
-      allowUnfreePredicate = (_: true);
+      allowUnfreePredicate = _: true;
     };
   };
   services.xcape = {
@@ -13063,7 +13262,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-21 So 15:56</p>
+<p class="date">Created: 2024-07-21 So 18:21</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

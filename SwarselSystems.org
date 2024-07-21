@@ -507,9 +507,23 @@ Lastly I define some common module lists that I can simply load depending on the
         "x86_64-darwin"
       ];
 
+  # pkgs for home-manager builds
+  homepkgs = import nixpkgs { system = "x86_64-linux";
+                            overlays = [ emacs-overlay.overlay
+                                         nur.overlay
+                                         nixgl.overlay
+                                         (final: _prev: {
+                                           stable = import nixpkgs-stable {
+                                             inherit (final) system config;
+                                           };
+                                         })
+                                       ];
+                            config.allowUnfree = true;
+                          };
+
   # NixOS modules that can only be used on NixOS systems
   nixModules = [
-    ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+    (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
     ({ inputs, config, ... }: {
       nixpkgs = {
         overlays = [
@@ -717,9 +731,10 @@ In contrast, this defines home-manager systems, which I only have one of.
 
 #+begin_src nix :tangle no :noweb-ref flakehomeconf
 
-  "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
+  "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+   pkgs = homepkgs;
     modules = homeModules ++ mixedModules ++ [
-      ./profiles/surface/home.nix
+      ./profiles/home-manager/home.nix
     ];
   };
 
@@ -1789,6 +1804,126 @@ in
 }
 
 #+end_src
+
+**** Home-manager only
+***** Home manager
+:PROPERTIES:
+:CUSTOM_ID: h:483a26b5-5a40-4417-9ffb-67cc2cf07161
+:END:
+
+Special things to note here: We are running xcape to allow =CAPS= to act as =CTRL= and =ESC=. Also we are using =nixGL= in most places.
+
+#+begin_src nix :noweb yes :tangle profiles/home-manager/home.nix
+
+  { config, pkgs, lib, fetchFromGitHub, ... }:
+
+  {
+    programs.home-manager.enable = true;
+    home.username = "swarsel";
+    home.homeDirectory = "/home/swarsel";
+
+    home.stateVersion = "23.05"; # Please read the comment before changing.
+
+    stylix.image = ../../wallpaper/surfacewp.png;
+    <<theme>>
+
+    nixpkgs = {
+      config = {
+        allowUnfree = true;
+        allowUnfreePredicate = _: true;
+      };
+    };
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+    #keyboard config
+    home.keyboard.layout = "us";
+
+    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+    # waybar config
+    programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
+
+    programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
+    programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
+                                                      "network"
+                                                      "custom/left-arrow-dark"
+                                                      "pulseaudio"
+                                                      "custom/left-arrow-light"
+                                                      "battery"
+                                                      "custom/left-arrow-dark"
+                                                      "temperature"
+                                                      "custom/left-arrow-light"
+                                                      "disk"
+                                                      "custom/left-arrow-dark"
+                                                      "memory"
+                                                      "custom/left-arrow-light"
+                                                      "cpu"
+                                                      "custom/left-arrow-dark"
+                                                      "tray"
+                                                      "custom/left-arrow-light"
+                                                      "clock#2"
+                                                      "custom/left-arrow-dark"
+                                                      "clock#1" ];
+    services.blueman-applet.enable = true;
+    home.packages = with pkgs; [
+      # nixgl.auto.nixGLDefault
+      evince
+      # nodejs_20
+
+      # messaging
+      # we use gomuks for RAM preservation, but keep schildi around for files and images
+    ];
+
+    programs.zsh.initExtra = "
+  export GPG_TTY=\"$(tty)\"
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+        ";
+
+    # sway config
+    wayland.windowManager.sway= {
+      config = rec {
+        input = {
+          "*" = {
+            xkb_layout = "us";
+            xkb_options = "ctrl:nocaps,grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+          };
+        };
+
+        output = {
+          eDP-1 = {
+            mode = "2160x1440@59.955Hz";
+            scale = "1";
+            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
+          };
+        };
+
+        keybindings = let
+          inherit (config.wayland.windowManager.sway.config) modifier;
+        in {
+        };
+
+        startup = [
+        ];
+
+      };
+
+    };
+  }
+
+#+end_src
+
 **** Threed (Surface Pro 3)
 :PROPERTIES:
 :CUSTOM_ID: h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4
@@ -4269,7 +4404,7 @@ As such, I also define three additional overlays:
 
 #+begin_src nix :tangle pkgs/default.nix
 
-{ ... }: { }
+ _ : { }
 
 #+end_src
 
@@ -10749,7 +10884,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
     nixpkgs = {
       config = {
         allowUnfree = true;
-        allowUnfreePredicate = (_: true);
+        allowUnfreePredicate = _: true;
       };
     };
     services.xcape = {

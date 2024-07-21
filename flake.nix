@@ -86,9 +86,25 @@
         "x86_64-darwin"
       ];
 
+      # pkgs for home-manager builds
+      homepkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [
+          emacs-overlay.overlay
+          nur.overlay
+          nixgl.overlay
+          (final: _prev: {
+            stable = import nixpkgs-stable {
+              inherit (final) system config;
+            };
+          })
+        ];
+        config.allowUnfree = true;
+      };
+
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
-        ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+        (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
         ({ inputs, config, ... }: {
           nixpkgs = {
             overlays = [
@@ -289,9 +305,10 @@
 
       homeConfigurations = {
 
-        "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
+        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = homepkgs;
           modules = homeModules ++ mixedModules ++ [
-            ./profiles/surface/home.nix
+            ./profiles/home-manager/home.nix
           ];
         };
 
