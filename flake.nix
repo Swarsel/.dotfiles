@@ -72,70 +72,75 @@
   };
 
   outputs =
-    inputs@{ nixpkgs
-    , nixpkgs-stable
-    , home-manager
-    , nix-on-droid
-    , emacs-overlay
-    , nur
-    , nixgl
-    , stylix
-    , sops-nix
-    , lanzaboote
-    , nixos-hardware
-    , nix-alien
-    , nixos-generators
-    , nswitch-rcm-nix
-    , nix-index-database
+    inputs@{ self
+    , nixpkgs
     , ...
     }:
     let
 
-      system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [
-          emacs-overlay.overlay
-          nur.overlay
-          nixgl.overlay
-          (final: _prev: {
-            stable = import nixpkgs-stable {
-              inherit (final) system config;
-            };
-          })
-        ];
-        config.allowUnfree = true;
-      };
+      forAllSystems = nixpkgs.lib.genAttrs [
+        "aarch64-linux"
+        "i686-linux"
+        "x86_64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
 
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
-        stylix.nixosModules.stylix
-        sops-nix.nixosModules.sops
-        nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ./profiles/common/nixos.nix
-        # dynamic library loading
-        ({ self, system, ... }: {
-          environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
-            nix-alien
-          ];
-          # needed for `nix-alien-ld`
-          programs.nix-ld.enable = true;
+        ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+        ({ inputs, config, ... }: {
+          nixpkgs = {
+            overlays = [
+              (import ./overlays { inherit inputs; }).additions
+              (import ./overlays { inherit inputs; }).modifications
+              (import ./overlays { inherit inputs; }).nixpkgs-stable
+              inputs.nur.overlay
+              inputs.emacs-overlay.overlay
+              inputs.nixgl.overlay
+            ];
+            config.allowUnfree = true;
+          };
         })
+        inputs.stylix.nixosModules.stylix
+        inputs.sops-nix.nixosModules.sops
+        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+        ./profiles/common/nixos.nix
       ];
 
       # Home-Manager modules wanted on non-NixOS systems
       homeModules = [
-        stylix.homeManagerModules.stylix
+        inputs.stylix.homeManagerModules.stylix
       ];
+
       # Home-Manager modules wanted on both NixOS and non-NixOS systems
       mixedModules = [
-        sops-nix.homeManagerModules.sops
-        nix-index-database.hmModules.nix-index
+        inputs.sops-nix.homeManagerModules.sops
+        inputs.nix-index-database.hmModules.nix-index
         ./profiles/common/home.nix
       ];
 
     in
     {
+
+      packages = forAllSystems (system:
+        let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
+      devShells = forAllSystems
+        (system:
+          let pkgs = nixpkgs.legacyPackages.${system};
+          in
+          {
+            default = pkgs.mkShell {
+              # Enable experimental features without having to specify the argument
+              NIX_CONFIG = "experimental-features = nix-command flakes";
+              nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+            };
+          });
+      formatter = forAllSystems (system:
+        let pkgs = nixpkgs.legacyPackages.${system};
+        in pkgs.nixpkgs-fmt);
+      overlays = import ./overlays { inherit inputs; };
+
 
       # NixOS setups - run home-manager as a NixOS module for better compatibility
       # another benefit - full rebuild on nixos-rebuild switch
@@ -146,46 +151,21 @@
 
       nixosConfigurations = {
 
-        onett = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
-          modules = nixModules ++ [
-            ./profles/onett/nixos.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/onett/home.nix
-              ];
-            }
-          ];
-        };
 
         sandbox = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/sandbox/nixos.nix
           ];
         };
 
-        twoson = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
-          modules = nixModules ++ [
-            ./profiles/twoson/nixos.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/twoson/home.nix
-              ];
-            }
-          ];
-        };
-
         threed = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = nixModules ++ [
-            lanzaboote.nixosModules.lanzaboote
+            inputs.lanzaboote.nixosModules.lanzaboote
             ./profiles/threed/nixos.nix
-            home-manager.nixosModules.home-manager
+            inputs.home-manager.nixosModules.home-manager
             {
               home-manager.users.swarsel.imports = mixedModules ++ [
                 ./profiles/threed/home.nix
@@ -195,11 +175,11 @@
         };
 
         fourside = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = nixModules ++ [
-            nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
             ./profiles/fourside/nixos.nix
-            home-manager.nixosModules.home-manager
+            inputs.home-manager.nixosModules.home-manager
             {
               home-manager.users.swarsel.imports = mixedModules ++ [
                 ./profiles/fourside/home.nix
@@ -209,11 +189,11 @@
         };
 
         winters = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = nixModules ++ [
-            nixos-hardware.nixosModules.framework-16-inch-7040-amd
+            inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
             ./profiles/winters/nixos.nix
-            home-manager.nixosModules.home-manager
+            inputs.home-manager.nixosModules.home-manager
             {
               home-manager.users.swarsel.imports = mixedModules ++ [
                 ./profiles/winters/home.nix
@@ -222,99 +202,83 @@
           ];
         };
 
-        stand = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
-          modules = nixModules ++ [
-            ./profiles/stand/nixos.nix
-            home-manager.nixosModules.home-manager
-            {
-              home-manager.users.homelen.imports = mixedModules ++ [
-                ./profiles/stand/home.nix
-              ];
-            }
-          ];
-        };
-
         nginx = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/nginx/nixos.nix
           ];
         };
 
         calibre = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/calibre/nixos.nix
           ];
         };
 
         jellyfin = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            # sops-nix.nixosModules.sops
             ./profiles/server1/jellyfin/nixos.nix
           ];
         };
 
         transmission = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/transmission/nixos.nix
           ];
         };
 
         matrix = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
-          # this is to import a service module that is not on nixpkgs
-          # this way avoids infinite recursion errors
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/matrix/nixos.nix
           ];
         };
 
         sound = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/sound/nixos.nix
           ];
         };
 
         spotifyd = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/spotifyd/nixos.nix
           ];
         };
 
         paperless = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/server1/paperless/nixos.nix
           ];
         };
 
         #ovm swarsel
         sync = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/remote/oracle/sync/nixos.nix
           ];
         };
 
         #ovm swarsel
         swatrix = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs pkgs; };
+          specialArgs = { inherit inputs; };
           modules = [
-            sops-nix.nixosModules.sops
+            inputs.sops-nix.nixosModules.sops
             ./profiles/remote/oracle/matrix/nixos.nix
           ];
         };
@@ -325,8 +289,7 @@
 
       homeConfigurations = {
 
-        "leons@PCisLee" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+        "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
           modules = homeModules ++ mixedModules ++ [
             ./profiles/surface/home.nix
           ];
@@ -336,22 +299,10 @@
 
       nixOnDroidConfigurations = {
 
-        default = nix-on-droid.lib.nixOnDroidConfiguration {
+        default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
           modules = [
             ./profiles/mysticant/configuration.nix
           ];
-        };
-
-      };
-
-      packages.x86_64-linux = {
-
-        proxmox-lxc = nixos-generators.nixosGenerate {
-          inherit system;
-          modules = [
-            ./profiles/server1/TEMPLATE/nixos.nix
-          ];
-          format = "proxmox-lxc";
         };
 
       };

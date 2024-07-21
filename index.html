@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-20 Sa 15:47 -->
+<!-- 2024-07-21 So 15:56 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -221,12 +221,13 @@
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2.3. flake.nix</a>
 <ul>
-<li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs &amp; Inputs@Outputs</a></li>
+<li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.3. nixosConfigurations</a></li>
-<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.4. homeConfigurations</a></li>
-<li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.5. nixOnDroidConfigurations</a></li>
-<li><a href="#h:6a08495a-8566-4bb5-9fac-b03df01f6c81">2.3.6. nixos-generators</a></li>
+<li><a href="#org673c997">2.3.3. General (outputs)</a></li>
+<li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
+<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
+<li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
+<li><a href="#h:6a08495a-8566-4bb5-9fac-b03df01f6c81">2.3.7. nixos-generators</a></li>
 </ul>
 </li>
 </ul>
@@ -240,48 +241,54 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.2. Common NixOS</a>
+<li><a href="#org1095185">3.2. Manual Overlays and packages</a>
 <ul>
-<li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.2.1. General</a></li>
-<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.2.2. sops</a></li>
-<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.2.3. System Packages</a></li>
-<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.2.4. Programs (including zsh setup)</a></li>
-<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.2.5. Services</a></li>
-<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.2.6. Hardware compatibility settings (Yubikey, Ledger) - udev rules</a></li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.2.7. System Login</a></li>
+<li><a href="#orgf8759c7">3.2.1. pkgs</a></li>
+<li><a href="#org8023fd9">3.2.2. Overlays</a></li>
 </ul>
 </li>
-<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.3. Common Home-Manager</a>
+<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3. Common NixOS</a>
 <ul>
-<li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.3.1. Installed packages</a></li>
+<li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.3.1. General</a></li>
 <li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.2. sops</a></li>
-<li><a href="#h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">3.3.3. SSH Machines</a></li>
-<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">3.3.4. Fonts + Theme</a></li>
-<li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">3.3.5. Desktop Entries</a></li>
-<li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.6. Linking dotfiles</a></li>
-<li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.7. Sourcing environment variables</a></li>
-<li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.3.8. Programs</a></li>
-<li><a href="#org2f26332">3.3.9. nix-index</a></li>
-<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.10. password-store</a></li>
-<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.11. direnv</a></li>
-<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.12. eza</a></li>
-<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.3.13. git</a></li>
-<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.3.14. Fuzzel</a></li>
-<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.15. Starship</a></li>
-<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.16. Kitty</a></li>
-<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.17. zsh</a></li>
-<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.3.18. Mail</a></li>
-<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.3.19. Home-manager: Emacs</a></li>
-<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.3.20. Waybar</a></li>
-<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.3.21. Firefox</a></li>
-<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.3.22. Services</a></li>
-<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.23. Sway</a></li>
+<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.3. System Packages</a></li>
+<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.4. Programs (including zsh setup)</a></li>
+<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.5. Services</a></li>
+<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.6. Hardware compatibility settings (Yubikey, Ledger) - udev rules</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.7. System Login</a></li>
 </ul>
 </li>
-<li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.4. flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</a>
+<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4. Common Home-Manager</a>
 <ul>
-<li><a href="#h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f">3.4.1. Closing parentheses for common/home.nix and common/nixos.nix</a></li>
-<li><a href="#h:4f89db68-a21c-415d-87a5-21c66f2b6ded">3.4.2. flake.nix</a></li>
+<li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.4.1. Installed packages</a></li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.4.2. sops</a></li>
+<li><a href="#h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">3.4.3. SSH Machines</a></li>
+<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">3.4.4. Fonts + Theme</a></li>
+<li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">3.4.5. Desktop Entries</a></li>
+<li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.4.6. Linking dotfiles</a></li>
+<li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.4.7. Sourcing environment variables</a></li>
+<li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.4.8. Programs</a></li>
+<li><a href="#org0ebdd87">3.4.9. nix-index</a></li>
+<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.4.10. password-store</a></li>
+<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.4.11. direnv</a></li>
+<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.4.12. eza</a></li>
+<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.4.13. git</a></li>
+<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.4.14. Fuzzel</a></li>
+<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.4.15. Starship</a></li>
+<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.4.16. Kitty</a></li>
+<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.4.17. zsh</a></li>
+<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.4.18. Mail</a></li>
+<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.4.19. Home-manager: Emacs</a></li>
+<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.4.20. Waybar</a></li>
+<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.4.21. Firefox</a></li>
+<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.4.22. Services</a></li>
+<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.4.23. Sway</a></li>
+</ul>
+</li>
+<li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</a>
+<ul>
+<li><a href="#h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f">3.5.1. Closing parentheses for common/home.nix and common/nixos.nix</a></li>
+<li><a href="#h:4f89db68-a21c-415d-87a5-21c66f2b6ded">3.5.2. flake.nix</a></li>
 </ul>
 </li>
 </ul>
@@ -329,7 +336,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgdd1ef7e">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgb40c8fe">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -389,7 +396,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41360 words spanning 11032 lines and was last revised on 2024-07-20 15:47:39 +0200.</b>
+<b>This file has 41470 words spanning 11046 lines and was last revised on 2024-07-21 15:56:32 +0200.</b>
 </p>
 
 <p>
@@ -439,7 +446,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 15:47:39 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-21 15:56:32 +0200)
 </p></li>
 </ul>
 
@@ -872,7 +879,7 @@ These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e3
 </p>
 </div>
 <div id="outline-container-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2" class="outline-4">
-<h4 id="h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2"><span class="section-number-4">2.3.1.</span> Inputs &amp; Inputs@Outputs</h4>
+<h4 id="h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2"><span class="section-number-4">2.3.1.</span> Inputs</h4>
 <div class="outline-text-4" id="text-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">
 <p>
 Here we define inputs and outputs of the flake. First, the following list is for the outputs of the flake.
@@ -885,27 +892,6 @@ Format: &lt;name&gt;,
 <p>
 Mind the comma at the end. You need this because the <code>...</code> is being passed as the last argument in the template at <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">flake.nix template</a>.
 </p>
-
-<div class="org-src-container">
-<pre class="src src-nix">
-nixpkgs,
-nixpkgs-stable,
-home-manager,
-nix-on-droid,
-emacs-overlay,
-nur,
-nixgl,
-stylix,
-sops-nix,
-lanzaboote,
-nixos-hardware,
-nix-alien,
-nixos-generators,
-nswitch-rcm-nix,
-nix-index-database,
-
-</pre>
-</div>
 
 <p>
 Here, just add the input names, urls and other options that are needed, like <code>nixpkgs.follows</code>. By using the latter option, you tell the package to not provide it's own package repository, but instead 'nest' itself into another, which is very useful.
@@ -1027,46 +1013,45 @@ Lastly I define some common module lists that I can simply load depending on the
 
 <div class="org-src-container">
 <pre class="src src-nix">
-system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
-pkgs = import nixpkgs {
-  inherit system;
-  overlays = [
-    emacs-overlay.overlay
-    nur.overlay
-    nixgl.overlay
-    (final: _prev: {
-      stable = import nixpkgs-stable {
-        inherit (final) system config;
-      };
-    })
-  ];
-  config.allowUnfree = true;
-};
+forAllSystems = nixpkgs.lib.genAttrs [
+      "aarch64-linux"
+      "i686-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
+    ];
 
 # NixOS modules that can only be used on NixOS systems
 nixModules = [
-  stylix.nixosModules.stylix
-  sops-nix.nixosModules.sops
-  nswitch-rcm-nix.nixosModules.nswitch-rcm
-  ./profiles/common/nixos.nix
-  # dynamic library loading
-  ({ self, system, ... }: {
-    environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
-      nix-alien
-    ];
-    # needed for `nix-alien-ld`
-    programs.nix-ld.enable = true;
+  ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+  ({ inputs, config, ... }: {
+    nixpkgs = {
+      overlays = [
+        (import ./overlays { inherit inputs; }).additions
+        (import ./overlays { inherit inputs; }).modifications
+        (import ./overlays { inherit inputs; }).nixpkgs-stable
+        inputs.nur.overlay
+        inputs.emacs-overlay.overlay
+        inputs.nixgl.overlay
+      ];
+      config.allowUnfree = true;
+    };
   })
+  inputs.stylix.nixosModules.stylix
+  inputs.sops-nix.nixosModules.sops
+  inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+  ./profiles/common/nixos.nix
 ];
 
 # Home-Manager modules wanted on non-NixOS systems
 homeModules = [
-  stylix.homeManagerModules.stylix
+  inputs.stylix.homeManagerModules.stylix
 ];
+
 # Home-Manager modules wanted on both NixOS and non-NixOS systems
 mixedModules = [
-  sops-nix.homeManagerModules.sops
-  nix-index-database.hmModules.nix-index
+  inputs.sops-nix.homeManagerModules.sops
+  inputs.nix-index-database.hmModules.nix-index
   ./profiles/common/home.nix
 ];
 
@@ -1074,8 +1059,36 @@ mixedModules = [
 </div>
 </div>
 </div>
+<div id="outline-container-org673c997" class="outline-4">
+<h4 id="org673c997"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div class="outline-text-4" id="text-2-3-3">
+<div class="org-src-container">
+<pre class="src src-nix">
+packages = forAllSystems (system:
+  let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
+devShells = forAllSystems
+  (system:
+    let pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      default = pkgs.mkShell {
+        # Enable experimental features without having to specify the argument
+        NIX_CONFIG = "experimental-features = nix-command flakes";
+        nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+      };
+    });
+formatter = forAllSystems (system:
+  let pkgs = nixpkgs.legacyPackages.${system};
+  in pkgs.nixpkgs-fmt);
+overlays = import ./overlays { inherit inputs; };
+
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:9c9b9e3b-8771-44fa-ba9e-5056ae809655" class="outline-4">
-<h4 id="h:9c9b9e3b-8771-44fa-ba9e-5056ae809655"><span class="section-number-4">2.3.3.</span> nixosConfigurations</h4>
+<h4 id="h:9c9b9e3b-8771-44fa-ba9e-5056ae809655"><span class="section-number-4">2.3.4.</span> nixosConfigurations</h4>
 <div class="outline-text-4" id="text-h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">
 <p>
 This section is the biggest pain point of the configuration. For every system, I have one of these. I know there are better ways to go about this, but I did not find the time yet to look into this further. For now, enjoy this meter-long list
@@ -1083,46 +1096,21 @@ This section is the biggest pain point of the configuration. For every system, I
 
 <div class="org-src-container">
 <pre class="src src-nix">
-onett = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
-  modules = nixModules ++ [
-    ./profles/onett/nixos.nix
-    home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = mixedModules ++ [
-        ./profiles/onett/home.nix
-      ];
-    }
-  ];
-};
 
 sandbox = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/sandbox/nixos.nix
   ];
 };
 
-twoson = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
-  modules = nixModules ++ [
-    ./profiles/twoson/nixos.nix
-    home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = mixedModules ++ [
-        ./profiles/twoson/home.nix
-      ];
-    }
-  ];
-};
-
 threed = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = nixModules ++ [
-    lanzaboote.nixosModules.lanzaboote
+    inputs.lanzaboote.nixosModules.lanzaboote
     ./profiles/threed/nixos.nix
-    home-manager.nixosModules.home-manager
+    inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = mixedModules ++ [
         ./profiles/threed/home.nix
@@ -1132,11 +1120,11 @@ threed = nixpkgs.lib.nixosSystem {
 };
 
 fourside = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
-  modules = nixModules ++ [
-    nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+  specialArgs = { inherit inputs; };
+  modules = nixModules ++  [
+    inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
     ./profiles/fourside/nixos.nix
-    home-manager.nixosModules.home-manager
+    inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = mixedModules ++ [
         ./profiles/fourside/home.nix
@@ -1146,11 +1134,11 @@ fourside = nixpkgs.lib.nixosSystem {
 };
 
 winters = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = nixModules ++ [
-    nixos-hardware.nixosModules.framework-16-inch-7040-amd
+    inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
     ./profiles/winters/nixos.nix
-    home-manager.nixosModules.home-manager
+    inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = mixedModules ++ [
         ./profiles/winters/home.nix
@@ -1159,99 +1147,83 @@ winters = nixpkgs.lib.nixosSystem {
   ];
 };
 
-stand = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
-  modules = nixModules ++ [
-    ./profiles/stand/nixos.nix
-    home-manager.nixosModules.home-manager
-    {
-      home-manager.users.homelen.imports = mixedModules ++ [
-        ./profiles/stand/home.nix
-      ];
-    }
-  ];
-};
-
 nginx = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/nginx/nixos.nix
   ];
 };
 
 calibre = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/calibre/nixos.nix
   ];
 };
 
 jellyfin = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    # sops-nix.nixosModules.sops
     ./profiles/server1/jellyfin/nixos.nix
   ];
 };
 
 transmission = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/transmission/nixos.nix
   ];
 };
 
 matrix = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
-  # this is to import a service module that is not on nixpkgs
-  # this way avoids infinite recursion errors
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/matrix/nixos.nix
   ];
 };
 
 sound = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/sound/nixos.nix
   ];
 };
 
 spotifyd = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/spotifyd/nixos.nix
   ];
 };
 
 paperless = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/server1/paperless/nixos.nix
   ];
 };
 
 #ovm swarsel
 sync = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/remote/oracle/sync/nixos.nix
   ];
 };
 
 #ovm swarsel
 swatrix = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs pkgs; };
+  specialArgs = { inherit inputs; };
   modules = [
-    sops-nix.nixosModules.sops
+    inputs.sops-nix.nixosModules.sops
     ./profiles/remote/oracle/matrix/nixos.nix
   ];
 };
@@ -1260,7 +1232,7 @@ swatrix = nixpkgs.lib.nixosSystem {
 </div>
 </div>
 <div id="outline-container-h:f881aa05-a670-48dd-a57b-2916abdcb692" class="outline-4">
-<h4 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-4">2.3.4.</span> homeConfigurations</h4>
+<h4 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-4">2.3.5.</span> homeConfigurations</h4>
 <div class="outline-text-4" id="text-h:f881aa05-a670-48dd-a57b-2916abdcb692">
 <p>
 In contrast, this defines home-manager systems, which I only have one of.
@@ -1268,8 +1240,7 @@ In contrast, this defines home-manager systems, which I only have one of.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-"leons@PCisLee" = home-manager.lib.homeManagerConfiguration {
-  inherit pkgs;
+"leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
   modules = homeModules ++ mixedModules ++ [
     ./profiles/surface/home.nix
   ];
@@ -1280,7 +1251,7 @@ In contrast, this defines home-manager systems, which I only have one of.
 </div>
 </div>
 <div id="outline-container-h:5f6ef553-59f9-4239-b6f3-63d33b57f335" class="outline-4">
-<h4 id="h:5f6ef553-59f9-4239-b6f3-63d33b57f335"><span class="section-number-4">2.3.5.</span> nixOnDroidConfigurations</h4>
+<h4 id="h:5f6ef553-59f9-4239-b6f3-63d33b57f335"><span class="section-number-4">2.3.6.</span> nixOnDroidConfigurations</h4>
 <div class="outline-text-4" id="text-h:5f6ef553-59f9-4239-b6f3-63d33b57f335">
 <p>
 Nix on Android also demands an own flake output, which is provided here.
@@ -1288,7 +1259,7 @@ Nix on Android also demands an own flake output, which is provided here.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-default = nix-on-droid.lib.nixOnDroidConfiguration {
+default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
   modules = [
     ./profiles/mysticant/configuration.nix
   ];
@@ -1299,7 +1270,7 @@ default = nix-on-droid.lib.nixOnDroidConfiguration {
 </div>
 </div>
 <div id="outline-container-h:6a08495a-8566-4bb5-9fac-b03df01f6c81" class="outline-4">
-<h4 id="h:6a08495a-8566-4bb5-9fac-b03df01f6c81"><span class="section-number-4">2.3.6.</span> nixos-generators</h4>
+<h4 id="h:6a08495a-8566-4bb5-9fac-b03df01f6c81"><span class="section-number-4">2.3.7.</span> nixos-generators</h4>
 <div class="outline-text-4" id="text-h:6a08495a-8566-4bb5-9fac-b03df01f6c81">
 <p>
 This builds my proxmox template. It is defined as a separate output so that I can already apply some rudimentary configuration before even setting up the system.
@@ -1322,7 +1293,7 @@ The resulting image can then be loaded in Proxmox.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-proxmox-lxc = nixos-generators.nixosGenerate {
+proxmox-lxc = inputs.nixos-generators.nixosGenerate {
   inherit system;
   modules = [
      ./profiles/server1/TEMPLATE/nixos.nix
@@ -5440,15 +5411,81 @@ in
 </ol>
 </div>
 </div>
+<div id="outline-container-org1095185" class="outline-3">
+<h3 id="org1095185"><span class="section-number-3">3.2.</span> Manual Overlays and packages</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
+</p>
+
+<p>
+As such, I also define three additional overlays:
+</p>
+
+<ol class="org-ol">
+<li><code>additions</code>
+These are for the aforementioned added packages</li>
+<li><code>modification</code>
+These are for packages that are on nixpkgs, but do not fit my usecase, meaning I need to perform modifications on them.</li>
+<li><code>nixpkgs-stable</code>
+This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
+</ol>
+</div>
+<div id="outline-container-orgf8759c7" class="outline-4">
+<h4 id="orgf8759c7"><span class="section-number-4">3.2.1.</span> pkgs</h4>
+<div class="outline-text-4" id="text-3-2-1">
+<div class="org-src-container">
+<pre class="src src-nix">
+{ ... }: { }
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org8023fd9" class="outline-4">
+<h4 id="org8023fd9"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div class="outline-text-4" id="text-3-2-2">
+<div class="org-src-container">
+<pre class="src src-nix">
+  { inputs, ... }: {
+  additions = final: _prev: import ../pkgs { pkgs = final; };
+  modifications = final: _prev: {
+    # example = prev.example.overrideAttrs (oldAttrs: rec {
+    # ...
+    # });
+
+    # river = prev.river.overrideAttrs (oldAttrs: rec {
+    #   pname = "river";
+    #   version = "git";
+    #   src = prev.fetchFromGitHub {
+    #     owner = "riverwm";
+    #     repo = pname;
+    #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
+    #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
+    #     fetchSubmodules = true;
+    #   };
+    # });
+  };
+
+  nixpkgs-stable = final: _prev: {
+    stable = import inputs.nixpkgs-stable { inherit (final) system; };
+  };
+}
+
+</pre>
+</div>
+</div>
+</div>
+</div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-3">
-<h3 id="h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f"><span class="section-number-3">3.2.</span> Common NixOS</h3>
+<h3 id="h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f"><span class="section-number-3">3.3.</span> Common NixOS</h3>
 <div class="outline-text-3" id="text-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">
 <p>
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 </p>
 </div>
 <div id="outline-container-h:5a114da6-ef8d-404d-b31b-b51472908e77" class="outline-4">
-<h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.2.1.</span> General</h4>
+<h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.3.1.</span> General</h4>
 <div class="outline-text-4" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
 </div>
 <ol class="org-ol">
@@ -5499,7 +5536,7 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 
 <div class="org-src-container">
 <pre class="src src-nix">
-nix.settings.experimental-features = ["nix-command" "flakes"];
+# nix.settings.experimental-features = ["nix-command" "flakes"];
 
 </pre>
 </div>
@@ -5927,7 +5964,7 @@ i18n = {
 </ol>
 </div>
 <div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
-<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.2.2.</span> sops</h4>
+<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.2.</span> sops</h4>
 <div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -5977,7 +6014,7 @@ sops = {
 </div>
 </div>
 <div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-4">
-<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.2.3.</span> System Packages</h4>
+<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.3.3.</span> System Packages</h4>
 <div class="outline-text-4" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
@@ -6069,7 +6106,7 @@ environment.systemPackages = with pkgs; [
 </div>
 </div>
 <div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-4">
-<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.2.4.</span> Programs (including zsh setup)</h4>
+<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.3.4.</span> Programs (including zsh setup)</h4>
 <div class="outline-text-4" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
@@ -6086,8 +6123,8 @@ programs = {
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgd7c64b1"></a>zsh<br />
-<div class="outline-text-5" id="text-3-2-4-1">
+<li><a id="org42fbb24"></a>zsh<br />
+<div class="outline-text-5" id="text-3-3-4-1">
 <p>
 Do not touch this.
 </p>
@@ -6103,8 +6140,8 @@ environment.pathsToLink = [ "/share/zsh" ];
 </div>
 </div>
 </li>
-<li><a id="org425ca0d"></a>syncthing<br />
-<div class="outline-text-5" id="text-3-2-4-2">
+<li><a id="org65418e8"></a>syncthing<br />
+<div class="outline-text-5" id="text-3-3-4-2">
 <div class="org-src-container">
 <pre class="src src-nix">
 services.syncthing = {
@@ -6157,7 +6194,7 @@ services.syncthing = {
 </ol>
 </div>
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
-<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.2.5.</span> Services</h4>
+<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.3.5.</span> Services</h4>
 <div class="outline-text-4" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
@@ -6295,7 +6332,7 @@ services.interception-tools = {
 </ol>
 </div>
 <div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-4">
-<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.2.6.</span> Hardware compatibility settings (Yubikey, Ledger) - udev rules</h4>
+<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.3.6.</span> Hardware compatibility settings (Yubikey, Ledger) - udev rules</h4>
 <div class="outline-text-4" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -6339,7 +6376,7 @@ services.udev.packages = with pkgs; [
 </div>
 </div>
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-4">
-<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.2.7.</span> System Login</h4>
+<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.3.7.</span> System Login</h4>
 <div class="outline-text-4" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -6372,11 +6409,11 @@ environment.etc."greetd/environments".text = ''
 </div>
 </div>
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-3">
-<h3 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-3">3.3.</span> Common Home-Manager</h3>
+<h3 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-3">3.4.</span> Common Home-Manager</h3>
 <div class="outline-text-3" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
 <div id="outline-container-h:893a7f33-7715-415b-a895-2687ded31c18" class="outline-4">
-<h4 id="h:893a7f33-7715-415b-a895-2687ded31c18"><span class="section-number-4">3.3.1.</span> Installed packages</h4>
+<h4 id="h:893a7f33-7715-415b-a895-2687ded31c18"><span class="section-number-4">3.4.1.</span> Installed packages</h4>
 <div class="outline-text-4" id="text-h:893a7f33-7715-415b-a895-2687ded31c18">
 <p>
 Here are defined some packages that I would like to use across all my machines. Most of these should not require further setup. Notably the cura package is severely outdated on nixpkgs, so I just fetch a more recent AppImage and run that instead.
@@ -6722,7 +6759,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </ol>
 </div>
 <div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
-<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.2.</span> sops</h4>
+<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.4.2.</span> sops</h4>
 <div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -6760,7 +6797,7 @@ sops = {
 </div>
 </div>
 <div id="outline-container-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08" class="outline-4">
-<h4 id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"><span class="section-number-4">3.3.3.</span> SSH Machines</h4>
+<h4 id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"><span class="section-number-4">3.4.3.</span> SSH Machines</h4>
 <div class="outline-text-4" id="text-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">
 <p>
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
@@ -6868,7 +6905,7 @@ programs.ssh = {
 </div>
 </div>
 <div id="outline-container-h:a92318cd-413e-4e78-a478-e63b09df019c" class="outline-4">
-<h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.3.4.</span> Fonts + Theme</h4>
+<h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.4.4.</span> Fonts + Theme</h4>
 <div class="outline-text-4" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
 <p>
 These section allows home-manager to allow theme settings, and handles some other appearance-related settings like cursor styles. Interestingly, system icons (adwaita) still need to be setup on system-level, and will break if defined here.
@@ -6887,7 +6924,7 @@ stylix.targets.emacs.enable = false;
 </div>
 </div>
 <div id="outline-container-h:867556e6-5a24-4c43-9d47-3edca2f16488" class="outline-4">
-<h4 id="h:867556e6-5a24-4c43-9d47-3edca2f16488"><span class="section-number-4">3.3.5.</span> Desktop Entries</h4>
+<h4 id="h:867556e6-5a24-4c43-9d47-3edca2f16488"><span class="section-number-4">3.4.5.</span> Desktop Entries</h4>
 <div class="outline-text-4" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
 <p>
 Some programs lack a dmenu launcher - I define them myself here.
@@ -6949,7 +6986,7 @@ xdg.desktopEntries = {
 </div>
 </div>
 <div id="outline-container-h:5ef03803-e150-41bc-b603-e80d60d96efc" class="outline-4">
-<h4 id="h:5ef03803-e150-41bc-b603-e80d60d96efc"><span class="section-number-4">3.3.6.</span> Linking dotfiles</h4>
+<h4 id="h:5ef03803-e150-41bc-b603-e80d60d96efc"><span class="section-number-4">3.4.6.</span> Linking dotfiles</h4>
 <div class="outline-text-4" id="text-h:5ef03803-e150-41bc-b603-e80d60d96efc">
 <p>
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
@@ -7000,7 +7037,7 @@ xdg.configFile = {
 </div>
 </div>
 <div id="outline-container-h:4486b02f-4fb8-432b-bfa2-2e786206341d" class="outline-4">
-<h4 id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"><span class="section-number-4">3.3.7.</span> Sourcing environment variables</h4>
+<h4 id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"><span class="section-number-4">3.4.7.</span> Sourcing environment variables</h4>
 <div class="outline-text-4" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -7013,7 +7050,7 @@ home.sessionVariables = {
 </div>
 </div>
 <div id="outline-container-h:070a75ce-e209-4cda-aa25-e979bbf75d47" class="outline-4">
-<h4 id="h:070a75ce-e209-4cda-aa25-e979bbf75d47"><span class="section-number-4">3.3.8.</span> Programs</h4>
+<h4 id="h:070a75ce-e209-4cda-aa25-e979bbf75d47"><span class="section-number-4">3.4.8.</span> Programs</h4>
 <div class="outline-text-4" id="text-h:070a75ce-e209-4cda-aa25-e979bbf75d47">
 <p>
 This houses the configurations for all programs managed by home-manager.
@@ -7050,9 +7087,9 @@ programs = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org2f26332" class="outline-4">
-<h4 id="org2f26332"><span class="section-number-4">3.3.9.</span> nix-index</h4>
-<div class="outline-text-4" id="text-3-3-9">
+<div id="outline-container-org0ebdd87" class="outline-4">
+<h4 id="org0ebdd87"><span class="section-number-4">3.4.9.</span> nix-index</h4>
+<div class="outline-text-4" id="text-3-4-9">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 </p>
@@ -7082,7 +7119,7 @@ programs.nix-index =
 </div>
 </div>
 <div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-4">
-<h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.3.10.</span> password-store</h4>
+<h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.4.10.</span> password-store</h4>
 <div class="outline-text-4" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
 <p>
 Enables password store with the <code>pass-otp</code> extension which allows me to store and generate one-time-passwords.
@@ -7100,7 +7137,7 @@ programs.password-store = {
 </div>
 </div>
 <div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-4">
-<h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.3.11.</span> direnv</h4>
+<h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.4.11.</span> direnv</h4>
 <div class="outline-text-4" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
 <p>
 Enables direnv, which I use for nearly all of my nix dev flakes.
@@ -7118,7 +7155,7 @@ programs.direnv = {
 </div>
 </div>
 <div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-4">
-<h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.3.12.</span> eza</h4>
+<h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.4.12.</span> eza</h4>
 <div class="outline-text-4" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
 <p>
 Eza provides me with a better <code>ls</code> command and some other useful aliases.
@@ -7141,7 +7178,7 @@ programs.eza = {
 </div>
 </div>
 <div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-4">
-<h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.3.13.</span> git</h4>
+<h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.4.13.</span> git</h4>
 <div class="outline-text-4" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
 <p>
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using <a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">Magit</a>) as well as a git template defined in <a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">Linking dotfiles</a>.
@@ -7191,7 +7228,7 @@ programs.git = {
 </div>
 </div>
 <div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-4">
-<h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.3.14.</span> Fuzzel</h4>
+<h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.4.14.</span> Fuzzel</h4>
 <div class="outline-text-4" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
 <p>
 Here I only need to set basic layout options - the rest is being managed by stylix.
@@ -7216,7 +7253,7 @@ programs.fuzzel = {
 </div>
 </div>
 <div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-4">
-<h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.3.15.</span> Starship</h4>
+<h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.4.15.</span> Starship</h4>
 <div class="outline-text-4" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
 <p>
 Starship makes my <code>zsh</code> look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
@@ -7333,7 +7370,7 @@ programs.starship = {
 </div>
 </div>
 <div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-4">
-<h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.3.16.</span> Kitty</h4>
+<h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.4.16.</span> Kitty</h4>
 <div class="outline-text-4" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
 <p>
 Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
@@ -7360,7 +7397,7 @@ programs.kitty = {
 </div>
 </div>
 <div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-4">
-<h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.3.17.</span> zsh</h4>
+<h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.4.17.</span> zsh</h4>
 <div class="outline-text-4" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
 <p>
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
@@ -7426,7 +7463,7 @@ programs.zsh = {
 </div>
 </div>
 <div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-4">
-<h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.3.18.</span> Mail</h4>
+<h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.4.18.</span> Mail</h4>
 <div class="outline-text-4" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
 <p>
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
@@ -7567,7 +7604,7 @@ accounts.email = {
 </div>
 </div>
 <div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-4">
-<h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.3.19.</span> Home-manager: Emacs</h4>
+<h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.4.19.</span> Home-manager: Emacs</h4>
 <div class="outline-text-4" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
 <p>
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my <code>init.el</code> file to the configuration which will then be parsed upon system rebuild, looking for <code>use-package</code> sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (<code>emacs-pgtk</code>). All of the nice options such as <code>tree-sitter</code> support are enabled by default, so I do not need to adjust the build process.
@@ -7630,7 +7667,7 @@ programs.emacs = {
 </div>
 </div>
 <div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-4">
-<h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.3.20.</span> Waybar</h4>
+<h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.4.20.</span> Waybar</h4>
 <div class="outline-text-4" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
 <p>
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
@@ -7842,7 +7879,7 @@ programs.waybar = {
 </div>
 </div>
 <div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-4">
-<h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.3.21.</span> Firefox</h4>
+<h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.4.21.</span> Firefox</h4>
 <div class="outline-text-4" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
 Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
@@ -7963,7 +8000,7 @@ programs.firefox = {
 </div>
 </div>
 <div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-4">
-<h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.3.22.</span> Services</h4>
+<h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.4.22.</span> Services</h4>
 <div class="outline-text-4" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
 <p>
 Services that can be defined through home-manager should be defined here.
@@ -8102,7 +8139,7 @@ group-by=category
 </ol>
 </div>
 <div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-4">
-<h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.3.23.</span> Sway</h4>
+<h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.4.23.</span> Sway</h4>
 <div class="outline-text-4" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
 <p>
 I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
@@ -8386,7 +8423,7 @@ wayland.windowManager.sway = {
 </div>
 </div>
 <div id="outline-container-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b" class="outline-3">
-<h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">3.4.</span> flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</h3>
+<h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">3.5.</span> flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)</h3>
 <div class="outline-text-3" id="text-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">
 <p>
 This sections puts together the <code>flake.nix</code> file from the <a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a> section.
@@ -8397,7 +8434,7 @@ Here we also close the opening parenthesis of modules/common.nix (home-manager) 
 </p>
 </div>
 <div id="outline-container-h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f" class="outline-4">
-<h4 id="h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f"><span class="section-number-4">3.4.1.</span> Closing parentheses for common/home.nix and common/nixos.nix</h4>
+<h4 id="h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f"><span class="section-number-4">3.5.1.</span> Closing parentheses for common/home.nix and common/nixos.nix</h4>
 <div class="outline-text-4" id="text-h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -8415,7 +8452,7 @@ Here we also close the opening parenthesis of modules/common.nix (home-manager) 
 </div>
 </div>
 <div id="outline-container-h:4f89db68-a21c-415d-87a5-21c66f2b6ded" class="outline-4">
-<h4 id="h:4f89db68-a21c-415d-87a5-21c66f2b6ded"><span class="section-number-4">3.4.2.</span> flake.nix</h4>
+<h4 id="h:4f89db68-a21c-415d-87a5-21c66f2b6ded"><span class="section-number-4">3.5.2.</span> flake.nix</h4>
 <div class="outline-text-4" id="text-h:4f89db68-a21c-415d-87a5-21c66f2b6ded">
 <p>
 This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
@@ -8496,293 +8533,246 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
   };
 
-  outputs = inputs@{
+  outputs =
+    inputs@{ self
+    , nixpkgs
+    , ...
+    }:
+    let
 
-    nixpkgs,
-    nixpkgs-stable,
-    home-manager,
-    nix-on-droid,
-    emacs-overlay,
-    nur,
-    nixgl,
-    stylix,
-    sops-nix,
-    lanzaboote,
-    nixos-hardware,
-    nix-alien,
-    nixos-generators,
-    nswitch-rcm-nix,
-    nix-index-database,
+      forAllSystems = nixpkgs.lib.genAttrs [
+            "aarch64-linux"
+            "i686-linux"
+            "x86_64-linux"
+            "aarch64-darwin"
+            "x86_64-darwin"
+          ];
 
-    ...
-  }: let
-
-    system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
-    pkgs = import nixpkgs {
-      inherit system;
-      overlays = [
-        emacs-overlay.overlay
-        nur.overlay
-        nixgl.overlay
-        (final: _prev: {
-          stable = import nixpkgs-stable {
-            inherit (final) system config;
+      # NixOS modules that can only be used on NixOS systems
+      nixModules = [
+        ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+        ({ inputs, config, ... }: {
+          nixpkgs = {
+            overlays = [
+              (import ./overlays { inherit inputs; }).additions
+              (import ./overlays { inherit inputs; }).modifications
+              (import ./overlays { inherit inputs; }).nixpkgs-stable
+              inputs.nur.overlay
+              inputs.emacs-overlay.overlay
+              inputs.nixgl.overlay
+            ];
+            config.allowUnfree = true;
           };
         })
+        inputs.stylix.nixosModules.stylix
+        inputs.sops-nix.nixosModules.sops
+        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+        ./profiles/common/nixos.nix
       ];
-      config.allowUnfree = true;
-    };
 
-    # NixOS modules that can only be used on NixOS systems
-    nixModules = [
-      stylix.nixosModules.stylix
-      sops-nix.nixosModules.sops
-      nswitch-rcm-nix.nixosModules.nswitch-rcm
-      ./profiles/common/nixos.nix
-      # dynamic library loading
-      ({ self, system, ... }: {
-        environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
-          nix-alien
-        ];
-        # needed for `nix-alien-ld`
-        programs.nix-ld.enable = true;
-      })
-    ];
+      # Home-Manager modules wanted on non-NixOS systems
+      homeModules = [
+        inputs.stylix.homeManagerModules.stylix
+      ];
 
-    # Home-Manager modules wanted on non-NixOS systems
-    homeModules = [
-      stylix.homeManagerModules.stylix
-    ];
-    # Home-Manager modules wanted on both NixOS and non-NixOS systems
-    mixedModules = [
-      sops-nix.homeManagerModules.sops
-      nix-index-database.hmModules.nix-index
-      ./profiles/common/home.nix
-    ];
+      # Home-Manager modules wanted on both NixOS and non-NixOS systems
+      mixedModules = [
+        inputs.sops-nix.homeManagerModules.sops
+        inputs.nix-index-database.hmModules.nix-index
+        ./profiles/common/home.nix
+      ];
 
-  in {
+    in
+    {
 
-    # NixOS setups - run home-manager as a NixOS module for better compatibility
-    # another benefit - full rebuild on nixos-rebuild switch
-    # run rebuild using `nswitch`
-
-    # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-    # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
-
-    nixosConfigurations = {
-
-      onett = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          ./profles/onett/nixos.nix
-          home-manager.nixosModules.home-manager
+      packages = forAllSystems (system:
+        let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
+      devShells = forAllSystems
+        (system:
+          let pkgs = nixpkgs.legacyPackages.${system};
+          in
           {
-            home-manager.users.swarsel.imports = mixedModules ++ [
-              ./profiles/onett/home.nix
-            ];
-          }
-        ];
+            default = pkgs.mkShell {
+              # Enable experimental features without having to specify the argument
+              NIX_CONFIG = "experimental-features = nix-command flakes";
+              nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+            };
+          });
+      formatter = forAllSystems (system:
+        let pkgs = nixpkgs.legacyPackages.${system};
+        in pkgs.nixpkgs-fmt);
+      overlays = import ./overlays { inherit inputs; };
+
+
+      # NixOS setups - run home-manager as a NixOS module for better compatibility
+      # another benefit - full rebuild on nixos-rebuild switch
+      # run rebuild using `nswitch`
+
+      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
+      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+
+      nixosConfigurations = {
+
+
+        sandbox = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/sandbox/nixos.nix
+          ];
+        };
+
+        threed = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = nixModules ++ [
+            inputs.lanzaboote.nixosModules.lanzaboote
+            ./profiles/threed/nixos.nix
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/threed/home.nix
+              ];
+            }
+          ];
+        };
+
+        fourside = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = nixModules ++  [
+            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+            ./profiles/fourside/nixos.nix
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/fourside/home.nix
+              ];
+            }
+          ];
+        };
+
+        winters = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = nixModules ++ [
+            inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
+            ./profiles/winters/nixos.nix
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = mixedModules ++ [
+                ./profiles/winters/home.nix
+              ];
+            }
+          ];
+        };
+
+        nginx = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/nginx/nixos.nix
+          ];
+        };
+
+        calibre = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/calibre/nixos.nix
+          ];
+        };
+
+        jellyfin = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            ./profiles/server1/jellyfin/nixos.nix
+          ];
+        };
+
+        transmission = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/transmission/nixos.nix
+          ];
+        };
+
+        matrix = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/matrix/nixos.nix
+          ];
+        };
+
+        sound = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/sound/nixos.nix
+          ];
+        };
+
+        spotifyd = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/spotifyd/nixos.nix
+          ];
+        };
+
+        paperless = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/server1/paperless/nixos.nix
+          ];
+        };
+
+        #ovm swarsel
+        sync = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/remote/oracle/sync/nixos.nix
+          ];
+        };
+
+        #ovm swarsel
+        swatrix = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            inputs.sops-nix.nixosModules.sops
+            ./profiles/remote/oracle/matrix/nixos.nix
+          ];
+        };
       };
 
-      sandbox = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/sandbox/nixos.nix
-        ];
+      # pure Home Manager setups - for non-NixOS machines
+      # run rebuild using `hmswitch`
+
+      homeConfigurations = {
+
+         "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
+           modules = homeModules ++ mixedModules ++ [
+             ./profiles/surface/home.nix
+           ];
+         };
+
       };
 
-      twoson = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          ./profiles/twoson/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.swarsel.imports = mixedModules ++ [
-              ./profiles/twoson/home.nix
-            ];
-          }
-        ];
-      };
+      nixOnDroidConfigurations = {
 
-      threed = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          lanzaboote.nixosModules.lanzaboote
-          ./profiles/threed/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.swarsel.imports = mixedModules ++ [
-              ./profiles/threed/home.nix
-            ];
-          }
-        ];
-      };
+        default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+          modules = [
+            ./profiles/mysticant/configuration.nix
+          ];
+        };
 
-      fourside = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
-          ./profiles/fourside/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.swarsel.imports = mixedModules ++ [
-              ./profiles/fourside/home.nix
-            ];
-          }
-        ];
-      };
-
-      winters = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          nixos-hardware.nixosModules.framework-16-inch-7040-amd
-          ./profiles/winters/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.swarsel.imports = mixedModules ++ [
-              ./profiles/winters/home.nix
-            ];
-          }
-        ];
-      };
-
-      stand = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = nixModules ++ [
-          ./profiles/stand/nixos.nix
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.users.homelen.imports = mixedModules ++ [
-              ./profiles/stand/home.nix
-            ];
-          }
-        ];
-      };
-
-      nginx = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/nginx/nixos.nix
-        ];
-      };
-
-      calibre = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/calibre/nixos.nix
-        ];
-      };
-
-      jellyfin = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          # sops-nix.nixosModules.sops
-          ./profiles/server1/jellyfin/nixos.nix
-        ];
-      };
-
-      transmission = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/transmission/nixos.nix
-        ];
-      };
-
-      matrix = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        # this is to import a service module that is not on nixpkgs
-        # this way avoids infinite recursion errors
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/matrix/nixos.nix
-        ];
-      };
-
-      sound = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/sound/nixos.nix
-        ];
-      };
-
-      spotifyd = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/spotifyd/nixos.nix
-        ];
-      };
-
-      paperless = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/server1/paperless/nixos.nix
-        ];
-      };
-
-      #ovm swarsel
-      sync = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/remote/oracle/sync/nixos.nix
-        ];
-      };
-
-      #ovm swarsel
-      swatrix = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          sops-nix.nixosModules.sops
-          ./profiles/remote/oracle/matrix/nixos.nix
-        ];
-      };
-    };
-
-    # pure Home Manager setups - for non-NixOS machines
-    # run rebuild using `hmswitch`
-
-    homeConfigurations = {
-
-      "leons@PCisLee" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = homeModules ++ mixedModules ++ [
-          ./profiles/surface/home.nix
-        ];
       };
 
     };
-
-    nixOnDroidConfigurations = {
-
-      default = nix-on-droid.lib.nixOnDroidConfiguration {
-        modules = [
-          ./profiles/mysticant/configuration.nix
-        ];
-      };
-
-    };
-
-    packages.x86_64-linux = {
-
-      proxmox-lxc = nixos-generators.nixosGenerate {
-        inherit system;
-        modules = [
-           ./profiles/server1/TEMPLATE/nixos.nix
-        ];
-        format = "proxmox-lxc";
-      };
-
-    };
-
-  };
 }
+
+
 
 </pre>
 </div>
@@ -9451,7 +9441,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org7bcbe28"></a>Nix common prefix bracketer<br />
+<li><a id="org29ecb4f"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9484,7 +9474,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="org418b2b1"></a>Nix formatters<br />
+<li><a id="orge46c5b3"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11057,8 +11047,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgdd1ef7e" class="outline-4">
-<h4 id="orgdd1ef7e"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgb40c8fe" class="outline-4">
+<h4 id="orgb40c8fe"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13073,7 +13063,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-20 Sa 15:47</p>
+<p class="date">Created: 2024-07-21 So 15:56</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

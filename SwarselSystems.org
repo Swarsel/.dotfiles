@@ -377,7 +377,7 @@ Handling the flake.nix file used to be a bit of a chore, since it felt like writ
 
 These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android). There is also the [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that currently just defines a Proxmox LXC image.
 
-*** Inputs & Inputs@Outputs
+*** Inputs
 :PROPERTIES:
 :CUSTOM_ID: h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2
 :END:
@@ -387,26 +387,6 @@ Here we define inputs and outputs of the flake. First, the following list is for
 Format: <name>,
 
 Mind the comma at the end. You need this because the =...= is being passed as the last argument in the template at [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]].
-
-#+begin_src nix :tangle no :noweb-ref flakeinputsatoutputs
-
-  nixpkgs,
-  nixpkgs-stable,
-  home-manager,
-  nix-on-droid,
-  emacs-overlay,
-  nur,
-  nixgl,
-  stylix,
-  sops-nix,
-  lanzaboote,
-  nixos-hardware,
-  nix-alien,
-  nixos-generators,
-  nswitch-rcm-nix,
-  nix-index-database,
-
-#+end_src
 
 Here, just add the input names, urls and other options that are needed, like =nixpkgs.follows=. By using the latter option, you tell the package to not provide it's own package repository, but instead 'nest' itself into another, which is very useful.
 A short overview over each input and what it does:
@@ -519,50 +499,74 @@ Lastly I define some common module lists that I can simply load depending on the
 
 #+begin_src nix :tangle no :noweb-ref flakelet
 
-  system = "x86_64-linux"; # not very portable, but I do not use other architectures at the moment
-  pkgs = import nixpkgs {
-    inherit system;
-    overlays = [
-      emacs-overlay.overlay
-      nur.overlay
-      nixgl.overlay
-      (final: _prev: {
-        stable = import nixpkgs-stable {
-          inherit (final) system config;
-        };
-      })
-    ];
-    config.allowUnfree = true;
-  };
+  forAllSystems = nixpkgs.lib.genAttrs [
+        "aarch64-linux"
+        "i686-linux"
+        "x86_64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [
-    stylix.nixosModules.stylix
-    sops-nix.nixosModules.sops
-    nswitch-rcm-nix.nixosModules.nswitch-rcm
-    ./profiles/common/nixos.nix
-    # dynamic library loading
-    ({ self, system, ... }: {
-      environment.systemPackages = with self.inputs.nix-alien.packages.${system}; [
-        nix-alien
-      ];
-      # needed for `nix-alien-ld`
-      programs.nix-ld.enable = true;
+    ({ ... }: { nix.extraOptions = "experimental-features = nix-command flakes"; })
+    ({ inputs, config, ... }: {
+      nixpkgs = {
+        overlays = [
+          (import ./overlays { inherit inputs; }).additions
+          (import ./overlays { inherit inputs; }).modifications
+          (import ./overlays { inherit inputs; }).nixpkgs-stable
+          inputs.nur.overlay
+          inputs.emacs-overlay.overlay
+          inputs.nixgl.overlay
+        ];
+        config.allowUnfree = true;
+      };
     })
+    inputs.stylix.nixosModules.stylix
+    inputs.sops-nix.nixosModules.sops
+    inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+    ./profiles/common/nixos.nix
   ];
 
   # Home-Manager modules wanted on non-NixOS systems
   homeModules = [
-    stylix.homeManagerModules.stylix
+    inputs.stylix.homeManagerModules.stylix
   ];
+
   # Home-Manager modules wanted on both NixOS and non-NixOS systems
   mixedModules = [
-    sops-nix.homeManagerModules.sops
-    nix-index-database.hmModules.nix-index
+    inputs.sops-nix.homeManagerModules.sops
+    inputs.nix-index-database.hmModules.nix-index
     ./profiles/common/home.nix
   ];
 
 #+end_src
+*** General (outputs)
+
+#+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
+
+        packages = forAllSystems (system:
+          let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
+        devShells = forAllSystems
+          (system:
+            let pkgs = nixpkgs.legacyPackages.${system};
+            in
+            {
+              default = pkgs.mkShell {
+                # Enable experimental features without having to specify the argument
+                NIX_CONFIG = "experimental-features = nix-command flakes";
+                nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+              };
+            });
+        formatter = forAllSystems (system:
+          let pkgs = nixpkgs.legacyPackages.${system};
+          in pkgs.nixpkgs-fmt);
+        overlays = import ./overlays { inherit inputs; };
+
+
+#+end_src
+
 *** nixosConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:9c9b9e3b-8771-44fa-ba9e-5056ae809655
@@ -572,46 +576,21 @@ This section is the biggest pain point of the configuration. For every system, I
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
-  onett = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
-    modules = nixModules ++ [
-      ./profles/onett/nixos.nix
-      home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/onett/home.nix
-        ];
-      }
-    ];
-  };
 
   sandbox = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/sandbox/nixos.nix
     ];
   };
 
-  twoson = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
-    modules = nixModules ++ [
-      ./profiles/twoson/nixos.nix
-      home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/twoson/home.nix
-        ];
-      }
-    ];
-  };
-
   threed = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = nixModules ++ [
-      lanzaboote.nixosModules.lanzaboote
+      inputs.lanzaboote.nixosModules.lanzaboote
       ./profiles/threed/nixos.nix
-      home-manager.nixosModules.home-manager
+      inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users.swarsel.imports = mixedModules ++ [
           ./profiles/threed/home.nix
@@ -621,11 +600,11 @@ This section is the biggest pain point of the configuration. For every system, I
   };
 
   fourside = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
-    modules = nixModules ++ [
-      nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+    specialArgs = { inherit inputs; };
+    modules = nixModules ++  [
+      inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
       ./profiles/fourside/nixos.nix
-      home-manager.nixosModules.home-manager
+      inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users.swarsel.imports = mixedModules ++ [
           ./profiles/fourside/home.nix
@@ -635,11 +614,11 @@ This section is the biggest pain point of the configuration. For every system, I
   };
 
   winters = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = nixModules ++ [
-      nixos-hardware.nixosModules.framework-16-inch-7040-amd
+      inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
       ./profiles/winters/nixos.nix
-      home-manager.nixosModules.home-manager
+      inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users.swarsel.imports = mixedModules ++ [
           ./profiles/winters/home.nix
@@ -648,99 +627,83 @@ This section is the biggest pain point of the configuration. For every system, I
     ];
   };
 
-  stand = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
-    modules = nixModules ++ [
-      ./profiles/stand/nixos.nix
-      home-manager.nixosModules.home-manager
-      {
-        home-manager.users.homelen.imports = mixedModules ++ [
-          ./profiles/stand/home.nix
-        ];
-      }
-    ];
-  };
-
   nginx = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/nginx/nixos.nix
     ];
   };
 
   calibre = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/calibre/nixos.nix
     ];
   };
 
   jellyfin = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      # sops-nix.nixosModules.sops
       ./profiles/server1/jellyfin/nixos.nix
     ];
   };
 
   transmission = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/transmission/nixos.nix
     ];
   };
 
   matrix = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
-    # this is to import a service module that is not on nixpkgs
-    # this way avoids infinite recursion errors
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/matrix/nixos.nix
     ];
   };
 
   sound = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/sound/nixos.nix
     ];
   };
 
   spotifyd = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/spotifyd/nixos.nix
     ];
   };
 
   paperless = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/server1/paperless/nixos.nix
     ];
   };
 
   #ovm swarsel
   sync = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/remote/oracle/sync/nixos.nix
     ];
   };
 
   #ovm swarsel
   swatrix = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs pkgs; };
+    specialArgs = { inherit inputs; };
     modules = [
-      sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./profiles/remote/oracle/matrix/nixos.nix
     ];
   };
@@ -754,8 +717,7 @@ In contrast, this defines home-manager systems, which I only have one of.
 
 #+begin_src nix :tangle no :noweb-ref flakehomeconf
 
-  "leons@PCisLee" = home-manager.lib.homeManagerConfiguration {
-    inherit pkgs;
+  "leons@PCisLee" = inputs.home-manager.lib.homeManagerConfiguration {
     modules = homeModules ++ mixedModules ++ [
       ./profiles/surface/home.nix
     ];
@@ -772,7 +734,7 @@ Nix on Android also demands an own flake output, which is provided here.
 
 #+begin_src nix :tangle no :noweb-ref flakedroidconf
 
-  default = nix-on-droid.lib.nixOnDroidConfiguration {
+  default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
     modules = [
       ./profiles/mysticant/configuration.nix
     ];
@@ -799,7 +761,7 @@ The resulting image can then be loaded in Proxmox.
 
 #+begin_src nix :tangle no :noweb-ref flakenixosgenerators
 
-  proxmox-lxc = nixos-generators.nixosGenerate {
+  proxmox-lxc = inputs.nixos-generators.nixosGenerate {
     inherit system;
     modules = [
        ./profiles/server1/TEMPLATE/nixos.nix
@@ -4290,6 +4252,57 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 }
 
 #+end_src
+** Manual Overlays and packages
+
+In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
+
+As such, I also define three additional overlays:
+
+1) =additions=
+   These are for the aforementioned added packages
+2) =modification=
+   These are for packages that are on nixpkgs, but do not fit my usecase, meaning I need to perform modifications on them.
+3) =nixpkgs-stable=
+   This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
+
+*** pkgs
+
+#+begin_src nix :tangle pkgs/default.nix
+
+{ ... }: { }
+
+#+end_src
+
+*** Overlays
+
+#+begin_src nix :tangle overlays/default.nix
+
+  { inputs, ... }: {
+  additions = final: _prev: import ../pkgs { pkgs = final; };
+  modifications = final: _prev: {
+    # example = prev.example.overrideAttrs (oldAttrs: rec {
+    # ...
+    # });
+
+    # river = prev.river.overrideAttrs (oldAttrs: rec {
+    #   pname = "river";
+    #   version = "git";
+    #   src = prev.fetchFromGitHub {
+    #     owner = "riverwm";
+    #     repo = pname;
+    #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
+    #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
+    #     fetchSubmodules = true;
+    #   };
+    # });
+  };
+
+  nixpkgs-stable = final: _prev: {
+    stable = import inputs.nixpkgs-stable { inherit (final) system; };
+  };
+}
+
+#+end_src
 
 ** Common NixOS
 :PROPERTIES:
@@ -4349,7 +4362,7 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 
 #+begin_src nix :tangle profiles/common/nixos.nix
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  # nix.settings.experimental-features = ["nix-command" "flakes"];
 
 #+end_src
 
@@ -7124,41 +7137,42 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       <<flakeinputs>>
     };
 
-    outputs = inputs@{
-      <<flakeinputsatoutputs>>
-      ...
-    }: let
-      <<flakelet>>
-    in {
+    outputs =
+      inputs@{ self
+      , nixpkgs
+      , ...
+      }:
+      let
+        <<flakelet>>
+      in
+      {
+        <<flakeoutputgeneral>>
+        # NixOS setups - run home-manager as a NixOS module for better compatibility
+        # another benefit - full rebuild on nixos-rebuild switch
+        # run rebuild using `nswitch`
 
-      # NixOS setups - run home-manager as a NixOS module for better compatibility
-      # another benefit - full rebuild on nixos-rebuild switch
-      # run rebuild using `nswitch`
+        # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
+        # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
 
-      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+        nixosConfigurations = {
+          <<flakenixosconf>>
+        };
 
-      nixosConfigurations = {
-        <<flakenixosconf>>
+        # pure Home Manager setups - for non-NixOS machines
+        # run rebuild using `hmswitch`
+
+        homeConfigurations = {
+           <<flakehomeconf>>
+        };
+
+        nixOnDroidConfigurations = {
+          <<flakedroidconf>>
+        };
+
       };
-
-      # pure Home Manager setups - for non-NixOS machines
-      # run rebuild using `hmswitch`
-
-      homeConfigurations = {
-        <<flakehomeconf>>
-      };
-
-      nixOnDroidConfigurations = {
-        <<flakedroidconf>>
-      };
-
-      packages.x86_64-linux = {
-        <<flakenixosgenerators>>
-      };
-
-    };
   }
+
+
 
 #+end_src
 * Emacs
