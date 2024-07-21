@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-20 Sa 11:04 -->
+<!-- 2024-07-20 Sa 15:47 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -261,7 +261,7 @@
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.6. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.7. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.3.8. Programs</a></li>
-<li><a href="#org5f31d24">3.3.9. nix-index</a></li>
+<li><a href="#org2f26332">3.3.9. nix-index</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.10. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.11. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.12. eza</a></li>
@@ -329,7 +329,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgcbe00d5">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgdd1ef7e">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -389,7 +389,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41361 words spanning 11031 lines and was last revised on 2024-07-20 11:04:39 +0200.</b>
+<b>This file has 41360 words spanning 11032 lines and was last revised on 2024-07-20 15:47:39 +0200.</b>
 </p>
 
 <p>
@@ -439,7 +439,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 11:04:39 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-20 15:47:39 +0200)
 </p></li>
 </ul>
 
@@ -3193,6 +3193,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
   environment.systemPackages = with pkgs; [
     sbctl
+    teams-for-linux
     # gog games installing
     heroic
     # minecraft
@@ -6085,7 +6086,7 @@ programs = {
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org34cd140"></a>zsh<br />
+<li><a id="orgd7c64b1"></a>zsh<br />
 <div class="outline-text-5" id="text-3-2-4-1">
 <p>
 Do not touch this.
@@ -6102,7 +6103,7 @@ environment.pathsToLink = [ "/share/zsh" ];
 </div>
 </div>
 </li>
-<li><a id="orgffaef65"></a>syncthing<br />
+<li><a id="org425ca0d"></a>syncthing<br />
 <div class="outline-text-5" id="text-3-2-4-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -6127,22 +6128,22 @@ services.syncthing = {
     folders = {
       "Default Folder" = {
         path = "/home/swarsel/Sync";
-        devices = [ "sync (@oracle)" "magicant" ];
+        devices = [ "sync (@oracle)" ];
         id = "default";
       };
       "Obsidian" = {
         path = "/home/swarsel/Nextcloud/Obsidian";
-        devices = [ "sync (@oracle)" "magicant" ];
+        devices = [ "sync (@oracle)" ];
         id = "yjvni-9eaa7";
       };
       "Org" = {
         path = "/home/swarsel/Nextcloud/Org";
-        devices = [ "sync (@oracle)" "magicant" ];
+        devices = [ "sync (@oracle)" ];
         id = "a7xnl-zjj3d";
       };
       "Vpn" = {
         path = "/home/swarsel/Vpn";
-        devices = [ "sync (@oracle)" "magicant" ];
+        devices = [ "sync (@oracle)" ];
         id = "hgp9s-fyq3p";
       };
     };
@@ -7049,8 +7050,8 @@ programs = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org5f31d24" class="outline-4">
-<h4 id="org5f31d24"><span class="section-number-4">3.3.9.</span> nix-index</h4>
+<div id="outline-container-org2f26332" class="outline-4">
+<h4 id="org2f26332"><span class="section-number-4">3.3.9.</span> nix-index</h4>
 <div class="outline-text-4" id="text-3-3-9">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -9450,7 +9451,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org6c1bb67"></a>Nix common prefix bracketer<br />
+<li><a id="org7bcbe28"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9483,7 +9484,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="org932d84d"></a>Nix formatters<br />
+<li><a id="org418b2b1"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11056,8 +11057,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgcbe00d5" class="outline-4">
-<h4 id="orgcbe00d5"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgdd1ef7e" class="outline-4">
+<h4 id="orgdd1ef7e"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13072,7 +13073,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-20 Sa 11:04</p>
+<p class="date">Created: 2024-07-20 Sa 15:47</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
