@@ -128,6 +128,7 @@
 
   environment.systemPackages = with pkgs; [
     sbctl
+    teams-for-linux
     # gog games installing
     heroic
     # minecraft
