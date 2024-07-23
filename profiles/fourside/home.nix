@@ -81,7 +81,7 @@
         eDP-1 = {
           mode = "1920x1080"; # TEMPLATE
           scale = "1";
-          position = "1920,0";
+          position = "2560,0";
           # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
         };
         DP-4 = {

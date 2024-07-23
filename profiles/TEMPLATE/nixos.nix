@@ -86,9 +86,9 @@
 
 
   # Configure keymap in X11 (only used for login)
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "altgr-intl";
+    variant = "altgr-intl";
   };
 
   users.users.TEMPLATE = {

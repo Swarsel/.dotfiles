@@ -10,9 +10,9 @@
 
 
   services = {
-    xserver = {
+    xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
     openssh = {
       enable = true;

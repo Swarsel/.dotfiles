@@ -7,6 +7,8 @@
 
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
 
+    systems.url = "github:nix-systems/default-linux";
+
     # user-level configuration
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -69,32 +71,41 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     inputs@{ self
     , nixpkgs
+    , home-manager
+    , systems
     , ...
     }:
     let
+      inherit (self) outputs;
+      lib = nixpkgs.lib // home-manager.lib;
 
-      forAllSystems = nixpkgs.lib.genAttrs [
-        "aarch64-linux"
-        "i686-linux"
-        "x86_64-linux"
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
+      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+      pkgsFor = lib.genAttrs (import systems) (
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        }
+      );
 
       # pkgs for home-manager builds
       homepkgs = import nixpkgs {
         system = "x86_64-linux";
         overlays = [
-          emacs-overlay.overlay
-          nur.overlay
-          nixgl.overlay
+          inputs.emacs-overlay.overlay
+          inputs.nur.overlay
+          inputs.nixgl.overlay
           (final: _prev: {
-            stable = import nixpkgs-stable {
+            stable = import inputs.nixpkgs-stable {
               inherit (final) system config;
             };
           })
@@ -105,23 +116,10 @@
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
         (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
-        ({ inputs, config, ... }: {
-          nixpkgs = {
-            overlays = [
-              (import ./overlays { inherit inputs; }).additions
-              (import ./overlays { inherit inputs; }).modifications
-              (import ./overlays { inherit inputs; }).nixpkgs-stable
-              inputs.nur.overlay
-              inputs.emacs-overlay.overlay
-              inputs.nixgl.overlay
-            ];
-            config.allowUnfree = true;
-          };
-        })
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ./profiles/common/nixos.nix
+        ./profiles/common/nixos
       ];
 
       # Home-Manager modules wanted on non-NixOS systems
@@ -133,18 +131,17 @@
       mixedModules = [
         inputs.sops-nix.homeManagerModules.sops
         inputs.nix-index-database.hmModules.nix-index
-        ./profiles/common/home.nix
+        ./profiles/common/home
       ];
 
     in
     {
 
-      packages = forAllSystems (system:
-        let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
-      devShells = forAllSystems
-        (system:
-          let pkgs = nixpkgs.legacyPackages.${system};
-          in
+      inherit lib;
+      inherit mixedModules;
+      packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+      devShells = forEachSystem
+        (pkgs:
           {
             default = pkgs.mkShell {
               # Enable experimental features without having to specify the argument
@@ -152,10 +149,16 @@
               nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
             };
           });
-      formatter = forAllSystems (system:
-        let pkgs = nixpkgs.legacyPackages.${system};
-        in pkgs.nixpkgs-fmt);
-      overlays = import ./overlays { inherit inputs; };
+      formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+      overlays = [
+        (import ./overlays { inherit inputs; }).additions
+        (import ./overlays { inherit inputs; }).modifications
+        (import ./overlays { inherit inputs; }).nixpkgs-stable
+        inputs.nur.overlay
+        inputs.emacs-overlay.overlay
+        inputs.nixgl.overlay
+      ];
+
 
 
       # NixOS setups - run home-manager as a NixOS module for better compatibility
@@ -171,6 +174,8 @@
         sandbox = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
           modules = [
+            inputs.disko.nixosModules.disko
+            ./profiles/sandbox/disk-config.nix
             inputs.sops-nix.nixosModules.sops
             ./profiles/sandbox/nixos.nix
           ];
@@ -190,17 +195,10 @@
           ];
         };
 
-        fourside = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
+        fourside = lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
           modules = nixModules ++ [
-            inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
-            ./profiles/fourside/nixos.nix
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/fourside/home.nix
-              ];
-            }
+            ./profiles/fourside
           ];
         };
 

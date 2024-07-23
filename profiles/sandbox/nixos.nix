@@ -8,17 +8,20 @@ in
     ./hardware-configuration.nix
   ];
 
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/sda";
-    useOSProber = true;
-    supportedFilesystems = [ "zfs" ];
+  boot = {
     zfs.forceImportRoot = false;
+    supportedFilesystems = [ "zfs" ];
     kernelModules = [ "tun" ];
     kernel.sysctl = {
       "net.ipv4.conf.all.rp_filter" = 2;
       "net.ipv4.conf.default.rp_filter" = 2;
       "net.ipv4.conf.enp7s0.rp_filter" = 2;
+    };
+
+    loader.grub = {
+      enable = true;
+      device = "/dev/sda";
+      useOSProber = true;
     };
   };
 
@@ -38,19 +41,19 @@ in
     };
   };
 
-  hardware.graphics = {
-    enable = true;
-    hardware.enableAllFirmware = true;
-    extraPackages = with pkgs; [
-      intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-      vaapiVdpau
-      libvdpau-va-gl
-    ];
-  };
+  nixpkgs.config.allowUnfree = true;
 
-  sound = {
-    enable = true;
+  hardware = {
+    enableAllFirmware = true;
+    graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver # LIBVA_DRIVER_NAME=iHD
+        vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+    };
   };
 
   users = {
@@ -266,9 +269,9 @@ in
   };
 
   services = {
-    xserver = {
+    xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     openssh = {
@@ -390,7 +393,7 @@ in
     kavita = {
       enable = true;
       user = "kavita";
-      port = 8080;
+      settings.port = 8080;
       tokenKeyFile = config.sops.secrets.kavita.path;
     };
 
@@ -804,7 +807,7 @@ in
       publish.enable = true;
       publish.userServices = true;
       # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
-      nssmdns = true;
+      nssmdns4 = true;
       # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
       enable = true;
     };

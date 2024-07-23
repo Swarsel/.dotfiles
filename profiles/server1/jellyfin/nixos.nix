@@ -24,9 +24,9 @@
     extraGroups = [ "video" "render" ];
   };
 
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "altgr-intl";
+    variant = "altgr-intl";
   };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];

@@ -2,17 +2,6 @@
 
 {
 
-  # 
-  # imports =
-  #   [
-  #     ./hardware-configuration.nix
-  #   ];
-  # 
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-
   services = {
     getty.autologinUser = "swarsel";
     greetd.settings.initial_session.user = "swarsel";
@@ -147,13 +136,6 @@
     };
   };
 
-  users.users.swarsel = {
-    isNormalUser = true;
-    description = "Leon S";
-    hashedPasswordFile = config.sops.secrets.swarseluser.path;
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
-    packages = with pkgs; [ ];
-  };
 
   environment.systemPackages = with pkgs; [
     # gog games installing

@@ -317,9 +317,9 @@ This sections is for common NixoS settings that I use for my NixoS LXC images th
 
 
   services = {
-    xserver = {
+    xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
     openssh = {
       enable = true;
@@ -417,6 +417,8 @@ A short overview over each input and what it does:
   Allows auto injection of payloads upon connecting a Nintendo Switch.
 - [[https://github.com/nix-community/nix-index-database][nix-index-database]]
   This provides a database for =nix-index= that is updated weekly. This allows for declarative management, without needing to run the =nix-index= command for database assembly.
+- [[https://github.com/nix-community/disko][disko]]
+  disko provides declarative disk partitioning, which I use for impermanence as well as [[https://github.com/nix-community/nixos-anywhere][nixos-anywhere]].
 
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
@@ -424,6 +426,8 @@ A short overview over each input and what it does:
   nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
+
+  systems.url = "github:nix-systems/default-linux";
 
   # user-level configuration
   home-manager = {
@@ -487,6 +491,10 @@ A short overview over each input and what it does:
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  disko = {
+     url =  "github:nix-community/disko";
+     inputs.nixpkgs.follows = "nixpkgs";
+  };
 #+end_src
 *** let
 :PROPERTIES:
@@ -498,49 +506,39 @@ Here I define a few variables that I need for my system specifications. First an
 Lastly I define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS).
 
 #+begin_src nix :tangle no :noweb-ref flakelet
+  inherit (self) outputs;
+  lib = nixpkgs.lib // home-manager.lib;
 
-  forAllSystems = nixpkgs.lib.genAttrs [
-        "aarch64-linux"
-        "i686-linux"
-        "x86_64-linux"
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
+  forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+  pkgsFor = lib.genAttrs (import systems) (
+    system:
+    import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    }
+  );
 
   # pkgs for home-manager builds
   homepkgs = import nixpkgs { system = "x86_64-linux";
-                            overlays = [ emacs-overlay.overlay
-                                         nur.overlay
-                                         nixgl.overlay
-                                         (final: _prev: {
-                                           stable = import nixpkgs-stable {
-                                             inherit (final) system config;
-                                           };
-                                         })
-                                       ];
-                            config.allowUnfree = true;
-                          };
+                              overlays = [ inputs.emacs-overlay.overlay
+                                           inputs.nur.overlay
+                                           inputs.nixgl.overlay
+                                           (final: _prev: {
+                                             stable = import inputs.nixpkgs-stable {
+                                               inherit (final) system config;
+                                             };
+                                           })
+                                         ];
+                              config.allowUnfree = true;
+                            };
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [
     (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
-    ({ inputs, config, ... }: {
-      nixpkgs = {
-        overlays = [
-          (import ./overlays { inherit inputs; }).additions
-          (import ./overlays { inherit inputs; }).modifications
-          (import ./overlays { inherit inputs; }).nixpkgs-stable
-          inputs.nur.overlay
-          inputs.emacs-overlay.overlay
-          inputs.nixgl.overlay
-        ];
-        config.allowUnfree = true;
-      };
-    })
     inputs.stylix.nixosModules.stylix
     inputs.sops-nix.nixosModules.sops
     inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-    ./profiles/common/nixos.nix
+    ./profiles/common/nixos
   ];
 
   # Home-Manager modules wanted on non-NixOS systems
@@ -552,7 +550,7 @@ Lastly I define some common module lists that I can simply load depending on the
   mixedModules = [
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
-    ./profiles/common/home.nix
+    ./profiles/common/home
   ];
 
 #+end_src
@@ -560,23 +558,28 @@ Lastly I define some common module lists that I can simply load depending on the
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
 
-        packages = forAllSystems (system:
-          let pkgs = nixpkgs.legacyPackages.${system}; in import ./pkgs { inherit pkgs; });
-        devShells = forAllSystems
-          (system:
-            let pkgs = nixpkgs.legacyPackages.${system};
-            in
-            {
-              default = pkgs.mkShell {
-                # Enable experimental features without having to specify the argument
-                NIX_CONFIG = "experimental-features = nix-command flakes";
-                nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
-              };
-            });
-        formatter = forAllSystems (system:
-          let pkgs = nixpkgs.legacyPackages.${system};
-          in pkgs.nixpkgs-fmt);
-        overlays = import ./overlays { inherit inputs; };
+  inherit lib;
+  inherit mixedModules;
+  packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+  devShells = forEachSystem
+    (pkgs:
+      {
+        default = pkgs.mkShell {
+          # Enable experimental features without having to specify the argument
+          NIX_CONFIG = "experimental-features = nix-command flakes";
+          nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+        };
+      });
+  formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+  overlays = [
+    (import ./overlays { inherit inputs; }).additions
+    (import ./overlays { inherit inputs; }).modifications
+    (import ./overlays { inherit inputs; }).nixpkgs-stable
+    inputs.nur.overlay
+    inputs.emacs-overlay.overlay
+    inputs.nixgl.overlay
+  ];
+
 
 
 #+end_src
@@ -594,6 +597,8 @@ This section is the biggest pain point of the configuration. For every system, I
   sandbox = nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
     modules = [
+      inputs.disko.nixosModules.disko
+      ./profiles/sandbox/disk-config.nix
       inputs.sops-nix.nixosModules.sops
       ./profiles/sandbox/nixos.nix
     ];
@@ -613,17 +618,10 @@ This section is the biggest pain point of the configuration. For every system, I
     ];
   };
 
-  fourside = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = nixModules ++  [
-      inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
-      ./profiles/fourside/nixos.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/fourside/home.nix
-        ];
-      }
+  fourside = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
+    modules = nixModules ++ [
+      ./profiles/fourside
     ];
   };
 
@@ -854,9 +852,9 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
   <<theme>>
 
   # Configure keymap in X11 (only used for login)
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "altgr-intl";
+    variant = "altgr-intl";
   };
 
   users.users.TEMPLATE = {
@@ -985,823 +983,826 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 :END:
 
 #+begin_src nix :noweb yes :tangle profiles/sandbox/nixos.nix
-{ config, pkgs, sops, ... }:
-let
-  matrixDomain = "swatrix.swarsel.win";
-in
-{
+  { config, pkgs, sops, ... }:
+  let
+    matrixDomain = "swatrix.swarsel.win";
+  in
+  {
 
-  imports = [
-    ./hardware-configuration.nix
-  ];
-
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/sda";
-    useOSProber = true;
-    supportedFilesystems = [ "zfs" ];
-    zfs.forceImportRoot = false;
-    kernelModules = [ "tun" ];
-    kernel.sysctl = {
-      "net.ipv4.conf.all.rp_filter" = 2;
-      "net.ipv4.conf.default.rp_filter" = 2;
-      "net.ipv4.conf.enp7s0.rp_filter" = 2;
-    };
-  };
-
-  networking = {
-    hostId = "8a8ad84a";
-    hostName = "sandbox"; # Define your hostname.
-    enableIPv6 = true;
-    firewall.enable = false;
-    firewall.extraCommands = ''
-      sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-    '';
-    iproute2 = {
-      enable = true;
-      rttablesExtraConfig = ''
-        200     vpn
-      '';
-    };
-  };
-
-  hardware.graphics = {
-    enable = true;
-    hardware.enableAllFirmware = true;
-    extraPackages = with pkgs; [
-      intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-      vaapiVdpau
-      libvdpau-va-gl
+    imports = [
+      ./hardware-configuration.nix
     ];
-  };
 
-  sound = {
-    enable = true;
-  };
-
-  users = {
-    groups = {
-      vpn = { };
-      mpd = { };
-      navidrome = {
-        gid = 61593;
+    boot = {
+      zfs.forceImportRoot = false;
+      supportedFilesystems = [ "zfs" ];
+      kernelModules = [ "tun" ];
+      kernel.sysctl = {
+       "net.ipv4.conf.all.rp_filter" = 2;
+        "net.ipv4.conf.default.rp_filter" = 2;
+        "net.ipv4.conf.enp7s0.rp_filter" = 2;
       };
-      spotifyd = {
-        gid = 65136;
+
+      loader.grub = {
+        enable = true;
+        device = "/dev/sda";
+        useOSProber = true;
       };
     };
-    users = {
-      jellyfin = {
-        extraGroups = [ "video" "render" ];
+
+    networking = {
+      hostId = "8a8ad84a";
+      hostName = "sandbox"; # Define your hostname.
+      enableIPv6 = true;
+      firewall.enable = false;
+      firewall.extraCommands = ''
+        sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
+      '';
+      iproute2 = {
+        enable = true;
+        rttablesExtraConfig = ''
+          200     vpn
+        '';
       };
-      vpn = {
-        isNormalUser = true;
-        group = "vpn";
-        home = "/home/vpn";
-      };
-      navidrome = {
-        isSystemUser = true;
-        uid = 61593;
-        group = "navidrome";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      spotifyd = {
-        isSystemUser = true;
-        uid = 65136;
-        group = "spotifyd";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      mpd = {
-        isSystemUser = true;
-        group = "mpd";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      swarsel = {
-        isNormalUser = true;
-        description = "Leon S";
-        extraGroups = [ "networkmanager" "wheel" "lp" ];
-        packages = with pkgs; [ ];
-      };
-      root = {
-        openssh.authorizedKeys.keyFiles = [
-          ../../secrets/keys/authorized_keys
+    };
+
+    nixpkgs.config.allowUnfree = true;
+
+    hardware = {
+      enableAllFirmware = true;
+      graphics = {
+        enable = true;
+        extraPackages = with pkgs; [
+          intel-media-driver # LIBVA_DRIVER_NAME=iHD
+          vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+          vaapiVdpau
+          libvdpau-va-gl
         ];
       };
     };
-  };
 
-  fileSystems."/mnt/Eternor" = {
-    device = "//192.168.1.3/Eternor";
-    fsType = "cifs";
-    options =
-      let
-        # this line prevents hanging on network split
-        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-      in
-      [ "${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100" ];
-  };
-
-  environment = {
-    systemPackages = with pkgs; [
-      git
-      gnupg
-      ssh-to-age
-      lego
-      nginx
-      calibre
-      openvpn
-      jq
-      iptables
-      busybox
-      wireguard-tools
-      matrix-synapse
-      lottieconverter
-      ffmpeg
-      pciutils
-      alsa-utils
-      mpv
-      zfs
-    ];
-    etc = {
-      "openvpn/iptables.sh" =
-        {
-          source = ../../scripts/server1/iptables.sh;
-          mode = "0755";
+    users = {
+      groups = {
+        vpn = { };
+        mpd = { };
+        navidrome = {
+          gid = 61593;
         };
-      "openvpn/update-resolv-conf" =
-        {
-          source = ../../scripts/server1/update-resolv-conf;
-          mode = "0755";
-        };
-      "openvpn/routing.sh" =
-        {
-          source = ../../scripts/server1/routing.sh;
-          mode = "0755";
-        };
-      "openvpn/ca.rsa.2048.crt" =
-        {
-          source = ../../secrets/certs/ca.rsa.2048.crt;
-          mode = "0644";
-        };
-      "openvpn/crl.rsa.2048.pem" =
-        {
-          source = ../../secrets/certs/crl.rsa.2048.pem;
-          mode = "0644";
-        };
-    };
-    shellAliases = {
-      nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
-  };
-
-  systemd = {
-    timers."restart-bridges" = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "1d";
-        OnUnitActiveSec = "1d";
-        Unit = "restart-bridges.service";
-      };
-    };
-
-    services."restart-bridges" = {
-      script = ''
-        systemctl restart mautrix-whatsapp.service
-        systemctl restart mautrix-signal.service
-        systemctl restart mautrix-telegram.service
-      '';
-      serviceConfig = {
-        Type = "oneshot";
-        User = "root";
-      };
-    };
-  };
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
-  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-  documentation = {
-    enable = false;
-  };
-
-  sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
-    validateSopsFiles = false;
-    secrets = {
-      dnstokenfull = { owner = "acme"; };
-      kavita = { owner = "kavita"; };
-      vpnuser = { };
-      rpcuser = { owner = "vpn"; };
-      vpnpass = { };
-      rpcpass = { owner = "vpn"; };
-      vpnprot = { };
-      vpnloc = { };
-      mpdpass = { owner = "mpd"; };
-    };
-    templates = {
-      "transmission-rpc" = {
-        owner = "vpn";
-        content = builtins.toJSON {
-          rpc-username = config.sops.placeholder.rpcuser;
-          rpc-password = config.sops.placeholder.rpcpass;
+        spotifyd = {
+          gid = 65136;
         };
       };
-
-      pia.content = ''
-        ${config.sops.placeholder.vpnuser}
-        ${config.sops.placeholder.vpnpass}
-      '';
-
-      vpn.content = ''
-        client
-        dev tun
-        proto ${config.sops.placeholder.vpnprot}
-        remote ${config.sops.placeholder.vpnloc}
-        resolv-retry infinite
-        nobind
-        persist-key
-        persist-tun
-        cipher aes-128-cbc
-        auth sha1
-        tls-client
-        remote-cert-tls server
-
-        auth-user-pass ${config.sops.templates.pia.path}
-        compress
-        verb 1
-        reneg-sec 0
-
-        crl-verify /etc/openvpn/crl.rsa.2048.pem
-        ca /etc/openvpn/ca.rsa.2048.crt
-
-        disable-occ
-      '';
-      "certs.secret".content = ''
-        CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-      '';
-    };
-  };
-
-  security.acme = {
-    acceptTerms = true;
-    preliminarySelfsigned = false;
-    defaults.email = "mrswarsel@gmail.com";
-    defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
-  };
-
-  services = {
-    xserver = {
-      layout = "us";
-      xkbVariant = "altgr-intl";
-    };
-
-    openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
-    };
-
-    nginx = {
-      enable = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-      recommendedOptimisation = true;
-      recommendedGzipSettings = true;
-      virtualHosts = {
-
-        "stash.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://192.168.1.5";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-            "/.well-known/carddav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-            "/.well-known/caldav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-          };
+      users = {
+        jellyfin = {
+          extraGroups = [ "video" "render" ];
         };
-
-        "swatrix.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://127.0.0.1:8008";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
+        vpn = {
+          isNormalUser = true;
+          group = "vpn";
+          home = "/home/vpn";
         };
-
-
-        "sound.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:4040";
-              proxyWebsockets = true;
-              extraConfig = ''
-                proxy_redirect          http:// https://;
-                proxy_read_timeout      600s;
-                proxy_send_timeout      600s;
-                proxy_buffering         off;
-                proxy_request_buffering off;
-                client_max_body_size    0;
-              '';
-            };
-          };
+        navidrome = {
+          isSystemUser = true;
+          uid = 61593;
+          group = "navidrome";
+          extraGroups = [ "audio" "utmp" ];
         };
-
-        "scan.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:28981";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
+        spotifyd = {
+          isSystemUser = true;
+          uid = 65136;
+          group = "spotifyd";
+          extraGroups = [ "audio" "utmp" ];
         };
-
-        "screen.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:8096";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
+        mpd = {
+          isSystemUser = true;
+          group = "mpd";
+          extraGroups = [ "audio" "utmp" ];
         };
-
-        "scroll.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:8080";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
+        swarsel = {
+          isNormalUser = true;
+          description = "Leon S";
+          extraGroups = [ "networkmanager" "wheel" "lp" ];
+          packages = with pkgs; [ ];
         };
-      };
-    };
-
-    kavita = {
-      enable = true;
-      user = "kavita";
-      port = 8080;
-      tokenKeyFile = config.sops.secrets.kavita.path;
-    };
-
-    jellyfin = {
-      enable = true;
-      user = "jellyfin";
-    };
-
-    radarr = {
-      enable = true;
-    };
-    readarr = {
-      enable = true;
-    };
-    sonarr = {
-      enable = true;
-    };
-    lidarr = {
-      enable = true;
-    };
-    prowlarr = {
-      enable = true;
-    };
-    openvpn.servers = {
-      pia = {
-        autoStart = true;
-        updateResolvConf = false;
-        config = "config ${config.sops.templates.vpn.path}";
-      };
-    };
-    transmission = {
-      enable = true;
-      credentialsFile = config.sops.templates."transmission-rpc".path;
-      user = "vpn";
-      settings = {
-        alt-speed-down = 8000;
-        alt-speed-enabled = false;
-        alt-speed-time-begin = 0;
-        alt-speed-time-day = 127;
-        alt-speed-time-enabled = true;
-        alt-speed-time-end = 360;
-        alt-speed-up = 2000;
-        bind-address-ipv4 = "0.0.0.0";
-        bind-address-ipv6 = "::";
-        blocklist-enabled = false;
-        blocklist-url = "http://www.example.com/blocklist";
-        cache-size-mb = 256;
-        dht-enabled = false;
-        download-dir = "/test";
-        download-limit = 100;
-        download-limit-enabled = 0;
-        download-queue-enabled = true;
-        download-queue-size = 5;
-        encryption = 2;
-        idle-seeding-limit = 30;
-        idle-seeding-limit-enabled = false;
-        incomplete-dir = "/var/lib/transmission-daemon/Downloads";
-        incomplete-dir-enabled = false;
-        lpd-enabled = false;
-        max-peers-global = 200;
-        message-level = 1;
-        peer-congestion-algorithm = "";
-        peer-id-ttl-hours = 6;
-        peer-limit-global = 100;
-        peer-limit-per-torrent = 40;
-        peer-port = 22371;
-        peer-port-random-high = 65535;
-        peer-port-random-low = 49152;
-        peer-port-random-on-start = false;
-        peer-socket-tos = "default";
-        pex-enabled = false;
-        port-forwarding-enabled = false;
-        preallocation = 1;
-        prefetch-enabled = true;
-        queue-stalled-enabled = true;
-        queue-stalled-minutes = 30;
-        ratio-limit = 2;
-        ratio-limit-enabled = false;
-        rename-partial-files = true;
-        rpc-authentication-required = true;
-        rpc-bind-address = "0.0.0.0";
-        rpc-enabled = true;
-        rpc-host-whitelist = "";
-        rpc-host-whitelist-enabled = true;
-        rpc-port = 9091;
-        rpc-url = "/transmission/";
-        rpc-whitelist = "127.0.0.1,192.168.3.2";
-        rpc-whitelist-enabled = true;
-        scrape-paused-torrents-enabled = true;
-        script-torrent-done-enabled = false;
-        seed-queue-enabled = false;
-        seed-queue-size = 10;
-        speed-limit-down = 6000;
-        speed-limit-down-enabled = true;
-        speed-limit-up = 500;
-        speed-limit-up-enabled = true;
-        start-added-torrents = true;
-        trash-original-torrent-files = false;
-        umask = 2;
-        upload-limit = 100;
-        upload-limit-enabled = 0;
-        upload-slots-per-torrent = 14;
-        utp-enabled = false;
-      };
-    };
-
-    # sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-    # sops.templates."matrix_user_register.sh".content = ''
-    # register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-    # '';
-    # sops.templates.matrixshared.owner = "matrix-synapse";
-    # sops.templates.matrixshared.content = ''
-    # registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-    # '';
-    # sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-    # sops.templates.mautrixtelegram.owner = "matrix-synapse";
-    # sops.templates.mautrixtelegram.content = ''
-    # MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-    # MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-    # MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-    # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-    # '';
-
-
-
-
-    # ----------------
-    # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-    # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-    # sops.templates.mautrixwhatsapp.content = ''
-    # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-    # '';
-
-    postgresql = {
-      enable = true;
-      initialScript = pkgs.writeText "synapse-init.sql" ''
-        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-      '';
-    };
-    matrix-synapse = {
-      settings.app_service_config_files = [
-        "/var/lib/matrix-synapse/telegram-registration.yaml"
-        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-        "/var/lib/matrix-synapse/signal-registration.yaml"
-        "/var/lib/matrix-synapse/doublepuppet.yaml"
-      ];
-      enable = false;
-      settings.server_name = matrixDomain;
-      settings.public_baseurl = "https://${matrixDomain}";
-      extraConfigFiles = [
-        config.sops.templates.matrixshared.path
-      ];
-      settings.listeners = [
-        {
-          port = 8008;
-          bind_addresses = [ "0.0.0.0" ];
-          type = "http";
-          tls = false;
-          x_forwarded = true;
-          resources = [
-            {
-              names = [ "client" "federation" ];
-              compress = true;
-            }
+        root = {
+          openssh.authorizedKeys.keyFiles = [
+            ../../secrets/keys/authorized_keys
           ];
-        }
-      ];
+        };
+      };
     };
 
-    mautrix-telegram = {
+    fileSystems."/mnt/Eternor" = {
+      device = "//192.168.1.3/Eternor";
+      fsType = "cifs";
+      options =
+        let
+          # this line prevents hanging on network split
+          automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+        in
+        [ "${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100" ];
+    };
+
+    environment = {
+      systemPackages = with pkgs; [
+        git
+        gnupg
+        ssh-to-age
+        lego
+        nginx
+        calibre
+        openvpn
+        jq
+        iptables
+        busybox
+        wireguard-tools
+        matrix-synapse
+        lottieconverter
+        ffmpeg
+        pciutils
+        alsa-utils
+        mpv
+        zfs
+      ];
+      etc = {
+        "openvpn/iptables.sh" =
+          {
+            source = ../../scripts/server1/iptables.sh;
+            mode = "0755";
+          };
+        "openvpn/update-resolv-conf" =
+          {
+            source = ../../scripts/server1/update-resolv-conf;
+            mode = "0755";
+          };
+        "openvpn/routing.sh" =
+          {
+            source = ../../scripts/server1/routing.sh;
+            mode = "0755";
+          };
+        "openvpn/ca.rsa.2048.crt" =
+          {
+            source = ../../secrets/certs/ca.rsa.2048.crt;
+            mode = "0644";
+          };
+        "openvpn/crl.rsa.2048.pem" =
+          {
+            source = ../../secrets/certs/crl.rsa.2048.pem;
+            mode = "0644";
+          };
+      };
+      shellAliases = {
+        nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      };
+    };
+
+    systemd = {
+      timers."restart-bridges" = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "1d";
+          OnUnitActiveSec = "1d";
+          Unit = "restart-bridges.service";
+        };
+      };
+
+      services."restart-bridges" = {
+        script = ''
+          systemctl restart mautrix-whatsapp.service
+          systemctl restart mautrix-signal.service
+          systemctl restart mautrix-telegram.service
+        '';
+        serviceConfig = {
+          Type = "oneshot";
+          User = "root";
+        };
+      };
+    };
+    nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+    system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
+
+    documentation = {
       enable = false;
-      environmentFile = config.sops.templates.mautrixtelegram.path;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
-        };
-        appservice = {
-          address = "http://localhost:29317";
-          hostname = "0.0.0.0";
-          port = "29317";
-          provisioning.enabled = true;
-          id = "telegram";
-          # ephemeral_events = true; # not needed due to double puppeting
-          public = {
-            enabled = false;
+    };
+
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
+      validateSopsFiles = false;
+      secrets = {
+        dnstokenfull = { owner = "acme"; };
+        kavita = { owner = "kavita"; };
+        vpnuser = { };
+        rpcuser = { owner = "vpn"; };
+        vpnpass = { };
+        rpcpass = { owner = "vpn"; };
+        vpnprot = { };
+        vpnloc = { };
+        mpdpass = { owner = "mpd"; };
+      };
+      templates = {
+        "transmission-rpc" = {
+          owner = "vpn";
+          content = builtins.toJSON {
+            rpc-username = config.sops.placeholder.rpcuser;
+            rpc-password = config.sops.placeholder.rpcpass;
           };
-          database = "postgresql:///mautrix-telegram?host=/run/postgresql";
         };
-        bridge = {
-          # login_shared_secret_map = {
-          # matrixDomain = "as_token:doublepuppet";
-          # };
-          relaybot.authless_portals = true;
-          allow_avatar_remove = true;
-          allow_contact_info = true;
-          sync_channel_members = true;
-          startup_sync = true;
-          sync_create_limit = 0;
-          sync_direct_chats = true;
-          telegram_link_preview = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
+
+        pia.content = ''
+          ${config.sops.placeholder.vpnuser}
+          ${config.sops.placeholder.vpnpass}
+        '';
+
+        vpn.content = ''
+          client
+          dev tun
+          proto ${config.sops.placeholder.vpnprot}
+          remote ${config.sops.placeholder.vpnloc}
+          resolv-retry infinite
+          nobind
+          persist-key
+          persist-tun
+          cipher aes-128-cbc
+          auth sha1
+          tls-client
+          remote-cert-tls server
+
+          auth-user-pass ${config.sops.templates.pia.path}
+          compress
+          verb 1
+          reneg-sec 0
+
+          crl-verify /etc/openvpn/crl.rsa.2048.pem
+          ca /etc/openvpn/ca.rsa.2048.crt
+
+          disable-occ
+        '';
+        "certs.secret".content = ''
+          CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+        '';
+      };
+    };
+
+    security.acme = {
+      acceptTerms = true;
+      preliminarySelfsigned = false;
+      defaults.email = "mrswarsel@gmail.com";
+      defaults.dnsProvider = "cloudflare";
+      defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+    };
+
+    services = {
+      xserver.xkb = {
+        layout = "us";
+        variant = "altgr-intl";
+      };
+
+      openssh = {
+        enable = true;
+        settings.PermitRootLogin = "yes";
+        listenAddresses = [{
+          port = 22;
+          addr = "0.0.0.0";
+        }];
+      };
+
+      nginx = {
+        enable = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        recommendedOptimisation = true;
+        recommendedGzipSettings = true;
+        virtualHosts = {
+
+          "stash.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://192.168.1.5";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+              "/.well-known/carddav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+              "/.well-known/caldav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+            };
           };
-          animated_sticker = {
-            target = "gif";
-            args = {
-              width = 256;
-              height = 256;
-              fps = 30; # only for webm
-              background = "020202"; # only for gif, transparency not supported
+
+          "swatrix.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "~ ^(/_matrix|/_synapse/client)" = {
+                proxyPass = "http://127.0.0.1:8008";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+
+
+          "sound.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:4040";
+                proxyWebsockets = true;
+                extraConfig = ''
+                  proxy_redirect          http:// https://;
+                  proxy_read_timeout      600s;
+                  proxy_send_timeout      600s;
+                  proxy_buffering         off;
+                  proxy_request_buffering off;
+                  client_max_body_size    0;
+                '';
+              };
+            };
+          };
+
+          "scan.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:28981";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+
+          "screen.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:8096";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+
+          "scroll.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:8080";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
             };
           };
         };
       };
-    };
 
-    mautrix-whatsapp = {
-      enable = false;
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
+      kavita = {
+        enable = true;
+        user = "kavita";
+        settings.port = 8080;
+        tokenKeyFile = config.sops.secrets.kavita.path;
+      };
+
+      jellyfin = {
+        enable = true;
+        user = "jellyfin";
+      };
+
+      radarr = {
+        enable = true;
+      };
+      readarr = {
+        enable = true;
+      };
+      sonarr = {
+        enable = true;
+      };
+      lidarr = {
+        enable = true;
+      };
+      prowlarr = {
+        enable = true;
+      };
+      openvpn.servers = {
+        pia = {
+          autoStart = true;
+          updateResolvConf = false;
+          config = "config ${config.sops.templates.vpn.path}";
         };
-        appservice = {
-          address = "http://localhost:29318";
-          hostname = "0.0.0.0";
-          port = 29318;
-          database = {
-            type = "postgres";
-            uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+      };
+      transmission = {
+        enable = true;
+        credentialsFile = config.sops.templates."transmission-rpc".path;
+        user = "vpn";
+        settings = {
+          alt-speed-down = 8000;
+          alt-speed-enabled = false;
+          alt-speed-time-begin = 0;
+          alt-speed-time-day = 127;
+          alt-speed-time-enabled = true;
+          alt-speed-time-end = 360;
+          alt-speed-up = 2000;
+          bind-address-ipv4 = "0.0.0.0";
+          bind-address-ipv6 = "::";
+          blocklist-enabled = false;
+          blocklist-url = "http://www.example.com/blocklist";
+          cache-size-mb = 256;
+          dht-enabled = false;
+          download-dir = "/test";
+          download-limit = 100;
+          download-limit-enabled = 0;
+          download-queue-enabled = true;
+          download-queue-size = 5;
+          encryption = 2;
+          idle-seeding-limit = 30;
+          idle-seeding-limit-enabled = false;
+          incomplete-dir = "/var/lib/transmission-daemon/Downloads";
+          incomplete-dir-enabled = false;
+          lpd-enabled = false;
+          max-peers-global = 200;
+          message-level = 1;
+          peer-congestion-algorithm = "";
+          peer-id-ttl-hours = 6;
+          peer-limit-global = 100;
+          peer-limit-per-torrent = 40;
+          peer-port = 22371;
+          peer-port-random-high = 65535;
+          peer-port-random-low = 49152;
+          peer-port-random-on-start = false;
+          peer-socket-tos = "default";
+          pex-enabled = false;
+          port-forwarding-enabled = false;
+          preallocation = 1;
+          prefetch-enabled = true;
+          queue-stalled-enabled = true;
+          queue-stalled-minutes = 30;
+          ratio-limit = 2;
+          ratio-limit-enabled = false;
+          rename-partial-files = true;
+          rpc-authentication-required = true;
+          rpc-bind-address = "0.0.0.0";
+          rpc-enabled = true;
+          rpc-host-whitelist = "";
+          rpc-host-whitelist-enabled = true;
+          rpc-port = 9091;
+          rpc-url = "/transmission/";
+          rpc-whitelist = "127.0.0.1,192.168.3.2";
+          rpc-whitelist-enabled = true;
+          scrape-paused-torrents-enabled = true;
+          script-torrent-done-enabled = false;
+          seed-queue-enabled = false;
+          seed-queue-size = 10;
+          speed-limit-down = 6000;
+          speed-limit-down-enabled = true;
+          speed-limit-up = 500;
+          speed-limit-up-enabled = true;
+          start-added-torrents = true;
+          trash-original-torrent-files = false;
+          umask = 2;
+          upload-limit = 100;
+          upload-limit-enabled = 0;
+          upload-slots-per-torrent = 14;
+          utp-enabled = false;
+        };
+      };
+
+      # sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
+      # sops.templates."matrix_user_register.sh".content = ''
+      # register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+      # '';
+      # sops.templates.matrixshared.owner = "matrix-synapse";
+      # sops.templates.matrixshared.content = ''
+      # registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+      # '';
+      # sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
+      # sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
+      # sops.templates.mautrixtelegram.owner = "matrix-synapse";
+      # sops.templates.mautrixtelegram.content = ''
+      # MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+      # MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+      # MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+      # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+      # '';
+
+
+
+
+      # ----------------
+      # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
+      # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
+      # sops.templates.mautrixwhatsapp.content = ''
+      # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
+      # '';
+
+      postgresql = {
+        enable = true;
+        initialScript = pkgs.writeText "synapse-init.sql" ''
+          CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+          CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+            TEMPLATE template0
+            LC_COLLATE = "C"
+            LC_CTYPE = "C";
+          CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+          CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+            TEMPLATE template0
+            LC_COLLATE = "C"
+            LC_CTYPE = "C";
+          CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+          CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+            TEMPLATE template0
+            LC_COLLATE = "C"
+            LC_CTYPE = "C";
+          CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+          CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+            TEMPLATE template0
+            LC_COLLATE = "C"
+            LC_CTYPE = "C";
+        '';
+      };
+      matrix-synapse = {
+        settings.app_service_config_files = [
+          "/var/lib/matrix-synapse/telegram-registration.yaml"
+          "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+          "/var/lib/matrix-synapse/signal-registration.yaml"
+          "/var/lib/matrix-synapse/doublepuppet.yaml"
+        ];
+        enable = false;
+        settings.server_name = matrixDomain;
+        settings.public_baseurl = "https://${matrixDomain}";
+        extraConfigFiles = [
+          config.sops.templates.matrixshared.path
+        ];
+        settings.listeners = [
+          {
+            port = 8008;
+            bind_addresses = [ "0.0.0.0" ];
+            type = "http";
+            tls = false;
+            x_forwarded = true;
+            resources = [
+              {
+                names = [ "client" "federation" ];
+                compress = true;
+              }
+            ];
+          }
+        ];
+      };
+
+      mautrix-telegram = {
+        enable = false;
+        environmentFile = config.sops.templates.mautrixtelegram.path;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
           };
-        };
-        bridge = {
-          displayname_template = "{{or .FullName .PushName .JID}} (WA)";
-          history_sync = {
-            backfill = true;
-            max_initial_conversations = -1;
-            message_count = -1;
-            request_full_sync = true;
-            full_sync_config = {
-              days_limit = 900;
-              size_mb_limit = 5000;
-              storage_quota_mb = 5000;
+          appservice = {
+            address = "http://localhost:29317";
+            hostname = "0.0.0.0";
+            port = "29317";
+            provisioning.enabled = true;
+            id = "telegram";
+            # ephemeral_events = true; # not needed due to double puppeting
+            public = {
+              enabled = false;
+            };
+            database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+          };
+          bridge = {
+            # login_shared_secret_map = {
+            # matrixDomain = "as_token:doublepuppet";
+            # };
+            relaybot.authless_portals = true;
+            allow_avatar_remove = true;
+            allow_contact_info = true;
+            sync_channel_members = true;
+            startup_sync = true;
+            sync_create_limit = 0;
+            sync_direct_chats = true;
+            telegram_link_preview = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
+            animated_sticker = {
+              target = "gif";
+              args = {
+                width = 256;
+                height = 256;
+                fps = 30; # only for webm
+                background = "020202"; # only for gif, transparency not supported
+              };
             };
           };
-          login_shared_secret_map = {
-            matrixDomain = "as_token:doublepuppet";
+        };
+      };
+
+      mautrix-whatsapp = {
+        enable = false;
+        # environmentFile = config.sops.templates.mautrixwhatsapp.path;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
           };
-          sync_manual_marked_unread = true;
-          send_presence_on_typing = true;
-          parallel_member_sync = true;
-          url_previews = true;
-          caption_in_message = true;
-          extev_polls = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
+          appservice = {
+            address = "http://localhost:29318";
+            hostname = "0.0.0.0";
+            port = 29318;
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+            };
+          };
+          bridge = {
+            displayname_template = "{{or .FullName .PushName .JID}} (WA)";
+            history_sync = {
+              backfill = true;
+              max_initial_conversations = -1;
+              message_count = -1;
+              request_full_sync = true;
+              full_sync_config = {
+                days_limit = 900;
+                size_mb_limit = 5000;
+                storage_quota_mb = 5000;
+              };
+            };
+            login_shared_secret_map = {
+              matrixDomain = "as_token:doublepuppet";
+            };
+            sync_manual_marked_unread = true;
+            send_presence_on_typing = true;
+            parallel_member_sync = true;
+            url_previews = true;
+            caption_in_message = true;
+            extev_polls = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
           };
         };
       };
-    };
 
-    mautrix-signal = {
-      enable = false;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
-        };
-        appservice = {
+      mautrix-signal = {
+        enable = false;
+        settings = {
+          homeserver = {
+            address = "http://localhost:8008";
+            domain = matrixDomain;
+          };
+          appservice = {
 
-          address = "http://localhost:29328";
-          hostname = "0.0.0.0";
-          port = 29328;
-          database = {
-            type = "postgres";
-            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+            address = "http://localhost:29328";
+            hostname = "0.0.0.0";
+            port = 29328;
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+            };
+          };
+          bridge = {
+            displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
+            login_shared_secret_map = {
+              matrixDomain = "as_token:doublepuppet";
+            };
+            caption_in_message = true;
+            permissions = {
+              "*" = "relaybot";
+              "@swarsel:${matrixDomain}" = "admin";
+            };
           };
         };
-        bridge = {
-          displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
-          login_shared_secret_map = {
-            matrixDomain = "as_token:doublepuppet";
-          };
-          caption_in_message = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
+      };
+
+      navidrome = {
+        enable = true;
+        settings = {
+          Address = "0.0.0.0";
+          Port = 4040;
+          MusicFolder = "/mnt/";
+          EnableSharing = true;
+          EnableTranscodingConfig = true;
+          Scanner.GroupAlbumReleases = true;
+          ScanSchedule = "@every 24h";
+          # Insert these values locally as sops-nix does not work for them
+          # LastFM.ApiKey = TEMPLATE;
+          # LastFM.Secret = TEMPLATE;
+          # Spotify.ID = TEMPLATE;
+          # Spotify.Secret = TEMPLATE;
+          UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
+          UIWelcomeMessage = "~SwarselSound~";
+        };
+      };
+      mpd = {
+        enable = true;
+        musicDirectory = "/mnt/Eternor/Musik";
+        user = "mpd";
+        group = "mpd";
+        network = {
+          port = 3254;
+          listenAddress = "any";
+        };
+        credentials = [
+          {
+            passwordFile = config.sops.secrets.mpdpass.path;
+            permissions = [
+              "read"
+              "add"
+              "control"
+              "admin"
+            ];
+          }
+        ];
+      };
+
+
+      spotifyd = {
+        enable = true;
+        settings = {
+          global = {
+            dbus_type = "session";
+            use_mpris = false;
+            device = "default:CARD=PCH";
+            device_name = "SwarselSpot";
+            mixer = "alsa";
+            zeroconf_port = 1025;
           };
         };
       };
-    };
 
-    navidrome = {
-      enable = true;
-      settings = {
-        Address = "0.0.0.0";
-        Port = 4040;
-        MusicFolder = "/mnt/";
-        EnableSharing = true;
-        EnableTranscodingConfig = true;
-        Scanner.GroupAlbumReleases = true;
-        ScanSchedule = "@every 24h";
-        # Insert these values locally as sops-nix does not work for them
-        # LastFM.ApiKey = TEMPLATE;
-        # LastFM.Secret = TEMPLATE;
-        # Spotify.ID = TEMPLATE;
-        # Spotify.Secret = TEMPLATE;
-        UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
-        UIWelcomeMessage = "~SwarselSound~";
-      };
-    };
-    mpd = {
-      enable = true;
-      musicDirectory = "/mnt/Eternor/Musik";
-      user = "mpd";
-      group = "mpd";
-      network = {
-        port = 3254;
-        listenAddress = "any";
-      };
-      credentials = [
-        {
-          passwordFile = config.sops.secrets.mpdpass.path;
-          permissions = [
-            "read"
-            "add"
-            "control"
-            "admin"
-          ];
-        }
-      ];
-    };
+      # Network shares
+      # add a user with sudo smbpasswd -a <user>
+      samba = {
+        package = pkgs.samba4Full;
+        extraConfig = ''
+          workgroup = WORKGROUP
+          server role = standalone server
+          dns proxy = no
 
+          pam password change = yes
+          map to guest = bad user
+          create mask = 0664
+          force create mode = 0664
+          directory mask = 0775
+          force directory mode = 0775
+          follow symlinks = yes
+        '';
 
-    spotifyd = {
-      enable = true;
-      settings = {
-        global = {
-          dbus_type = "session";
-          use_mpris = false;
-          device = "default:CARD=PCH";
-          device_name = "SwarselSpot";
-          mixer = "alsa";
-          zeroconf_port = 1025;
+        # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
+        # Required for samba to register mDNS records for auto discovery
+        # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
+        enable = true;
+        # openFirewall = true;
+        shares.test = {
+          browseable = "yes";
+          "read only" = "no";
+          "guest ok" = "no";
+          path = "/test2";
+          writable = "true";
+          comment = "Eternor";
+          "valid users" = "@smbtest2";
         };
       };
-    };
 
-    # Network shares
-    # add a user with sudo smbpasswd -a <user>
-    samba = {
-      package = pkgs.samba4Full;
-      extraConfig = ''
-        workgroup = WORKGROUP
-        server role = standalone server
-        dns proxy = no
 
-        pam password change = yes
-        map to guest = bad user
-        create mask = 0664
-        force create mode = 0664
-        directory mask = 0775
-        force directory mode = 0775
-        follow symlinks = yes
-      '';
+      avahi = {
+        publish.enable = true;
+        publish.userServices = true;
+        # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+        nssmdns4 = true;
+        # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
+        enable = true;
+      };
 
-      # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
-      # Required for samba to register mDNS records for auto discovery
-      # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
-      enable = true;
-      # openFirewall = true;
-      shares.test = {
-        browseable = "yes";
-        "read only" = "no";
-        "guest ok" = "no";
-        path = "/test2";
-        writable = "true";
-        comment = "Eternor";
-        "valid users" = "@smbtest2";
+      samba-wsdd = {
+        # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
+        enable = true;
       };
     };
-
-
-    avahi = {
-      publish.enable = true;
-      publish.userServices = true;
-      # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
-      nssmdns = true;
-      # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
-      enable = true;
-    };
-
-    samba-wsdd = {
-      # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
-      enable = true;
-    };
-  };
-}
+  }
 
 #+end_src
 
@@ -1815,7 +1816,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
 
 #+begin_src nix :noweb yes :tangle profiles/home-manager/home.nix
 
-  { config, pkgs, lib, fetchFromGitHub, ... }:
+  { config, pkgs, ... }:
 
   {
     programs.home-manager.enable = true;
@@ -2078,6 +2079,35 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
 My new main machine.
 
+#+begin_src nix :tangle profiles/fourside/default.nix
+
+  { inputs, outputs, ... }:
+  {
+
+    imports = [
+      inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+      ./hardware-configuration.nix
+      ./nixos.nix
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+          ./home.nix
+        ];
+      }
+    ];
+
+    nixpkgs = {
+      overlays = outputs.overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+  }
+
+
+#+end_src
+
 ***** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:ab6fefc4-aabd-456c-8a21-5fcb20c02869
@@ -2089,12 +2119,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
   { config, pkgs, ... }:
 
   {
-
-    # <<wrap>>
-    imports =
-      [
-        ./hardware-configuration.nix
-      ];
 
     services = {
       getty.autologinUser = "swarsel";
@@ -2184,13 +2208,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       };
     };
 
-    users.users.swarsel = {
-      isNormalUser = true;
-      description = "Leon S";
-      hashedPasswordFile = config.sops.secrets.swarseluser.path;
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
-      packages = with pkgs; [ ];
-    };
 
     environment.systemPackages = with pkgs; [
       # gog games installing
@@ -2269,7 +2286,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
           eDP-1 = {
             mode = "1920x1080"; # TEMPLATE
             scale = "1";
-            position = "1920,0";
+            position = "2560,0";
             # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
           };
           DP-4 = {
@@ -2551,9 +2568,9 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
     ssh-to-age
   ];
 
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "altgr-intl";
+    variant = "altgr-intl";
   };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -2607,9 +2624,9 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
       nginx
     ];
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -2850,9 +2867,9 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
       ];
     };
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -2935,9 +2952,9 @@ In general, I am not amazed by this setup; Kavita is the reader of choice, calib
       extraGroups = [ "video" "render" ];
     };
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -3041,9 +3058,9 @@ This stuff just does not work, I seem to be unable to create a working VPN Split
       home = "/home/vpn";
     };
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -3776,9 +3793,9 @@ Make sure to also do this for doublepuppet.yaml
       ssh-to-age
     ];
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -4002,9 +4019,9 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
       ffmpeg
     ];
 
-    services.xserver = {
+    services.xserver.xkb = {
       layout = "us";
-      xkbVariant = "altgr-intl";
+      variant = "altgr-intl";
     };
 
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -4404,7 +4421,7 @@ As such, I also define three additional overlays:
 
 #+begin_src nix :tangle pkgs/default.nix
 
- _ : { }
+ _ : rec { }
 
 #+end_src
 
@@ -4451,22 +4468,48 @@ These are system-level settings specific to NixOS machines. All settings that ar
 :CUSTOM_ID: h:5a114da6-ef8d-404d-b31b-b51472908e77
 :END:
 
-**** Enable home-manager module
+**** Imports, enable home-manager module
 :PROPERTIES:
 :CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
 :END:
 
 First, we enable the use of =home-manager= as a NixoS module
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/default.nix
 
-  { config, lib, pkgs, ... }:
-
+  { ... }:
   {
+    imports = [
+      ./xserver.nix
+      ./users.nix
+      ./env.nix
+      ./stylix.nix
+      ./polkit.nix
+      ./gc.nix
+      ./store.nix
+      ./systemd.nix
+      ./network.nix
+      ./time.nix
+      ./hardware.nix
+      ./sops.nix
+      ./packages.nix
+      ./programs.nix
+      ./zsh.nix
+      ./syncthing.nix
+      ./blueman.nix
+      ./networkdevices.nix
+      ./gvfs.nix
+      ./interceptiontools.nix
+      ./hardwarecompatibility.nix
+      ./login.nix
+    ];
+
+
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
     };
+  }
 
   #+end_src
 
@@ -4477,29 +4520,18 @@ First, we enable the use of =home-manager= as a NixoS module
 
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  services.xserver = {
-    xkb = {
-      layout = "us";
-      variant = "altgr-intl";
+#+begin_src nix :tangle profiles/common/nixos/xserver.nix
+  { ... }:
+  {
+    services.xserver = {
+      xkb = {
+        layout = "us";
+        variant = "altgr-intl";
+      };
     };
-  };
-
+  }
   #+end_src
 
-**** Enable flakes and nix-command
-:PROPERTIES:
-:CUSTOM_ID: h:f9718641-adf7-4e5b-9e07-5b9413224971
-:END:
-
-Next, we need to make sure that flakes stay enabled when we rebuild the configuration. At the same time we enable the experimental =nix-command=, which enables commands such as the more powerful =nix shell= as opposed to =nix-shell=.
-
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  # nix.settings.experimental-features = ["nix-command" "flakes"];
-
-#+end_src
 
 **** Make users non-mutable
 :PROPERTIES:
@@ -4508,10 +4540,20 @@ Next, we need to make sure that flakes stay enabled when we rebuild the configur
 
 This ensures that all user-configuration happens here in the config file.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  users.mutableUsers = false;
-
+#+begin_src nix :tangle profiles/common/nixos/users.nix
+  { pkgs, config, ... }:
+  {
+    users = {
+      mutableUsers = false;
+      users.swarsel = {
+        isNormalUser = true;
+        description = "Leon S";
+        hashedPasswordFile = config.sops.secrets.swarseluser.path;
+        extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+        packages = with pkgs; [ ];
+      };
+    };
+  }
 #+end_src
 
 **** Environment setup
@@ -4521,35 +4563,23 @@ This ensures that all user-configuration happens here in the config file.
 
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  environment = {
-    wordlist.enable = true;
-    sessionVariables = {
-      NIXOS_OZONE_WL = "1";
-      GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
-        gst-plugins-good
-        gst-plugins-bad
-        gst-plugins-ugly
-        gst-libav
-      ]);
+#+begin_src nix :tangle profiles/common/nixos/env.nix
+  { lib, pkgs, ... }:
+  {
+    environment = {
+      wordlist.enable = true;
+      sessionVariables = {
+        NIXOS_OZONE_WL = "1";
+        GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+          gst-plugins-good
+          gst-plugins-bad
+          gst-plugins-ugly
+          gst-libav
+        ]);
+      };
     };
-  };
-  # gstreamer plugins for nautilus (used for file metadata)
-
-#+end_src
-
-**** Make sure time is consistent in windows dualboot
-:PROPERTIES:
-:CUSTOM_ID: h:c31f7900-f8b7-46aa-b501-c245ab889578
-:END:
-
-Windows/Linux dualboot has the quirk of ruining the system clock. Fix it on this side.
-
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  time.hardwareClockInLocalTime = true;
-
+    # gstreamer plugins for nautilus (used for file metadata)
+  }
 #+end_src
 
 **** Disallow stylix from styling grub
@@ -4559,11 +4589,12 @@ Windows/Linux dualboot has the quirk of ruining the system clock. Fix it on this
 
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  # dont style GRUB with stylix
-  stylix.targets.grub.enable = false; # the styling makes grub more ugly
-
+#+begin_src nix :tangle profiles/common/nixos/stylix.nix
+  { ... }:
+  {
+    # dont style GRUB with stylix
+    stylix.targets.grub.enable = false; # the styling makes grub more ugly
+  }
 #+end_src
 
 **** Enable PolicyKit
@@ -4573,10 +4604,11 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 
 Needed for control over system-wide privileges etc.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  security.polkit.enable = true;
-
+#+begin_src nix :tangle profiles/common/nixos/polkit.nix
+  { ... }:
+  {
+    security.polkit.enable = true;
+  }
 #+end_src
 
 **** Enable automatic garbage collection
@@ -4586,15 +4618,16 @@ Needed for control over system-wide privileges etc.
 
 The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  nix.gc = {
-    automatic = true;
-    randomizedDelaySec = "14m";
-    dates = "weekly";
-    options = "--delete-older-than 10d";
-  };
-
+#+begin_src nix :tangle profiles/common/nixos/gc.nix
+  { ... }:
+  {
+    nix.gc = {
+      automatic = true;
+      randomizedDelaySec = "14m";
+      dates = "weekly";
+      options = "--delete-older-than 10d";
+    };
+  }
 #+end_src
 
 **** Enable automatic store optimisation
@@ -4604,12 +4637,14 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
 
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  nix.optimise = {
-    automatic = true;
-    dates = [ "weekly" ];
-  };
+#+begin_src nix :tangle profiles/common/nixos/store.nix
+  { ... }:
+  {
+    nix.optimise = {
+      automatic = true;
+      dates = [ "weekly" ];
+    };
+  }
 
 #+end_src
 
@@ -4620,15 +4655,15 @@ This enables hardlinking identical files in the nix store, to save on disk space
 
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-
-  # systemd
-  systemd.extraConfig = ''
-    DefaultTimeoutStartSec=60s
-    DefaultTimeoutStopSec=15s
-  '';
-
+#+begin_src nix :tangle profiles/common/nixos/systemd.nix
+  { ... }:
+  {
+    # systemd
+    systemd.extraConfig = ''
+        DefaultTimeoutStartSec=60s
+        DefaultTimeoutStopSec=15s
+      '';
+  }
 #+end_src
 
 **** Hardware settings
@@ -4638,31 +4673,33 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 
 Enable OpenGL, Sound, Bluetooth and various drivers.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/hardware.nix
+  { pkgs, ...}:
+  {
 
-  hardware = {
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-    };
+    hardware = {
+      graphics = {
+        enable = true;
+        enable32Bit = true;
+      };
 
-    pulseaudio= {
-      enable = true;
-      package = pkgs.pulseaudioFull;
-    };
+      pulseaudio= {
+        enable = true;
+        package = pkgs.pulseaudioFull;
+      };
 
-    enableAllFirmware = true;
+      enableAllFirmware = true;
 
-    bluetooth = {
-      powerOnBoot = true;
-      settings = {
-        General = {
-          Enable = "Source,Sink,Media,Socket";
+      bluetooth = {
+        powerOnBoot = true;
+        settings = {
+          General = {
+            Enable = "Source,Sink,Media,Socket";
+          };
         };
       };
     };
-  };
-
+  }
 #+end_src
 
 **** Common network settings
@@ -4672,241 +4709,246 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
 Here I only enable =networkmanager=. Most of the 'real' network config is done in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/network.nix
+  { config, ...}:
+  {
+    networking.networkmanager = {
+      enable = true;
+      ensureProfiles = {
+        environmentFiles = [
+          "${config.sops.templates."network-manager.env".path}"
+        ];
+        profiles = {
+          "Ernest Routerford" = {
+            connection = {
+              id = "Ernest Routerford";
+              permissions = "";
+              type = "wifi";
+            };
+            ipv4 = {
+              dns-search = "";
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              dns-search = "";
+              method = "auto";
+            };
+            wifi = {
+              mac-address-blacklist = "";
+              mode = "infrastructure";
+              ssid = "Ernest Routerford";
+            };
+            wifi-security = {
+              auth-alg = "open";
+              key-mgmt = "wpa-psk";
+              psk = "$ERNEST";
+            };
+          };
 
-  networking.networkmanager = {
-    enable = true;
-    ensureProfiles = {
-      environmentFiles = [
-        "${config.sops.templates."network-manager.env".path}"
-      ];
-      profiles = {
-        "Ernest Routerford" = {
-          connection = {
-            id = "Ernest Routerford";
-            permissions = "";
-            type = "wifi";
+          LAN-Party = {
+            connection = {
+              autoconnect = "false";
+              id = "LAN-Party";
+              type = "ethernet";
+            };
+            ethernet = {
+              auto-negotiate = "true";
+              cloned-mac-address = "preserve";
+              mac-address = "90:2E:16:D0:A1:87";
+            };
+            ipv4 = { method = "shared"; };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            proxy = { };
           };
-          ipv4 = {
-            dns-search = "";
-            method = "auto";
+
+          eduroam = {
+            "802-1x" = {
+              eap = "ttls;";
+              identity = "$EDUID";
+              password = "$EDUPASS";
+              phase2-auth = "mschapv2";
+            };
+            connection = {
+              id = "eduroam";
+              type = "wifi";
+            };
+            ipv4 = { method = "auto"; };
+            ipv6 = {
+              addr-gen-mode = "default";
+              method = "auto";
+            };
+            proxy = { };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "eduroam";
+            };
+            wifi-security = {
+              auth-alg = "open";
+              key-mgmt = "wpa-eap";
+            };
           };
-          ipv6 = {
-            addr-gen-mode = "stable-privacy";
-            dns-search = "";
-            method = "auto";
+
+          local = {
+            connection = {
+              autoconnect = "false";
+              id = "local";
+              type = "ethernet";
+            };
+            ethernet = { };
+            ipv4 = {
+              address1 = "10.42.1.1/24";
+              method = "shared";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            proxy = { };
           };
-          wifi = {
-            mac-address-blacklist = "";
-            mode = "infrastructure";
-            ssid = "Ernest Routerford";
+
+          HH40V_39F5 = {
+            connection = {
+              id = "HH40V_39F5";
+              type = "wifi";
+            };
+            ipv4 = { method = "auto"; };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            proxy = { };
+            wifi = {
+              band = "bg";
+              mode = "infrastructure";
+              ssid = "HH40V_39F5";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$FRAUNS";
+            };
           };
-          wifi-security = {
-            auth-alg = "open";
-            key-mgmt = "wpa-psk";
-            psk = "$ERNEST";
+
+          magicant = {
+            connection = {
+              id = "magicant";
+              type = "wifi";
+            };
+            ipv4 = { method = "auto"; };
+            ipv6 = {
+              addr-gen-mode = "default";
+              method = "auto";
+            };
+            proxy = { };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "magicant";
+            };
+            wifi-security = {
+              auth-alg = "open";
+              key-mgmt = "wpa-psk";
+              psk = "$HANDYHOTSPOT";
+            };
           };
+
+          "sweden-aes-128-cbc-udp-dns" = {
+            connection = {
+              autoconnect = "false";
+              id = "PIA Sweden";
+              type = "vpn";
+            };
+            ipv4 = { method = "auto"; };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            proxy = { };
+            vpn = {
+              auth = "sha1";
+              ca =
+                "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
+              challenge-response-flags = "2";
+              cipher = "aes-128-cbc";
+              compress = "yes";
+              connection-type = "password";
+              crl-verify-file = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-crl-verify.pem";
+              dev = "tun";
+              password-flags = "0";
+              remote = "sweden.privacy.network:1198";
+              remote-cert-tls = "server";
+              reneg-seconds = "0";
+              service-type = "org.freedesktop.NetworkManager.openvpn";
+              username = "$VPNUSER";
+            };
+            vpn-secrets = { password = "$VPNPASS"; };
+          };
+
+          Hotspot = {
+            connection = {
+              autoconnect = "false";
+              id = "Hotspot";
+              type = "wifi";
+            };
+            ipv4 = { method = "shared"; };
+            ipv6 = {
+              addr-gen-mode = "default";
+              method = "ignore";
+            };
+            proxy = { };
+            wifi = {
+              mode = "ap";
+              ssid = "Hotspot-fourside";
+            };
+            wifi-security = {
+              group = "ccmp;";
+              key-mgmt = "wpa-psk";
+              pairwise = "ccmp;";
+              proto = "rsn;";
+              psk = "$HOTSPOT";
+            };
+          };
+
         };
-
-        LAN-Party = {
-          connection = {
-            autoconnect = "false";
-            id = "LAN-Party";
-            type = "ethernet";
-          };
-          ethernet = {
-            auto-negotiate = "true";
-            cloned-mac-address = "preserve";
-            mac-address = "90:2E:16:D0:A1:87";
-          };
-          ipv4 = { method = "shared"; };
-          ipv6 = {
-            addr-gen-mode = "stable-privacy";
-            method = "auto";
-          };
-          proxy = { };
-        };
-
-        eduroam = {
-          "802-1x" = {
-            eap = "ttls;";
-            identity = "$EDUID";
-            password = "$EDUPASS";
-            phase2-auth = "mschapv2";
-          };
-          connection = {
-            id = "eduroam";
-            type = "wifi";
-          };
-          ipv4 = { method = "auto"; };
-          ipv6 = {
-            addr-gen-mode = "default";
-            method = "auto";
-          };
-          proxy = { };
-          wifi = {
-            mode = "infrastructure";
-            ssid = "eduroam";
-          };
-          wifi-security = {
-            auth-alg = "open";
-            key-mgmt = "wpa-eap";
-          };
-        };
-
-        local = {
-          connection = {
-            autoconnect = "false";
-            id = "local";
-            type = "ethernet";
-          };
-          ethernet = { };
-          ipv4 = {
-            address1 = "10.42.1.1/24";
-            method = "shared";
-          };
-          ipv6 = {
-            addr-gen-mode = "stable-privacy";
-            method = "auto";
-          };
-          proxy = { };
-        };
-
-        HH40V_39F5 = {
-          connection = {
-            id = "HH40V_39F5";
-            type = "wifi";
-          };
-          ipv4 = { method = "auto"; };
-          ipv6 = {
-            addr-gen-mode = "stable-privacy";
-            method = "auto";
-          };
-          proxy = { };
-          wifi = {
-            band = "bg";
-            mode = "infrastructure";
-            ssid = "HH40V_39F5";
-          };
-          wifi-security = {
-            key-mgmt = "wpa-psk";
-            psk = "$FRAUNS";
-          };
-        };
-
-        magicant = {
-          connection = {
-            id = "magicant";
-            type = "wifi";
-          };
-          ipv4 = { method = "auto"; };
-          ipv6 = {
-            addr-gen-mode = "default";
-            method = "auto";
-          };
-          proxy = { };
-          wifi = {
-            mode = "infrastructure";
-            ssid = "magicant";
-          };
-          wifi-security = {
-            auth-alg = "open";
-            key-mgmt = "wpa-psk";
-            psk = "$HANDYHOTSPOT";
-          };
-        };
-
-        "sweden-aes-128-cbc-udp-dns" = {
-          connection = {
-            autoconnect = "false";
-            id = "PIA Sweden";
-            type = "vpn";
-          };
-          ipv4 = { method = "auto"; };
-          ipv6 = {
-            addr-gen-mode = "stable-privacy";
-            method = "auto";
-          };
-          proxy = { };
-          vpn = {
-            auth = "sha1";
-            ca =
-              "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
-            challenge-response-flags = "2";
-            cipher = "aes-128-cbc";
-            compress = "yes";
-            connection-type = "password";
-            crl-verify-file = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-crl-verify.pem";
-            dev = "tun";
-            password-flags = "0";
-            remote = "sweden.privacy.network:1198";
-            remote-cert-tls = "server";
-            reneg-seconds = "0";
-            service-type = "org.freedesktop.NetworkManager.openvpn";
-            username = "$VPNUSER";
-          };
-          vpn-secrets = { password = "$VPNPASS"; };
-        };
-
-        Hotspot = {
-          connection = {
-            autoconnect = "false";
-            id = "Hotspot";
-            type = "wifi";
-          };
-          ipv4 = { method = "shared"; };
-          ipv6 = {
-            addr-gen-mode = "default";
-            method = "ignore";
-          };
-          proxy = { };
-          wifi = {
-            mode = "ap";
-            ssid = "Hotspot-fourside";
-          };
-          wifi-security = {
-            group = "ccmp;";
-            key-mgmt = "wpa-psk";
-            pairwise = "ccmp;";
-            proto = "rsn;";
-            psk = "$HOTSPOT";
-          };
-        };
-
       };
     };
-  };
 
-  systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
-
+    systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
+  }
 #+end_src
 
-**** Locale settings
+**** Time, locale settings
 :PROPERTIES:
 :CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
 :END:
 
-Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone.
+Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  time.timeZone = "Europe/Vienna";
-
-  i18n = {
-    defaultLocale = "en_US.UTF-8";
-    extraLocaleSettings = {
-      LC_ADDRESS = "de_AT.UTF-8";
-      LC_IDENTIFICATION = "de_AT.UTF-8";
-      LC_MEASUREMENT = "de_AT.UTF-8";
-      LC_MONETARY = "de_AT.UTF-8";
-      LC_NAME = "de_AT.UTF-8";
-      LC_NUMERIC = "de_AT.UTF-8";
-      LC_PAPER = "de_AT.UTF-8";
-      LC_TELEPHONE = "de_AT.UTF-8";
-      LC_TIME = "de_AT.UTF-8";
+#+begin_src nix :tangle profiles/common/nixos/time.nix
+  { ... }:
+  {
+    time = {
+      timeZone = "Europe/Vienna";
+      hardwareClockInLocalTime = true;
     };
-  };
 
+    i18n = {
+      defaultLocale = "en_US.UTF-8";
+      extraLocaleSettings = {
+        LC_ADDRESS = "de_AT.UTF-8";
+        LC_IDENTIFICATION = "de_AT.UTF-8";
+        LC_MEASUREMENT = "de_AT.UTF-8";
+        LC_MONETARY = "de_AT.UTF-8";
+        LC_NAME = "de_AT.UTF-8";
+        LC_NUMERIC = "de_AT.UTF-8";
+        LC_PAPER = "de_AT.UTF-8";
+        LC_TELEPHONE = "de_AT.UTF-8";
+        LC_TIME = "de_AT.UTF-8";
+      };
+    };
+  }
 #+end_src
 
 *** sops
@@ -4921,38 +4963,39 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/sops.nix
+  { config, ... }:
+  {
+    sops = {
 
-  sops = {
+      defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+      validateSopsFiles = false;
 
-    defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
-    validateSopsFiles = false;
-
-    secrets = {
-      swarseluser = { neededForUsers = true; };
-      ernest = { };
-      frauns = { };
-      hotspot = { };
-      eduid = { };
-      edupass = { };
-      handyhotspot = { };
-      vpnuser = { };
-      vpnpass = { };
+      secrets = {
+        swarseluser = { neededForUsers = true; };
+        ernest = { };
+        frauns = { };
+        hotspot = { };
+        eduid = { };
+        edupass = { };
+        handyhotspot = { };
+        vpnuser = { };
+        vpnpass = { };
+      };
+      templates = {
+        "network-manager.env".content = ''
+          ERNEST=${config.sops.placeholder.ernest}
+          FRAUNS=${config.sops.placeholder.frauns}
+          HOTSPOT=${config.sops.placeholder.hotspot}
+          EDUID=${config.sops.placeholder.eduid}
+          EDUPASS=${config.sops.placeholder.edupass}
+          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+          VPNUSER=${config.sops.placeholder.vpnuser}
+          VPNPASS=${config.sops.placeholder.vpnpass}
+        '';
+      };
     };
-    templates = {
-      "network-manager.env".content = ''
-        ERNEST=${config.sops.placeholder.ernest}
-        FRAUNS=${config.sops.placeholder.frauns}
-        HOTSPOT=${config.sops.placeholder.hotspot}
-        EDUID=${config.sops.placeholder.eduid}
-        EDUPASS=${config.sops.placeholder.edupass}
-        HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-        VPNUSER=${config.sops.placeholder.vpnuser}
-        VPNPASS=${config.sops.placeholder.vpnpass}
-      '';
-    };
-  };
-
+  }
   #+end_src
 
 *** System Packages
@@ -4962,87 +5005,88 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/packages.nix
+  { pkgs, ... }:
+  {
+    environment.systemPackages = with pkgs; [
+      # yubikey packages
+      gnupg
+      yubikey-personalization
+      yubikey-personalization-gui
+      yubico-pam
+      yubioath-flutter
+      yubikey-manager
+      yubikey-manager-qt
+      yubico-piv-tool
+      cfssl
+      pcsctools
+      pcscliteWithPolkit.out
 
-  environment.systemPackages = with pkgs; [
-    # yubikey packages
-    gnupg
-    yubikey-personalization
-    yubikey-personalization-gui
-    yubico-pam
-    yubioath-flutter
-    yubikey-manager
-    yubikey-manager-qt
-    yubico-piv-tool
-    cfssl
-    pcsctools
-    pcscliteWithPolkit.out
+      # ledger packages
+      ledger-live-desktop
 
-    # ledger packages
-    ledger-live-desktop
+      # pinentry
 
-    # pinentry
+      # theme related
+      adwaita-icon-theme
 
-    # theme related
-    adwaita-icon-theme
+      # kde-connect
+      xdg-desktop-portal
 
-    # kde-connect
-    xdg-desktop-portal
+      # bluetooth
+      bluez
 
-    # bluetooth
-    bluez
+      # lsp-related -------------------------------
+      # nix
+      # latex
+      texlab
+      ghostscript_headless
+      # wireguard
+      wireguard-tools
+      # rust
+      rust-analyzer
+      clippy
+      rustfmt
+      # go
+      go
+      gopls
+      # zig
+      zig
+      zls
+      # cpp
+      clang-tools
+      # + cuda
+      cudatoolkit
+      #lsp-bridge / python
+      gcc
+      gdb
+      (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
+      # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+      # --------------------------------------------
 
-    # lsp-related -------------------------------
-    # nix
-    # latex
-    texlab
-    ghostscript_headless
-    # wireguard
-    wireguard-tools
-    # rust
-    rust-analyzer
-    clippy
-    rustfmt
-    # go
-    go
-    gopls
-    # zig
-    zig
-    zls
-    # cpp
-    clang-tools
-    # + cuda
-    cudatoolkit
-    #lsp-bridge / python
-    gcc
-    gdb
-    (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
-    # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-    # --------------------------------------------
-
-    (stdenv.mkDerivation {
-      name = "oama";
-
-      src = pkgs.fetchurl {
+      (stdenv.mkDerivation {
         name = "oama";
-        url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-        sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
-      };
 
-      phases = [
-        "unpackPhase"
-      ];
+        src = pkgs.fetchurl {
+          name = "oama";
+          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+        };
 
-      unpackPhase = ''
-        mkdir -p $out/bin
-        tar xvf $src -C $out/
-        mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
-      '';
+        phases = [
+          "unpackPhase"
+        ];
 
-    })
+        unpackPhase = ''
+           mkdir -p $out/bin
+           tar xvf $src -C $out/
+           mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+         '';
 
-  ];
+      })
 
+    ];
+  }
 #+end_src
 
 *** Programs (including zsh setup)
@@ -5052,73 +5096,78 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  programs = {
-    dconf.enable = true;
-    evince.enable = true;
-    kdeconnect.enable = true;
-  };
+#+begin_src nix :tangle profiles/common/nixos/programs.nix
+  { ... }:
+  {
+    programs = {
+      dconf.enable = true;
+      evince.enable = true;
+      kdeconnect.enable = true;
+    };
+  }
 #+end_src
 
 **** zsh
 Do not touch this.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  programs.zsh.enable = true;
-  users.defaultUserShell = pkgs.zsh;
-  environment.shells = with pkgs; [ zsh ];
-  environment.pathsToLink = [ "/share/zsh" ];
-
+#+begin_src nix :tangle profiles/common/nixos/zsh.nix
+  { pkgs, ... }:
+  {
+    programs.zsh.enable = true;
+    users.defaultUserShell = pkgs.zsh;
+    environment.shells = with pkgs; [ zsh ];
+    environment.pathsToLink = [ "/share/zsh" ];
+  }
 #+end_src
 **** syncthing
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/syncthing.nix
 
-  services.syncthing = {
-    enable = true;
-    user = "swarsel";
-    dataDir = "/home/swarsel";
-    configDir = "/home/swarsel/.config/syncthing";
-    openDefaultPorts = true;
-    settings = {
-      devices = {
-        "magicant" = {
-          id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
+  { ... }:
+  {
+    services.syncthing = {
+      enable = true;
+      user = "swarsel";
+      dataDir = "/home/swarsel";
+      configDir = "/home/swarsel/.config/syncthing";
+      openDefaultPorts = true;
+      settings = {
+        devices = {
+          "magicant" = {
+            id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
+          };
+          "sync (@oracle)" = {
+            id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
+          };
+          "server1" = {
+            id = "ZXWVC4X-IIARITZ-MERZPHN-HD55Y6G-QJM2GTB-6BWYXMR-DTO3TS2-QDBREQQ";
+          };
         };
-        "sync (@oracle)" = {
-          id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
-        };
-        "server1" = {
-          id = "ZXWVC4X-IIARITZ-MERZPHN-HD55Y6G-QJM2GTB-6BWYXMR-DTO3TS2-QDBREQQ";
-        };
-      };
-      folders = {
-        "Default Folder" = {
-          path = "/home/swarsel/Sync";
-          devices = [ "sync (@oracle)" ];
-          id = "default";
-        };
-        "Obsidian" = {
-          path = "/home/swarsel/Nextcloud/Obsidian";
-          devices = [ "sync (@oracle)" ];
-          id = "yjvni-9eaa7";
-        };
-        "Org" = {
-          path = "/home/swarsel/Nextcloud/Org";
-          devices = [ "sync (@oracle)" ];
-          id = "a7xnl-zjj3d";
-        };
-        "Vpn" = {
-          path = "/home/swarsel/Vpn";
-          devices = [ "sync (@oracle)" ];
-          id = "hgp9s-fyq3p";
+        folders = {
+          "Default Folder" = {
+            path = "/home/swarsel/Sync";
+            devices = [ "sync (@oracle)" ];
+            id = "default";
+          };
+          "Obsidian" = {
+            path = "/home/swarsel/Nextcloud/Obsidian";
+            devices = [ "sync (@oracle)" ];
+            id = "yjvni-9eaa7";
+          };
+          "Org" = {
+            path = "/home/swarsel/Nextcloud/Org";
+            devices = [ "sync (@oracle)" ];
+            id = "a7xnl-zjj3d";
+          };
+          "Vpn" = {
+            path = "/home/swarsel/Vpn";
+            devices = [ "sync (@oracle)" ];
+            id = "hgp9s-fyq3p";
+          };
         };
       };
     };
-  };
-
+  }
 #+end_src
 
 *** Services
@@ -5135,66 +5184,71 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 
 Enables the blueman service including the nice system tray icon.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  services.blueman.enable = true;
-
+#+begin_src nix :tangle profiles/common/nixos/blueman.nix
+  { ... }:
+  {
+    services.blueman.enable = true;
+  }
 #+end_src
 
-**** Detect Scanners over network
+**** Network devices
+
+In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
+***** Scanners
 :PROPERTIES:
 :CUSTOM_ID: h:fae5939e-22ac-4532-a10e-0b86013d20ce
 :END:
 
 This allows me to use my big scanner/printer's scanning function over the network.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  # enable scanners over network
-  hardware.sane = {
-    enable = true;
-    extraBackends = [ pkgs.sane-airscan ];
-  };
+#+begin_src nix :tangle profiles/common/nixos/networkdevices.nix
+  {pkgs, ...}:
+  {
+    # enable scanners over network
+    hardware.sane = {
+      enable = true;
+      extraBackends = [ pkgs.sane-airscan ];
+    };
 
 #+end_src
 
-**** Detect Printers over network
+***** Printers
 :PROPERTIES:
 :CUSTOM_ID: h:8c13df62-c6d9-4a0a-83be-d77e71628f0b
 :END:
 
 This allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  # enable discovery and usage of network devices (esp. printers)
-  services.printing = {
-    enable = true;
-    drivers = [
-      pkgs.gutenprint
-      pkgs.gutenprintBin
-    ];
-    browsedConf = ''
-      BrowseDNSSDSubTypes _cups,_print
-      BrowseLocalProtocols all
-      BrowseRemoteProtocols all
-      CreateIPPPrinterQueues All
-      BrowseProtocols all
-    '';
-  };
-
+#+begin_src nix :tangle profiles/common/nixos/networkdevices.nix
+    # enable discovery and usage of network devices (esp. printers)
+    services.printing = {
+      enable = true;
+      drivers = [
+        pkgs.gutenprint
+        pkgs.gutenprintBin
+      ];
+      browsedConf = ''
+        BrowseDNSSDSubTypes _cups,_print
+        BrowseLocalProtocols all
+        BrowseRemoteProtocols all
+        CreateIPPPrinterQueues All
+        BrowseProtocols all
+      '';
+    };
 #+end_src
 
-Avahi is the service used for the network discovery
+***** Avahi (device discovery)
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+Avahi is the service used for the network discovery.
+
+#+begin_src nix :tangle profiles/common/nixos/networkdevices.nix
 
   services.avahi = {
     enable = true;
     nssmdns4 = true;
     openFirewall = true;
   };
-
+  }
 #+end_src
 
 **** enable GVfs
@@ -5204,10 +5258,11 @@ Avahi is the service used for the network discovery
 
 This is being set to allow myself to use all functions of nautilus in NixOS
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  services.gvfs.enable = true;
-
+#+begin_src nix :tangle profiles/common/nixos/gvfs.nix
+  { ... }:
+  {
+    services.gvfs.enable = true;
+  }
 #+end_src
 
 **** interception-tools: Make CAPS work as ESC/CTRL
@@ -5217,35 +5272,37 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 
 This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/interceptiontools.nix
 
-  # Make CAPS work as a dual function ESC/CTRL key
-  services.interception-tools = {
-    enable = true;
-    udevmonConfig =
-      let
-        dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-          TIMING:
-            TAP_MILLISEC: 200
-            DOUBLE_TAP_MILLISEC: 0
+  { pkgs, ... }:
+  {
+    # Make CAPS work as a dual function ESC/CTRL key
+    services.interception-tools = {
+      enable = true;
+      udevmonConfig =
+        let
+          dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+            TIMING:
+              TAP_MILLISEC: 200
+              DOUBLE_TAP_MILLISEC: 0
 
-          MAPPINGS:
-            - KEY: KEY_CAPSLOCK
-              TAP: KEY_ESC
-              HOLD: KEY_LEFTCTRL
+            MAPPINGS:
+              - KEY: KEY_CAPSLOCK
+                TAP: KEY_ESC
+                HOLD: KEY_LEFTCTRL
+          '';
+        in
+          ''
+          - JOB: |
+              ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+                | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+                | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+            DEVICE:
+              EVENTS:
+                EV_KEY: [KEY_CAPSLOCK]
         '';
-      in
-      ''
-        - JOB: |
-            ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-              | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-              | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-          DEVICE:
-            EVENTS:
-              EV_KEY: [KEY_CAPSLOCK]
-      '';
-  };
-
+    };
+  }
 #+end_src
 
 *** Hardware compatibility settings (Yubikey, Ledger) - udev rules
@@ -5260,25 +5317,22 @@ It makes sense to house these settings in their own section, since they are all 
 The exception is the system packages, since that cannot be defined twice in the same file (common.nix). The comment is left in as a remider for that.
 
 The rest of the gpg-agent related settings are here: [[#h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103][gpg-agent]]
-
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  programs.ssh.startAgent = false;
-
-  services.pcscd.enable = true;
-
-  hardware.ledger.enable = true;
-#+end_src
-
 Also, this is a good place to setup the udev rules.
 
-#+begin_src nix :tangle profiles/common/nixos.nix
+#+begin_src nix :tangle profiles/common/nixos/hardwarecompatibility.nix
+  { pkgs, ... }:
+  {
+    programs.ssh.startAgent = false;
 
-  services.udev.packages = with pkgs; [
-    yubikey-personalization
-    ledger-udev-rules
-  ];
+    services.pcscd.enable = true;
 
+    hardware.ledger.enable = true;
+
+    services.udev.packages = with pkgs; [
+      yubikey-personalization
+      ledger-udev-rules
+    ];
+  }
 #+end_src
 
 *** System Login
@@ -5288,33 +5342,72 @@ Also, this is a good place to setup the udev rules.
 
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
 
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  services.greetd = {
-    enable = true;
-    settings = {
-      initial_session.command = "sway";
-      # initial_session.user ="swarsel";
-      default_session.command = ''
-        ${pkgs.greetd.tuigreet}/bin/tuigreet \
-          --time \
-          --asterisks \
-          --user-menu \
-          --cmd sway
-      '';
+#+begin_src nix :tangle profiles/common/nixos/login.nix
+  { pkgs, ... }:
+  {
+    services.greetd = {
+      enable = true;
+      settings = {
+        initial_session.command = "sway";
+        # initial_session.user ="swarsel";
+        default_session.command = ''
+          ${pkgs.greetd.tuigreet}/bin/tuigreet \
+            --time \
+            --asterisks \
+            --user-menu \
+            --cmd sway
+        '';
+      };
     };
-  };
 
-  environment.etc."greetd/environments".text = ''
-    sway
-  '';
-
+    environment.etc."greetd/environments".text = ''
+      sway
+    '';
+  }
 #+end_src
 
 ** Common Home-Manager
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
 :END:
+*** Imports
+
+This section sets up all the imports that are used in the home-manager section.
+
+#+begin_src nix :tangle profiles/common/home/default.nix
+  { ... }:
+  {
+    imports = [
+      ./packages.nix
+      ./sops.nix
+      ./ssh.nix
+      ./stylix.nix
+      ./desktop.nix
+      ./symlink.nix
+      ./env.nix
+      ./programs.nix
+      ./nix-index.nix
+      ./password-store.nix
+      ./direnv.nix
+      ./eza.nix
+      ./git.nix
+      ./fuzzel.nix
+      ./starship.nix
+      ./kitty.nix
+      ./zsh.nix
+      ./mail.nix
+      ./emacs.nix
+      ./waybar.nix
+      ./firefox.nix
+      ./gnome-keyring.nix
+      ./kdeconnect.nix
+      ./mako.nix
+      ./sway.nix
+    ];
+
+  }
+#+end_src
+
 *** Installed packages
 :PROPERTIES:
 :CUSTOM_ID: h:893a7f33-7715-415b-a895-2687ded31c18
@@ -5331,8 +5424,8 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 :CUSTOM_ID: h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75
 :END:
 
-#+begin_src nix :tangle profiles/common/home.nix
-  { config, pkgs, fetchFromGitHub, ... }:
+#+begin_src nix :tangle profiles/common/home/packages.nix
+  { pkgs, ... }:
 
   {
     home.packages = with pkgs; [
@@ -5501,7 +5594,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 :CUSTOM_ID: h:96cbea91-ff13-4120-b8a9-496b2fa96e70
 :END:
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/packages.nix
   # cura
   (
     let
@@ -5653,6 +5746,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
     })
 
   ];
+   }
 
 #+end_src
 
@@ -5670,20 +5764,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
  Since we are using the home-manager implementation here, we need to specify the runtime path.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  sops = {
-    defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-    validateSopsFiles = false;
-    secrets = {
-      mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
-      nautilus = { path = "/run/user/1000/secrets/nautilus"; };
-      leon = { path = "/run/user/1000/secrets/leon"; };
-      swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
-      caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+#+begin_src nix :tangle profiles/common/home/sops.nix
+  { config, ... }:
+  {
+    sops = {
+      defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+      validateSopsFiles = false;
+      secrets = {
+        mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
+        nautilus = { path = "/run/user/1000/secrets/nautilus"; };
+        leon = { path = "/run/user/1000/secrets/leon"; };
+        swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
+        caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+      };
     };
-  };
-
+}
 #+end_src
 
 *** SSH Machines
@@ -5693,103 +5788,104 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.ssh = {
-    enable = true;
-    forwardAgent = true;
-    extraConfig = ''
-      SetEnv TERM=xterm-256color
-    '';
-    matchBlocks = {
-      "nginx" = {
-        hostname = "192.168.1.14";
-        user = "root";
-      };
-      "jellyfin" = {
-        hostname = "192.168.1.16";
-        user = "root";
-      };
-      "pfsense" = {
-        hostname = "192.168.1.1";
-        user = "root";
-      };
-      "proxmox" = {
-        hostname = "192.168.1.2";
-        user = "root";
-      };
-      "transmission" = {
-        hostname = "192.168.1.6";
-        user = "root";
-      };
-      "fetcher" = {
-        hostname = "192.168.1.7";
-        user = "root";
-      };
-      "omv" = {
-        hostname = "192.168.1.3";
-        user = "root";
-      };
-      "webbot" = {
-        hostname = "192.168.1.11";
-        user = "root";
-      };
-      "nextcloud" = {
-        hostname = "192.168.1.5";
-        user = "root";
-      };
-      "sound" = {
-        hostname = "192.168.1.13";
-        user = "root";
-      };
-      "spotify" = {
-        hostname = "192.168.1.17";
-        user = "root";
-      };
-      "wordpress" = {
-        hostname = "192.168.1.9";
-        user = "root";
-      };
-      "turn" = {
-        hostname = "192.168.1.18";
-        user = "root";
-      };
-      "hugo" = {
-        hostname = "192.168.1.19";
-        user = "root";
-      };
-      "matrix" = {
-        hostname = "192.168.1.23";
-        user = "root";
-      };
-      "scroll" = {
-        hostname = "192.168.1.22";
-        user = "root";
-      };
-      "minecraft" = {
-        hostname = "130.61.119.129";
-        user = "opc";
-      };
-      "sync" = {
-        hostname = "193.122.53.173";
-        user = "root"; #this is a oracle vm server but needs root due to nixos-infect
-      };
-      "songdiver" = {
-        hostname = "89.168.100.65";
-        user = "ubuntu";
-      };
-      "pkv" = {
-        hostname = "46.232.248.161";
-        user = "root";
-      };
-      "efficient" = {
-        hostname = "g0.complang.tuwien.ac.at";
-        forwardAgent = true;
-        user = "ep01427399";
+#+begin_src nix :tangle profiles/common/home/ssh.nix
+  { ... }:
+  {
+    programs.ssh = {
+      enable = true;
+      forwardAgent = true;
+      extraConfig = ''
+        SetEnv TERM=xterm-256color
+      '';
+      matchBlocks = {
+        "nginx" = {
+          hostname = "192.168.1.14";
+          user = "root";
+        };
+        "jellyfin" = {
+          hostname = "192.168.1.16";
+          user = "root";
+        };
+        "pfsense" = {
+          hostname = "192.168.1.1";
+          user = "root";
+        };
+        "proxmox" = {
+          hostname = "192.168.1.2";
+          user = "root";
+        };
+        "transmission" = {
+          hostname = "192.168.1.6";
+          user = "root";
+        };
+        "fetcher" = {
+          hostname = "192.168.1.7";
+          user = "root";
+        };
+        "omv" = {
+          hostname = "192.168.1.3";
+          user = "root";
+        };
+        "webbot" = {
+          hostname = "192.168.1.11";
+          user = "root";
+        };
+        "nextcloud" = {
+          hostname = "192.168.1.5";
+          user = "root";
+        };
+        "sound" = {
+          hostname = "192.168.1.13";
+          user = "root";
+        };
+        "spotify" = {
+          hostname = "192.168.1.17";
+          user = "root";
+        };
+        "wordpress" = {
+          hostname = "192.168.1.9";
+          user = "root";
+        };
+        "turn" = {
+          hostname = "192.168.1.18";
+          user = "root";
+        };
+        "hugo" = {
+          hostname = "192.168.1.19";
+          user = "root";
+        };
+        "matrix" = {
+          hostname = "192.168.1.23";
+          user = "root";
+        };
+        "scroll" = {
+          hostname = "192.168.1.22";
+          user = "root";
+        };
+        "minecraft" = {
+          hostname = "130.61.119.129";
+          user = "opc";
+        };
+        "sync" = {
+          hostname = "193.122.53.173";
+          user = "root"; #this is a oracle vm server but needs root due to nixos-infect
+        };
+        "songdiver" = {
+          hostname = "89.168.100.65";
+          user = "ubuntu";
+        };
+        "pkv" = {
+          hostname = "46.232.248.161";
+          user = "root";
+        };
+        "efficient" = {
+          hostname = "g0.complang.tuwien.ac.at";
+          forwardAgent = true;
+          user = "ep01427399";
+        };
       };
     };
-  };
-
+}
 #+end_src
 
 *** Fonts + Theme
@@ -5801,10 +5897,11 @@ These section allows home-manager to allow theme settings, and handles some othe
 
 This section has been notably empty ever since switching to stylix. Only Emacs is not allowed to be styled by it, because it becomes more ugly compared to my handcrafted setup.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  stylix.targets.emacs.enable = false;
-
+#+begin_src nix :tangle profiles/common/home/stylix.nix
+  { ... }:
+  {
+   stylix.targets.emacs.enable = false;
+  }
 #+end_src
 
 *** Desktop Entries
@@ -5816,53 +5913,55 @@ Some programs lack a dmenu launcher - I define them myself here.
 
 TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/desktop.nix
 
-  xdg.desktopEntries = {
+  { ... }:
+  {
+    xdg.desktopEntries = {
 
-    cura = {
-      name = "Ultimaker Cura";
-      genericName = "Cura";
-      exec = "cura";
-      terminal = false;
-      categories = [ "Application" ];
+      cura = {
+        name = "Ultimaker Cura";
+        genericName = "Cura";
+        exec = "cura";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      anki = {
+        name = "Anki Flashcards";
+        genericName = "Anki";
+        exec = "anki";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      # schlidichat = {
+      #   name = "SchildiChat Matrix Client";
+      #   genericName = "SchildiChat";
+      #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+      #   terminal = false;
+      #   categories = [ "Application"];
+      # };
+
+      element = {
+        name = "Element Matrix Client";
+        genericName = "Element";
+        exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      emacsclient-newframe = {
+        name = "Emacs (Client, New Frame)";
+        genericName = "Emacs (Client, New Frame)";
+        exec = "emacsclient -r %u";
+        icon = "emacs";
+        terminal = false;
+        categories = [ "Development" "TextEditor" ];
+      };
+
     };
-
-    anki = {
-      name = "Anki Flashcards";
-      genericName = "Anki";
-      exec = "anki";
-      terminal = false;
-      categories = [ "Application" ];
-    };
-
-    # schlidichat = {
-    #   name = "SchildiChat Matrix Client";
-    #   genericName = "SchildiChat";
-    #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-    #   terminal = false;
-    #   categories = [ "Application"];
-    # };
-
-    element = {
-      name = "Element Matrix Client";
-      genericName = "Element";
-      exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-      terminal = false;
-      categories = [ "Application" ];
-    };
-
-    emacsclient-newframe = {
-      name = "Emacs (Client, New Frame)";
-      genericName = "Emacs (Client, New Frame)";
-      exec = "emacsclient -r %u";
-      icon = "emacs";
-      terminal = false;
-      categories = [ "Development" "TextEditor" ];
-    };
-
-  };
-
+  }
 #+end_src
 
 *** Linking dotfiles
@@ -5874,24 +5973,26 @@ This section should be used in order to symlink already existing configuration f
 
 As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/symlink.nix
 
+  { ... }:
+  {
   home.file = {
     "init.el" = {
-      source = ../../programs/emacs/init.el;
+      source = ../../../programs/emacs/init.el;
       target = ".emacs.d/init.el";
     };
     "early-init.el" = {
-      source = ../../programs/emacs/early-init.el;
+      source = ../../../programs/emacs/early-init.el;
       target = ".emacs.d/early-init.el";
     };
     # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
     ".aspell.conf" = {
-      source = ../../programs/config/.aspell.conf;
+      source = ../../../programs/config/.aspell.conf;
       target = ".aspell.conf";
     };
     ".gitmessage" = {
-      source = ../../programs/git/.gitmessage;
+      source = ../../../programs/git/.gitmessage;
       target = ".gitmessage";
     };
   };
@@ -5900,13 +6001,13 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 Also, we link some files to the users XDG configuration home:
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/symlink.nix
 
   xdg.configFile = {
-    "tridactyl/tridactylrc".source = ../../programs/firefox/tridactyl/tridactylrc;
-    "tridactyl/themes/base16-codeschool.css".source = ../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+    "tridactyl/tridactylrc".source = ../../../programs/firefox/tridactyl/tridactylrc;
+    "tridactyl/themes/base16-codeschool.css".source = ../../../programs/firefox/tridactyl/themes/base16-codeschool.css;
   };
-
+}
 #+end_src
 
 *** Sourcing environment variables
@@ -5914,12 +6015,13 @@ Also, we link some files to the users XDG configuration home:
 :CUSTOM_ID: h:4486b02f-4fb8-432b-bfa2-2e786206341d
 :END:
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  home.sessionVariables = {
-    EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
-  };
-
+#+begin_src nix :tangle profiles/common/home/env.nix
+  { ... }:
+  {
+    home.sessionVariables = {
+      EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
+    };
+  }
 #+end_src
 
 *** Programs
@@ -5936,50 +6038,53 @@ This houses the configurations for all programs managed by home-manager.
 
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs = {
-    bottom.enable = true;
-    imv.enable = true;
-    sioyek.enable = true;
-    bat.enable = true;
-    carapace.enable = true;
-    wlogout.enable = true;
-    swayr.enable = true;
-    yt-dlp.enable = true;
-    mpv.enable = true;
-    jq.enable = true;
-    ripgrep.enable = true;
-    pandoc.enable = true;
-    fzf.enable = true;
-    zoxide.enable = true;
-  };
+#+begin_src nix :tangle profiles/common/home/programs.nix
+  { ... }:
+  {
+    programs = {
+      bottom.enable = true;
+      imv.enable = true;
+      sioyek.enable = true;
+      bat.enable = true;
+      carapace.enable = true;
+      wlogout.enable = true;
+      swayr.enable = true;
+      yt-dlp.enable = true;
+      mpv.enable = true;
+      jq.enable = true;
+      ripgrep.enable = true;
+      pandoc.enable = true;
+      fzf.enable = true;
+      zoxide.enable = true;
+    };
+  }
 #+end_src
 
 *** nix-index
 
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.nix-index =
-    let
-      command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
-        mkdir -p $out/etc/profile.d
-        substitute ${../../scripts/command-not-found.sh}                  \
-          $out/etc/profile.d/command-not-found.sh             \
-          --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-          --replace @tput@ ${pkgs.ncurses}/bin/tput
-      '';
-    in
-    {
-      enable = true;
-      package = pkgs.symlinkJoin {
-        name = "nix-index";
-        paths = [ command-not-found ];
+#+begin_src nix :tangle profiles/common/home/nix-index.nix
+  {pkgs, ...}:
+  {
+    programs.nix-index =
+      let
+        command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+          mkdir -p $out/etc/profile.d
+          substitute ${../../../scripts/command-not-found.sh}                  \
+            $out/etc/profile.d/command-not-found.sh             \
+            --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+            --replace @tput@ ${pkgs.ncurses}/bin/tput
+        '';
+      in
+      {
+        enable = true;
+        package = pkgs.symlinkJoin {
+          name = "nix-index";
+          paths = [ command-not-found ];
+        };
       };
-    };
-
+  }
 #+end_src
 
 *** password-store
@@ -5989,13 +6094,17 @@ nix-index provides a way to find out which packages are provided by which deriva
 
 Enables password store with the =pass-otp= extension which allows me to store and generate one-time-passwords.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.password-store = {
-    enable = true;
-    package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
-  };
-
+#+begin_src nix :tangle profiles/common/home/password-store.nix
+  { pkgs, ... }:
+  {
+    programs.password-store = {
+      enable = true;
+      settings = {
+        PASSWORD_STORE_DIR = "$HOME/.local/share/password-store";
+      };
+      package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
+    };
+}
 #+end_src
 
 *** direnv
@@ -6005,13 +6114,14 @@ Enables password store with the =pass-otp= extension which allows me to store an
 
 Enables direnv, which I use for nearly all of my nix dev flakes.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-  };
-
+#+begin_src nix :tangle profiles/common/home/direnv.nix
+  { ... }:
+  {
+    programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
+  }
 #+end_src
 
 *** eza
@@ -6021,18 +6131,19 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 
 Eza provides me with a better =ls= command and some other useful aliases.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.eza = {
-    enable = true;
-    icons = true;
-    git = true;
-    extraOptions = [
-      "-l"
-      "--group-directories-first"
-    ];
-  };
-
+#+begin_src nix :tangle profiles/common/home/eza.nix
+  { ... }:
+  {
+    programs.eza = {
+      enable = true;
+      icons = true;
+      git = true;
+      extraOptions = [
+        "-l"
+        "--group-directories-first"
+      ];
+    };
+  }
 #+end_src
 
 *** git
@@ -6042,45 +6153,46 @@ Eza provides me with a better =ls= command and some other useful aliases.
 
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.git = {
-    enable = true;
-    aliases = {
-      a = "add";
-      c = "commit";
-      cl = "clone";
-      co = "checkout";
-      b = "branch";
-      i = "init";
-      m = "merge";
-      s = "status";
-      r = "restore";
-      p = "pull";
-      pp = "push";
-    };
-    signing = {
-      key = "0x76FD3810215AE097";
-      signByDefault = true;
-    };
-    userEmail = "leon.schwarzaeugl@gmail.com";
-    userName = "Swarsel";
-    difftastic.enable = true;
-    lfs.enable = true;
-    includes = [
-      {
-        contents = {
-          github = {
-            user = "Swarsel";
+#+begin_src nix :tangle profiles/common/home/git.nix
+  { ... }:
+  {
+    programs.git = {
+      enable = true;
+      aliases = {
+        a = "add";
+        c = "commit";
+        cl = "clone";
+        co = "checkout";
+        b = "branch";
+        i = "init";
+        m = "merge";
+        s = "status";
+        r = "restore";
+        p = "pull";
+        pp = "push";
+      };
+      signing = {
+        key = "0x76FD3810215AE097";
+        signByDefault = true;
+      };
+      userEmail = "leon.schwarzaeugl@gmail.com";
+      userName = "Swarsel";
+      difftastic.enable = true;
+      lfs.enable = true;
+      includes = [
+        {
+          contents = {
+            github = {
+              user = "Swarsel";
+            };
+            commit = {
+              template = "~/.gitmessage";
+            };
           };
-          commit = {
-            template = "~/.gitmessage";
-          };
-        };
-      }
-    ];
-  };
-
+        }
+      ];
+    };
+  }
 #+end_src
 
 *** Fuzzel
@@ -6090,20 +6202,21 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 
 Here I only need to set basic layout options - the rest is being managed by stylix.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.fuzzel = {
-    enable = true;
-    settings = {
-      main = {
-        layer = "overlay";
-        lines = "10";
-        width = "40";
+#+begin_src nix :tangle profiles/common/home/fuzzel.nix
+  { ... }:
+  {
+    programs.fuzzel = {
+      enable = true;
+      settings = {
+        main = {
+          layer = "overlay";
+          lines = "10";
+          width = "40";
+        };
+        border.radius = "0";
       };
-      border.radius = "0";
     };
-  };
-
+  }
 #+end_src
 
 *** Starship
@@ -6113,112 +6226,113 @@ Here I only need to set basic layout options - the rest is being managed by styl
 
 Starship makes my =zsh= look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/starship.nix
+  { ... }:
+  {
+    programs.starship = {
+      enable = true;
+      enableZshIntegration = true;
+      settings = {
+        add_newline = false;
+        format = "$character";
+        right_format = "$all";
+        command_timeout = 3000;
 
-  programs.starship = {
-    enable = true;
-    enableZshIntegration = true;
-    settings = {
-      add_newline = false;
-      format = "$character";
-      right_format = "$all";
-      command_timeout = 3000;
+        directory.substitutions = {
+          "Documents" = "󰈙 ";
+          "Downloads" = " ";
+          "Music" = " ";
+          "Pictures" = " ";
+        };
 
-      directory.substitutions = {
-        "Documents" = "󰈙 ";
-        "Downloads" = " ";
-        "Music" = " ";
-        "Pictures" = " ";
+        git_status = {
+          style = "bg:#394260";
+          format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+        };
+
+        character = {
+          success_symbol = "[λ](bold green)";
+          error_symbol = "[λ](bold red)";
+        };
+
+        aws.symbol = "  ";
+        buf.symbol = " ";
+        c.symbol = " ";
+        conda.symbol = " ";
+        dart.symbol = " ";
+        directory.read_only = " 󰌾";
+        docker_context.symbol = " ";
+        elixir.symbol = " ";
+        elm.symbol = " ";
+        fossil_branch.symbol = " ";
+        git_branch.symbol = " ";
+        golang.symbol = " ";
+        guix_shell.symbol = " ";
+        haskell.symbol = " ";
+        haxe.symbol = " ";
+        hg_branch.symbol = " ";
+        hostname.ssh_symbol = " ";
+        java.symbol = " ";
+        julia.symbol = " ";
+        lua.symbol = " ";
+        memory_usage.symbol = "󰍛 ";
+        meson.symbol = "󰔷 ";
+        nim.symbol = "󰆥 ";
+        nix_shell.symbol = " ";
+        nodejs.symbol = " ";
+
+        os.symbols = {
+          Alpaquita = " ";
+          Alpine = " ";
+          Amazon = " ";
+          Android = " ";
+          Arch = " ";
+          Artix = " ";
+          CentOS = " ";
+          Debian = " ";
+          DragonFly = " ";
+          Emscripten = " ";
+          EndeavourOS = " ";
+          Fedora = " ";
+          FreeBSD = " ";
+          Garuda = "󰛓 ";
+          Gentoo = " ";
+          HardenedBSD = "󰞌 ";
+          Illumos = "󰈸 ";
+          Linux = " ";
+          Mabox = " ";
+          Macos = " ";
+          Manjaro = " ";
+          Mariner = " ";
+          MidnightBSD = " ";
+          Mint = " ";
+          NetBSD = " ";
+          NixOS = " ";
+          OpenBSD = "󰈺 ";
+          openSUSE = " ";
+          OracleLinux = "󰌷 ";
+          Pop = " ";
+          Raspbian = " ";
+          Redhat = " ";
+          RedHatEnterprise = " ";
+          Redox = "󰀘 ";
+          Solus = "󰠳 ";
+          SUSE = " ";
+          Ubuntu = " ";
+          Unknown = " ";
+          Windows = "󰍲 ";
+        };
+
+        package.symbol = "󰏗 ";
+        pijul_channel.symbol = " ";
+        python.symbol = " ";
+        rlang.symbol = "󰟔 ";
+        ruby.symbol = " ";
+        rust.symbol = " ";
+        scala.symbol = " ";
       };
-
-      git_status = {
-        style = "bg:#394260";
-        format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
-      };
-
-      character = {
-        success_symbol = "[λ](bold green)";
-        error_symbol = "[λ](bold red)";
-      };
-
-      aws.symbol = "  ";
-      buf.symbol = " ";
-      c.symbol = " ";
-      conda.symbol = " ";
-      dart.symbol = " ";
-      directory.read_only = " 󰌾";
-      docker_context.symbol = " ";
-      elixir.symbol = " ";
-      elm.symbol = " ";
-      fossil_branch.symbol = " ";
-      git_branch.symbol = " ";
-      golang.symbol = " ";
-      guix_shell.symbol = " ";
-      haskell.symbol = " ";
-      haxe.symbol = " ";
-      hg_branch.symbol = " ";
-      hostname.ssh_symbol = " ";
-      java.symbol = " ";
-      julia.symbol = " ";
-      lua.symbol = " ";
-      memory_usage.symbol = "󰍛 ";
-      meson.symbol = "󰔷 ";
-      nim.symbol = "󰆥 ";
-      nix_shell.symbol = " ";
-      nodejs.symbol = " ";
-
-      os.symbols = {
-        Alpaquita = " ";
-        Alpine = " ";
-        Amazon = " ";
-        Android = " ";
-        Arch = " ";
-        Artix = " ";
-        CentOS = " ";
-        Debian = " ";
-        DragonFly = " ";
-        Emscripten = " ";
-        EndeavourOS = " ";
-        Fedora = " ";
-        FreeBSD = " ";
-        Garuda = "󰛓 ";
-        Gentoo = " ";
-        HardenedBSD = "󰞌 ";
-        Illumos = "󰈸 ";
-        Linux = " ";
-        Mabox = " ";
-        Macos = " ";
-        Manjaro = " ";
-        Mariner = " ";
-        MidnightBSD = " ";
-        Mint = " ";
-        NetBSD = " ";
-        NixOS = " ";
-        OpenBSD = "󰈺 ";
-        openSUSE = " ";
-        OracleLinux = "󰌷 ";
-        Pop = " ";
-        Raspbian = " ";
-        Redhat = " ";
-        RedHatEnterprise = " ";
-        Redox = "󰀘 ";
-        Solus = "󰠳 ";
-        SUSE = " ";
-        Ubuntu = " ";
-        Unknown = " ";
-        Windows = "󰍲 ";
-      };
-
-      package.symbol = "󰏗 ";
-      pijul_channel.symbol = " ";
-      python.symbol = " ";
-      rlang.symbol = "󰟔 ";
-      ruby.symbol = " ";
-      rust.symbol = " ";
-      scala.symbol = " ";
     };
-  };
-
+}
 #+end_src
 
 *** Kitty
@@ -6230,18 +6344,19 @@ Kitty is the terminal emulator of choice for me, it is nice to configure using n
 
 The theme is handled by stylix.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.kitty = {
-    enable = true;
-    keybindings = {
-      "ctrl+shift+left" = "no_op";
-      "ctrl+shift+right" = "no_op";
-      "ctrl+shift+home" = "no_op";
-      "ctrl+shift+end" = "no_op";
+#+begin_src nix :tangle profiles/common/home/kitty.nix
+  { ... }:
+  {
+    programs.kitty = {
+      enable = true;
+      keybindings = {
+        "ctrl+shift+left" = "no_op";
+        "ctrl+shift+right" = "no_op";
+        "ctrl+shift+home" = "no_op";
+        "ctrl+shift+end" = "no_op";
+      };
     };
-  };
-
+  }
 #+end_src
 
 *** zsh
@@ -6253,57 +6368,58 @@ zsh is the most convenient shell for me and it happens to be super neat to confi
 
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.zsh = {
-    enable = true;
-    shellAliases = {
-      hg = "history | grep";
-      hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
-      nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
-      magit = "emacsclient -nc -e \"(magit-status)\"";
-      config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
-      g = "git";
-      c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
-      passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
-      passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-      hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-      cd = "z";
-      cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+#+begin_src nix :tangle profiles/common/home/zsh.nix
+  { pkgs, ... }:
+  {
+    programs.zsh = {
+      enable = true;
+      shellAliases = {
+        hg = "history | grep";
+        hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
+        nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+        edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
+        magit = "emacsclient -nc -e \"(magit-status)\"";
+        config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+        g = "git";
+        c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
+        passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+        passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+        hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
+        cd = "z";
+        cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+      };
+      autosuggestion.enable = true;
+      enableCompletion = true;
+      syntaxHighlighting.enable = true;
+      autocd = false;
+      cdpath = [
+        "~/.dotfiles"
+        # "~/Documents/GitHub"
+      ];
+      defaultKeymap = "emacs";
+      dirHashes = {
+        dl = "$HOME/Downloads";
+        gh = "$HOME/Documents/GitHub";
+      };
+      history = {
+        expireDuplicatesFirst = true;
+        path = "$HOME/.histfile";
+        save = 10000;
+        size = 10000;
+      };
+      historySubstringSearch.enable = true;
+      plugins = [
+        {
+          name = "fzf-tab";
+          src = pkgs.zsh-fzf-tab;
+        }
+      ];
+      initExtra = ''
+        bindkey "^[[1;5D" backward-word
+        bindkey "^[[1;5C" forward-word
+      '';
     };
-    autosuggestion.enable = true;
-    enableCompletion = true;
-    syntaxHighlighting.enable = true;
-    autocd = false;
-    cdpath = [
-      "~/.dotfiles"
-      # "~/Documents/GitHub"
-    ];
-    defaultKeymap = "emacs";
-    dirHashes = {
-      dl = "$HOME/Downloads";
-      gh = "$HOME/Documents/GitHub";
-    };
-    history = {
-      expireDuplicatesFirst = true;
-      path = "$HOME/.histfile";
-      save = 10000;
-      size = 10000;
-    };
-    historySubstringSearch.enable = true;
-    plugins = [
-      {
-        name = "fzf-tab";
-        src = pkgs.zsh-fzf-tab;
-      }
-    ];
-    initExtra = ''
-      bindkey "^[[1;5D" backward-word
-      bindkey "^[[1;5C" forward-word
-    '';
-  };
-
+  }
 #+end_src
 
 *** Mail
@@ -6313,9 +6429,14 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/mail.nix
 
+  { config, ...}:
+  {
   programs.mbsync = {
+    enable = true;
+  };
+  services.mbsync = {
     enable = true;
   };
   # this is needed so that mbsync can use the passwords from sops
@@ -6442,7 +6563,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       };
     };
   };
-
+  }
 #+end_src
 
 *** Home-manager: Emacs
@@ -6454,54 +6575,61 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/emacs.nix
+  { pkgs, ... }:
+  {
+    # enable emacs overlay for bleeding edge features
+    # also read init.el file and install use-package packages
+    programs.emacs = {
+      enable = true;
+      package = pkgs.emacsWithPackagesFromUsePackage {
+        config = ../../../programs/emacs/init.el;
+        package = pkgs.emacs-pgtk;
+        alwaysEnsure = true;
+        alwaysTangle = true;
+        extraEmacsPackages = epkgs: [
+          epkgs.mu4e
+          epkgs.use-package
+          # epkgs.lsp-bridge
+          epkgs.doom-themes
 
-  # enable emacs overlay for bleeding edge features
-  # also read init.el file and install use-package packages
-  programs.emacs = {
-    enable = true;
-    package = pkgs.emacsWithPackagesFromUsePackage {
-      config = ../../programs/emacs/init.el;
-      package = pkgs.emacs-pgtk;
-      alwaysEnsure = true;
-      alwaysTangle = true;
-      extraEmacsPackages = epkgs: [
-        epkgs.mu4e
-        epkgs.use-package
-        # epkgs.lsp-bridge
-        epkgs.doom-themes
+          # build the rest of the packages myself
+          # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
+          # build the package from the haji-ali fork, which is well-maintained
+          (epkgs.trivialBuild rec {
+            pname = "calfw";
+            version = "1.0.0-20231002";
+            src = pkgs.fetchFromGitHub {
+              owner = "haji-ali";
+              repo = "emacs-calfw";
+              rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+              hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+            };
+            packageRequires = [ epkgs.howm ];
+          })
 
-        # build the rest of the packages myself
-        # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
-        # build the package from the haji-ali fork, which is well-maintained
-        (epkgs.trivialBuild rec {
-          pname = "calfw";
-          version = "1.0.0-20231002";
-          src = pkgs.fetchFromGitHub {
-            owner = "haji-ali";
-            repo = "emacs-calfw";
-            rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-            hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-          };
-          packageRequires = [ epkgs.howm ];
-        })
+          (epkgs.trivialBuild rec {
+            pname = "fast-scroll";
+            version = "1.0.0-20191016";
+            src = pkgs.fetchFromGitHub {
+              owner = "ahungry";
+              repo = "fast-scroll";
+              rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
+              hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
+            };
+            packageRequires = [ ];
+          })
 
-        (epkgs.trivialBuild rec {
-          pname = "fast-scroll";
-          version = "1.0.0-20191016";
-          src = pkgs.fetchFromGitHub {
-            owner = "ahungry";
-            repo = "fast-scroll";
-            rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
-            hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
-          };
-          packageRequires = [ ];
-        })
-
-      ];
+        ];
+      };
     };
-  };
 
+    services.emacs = {
+      enable = true;
+      # socketActivation.enable = false;
+      # startWithUserSession = "graphical";
+    };
+  }
 #+end_src
 
 *** Waybar
@@ -6515,8 +6643,10 @@ The rest of this configuration is found here:
 - [[#h:47749e76-3f25-485a-9e98-c7ce3a4ad444][Waybar items - PC]]
 - [[#h:f3cf9bdc-6826-4d8e-ba5a-253ef098a9b8][Waybar items - LAPTOPS]]
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/waybar.nix
 
+  { ... }:
+  {
   programs.waybar = {
 
     enable = true;
@@ -6705,9 +6835,9 @@ The rest of this configuration is found here:
         };
       };
     };
-    style = builtins.readFile ../../programs/waybar/style.css;
+    style = builtins.readFile ../../../programs/waybar/style.css;
   };
-
+  }
 #+end_src
 
 *** Firefox
@@ -6723,104 +6853,105 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  programs.firefox = {
-    enable = true;
-    package = pkgs.firefox.override {
-      nativeMessagingHosts = [
-        pkgs.tridactyl-native
-        pkgs.browserpass
-        pkgs.plasma5Packages.plasma-browser-integration
-      ];
-    };
-    policies = {
-      CaptivePortal = false;
-      DisableFirefoxStudies = true;
-      DisablePocket = true;
-      DisableTelemetry = true;
-      DisableFirefoxAccounts = false;
-      NoDefaultBookmarks = true;
-      OfferToSaveLogins = false;
-      OfferToSaveLoginsDefault = false;
-      EnableTrackingProtection = true;
-    };
-    profiles.default = {
-      isDefault = true;
-      userChrome = builtins.readFile ../../programs/firefox/chrome/userChrome.css;
-      extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-        tridactyl
-        browserpass
-        clearurls
-        darkreader
-        enhancer-for-youtube
-        istilldontcareaboutcookies
-        translate-web-pages
-        ublock-origin
-        reddit-enhancement-suite
-        pushbullet
-        sponsorblock
-        web-archives
-        single-file
-        widegithub
-        enhanced-github
-        unpaywall
-        don-t-fuck-with-paste
-        plasma-integration
-      ];
-
-      search.engines = {
-        "Nix Packages" = {
-          urls = [{
-            template = "https://search.nixos.org/packages";
-            params = [
-              { name = "type"; value = "packages"; }
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@np" ];
-        };
-
-        "NixOS Wiki" = {
-          urls = [{
-            template = "https://nixos.wiki/index.php?search={searchTerms}";
-          }];
-          iconUpdateURL = "https://nixos.wiki/favicon.png";
-          updateInterval = 24 * 60 * 60 * 1000; # every day
-          definedAliases = [ "@nw" ];
-        };
-
-        "NixOS Options" = {
-          urls = [{
-            template = "https://search.nixos.org/options";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@no" ];
-        };
-
-        "Home Manager Options" = {
-          urls = [{
-            template = "https://home-manager-options.extranix.com/";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@hm" "@ho" "@hmo" ];
-        };
-
-        "Google".metaData.alias = "@g";
+#+begin_src nix :tangle profiles/common/home/firefox.nix
+  { pkgs, ... }:
+  {
+    programs.firefox = {
+      enable = true;
+      package = pkgs.firefox.override {
+        nativeMessagingHosts = [
+          pkgs.tridactyl-native
+          pkgs.browserpass
+          pkgs.plasma5Packages.plasma-browser-integration
+        ];
       };
-      search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-    };
-  };
+      policies = {
+        CaptivePortal = false;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableTelemetry = true;
+        DisableFirefoxAccounts = false;
+        NoDefaultBookmarks = true;
+        OfferToSaveLogins = false;
+        OfferToSaveLoginsDefault = false;
+        EnableTrackingProtection = true;
+      };
+      profiles.default = {
+        isDefault = true;
+        userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+          tridactyl
+          browserpass
+          clearurls
+          darkreader
+          enhancer-for-youtube
+          istilldontcareaboutcookies
+          translate-web-pages
+          ublock-origin
+          reddit-enhancement-suite
+          pushbullet
+          sponsorblock
+          web-archives
+          single-file
+          widegithub
+          enhanced-github
+          unpaywall
+          don-t-fuck-with-paste
+          plasma-integration
+        ];
 
+        search.engines = {
+          "Nix Packages" = {
+            urls = [{
+              template = "https://search.nixos.org/packages";
+              params = [
+                { name = "type"; value = "packages"; }
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@np" ];
+          };
+
+          "NixOS Wiki" = {
+            urls = [{
+              template = "https://nixos.wiki/index.php?search={searchTerms}";
+            }];
+            iconUpdateURL = "https://nixos.wiki/favicon.png";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@nw" ];
+          };
+
+          "NixOS Options" = {
+            urls = [{
+              template = "https://search.nixos.org/options";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@no" ];
+          };
+
+          "Home Manager Options" = {
+            urls = [{
+              template = "https://home-manager-options.extranix.com/";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@hm" "@ho" "@hmo" ];
+          };
+
+          "Google".metaData.alias = "@g";
+        };
+        search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+      };
+    };
+  }
 #+end_src
 
 *** Services
@@ -6837,27 +6968,14 @@ Services that can be defined through home-manager should be defined here.
 
 Used for storing sessions in e.g. Nextcloud
 
-#+begin_src nix :tangle profiles/common/home.nix
+#+begin_src nix :tangle profiles/common/home/gnome-keyring.nix
 
+  { ... }:
+  {
   services.gnome-keyring = {
     enable = true;
   };
-
-#+end_src
-
-**** mbsync
-:PROPERTIES:
-:CUSTOM_ID: h:06d34282-5c75-4c21-a857-604f129ce911
-:END:
-
-Used for syncing mail. This might be automatically enabled by my mail configuration, but I like to make sure.
-
-#+begin_src nix :tangle profiles/common/home.nix
-
-  services.mbsync = {
-    enable = true;
-  };
-
+  }
 #+end_src
 
 **** KDE Connect
@@ -6867,47 +6985,14 @@ Used for syncing mail. This might be automatically enabled by my mail configurat
 
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  services.kdeconnect = {
-    enable = true;
-    indicator = true;
-  };
-
-#+end_src
-
-**** syncthing
-:PROPERTIES:
-:CUSTOM_ID: h:a17df4b8-1044-4569-b1b9-6c99ae354654
-:END:
-
-Enables the syncthing service which talks to my syncthing instance on the Oracle cloud as well as my home server.
-
-#+begin_src nix :tangle profiles/common/home.nix
-
-  services.syncthing = {
-    enable = false;
-    tray = {
-      enable = false; # we enable this by installing the syncthingtray package instead, it works better.
+#+begin_src nix :tangle profiles/common/home/kdeconnect.nix
+  { ... }:
+  {
+    services.kdeconnect = {
+      enable = true;
+      indicator = true;
     };
-  };
-
-#+end_src
-
-**** Emacs server
-:PROPERTIES:
-:CUSTOM_ID: h:1f5a04de-0898-41ba-8134-741e4aeb0f79
-:END:
-
-This enables the Emacs server. This allows me to invocate Emacs by using =emacsclient= instead, which is a lot faster.
-
-#+begin_src nix :tangle profiles/common/home.nix
-
-  services.emacs = {
-    enable = true;
-    # socketActivation.enable = false;
-    # startWithUserSession = "graphical";
-  };
+  }
 #+end_src
 
 **** Mako
@@ -6919,36 +7004,37 @@ Desktop notifications!
 
 The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multiline strings, when indented Mako will fail to start. This might be a mako bug as well.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  services.mako = {
-    enable = true;
-    # backgroundColor = "#2e3440";
-    # borderColor = "#88c0d0";
-    borderRadius = 15;
-    borderSize = 1;
-    defaultTimeout = 5000;
-    height = 150;
-    icons = true;
-    ignoreTimeout = true;
-    layer = "overlay";
-    maxIconSize = 64;
-    sort = "-time";
-    width = 300;
-    # font = "monospace 10";
-    extraConfig = "[urgency=low]
-  border-color=#cccccc
-  [urgency=normal]
-  border-color=#d08770
-  [urgency=high]
-  border-color=#bf616a
-  default-timeout=3000
-  [category=mpd]
-  default-timeout=2000
-  group-by=category
-  ";
-  };
-
+#+begin_src nix :tangle profiles/common/home/mako.nix
+  { ... }:
+  {
+    services.mako = {
+      enable = true;
+      # backgroundColor = "#2e3440";
+      # borderColor = "#88c0d0";
+      borderRadius = 15;
+      borderSize = 1;
+      defaultTimeout = 5000;
+      height = 150;
+      icons = true;
+      ignoreTimeout = true;
+      layer = "overlay";
+      maxIconSize = 64;
+      sort = "-time";
+      width = 300;
+      # font = "monospace 10";
+      extraConfig = "[urgency=low]
+    border-color=#cccccc
+    [urgency=normal]
+    border-color=#d08770
+    [urgency=high]
+    border-color=#bf616a
+    default-timeout=3000
+    [category=mpd]
+    default-timeout=2000
+    group-by=category
+    ";
+    };
+}
 #+end_src
 
 *** Sway
@@ -6960,301 +7046,283 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
-#+begin_src nix :tangle profiles/common/home.nix
-
-  wayland.windowManager.sway = {
-    enable = true;
-    checkConfig = false; # delete this line once SwayFX is fixed upstream
-    package = pkgs.swayfx;
-    systemd = {
+#+begin_src nix :tangle profiles/common/home/sway.nix
+  { config, pkgs, ... }:
+  {
+    wayland.windowManager.sway = {
       enable = true;
-      xdgAutostart = true;
-    };
-    wrapperFeatures.gtk = true;
-    config = rec {
-      modifier = "Mod4";
-      terminal = "kitty";
-      menu = "fuzzel";
-      bars = [{ command = "waybar"; }];
-      keybindings =
+      checkConfig = false; # delete this line once SwayFX is fixed upstream
+      package = pkgs.swayfx;
+      systemd = {
+        enable = true;
+        xdgAutostart = true;
+      };
+      wrapperFeatures.gtk = true;
+      config = rec {
+        modifier = "Mod4";
+        terminal = "kitty";
+        menu = "fuzzel";
+        bars = [{ command = "waybar"; }];
+        keybindings =
+          let
+            inherit (config.wayland.windowManager.sway.config) modifier;
+          in
+          {
+            "${modifier}+q" = "kill";
+            "${modifier}+f" = "exec firefox";
+            "${modifier}+Space" = "exec fuzzel";
+            "${modifier}+Shift+Space" = "floating toggle";
+            "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+            "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
+            "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
+            "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
+            "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
+            "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
+            "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
+            "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
+            "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
+            "${modifier}+Shift+F12" = "move scratchpad";
+            "${modifier}+F12" = "scratchpad show";
+            "${modifier}+c" = "exec qalculate-gtk";
+            "${modifier}+p" = "exec pass-fuzzel";
+            "${modifier}+o" = "exec pass-fuzzel-otp";
+            "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+            "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
+            "${modifier}+Escape" = "mode $exit";
+            # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
+            "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+            "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+            "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
+            "${modifier}+1" = "workspace 1:一";
+            "${modifier}+Shift+1" = "move container to workspace 1:一";
+            "${modifier}+2" = "workspace 2:二";
+            "${modifier}+Shift+2" = "move container to workspace 2:二";
+            "${modifier}+3" = "workspace 3:三";
+            "${modifier}+Shift+3" = "move container to workspace 3:三";
+            "${modifier}+4" = "workspace 4:四";
+            "${modifier}+Shift+4" = "move container to workspace 4:四";
+            "${modifier}+5" = "workspace 5:五";
+            "${modifier}+Shift+5" = "move container to workspace 5:五";
+            "${modifier}+6" = "workspace 6:六";
+            "${modifier}+Shift+6" = "move container to workspace 6:六";
+            "${modifier}+7" = "workspace 7:七";
+            "${modifier}+Shift+7" = "move container to workspace 7:七";
+            "${modifier}+8" = "workspace 8:八";
+            "${modifier}+Shift+8" = "move container to workspace 8:八";
+            "${modifier}+9" = "workspace 9:九";
+            "${modifier}+Shift+9" = "move container to workspace 9:九";
+            "${modifier}+0" = "workspace 10:十";
+            "${modifier}+Shift+0" = "move container to workspace 10:十";
+            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+            "${modifier}+Left" = "focus left";
+            "${modifier}+Right" = "focus right";
+            "${modifier}+Down" = "focus down";
+            "${modifier}+Up" = "focus up";
+            "${modifier}+Shift+Left" = "move left 40px";
+            "${modifier}+Shift+Right" = "move right 40px";
+            "${modifier}+Shift+Down" = "move down 40px";
+            "${modifier}+Shift+Up" = "move up 40px";
+            "${modifier}+h" = "focus left";
+            "${modifier}+l" = "focus right";
+            "${modifier}+j" = "focus down";
+            "${modifier}+k" = "focus up";
+            "${modifier}+Shift+h" = "move left 40px";
+            "${modifier}+Shift+l" = "move right 40px";
+            "${modifier}+Shift+j" = "move down 40px";
+            "${modifier}+Shift+k" = "move up 40px";
+            "${modifier}+Ctrl+Shift+c" = "reload";
+            "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+            "${modifier}+r" = "mode resize";
+            "${modifier}+Return" = "exec kitty";
+          };
+        modes = {
+          resize = {
+            Down = "resize grow height 10 px or 10 ppt";
+            Escape = "mode default";
+            Left = "resize shrink width 10 px or 10 ppt";
+            Return = "mode default";
+            Right = "resize grow width 10 px or 10 ppt";
+            Up = "resize shrink height 10 px or 10 ppt";
+          };
+        };
+        defaultWorkspace = "workspace 1:一";
+        startup = [
+          { command = "kitty -T kittyterm"; }
+          { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+        ];
+        window = {
+          border = 1;
+          titlebar = false;
+        };
+        assigns = {
+          "1:一" = [{ app_id = "firefox"; }];
+        };
+        floating = {
+          border = 1;
+          criteria = [
+            { title = "^Picture-in-Picture$"; }
+            { app_id = "qalculate-gtk"; }
+            { app_id = "org.gnome.clocks"; }
+            { app_id = "com.github.stsdc.monitor"; }
+            { app_id = "blueman"; }
+            { app_id = "pavucontrol"; }
+            { app_id = "syncthingtray"; }
+            { title = "Syncthing Tray"; }
+            { app_id = "SchildiChat"; }
+            { app_id = "Element"; }
+            { app_id = "com.nextcloud.desktopclient.nextcloud"; }
+            { app_id = "gnome-system-monitor"; }
+            { title = "(?:Open|Save) (?:File|Folder|As)"; }
+            { title = "^Add$"; }
+            { title = "com-jgoodies-jdiskreport-JDiskReport"; }
+            { app_id = "discord"; }
+            { window_role = "pop-up"; }
+            { window_role = "bubble"; }
+            { window_role = "dialog"; }
+            { window_role = "task_dialog"; }
+            { window_role = "menu"; }
+            { window_role = "Preferences"; }
+          ];
+          titlebar = false;
+        };
+        window = {
+          commands = [
+            {
+              command = "opacity 0.95";
+              criteria = {
+                class = ".*";
+              };
+            }
+            {
+              command = "opacity 1";
+              criteria = {
+                app_id = "Gimp-2.10";
+              };
+            }
+            {
+              command = "opacity 0.99";
+              criteria = {
+                app_id = "firefox";
+              };
+            }
+            {
+              command = "sticky enable, shadows enable";
+              criteria = {
+                title = "^Picture-in-Picture$";
+              };
+            }
+            {
+              command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
+              criteria = {
+                title = "^kittyterm$";
+              };
+            }
+            {
+              command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
+              criteria = {
+                title = "^spotifytui$";
+              };
+            }
+            # {
+            #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+            #   criteria = {
+            #     app_id="^$";
+            #     class="^$";
+            # };
+            # }
+            {
+
+              command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+              criteria = {
+                class = "Spotify";
+              };
+            }
+            {
+              command = "sticky enable";
+              criteria = {
+                app_id = "discord";
+              };
+            }
+            {
+              command = "resize set width 60 ppt height 60 ppt, sticky enable";
+              criteria = {
+                class = "Element";
+              };
+            }
+            {
+              command = "resize set width 60 ppt height 60 ppt, sticky enable";
+              criteria = {
+                app_id = "SchildiChat";
+              };
+            }
+          ];
+        };
+        gaps = {
+          inner = 5;
+        };
+      };
+      extraSessionCommands = ''
+        export SDL_VIDEODRIVER=wayland
+        export QT_QPA_PLATFORM=wayland
+        export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
+        export _JAVA_AWT_WM_NONREPARENTING=1
+        export XDG_CURRENT_DESKTOP=sway
+        export XDG_SESSION_DESKTOP=sway
+        export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
+        export ANKI_WAYLAND=1;
+        export OBSIDIAN_USE_WAYLAND=1;
+      '';
+      # extraConfigEarly = "
+      # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+      # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+      # ";
+      extraConfig =
         let
           inherit (config.wayland.windowManager.sway.config) modifier;
-        in
-        {
-          "${modifier}+q" = "kill";
-          "${modifier}+f" = "exec firefox";
-          "${modifier}+Space" = "exec fuzzel";
-          "${modifier}+Shift+Space" = "floating toggle";
-          "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-          "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
-          "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-          "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
-          "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
-          "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
-          "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
-          "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
-          "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
-          "${modifier}+Shift+F12" = "move scratchpad";
-          "${modifier}+F12" = "scratchpad show";
-          "${modifier}+c" = "exec qalculate-gtk";
-          "${modifier}+p" = "exec pass-fuzzel";
-          "${modifier}+o" = "exec pass-fuzzel-otp";
-          "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-          "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
-          "${modifier}+Escape" = "mode $exit";
-          # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
-          "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-          "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-          "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
-          "${modifier}+1" = "workspace 1:一";
-          "${modifier}+Shift+1" = "move container to workspace 1:一";
-          "${modifier}+2" = "workspace 2:二";
-          "${modifier}+Shift+2" = "move container to workspace 2:二";
-          "${modifier}+3" = "workspace 3:三";
-          "${modifier}+Shift+3" = "move container to workspace 3:三";
-          "${modifier}+4" = "workspace 4:四";
-          "${modifier}+Shift+4" = "move container to workspace 4:四";
-          "${modifier}+5" = "workspace 5:五";
-          "${modifier}+Shift+5" = "move container to workspace 5:五";
-          "${modifier}+6" = "workspace 6:六";
-          "${modifier}+Shift+6" = "move container to workspace 6:六";
-          "${modifier}+7" = "workspace 7:七";
-          "${modifier}+Shift+7" = "move container to workspace 7:七";
-          "${modifier}+8" = "workspace 8:八";
-          "${modifier}+Shift+8" = "move container to workspace 8:八";
-          "${modifier}+9" = "workspace 9:九";
-          "${modifier}+Shift+9" = "move container to workspace 9:九";
-          "${modifier}+0" = "workspace 10:十";
-          "${modifier}+Shift+0" = "move container to workspace 10:十";
-          "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-          "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-          "${modifier}+Left" = "focus left";
-          "${modifier}+Right" = "focus right";
-          "${modifier}+Down" = "focus down";
-          "${modifier}+Up" = "focus up";
-          "${modifier}+Shift+Left" = "move left 40px";
-          "${modifier}+Shift+Right" = "move right 40px";
-          "${modifier}+Shift+Down" = "move down 40px";
-          "${modifier}+Shift+Up" = "move up 40px";
-          "${modifier}+h" = "focus left";
-          "${modifier}+l" = "focus right";
-          "${modifier}+j" = "focus down";
-          "${modifier}+k" = "focus up";
-          "${modifier}+Shift+h" = "move left 40px";
-          "${modifier}+Shift+l" = "move right 40px";
-          "${modifier}+Shift+j" = "move down 40px";
-          "${modifier}+Shift+k" = "move up 40px";
-          "${modifier}+Ctrl+Shift+c" = "reload";
-          "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-          "${modifier}+r" = "mode resize";
-          "${modifier}+Return" = "exec kitty";
-        };
-      modes = {
-        resize = {
-          Down = "resize grow height 10 px or 10 ppt";
-          Escape = "mode default";
-          Left = "resize shrink width 10 px or 10 ppt";
-          Return = "mode default";
-          Right = "resize grow width 10 px or 10 ppt";
-          Up = "resize shrink height 10 px or 10 ppt";
-        };
-      };
-      defaultWorkspace = "workspace 1:一";
-      startup = [
-        { command = "kitty -T kittyterm"; }
-        { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
-      ];
-      window = {
-        border = 1;
-        titlebar = false;
-      };
-      assigns = {
-        "1:一" = [{ app_id = "firefox"; }];
-      };
-      floating = {
-        border = 1;
-        criteria = [
-          { title = "^Picture-in-Picture$"; }
-          { app_id = "qalculate-gtk"; }
-          { app_id = "org.gnome.clocks"; }
-          { app_id = "com.github.stsdc.monitor"; }
-          { app_id = "blueman"; }
-          { app_id = "pavucontrol"; }
-          { app_id = "syncthingtray"; }
-          { title = "Syncthing Tray"; }
-          { app_id = "SchildiChat"; }
-          { app_id = "Element"; }
-          { app_id = "com.nextcloud.desktopclient.nextcloud"; }
-          { app_id = "gnome-system-monitor"; }
-          { title = "(?:Open|Save) (?:File|Folder|As)"; }
-          { title = "^Add$"; }
-          { title = "com-jgoodies-jdiskreport-JDiskReport"; }
-          { app_id = "discord"; }
-          { window_role = "pop-up"; }
-          { window_role = "bubble"; }
-          { window_role = "dialog"; }
-          { window_role = "task_dialog"; }
-          { window_role = "menu"; }
-          { window_role = "Preferences"; }
-        ];
-        titlebar = false;
-      };
-      window = {
-        commands = [
-          {
-            command = "opacity 0.95";
-            criteria = {
-              class = ".*";
-            };
-          }
-          {
-            command = "opacity 1";
-            criteria = {
-              app_id = "Gimp-2.10";
-            };
-          }
-          {
-            command = "opacity 0.99";
-            criteria = {
-              app_id = "firefox";
-            };
-          }
-          {
-            command = "sticky enable, shadows enable";
-            criteria = {
-              title = "^Picture-in-Picture$";
-            };
-          }
-          {
-            command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
-            criteria = {
-              title = "^kittyterm$";
-            };
-          }
-          {
-            command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
-            criteria = {
-              title = "^spotifytui$";
-            };
-          }
-          # {
-          #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-          #   criteria = {
-          #     app_id="^$";
-          #     class="^$";
-          # };
-          # }
-          {
-
-            command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-            criteria = {
-              class = "Spotify";
-            };
-          }
-          {
-            command = "sticky enable";
-            criteria = {
-              app_id = "discord";
-            };
-          }
-          {
-            command = "resize set width 60 ppt height 60 ppt, sticky enable";
-            criteria = {
-              class = "Element";
-            };
-          }
-          {
-            command = "resize set width 60 ppt height 60 ppt, sticky enable";
-            criteria = {
-              app_id = "SchildiChat";
-            };
-          }
-        ];
-      };
-      gaps = {
-        inner = 5;
-      };
-    };
-    extraSessionCommands = ''
-      export SDL_VIDEODRIVER=wayland
-      export QT_QPA_PLATFORM=wayland
-      export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
-      export _JAVA_AWT_WM_NONREPARENTING=1
-      export XDG_CURRENT_DESKTOP=sway
-      export XDG_SESSION_DESKTOP=sway
-      export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
-      export ANKI_WAYLAND=1;
-      export OBSIDIAN_USE_WAYLAND=1;
-    '';
-    # extraConfigEarly = "
-    # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
-    # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
-    # ";
-    extraConfig =
-      let
-        inherit (config.wayland.windowManager.sway.config) modifier;
-        swayfxSettings = "
-          blur enable
-          blur_xray disable
-          blur_passes 1
-          blur_radius 1
-          shadows enable
-          corner_radius 2
-          titlebar_separator disable
-          default_dim_inactive 0.02
-      ";
-      in
-      "
-        exec_always autotiling
-        set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
-        mode $exit {
-
-            bindsym --to-code {
-                s exec \"systemctl suspend\", mode \"default\"
-                p exec \"systemctl poweroff\"
-                r exec \"systemctl reboot\"
-                l exec \"swaymsg exit\"
-
-                Return mode \"default\"
-                Escape mode \"default\"
-                ${modifier}+x mode \"default\"
-            }
-        }
-
-        exec systemctl --user import-environment
-
-        ${swayfxSettings}
-
+          swayfxSettings = "
+            blur enable
+            blur_xray disable
+            blur_passes 1
+            blur_radius 1
+            shadows enable
+            corner_radius 2
+            titlebar_separator disable
+            default_dim_inactive 0.02
         ";
-  };
+        in
+        "
+          exec_always autotiling
+          set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
+          mode $exit {
 
+              bindsym --to-code {
+                  s exec \"systemctl suspend\", mode \"default\"
+                  p exec \"systemctl poweroff\"
+                  r exec \"systemctl reboot\"
+                  l exec \"swaymsg exit\"
+
+                  Return mode \"default\"
+                  Escape mode \"default\"
+                  ${modifier}+x mode \"default\"
+              }
+          }
+
+          exec systemctl --user import-environment
+
+          ${swayfxSettings}
+
+          ";
+    };
+  }
 #+end_src
 
-** flake.nix template and Closing Parenthesis (this needs to be the last heading in the Systems header)
+** flake.nix template
 :PROPERTIES:
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
 :END:
 
 This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]] section.
-
-Here we also close the opening parenthesis of modules/common.nix (home-manager) and profiles/common.nix (NixOS):
-
-*** Closing parentheses for common/home.nix and common/nixos.nix
-:PROPERTIES:
-:CUSTOM_ID: h:24e2a65b-b0cc-42cb-8e61-5a4cc39d6b2f
-:END:
-
-#+begin_src nix :tangle profiles/common/home.nix
-
-  }
-
-#+end_src
-
-#+begin_src nix :tangle profiles/common/nixos.nix
-
-  }
-
-#+end_src
 
 *** flake.nix
 :PROPERTIES:
@@ -7275,6 +7343,8 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     outputs =
       inputs@{ self
       , nixpkgs
+      , home-manager
+      , systems
       , ...
       }:
       let

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, fetchFromGitHub, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.home-manager.enable = true;
