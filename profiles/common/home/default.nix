@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, pkgs, config, outputs, ... }:
 {
   imports = [
     ./packages.nix
@@ -27,5 +27,31 @@
     ./mako.nix
     ./sway.nix
   ];
+
+  nix = {
+    package = lib.mkDefault pkgs.nix;
+    settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+        "ca-derivations"
+      ];
+      warn-dirty = false;
+    };
+  };
+
+  programs = {
+    git.enable = true;
+  };
+
+  home = {
+    username = lib.mkDefault "swarsel";
+    homeDirectory = lib.mkDefault "/home/${config.home.username}";
+    stateVersion = lib.mkDefault "23.05";
+    keyboard.layout = "us"; # TEMPLATE
+    sessionVariables = {
+      FLAKE = "$HOME/.dotfiles";
+    };
+  };
 
 }

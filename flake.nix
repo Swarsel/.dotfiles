@@ -115,7 +115,6 @@
 
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
-        (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -139,6 +138,9 @@
 
       inherit lib;
       inherit mixedModules;
+      nixosModules = import ./modules/nixos;
+      homeManagerModules = import ./modules/home;
+
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
       devShells = forEachSystem
         (pkgs:

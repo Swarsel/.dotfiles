@@ -15,16 +15,17 @@
     sort = "-time";
     width = 300;
     # font = "monospace 10";
-    extraConfig = "[urgency=low]
-    border-color=#cccccc
-    [urgency=normal]
-    border-color=#d08770
-    [urgency=high]
-    border-color=#bf616a
-    default-timeout=3000
-    [category=mpd]
-    default-timeout=2000
-    group-by=category
-    ";
+    extraConfig = ''
+      [urgency=low]
+      border-color=#cccccc
+      [urgency=normal]
+      border-color=#d08770
+      [urgency=high]
+      border-color=#bf616a
+      default-timeout=3000
+      [category=mpd]
+      default-timeout=2000
+      group-by=category
+    '';
   };
 }

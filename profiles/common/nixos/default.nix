@@ -23,6 +23,7 @@
     ./interceptiontools.nix
     ./hardwarecompatibility.nix
     ./login.nix
+    ./stylix.nix
   ];
 
 

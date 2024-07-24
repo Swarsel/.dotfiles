@@ -116,9 +116,8 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
 
 #+begin_src nix :tangle no :noweb-ref theme
 
-  stylix = {
     enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
+    base16Scheme = ../../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
     opacity.popups = 0.5;
@@ -160,7 +159,6 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
         name = "Noto Color Emoji";
       };
     };
-  };
 
 #+end_src
 *** Waybar items - LAPTOPS
@@ -534,7 +532,6 @@ Lastly I define some common module lists that I can simply load depending on the
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [
-    (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
     inputs.stylix.nixosModules.stylix
     inputs.sops-nix.nixosModules.sops
     inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -560,6 +557,9 @@ Lastly I define some common module lists that I can simply load depending on the
 
   inherit lib;
   inherit mixedModules;
+  nixosModules = import ./modules/nixos;
+  homeManagerModules = import ./modules/home;
+
   packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
   devShells = forEachSystem
     (pkgs:
@@ -2092,14 +2092,48 @@ My new main machine.
       {
         home-manager.users.swarsel.imports = outputs.mixedModules ++ [
           ./home.nix
-        ];
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ];
+    ]++ (builtins.attrValues outputs.nixosModules);
+
 
     nixpkgs = {
       overlays = outputs.overlays;
       config = {
         allowUnfree = true;
+      };
+    };
+
+    #  ------   -----
+    # | DP-4 | |eDP-1|
+    #  ------   -----
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = true;
+      isNixos = true;
+      monitors = {
+          main = {
+            name = "California Institute of Technology 0x1407 Unknown";
+            mode = "1920x1080"; # TEMPLATE
+            scale = "1";
+            position = "2560,0";
+            workspace = "2:二";
+            output = "eDP-1";
+          };
+          homedesktop = {
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            mode = "2560x1440";
+            scale = "1";
+            position = "0,0";
+            workspace = "1:一";
+            output = "DP-4";
+          };
+        };
+      inputs =  {
+        "1:1:AT_Translated_Set_2_keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
       };
     };
 
@@ -2165,7 +2199,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     };
 
     stylix.image = ../../wallpaper/lenovowp.png;
-    <<theme>>
 
     hardware = {
       graphics = {
@@ -2234,101 +2267,58 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 This is basically just adjusted to the core count, path to the =hwmon= (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
 
 #+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
-  { config, pkgs, ... }:
+  { config, pkgs, lib, ... }: with lib;
+      {
 
-  {
+        <<gpgagent>>
+        sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
-    <<gpgagent>>
-    home = {
-      username = "swarsel";
-      homeDirectory = "/home/swarsel";
-      stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-      keyboard.layout = "us"; # TEMPLATE
-      packages = with pkgs; [
-      ];
-    };
-    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-    # waybar config - TEMPLATE - update for cores and temp
-    programs.waybar.settings.mainBar = {
-      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-      # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-      temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      temperature.input-filename = "temp1_input";
-    };
-
-    <<waybarlaptop>>
-
-    wayland.windowManager.sway = {
-      config = rec {
-        # update for actual inputs here,
-        input = {
-          "36125:53060:splitkb.com_Kyria_rev3" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1:1:AT_Translated_Set_2_keyboard" = {
-            # TEMPLATE
-            xkb_layout = "us";
-            xkb_options = "grp:win_space_toggle";
-            xkb_variant = "altgr-intl";
-          };
-          "type:touchpad" = {
-            dwt = "enabled";
-            tap = "enabled";
-            natural_scroll = "enabled";
-            middle_emulation = "enabled";
-          };
-
+        # waybar config - TEMPLATE - update for cores and temp
+        programs.waybar.settings.mainBar = {
+          cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+          # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
+          temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+          temperature.input-filename = "temp1_input";
         };
 
-        output = {
-          eDP-1 = {
-            mode = "1920x1080"; # TEMPLATE
-            scale = "1";
-            position = "2560,0";
-            # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          };
-          DP-4 = {
-            mode = "2560x1440";
-            scale = "1";
-            # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-            position = "0,0";
+        <<waybarlaptop>>
+
+        wayland.windowManager.sway = {
+          config = rec {
+            # update for actual inputs here,
+
+            # workspaceOutputAssign = [
+            #   { output = "eDP-1"; workspace = "1:一"; }
+            #   { output = "DP-4"; workspace = "2:二"; }
+            # ];
+
+
+            keybindings =
+              let
+                inherit (config.wayland.windowManager.sway.config) modifier;
+              in
+                {
+                  "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+                  "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+                  "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+                  "XF86Display" = "exec wl-mirror eDP-1";
+                  # these are left open to use
+                  # "XF86WLAN" = "exec wl-mirror eDP-1";
+                  # "XF86Messenger" = "exec wl-mirror eDP-1";
+                  # "XF86Go" = "exec wl-mirror eDP-1";
+                  # "XF86Favorites" = "exec wl-mirror eDP-1";
+                  # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+                  # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+                  # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+                  "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
+                };
+
+            startup = [
+              <<startupnixos>>
+            ];
           };
         };
-
-        workspaceOutputAssign = [
-          { output = "eDP-1"; workspace = "1:一"; }
-          { output = "DP-4"; workspace = "2:二"; }
-        ];
-
-
-        keybindings =
-          let
-            inherit (config.wayland.windowManager.sway.config) modifier;
-          in
-          {
-            "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-            "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-            "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-            "XF86Display" = "exec wl-mirror eDP-1";
-            # these are left open to use
-            # "XF86WLAN" = "exec wl-mirror eDP-1";
-            # "XF86Messenger" = "exec wl-mirror eDP-1";
-            # "XF86Go" = "exec wl-mirror eDP-1";
-            # "XF86Favorites" = "exec wl-mirror eDP-1";
-            # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-            # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-            # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-            "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
-          };
-
-        startup = [
-          <<startupnixos>>
-        ];
-      };
-    };
-  }
+      }
 
 #+end_src
 
@@ -4404,7 +4394,7 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 }
 
 #+end_src
-** Manual Overlays and packages
+** Overlays, packages, and modules
 
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
 
@@ -4417,7 +4407,7 @@ As such, I also define three additional overlays:
 3) =nixpkgs-stable=
    This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
 
-*** pkgs
+*** Packages
 
 #+begin_src nix :tangle pkgs/default.nix
 
@@ -4456,6 +4446,110 @@ As such, I also define three additional overlays:
 
 #+end_src
 
+*** Modules
+
+In this section I define custom modules under the =swarsel= attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
+
+**** NixOS
+
+Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
+
+#+begin_src nix :tangle modules/nixos/default.nix
+  {
+
+  }
+#+end_src
+
+
+
+**** home-manager
+
+#+BEGIN_src nix :tangle modules/home/default.nix
+  {
+    laptop = import ./laptop.nix;
+    monitors = import ./monitors.nix;
+    input = import ./input.nix;
+    nixos = import ./nixos.nix;
+  }
+#+end_src
+
+***** Laptop
+
+#+begin_src nix :tangle modules/home/laptop.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.isLaptop = lib.mkEnableOption "laptop host";
+    config.swarselsystems.touchpad = lib.mkIf config.swarselsystems.isLaptop {
+       "type:touchpad" = {
+          dwt = "enabled";
+          tap = "enabled";
+          natural_scroll = "enabled";
+          middle_emulation = "enabled";
+       };
+    };
+  }
+#+end_src
+
+***** Monitors
+
+#+begin_src nix :tangle modules/home/monitors.nix
+  { lib, config, ... }:
+  let
+    inherit (lib) mkOption types;
+  in
+  {
+    options.swarselsystems.monitors = mkOption {
+      type = types.attrsOf (types.attrsOf types.str );
+      default = { };
+    };
+  }
+#+end_src
+
+***** Input
+
+#+begin_src nix :tangle modules/home/input.nix
+  { lib, config, ... }:
+  let
+    inherit (lib) mkIf mkOption types;
+  in
+  {
+    options.swarselsystems.inputs = mkOption {
+      type = types.attrsOf (types.attrsOf types.str );
+      default = { };
+    };
+    options.swarselsystems.kyria = mkOption {
+      type = types.attrsOf (types.attrsOf types.str );
+      default = {
+        "36125:53060:splitkb.com_Kyria_rev3" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+      };
+    };
+    options.swarselsystems.touchpad = mkOption {
+      type = types.attrsOf (types.attrsOf types.str );
+      default = { };
+    };
+    options.swarselsystems.standardinputs = mkOption {
+      type = types.attrsOf (types.attrsOf types.str );
+      default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+    };
+
+
+  }
+#+end_src
+
+***** Nixos
+
+
+#+begin_src nix :noweb yes :tangle modules/home/nixos.nix
+
+  { lib, config, ... }:
+  {
+    options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+  }
+#+end_src
+
 ** Common NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
@@ -4463,12 +4557,7 @@ As such, I also define three additional overlays:
 
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
-*** General
-:PROPERTIES:
-:CUSTOM_ID: h:5a114da6-ef8d-404d-b31b-b51472908e77
-:END:
-
-**** Imports, enable home-manager module
+*** Imports, enable home-manager module
 :PROPERTIES:
 :CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
 :END:
@@ -4502,6 +4591,7 @@ First, we enable the use of =home-manager= as a NixoS module
       ./interceptiontools.nix
       ./hardwarecompatibility.nix
       ./login.nix
+      ./stylix.nix
     ];
 
 
@@ -4512,6 +4602,11 @@ First, we enable the use of =home-manager= as a NixoS module
   }
 
   #+end_src
+
+*** General
+:PROPERTIES:
+:CUSTOM_ID: h:5a114da6-ef8d-404d-b31b-b51472908e77
+:END:
 
 **** Setup login keymap
 :PROPERTIES:
@@ -4531,7 +4626,6 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
     };
   }
   #+end_src
-
 
 **** Make users non-mutable
 :PROPERTIES:
@@ -4579,21 +4673,6 @@ Next, we will setup some environment variables that need to be set on the system
       };
     };
     # gstreamer plugins for nautilus (used for file metadata)
-  }
-#+end_src
-
-**** Disallow stylix from styling grub
-:PROPERTIES:
-:CUSTOM_ID: h:b09c2bb6-86b7-46f4-a855-ac21dd9988b2
-:END:
-
-By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
-
-#+begin_src nix :tangle profiles/common/nixos/stylix.nix
-  { ... }:
-  {
-    # dont style GRUB with stylix
-    stylix.targets.grub.enable = false; # the styling makes grub more ugly
   }
 #+end_src
 
@@ -4998,6 +5077,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   }
   #+end_src
 
+*** Theme (stylix)
+
+By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
+=theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
+
+#+begin_src nix :noweb yes :tangle profiles/common/nixos/stylix.nix
+  { pkgs, ... }:
+  {
+    stylix = {
+      <<theme>>
+      targets.grub.enable = false; # the styling makes grub more ugly
+    };
+  }
+#+end_src
+
 *** System Packages
 :PROPERTIES:
 :CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
@@ -5375,7 +5469,7 @@ This section houses the greetd related settings. I do not really want to use a d
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/common/home/default.nix
-  { ... }:
+  { lib, pkgs, config, outputs, ... }:
   {
     imports = [
       ./packages.nix
@@ -5404,6 +5498,32 @@ This section sets up all the imports that are used in the home-manager section.
       ./mako.nix
       ./sway.nix
     ];
+
+    nix = {
+      package = lib.mkDefault pkgs.nix;
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+        ];
+        warn-dirty = false;
+      };
+    };
+
+    programs = {
+      git.enable = true;
+    };
+
+    home = {
+      username = lib.mkDefault "swarsel";
+      homeDirectory = lib.mkDefault "/home/${config.home.username}";
+      stateVersion = lib.mkDefault "23.05";
+      keyboard.layout = "us"; # TEMPLATE
+      sessionVariables = {
+        FLAKE = "$HOME/.dotfiles";
+      };
+    };
 
   }
 #+end_src
@@ -5888,7 +6008,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 }
 #+end_src
 
-*** Fonts + Theme
+*** Theme (stylix)
 :PROPERTIES:
 :CUSTOM_ID: h:a92318cd-413e-4e78-a478-e63b09df019c
 :END:
@@ -5897,10 +6017,16 @@ These section allows home-manager to allow theme settings, and handles some othe
 
 This section has been notably empty ever since switching to stylix. Only Emacs is not allowed to be styled by it, because it becomes more ugly compared to my handcrafted setup.
 
-#+begin_src nix :tangle profiles/common/home/stylix.nix
-  { ... }:
+=theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
+
+#+begin_src nix :noweb yes :tangle profiles/common/home/stylix.nix
+  { lib, config, pkgs, ... }:
   {
-   stylix.targets.emacs.enable = false;
+   stylix = lib.mkIf (!config.swarselsystems.isNixos) {
+     <<theme>>
+     targets.emacs.enable = false;
+     targets.waybar.enable = false;
+   };
   }
 #+end_src
 
@@ -7022,19 +7148,20 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
       sort = "-time";
       width = 300;
       # font = "monospace 10";
-      extraConfig = "[urgency=low]
-    border-color=#cccccc
-    [urgency=normal]
-    border-color=#d08770
-    [urgency=high]
-    border-color=#bf616a
-    default-timeout=3000
-    [category=mpd]
-    default-timeout=2000
-    group-by=category
-    ";
+      extraConfig = ''
+        [urgency=low]
+        border-color=#cccccc
+        [urgency=normal]
+        border-color=#d08770
+        [urgency=high]
+        border-color=#bf616a
+        default-timeout=3000
+        [category=mpd]
+        default-timeout=2000
+        group-by=category
+        '';
     };
-}
+  }
 #+end_src
 
 *** Sway
@@ -7047,7 +7174,20 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
 #+begin_src nix :tangle profiles/common/home/sway.nix
-  { config, pkgs, ... }:
+  { config, pkgs, lib, ... }: with lib;
+    let
+      monitors = config.swarselsystems.monitors;
+      eachMonitor = _name: monitor: {
+        name = monitor.name;
+        value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
+      };
+      eachOutput = _name: monitor: {
+        name = monitor.name;
+        value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
+      };
+      workplaceSets = (mapAttrs' eachOutput monitors);
+      workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+    in
   {
     wayland.windowManager.sway = {
       enable = true;
@@ -7147,6 +7287,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
         defaultWorkspace = "workspace 1:一";
+        output = (mapAttrs' eachMonitor monitors);
+        input = config.swarselsystems.standardinputs;
+        workspaceOutputAssign = workplaceOutputs;
         startup = [
           { command = "kitty -T kittyterm"; }
           { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }

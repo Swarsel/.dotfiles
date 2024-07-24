@@ -1,5 +1,4 @@
-{ config, pkgs, ... }:
-
+{ config, pkgs, lib, ... }: with lib;
 {
 
 
@@ -16,14 +15,6 @@
     '';
   };
 
-  home = {
-    username = "swarsel";
-    homeDirectory = "/home/swarsel";
-    stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-    keyboard.layout = "us"; # TEMPLATE
-    packages = with pkgs; [
-    ];
-  };
   sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
   # waybar config - TEMPLATE - update for cores and temp
@@ -57,45 +48,11 @@
   wayland.windowManager.sway = {
     config = rec {
       # update for actual inputs here,
-      input = {
-        "36125:53060:splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          # TEMPLATE
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
 
-      };
-
-      output = {
-        eDP-1 = {
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-        };
-        DP-4 = {
-          mode = "2560x1440";
-          scale = "1";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          position = "0,0";
-        };
-      };
-
-      workspaceOutputAssign = [
-        { output = "eDP-1"; workspace = "1:一"; }
-        { output = "DP-4"; workspace = "2:二"; }
-      ];
+      # workspaceOutputAssign = [
+      #   { output = "eDP-1"; workspace = "1:一"; }
+      #   { output = "DP-4"; workspace = "2:二"; }
+      # ];
 
 
       keybindings =

@@ -1,4 +1,17 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }: with lib;
+let
+  monitors = config.swarselsystems.monitors;
+  eachMonitor = _name: monitor: {
+    name = monitor.name;
+    value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
+  };
+  eachOutput = _name: monitor: {
+    name = monitor.name;
+    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
+  };
+  workplaceSets = (mapAttrs' eachOutput monitors);
+  workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+in
 {
   wayland.windowManager.sway = {
     enable = true;
@@ -98,6 +111,9 @@
         };
       };
       defaultWorkspace = "workspace 1:一";
+      output = (mapAttrs' eachMonitor monitors);
+      input = config.swarselsystems.standardinputs;
+      workspaceOutputAssign = workplaceOutputs;
       startup = [
         { command = "kitty -T kittyterm"; }
         { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }

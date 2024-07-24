@@ -1,4 +1,52 @@
-{ ... }:
+{ lib, config, pkgs, ... }:
 {
-  stylix.targets.emacs.enable = false;
+  stylix = lib.mkIf (!config.swarselsystems.isNixos) {
+
+    enable = true;
+    base16Scheme = ../../../wallpaper/swarsel.yaml;
+    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    polarity = "dark";
+    opacity.popups = 0.5;
+    cursor = {
+      package = pkgs.capitaine-cursors;
+      name = "capitaine-cursors";
+      size = 16;
+    };
+    fonts = {
+      sizes = {
+        terminal = 10;
+        applications = 11;
+      };
+      serif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      sansSerif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      monospace = {
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+        name = "FiraCode Nerd Font Mono";
+      };
+
+      emoji = {
+        package = pkgs.noto-fonts-emoji;
+        name = "Noto Color Emoji";
+      };
+    };
+
+    targets.emacs.enable = false;
+    targets.waybar.enable = false;
+  };
 }

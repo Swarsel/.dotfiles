@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-23 Di 11:27 -->
+<!-- 2024-07-24 Mi 18:31 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#orgb246f68">2.3.3. General (outputs)</a></li>
+<li><a href="#orgfc20bba">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,35 +241,38 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#org2c60dc1">3.2. Manual Overlays and packages</a>
+<li><a href="#orga96c07c">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#org4521b85">3.2.1. pkgs</a></li>
-<li><a href="#orgb28ec6a">3.2.2. Overlays</a></li>
+<li><a href="#org07cc93a">3.2.1. Packages</a></li>
+<li><a href="#orga89e3b1">3.2.2. Overlays</a></li>
+<li><a href="#org70c326b">3.2.3. Modules</a></li>
 </ul>
 </li>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3. Common NixOS</a>
 <ul>
-<li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.3.1. General</a></li>
-<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.2. sops</a></li>
-<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.3. System Packages</a></li>
-<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.4. Programs (including zsh setup)</a></li>
-<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.5. Services</a></li>
-<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.6. Hardware compatibility settings (Yubikey, Ledger) - udev rules</a></li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.7. System Login</a></li>
+<li><a href="#h:45e4315b-0929-4c47-b65a-c8f0a685f4df">3.3.1. Imports, enable home-manager module</a></li>
+<li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.3.2. General</a></li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.3. sops</a></li>
+<li><a href="#org8d56c12">3.3.4. Theme (stylix)</a></li>
+<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.5. System Packages</a></li>
+<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.6. Programs (including zsh setup)</a></li>
+<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.7. Services</a></li>
+<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.8. Hardware compatibility settings (Yubikey, Ledger) - udev rules</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.9. System Login</a></li>
 </ul>
 </li>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4. Common Home-Manager</a>
 <ul>
-<li><a href="#orge039dea">3.4.1. Imports</a></li>
+<li><a href="#orgc08c163">3.4.1. Imports</a></li>
 <li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.4.2. Installed packages</a></li>
 <li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.4.3. sops</a></li>
 <li><a href="#h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">3.4.4. SSH Machines</a></li>
-<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">3.4.5. Fonts + Theme</a></li>
+<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">3.4.5. Theme (stylix)</a></li>
 <li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">3.4.6. Desktop Entries</a></li>
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.4.7. Linking dotfiles</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.4.8. Sourcing environment variables</a></li>
 <li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.4.9. Programs</a></li>
-<li><a href="#orgba17762">3.4.10. nix-index</a></li>
+<li><a href="#orgdd27bcf">3.4.10. nix-index</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.4.11. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.4.12. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.4.13. eza</a></li>
@@ -336,7 +339,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgca010ea">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#org84946c9">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -396,7 +399,7 @@
 </div>
 </div>
 <p>
-<b>This file has 41818 words spanning 11251 lines and was last revised on 2024-07-23 11:27:32 +0200.</b>
+<b>This file has 42234 words spanning 11394 lines and was last revised on 2024-07-24 18:31:42 +0200.</b>
 </p>
 
 <p>
@@ -446,7 +449,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-23 11:27:32 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-24 18:31:42 +0200)
 </p></li>
 </ul>
 
@@ -537,49 +540,47 @@ For styling, I am using the <a href="https://github.com/danth/stylix">stylix</a>
 
 <div class="org-src-container">
 <pre class="src src-nix">
-stylix = {
-  enable = true;
-  base16Scheme = ../../wallpaper/swarsel.yaml;
-  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-  polarity = "dark";
-  opacity.popups = 0.5;
-  cursor = {
-    package = pkgs.capitaine-cursors;
-    name = "capitaine-cursors";
-    size = 16;
+enable = true;
+base16Scheme = ../../../wallpaper/swarsel.yaml;
+# base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+polarity = "dark";
+opacity.popups = 0.5;
+cursor = {
+  package = pkgs.capitaine-cursors;
+  name = "capitaine-cursors";
+  size = 16;
+};
+fonts = {
+  sizes = {
+    terminal = 10;
+    applications = 11;
   };
-  fonts = {
-    sizes = {
-      terminal = 10;
-      applications = 11;
-    };
-    serif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
+  serif = {
+    # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+    package = pkgs.cantarell-fonts;
+    # package = pkgs.montserrat;
+    name = "Cantarell";
+    # name = "FiraCode Nerd Font Propo";
+    # name = "Montserrat";
+  };
 
-    sansSerif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
+  sansSerif = {
+    # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+    package = pkgs.cantarell-fonts;
+    # package = pkgs.montserrat;
+    name = "Cantarell";
+    # name = "FiraCode Nerd Font Propo";
+    # name = "Montserrat";
+  };
 
-    monospace = {
-      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-      name = "FiraCode Nerd Font Mono";
-    };
+  monospace = {
+    package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+    name = "FiraCode Nerd Font Mono";
+  };
 
-    emoji = {
-      package = pkgs.noto-fonts-emoji;
-      name = "Noto Color Emoji";
-    };
+  emoji = {
+    package = pkgs.noto-fonts-emoji;
+    name = "Noto Color Emoji";
   };
 };
 
@@ -1048,7 +1049,6 @@ homepkgs = import nixpkgs { system = "x86_64-linux";
 
 # NixOS modules that can only be used on NixOS systems
 nixModules = [
-  (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
   inputs.stylix.nixosModules.stylix
   inputs.sops-nix.nixosModules.sops
   inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -1071,13 +1071,16 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-orgb246f68" class="outline-4">
-<h4 id="orgb246f68"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-orgfc20bba" class="outline-4">
+<h4 id="orgfc20bba"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
 inherit lib;
 inherit mixedModules;
+nixosModules = import ./modules/nixos;
+homeManagerModules = import ./modules/home;
+
 packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
 devShells = forEachSystem
   (pkgs:
@@ -1394,49 +1397,47 @@ No matter what you do, check the initial /etc/nixos/configuration.nix for notabl
 
   stylix.image = ../../wallpaper/TEMPLATEwp.png;
 
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
+  enable = true;
+  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
     };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-        name = "FiraCode Nerd Font Mono";
-      };
+    monospace = {
+      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+      name = "FiraCode Nerd Font Mono";
+    };
 
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
     };
   };
 
@@ -2462,7 +2463,7 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org2ec970c"></a>Home-manager only<br />
+<li><a id="org831ef94"></a>Home-manager only<br />
 <ol class="org-ol">
 <li><a id="h:483a26b5-5a40-4417-9ffb-67cc2cf07161"></a>Home manager<br />
 <div class="outline-text-6" id="text-h:483a26b5-5a40-4417-9ffb-67cc2cf07161">
@@ -2483,49 +2484,47 @@ Special things to note here: We are running xcape to allow <code>CAPS</code> to 
 
   stylix.image = ../../wallpaper/surfacewp.png;
 
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
+  enable = true;
+  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
     };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-        name = "FiraCode Nerd Font Mono";
-      };
+    monospace = {
+      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+      name = "FiraCode Nerd Font Mono";
+    };
 
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
     };
   };
 
@@ -2679,49 +2678,47 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 
   stylix.image = ../../wallpaper/surfacewp.png;
 
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
+  enable = true;
+  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
     };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-        name = "FiraCode Nerd Font Mono";
-      };
+    monospace = {
+      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+      name = "FiraCode Nerd Font Mono";
+    };
 
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
     };
   };
 
@@ -2887,14 +2884,48 @@ My new main machine.
     {
       home-manager.users.swarsel.imports = outputs.mixedModules ++ [
         ./home.nix
-      ];
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
-  ];
+  ]++ (builtins.attrValues outputs.nixosModules);
+
 
   nixpkgs = {
     overlays = outputs.overlays;
     config = {
       allowUnfree = true;
+    };
+  };
+
+  #  ------   -----
+  # | DP-4 | |eDP-1|
+  #  ------   -----
+  home-manager.users.swarsel.swarselsystems = {
+    isLaptop = true;
+    isNixos = true;
+    monitors = {
+        main = {
+          name = "California Institute of Technology 0x1407 Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-1";
+        };
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-4";
+        };
+      };
+    inputs =  {
+      "1:1:AT_Translated_Set_2_keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
     };
   };
 
@@ -2961,53 +2992,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
   };
 
   stylix.image = ../../wallpaper/lenovowp.png;
-
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
-    };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-        name = "FiraCode Nerd Font Mono";
-      };
-
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
-    };
-  };
-
 
   hardware = {
     graphics = {
@@ -3077,139 +3061,96 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, ... }:
-
-{
-
-
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = true;
-    enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry.gtk2;
-    defaultCacheTtl = 600;
-    maxCacheTtl = 7200;
-    extraConfig = ''
-      allow-loopback-pinentry
-      allow-emacs-pinentry
-    '';
-  };
-
-  home = {
-    username = "swarsel";
-    homeDirectory = "/home/swarsel";
-    stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-    keyboard.layout = "us"; # TEMPLATE
-    packages = with pkgs; [
-    ];
-  };
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # waybar config - TEMPLATE - update for cores and temp
-  programs.waybar.settings.mainBar = {
-    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-    # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-    temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-    temperature.input-filename = "temp1_input";
-  };
+<pre class="src src-nix">{ config, pkgs, lib, ... }: with lib;
+    {
 
 
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-
-  wayland.windowManager.sway = {
-    config = rec {
-      # update for actual inputs here,
-      input = {
-        "36125:53060:splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          # TEMPLATE
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-
+      services.gpg-agent = {
+        enable = true;
+        enableSshSupport = true;
+        enableExtraSocket = true;
+        pinentryPackage = pkgs.pinentry.gtk2;
+        defaultCacheTtl = 600;
+        maxCacheTtl = 7200;
+        extraConfig = ''
+          allow-loopback-pinentry
+          allow-emacs-pinentry
+        '';
       };
 
-      output = {
-        eDP-1 = {
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-        };
-        DP-4 = {
-          mode = "2560x1440";
-          scale = "1";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          position = "0,0";
-        };
+      sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+
+      # waybar config - TEMPLATE - update for cores and temp
+      programs.waybar.settings.mainBar = {
+        cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
+        # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
+        temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+        temperature.input-filename = "temp1_input";
       };
 
-      workspaceOutputAssign = [
-        { output = "eDP-1"; workspace = "1:一"; }
-        { output = "DP-4"; workspace = "2:二"; }
+
+      programs.waybar.settings.mainBar.modules-right = [
+        "custom/outer-left-arrow-dark"
+        "mpris"
+        "custom/left-arrow-light"
+        "network"
+        "custom/left-arrow-dark"
+        "pulseaudio"
+        "custom/left-arrow-light"
+        "custom/pseudobat"
+        "battery"
+        "custom/left-arrow-dark"
+        "group/hardware"
+        "custom/left-arrow-light"
+        "clock#2"
+        "custom/left-arrow-dark"
+        "clock#1"
       ];
 
 
-      keybindings =
-        let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-        in
-        {
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-          "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-          "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-          "XF86Display" = "exec wl-mirror eDP-1";
-          # these are left open to use
-          # "XF86WLAN" = "exec wl-mirror eDP-1";
-          # "XF86Messenger" = "exec wl-mirror eDP-1";
-          # "XF86Go" = "exec wl-mirror eDP-1";
-          # "XF86Favorites" = "exec wl-mirror eDP-1";
-          # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-          # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-          # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-          "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
+      wayland.windowManager.sway = {
+        config = rec {
+          # update for actual inputs here,
+
+          # workspaceOutputAssign = [
+          #   { output = "eDP-1"; workspace = "1:一"; }
+          #   { output = "DP-4"; workspace = "2:二"; }
+          # ];
+
+
+          keybindings =
+            let
+              inherit (config.wayland.windowManager.sway.config) modifier;
+            in
+              {
+                "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+                "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+                "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+                "XF86Display" = "exec wl-mirror eDP-1";
+                # these are left open to use
+                # "XF86WLAN" = "exec wl-mirror eDP-1";
+                # "XF86Messenger" = "exec wl-mirror eDP-1";
+                # "XF86Go" = "exec wl-mirror eDP-1";
+                # "XF86Favorites" = "exec wl-mirror eDP-1";
+                # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+                # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+                # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+                "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
+              };
+
+          startup = [
+
+            { command = "nextcloud --background"; }
+            { command = "discord --start-minimized"; }
+            { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            { command = "ANKI_WAYLAND=1 anki"; }
+            { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+            { command = "nm-applet"; }
+
+          ];
         };
-
-      startup = [
-
-        { command = "nextcloud --background"; }
-        { command = "discord --start-minimized"; }
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-
-      ];
-    };
-  };
-}
+      };
+    }
 
 </pre>
 </div>
@@ -3286,49 +3227,47 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
   stylix.image = ../../wallpaper/lenovowp.png;
 
-  stylix = {
-    enable = true;
-    base16Scheme = ../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
+  enable = true;
+  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
     };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
 
-      monospace = {
-        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-        name = "FiraCode Nerd Font Mono";
-      };
+    monospace = {
+      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+      name = "FiraCode Nerd Font Mono";
+    };
 
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
     };
   };
 
@@ -5608,8 +5547,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-org2c60dc1" class="outline-3">
-<h3 id="org2c60dc1"><span class="section-number-3">3.2.</span> Manual Overlays and packages</h3>
+<div id="outline-container-orga96c07c" class="outline-3">
+<h3 id="orga96c07c"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -5628,8 +5567,8 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-org4521b85" class="outline-4">
-<h4 id="org4521b85"><span class="section-number-4">3.2.1.</span> pkgs</h4>
+<div id="outline-container-org07cc93a" class="outline-4">
+<h4 id="org07cc93a"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5639,8 +5578,8 @@ _ : rec { }
 </div>
 </div>
 </div>
-<div id="outline-container-orgb28ec6a" class="outline-4">
-<h4 id="orgb28ec6a"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-orga89e3b1" class="outline-4">
+<h4 id="orga89e3b1"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5673,6 +5612,129 @@ _ : rec { }
 </div>
 </div>
 </div>
+<div id="outline-container-org70c326b" class="outline-4">
+<h4 id="org70c326b"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div class="outline-text-4" id="text-3-2-3">
+<p>
+In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
+</p>
+</div>
+<ol class="org-ol">
+<li><a id="orge617667"></a>NixOS<br />
+<div class="outline-text-5" id="text-3-2-3-1">
+<p>
+Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{
+
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org9ea6237"></a>home-manager<br />
+<div class="outline-text-5" id="text-3-2-3-2">
+<div class="org-src-container">
+<pre class="src src-nix">{
+  laptop = import ./laptop.nix;
+  monitors = import ./monitors.nix;
+  input = import ./input.nix;
+  nixos = import ./nixos.nix;
+}
+</pre>
+</div>
+</div>
+<ol class="org-ol">
+<li><a id="orgccb127a"></a>Laptop<br />
+<div class="outline-text-6" id="text-3-2-3-2-1">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+{
+  options.swarselsystems.isLaptop = lib.mkEnableOption "laptop host";
+  config.swarselsystems.touchpad = lib.mkIf config.swarselsystems.isLaptop {
+     "type:touchpad" = {
+        dwt = "enabled";
+        tap = "enabled";
+        natural_scroll = "enabled";
+        middle_emulation = "enabled";
+     };
+  };
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org8ae6f49"></a>Monitors<br />
+<div class="outline-text-6" id="text-3-2-3-2-2">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+let
+  inherit (lib) mkOption types;
+in
+{
+  options.swarselsystems.monitors = mkOption {
+    type = types.attrsOf (types.attrsOf types.str );
+    default = { };
+  };
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orga003992"></a>Input<br />
+<div class="outline-text-6" id="text-3-2-3-2-3">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+let
+  inherit (lib) mkIf mkOption types;
+in
+{
+  options.swarselsystems.inputs = mkOption {
+    type = types.attrsOf (types.attrsOf types.str );
+    default = { };
+  };
+  options.swarselsystems.kyria = mkOption {
+    type = types.attrsOf (types.attrsOf types.str );
+    default = {
+      "36125:53060:splitkb.com_Kyria_rev3" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
+      };
+    };
+  };
+  options.swarselsystems.touchpad = mkOption {
+    type = types.attrsOf (types.attrsOf types.str );
+    default = { };
+  };
+  options.swarselsystems.standardinputs = mkOption {
+    type = types.attrsOf (types.attrsOf types.str );
+    default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+  };
+
+
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgd4e4ccc"></a>Nixos<br />
+<div class="outline-text-6" id="text-3-2-3-2-4">
+<div class="org-src-container">
+<pre class="src src-nix">
+{ lib, config, ... }:
+{
+  options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+}
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</li>
+</ol>
+</div>
 </div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-3">
 <h3 id="h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f"><span class="section-number-3">3.3.</span> Common NixOS</h3>
@@ -5681,13 +5743,9 @@ _ : rec { }
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 </p>
 </div>
-<div id="outline-container-h:5a114da6-ef8d-404d-b31b-b51472908e77" class="outline-4">
-<h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.3.1.</span> General</h4>
-<div class="outline-text-4" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
-</div>
-<ol class="org-ol">
-<li><a id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"></a>Imports, enable home-manager module<br />
-<div class="outline-text-5" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
+<div id="outline-container-h:45e4315b-0929-4c47-b65a-c8f0a685f4df" class="outline-4">
+<h4 id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"><span class="section-number-4">3.3.1.</span> Imports, enable home-manager module</h4>
+<div class="outline-text-4" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module
 </p>
@@ -5719,6 +5777,7 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
     ./interceptiontools.nix
     ./hardwarecompatibility.nix
     ./login.nix
+    ./stylix.nix
   ];
 
 
@@ -5731,7 +5790,12 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
 </pre>
 </div>
 </div>
-</li>
+</div>
+<div id="outline-container-h:5a114da6-ef8d-404d-b31b-b51472908e77" class="outline-4">
+<h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.3.2.</span> General</h4>
+<div class="outline-text-4" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
+</div>
+<ol class="org-ol">
 <li><a id="h:7248f338-8cad-4443-9060-deae7955b26f"></a>Setup login keymap<br />
 <div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
@@ -5798,22 +5862,6 @@ Next, we will setup some environment variables that need to be set on the system
     };
   };
   # gstreamer plugins for nautilus (used for file metadata)
-}
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:b09c2bb6-86b7-46f4-a855-ac21dd9988b2"></a>Disallow stylix from styling grub<br />
-<div class="outline-text-5" id="text-h:b09c2bb6-86b7-46f4-a855-ac21dd9988b2">
-<p>
-By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ ... }:
-{
-  # dont style GRUB with stylix
-  stylix.targets.grub.enable = false; # the styling makes grub more ugly
 }
 </pre>
 </div>
@@ -6183,7 +6231,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </ol>
 </div>
 <div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
-<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.2.</span> sops</h4>
+<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.3.</span> sops</h4>
 <div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -6233,8 +6281,72 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </div>
 </div>
 </div>
+<div id="outline-container-org8d56c12" class="outline-4">
+<h4 id="org8d56c12"><span class="section-number-4">3.3.4.</span> Theme (stylix)</h4>
+<div class="outline-text-4" id="text-3-3-4">
+<p>
+By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
+<code>theme</code> is defined in <a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">Theme (stylix)</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+  stylix = {
+
+    enable = true;
+    base16Scheme = ../../../wallpaper/swarsel.yaml;
+    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    polarity = "dark";
+    opacity.popups = 0.5;
+    cursor = {
+      package = pkgs.capitaine-cursors;
+      name = "capitaine-cursors";
+      size = 16;
+    };
+    fonts = {
+      sizes = {
+        terminal = 10;
+        applications = 11;
+      };
+      serif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      sansSerif = {
+        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+        package = pkgs.cantarell-fonts;
+        # package = pkgs.montserrat;
+        name = "Cantarell";
+        # name = "FiraCode Nerd Font Propo";
+        # name = "Montserrat";
+      };
+
+      monospace = {
+        package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+        name = "FiraCode Nerd Font Mono";
+      };
+
+      emoji = {
+        package = pkgs.noto-fonts-emoji;
+        name = "Noto Color Emoji";
+      };
+    };
+
+    targets.grub.enable = false; # the styling makes grub more ugly
+  };
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-4">
-<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.3.3.</span> System Packages</h4>
+<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.3.5.</span> System Packages</h4>
 <div class="outline-text-4" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
@@ -6327,7 +6439,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 </div>
 </div>
 <div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-4">
-<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.3.4.</span> Programs (including zsh setup)</h4>
+<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.3.6.</span> Programs (including zsh setup)</h4>
 <div class="outline-text-4" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
@@ -6346,8 +6458,8 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org5949477"></a>zsh<br />
-<div class="outline-text-5" id="text-3-3-4-1">
+<li><a id="orge769e5e"></a>zsh<br />
+<div class="outline-text-5" id="text-3-3-6-1">
 <p>
 Do not touch this.
 </p>
@@ -6364,8 +6476,8 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="orgac2e786"></a>syncthing<br />
-<div class="outline-text-5" id="text-3-3-4-2">
+<li><a id="orgd036c0e"></a>syncthing<br />
+<div class="outline-text-5" id="text-3-3-6-2">
 <div class="org-src-container">
 <pre class="src src-nix">
 { ... }:
@@ -6420,7 +6532,7 @@ Do not touch this.
 </ol>
 </div>
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
-<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.3.5.</span> Services</h4>
+<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.3.7.</span> Services</h4>
 <div class="outline-text-4" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
@@ -6442,8 +6554,8 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="orge49842e"></a>Network devices<br />
-<div class="outline-text-5" id="text-3-3-5-2">
+<li><a id="org3935093"></a>Network devices<br />
+<div class="outline-text-5" id="text-3-3-7-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
 </p>
@@ -6494,8 +6606,8 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org4e1d012"></a>Avahi (device discovery)<br />
-<div class="outline-text-6" id="text-3-3-5-2-3">
+<li><a id="org34a4def"></a>Avahi (device discovery)<br />
+<div class="outline-text-6" id="text-3-3-7-2-3">
 <p>
 Avahi is the service used for the network discovery.
 </p>
@@ -6573,7 +6685,7 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </ol>
 </div>
 <div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-4">
-<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.3.6.</span> Hardware compatibility settings (Yubikey, Ledger) - udev rules</h4>
+<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.3.8.</span> Hardware compatibility settings (Yubikey, Ledger) - udev rules</h4>
 <div class="outline-text-4" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -6611,7 +6723,7 @@ Also, this is a good place to setup the udev rules.
 </div>
 </div>
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-4">
-<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.3.7.</span> System Login</h4>
+<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.3.9.</span> System Login</h4>
 <div class="outline-text-4" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -6648,15 +6760,15 @@ This section houses the greetd related settings. I do not really want to use a d
 <h3 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-3">3.4.</span> Common Home-Manager</h3>
 <div class="outline-text-3" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
-<div id="outline-container-orge039dea" class="outline-4">
-<h4 id="orge039dea"><span class="section-number-4">3.4.1.</span> Imports</h4>
+<div id="outline-container-orgc08c163" class="outline-4">
+<h4 id="orgc08c163"><span class="section-number-4">3.4.1.</span> Imports</h4>
 <div class="outline-text-4" id="text-3-4-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">{ lib, pkgs, config, outputs, ... }:
 {
   imports = [
     ./packages.nix
@@ -6685,6 +6797,32 @@ This section sets up all the imports that are used in the home-manager section.
     ./mako.nix
     ./sway.nix
   ];
+
+  nix = {
+    package = lib.mkDefault pkgs.nix;
+    settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+        "ca-derivations"
+      ];
+      warn-dirty = false;
+    };
+  };
+
+  programs = {
+    git.enable = true;
+  };
+
+  home = {
+    username = lib.mkDefault "swarsel";
+    homeDirectory = lib.mkDefault "/home/${config.home.username}";
+    stateVersion = lib.mkDefault "23.05";
+    keyboard.layout = "us"; # TEMPLATE
+    sessionVariables = {
+      FLAKE = "$HOME/.dotfiles";
+    };
+  };
 
 }
 </pre>
@@ -7187,7 +7325,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 </div>
 </div>
 <div id="outline-container-h:a92318cd-413e-4e78-a478-e63b09df019c" class="outline-4">
-<h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.4.5.</span> Fonts + Theme</h4>
+<h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.4.5.</span> Theme (stylix)</h4>
 <div class="outline-text-4" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
 <p>
 These section allows home-manager to allow theme settings, and handles some other appearance-related settings like cursor styles. Interestingly, system icons (adwaita) still need to be setup on system-level, and will break if defined here.
@@ -7197,10 +7335,62 @@ These section allows home-manager to allow theme settings, and handles some othe
 This section has been notably empty ever since switching to stylix. Only Emacs is not allowed to be styled by it, because it becomes more ugly compared to my handcrafted setup.
 </p>
 
+<p>
+<code>theme</code> is defined in <a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">Theme (stylix)</a>.
+</p>
+
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">{ lib, config, pkgs, ... }:
 {
- stylix.targets.emacs.enable = false;
+ stylix = lib.mkIf (!config.swarselsystems.isNixos) {
+
+   enable = true;
+   base16Scheme = ../../../wallpaper/swarsel.yaml;
+   # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+   polarity = "dark";
+   opacity.popups = 0.5;
+   cursor = {
+     package = pkgs.capitaine-cursors;
+     name = "capitaine-cursors";
+     size = 16;
+   };
+   fonts = {
+     sizes = {
+       terminal = 10;
+       applications = 11;
+     };
+     serif = {
+       # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+       package = pkgs.cantarell-fonts;
+       # package = pkgs.montserrat;
+       name = "Cantarell";
+       # name = "FiraCode Nerd Font Propo";
+       # name = "Montserrat";
+     };
+
+     sansSerif = {
+       # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+       package = pkgs.cantarell-fonts;
+       # package = pkgs.montserrat;
+       name = "Cantarell";
+       # name = "FiraCode Nerd Font Propo";
+       # name = "Montserrat";
+     };
+
+     monospace = {
+       package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
+       name = "FiraCode Nerd Font Mono";
+     };
+
+     emoji = {
+       package = pkgs.noto-fonts-emoji;
+       name = "Noto Color Emoji";
+     };
+   };
+
+   targets.emacs.enable = false;
+   targets.waybar.enable = false;
+ };
 }
 </pre>
 </div>
@@ -7377,8 +7567,8 @@ This section is for programs that require no further configuration. zsh Integrat
 </li>
 </ol>
 </div>
-<div id="outline-container-orgba17762" class="outline-4">
-<h4 id="orgba17762"><span class="section-number-4">3.4.10.</span> nix-index</h4>
+<div id="outline-container-orgdd27bcf" class="outline-4">
+<h4 id="orgdd27bcf"><span class="section-number-4">3.4.10.</span> nix-index</h4>
 <div class="outline-text-4" id="text-3-4-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -8371,35 +8561,36 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">  { ... }:
-  {
-    services.mako = {
-      enable = true;
-      # backgroundColor = "#2e3440";
-      # borderColor = "#88c0d0";
-      borderRadius = 15;
-      borderSize = 1;
-      defaultTimeout = 5000;
-      height = 150;
-      icons = true;
-      ignoreTimeout = true;
-      layer = "overlay";
-      maxIconSize = 64;
-      sort = "-time";
-      width = 300;
-      # font = "monospace 10";
-      extraConfig = "[urgency=low]
-    border-color=#cccccc
-    [urgency=normal]
-    border-color=#d08770
-    [urgency=high]
-    border-color=#bf616a
-    default-timeout=3000
-    [category=mpd]
-    default-timeout=2000
-    group-by=category
-    ";
-    };
+<pre class="src src-nix">{ ... }:
+{
+  services.mako = {
+    enable = true;
+    # backgroundColor = "#2e3440";
+    # borderColor = "#88c0d0";
+    borderRadius = 15;
+    borderSize = 1;
+    defaultTimeout = 5000;
+    height = 150;
+    icons = true;
+    ignoreTimeout = true;
+    layer = "overlay";
+    maxIconSize = 64;
+    sort = "-time";
+    width = 300;
+    # font = "monospace 10";
+    extraConfig = ''
+      [urgency=low]
+      border-color=#cccccc
+      [urgency=normal]
+      border-color=#d08770
+      [urgency=high]
+      border-color=#bf616a
+      default-timeout=3000
+      [category=mpd]
+      default-timeout=2000
+      group-by=category
+      '';
+  };
 }
 </pre>
 </div>
@@ -8419,7 +8610,20 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, ... }:
+<pre class="src src-nix">{ config, pkgs, lib, ... }: with lib;
+  let
+    monitors = config.swarselsystems.monitors;
+    eachMonitor = _name: monitor: {
+      name = monitor.name;
+      value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
+    };
+    eachOutput = _name: monitor: {
+      name = monitor.name;
+      value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
+    };
+    workplaceSets = (mapAttrs' eachOutput monitors);
+    workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+  in
 {
   wayland.windowManager.sway = {
     enable = true;
@@ -8519,6 +8723,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         };
       };
       defaultWorkspace = "workspace 1:一";
+      output = (mapAttrs' eachMonitor monitors);
+      input = config.swarselsystems.standardinputs;
+      workspaceOutputAssign = workplaceOutputs;
       startup = [
         { command = "kitty -T kittyterm"; }
         { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
@@ -8823,7 +9030,6 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
-        (_: { nix.extraOptions = "experimental-features = nix-command flakes"; })
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -8847,6 +9053,9 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
       inherit lib;
       inherit mixedModules;
+      nixosModules = import ./modules/nixos;
+      homeManagerModules = import ./modules/home;
+
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
       devShells = forEachSystem
         (pkgs:
@@ -9702,7 +9911,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org873aac9"></a>Nix common prefix bracketer<br />
+<li><a id="org12bc16b"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -9735,7 +9944,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="org5e718c5"></a>Nix formatters<br />
+<li><a id="orgb808b74"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11308,8 +11517,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgca010ea" class="outline-4">
-<h4 id="orgca010ea"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-org84946c9" class="outline-4">
+<h4 id="org84946c9"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13324,7 +13533,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-23 Di 11:27</p>
+<p class="date">Created: 2024-07-24 Mi 18:31</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
