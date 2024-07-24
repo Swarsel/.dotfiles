@@ -4,4 +4,5 @@
   monitors = import ./monitors.nix;
   input = import ./input.nix;
   nixos = import ./nixos.nix;
+  waybar = import ./waybar.nix;
 }

@@ -4470,6 +4470,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     monitors = import ./monitors.nix;
     input = import ./input.nix;
     nixos = import ./nixos.nix;
+    waybar = import ./waybar.nix;
   }
 #+end_src
 
@@ -4493,16 +4494,25 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 ***** Hardware
 
 #+begin_src nix :tangle modules/home/hardware.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.cpuCount = lib.mkOption {
+        type = lib.types.int;
+        default = 8;
+      };
+    }
+#+end_src
+
+***** Waybar
+
+#+begin_src nix :tangle modules/home/waybar.nix
   { lib, config, ... }:
 
 let
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
 in
   {
-    options.swarselsystems.cpuCount = lib.mkOption {
-        type = lib.types.int;
-        default = 8;
-      };
     options.swarselsystems.cpuString = lib.mkOption {
         type = lib.types.str;
         default = generateIcons config.swarselsystems.cpuCount;
