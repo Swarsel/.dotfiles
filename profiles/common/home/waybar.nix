@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 {
   programs.waybar = {
 
@@ -137,6 +137,7 @@
           tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
         };
         cpu = {
+          format = config.swarselsystems.cpuString;
           min-length = 6;
           interval = 5;
           format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];

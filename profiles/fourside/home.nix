@@ -19,7 +19,6 @@
 
   # waybar config - TEMPLATE - update for cores and temp
   programs.waybar.settings.mainBar = {
-    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
     # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
     temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
     temperature.input-filename = "temp1_input";

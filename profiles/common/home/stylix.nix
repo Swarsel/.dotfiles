@@ -46,7 +46,9 @@
       };
     };
 
-    targets.emacs.enable = false;
-    targets.waybar.enable = false;
+    targets = {
+      emacs.enable = false;
+      waybar.enable = false;
+    };
   };
 }

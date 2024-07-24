@@ -2275,7 +2275,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
         # waybar config - TEMPLATE - update for cores and temp
         programs.waybar.settings.mainBar = {
-          cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
           # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
           temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
           temperature.input-filename = "temp1_input";
@@ -4467,6 +4466,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+BEGIN_src nix :tangle modules/home/default.nix
   {
     laptop = import ./laptop.nix;
+    hardware = import ./hardware.nix;
     monitors = import ./monitors.nix;
     input = import ./input.nix;
     nixos = import ./nixos.nix;
@@ -4488,6 +4488,28 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
        };
     };
   }
+#+end_src
+
+***** Hardware
+
+#+begin_src nix :tangle modules/home/hardware.nix
+  { lib, config, ... }:
+
+let
+  generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
+in
+  {
+    options.swarselsystems.cpuCount = lib.mkOption {
+        type = lib.types.int;
+        default = 8;
+      };
+    options.swarselsystems.cpuString = lib.mkOption {
+        type = lib.types.str;
+        default = generateIcons config.swarselsystems.cpuCount;
+        description = "The generated icons string for use by Waybar.";
+        internal = true;
+      };
+    }
 #+end_src
 
 ***** Monitors
@@ -5083,13 +5105,19 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/common/nixos/stylix.nix
-  { pkgs, ... }:
-  {
-    stylix = {
-      <<theme>>
-      targets.grub.enable = false; # the styling makes grub more ugly
-    };
-  }
+   { pkgs, home-manager, ... }:
+   {
+     stylix = {
+       <<theme>>
+       targets.grub.enable = false; # the styling makes grub more ugly
+     };
+     home-manager.users.swarsel = {
+       stylix.targets = {
+         emacs.enable = false;
+         waybar.enable = false;
+       };
+     };
+   }
 #+end_src
 
 *** System Packages
@@ -6024,8 +6052,10 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
   {
    stylix = lib.mkIf (!config.swarselsystems.isNixos) {
      <<theme>>
-     targets.emacs.enable = false;
-     targets.waybar.enable = false;
+   targets = {
+     emacs.enable = false;
+     waybar.enable = false;
+   };
    };
   }
 #+end_src
@@ -6771,7 +6801,7 @@ The rest of this configuration is found here:
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
 
-  { ... }:
+  { config, ... }:
   {
   programs.waybar = {
 
@@ -6910,6 +6940,7 @@ The rest of this configuration is found here:
           tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
         };
         cpu = {
+          format = config.swarselsystems.cpuString;
           min-length = 6;
           interval = 5;
           format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
