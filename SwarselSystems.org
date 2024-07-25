@@ -2098,6 +2098,11 @@ My new main machine.
     home-manager.users.swarsel.swarselsystems = {
       isLaptop = true;
       isNixos = true;
+      temperatureHwmon = {
+        isAbsolutePath = true;
+        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+        input-filename = "temp1_input";
+      };
       monitors = {
           main = {
             name = "California Institute of Technology 0x1407 Unknown";
@@ -2256,15 +2261,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 #+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
   { config, pkgs, lib, ... }: with lib;
       {
-
-        # waybar config - TEMPLATE - update for cores and temp
-        programs.waybar.settings.mainBar = {
-          # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-          temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-          temperature.input-filename = "temp1_input";
-        };
-
-        <<waybarlaptop>>
 
         wayland.windowManager.sway = {
           config = rec {
@@ -4470,6 +4466,22 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           middle_emulation = "enabled";
        };
     };
+    config.swarselsystems.waybarModules = lib.mkIf config.swarselsystems.isLaptop [
+    "custom/outer-left-arrow-dark"
+    "mpris"
+    "custom/left-arrow-light"
+    "network"
+    "custom/left-arrow-dark"
+    "pulseaudio"
+    "custom/left-arrow-light"
+    "battery"
+    "custom/left-arrow-dark"
+    "group/hardware"
+    "custom/left-arrow-light"
+    "clock#2"
+    "custom/left-arrow-dark"
+    "clock#1"
+    ];
   }
 #+end_src
 
@@ -4483,23 +4495,52 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         type = lib.types.int;
         default = 8;
       };
+    options.swarselsystems.temperatureHwmon.isAbsolutePath = lib.mkEnableOption "absolute temperature path";
+    options.swarselsystems.temperatureHwmon.path = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+    options.swarselsystems.temperatureHwmon.input-filename = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
     }
 #+end_src
 
 ***** Waybar
 
 #+begin_src nix :tangle modules/home/waybar.nix
-  { lib, config, ... }:
+    { lib, config, ... }:
 
-let
-  generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
-in
-  {
-    options.swarselsystems.cpuString = lib.mkOption {
-        type = lib.types.str;
-        default = generateIcons config.swarselsystems.cpuCount;
-        description = "The generated icons string for use by Waybar.";
-        internal = true;
+  let
+    generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
+  in
+    {
+      options.swarselsystems.cpuString = lib.mkOption {
+          type = lib.types.str;
+          default = generateIcons config.swarselsystems.cpuCount;
+          description = "The generated icons string for use by Waybar.";
+          internal = true;
+        };
+      options.swarselsystems.waybarModules = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+    "custom/outer-left-arrow-dark"
+    "mpris"
+    "custom/left-arrow-light"
+    "network"
+    "custom/left-arrow-dark"
+    "pulseaudio"
+    "custom/left-arrow-light"
+    "custom/pseudobat"
+    "battery"
+    "custom/left-arrow-dark"
+    "group/hardware"
+    "custom/left-arrow-light"
+    "clock#2"
+    "custom/left-arrow-dark"
+    "clock#1"
+        ];
       };
     }
 #+end_src
@@ -6829,7 +6870,7 @@ The rest of this configuration is found here:
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
 
-  { config, ... }:
+  { config, lib,  ... }:
   {
   programs.waybar = {
 
@@ -6843,6 +6884,13 @@ The rest of this configuration is found here:
         modules-center = [ "sway/mode" "custom/configwarn" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+        };
+
+        modules-right = config.swarselsystems.waybarModules;
+
+        "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
+          format = "";
+          on-click-right = "wlogout -p layer-shell";
         };
 
         "custom/configwarn" = {
@@ -6882,6 +6930,9 @@ The rest of this configuration is found here:
         };
 
         temperature = {
+          hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path ;
+          hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path ;
+          input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
           critical-threshold = 80;
           format-critical = " {temperatureC}°C";
           format = " {temperatureC}°C";

@@ -1,33 +1,6 @@
 { config, pkgs, lib, ... }: with lib;
 {
 
-  # waybar config - TEMPLATE - update for cores and temp
-  programs.waybar.settings.mainBar = {
-    # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";
-    temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-    temperature.input-filename = "temp1_input";
-  };
-
-
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-
   wayland.windowManager.sway = {
     config = rec {
       # update for actual inputs here,

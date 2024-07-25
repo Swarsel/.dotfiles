@@ -9,4 +9,20 @@
       middle_emulation = "enabled";
     };
   };
+  config.swarselsystems.waybarModules = lib.mkIf config.swarselsystems.isLaptop [
+    "custom/outer-left-arrow-dark"
+    "mpris"
+    "custom/left-arrow-light"
+    "network"
+    "custom/left-arrow-dark"
+    "pulseaudio"
+    "custom/left-arrow-light"
+    "battery"
+    "custom/left-arrow-dark"
+    "group/hardware"
+    "custom/left-arrow-light"
+    "clock#2"
+    "custom/left-arrow-dark"
+    "clock#1"
+  ];
 }

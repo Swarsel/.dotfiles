@@ -27,6 +27,11 @@
   home-manager.users.swarsel.swarselsystems = {
     isLaptop = true;
     isNixos = true;
+    temperatureHwmon = {
+      isAbsolutePath = true;
+      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+      input-filename = "temp1_input";
+    };
     monitors = {
       main = {
         name = "California Institute of Technology 0x1407 Unknown";

@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   programs.waybar = {
 
@@ -12,6 +12,13 @@
         modules-center = [ "sway/mode" "custom/configwarn" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+        };
+
+        modules-right = config.swarselsystems.waybarModules;
+
+        "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
+          format = "";
+          on-click-right = "wlogout -p layer-shell";
         };
 
         "custom/configwarn" = {
@@ -51,6 +58,9 @@
         };
 
         temperature = {
+          hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
+          hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
+          input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
           critical-threshold = 80;
           format-critical = " {temperatureC}°C";
           format = " {temperatureC}°C";
