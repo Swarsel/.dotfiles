@@ -2069,7 +2069,7 @@ My new main machine.
 
 #+begin_src nix :tangle profiles/fourside/default.nix
 
-  { inputs, outputs, ... }:
+  { inputs, outputs, config, ... }:
   {
 
     imports = [
@@ -2104,29 +2104,44 @@ My new main machine.
         input-filename = "temp1_input";
       };
       monitors = {
-          main = {
-            name = "California Institute of Technology 0x1407 Unknown";
-            mode = "1920x1080"; # TEMPLATE
-            scale = "1";
-            position = "2560,0";
-            workspace = "2:二";
-            output = "eDP-1";
-          };
-          homedesktop = {
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-            mode = "2560x1440";
-            scale = "1";
-            position = "0,0";
-            workspace = "1:一";
-            output = "DP-4";
-          };
+        main = {
+          name = "California Institute of Technology 0x1407 Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-1";
         };
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-4";
+        };
+      };
       inputs =  {
         "1:1:AT_Translated_Set_2_keyboard" = {
           xkb_layout = "us";
           xkb_options = "grp:win_space_toggle";
           xkb_variant = "altgr-intl";
         };
+      };
+      keybindings = {
+        "Mod4+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+        "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+        "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+        "XF86Display" = "exec wl-mirror eDP-1";
+        # these are left open to use
+        # "XF86WLAN" = "exec wl-mirror eDP-1";
+        # "XF86Messenger" = "exec wl-mirror eDP-1";
+        # "XF86Go" = "exec wl-mirror eDP-1";
+        # "XF86Favorites" = "exec wl-mirror eDP-1";
+        # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+        # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+        # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+        "XF86AudioMute" = "exec pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__Speaker__sink toggle && exec pactl set-sink-mute alsa_output.usb-Lenovo_ThinkPad_Thunderbolt_4_Dock_USB_Audio_000000000000-00.analog-stereo toggle";
       };
     };
 
@@ -2272,25 +2287,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
             # ];
 
 
-            keybindings =
-              let
-                inherit (config.wayland.windowManager.sway.config) modifier;
-              in
-                {
-                  "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-                  "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-                  "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-                  "XF86Display" = "exec wl-mirror eDP-1";
-                  # these are left open to use
-                  # "XF86WLAN" = "exec wl-mirror eDP-1";
-                  # "XF86Messenger" = "exec wl-mirror eDP-1";
-                  # "XF86Go" = "exec wl-mirror eDP-1";
-                  # "XF86Favorites" = "exec wl-mirror eDP-1";
-                  # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-                  # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-                  # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-                  "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
-                };
 
           };
         };
@@ -4459,28 +4455,28 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   {
     options.swarselsystems.isLaptop = lib.mkEnableOption "laptop host";
     config.swarselsystems.touchpad = lib.mkIf config.swarselsystems.isLaptop {
-       "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-       };
+      "type:touchpad" = {
+        dwt = "enabled";
+        tap = "enabled";
+        natural_scroll = "enabled";
+        middle_emulation = "enabled";
+      };
     };
     config.swarselsystems.waybarModules = lib.mkIf config.swarselsystems.isLaptop [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
+      "custom/outer-left-arrow-dark"
+      "mpris"
+      "custom/left-arrow-light"
+      "network"
+      "custom/left-arrow-dark"
+      "pulseaudio"
+      "custom/left-arrow-light"
+      "battery"
+      "custom/left-arrow-dark"
+      "group/hardware"
+      "custom/left-arrow-light"
+      "clock#2"
+      "custom/left-arrow-dark"
+      "clock#1"
     ];
   }
 #+end_src
@@ -4588,6 +4584,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     options.swarselsystems.standardinputs = mkOption {
       type = types.attrsOf (types.attrsOf types.str );
       default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+      internal = true;
+    };
+    options.swarselsystems.keybindings = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
     };
 
 
@@ -7317,7 +7318,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           let
             inherit (config.wayland.windowManager.sway.config) modifier;
           in
-          {
+          recursiveUpdate {
             "${modifier}+q" = "kill";
             "${modifier}+f" = "exec firefox";
             "${modifier}+Space" = "exec fuzzel";
@@ -7385,7 +7386,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
-          };
+          } config.swarselsystems.keybindings;
         modes = {
           resize = {
             Down = "resize grow height 10 px or 10 ppt";

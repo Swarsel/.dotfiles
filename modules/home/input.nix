@@ -23,6 +23,11 @@ in
   options.swarselsystems.standardinputs = mkOption {
     type = types.attrsOf (types.attrsOf types.str);
     default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+    internal = true;
+  };
+  options.swarselsystems.keybindings = mkOption {
+    type = types.attrsOf types.str;
+    default = { };
   };
 
 

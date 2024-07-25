@@ -1,4 +1,4 @@
-{ inputs, outputs, ... }:
+{ inputs, outputs, config, ... }:
 {
 
   imports = [
@@ -56,6 +56,21 @@
         xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";
       };
+    };
+    keybindings = {
+      "Mod4+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
+      "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+      "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+      "XF86Display" = "exec wl-mirror eDP-1";
+      # these are left open to use
+      # "XF86WLAN" = "exec wl-mirror eDP-1";
+      # "XF86Messenger" = "exec wl-mirror eDP-1";
+      # "XF86Go" = "exec wl-mirror eDP-1";
+      # "XF86Favorites" = "exec wl-mirror eDP-1";
+      # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+      # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+      # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+      "XF86AudioMute" = "exec pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__Speaker__sink toggle && exec pactl set-sink-mute alsa_output.usb-Lenovo_ThinkPad_Thunderbolt_4_Dock_USB_Audio_000000000000-00.analog-stereo toggle";
     };
   };
 
