@@ -2066,6 +2066,8 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 :END:
 
 My new main machine.
+This is basically just adjusted to the core count, path to the =hwmon= (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
+
 
 #+begin_src nix :tangle profiles/fourside/default.nix
 
@@ -2074,12 +2076,17 @@ My new main machine.
 
     imports = [
       inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+
       ./hardware-configuration.nix
       ./nixos.nix
+
+      ../optional/nixos/steam.nix
+      ../optional/nixos/virtualbox.nix
+
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-          ./home.nix
+          ../optional/home/gaming.nix
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
     ]++ (builtins.attrValues outputs.nixosModules);
@@ -2095,6 +2102,11 @@ My new main machine.
     #  ------   -----
     # | DP-4 | |eDP-1|
     #  ------   -----
+
+    swarselsystems = {
+      wallpaper = ../../wallpaper/lenovowp.png;
+    };
+
     home-manager.users.swarsel.swarselsystems = {
       isLaptop = true;
       isNixos = true;
@@ -2194,18 +2206,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       };
     };
 
-    virtualisation.virtualbox = {
-      host = {
-        enable = true;
-        enableExtensionPack = true;
-      };
-      # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-      guest = {
-        enable = false;
-      };
-    };
 
-    stylix.image = ../../wallpaper/lenovowp.png;
 
     hardware = {
       graphics = {
@@ -2224,12 +2225,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       };
     };
 
-    programs.steam = {
-      enable = true;
-      extraCompatPackages = [
-        pkgs.proton-ge-bin
-      ];
-    };
 
     # Configure keymap in X11 (only used for login)
 
@@ -2250,47 +2245,12 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 
     environment.systemPackages = with pkgs; [
-      # gog games installing
-      heroic
-      # minecraft
-      temurin-bin-17
-      (prismlauncher.override {
-        glfw = pkgs.glfw-wayland-minecraft;
-      })
     ];
 
     system.stateVersion = "23.05";
 
 
   }
-
-#+end_src
-
-***** Home Manager
-:PROPERTIES:
-:CUSTOM_ID: h:85f7110c-2f25-4506-b64a-fce29f29d0d0
-:END:
-
-This is basically just adjusted to the core count, path to the =hwmon= (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
-
-#+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
-  { config, pkgs, lib, ... }: with lib;
-      {
-
-        wayland.windowManager.sway = {
-          config = rec {
-            # update for actual inputs here,
-
-            # workspaceOutputAssign = [
-            #   { output = "eDP-1"; workspace = "1:一"; }
-            #   { output = "DP-4"; workspace = "2:二"; }
-            # ];
-
-
-
-          };
-        };
-      }
 
 #+end_src
 
@@ -4428,10 +4388,24 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+begin_src nix :tangle modules/nixos/default.nix
   {
-
+    wallpaper = import ./wallpaper.nix;
   }
 #+end_src
 
+
+***** Wallpaper
+
+#+begin_src nix :tangle modules/nixos/wallpaper.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.wallpaper = lib.mkOption {
+        type = lib.types.path;
+        default = "";
+      };
+    }
+
+#+end_src
 
 
 **** home-manager
@@ -4445,6 +4419,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     nixos = import ./nixos.nix;
     waybar = import ./waybar.nix;
     startup = import ./startup.nix;
+    wallpaper = import ./wallpaper.nix;
   }
 #+end_src
 
@@ -4639,14 +4614,29 @@ in
 }
 #+end_src
 
-** Common NixOS
+***** Wallpaper
+
+#+begin_src nix :tangle modules/home/wallpaper.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.wallpaper = lib.mkOption {
+        type = lib.types.path;
+        default = "";
+      };
+    }
+
+#+end_src
+
+** NixOS
+*** Common
 :PROPERTIES:
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
 :END:
 
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
-*** Imports, enable home-manager module
+**** Imports, enable home-manager module
 :PROPERTIES:
 :CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
 :END:
@@ -4692,12 +4682,12 @@ First, we enable the use of =home-manager= as a NixoS module
 
   #+end_src
 
-*** General
+**** General
 :PROPERTIES:
 :CUSTOM_ID: h:5a114da6-ef8d-404d-b31b-b51472908e77
 :END:
 
-**** Setup login keymap
+***** Setup login keymap
 :PROPERTIES:
 :CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
 :END:
@@ -4716,7 +4706,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
   }
   #+end_src
 
-**** Make users non-mutable
+***** Make users non-mutable
 :PROPERTIES:
 :CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
 :END:
@@ -4739,7 +4729,7 @@ This ensures that all user-configuration happens here in the config file.
   }
 #+end_src
 
-**** Environment setup
+***** Environment setup
 :PROPERTIES:
 :CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
 :END:
@@ -4765,7 +4755,7 @@ Next, we will setup some environment variables that need to be set on the system
   }
 #+end_src
 
-**** Enable PolicyKit
+***** Enable PolicyKit
 :PROPERTIES:
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
@@ -4779,7 +4769,7 @@ Needed for control over system-wide privileges etc.
   }
 #+end_src
 
-**** Enable automatic garbage collection
+***** Enable automatic garbage collection
 :PROPERTIES:
 :CUSTOM_ID: h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee
 :END:
@@ -4798,7 +4788,7 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
   }
 #+end_src
 
-**** Enable automatic store optimisation
+***** Enable automatic store optimisation
 :PROPERTIES:
 :CUSTOM_ID: h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8
 :END:
@@ -4816,7 +4806,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 
 #+end_src
 
-**** Reduce systemd timeouts
+***** Reduce systemd timeouts
 :PROPERTIES:
 :CUSTOM_ID: h:12858442-c129-4aa1-9c9c-a0916e36b302
 :END:
@@ -4834,7 +4824,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
   }
 #+end_src
 
-**** Hardware settings
+***** Hardware settings
 :PROPERTIES:
 :CUSTOM_ID: h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b
 :END:
@@ -4870,7 +4860,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   }
 #+end_src
 
-**** Common network settings
+***** Common network settings
 :PROPERTIES:
 :CUSTOM_ID: h:7d696b64-debe-4a95-80b5-1e510156a6c6
 :END:
@@ -5087,7 +5077,7 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
   }
 #+end_src
 
-**** Time, locale settings
+***** Time, locale settings
 :PROPERTIES:
 :CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
 :END:
@@ -5119,7 +5109,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
   }
 #+end_src
 
-*** sops
+**** sops
 :PROPERTIES:
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
 :END:
@@ -5167,28 +5157,31 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   }
   #+end_src
 
-*** Theme (stylix)
+**** Theme (stylix)
 
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/common/nixos/stylix.nix
-   { pkgs, home-manager, ... }:
-   {
-     stylix = {
-       <<theme>>
-       targets.grub.enable = false; # the styling makes grub more ugly
-     };
-     home-manager.users.swarsel = {
-       stylix.targets = {
-         emacs.enable = false;
-         waybar.enable = false;
-       };
-     };
-   }
+  { inputs, pkgs, home-manager, config, ... }:
+  {
+    stylix = {
+      <<theme>>
+      targets.grub.enable = false; # the styling makes grub more ugly
+      image = config.swarselsystems.wallpaper;
+    };
+    home-manager.users.swarsel = {
+      stylix= {
+        targets = {
+          emacs.enable = false;
+          waybar.enable = false;
+        };
+      };
+    };
+  }
 #+end_src
 
-*** System Packages
+**** System Packages
 :PROPERTIES:
 :CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
 :END:
@@ -5279,7 +5272,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
   }
 #+end_src
 
-*** Programs (including zsh setup)
+**** Programs (including zsh setup)
 :PROPERTIES:
 :CUSTOM_ID: h:2bbf5f31-246d-4738-925f-eca40681f7b6
 :END:
@@ -5297,7 +5290,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
   }
 #+end_src
 
-**** zsh
+***** zsh
 Do not touch this.
 
 #+begin_src nix :tangle profiles/common/nixos/zsh.nix
@@ -5309,7 +5302,7 @@ Do not touch this.
     environment.pathsToLink = [ "/share/zsh" ];
   }
 #+end_src
-**** syncthing
+***** syncthing
 
 #+begin_src nix :tangle profiles/common/nixos/syncthing.nix
 
@@ -5360,14 +5353,14 @@ Do not touch this.
   }
 #+end_src
 
-*** Services
+**** Services
 :PROPERTIES:
 :CUSTOM_ID: h:79f3258f-ed9d-434d-b50a-e58d57ade2a7
 :END:
 
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 
-**** blueman
+***** blueman
 :PROPERTIES:
 :CUSTOM_ID: h:b91df05b-113d-4d09-93d1-b271e5b76810
 :END:
@@ -5381,10 +5374,10 @@ Enables the blueman service including the nice system tray icon.
   }
 #+end_src
 
-**** Network devices
+***** Network devices
 
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
-***** Scanners
+****** Scanners
 :PROPERTIES:
 :CUSTOM_ID: h:fae5939e-22ac-4532-a10e-0b86013d20ce
 :END:
@@ -5402,7 +5395,7 @@ This allows me to use my big scanner/printer's scanning function over the networ
 
 #+end_src
 
-***** Printers
+****** Printers
 :PROPERTIES:
 :CUSTOM_ID: h:8c13df62-c6d9-4a0a-83be-d77e71628f0b
 :END:
@@ -5427,7 +5420,7 @@ This allows me to use my big scanner/printer's printing function over the networ
     };
 #+end_src
 
-***** Avahi (device discovery)
+****** Avahi (device discovery)
 
 Avahi is the service used for the network discovery.
 
@@ -5441,7 +5434,7 @@ Avahi is the service used for the network discovery.
   }
 #+end_src
 
-**** enable GVfs
+***** enable GVfs
 :PROPERTIES:
 :CUSTOM_ID: h:f101daa2-604d-4553-99e2-f64b9c207f51
 :END:
@@ -5455,7 +5448,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
   }
 #+end_src
 
-**** interception-tools: Make CAPS work as ESC/CTRL
+***** interception-tools: Make CAPS work as ESC/CTRL
 :PROPERTIES:
 :CUSTOM_ID: h:08d213d5-a9f4-4309-8635-ba557b01dc7d
 :END:
@@ -5495,7 +5488,7 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
   }
 #+end_src
 
-*** Hardware compatibility settings (Yubikey, Ledger) - udev rules
+**** Hardware compatibility settings (Yubikey, Ledger) - udev rules
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
 :END:
@@ -5525,7 +5518,7 @@ Also, this is a good place to setup the udev rules.
   }
 #+end_src
 
-*** System Login
+**** System Login
 :PROPERTIES:
 :CUSTOM_ID: h:eae45839-223a-4027-bce3-e26e092c9096
 :END:
@@ -5555,12 +5548,49 @@ This section houses the greetd related settings. I do not really want to use a d
     '';
   }
 #+end_src
+*** Optional
 
-** Common Home-Manager
+**** steam
+
+#+begin_src nix :tangle profiles/optional/nixos/steam.nix
+  { pkgs, ... }:
+  {
+
+    programs.steam = {
+      enable = true;
+      extraCompatPackages = [
+        pkgs.proton-ge-bin
+      ];
+    };
+  }
+
+
+#+end_src
+
+**** VirtualBox
+
+#+begin_src nix :tangle profiles/optional/nixos/virtualbox.nix
+  { ... }:
+  {
+      virtualisation.virtualbox = {
+        host = {
+          enable = true;
+          enableExtensionPack = true;
+        };
+        # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+        guest = {
+          enable = false;
+        };
+      };
+}
+#+end_src
+
+** Home-manager
+*** Common
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
 :END:
-*** Imports
+**** Imports
 
 This section sets up all the imports that are used in the home-manager section.
 
@@ -5625,7 +5655,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-*** Installed packages
+**** Installed packages
 :PROPERTIES:
 :CUSTOM_ID: h:893a7f33-7715-415b-a895-2687ded31c18
 :END:
@@ -5636,7 +5666,7 @@ Also, I define some useful shell scripts here.
 
 Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499c-9731-09dddfc39532][System Packages]]
 
-**** Packaged
+***** Packaged
 :PROPERTIES:
 :CUSTOM_ID: h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75
 :END:
@@ -5703,20 +5733,6 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       # kyria
       qmk
       qmk-udev-rules
-
-      # games
-      lutris
-      wine
-      libudev-zero
-      dwarfs
-      fuse-overlayfs
-      # steam
-      # steam-run
-      patchelf
-      gamescope
-      vulkan-tools
-      moonlight-qt
-      ns-usbloader
 
       # firefox related
       tridactyl-native
@@ -5806,7 +5822,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
 #+end_src
 
-**** Self-defined
+***** Self-defined
 :PROPERTIES:
 :CUSTOM_ID: h:96cbea91-ff13-4120-b8a9-496b2fa96e70
 :END:
@@ -5967,7 +5983,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
 #+end_src
 
-*** sops
+**** sops
 :PROPERTIES:
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
 :END:
@@ -5999,7 +6015,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   }
 #+end_src
 
-*** SSH Machines
+**** SSH Machines
 :PROPERTIES:
 :CUSTOM_ID: h:edd6720e-1f90-40bf-b6f9-30a19d4cae08
 :END:
@@ -6106,7 +6122,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 }
 #+end_src
 
-*** Theme (stylix)
+**** Theme (stylix)
 :PROPERTIES:
 :CUSTOM_ID: h:a92318cd-413e-4e78-a478-e63b09df019c
 :END:
@@ -6122,6 +6138,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
   {
    stylix = lib.mkIf (!config.swarselsystems.isNixos) {
      <<theme>>
+     image = config.swarselsystems.wallpaper;
    targets = {
      emacs.enable = false;
      waybar.enable = false;
@@ -6130,7 +6147,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
   }
 #+end_src
 
-*** Desktop Entries
+**** Desktop Entries
 :PROPERTIES:
 :CUSTOM_ID: h:867556e6-5a24-4c43-9d47-3edca2f16488
 :END:
@@ -6190,7 +6207,7 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
   }
 #+end_src
 
-*** Linking dotfiles
+**** Linking dotfiles
 :PROPERTIES:
 :CUSTOM_ID: h:5ef03803-e150-41bc-b603-e80d60d96efc
 :END:
@@ -6236,7 +6253,7 @@ Also, we link some files to the users XDG configuration home:
 }
 #+end_src
 
-*** Sourcing environment variables
+**** Sourcing environment variables
 :PROPERTIES:
 :CUSTOM_ID: h:4486b02f-4fb8-432b-bfa2-2e786206341d
 :END:
@@ -6250,14 +6267,14 @@ Also, we link some files to the users XDG configuration home:
   }
 #+end_src
 
-*** Programs
+**** Programs
 :PROPERTIES:
 :CUSTOM_ID: h:070a75ce-e209-4cda-aa25-e979bbf75d47
 :END:
 
 This houses the configurations for all programs managed by home-manager.
 
-**** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf
+***** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf
 :PROPERTIES:
 :CUSTOM_ID: h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde
 :END:
@@ -6286,7 +6303,7 @@ This section is for programs that require no further configuration. zsh Integrat
   }
 #+end_src
 
-*** nix-index
+**** nix-index
 
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
@@ -6313,7 +6330,7 @@ nix-index provides a way to find out which packages are provided by which deriva
   }
 #+end_src
 
-*** password-store
+**** password-store
 :PROPERTIES:
 :CUSTOM_ID: h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae
 :END:
@@ -6333,7 +6350,7 @@ Enables password store with the =pass-otp= extension which allows me to store an
 }
 #+end_src
 
-*** direnv
+**** direnv
 :PROPERTIES:
 :CUSTOM_ID: h:1ab84307-b3fb-4c32-9def-4b89a53a8547
 :END:
@@ -6350,7 +6367,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
   }
 #+end_src
 
-*** eza
+**** eza
 :PROPERTIES:
 :CUSTOM_ID: h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6
 :END:
@@ -6372,7 +6389,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
   }
 #+end_src
 
-*** git
+**** git
 :PROPERTIES:
 :CUSTOM_ID: h:419675ec-3310-438e-80ae-9eaa798a319d
 :END:
@@ -6421,7 +6438,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
   }
 #+end_src
 
-*** Fuzzel
+**** Fuzzel
 :PROPERTIES:
 :CUSTOM_ID: h:069cabf3-df14-49ba-8d17-75f2bcf34fbf
 :END:
@@ -6445,7 +6462,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
   }
 #+end_src
 
-*** Starship
+**** Starship
 :PROPERTIES:
 :CUSTOM_ID: h:55212502-c8f6-43af-ae99-55c8377ef34e
 :END:
@@ -6561,7 +6578,7 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
 }
 #+end_src
 
-*** Kitty
+**** Kitty
 :PROPERTIES:
 :CUSTOM_ID: h:5f1287db-d2e8-49aa-8c58-730129c7795c
 :END:
@@ -6585,7 +6602,7 @@ The theme is handled by stylix.
   }
 #+end_src
 
-*** zsh
+**** zsh
 :PROPERTIES:
 :CUSTOM_ID: h:91dd4cc4-aada-4e74-be23-0cc69ed85af5
 :END:
@@ -6648,7 +6665,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
   }
 #+end_src
 
-*** Mail
+**** Mail
 :PROPERTIES:
 :CUSTOM_ID: h:506d01fc-c20b-473a-ac78-bce4b53fe0e3
 :END:
@@ -6792,7 +6809,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
   }
 #+end_src
 
-*** Home-manager: Emacs
+**** Home-manager: Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:c05d1b64-7110-4151-b436-46bc447113b4
 :END:
@@ -6858,7 +6875,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
   }
 #+end_src
 
-*** Waybar
+**** Waybar
 :PROPERTIES:
 :CUSTOM_ID: h:0bf51f63-01c0-4053-a591-7f0c5697c690
 :END:
@@ -7077,7 +7094,7 @@ The rest of this configuration is found here:
   }
 #+end_src
 
-*** Firefox
+**** Firefox
 :PROPERTIES:
 :CUSTOM_ID: h:fbec0bd4-690b-4f79-8b2b-a40263760a96
 :END:
@@ -7191,14 +7208,14 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
   }
 #+end_src
 
-*** Services
+**** Services
 :PROPERTIES:
 :CUSTOM_ID: h:387c3a82-1fb1-4c0f-8051-874e2acb8804
 :END:
 
 Services that can be defined through home-manager should be defined here.
 
-**** gnome-keyring
+***** gnome-keyring
 :PROPERTIES:
 :CUSTOM_ID: h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9
 :END:
@@ -7215,7 +7232,7 @@ Used for storing sessions in e.g. Nextcloud
   }
 #+end_src
 
-**** KDE Connect
+***** KDE Connect
 :PROPERTIES:
 :CUSTOM_ID: h:be6afd89-9e1e-40b6-8542-5c07a0ab780d
 :END:
@@ -7232,7 +7249,7 @@ This enables phone/computer communication, including sending clipboard, files et
   }
 #+end_src
 
-**** Mako
+***** Mako
 :PROPERTIES:
 :CUSTOM_ID: h:99d05729-df35-4958-9940-3319d6a41359
 :END:
@@ -7275,7 +7292,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
-*** Sway
+**** Sway
 :PROPERTIES:
 :CUSTOM_ID: h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20
 :END:
@@ -7571,7 +7588,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
   }
 #+end_src
 
-*** gpg-agent
+**** gpg-agent
 
 #+begin_src nix :tangle profiles/common/home/gpg-agent.nix
   { pkgs, ... }:
@@ -7589,6 +7606,42 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     '';
   };
   }
+#+end_src
+
+*** Optional
+
+**** Gaming
+
+#+begin_src nix :tangle profiles/optional/home/gaming.nix
+
+  { pkgs, ... }:
+
+   {
+     home.packages = with pkgs; [
+      lutris
+      wine
+      libudev-zero
+      dwarfs
+      fuse-overlayfs
+      # steam
+      # steam-run
+      patchelf
+      gamescope
+      vulkan-tools
+      moonlight-qt
+      ns-usbloader
+
+      # gog games installing
+      heroic
+
+      # minecraft
+      temurin-bin-17
+      (prismlauncher.override {
+        glfw = pkgs.glfw-wayland-minecraft;
+      })
+     ];
+   }
+
 #+end_src
 
 ** flake.nix template

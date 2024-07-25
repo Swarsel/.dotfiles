@@ -6,4 +6,5 @@
   nixos = import ./nixos.nix;
   waybar = import ./waybar.nix;
   startup = import ./startup.nix;
+  wallpaper = import ./wallpaper.nix;
 }

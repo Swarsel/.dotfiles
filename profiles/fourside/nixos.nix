@@ -34,18 +34,7 @@
     };
   };
 
-  virtualisation.virtualbox = {
-    host = {
-      enable = true;
-      enableExtensionPack = true;
-    };
-    # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-    guest = {
-      enable = false;
-    };
-  };
 
-  stylix.image = ../../wallpaper/lenovowp.png;
 
   hardware = {
     graphics = {
@@ -64,12 +53,6 @@
     };
   };
 
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = [
-      pkgs.proton-ge-bin
-    ];
-  };
 
   # Configure keymap in X11 (only used for login)
 
@@ -90,13 +73,6 @@
 
 
   environment.systemPackages = with pkgs; [
-    # gog games installing
-    heroic
-    # minecraft
-    temurin-bin-17
-    (prismlauncher.override {
-      glfw = pkgs.glfw-wayland-minecraft;
-    })
   ];
 
   system.stateVersion = "23.05";

@@ -3,12 +3,17 @@
 
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+
     ./hardware-configuration.nix
     ./nixos.nix
+
+    ../optional/nixos/steam.nix
+    ../optional/nixos/virtualbox.nix
+
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ./home.nix
+        ../optional/home/gaming.nix
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);
@@ -24,6 +29,11 @@
   #  ------   -----
   # | DP-4 | |eDP-1|
   #  ------   -----
+
+  swarselsystems = {
+    wallpaper = ../../wallpaper/lenovowp.png;
+  };
+
   home-manager.users.swarsel.swarselsystems = {
     isLaptop = true;
     isNixos = true;

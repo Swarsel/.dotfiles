@@ -60,20 +60,6 @@
     qmk
     qmk-udev-rules
 
-    # games
-    lutris
-    wine
-    libudev-zero
-    dwarfs
-    fuse-overlayfs
-    # steam
-    # steam-run
-    patchelf
-    gamescope
-    vulkan-tools
-    moonlight-qt
-    ns-usbloader
-
     # firefox related
     tridactyl-native
 

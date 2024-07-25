@@ -46,6 +46,7 @@
       };
     };
 
+    image = config.swarselsystems.wallpaper;
     targets = {
       emacs.enable = false;
       waybar.enable = false;

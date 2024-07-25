@@ -1,4 +1,4 @@
-{ pkgs, home-manager, ... }:
+{ inputs, pkgs, home-manager, config, ... }:
 {
   stylix = {
 
@@ -47,11 +47,14 @@
     };
 
     targets.grub.enable = false; # the styling makes grub more ugly
+    image = config.swarselsystems.wallpaper;
   };
   home-manager.users.swarsel = {
-    stylix.targets = {
-      emacs.enable = false;
-      waybar.enable = false;
+    stylix = {
+      targets = {
+        emacs.enable = false;
+        waybar.enable = false;
+      };
     };
   };
 }

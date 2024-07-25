@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-25 Do 16:01 -->
+<!-- 2024-07-25 Do 16:53 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org672ba3a">2.3.3. General (outputs)</a></li>
+<li><a href="#orgac1678e">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,53 +241,23 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#org3358c6e">3.2. Overlays, packages, and modules</a>
+<li><a href="#orgc25794c">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#orge67e1f0">3.2.1. Packages</a></li>
-<li><a href="#org913e520">3.2.2. Overlays</a></li>
-<li><a href="#org459523c">3.2.3. Modules</a></li>
+<li><a href="#org390ea62">3.2.1. Packages</a></li>
+<li><a href="#orged27f86">3.2.2. Overlays</a></li>
+<li><a href="#orge554f8e">3.2.3. Modules</a></li>
 </ul>
 </li>
-<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3. Common NixOS</a>
+<li><a href="#orgd7b8492">3.3. NixOS</a>
 <ul>
-<li><a href="#h:45e4315b-0929-4c47-b65a-c8f0a685f4df">3.3.1. Imports, enable home-manager module</a></li>
-<li><a href="#h:5a114da6-ef8d-404d-b31b-b51472908e77">3.3.2. General</a></li>
-<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.3. sops</a></li>
-<li><a href="#org683e0c0">3.3.4. Theme (stylix)</a></li>
-<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.5. System Packages</a></li>
-<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.6. Programs (including zsh setup)</a></li>
-<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.7. Services</a></li>
-<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.8. Hardware compatibility settings (Yubikey, Ledger) - udev rules</a></li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.9. System Login</a></li>
+<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
+<li><a href="#orge3fad27">3.3.2. Optional</a></li>
 </ul>
 </li>
-<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4. Common Home-Manager</a>
+<li><a href="#org3437a1b">3.4. Home-manager</a>
 <ul>
-<li><a href="#orgd681b46">3.4.1. Imports</a></li>
-<li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.4.2. Installed packages</a></li>
-<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.4.3. sops</a></li>
-<li><a href="#h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">3.4.4. SSH Machines</a></li>
-<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">3.4.5. Theme (stylix)</a></li>
-<li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">3.4.6. Desktop Entries</a></li>
-<li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.4.7. Linking dotfiles</a></li>
-<li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.4.8. Sourcing environment variables</a></li>
-<li><a href="#h:070a75ce-e209-4cda-aa25-e979bbf75d47">3.4.9. Programs</a></li>
-<li><a href="#org4963dc2">3.4.10. nix-index</a></li>
-<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.4.11. password-store</a></li>
-<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.4.12. direnv</a></li>
-<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.4.13. eza</a></li>
-<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.4.14. git</a></li>
-<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.4.15. Fuzzel</a></li>
-<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.4.16. Starship</a></li>
-<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.4.17. Kitty</a></li>
-<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.4.18. zsh</a></li>
-<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.4.19. Mail</a></li>
-<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.4.20. Home-manager: Emacs</a></li>
-<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.4.21. Waybar</a></li>
-<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.4.22. Firefox</a></li>
-<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.4.23. Services</a></li>
-<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.4.24. Sway</a></li>
-<li><a href="#org318c149">3.4.25. gpg-agent</a></li>
+<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
+<li><a href="#orgb5a2fcb">3.4.2. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -340,7 +310,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#org0f524e3">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#org57c613b">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -400,7 +370,7 @@
 </div>
 </div>
 <p>
-<b>This file has 42684 words spanning 11525 lines and was last revised on 2024-07-25 16:01:11 +0200.</b>
+<b>This file has 42747 words spanning 11578 lines and was last revised on 2024-07-25 16:53:03 +0200.</b>
 </p>
 
 <p>
@@ -450,7 +420,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-25 16:01:11 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-25 16:53:03 +0200)
 </p></li>
 </ul>
 
@@ -1060,8 +1030,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org672ba3a" class="outline-4">
-<h4 id="org672ba3a"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-orgac1678e" class="outline-4">
+<h4 id="orgac1678e"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2440,7 +2410,7 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org7681fe0"></a>Home-manager only<br />
+<li><a id="orge978872"></a>Home-manager only<br />
 <ol class="org-ol">
 <li><a id="h:483a26b5-5a40-4417-9ffb-67cc2cf07161"></a>Home manager<br />
 <div class="outline-text-6" id="text-h:483a26b5-5a40-4417-9ffb-67cc2cf07161">
@@ -2834,7 +2804,9 @@ New setup for the SP3, this time using NixOS - another machine will take over th
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
 My new main machine.
+This is basically just adjusted to the core count, path to the <code>hwmon</code> (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
 </p>
+
 
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2843,12 +2815,17 @@ My new main machine.
 
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+
     ./hardware-configuration.nix
     ./nixos.nix
+
+    ../optional/nixos/steam.nix
+    ../optional/nixos/virtualbox.nix
+
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ./home.nix
+        ../optional/home/gaming.nix
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ]++ (builtins.attrValues outputs.nixosModules);
@@ -2864,6 +2841,11 @@ My new main machine.
   #  ------   -----
   # | DP-4 | |eDP-1|
   #  ------   -----
+
+  swarselsystems = {
+    wallpaper = ../../wallpaper/lenovowp.png;
+  };
+
   home-manager.users.swarsel.swarselsystems = {
     isLaptop = true;
     isNixos = true;
@@ -2964,18 +2946,7 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     };
   };
 
-  virtualisation.virtualbox = {
-    host = {
-      enable = true;
-      enableExtensionPack = true;
-    };
-    # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-    guest = {
-      enable = false;
-    };
-  };
 
-  stylix.image = ../../wallpaper/lenovowp.png;
 
   hardware = {
     graphics = {
@@ -2994,12 +2965,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
     };
   };
 
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = [
-      pkgs.proton-ge-bin
-    ];
-  };
 
   # Configure keymap in X11 (only used for login)
 
@@ -3020,48 +2985,12 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
 
 
   environment.systemPackages = with pkgs; [
-    # gog games installing
-    heroic
-    # minecraft
-    temurin-bin-17
-    (prismlauncher.override {
-      glfw = pkgs.glfw-wayland-minecraft;
-    })
   ];
 
   system.stateVersion = "23.05";
 
 
 }
-
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:85f7110c-2f25-4506-b64a-fce29f29d0d0"></a>Home Manager<br />
-<div class="outline-text-6" id="text-h:85f7110c-2f25-4506-b64a-fce29f29d0d0">
-<p>
-This is basically just adjusted to the core count, path to the <code>hwmon</code> (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, lib, ... }: with lib;
-    {
-
-      wayland.windowManager.sway = {
-        config = rec {
-          # update for actual inputs here,
-
-          # workspaceOutputAssign = [
-          #   { output = "eDP-1"; workspace = "1:一"; }
-          #   { output = "DP-4"; workspace = "2:二"; }
-          # ];
-
-
-
-        };
-      };
-    }
 
 </pre>
 </div>
@@ -5446,8 +5375,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-org3358c6e" class="outline-3">
-<h3 id="org3358c6e"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
+<div id="outline-container-orgc25794c" class="outline-3">
+<h3 id="orgc25794c"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -5466,8 +5395,8 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-orge67e1f0" class="outline-4">
-<h4 id="orge67e1f0"><span class="section-number-4">3.2.1.</span> Packages</h4>
+<div id="outline-container-org390ea62" class="outline-4">
+<h4 id="org390ea62"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5477,8 +5406,8 @@ _ : rec { }
 </div>
 </div>
 </div>
-<div id="outline-container-org913e520" class="outline-4">
-<h4 id="org913e520"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-orged27f86" class="outline-4">
+<h4 id="orged27f86"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5511,15 +5440,15 @@ _ : rec { }
 </div>
 </div>
 </div>
-<div id="outline-container-org459523c" class="outline-4">
-<h4 id="org459523c"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div id="outline-container-orge554f8e" class="outline-4">
+<h4 id="orge554f8e"><span class="section-number-4">3.2.3.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-2-3">
 <p>
 In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orgc4b8b6e"></a>NixOS<br />
+<li><a id="orgbe6e213"></a>NixOS<br />
 <div class="outline-text-5" id="text-3-2-3-1">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -5527,13 +5456,31 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 <div class="org-src-container">
 <pre class="src src-nix">{
-
+  wallpaper = import ./wallpaper.nix;
 }
 </pre>
 </div>
 </div>
+<ol class="org-ol">
+<li><a id="org4ffee2c"></a>Wallpaper<br />
+<div class="outline-text-6" id="text-3-2-3-1-1">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.wallpaper = lib.mkOption {
+      type = lib.types.path;
+      default = "";
+    };
+  }
+
+</pre>
+</div>
+</div>
 </li>
-<li><a id="orgc1077bd"></a>home-manager<br />
+</ol>
+</li>
+<li><a id="org0ec9a59"></a>home-manager<br />
 <div class="outline-text-5" id="text-3-2-3-2">
 <div class="org-src-container">
 <pre class="src src-nix">{
@@ -5544,12 +5491,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   nixos = import ./nixos.nix;
   waybar = import ./waybar.nix;
   startup = import ./startup.nix;
+  wallpaper = import ./wallpaper.nix;
 }
 </pre>
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgfa8854d"></a>Laptop<br />
+<li><a id="org050bf0d"></a>Laptop<br />
 <div class="outline-text-6" id="text-3-2-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5584,7 +5532,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgb5aba4c"></a>Hardware<br />
+<li><a id="org265794a"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5608,7 +5556,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orge5dece8"></a>Waybar<br />
+<li><a id="org66979aa"></a>Waybar<br />
 <div class="outline-text-6" id="text-3-2-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">  { lib, config, ... }:
@@ -5648,7 +5596,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org6ee28d8"></a>Monitors<br />
+<li><a id="org6491f5b"></a>Monitors<br />
 <div class="outline-text-6" id="text-3-2-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5665,7 +5613,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgcef717e"></a>Input<br />
+<li><a id="orgf311b2e"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5706,7 +5654,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org878ca11"></a>Nixos<br />
+<li><a id="orgd367938"></a>Nixos<br />
 <div class="outline-text-6" id="text-3-2-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5728,7 +5676,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgdaf9acc"></a>System startup<br />
+<li><a id="org40937fd"></a>System startup<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5753,21 +5701,41 @@ in
 </div>
 </div>
 </li>
+<li><a id="org125b485"></a>Wallpaper<br />
+<div class="outline-text-6" id="text-3-2-3-2-8">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.wallpaper = lib.mkOption {
+      type = lib.types.path;
+      default = "";
+    };
+  }
+
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
 </ol>
 </div>
 </div>
-<div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-3">
-<h3 id="h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f"><span class="section-number-3">3.3.</span> Common NixOS</h3>
-<div class="outline-text-3" id="text-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">
+<div id="outline-container-orgd7b8492" class="outline-3">
+<h3 id="orgd7b8492"><span class="section-number-3">3.3.</span> NixOS</h3>
+<div class="outline-text-3" id="text-3-3">
+</div>
+<div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-4">
+<h4 id="h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f"><span class="section-number-4">3.3.1.</span> Common</h4>
+<div class="outline-text-4" id="text-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">
 <p>
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 </p>
 </div>
-<div id="outline-container-h:45e4315b-0929-4c47-b65a-c8f0a685f4df" class="outline-4">
-<h4 id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"><span class="section-number-4">3.3.1.</span> Imports, enable home-manager module</h4>
-<div class="outline-text-4" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
+<ol class="org-ol">
+<li><a id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"></a>Imports, enable home-manager module<br />
+<div class="outline-text-5" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module
 </p>
@@ -5812,14 +5780,13 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:5a114da6-ef8d-404d-b31b-b51472908e77" class="outline-4">
-<h4 id="h:5a114da6-ef8d-404d-b31b-b51472908e77"><span class="section-number-4">3.3.2.</span> General</h4>
-<div class="outline-text-4" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
+</li>
+<li><a id="h:5a114da6-ef8d-404d-b31b-b51472908e77"></a>General<br />
+<div class="outline-text-5" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
 </div>
 <ol class="org-ol">
 <li><a id="h:7248f338-8cad-4443-9060-deae7955b26f"></a>Setup login keymap<br />
-<div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
+<div class="outline-text-6" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
 </p>
@@ -5839,7 +5806,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </div>
 </li>
 <li><a id="h:48959890-fbc7-4d28-b33c-f33e028ab473"></a>Make users non-mutable<br />
-<div class="outline-text-5" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
+<div class="outline-text-6" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
 <p>
 This ensures that all user-configuration happens here in the config file.
 </p>
@@ -5863,7 +5830,7 @@ This ensures that all user-configuration happens here in the config file.
 </div>
 </li>
 <li><a id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"></a>Environment setup<br />
-<div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
+<div class="outline-text-6" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 </p>
@@ -5890,7 +5857,7 @@ Next, we will setup some environment variables that need to be set on the system
 </div>
 </li>
 <li><a id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"></a>Enable PolicyKit<br />
-<div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
+<div class="outline-text-6" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
 Needed for control over system-wide privileges etc.
 </p>
@@ -5905,7 +5872,7 @@ Needed for control over system-wide privileges etc.
 </div>
 </li>
 <li><a id="h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee"></a>Enable automatic garbage collection<br />
-<div class="outline-text-5" id="text-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">
+<div class="outline-text-6" id="text-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">
 <p>
 The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
 </p>
@@ -5925,7 +5892,7 @@ The nix store fills up over time, until <code>/boot/efi</code> is filled. This s
 </div>
 </li>
 <li><a id="h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8"></a>Enable automatic store optimisation<br />
-<div class="outline-text-5" id="text-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">
+<div class="outline-text-6" id="text-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">
 <p>
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 </p>
@@ -5944,7 +5911,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 </div>
 </li>
 <li><a id="h:12858442-c129-4aa1-9c9c-a0916e36b302"></a>Reduce systemd timeouts<br />
-<div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
+<div class="outline-text-6" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
 <p>
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason <code>a stop job is running for session 1 of user ...</code>. I do not want to wait that long and am confident no important data is lost by doing this.
 </p>
@@ -5963,7 +5930,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </div>
 </li>
 <li><a id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"></a>Hardware settings<br />
-<div class="outline-text-5" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
+<div class="outline-text-6" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
 <p>
 Enable OpenGL, Sound, Bluetooth and various drivers.
 </p>
@@ -6000,7 +5967,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </div>
 </li>
 <li><a id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"></a>Common network settings<br />
-<div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
+<div class="outline-text-6" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
 Here I only enable <code>networkmanager</code>. Most of the 'real' network config is done in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
 </p>
@@ -6218,7 +6185,7 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 </div>
 </li>
 <li><a id="h:852d59ab-63c3-4831-993d-b5e23b877796"></a>Time, locale settings<br />
-<div class="outline-text-5" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
+<div class="outline-text-6" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
 <p>
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 </p>
@@ -6251,10 +6218,9 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
-<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.3.3.</span> sops</h4>
-<div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
+</li>
+<li><a id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"></a>sops<br />
+<div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
 </p>
@@ -6303,17 +6269,16 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-org683e0c0" class="outline-4">
-<h4 id="org683e0c0"><span class="section-number-4">3.3.4.</span> Theme (stylix)</h4>
-<div class="outline-text-4" id="text-3-3-4">
+</li>
+<li><a id="org2868233"></a>Theme (stylix)<br />
+<div class="outline-text-5" id="text-3-3-1-4">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
 <code>theme</code> is defined in <a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">Theme (stylix)</a>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, home-manager, ... }:
+<pre class="src src-nix">{ inputs, pkgs, home-manager, config, ... }:
 {
   stylix = {
 
@@ -6362,21 +6327,23 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
     };
 
     targets.grub.enable = false; # the styling makes grub more ugly
+    image = config.swarselsystems.wallpaper;
   };
   home-manager.users.swarsel = {
-    stylix.targets = {
-      emacs.enable = false;
-      waybar.enable = false;
+    stylix= {
+      targets = {
+        emacs.enable = false;
+        waybar.enable = false;
+      };
     };
   };
 }
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-4">
-<h4 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-4">3.3.5.</span> System Packages</h4>
-<div class="outline-text-4" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
+</li>
+<li><a id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"></a>System Packages<br />
+<div class="outline-text-5" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
 </p>
@@ -6466,10 +6433,9 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-4">
-<h4 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-4">3.3.6.</span> Programs (including zsh setup)</h4>
-<div class="outline-text-4" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
+</li>
+<li><a id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"></a>Programs (including zsh setup)<br />
+<div class="outline-text-5" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 </p>
@@ -6487,8 +6453,8 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgbdf66ae"></a>zsh<br />
-<div class="outline-text-5" id="text-3-3-6-1">
+<li><a id="orgbebcef9"></a>zsh<br />
+<div class="outline-text-6" id="text-3-3-1-6-1">
 <p>
 Do not touch this.
 </p>
@@ -6505,8 +6471,8 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="org38c0a5e"></a>syncthing<br />
-<div class="outline-text-5" id="text-3-3-6-2">
+<li><a id="orge5aba30"></a>syncthing<br />
+<div class="outline-text-6" id="text-3-3-1-6-2">
 <div class="org-src-container">
 <pre class="src src-nix">
 { ... }:
@@ -6559,17 +6525,16 @@ Do not touch this.
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-4">
-<h4 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-4">3.3.7.</span> Services</h4>
-<div class="outline-text-4" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
+</li>
+<li><a id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"></a>Services<br />
+<div class="outline-text-5" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 </p>
 </div>
 <ol class="org-ol">
 <li><a id="h:b91df05b-113d-4d09-93d1-b271e5b76810"></a>blueman<br />
-<div class="outline-text-5" id="text-h:b91df05b-113d-4d09-93d1-b271e5b76810">
+<div class="outline-text-6" id="text-h:b91df05b-113d-4d09-93d1-b271e5b76810">
 <p>
 Enables the blueman service including the nice system tray icon.
 </p>
@@ -6583,15 +6548,15 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="orgb35e55a"></a>Network devices<br />
-<div class="outline-text-5" id="text-3-3-7-2">
+<li><a id="org5759fd2"></a>Network devices<br />
+<div class="outline-text-6" id="text-3-3-1-7-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
 </p>
 </div>
 <ol class="org-ol">
 <li><a id="h:fae5939e-22ac-4532-a10e-0b86013d20ce"></a>Scanners<br />
-<div class="outline-text-6" id="text-h:fae5939e-22ac-4532-a10e-0b86013d20ce">
+<div class="outline-text-7" id="text-h:fae5939e-22ac-4532-a10e-0b86013d20ce">
 <p>
 This allows me to use my big scanner/printer's scanning function over the network.
 </p>
@@ -6610,7 +6575,7 @@ This allows me to use my big scanner/printer's scanning function over the networ
 </div>
 </li>
 <li><a id="h:8c13df62-c6d9-4a0a-83be-d77e71628f0b"></a>Printers<br />
-<div class="outline-text-6" id="text-h:8c13df62-c6d9-4a0a-83be-d77e71628f0b">
+<div class="outline-text-7" id="text-h:8c13df62-c6d9-4a0a-83be-d77e71628f0b">
 <p>
 This allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
 </p>
@@ -6635,8 +6600,8 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org6bbe0dc"></a>Avahi (device discovery)<br />
-<div class="outline-text-6" id="text-3-3-7-2-3">
+<li><a id="org76ac390"></a>Avahi (device discovery)<br />
+<div class="outline-text-7" id="text-3-3-1-7-2-3">
 <p>
 Avahi is the service used for the network discovery.
 </p>
@@ -6656,7 +6621,7 @@ services.avahi = {
 </ol>
 </li>
 <li><a id="h:f101daa2-604d-4553-99e2-f64b9c207f51"></a>enable GVfs<br />
-<div class="outline-text-5" id="text-h:f101daa2-604d-4553-99e2-f64b9c207f51">
+<div class="outline-text-6" id="text-h:f101daa2-604d-4553-99e2-f64b9c207f51">
 <p>
 This is being set to allow myself to use all functions of nautilus in NixOS
 </p>
@@ -6671,7 +6636,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 </div>
 </li>
 <li><a id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"></a>interception-tools: Make CAPS work as ESC/CTRL<br />
-<div class="outline-text-5" id="text-h:08d213d5-a9f4-4309-8635-ba557b01dc7d">
+<div class="outline-text-6" id="text-h:08d213d5-a9f4-4309-8635-ba557b01dc7d">
 <p>
 This is a super-convenient package that lets my remap my <code>CAPS</code> key to <code>ESC</code> if pressed shortly, and <code>CTRL</code> if being held.
 </p>
@@ -6712,10 +6677,9 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-4">
-<h4 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-4">3.3.8.</span> Hardware compatibility settings (Yubikey, Ledger) - udev rules</h4>
-<div class="outline-text-4" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
+</li>
+<li><a id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"></a>Hardware compatibility settings (Yubikey, Ledger) - udev rules<br />
+<div class="outline-text-5" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
 </p>
@@ -6750,10 +6714,9 @@ Also, this is a good place to setup the udev rules.
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-4">
-<h4 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-4">3.3.9.</span> System Login</h4>
-<div class="outline-text-4" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
+</li>
+<li><a id="h:eae45839-223a-4027-bce3-e26e092c9096"></a>System Login<br />
+<div class="outline-text-5" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
 </p>
@@ -6783,15 +6746,67 @@ This section houses the greetd related settings. I do not really want to use a d
 </pre>
 </div>
 </div>
+</li>
+</ol>
+</div>
+<div id="outline-container-orge3fad27" class="outline-4">
+<h4 id="orge3fad27"><span class="section-number-4">3.3.2.</span> Optional</h4>
+<div class="outline-text-4" id="text-3-3-2">
+</div>
+<ol class="org-ol">
+<li><a id="orgb5d8c78"></a>steam<br />
+<div class="outline-text-5" id="text-3-3-2-1">
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [
+      pkgs.proton-ge-bin
+    ];
+  };
+}
+
+
+</pre>
 </div>
 </div>
-<div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-3">
-<h3 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-3">3.4.</span> Common Home-Manager</h3>
-<div class="outline-text-3" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
+</li>
+<li><a id="org3a5dfa2"></a>VirtualBox<br />
+<div class="outline-text-5" id="text-3-3-2-2">
+<div class="org-src-container">
+<pre class="src src-nix">  { ... }:
+  {
+      virtualisation.virtualbox = {
+        host = {
+          enable = true;
+          enableExtensionPack = true;
+        };
+        # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+        guest = {
+          enable = false;
+        };
+      };
+}
+</pre>
 </div>
-<div id="outline-container-orgd681b46" class="outline-4">
-<h4 id="orgd681b46"><span class="section-number-4">3.4.1.</span> Imports</h4>
-<div class="outline-text-4" id="text-3-4-1">
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org3437a1b" class="outline-3">
+<h3 id="org3437a1b"><span class="section-number-3">3.4.</span> Home-manager</h3>
+<div class="outline-text-3" id="text-3-4">
+</div>
+<div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-4">
+<h4 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-4">3.4.1.</span> Common</h4>
+<div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
+</div>
+<ol class="org-ol">
+<li><a id="org3dedecc"></a>Imports<br />
+<div class="outline-text-5" id="text-3-4-1-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
 </p>
@@ -6858,10 +6873,9 @@ This section sets up all the imports that are used in the home-manager section.
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:893a7f33-7715-415b-a895-2687ded31c18" class="outline-4">
-<h4 id="h:893a7f33-7715-415b-a895-2687ded31c18"><span class="section-number-4">3.4.2.</span> Installed packages</h4>
-<div class="outline-text-4" id="text-h:893a7f33-7715-415b-a895-2687ded31c18">
+</li>
+<li><a id="h:893a7f33-7715-415b-a895-2687ded31c18"></a>Installed packages<br />
+<div class="outline-text-5" id="text-h:893a7f33-7715-415b-a895-2687ded31c18">
 <p>
 Here are defined some packages that I would like to use across all my machines. Most of these should not require further setup. Notably the cura package is severely outdated on nixpkgs, so I just fetch a more recent AppImage and run that instead.
 </p>
@@ -6876,7 +6890,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </div>
 <ol class="org-ol">
 <li><a id="h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75"></a>Packaged<br />
-<div class="outline-text-5" id="text-h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75">
+<div class="outline-text-6" id="text-h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 
@@ -6939,20 +6953,6 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     # kyria
     qmk
     qmk-udev-rules
-
-    # games
-    lutris
-    wine
-    libudev-zero
-    dwarfs
-    fuse-overlayfs
-    # steam
-    # steam-run
-    patchelf
-    gamescope
-    vulkan-tools
-    moonlight-qt
-    ns-usbloader
 
     # firefox related
     tridactyl-native
@@ -7045,7 +7045,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </div>
 </li>
 <li><a id="h:96cbea91-ff13-4120-b8a9-496b2fa96e70"></a>Self-defined<br />
-<div class="outline-text-5" id="text-h:96cbea91-ff13-4120-b8a9-496b2fa96e70">
+<div class="outline-text-6" id="text-h:96cbea91-ff13-4120-b8a9-496b2fa96e70">
 <div class="org-src-container">
 <pre class="src src-nix"># cura
 (
@@ -7205,10 +7205,9 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-4">
-<h4 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-4">3.4.3.</span> sops</h4>
-<div class="outline-text-4" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
+</li>
+<li><a id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"></a>sops<br />
+<div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
 </p>
@@ -7245,10 +7244,9 @@ Since we are using the home-manager implementation here, we need to specify the 
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08" class="outline-4">
-<h4 id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"><span class="section-number-4">3.4.4.</span> SSH Machines</h4>
-<div class="outline-text-4" id="text-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">
+</li>
+<li><a id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"></a>SSH Machines<br />
+<div class="outline-text-5" id="text-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">
 <p>
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 </p>
@@ -7354,10 +7352,9 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:a92318cd-413e-4e78-a478-e63b09df019c" class="outline-4">
-<h4 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-4">3.4.5.</span> Theme (stylix)</h4>
-<div class="outline-text-4" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
+</li>
+<li><a id="h:a92318cd-413e-4e78-a478-e63b09df019c"></a>Theme (stylix)<br />
+<div class="outline-text-5" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
 <p>
 These section allows home-manager to allow theme settings, and handles some other appearance-related settings like cursor styles. Interestingly, system icons (adwaita) still need to be setup on system-level, and will break if defined here.
 </p>
@@ -7419,6 +7416,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
      };
    };
 
+   image = config.swarselsystems.wallpaper;
  targets = {
    emacs.enable = false;
    waybar.enable = false;
@@ -7428,10 +7426,9 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:867556e6-5a24-4c43-9d47-3edca2f16488" class="outline-4">
-<h4 id="h:867556e6-5a24-4c43-9d47-3edca2f16488"><span class="section-number-4">3.4.6.</span> Desktop Entries</h4>
-<div class="outline-text-4" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
+</li>
+<li><a id="h:867556e6-5a24-4c43-9d47-3edca2f16488"></a>Desktop Entries<br />
+<div class="outline-text-5" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
 <p>
 Some programs lack a dmenu launcher - I define them myself here.
 </p>
@@ -7492,10 +7489,9 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:5ef03803-e150-41bc-b603-e80d60d96efc" class="outline-4">
-<h4 id="h:5ef03803-e150-41bc-b603-e80d60d96efc"><span class="section-number-4">3.4.7.</span> Linking dotfiles</h4>
-<div class="outline-text-4" id="text-h:5ef03803-e150-41bc-b603-e80d60d96efc">
+</li>
+<li><a id="h:5ef03803-e150-41bc-b603-e80d60d96efc"></a>Linking dotfiles<br />
+<div class="outline-text-5" id="text-h:5ef03803-e150-41bc-b603-e80d60d96efc">
 <p>
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
 </p>
@@ -7545,10 +7541,9 @@ Also, we link some files to the users XDG configuration home:
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:4486b02f-4fb8-432b-bfa2-2e786206341d" class="outline-4">
-<h4 id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"><span class="section-number-4">3.4.8.</span> Sourcing environment variables</h4>
-<div class="outline-text-4" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
+</li>
+<li><a id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"></a>Sourcing environment variables<br />
+<div class="outline-text-5" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
 <div class="org-src-container">
 <pre class="src src-nix">{ ... }:
 {
@@ -7559,17 +7554,16 @@ Also, we link some files to the users XDG configuration home:
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:070a75ce-e209-4cda-aa25-e979bbf75d47" class="outline-4">
-<h4 id="h:070a75ce-e209-4cda-aa25-e979bbf75d47"><span class="section-number-4">3.4.9.</span> Programs</h4>
-<div class="outline-text-4" id="text-h:070a75ce-e209-4cda-aa25-e979bbf75d47">
+</li>
+<li><a id="h:070a75ce-e209-4cda-aa25-e979bbf75d47"></a>Programs<br />
+<div class="outline-text-5" id="text-h:070a75ce-e209-4cda-aa25-e979bbf75d47">
 <p>
 This houses the configurations for all programs managed by home-manager.
 </p>
 </div>
 <ol class="org-ol">
 <li><a id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"></a>General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf<br />
-<div class="outline-text-5" id="text-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">
+<div class="outline-text-6" id="text-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">
 <p>
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 </p>
@@ -7599,10 +7593,9 @@ This section is for programs that require no further configuration. zsh Integrat
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-org4963dc2" class="outline-4">
-<h4 id="org4963dc2"><span class="section-number-4">3.4.10.</span> nix-index</h4>
-<div class="outline-text-4" id="text-3-4-10">
+</li>
+<li><a id="orgcbec89d"></a>nix-index<br />
+<div class="outline-text-5" id="text-3-4-1-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 </p>
@@ -7631,10 +7624,9 @@ nix-index provides a way to find out which packages are provided by which deriva
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-4">
-<h4 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-4">3.4.11.</span> password-store</h4>
-<div class="outline-text-4" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
+</li>
+<li><a id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"></a>password-store<br />
+<div class="outline-text-5" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
 <p>
 Enables password store with the <code>pass-otp</code> extension which allows me to store and generate one-time-passwords.
 </p>
@@ -7653,10 +7645,9 @@ Enables password store with the <code>pass-otp</code> extension which allows me 
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-4">
-<h4 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-4">3.4.12.</span> direnv</h4>
-<div class="outline-text-4" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
+</li>
+<li><a id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"></a>direnv<br />
+<div class="outline-text-5" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
 <p>
 Enables direnv, which I use for nearly all of my nix dev flakes.
 </p>
@@ -7672,10 +7663,9 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-4">
-<h4 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-4">3.4.13.</span> eza</h4>
-<div class="outline-text-4" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
+</li>
+<li><a id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"></a>eza<br />
+<div class="outline-text-5" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
 <p>
 Eza provides me with a better <code>ls</code> command and some other useful aliases.
 </p>
@@ -7696,10 +7686,9 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-4">
-<h4 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-4">3.4.14.</span> git</h4>
-<div class="outline-text-4" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
+</li>
+<li><a id="h:419675ec-3310-438e-80ae-9eaa798a319d"></a>git<br />
+<div class="outline-text-5" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
 <p>
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using <a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">Magit</a>) as well as a git template defined in <a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">Linking dotfiles</a>.
 </p>
@@ -7747,10 +7736,9 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-4">
-<h4 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-4">3.4.15.</span> Fuzzel</h4>
-<div class="outline-text-4" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
+</li>
+<li><a id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"></a>Fuzzel<br />
+<div class="outline-text-5" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
 <p>
 Here I only need to set basic layout options - the rest is being managed by stylix.
 </p>
@@ -7773,10 +7761,9 @@ Here I only need to set basic layout options - the rest is being managed by styl
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-4">
-<h4 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-4">3.4.16.</span> Starship</h4>
-<div class="outline-text-4" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
+</li>
+<li><a id="h:55212502-c8f6-43af-ae99-55c8377ef34e"></a>Starship<br />
+<div class="outline-text-5" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
 <p>
 Starship makes my <code>zsh</code> look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
 </p>
@@ -7891,10 +7878,9 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-4">
-<h4 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-4">3.4.17.</span> Kitty</h4>
-<div class="outline-text-4" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
+</li>
+<li><a id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"></a>Kitty<br />
+<div class="outline-text-5" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
 <p>
 Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
 </p>
@@ -7919,10 +7905,9 @@ The theme is handled by stylix.
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-4">
-<h4 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-4">3.4.18.</span> zsh</h4>
-<div class="outline-text-4" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
+</li>
+<li><a id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"></a>zsh<br />
+<div class="outline-text-5" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
 <p>
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
 </p>
@@ -7986,10 +7971,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-4">
-<h4 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-4">3.4.19.</span> Mail</h4>
-<div class="outline-text-4" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
+</li>
+<li><a id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"></a>Mail<br />
+<div class="outline-text-5" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
 <p>
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 </p>
@@ -8132,10 +8116,9 @@ accounts.email = {
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-4">
-<h4 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-4">3.4.20.</span> Home-manager: Emacs</h4>
-<div class="outline-text-4" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
+</li>
+<li><a id="h:c05d1b64-7110-4151-b436-46bc447113b4"></a>Home-manager: Emacs<br />
+<div class="outline-text-5" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
 <p>
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my <code>init.el</code> file to the configuration which will then be parsed upon system rebuild, looking for <code>use-package</code> sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (<code>emacs-pgtk</code>). All of the nice options such as <code>tree-sitter</code> support are enabled by default, so I do not need to adjust the build process.
 </p>
@@ -8202,10 +8185,9 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-4">
-<h4 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-4">3.4.21.</span> Waybar</h4>
-<div class="outline-text-4" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
+</li>
+<li><a id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"></a>Waybar<br />
+<div class="outline-text-5" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
 <p>
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
 </p>
@@ -8427,10 +8409,9 @@ programs.waybar = {
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-4">
-<h4 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-4">3.4.22.</span> Firefox</h4>
-<div class="outline-text-4" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
+</li>
+<li><a id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"></a>Firefox<br />
+<div class="outline-text-5" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
 Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
 </p>
@@ -8549,17 +8530,16 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-4">
-<h4 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-4">3.4.23.</span> Services</h4>
-<div class="outline-text-4" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
+</li>
+<li><a id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"></a>Services<br />
+<div class="outline-text-5" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
 <p>
 Services that can be defined through home-manager should be defined here.
 </p>
 </div>
 <ol class="org-ol">
 <li><a id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"></a>gnome-keyring<br />
-<div class="outline-text-5" id="text-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">
+<div class="outline-text-6" id="text-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">
 <p>
 Used for storing sessions in e.g. Nextcloud
 </p>
@@ -8577,7 +8557,7 @@ services.gnome-keyring = {
 </div>
 </li>
 <li><a id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"></a>KDE Connect<br />
-<div class="outline-text-5" id="text-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">
+<div class="outline-text-6" id="text-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">
 <p>
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
 </p>
@@ -8595,7 +8575,7 @@ This enables phone/computer communication, including sending clipboard, files et
 </div>
 </li>
 <li><a id="h:99d05729-df35-4958-9940-3319d6a41359"></a>Mako<br />
-<div class="outline-text-5" id="text-h:99d05729-df35-4958-9940-3319d6a41359">
+<div class="outline-text-6" id="text-h:99d05729-df35-4958-9940-3319d6a41359">
 <p>
 Desktop notifications!
 </p>
@@ -8641,10 +8621,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </li>
 </ol>
-</div>
-<div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-4">
-<h4 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-4">3.4.24.</span> Sway</h4>
-<div class="outline-text-4" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
+</li>
+<li><a id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"></a>Sway<br />
+<div class="outline-text-5" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
 <p>
 I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
 </p>
@@ -8941,10 +8920,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </pre>
 </div>
 </div>
-</div>
-<div id="outline-container-org318c149" class="outline-4">
-<h4 id="org318c149"><span class="section-number-4">3.4.25.</span> gpg-agent</h4>
-<div class="outline-text-4" id="text-3-4-25">
+</li>
+<li><a id="orgbcac627"></a>gpg-agent<br />
+<div class="outline-text-5" id="text-3-4-1-25">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 {
@@ -8964,6 +8942,51 @@ services.gpg-agent = {
 </pre>
 </div>
 </div>
+</li>
+</ol>
+</div>
+<div id="outline-container-orgb5a2fcb" class="outline-4">
+<h4 id="orgb5a2fcb"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<div class="outline-text-4" id="text-3-4-2">
+</div>
+<ol class="org-ol">
+<li><a id="org886fb6b"></a>Gaming<br />
+<div class="outline-text-5" id="text-3-4-2-1">
+<div class="org-src-container">
+<pre class="src src-nix">
+{ pkgs, ... }:
+
+ {
+   home.packages = with pkgs; [
+    lutris
+    wine
+    libudev-zero
+    dwarfs
+    fuse-overlayfs
+    # steam
+    # steam-run
+    patchelf
+    gamescope
+    vulkan-tools
+    moonlight-qt
+    ns-usbloader
+
+    # gog games installing
+    heroic
+
+    # minecraft
+    temurin-bin-17
+    (prismlauncher.override {
+      glfw = pkgs.glfw-wayland-minecraft;
+    })
+   ];
+ }
+
+</pre>
+</div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 <div id="outline-container-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b" class="outline-3">
@@ -9978,7 +10001,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="org0f2f88d"></a>Nix common prefix bracketer<br />
+<li><a id="org6634dda"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -10011,7 +10034,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="org4cede31"></a>Nix formatters<br />
+<li><a id="org074b664"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11584,8 +11607,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-org0f524e3" class="outline-4">
-<h4 id="org0f524e3"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-org57c613b" class="outline-4">
+<h4 id="org57c613b"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13600,7 +13623,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-25 Do 16:01</p>
+<p class="date">Created: 2024-07-25 Do 16:53</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
