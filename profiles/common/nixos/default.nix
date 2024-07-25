@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, ... }:
 {
   imports = [
     ./xserver.nix
@@ -24,6 +24,7 @@
     ./hardwarecompatibility.nix
     ./login.nix
     ./stylix.nix
+    ./power-profiles-daemon.nix
   ];
 
 
@@ -31,4 +32,6 @@
     useGlobalPkgs = true;
     useUserPackages = true;
   };
+
+  system.stateVersion = lib.mkDefault "23.05";
 }

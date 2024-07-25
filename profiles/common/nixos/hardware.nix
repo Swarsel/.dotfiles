@@ -1,10 +1,15 @@
-{ pkgs, ... }:
+{ pkgs, config, lib, ... }:
 {
 
   hardware = {
     graphics = {
       enable = true;
       enable32Bit = true;
+    };
+
+    trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+      enable = true;
+      device = config.swarselsystems.trackpoint.device;
     };
 
     pulseaudio = {
@@ -14,7 +19,7 @@
 
     enableAllFirmware = true;
 
-    bluetooth = {
+    bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
       powerOnBoot = true;
       settings = {
         General = {
@@ -23,4 +28,6 @@
       };
     };
   };
+
+  services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
 }

@@ -2071,17 +2071,18 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
 #+begin_src nix :tangle profiles/fourside/default.nix
 
-  { inputs, outputs, config, ... }:
+  { inputs, outputs, config, pkgs, ... }:
   {
 
     imports = [
       inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
 
       ./hardware-configuration.nix
-      ./nixos.nix
 
       ../optional/nixos/steam.nix
       ../optional/nixos/virtualbox.nix
+      ../optional/nixos/autologin.nix
+      ../optional/nixos/nswitch-rcm.nix
 
       inputs.home-manager.nixosModules.home-manager
       {
@@ -2089,7 +2090,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
           ../optional/home/gaming.nix
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ]++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules);
 
 
     nixpkgs = {
@@ -2099,12 +2100,37 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
       };
     };
 
-    #  ------   -----
-    # | DP-4 | |eDP-1|
-    #  ------   -----
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+    };
+
+
+    networking = {
+      hostName = "fourside";
+      firewall.enable = true;
+    };
+
+    hardware.graphics.extraPackages = with pkgs; [
+      vulkan-loader
+      vulkan-validation-layers
+      vulkan-extension-layer
+    ];
+
+    services = {
+      thinkfan.enable = false;
+      fwupd.enable = true;
+    };
 
     swarselsystems = {
       wallpaper = ../../wallpaper/lenovowp.png;
+      hasBluetooth = true;
+      hasFingerprint = true;
+      trackpoint = {
+        isAvailable = true;
+        device = "TPPS/2 Elan TrackPoint";
+      };
     };
 
     home-manager.users.swarsel.swarselsystems = {
@@ -2115,6 +2141,9 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
         path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
         input-filename = "temp1_input";
       };
+    #  ------   -----
+    # | DP-4 | |eDP-1|
+    #  ------   -----
       monitors = {
         main = {
           name = "California Institute of Technology 0x1407 Unknown";
@@ -2159,98 +2188,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
   }
 
-
-#+end_src
-
-***** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:ab6fefc4-aabd-456c-8a21-5fcb20c02869
-:END:
-
-Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
-
-#+begin_src nix :noweb yes :tangle profiles/fourside/nixos.nix
-  { config, pkgs, ... }:
-
-  {
-
-    services = {
-      getty.autologinUser = "swarsel";
-      greetd.settings.initial_session.user = "swarsel";
-    };
-
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-      # kernelPackages = pkgs.linuxPackages_latest;
-    };
-
-
-    networking = {
-      hostName = "fourside"; # Define your hostname.
-      nftables.enable = true;
-      enableIPv6 = false;
-      firewall.checkReversePath = false;
-      firewall = {
-        enable = true;
-        allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-        allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-        allowedTCPPortRanges = [
-          { from = 27015; to = 27030; } # barotrauma
-          { from = 27036; to = 27037; } # barotrauma
-        ];
-        allowedUDPPortRanges = [
-          { from = 27000; to = 27031; } # barotrauma
-          { from = 58962; to = 58964; } # barotrauma
-        ];
-      };
-    };
-
-
-
-    hardware = {
-      graphics = {
-        enable = true;
-        enable32Bit = true;
-        extraPackages = with pkgs; [
-          vulkan-loader
-          vulkan-validation-layers
-          vulkan-extension-layer
-        ];
-      };
-      bluetooth.enable = true;
-      trackpoint = {
-        enable = true;
-        device = "TPPS/2 Elan TrackPoint";
-      };
-    };
-
-
-    # Configure keymap in X11 (only used for login)
-
-    services.thinkfan = {
-      enable = false;
-    };
-    services.power-profiles-daemon.enable = true;
-    services.fprintd.enable = true;
-    services.fwupd.enable = true;
-
-    services.nswitch-rcm = {
-      enable = true;
-      package = pkgs.fetchurl {
-        url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
-        hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
-      };
-    };
-
-
-    environment.systemPackages = with pkgs; [
-    ];
-
-    system.stateVersion = "23.05";
-
-
-  }
 
 #+end_src
 
@@ -4389,6 +4326,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix :tangle modules/nixos/default.nix
   {
     wallpaper = import ./wallpaper.nix;
+    hardware = import ./hardware.nix;
   }
 #+end_src
 
@@ -4405,6 +4343,22 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       };
     }
 
+#+end_src
+
+***** Hardware
+
+#+begin_src nix :tangle modules/nixos/hardware.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.hasBluetooth = lib.mkEnableOption "bluetooth availability";
+    options.swarselsystems.hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
+    options.swarselsystems.trackpoint.isAvailable = lib.mkEnableOption "trackpoint availability";
+    options.swarselsystems.trackpoint.device = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    }
 #+end_src
 
 
@@ -4566,7 +4520,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       default = { };
     };
 
-
   }
 #+end_src
 
@@ -4636,7 +4589,8 @@ in
 
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
-**** Imports, enable home-manager module
+**** Imports, enable home-manager module, stateVersion
+
 :PROPERTIES:
 :CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
 :END:
@@ -4645,7 +4599,7 @@ First, we enable the use of =home-manager= as a NixoS module
 
 #+begin_src nix :tangle profiles/common/nixos/default.nix
 
-  { ... }:
+  { lib, ... }:
   {
     imports = [
       ./xserver.nix
@@ -4671,6 +4625,7 @@ First, we enable the use of =home-manager= as a NixoS module
       ./hardwarecompatibility.nix
       ./login.nix
       ./stylix.nix
+      ./power-profiles-daemon.nix
     ];
 
 
@@ -4678,6 +4633,8 @@ First, we enable the use of =home-manager= as a NixoS module
       useGlobalPkgs = true;
       useUserPackages = true;
     };
+
+    system.stateVersion = lib.mkDefault "23.05";
   }
 
   #+end_src
@@ -4832,13 +4789,18 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 Enable OpenGL, Sound, Bluetooth and various drivers.
 
 #+begin_src nix :tangle profiles/common/nixos/hardware.nix
-  { pkgs, ...}:
+  { pkgs, config, lib, ...}:
   {
 
     hardware = {
       graphics = {
         enable = true;
         enable32Bit = true;
+      };
+
+      trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+        enable = true;
+        device = config.swarselsystems.trackpoint.device;
       };
 
       pulseaudio= {
@@ -4848,7 +4810,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
       enableAllFirmware = true;
 
-      bluetooth = {
+      bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
         powerOnBoot = true;
         settings = {
           General = {
@@ -4857,6 +4819,8 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
         };
       };
     };
+
+    services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
   }
 #+end_src
 
@@ -4868,9 +4832,18 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 Here I only enable =networkmanager=. Most of the 'real' network config is done in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
 #+begin_src nix :tangle profiles/common/nixos/network.nix
-  { config, ...}:
+  { lib, config, ...}:
   {
-    networking.networkmanager = {
+    networking = {
+      nftables.enable = lib.mkDefault true;
+      enableIPv6 = lib.mkDefault true;
+      firewall = {
+        checkReversePath = lib.mkDefault false;
+        enable = lib.mkDefault true;
+        allowedUDPPorts = [ 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      };
+
+      networkmanager = {
       enable = true;
       ensureProfiles = {
         environmentFiles = [
@@ -5071,6 +5044,7 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
 
         };
       };
+    };
     };
 
     systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
@@ -5488,6 +5462,15 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
   }
 #+end_src
 
+***** power-profiles-daemon
+
+#+begin_src nix :tangle profiles/common/nixos/power-profiles-daemon.nix
+  { ... }:
+  {
+    services.power-profiles-daemon.enable = true;
+  }
+#+end_src
+
 **** Hardware compatibility settings (Yubikey, Ledger) - udev rules
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
@@ -5550,11 +5533,25 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 *** Optional
 
-**** steam
+**** gaming
 
-#+begin_src nix :tangle profiles/optional/nixos/steam.nix
+#+begin_src nix :tangle profiles/optional/nixos/gaming.nix
   { pkgs, ... }:
   {
+    networking = {
+      firewall = {
+        allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
+        allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+        allowedTCPPortRanges = [
+          { from = 27015; to = 27030; } # barotrauma
+          { from = 27036; to = 27037; } # barotrauma
+        ];
+        allowedUDPPortRanges = [
+          { from = 27000; to = 27031; } # barotrauma
+          { from = 58962; to = 58964; } # barotrauma
+        ];
+      };
+    };
 
     programs.steam = {
       enable = true;
@@ -5583,6 +5580,33 @@ This section houses the greetd related settings. I do not really want to use a d
         };
       };
 }
+#+end_src
+
+**** Auto-login
+
+#+begin_src nix :tangle profiles/optional/nixos/autologin.nix
+  { ... }:
+  {
+    services = {
+      getty.autologinUser = "swarsel";
+      greetd.settings.initial_session.user = "swarsel";
+    };
+  }
+#+end_src
+
+**** nswitch-rcm
+
+#+begin_src nix :tangle profiles/optional/nixos/nswitch-rcm.nix
+  { pkgs, ... }:
+  {
+    services.nswitch-rcm = {
+      enable = true;
+      package = pkgs.fetchurl {
+        url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
+        hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
+      };
+    };
+  }
 #+end_src
 
 ** Home-manager
@@ -8181,7 +8205,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
                             swarsel-swarsel-org-filepath)
           ;; Dynamic scoping to the rescue
           (let ((org-confirm-babel-evaluate nil))
-            (org-html-export-to-html)
+            ;; (org-html-export-to-html)
             (org-babel-tangle)
             (swarsel/run-formatting))))
 

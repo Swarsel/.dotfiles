@@ -184,7 +184,7 @@ create a new one."
                         swarsel-swarsel-org-filepath)
       ;; Dynamic scoping to the rescue
       (let ((org-confirm-babel-evaluate nil))
-        (org-html-export-to-html)
+        ;; (org-html-export-to-html)
         (org-babel-tangle)
         (swarsel/run-formatting))))
 

@@ -1,14 +1,15 @@
-{ inputs, outputs, config, ... }:
+{ inputs, outputs, config, pkgs, ... }:
 {
 
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
 
     ./hardware-configuration.nix
-    ./nixos.nix
 
     ../optional/nixos/steam.nix
     ../optional/nixos/virtualbox.nix
+    ../optional/nixos/autologin.nix
+    ../optional/nixos/nswitch-rcm.nix
 
     inputs.home-manager.nixosModules.home-manager
     {
@@ -26,12 +27,37 @@
     };
   };
 
-  #  ------   -----
-  # | DP-4 | |eDP-1|
-  #  ------   -----
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
+  };
+
+
+  networking = {
+    hostName = "fourside";
+    firewall.enable = true;
+  };
+
+  hardware.graphics.extraPackages = with pkgs; [
+    vulkan-loader
+    vulkan-validation-layers
+    vulkan-extension-layer
+  ];
+
+  services = {
+    thinkfan.enable = false;
+    fwupd.enable = true;
+  };
 
   swarselsystems = {
     wallpaper = ../../wallpaper/lenovowp.png;
+    hasBluetooth = true;
+    hasFingerprint = true;
+    trackpoint = {
+      isAvailable = true;
+      device = "TPPS/2 Elan TrackPoint";
+    };
   };
 
   home-manager.users.swarsel.swarselsystems = {
@@ -42,6 +68,9 @@
       path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
       input-filename = "temp1_input";
     };
+    #  ------   -----
+    # | DP-4 | |eDP-1|
+    #  ------   -----
     monitors = {
       main = {
         name = "California Institute of Technology 0x1407 Unknown";
