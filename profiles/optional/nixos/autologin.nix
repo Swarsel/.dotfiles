@@ -1,4 +1,4 @@
-{ ... }:
+_:
 {
   services = {
     getty.autologinUser = "swarsel";

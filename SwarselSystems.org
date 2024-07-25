@@ -718,9 +718,10 @@ In contrast, this defines home-manager systems, which I only have one of.
 #+begin_src nix :tangle no :noweb-ref flakehomeconf
 
   "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-   pkgs = homepkgs;
+   pkgs = pkgsFor.x86_64-linux;
+   extraSpecialArgs = { inherit inputs outputs; };
     modules = homeModules ++ mixedModules ++ [
-      ./profiles/home-manager/home.nix
+      ./profiles/home-manager
     ];
   };
 
@@ -1795,77 +1796,28 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 #+end_src
 
 **** Home-manager only
-***** Home manager
-:PROPERTIES:
-:CUSTOM_ID: h:483a26b5-5a40-4417-9ffb-67cc2cf07161
-:END:
 
-Special things to note here: We are running xcape to allow =CAPS= to act as =CTRL= and =ESC=. Also we are using =nixGL= in most places.
 
-#+begin_src nix :noweb yes :tangle profiles/home-manager/home.nix
+#+begin_src nix :tangle profiles/home-manager/default.nix
 
-  { config, pkgs, ... }:
-
+  { inputs, outputs, config, pkgs, ... }:
   {
-    programs.home-manager.enable = true;
-    home.username = "swarsel";
-    home.homeDirectory = "/home/swarsel";
 
-    home.stateVersion = "23.05"; # Please read the comment before changing.
-
-    stylix.image = ../../wallpaper/surfacewp.png;
-    <<theme>>
+    imports = (builtins.attrValues outputs.homeManagerModules);
 
     nixpkgs = {
+      inherit (outputs) overlays;
       config = {
         allowUnfree = true;
-        allowUnfreePredicate = _: true;
       };
     };
+
     services.xcape = {
       enable = true;
       mapExpression = {
         Control_L = "Escape";
       };
     };
-    #keyboard config
-    home.keyboard.layout = "us";
-
-    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-    # waybar config
-    programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-
-    programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
-    programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
-                                                      "network"
-                                                      "custom/left-arrow-dark"
-                                                      "pulseaudio"
-                                                      "custom/left-arrow-light"
-                                                      "battery"
-                                                      "custom/left-arrow-dark"
-                                                      "temperature"
-                                                      "custom/left-arrow-light"
-                                                      "disk"
-                                                      "custom/left-arrow-dark"
-                                                      "memory"
-                                                      "custom/left-arrow-light"
-                                                      "cpu"
-                                                      "custom/left-arrow-dark"
-                                                      "tray"
-                                                      "custom/left-arrow-light"
-                                                      "clock#2"
-                                                      "custom/left-arrow-dark"
-                                                      "clock#1" ];
-    services.blueman-applet.enable = true;
-    home.packages = with pkgs; [
-      # nixgl.auto.nixGLDefault
-      evince
-      # nodejs_20
-
-      # messaging
-      # we use gomuks for RAM preservation, but keep schildi around for files and images
-    ];
 
     programs.zsh.initExtra = "
   export GPG_TTY=\"$(tty)\"
@@ -1873,43 +1825,38 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
   gpgconf --launch gpg-agent
         ";
 
-    # sway config
-    wayland.windowManager.sway= {
-      config = rec {
-        input = {
-          "*" = {
-            xkb_layout = "us";
-            xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-            xkb_variant = "altgr-intl";
-          };
-          "type:touchpad" = {
-            dwt = "enabled";
-            tap = "enabled";
-            natural_scroll = "enabled";
-            middle_emulation = "enabled";
-          };
-        };
-
-        output = {
-          eDP-1 = {
-            mode = "2160x1440@59.955Hz";
-            scale = "1";
-            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
-          };
-        };
-
-        keybindings = let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-        in {
-        };
-
-        startup = [
-        ];
-
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = true;
+      isNixos = false;
+      wallpaper = ../../wallpaper/surfacewp.png;
+      temperatureHwmon = {
+        isAbsolutePath = true;
+        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+        input-filename = "temp1_input";
       };
-
+      monitors = {
+        main = {
+          name = "California Institute of Technology 0x1407 Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-1";
+        };
+      };
+      inputs =  {
+        "1:1:AT_Translated_Set_2_keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+      };
+      keybindings = {
+      };
     };
+
   }
+
 
 #+end_src
 
@@ -2094,7 +2041,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
 
     nixpkgs = {
-      overlays = outputs.overlays;
+      inherit (outputs) overlays;
       config = {
         allowUnfree = true;
       };
@@ -4652,7 +4599,7 @@ First, we enable the use of =home-manager= as a NixoS module
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
 
 #+begin_src nix :tangle profiles/common/nixos/xserver.nix
-  { ... }:
+  _ :
   {
     services.xserver = {
       xkb = {
@@ -4720,7 +4667,7 @@ Next, we will setup some environment variables that need to be set on the system
 Needed for control over system-wide privileges etc.
 
 #+begin_src nix :tangle profiles/common/nixos/polkit.nix
-  { ... }:
+  _ :
   {
     security.polkit.enable = true;
   }
@@ -4734,7 +4681,7 @@ Needed for control over system-wide privileges etc.
 The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
 
 #+begin_src nix :tangle profiles/common/nixos/gc.nix
-  { ... }:
+  _ :
   {
     nix.gc = {
       automatic = true;
@@ -4753,7 +4700,7 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 
 #+begin_src nix :tangle profiles/common/nixos/store.nix
-  { ... }:
+  _ :
   {
     nix.optimise = {
       automatic = true;
@@ -4771,7 +4718,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
 #+begin_src nix :tangle profiles/common/nixos/systemd.nix
-  { ... }:
+  _ :
   {
     # systemd
     systemd.extraConfig = ''
@@ -4800,7 +4747,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
       trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
         enable = true;
-        device = config.swarselsystems.trackpoint.device;
+        inherit (config.swarselsystems.trackpoint) device;
       };
 
       pulseaudio= {
@@ -5059,7 +5006,7 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 
 #+begin_src nix :tangle profiles/common/nixos/time.nix
-  { ... }:
+  _ :
   {
     time = {
       timeZone = "Europe/Vienna";
@@ -5254,7 +5201,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 
 #+begin_src nix :tangle profiles/common/nixos/programs.nix
-  { ... }:
+  _ :
   {
     programs = {
       dconf.enable = true;
@@ -5280,7 +5227,7 @@ Do not touch this.
 
 #+begin_src nix :tangle profiles/common/nixos/syncthing.nix
 
-  { ... }:
+  _ :
   {
     services.syncthing = {
       enable = true;
@@ -5342,7 +5289,7 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 Enables the blueman service including the nice system tray icon.
 
 #+begin_src nix :tangle profiles/common/nixos/blueman.nix
-  { ... }:
+  _ :
   {
     services.blueman.enable = true;
   }
@@ -5416,7 +5363,7 @@ Avahi is the service used for the network discovery.
 This is being set to allow myself to use all functions of nautilus in NixOS
 
 #+begin_src nix :tangle profiles/common/nixos/gvfs.nix
-  { ... }:
+  _ :
   {
     services.gvfs.enable = true;
   }
@@ -5465,7 +5412,7 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 ***** power-profiles-daemon
 
 #+begin_src nix :tangle profiles/common/nixos/power-profiles-daemon.nix
-  { ... }:
+  _ :
   {
     services.power-profiles-daemon.enable = true;
   }
@@ -5567,7 +5514,7 @@ This section houses the greetd related settings. I do not really want to use a d
 **** VirtualBox
 
 #+begin_src nix :tangle profiles/optional/nixos/virtualbox.nix
-  { ... }:
+  _ :
   {
       virtualisation.virtualbox = {
         host = {
@@ -5585,7 +5532,7 @@ This section houses the greetd related settings. I do not really want to use a d
 **** Auto-login
 
 #+begin_src nix :tangle profiles/optional/nixos/autologin.nix
-  { ... }:
+  _ :
   {
     services = {
       getty.autologinUser = "swarsel";
@@ -6047,7 +5994,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
 #+begin_src nix :tangle profiles/common/home/ssh.nix
-  { ... }:
+  _ :
   {
     programs.ssh = {
       enable = true;
@@ -6182,7 +6129,7 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
 
 #+begin_src nix :tangle profiles/common/home/desktop.nix
 
-  { ... }:
+  _ :
   {
     xdg.desktopEntries = {
 
@@ -6242,7 +6189,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 #+begin_src nix :tangle profiles/common/home/symlink.nix
 
-  { ... }:
+  _ :
   {
   home.file = {
     "init.el" = {
@@ -6283,7 +6230,7 @@ Also, we link some files to the users XDG configuration home:
 :END:
 
 #+begin_src nix :tangle profiles/common/home/env.nix
-  { ... }:
+  _ :
   {
     home.sessionVariables = {
       EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
@@ -6306,7 +6253,7 @@ This houses the configurations for all programs managed by home-manager.
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
 #+begin_src nix :tangle profiles/common/home/programs.nix
-  { ... }:
+  _ :
   {
     programs = {
       bottom.enable = true;
@@ -6382,7 +6329,7 @@ Enables password store with the =pass-otp= extension which allows me to store an
 Enables direnv, which I use for nearly all of my nix dev flakes.
 
 #+begin_src nix :tangle profiles/common/home/direnv.nix
-  { ... }:
+  _ :
   {
     programs.direnv = {
       enable = true;
@@ -6399,7 +6346,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 Eza provides me with a better =ls= command and some other useful aliases.
 
 #+begin_src nix :tangle profiles/common/home/eza.nix
-  { ... }:
+  _ :
   {
     programs.eza = {
       enable = true;
@@ -6421,7 +6368,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix :tangle profiles/common/home/git.nix
-  { ... }:
+  _ :
   {
     programs.git = {
       enable = true;
@@ -6470,7 +6417,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 Here I only need to set basic layout options - the rest is being managed by stylix.
 
 #+begin_src nix :tangle profiles/common/home/fuzzel.nix
-  { ... }:
+  _ :
   {
     programs.fuzzel = {
       enable = true;
@@ -6494,7 +6441,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 Starship makes my =zsh= look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
 
 #+begin_src nix :tangle profiles/common/home/starship.nix
-  { ... }:
+  _ :
   {
     programs.starship = {
       enable = true;
@@ -6612,7 +6559,7 @@ Kitty is the terminal emulator of choice for me, it is nice to configure using n
 The theme is handled by stylix.
 
 #+begin_src nix :tangle profiles/common/home/kitty.nix
-  { ... }:
+  _ :
   {
     programs.kitty = {
       enable = true;
@@ -7248,7 +7195,7 @@ Used for storing sessions in e.g. Nextcloud
 
 #+begin_src nix :tangle profiles/common/home/gnome-keyring.nix
 
-  { ... }:
+  _ :
   {
   services.gnome-keyring = {
     enable = true;
@@ -7264,7 +7211,7 @@ Used for storing sessions in e.g. Nextcloud
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
 
 #+begin_src nix :tangle profiles/common/home/kdeconnect.nix
-  { ... }:
+  _ :
   {
     services.kdeconnect = {
       enable = true;
@@ -7283,7 +7230,7 @@ Desktop notifications!
 The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multiline strings, when indented Mako will fail to start. This might be a mako bug as well.
 
 #+begin_src nix :tangle profiles/common/home/mako.nix
-  { ... }:
+  _ :
   {
     services.mako = {
       enable = true;
@@ -7328,17 +7275,17 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+begin_src nix :tangle profiles/common/home/sway.nix
   { config, pkgs, lib, ... }: with lib;
     let
-      monitors = config.swarselsystems.monitors;
+      inherit (config.swarselsystems) monitors;
       eachMonitor = _name: monitor: {
-        name = monitor.name;
+        inherit (monitor) name;
         value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
       };
       eachOutput = _name: monitor: {
-        name = monitor.name;
+        inherit (monitor) name;
         value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
       };
-      workplaceSets = (mapAttrs' eachOutput monitors);
-      workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+      workplaceSets = mapAttrs' eachOutput monitors;
+      workplaceOutputs = map (key: getAttr key workplaceSets) (attrNames workplaceSets);
     in
   {
     wayland.windowManager.sway = {
@@ -7439,7 +7386,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
         defaultWorkspace = "workspace 1:一";
-        output = (mapAttrs' eachMonitor monitors);
+        output = mapAttrs' eachMonitor monitors;
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign = workplaceOutputs;
         startup = config.swarselsystems.startup ++ [

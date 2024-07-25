@@ -9,7 +9,7 @@
 
     trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
       enable = true;
-      device = config.swarselsystems.trackpoint.device;
+      inherit (config.swarselsystems.trackpoint) device;
     };
 
     pulseaudio = {

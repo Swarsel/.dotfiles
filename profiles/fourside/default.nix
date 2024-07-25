@@ -21,7 +21,7 @@
 
 
   nixpkgs = {
-    overlays = outputs.overlays;
+    inherit (outputs) overlays;
     config = {
       allowUnfree = true;
     };

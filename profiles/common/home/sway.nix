@@ -1,16 +1,16 @@
 { config, pkgs, lib, ... }: with lib;
 let
-  monitors = config.swarselsystems.monitors;
+  inherit (config.swarselsystems) monitors;
   eachMonitor = _name: monitor: {
-    name = monitor.name;
+    inherit (monitor) name;
     value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
   };
   eachOutput = _name: monitor: {
-    name = monitor.name;
+    inherit (monitor) name;
     value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
   };
-  workplaceSets = (mapAttrs' eachOutput monitors);
-  workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+  workplaceSets = mapAttrs' eachOutput monitors;
+  workplaceOutputs = map (key: getAttr key workplaceSets) (attrNames workplaceSets);
 in
 {
   wayland.windowManager.sway = {
@@ -113,7 +113,7 @@ in
         };
       };
       defaultWorkspace = "workspace 1:一";
-      output = (mapAttrs' eachMonitor monitors);
+      output = mapAttrs' eachMonitor monitors;
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [

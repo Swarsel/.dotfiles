@@ -306,9 +306,10 @@
       homeConfigurations = {
 
         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = homepkgs;
+          pkgs = pkgsFor.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
           modules = homeModules ++ mixedModules ++ [
-            ./profiles/home-manager/home.nix
+            ./profiles/home-manager
           ];
         };
 
