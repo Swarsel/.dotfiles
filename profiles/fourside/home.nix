@@ -1,22 +1,6 @@
 { config, pkgs, lib, ... }: with lib;
 {
 
-
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = true;
-    enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry.gtk2;
-    defaultCacheTtl = 600;
-    maxCacheTtl = 7200;
-    extraConfig = ''
-      allow-loopback-pinentry
-      allow-emacs-pinentry
-    '';
-  };
-
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
   # waybar config - TEMPLATE - update for cores and temp
   programs.waybar.settings.mainBar = {
     # temperature.hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon4/temp1_input";

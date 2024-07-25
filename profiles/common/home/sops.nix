@@ -1,6 +1,7 @@
 { config, ... }:
 {
   sops = {
+    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
     defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
     validateSopsFiles = false;
     secrets = {

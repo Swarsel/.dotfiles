@@ -2,6 +2,7 @@
 {
   sops = {
 
+    age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
     defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
     validateSopsFiles = false;
 

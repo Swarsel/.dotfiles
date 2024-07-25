@@ -264,18 +264,6 @@ I also enable the extra socket here for ssh agent forwarding. But I have not ful
 
 #+begin_src nix :tangle no :noweb-ref gpgagent
 
-  services.gpg-agent = {
-    enable = true;
-    enableSshSupport = true;
-    enableExtraSocket = true;
-    pinentryPackage = pkgs.pinentry.gtk2;
-    defaultCacheTtl = 600;
-    maxCacheTtl = 7200;
-    extraConfig = ''
-      allow-loopback-pinentry
-      allow-emacs-pinentry
-    '';
-  };
 
 #+end_src
 
@@ -2165,7 +2153,6 @@ Mostly just sets some opened ports for several games, enables virtualbox (which 
       # kernelPackages = pkgs.linuxPackages_latest;
     };
 
-    sops.age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
 
     networking = {
       hostName = "fourside"; # Define your hostname.
@@ -2269,9 +2256,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 #+begin_src nix :noweb yes :tangle profiles/fourside/home.nix
   { config, pkgs, lib, ... }: with lib;
       {
-
-        <<gpgagent>>
-        sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
 
         # waybar config - TEMPLATE - update for cores and temp
         programs.waybar.settings.mainBar = {
@@ -5110,6 +5094,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     sops = {
 
+      age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
       defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
       validateSopsFiles = false;
 
@@ -5566,6 +5551,7 @@ This section sets up all the imports that are used in the home-manager section.
       ./kdeconnect.nix
       ./mako.nix
       ./sway.nix
+      ./gpg-agent.nix
     ];
 
     nix = {
@@ -5954,20 +5940,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
  Since we are using the home-manager implementation here, we need to specify the runtime path.
 
 #+begin_src nix :tangle profiles/common/home/sops.nix
-  { config, ... }:
-  {
-    sops = {
-      defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
-      validateSopsFiles = false;
-      secrets = {
-        mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
-        nautilus = { path = "/run/user/1000/secrets/nautilus"; };
-        leon = { path = "/run/user/1000/secrets/leon"; };
-        swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
-        caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+    { config, ... }:
+    {
+      sops = {
+        age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+        defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+        validateSopsFiles = false;
+        secrets = {
+          mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
+          nautilus = { path = "/run/user/1000/secrets/nautilus"; };
+          leon = { path = "/run/user/1000/secrets/leon"; };
+          swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
+          caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+        };
       };
-    };
-}
+  }
 #+end_src
 
 *** SSH Machines
@@ -7529,6 +7516,26 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
           ";
     };
+  }
+#+end_src
+
+*** gpg-agent
+
+#+begin_src nix :tangle profiles/common/home/gpg-agent.nix
+  { pkgs, ... }:
+  {
+  services.gpg-agent = {
+    enable = true;
+    enableSshSupport = true;
+    enableExtraSocket = true;
+    pinentryPackage = pkgs.pinentry.gtk2;
+    defaultCacheTtl = 600;
+    maxCacheTtl = 7200;
+    extraConfig = ''
+      allow-loopback-pinentry
+      allow-emacs-pinentry
+    '';
+  };
   }
 #+end_src
 

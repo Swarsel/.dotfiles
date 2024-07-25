@@ -13,7 +13,6 @@
     # kernelPackages = pkgs.linuxPackages_latest;
   };
 
-  sops.age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
 
   networking = {
     hostName = "fourside"; # Define your hostname.

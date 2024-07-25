@@ -26,6 +26,7 @@
     ./kdeconnect.nix
     ./mako.nix
     ./sway.nix
+    ./gpg-agent.nix
   ];
 
   nix = {
