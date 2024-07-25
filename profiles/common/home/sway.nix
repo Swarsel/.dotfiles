@@ -114,7 +114,7 @@ in
       output = (mapAttrs' eachMonitor monitors);
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
-      startup = [
+      startup = config.swarselsystems.startup ++ [
         { command = "kitty -T kittyterm"; }
         { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
       ];

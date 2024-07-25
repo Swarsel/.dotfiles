@@ -2312,9 +2312,6 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
                   "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
                 };
 
-            startup = [
-              <<startupnixos>>
-            ];
           };
         };
       }
@@ -4471,6 +4468,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     input = import ./input.nix;
     nixos = import ./nixos.nix;
     waybar = import ./waybar.nix;
+    startup = import ./startup.nix;
   }
 #+end_src
 
@@ -4575,11 +4573,44 @@ in
 
 
 #+begin_src nix :noweb yes :tangle modules/home/nixos.nix
+{ lib, config, ... }:
+{
+  options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+  config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
+      { command = "sleep 60 && nixGL nextcloud --background";
+    }
+    { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+    { command = "sleep 60 && nixGL syncthingtray --wait"; }
+    { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
+    { command = "nm-applet --indicator"; }
+    { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+    { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+    ];
 
-  { lib, config, ... }:
-  {
-    options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
-  }
+}
+#+end_src
+
+***** System startup
+
+#+begin_src nix :tangle modules/home/startup.nix
+{ lib, config, ... }:
+let
+  inherit (lib) mkIf mkOption types;
+in
+{
+
+  options.swarselsystems.startup = mkOption {
+    type = types.listOf (types.attrsOf types.str);
+    default = [
+      { command = "nextcloud --background"; }
+      { command = "discord --start-minimized"; }
+      { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      { command = "ANKI_WAYLAND=1 anki"; }
+      { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+      { command = "nm-applet"; }
+    ];
+  };
+}
 #+end_src
 
 ** Common NixOS
@@ -7331,7 +7362,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         output = (mapAttrs' eachMonitor monitors);
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign = workplaceOutputs;
-        startup = [
+        startup = config.swarselsystems.startup ++ [
           { command = "kitty -T kittyterm"; }
           { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
         ];

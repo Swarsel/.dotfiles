@@ -74,16 +74,6 @@
           "XF86AudioMute" = "pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink toggle";
         };
 
-      startup = [
-
-        { command = "nextcloud --background"; }
-        { command = "discord --start-minimized"; }
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-
-      ];
     };
   };
 }
