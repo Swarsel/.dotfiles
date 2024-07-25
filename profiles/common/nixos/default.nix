@@ -27,6 +27,7 @@
     ./power-profiles-daemon.nix
   ];
 
+  nix.settings.trusted-users = [ "swarsel" ];
 
   home-manager = {
     useGlobalPkgs = true;

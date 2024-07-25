@@ -1,7 +1,7 @@
-{ inputs, outputs, config, pkgs, ... }:
+{ inputs, outputs, config, ... }:
 {
 
-  imports = (builtins.attrValues outputs.homeManagerModules);
+  imports = builtins.attrValues outputs.homeManagerModules;
 
   nixpkgs = {
     inherit (outputs) overlays;

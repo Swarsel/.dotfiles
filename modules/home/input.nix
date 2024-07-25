@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkmkOption types;
 in
 {
   options.swarselsystems.inputs = mkOption {

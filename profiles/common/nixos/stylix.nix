@@ -1,4 +1,4 @@
-{ inputs, pkgs, home-manager, config, ... }:
+{ pkgs, home-manager, config, ... }:
 {
   stylix = {
 

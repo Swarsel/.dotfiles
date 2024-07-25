@@ -1,6 +1,16 @@
 {
   description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+    ];
+
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+  };
+
   inputs = {
 
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -98,22 +108,21 @@
       );
 
       # pkgs for home-manager builds
-      homepkgs = import nixpkgs {
-        system = "x86_64-linux";
-        overlays = [
-          inputs.emacs-overlay.overlay
-          inputs.nur.overlay
-          inputs.nixgl.overlay
-          (final: _prev: {
-            stable = import inputs.nixpkgs-stable {
-              inherit (final) system config;
-            };
-          })
-        ];
-        config.allowUnfree = true;
-      };
+      # homepkgs = import nixpkgs { system = "x86_64-linux";
+      #                             overlays = [ inputs.emacs-overlay.overlay
+      #                                          inputs.nur.overlay
+      #                                          inputs.nixgl.overlay
+      #                                          (final: _prev: {
+      #                                            stable = import inputs.nixpkgs-stable {
+      #                                              inherit (final) system config;
+      #                                            };
+      #                                          })
+      #                                        ];
+      #                             config.allowUnfree = true;
+      #                           };
 
-      # NixOS modules that can only be used on NixOS systems
+      # # NixOS modules that ca
+      n only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops

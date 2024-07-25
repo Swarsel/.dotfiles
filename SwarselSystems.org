@@ -505,20 +505,21 @@ Lastly I define some common module lists that I can simply load depending on the
   );
 
   # pkgs for home-manager builds
-  homepkgs = import nixpkgs { system = "x86_64-linux";
-                              overlays = [ inputs.emacs-overlay.overlay
-                                           inputs.nur.overlay
-                                           inputs.nixgl.overlay
-                                           (final: _prev: {
-                                             stable = import inputs.nixpkgs-stable {
-                                               inherit (final) system config;
-                                             };
-                                           })
-                                         ];
-                              config.allowUnfree = true;
-                            };
+  # homepkgs = import nixpkgs { system = "x86_64-linux";
+  #                             overlays = [ inputs.emacs-overlay.overlay
+  #                                          inputs.nur.overlay
+  #                                          inputs.nixgl.overlay
+  #                                          (final: _prev: {
+  #                                            stable = import inputs.nixpkgs-stable {
+  #                                              inherit (final) system config;
+  #                                            };
+  #                                          })
+  #                                        ];
+  #                             config.allowUnfree = true;
+  #                           };
 
-  # NixOS modules that can only be used on NixOS systems
+  # # NixOS modules that ca
+  n only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
     inputs.sops-nix.nixosModules.sops
@@ -1800,10 +1801,10 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 
 #+begin_src nix :tangle profiles/home-manager/default.nix
 
-  { inputs, outputs, config, pkgs, ... }:
+  { inputs, outputs, config, ... }:
   {
 
-    imports = (builtins.attrValues outputs.homeManagerModules);
+    imports = builtins.attrValues outputs.homeManagerModules;
 
     nixpkgs = {
       inherit (outputs) overlays;
@@ -4420,7 +4421,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 ***** Monitors
 
 #+begin_src nix :tangle modules/home/monitors.nix
-  { lib, config, ... }:
+  { lib, ... }:
   let
     inherit (lib) mkOption types;
   in
@@ -4437,7 +4438,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix :tangle modules/home/input.nix
   { lib, config, ... }:
   let
-    inherit (lib) mkIf mkOption types;
+    inherit (lib) mkmkOption types;
   in
   {
     options.swarselsystems.inputs = mkOption {
@@ -4494,9 +4495,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 ***** System startup
 
 #+begin_src nix :tangle modules/home/startup.nix
-{ lib, config, ... }:
+{ lib, ... }:
 let
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkOption types;
 in
 {
 
@@ -4575,6 +4576,7 @@ First, we enable the use of =home-manager= as a NixoS module
       ./power-profiles-daemon.nix
     ];
 
+    nix.settings.trusted-users = [ "swarsel" ];
 
     home-manager = {
       useGlobalPkgs = true;
@@ -5084,7 +5086,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/common/nixos/stylix.nix
-  { inputs, pkgs, home-manager, config, ... }:
+  { pkgs, home-manager, config, ... }:
   {
     stylix = {
       <<theme>>
@@ -5566,7 +5568,7 @@ This section houses the greetd related settings. I do not really want to use a d
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/common/home/default.nix
-  { lib, pkgs, config, outputs, ... }:
+  { lib, pkgs, config, ... }:
   {
     imports = [
       ./packages.nix
@@ -7633,6 +7635,16 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
   {
     description = "SwarseFlake - Nix Flake for all SwarselSystems";
+
+    nixConfig = {
+      extra-substituters = [
+        "https://nix-community.cachix.org"
+      ];
+
+      extra-trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      ];
+    };
 
     inputs = {
       <<flakeinputs>>
