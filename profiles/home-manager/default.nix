@@ -23,7 +23,7 @@ export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
       ";
 
-  home-manager.users.swarsel.swarselsystems = {
+  swarselsystems = {
     isLaptop = true;
     isNixos = false;
     wallpaper = ../../wallpaper/surfacewp.png;

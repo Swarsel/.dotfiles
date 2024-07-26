@@ -1825,7 +1825,7 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
   gpgconf --launch gpg-agent
         ";
 
-    home-manager.users.swarsel.swarselsystems = {
+    swarselsystems = {
       isLaptop = true;
       isNixos = false;
       wallpaper = ../../wallpaper/surfacewp.png;
@@ -5611,15 +5611,13 @@ This section sets up all the imports that are used in the home-manager section.
       };
     };
 
-    programs = {
-      git.enable = true;
-    };
+    programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
     home = {
       username = lib.mkDefault "swarsel";
       homeDirectory = lib.mkDefault "/home/${config.home.username}";
       stateVersion = lib.mkDefault "23.05";
-      keyboard.layout = "us"; # TEMPLATE
+      keyboard.layout = "us";
       sessionVariables = {
         FLAKE = "$HOME/.dotfiles";
       };

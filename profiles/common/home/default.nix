@@ -41,15 +41,13 @@
     };
   };
 
-  programs = {
-    git.enable = true;
-  };
+  programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
   home = {
     username = lib.mkDefault "swarsel";
     homeDirectory = lib.mkDefault "/home/${config.home.username}";
     stateVersion = lib.mkDefault "23.05";
-    keyboard.layout = "us"; # TEMPLATE
+    keyboard.layout = "us";
     sessionVariables = {
       FLAKE = "$HOME/.dotfiles";
     };
