@@ -121,8 +121,7 @@
       #                             config.allowUnfree = true;
       #                           };
 
-      # # NixOS modules that ca
-      n only be used on NixOS systems
+      # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops

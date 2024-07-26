@@ -518,8 +518,7 @@ Lastly I define some common module lists that I can simply load depending on the
   #                             config.allowUnfree = true;
   #                           };
 
-  # # NixOS modules that ca
-  n only be used on NixOS systems
+  # # NixOS modules that can only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
     inputs.sops-nix.nixosModules.sops
@@ -4438,7 +4437,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix :tangle modules/home/input.nix
   { lib, config, ... }:
   let
-    inherit (lib) mkmkOption types;
+    inherit (lib) mkOption types;
   in
   {
     options.swarselsystems.inputs = mkOption {
@@ -4760,6 +4759,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
       enableAllFirmware = true;
 
       bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
+        enable = true;
         powerOnBoot = true;
         settings = {
           General = {

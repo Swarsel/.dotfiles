@@ -20,6 +20,7 @@
     enableAllFirmware = true;
 
     bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
+      enable = true;
       powerOnBoot = true;
       settings = {
         General = {
