@@ -4227,7 +4227,92 @@ As such, I also define three additional overlays:
 
 #+begin_src nix :tangle pkgs/default.nix
 
- _ : rec { }
+  {pkgs, ...}:
+  let
+    inherit (pkgs) callPackage;
+  in
+  {
+    pass-fuzzel = callPackage ./pass-fuzzel { };
+    pass-fuzzel-otp = callPackage ./pass-fuzzel-otp { };
+  }
+
+#+end_src
+
+**** pass-fuzzel
+
+#+begin_src nix :tangle pkgs/pass-fuzzel/default.nix
+{writeShellApplication, libnotify, pass, fuzzel, wtype}:
+
+  writeShellApplication {
+    name = "pass-fuzzel";
+    runtimeInputs = [ libnotify pass fuzzel wtype ];
+    text = ''
+      shopt -s nullglob globstar
+
+      typeit=0
+      if [[ $# -ge 1 && $1 == "--type" ]]; then
+        typeit=1
+        shift
+      fi
+
+      export PASSWORD_STORE_DIR=~/.local/share/password-store
+      prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+      password_files=( "$prefix"/**/*.gpg )
+      password_files=( "''${password_files[@]#"$prefix"/}" )
+      password_files=( "''${password_files[@]%.gpg}" )
+
+      password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+      [[ -n $password ]] || exit
+
+      if [[ $typeit -eq 0 ]]; then
+        pass show -c "$password" &>/tmp/pass-fuzzel
+      else
+        pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+      fi
+      notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+    '';
+  }
+
+#+end_src
+
+**** pass-fuzzel-otp
+
+
+#+begin_src nix :tangle pkgs/pass-fuzzel-otp/default.nix
+
+  {writeShellApplication, libnotify, pass, fuzzel, wtype}:
+
+      writeShellApplication {
+        name = "pass-fuzzel-otp";
+        runtimeInputs = [ fuzzel (pass.withExtensions (exts: [ exts.pass-otp ])) ];
+        text = ''
+          shopt -s nullglob globstar
+
+          typeit=0
+          if [[ $# -ge 1 && $1 == "--type" ]]; then
+            typeit=1
+            shift
+          fi
+
+          export PASSWORD_STORE_DIR=~/.local/share/password-store
+          prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
+          password_files=( "$prefix"/otp/**/*.gpg )
+          password_files=( "''${password_files[@]#"$prefix"/}" )
+          password_files=( "''${password_files[@]%.gpg}" )
+
+          password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
+
+          [[ -n $password ]] || exit
+
+          if [[ $typeit -eq 0 ]]; then
+            pass otp -c "$password" &>/tmp/pass-fuzzel
+          else
+            pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+          fi
+          notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
+        '';
+      }
 
 #+end_src
 
@@ -4474,21 +4559,35 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 
 #+begin_src nix :noweb yes :tangle modules/home/nixos.nix
-{ lib, config, ... }:
-{
-  options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
-  config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
-      { command = "sleep 60 && nixGL nextcloud --background";
-    }
-    { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
-    { command = "sleep 60 && nixGL syncthingtray --wait"; }
-    { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
-    { command = "nm-applet --indicator"; }
-    { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
-    { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-    ];
-
-}
+  { lib, config, ... }:
+  {
+    options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+    config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
+        { command = "sleep 60 && nixGL nextcloud --background";
+      }
+      { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+      { command = "sleep 60 && nixGL syncthingtray --wait"; }
+      { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
+      { command = "nm-applet --indicator"; }
+      { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+      { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      ];
+    options.swarselsystems.swayfxConfig = lib.mkOption {
+      type = lib.types.str;
+      default = "
+            blur enable
+            blur_xray disable
+            blur_passes 1
+            blur_radius 1
+            shadows enable
+            corner_radius 2
+            titlebar_separator disable
+            default_dim_inactive 0.02
+        ";
+      internal = true;
+    };
+    config.swarselsystems.swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
+  }
 #+end_src
 
 ***** System startup
@@ -5798,7 +5897,15 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 :CUSTOM_ID: h:96cbea91-ff13-4120-b8a9-496b2fa96e70
 :END:
 
+
+
+
+
 #+begin_src nix :tangle profiles/common/home/packages.nix
+
+pass-fuzzel
+pass-fuzzel-otp
+
   # cura
   (
     let
@@ -5812,7 +5919,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
         extraPkgs = pkgs: with pkgs; [ ];
       };
     in
-    writeScriptBin "cura" ''
+      writeScriptBin "cura" ''
       #! ${pkgs.bash}/bin/bash
       # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
       # So we convert each of the files passed as argument to an absolute path.
@@ -5864,67 +5971,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       direnv allow
     '')
 
-    (pkgs.writeShellApplication {
-      name = "pass-fuzzel";
-      runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-      text = ''
-        shopt -s nullglob globstar
 
-        typeit=0
-        if [[ $# -ge 1 && $1 == "--type" ]]; then
-          typeit=1
-          shift
-        fi
-
-        export PASSWORD_STORE_DIR=~/.local/share/password-store
-        prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-        password_files=( "$prefix"/**/*.gpg )
-        password_files=( "''${password_files[@]#"$prefix"/}" )
-        password_files=( "''${password_files[@]%.gpg}" )
-
-        password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
-
-        [[ -n $password ]] || exit
-
-        if [[ $typeit -eq 0 ]]; then
-          pass show -c "$password" &>/tmp/pass-fuzzel
-        else
-          pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-        fi
-        notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-      '';
-    })
-
-    (pkgs.writeShellApplication {
-      name = "pass-fuzzel-otp";
-      runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [ exts.pass-otp ])) ];
-      text = ''
-        shopt -s nullglob globstar
-
-        typeit=0
-        if [[ $# -ge 1 && $1 == "--type" ]]; then
-          typeit=1
-          shift
-        fi
-
-        export PASSWORD_STORE_DIR=~/.local/share/password-store
-        prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-        password_files=( "$prefix"/otp/**/*.gpg )
-        password_files=( "''${password_files[@]#"$prefix"/}" )
-        password_files=( "''${password_files[@]%.gpg}" )
-
-        password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
-
-        [[ -n $password ]] || exit
-
-        if [[ $typeit -eq 0 ]]; then
-          pass otp -c "$password" &>/tmp/pass-fuzzel
-        else
-          pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-        fi
-        notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
-      '';
-    })
 
     (pkgs.writeShellApplication {
       name = "cdw";
@@ -5951,7 +5998,6 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
   ];
    }
-
 #+end_src
 
 **** sops
@@ -7291,7 +7337,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     wayland.windowManager.sway = {
       enable = true;
       checkConfig = false; # delete this line once SwayFX is fixed upstream
-      package = pkgs.swayfx;
+      package = lib.mkIf config.swarselsystems.isNixos pkgs.swayfx;
       systemd = {
         enable = true;
         xdgAutostart = true;
@@ -7522,16 +7568,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       extraConfig =
         let
           inherit (config.wayland.windowManager.sway.config) modifier;
-          swayfxSettings = "
-            blur enable
-            blur_xray disable
-            blur_passes 1
-            blur_radius 1
-            shadows enable
-            corner_radius 2
-            titlebar_separator disable
-            default_dim_inactive 0.02
-        ";
+          swayfxSettings = config.swarselsystems.swayfxConfig;
         in
         "
           exec_always autotiling

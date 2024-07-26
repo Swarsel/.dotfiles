@@ -16,7 +16,7 @@ in
   wayland.windowManager.sway = {
     enable = true;
     checkConfig = false; # delete this line once SwayFX is fixed upstream
-    package = pkgs.swayfx;
+    package = lib.mkIf config.swarselsystems.isNixos pkgs.swayfx;
     systemd = {
       enable = true;
       xdgAutostart = true;
@@ -249,16 +249,7 @@ in
     extraConfig =
       let
         inherit (config.wayland.windowManager.sway.config) modifier;
-        swayfxSettings = "
-          blur enable
-          blur_xray disable
-          blur_passes 1
-          blur_radius 1
-          shadows enable
-          corner_radius 2
-          titlebar_separator disable
-          default_dim_inactive 0.02
-      ";
+        swayfxSettings = config.swarselsystems.swayfxConfig;
       in
       "
         exec_always autotiling
