@@ -183,13 +183,13 @@ in
             };
           }
           {
-            command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
+            command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
             criteria = {
               title = "^kittyterm$";
             };
           }
           {
-            command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
+            command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
             criteria = {
               title = "^spotifytui$";
             };
@@ -209,7 +209,7 @@ in
             };
           }
           {
-            command = "sticky enable";
+            command = "resize set width 60 ppt height 60 ppt, sticky enable";
             criteria = {
               app_id = "discord";
             };
