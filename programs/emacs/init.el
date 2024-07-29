@@ -125,7 +125,6 @@ create a new one."
 (advice-add 'org-unlogged-message :around #'suppress-messages)
 (advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
 (advice-add 'push-mark  :around #'suppress-messages)
-(advice-add 'timer-event-handler  :around #'suppress-messages)
 (advice-add 'evil-insert  :around #'suppress-messages)
 (advice-add 'evil-visual-char  :around #'suppress-messages)
 

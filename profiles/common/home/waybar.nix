@@ -22,7 +22,7 @@
         };
 
         "custom/configwarn" = {
-          exec = "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+          exec = "waybarupdate";
           interval = 60;
         };
 
@@ -141,6 +141,7 @@
           on-click = "pamixer -t";
           on-click-right = "pavucontrol";
         };
+
         memory = {
           interval = 5;
           format = " {}%";

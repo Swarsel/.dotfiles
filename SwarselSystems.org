@@ -2018,122 +2018,116 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 
 #+begin_src nix :tangle profiles/fourside/default.nix
 
-  { inputs, outputs, config, pkgs, ... }:
-  {
+    { inputs, outputs, config, pkgs, ... }:
+    {
 
-    imports = [
-      inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
+      imports = [
+        inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
 
-      ./hardware-configuration.nix
+        ./hardware-configuration.nix
 
-      ../optional/nixos/steam.nix
-      ../optional/nixos/virtualbox.nix
-      ../optional/nixos/autologin.nix
-      ../optional/nixos/nswitch-rcm.nix
+        ../optional/nixos/steam.nix
+        ../optional/nixos/virtualbox.nix
+        ../optional/nixos/autologin.nix
+        ../optional/nixos/nswitch-rcm.nix
 
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-          ../optional/home/gaming.nix
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-    nixpkgs = {
-      inherit (outputs) overlays;
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-      kernelPackages = pkgs.linuxPackages_latest;
-    };
+        inputs.home-manager.nixosModules.home-manager
+        {
+          home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+            ../optional/home/gaming.nix
+          ] ++ (builtins.attrValues outputs.homeManagerModules);
+        }
+      ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-    networking = {
-      hostName = "fourside";
-      firewall.enable = true;
-    };
-
-    hardware.graphics.extraPackages = with pkgs; [
-      vulkan-loader
-      vulkan-validation-layers
-      vulkan-extension-layer
-    ];
-
-    services = {
-      thinkfan.enable = false;
-      fwupd.enable = true;
-    };
-
-    swarselsystems = {
-      wallpaper = ../../wallpaper/lenovowp.png;
-      hasBluetooth = true;
-      hasFingerprint = true;
-      trackpoint = {
-        isAvailable = true;
-        device = "TPPS/2 Elan TrackPoint";
-      };
-    };
-
-    home-manager.users.swarsel.swarselsystems = {
-      isLaptop = true;
-      isNixos = true;
-      temperatureHwmon = {
-        isAbsolutePath = true;
-        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-        input-filename = "temp1_input";
-      };
-    #  ------   -----
-    # | DP-4 | |eDP-1|
-    #  ------   -----
-      monitors = {
-        main = {
-          name = "California Institute of Technology 0x1407 Unknown";
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          workspace = "2:二";
-          output = "eDP-1";
-        };
-        homedesktop = {
-          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-          mode = "2560x1440";
-          scale = "1";
-          position = "0,0";
-          workspace = "1:一";
-          output = "DP-4";
+      nixpkgs = {
+        inherit (outputs) overlays;
+        config = {
+          allowUnfree = true;
         };
       };
-      inputs =  {
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
+
+      boot = {
+        loader.systemd-boot.enable = true;
+        loader.efi.canTouchEfiVariables = true;
+        kernelPackages = pkgs.linuxPackages_latest;
+      };
+
+
+      networking = {
+        hostName = "fourside";
+        firewall.enable = true;
+      };
+
+      hardware.graphics.extraPackages = with pkgs; [
+        vulkan-loader
+        vulkan-validation-layers
+        vulkan-extension-layer
+      ];
+
+      services = {
+        thinkfan.enable = false;
+        fwupd.enable = true;
+      };
+
+      swarselsystems = {
+        wallpaper = ../../wallpaper/lenovowp.png;
+        hasBluetooth = true;
+        hasFingerprint = true;
+        trackpoint = {
+          isAvailable = true;
+          device = "TPPS/2 Elan TrackPoint";
         };
       };
-      keybindings = {
-        "Mod4+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-        "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-        "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-        "XF86Display" = "exec wl-mirror eDP-1";
-        # these are left open to use
-        # "XF86WLAN" = "exec wl-mirror eDP-1";
-        # "XF86Messenger" = "exec wl-mirror eDP-1";
-        # "XF86Go" = "exec wl-mirror eDP-1";
-        # "XF86Favorites" = "exec wl-mirror eDP-1";
-        # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-        # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-        # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-        "XF86AudioMute" = "exec pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__Speaker__sink toggle && exec pactl set-sink-mute alsa_output.usb-Lenovo_ThinkPad_Thunderbolt_4_Dock_USB_Audio_000000000000-00.analog-stereo toggle";
-      };
-    };
 
-  }
+      home-manager.users.swarsel.swarselsystems = {
+        isLaptop = true;
+        isNixos = true;
+        temperatureHwmon = {
+          isAbsolutePath = true;
+          path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+          input-filename = "temp1_input";
+        };
+      #  ------   -----
+      # | DP-4 | |eDP-1|
+      #  ------   -----
+        monitors = {
+          main = {
+            name = "California Institute of Technology 0x1407 Unknown";
+            mode = "1920x1080"; # TEMPLATE
+            scale = "1";
+            position = "2560,0";
+            workspace = "2:二";
+            output = "eDP-1";
+          };
+          homedesktop = {
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            mode = "2560x1440";
+            scale = "1";
+            position = "0,0";
+            workspace = "1:一";
+            output = "DP-4";
+          };
+        };
+        inputs =  {
+          "1:1:AT_Translated_Set_2_keyboard" = {
+            xkb_layout = "us";
+            xkb_options = "grp:win_space_toggle";
+            xkb_variant = "altgr-intl";
+          };
+        };
+        keybindings = {
+          # these are left open to use
+          # "XF86WLAN" = "exec wl-mirror eDP-1";
+          # "XF86Messenger" = "exec wl-mirror eDP-1";
+          # "XF86Go" = "exec wl-mirror eDP-1";
+          # "XF86Favorites" = "exec wl-mirror eDP-1";
+          # "XF86HomePage" = "exec wtype -P Escape -p Escape";
+          # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
+          # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
+        };
+      };
+    }
 
 
 #+end_src
@@ -4233,91 +4227,75 @@ As such, I also define three additional overlays:
   in
   {
     pass-fuzzel = callPackage ./pass-fuzzel { };
-    pass-fuzzel-otp = callPackage ./pass-fuzzel-otp { };
     cura5 = callPackage ./cura5 { };
     cdw = callPackage ./cdw { };
     cdb = callPackage ./cdb { };
     bak = callPackage ./bak { };
     timer = callPackage ./timer { };
+    e = callPackage ./e { };
+    swarselcheck = callPackage ./swarselcheck { };
+    waybarupdate = callPackage ./waybarupdate { };
+    opacitytoggle = callPackage ./opacitytoggle { };
   }
 
 #+end_src
 
 **** pass-fuzzel
 
+#+begin_src shell :tangle scripts/pass-fuzzel.sh
+  # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
+  shopt -s nullglob globstar
+
+  otp=0
+  typeit=0
+  while :; do
+      case ${1:-} in
+          -t|--type) typeit=1
+                     ;;
+          -o|--otp) otp=1
+                    ;;
+          ,*) break
+      esac
+      shift
+  done
+
+  export PASSWORD_STORE_DIR=~/.local/share/password-store
+  prefix=${PASSWORD_STORE_DIR-~/.local/share/password-store}
+  if [[ $otp -eq 0 ]]; then
+      password_files=( "$prefix"/**/*.gpg )
+  else
+      password_files=( "$prefix"/otp/**/*.gpg )
+  fi
+  password_files=( "${password_files[@]#"$prefix"/}" )
+  password_files=( "${password_files[@]%.gpg}" )
+
+  password=$(printf '%s\n' "${password_files[@]}" | fuzzel --dmenu "$@")
+
+  [[ -n $password ]] || exit
+  if [[ $otp -eq 0 ]]; then
+      if [[ $typeit -eq 0 ]]; then
+          pass show -c "$password" &>/tmp/pass-fuzzel
+      else
+          pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+      fi
+  else
+      if [[ $typeit -eq 0 ]]; then
+          pass otp -c "$password" &>/tmp/pass-fuzzel
+      else
+          pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+      fi
+  fi
+  notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+#+end_src
+
 #+begin_src nix :tangle pkgs/pass-fuzzel/default.nix
-{writeShellApplication, libnotify, pass, fuzzel, wtype}:
+  {writeShellApplication, libnotify, pass, fuzzel, wtype}:
 
   writeShellApplication {
     name = "pass-fuzzel";
-    runtimeInputs = [ libnotify pass fuzzel wtype ];
-    text = ''
-      shopt -s nullglob globstar
-
-      typeit=0
-      if [[ $# -ge 1 && $1 == "--type" ]]; then
-        typeit=1
-        shift
-      fi
-
-      export PASSWORD_STORE_DIR=~/.local/share/password-store
-      prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-      password_files=( "$prefix"/**/*.gpg )
-      password_files=( "''${password_files[@]#"$prefix"/}" )
-      password_files=( "''${password_files[@]%.gpg}" )
-
-      password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
-
-      [[ -n $password ]] || exit
-
-      if [[ $typeit -eq 0 ]]; then
-        pass show -c "$password" &>/tmp/pass-fuzzel
-      else
-        pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-      fi
-      notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-    '';
+    runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
+    text = builtins.readFile ../../scripts/pass-fuzzel.sh;
   }
-
-#+end_src
-
-**** pass-fuzzel-otp
-
-
-#+begin_src nix :tangle pkgs/pass-fuzzel-otp/default.nix
-
-  {writeShellApplication, libnotify, pass, fuzzel, wtype}:
-
-      writeShellApplication {
-        name = "pass-fuzzel-otp";
-        runtimeInputs = [ fuzzel (pass.withExtensions (exts: [ exts.pass-otp ])) ];
-        text = ''
-          shopt -s nullglob globstar
-
-          typeit=0
-          if [[ $# -ge 1 && $1 == "--type" ]]; then
-            typeit=1
-            shift
-          fi
-
-          export PASSWORD_STORE_DIR=~/.local/share/password-store
-          prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-          password_files=( "$prefix"/otp/**/*.gpg )
-          password_files=( "''${password_files[@]#"$prefix"/}" )
-          password_files=( "''${password_files[@]%.gpg}" )
-
-          password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
-
-          [[ -n $password ]] || exit
-
-          if [[ $typeit -eq 0 ]]; then
-            pass otp -c "$password" &>/tmp/pass-fuzzel
-          else
-            pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-          fi
-          notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
-        '';
-      }
 
 #+end_src
 
@@ -4329,18 +4307,18 @@ As such, I also define three additional overlays:
   {appimageTools, fetchurl, writeScriptBin, pkgs}:
 
 
-    let
-      cura5 = appimageTools.wrapType2 rec {
-        name = "cura5";
-        version = "5.4.0";
-        src = fetchurl {
-          url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-          hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-        };
-        extraPkgs = pkgs: with pkgs; [ ];
+  let
+    cura5 = appimageTools.wrapType2 rec {
+      name = "cura5";
+      version = "5.4.0";
+      src = fetchurl {
+        url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+        hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
       };
-    in
-      writeScriptBin "cura" ''
+      extraPkgs = pkgs: with pkgs; [ ];
+    };
+  in
+  writeScriptBin "cura" ''
       #! ${pkgs.bash}/bin/bash
       # AppImage version of Cura loses current working directory and treats all paths relative to $HOME.
       # So we convert each of the files passed as argument to an absolute path.
@@ -4364,13 +4342,13 @@ As such, I also define three additional overlays:
 
   {writeShellApplication, fzf}:
 
-      writeShellApplication {
-        name = "cdw";
-        runtimeInputs = [ fzf ];
-        text = ''
+  writeShellApplication {
+    name = "cdw";
+    runtimeInputs = [ fzf ];
+    text = ''
           cd "$(git worktree list | fzf | awk '{print $1}')"
         '';
-      }
+  }
 
 
 #+end_src
@@ -4382,13 +4360,13 @@ As such, I also define three additional overlays:
 
   {writeShellApplication, fzf}:
 
-      writeShellApplication {
-        name = "cdb";
-        runtimeInputs = [ fzf ];
-        text = ''
+  writeShellApplication {
+    name = "cdb";
+    runtimeInputs = [ fzf ];
+    text = ''
           git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
         '';
-      }
+  }
 
 #+end_src
 
@@ -4400,11 +4378,11 @@ As such, I also define three additional overlays:
   {writeShellApplication}:
 
   writeShellApplication {
-        name = "bak";
-        text = ''
+    name = "bak";
+    text = ''
           cp "$1"{,.bak}
         '';
-      }
+  }
 
 
 #+end_src
@@ -4416,14 +4394,223 @@ As such, I also define three additional overlays:
 
   {writeShellApplication, speechd}:
 
-      writeShellApplication {
-        name = "timer";
-        runtimeInputs = [ speechd ];
-        text = ''
+  writeShellApplication {
+    name = "timer";
+    runtimeInputs = [ speechd ];
+    text = ''
       sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
         '';
-      }
+  }
 
+#+end_src
+
+**** e
+
+#+begin_src shell :tangle scripts/e.sh
+  wait=0
+  while :; do
+      case ${1:-} in
+          -w|--wait) wait=1
+                     ;;
+          ,*) break
+      esac
+      shift
+  done
+
+  STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true )
+  if [ "$STR" == "" ]; then
+      swaymsg '[title="kittyterm"]' scratchpad show
+      emacsclient -c -a "" "$@"
+      swaymsg '[title="kittyterm"]' scratchpad show
+  else
+      if [[ $wait -eq 0 ]]; then
+          emacsclient -n -c -a "" "$@"
+      else
+          emacsclient -c -a "" "$@"
+      fi
+  fi
+#+end_src
+
+#+begin_src nix :tangle pkgs/e/default.nix
+  { writeShellApplication, emacs-pgtk, sway, jq}:
+
+  writeShellApplication {
+    name = "e";
+    runtimeInputs = [ emacs-pgtk sway jq ];
+    text = builtins.readFile ../../scripts/e.sh;
+  }
+
+#+end_src
+
+**** command-not-found
+
+
+#+begin_src shell :tangle scripts/command-not-found.sh
+  # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
+  command_not_found_handle () {
+      if [ -n "${MC_SID-}" ] || ! [ -t 1 ]; then
+          >&2 echo "$1: command not found"
+          return 127
+      fi
+
+      echo -n "searching nix-index..."
+      ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --top-level --whole-name --at-root "/bin/$1")
+
+      case $(echo -n "$ATTRS" | grep -c "^") in
+          0)
+              >&2 echo -ne "$(@tput@ el1)\r"
+              >&2 echo "$1: command not found"
+              ;;
+          ,*)
+              >&2 echo -ne "$(@tput@ el1)\r"
+              >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
+              >&2 echo "It is provided by the following derivation(s):"
+              while read -r ATTR; do
+                  ATTR=${ATTR%.out}
+                  >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
+              done <<< "$ATTRS"
+      esac
+
+      return 127
+  }
+
+  command_not_found_handler () {
+      command_not_found_handle "$@"
+      return $?
+  }
+#+end_src
+
+**** swarselcheck
+
+#+begin_src shell :tangle scripts/swarselcheck.sh
+  kitty=0
+  element=0
+  discord=0
+  spotifyplayer=0
+  while :; do
+      case ${1:-} in
+          -k|--kitty) kitty=1
+                     ;;
+          -e|--element) element=1
+                     ;;
+          -d|--discord) discord=1
+                     ;;
+          -s|--spotifyplayer) spotifyplayer=1
+                     ;;
+          *) break
+      esac
+      shift
+  done
+
+  if [[ $kitty -eq 1 ]]; then
+      STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
+      CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
+      if [ "$CHECK" == "" ]; then
+          exec kitty -T kittyterm & sleep 1
+      fi
+      if [ "$STR" == "" ]; then
+          exec swaymsg '[title="kittyterm"]' scratchpad show
+      else
+          exec swaymsg '[title="kittyterm"]' scratchpad show
+      fi
+  elif [[ $element -eq 1 ]]; then
+      STR=$(swaymsg -t get_tree | grep Element || true)
+      if [ "$STR" == "" ]; then
+          exec element-desktop
+      else
+          exec swaymsg '[app_id=Element]' kill
+      fi
+  elif [[ $discord -eq 1 ]]; then
+      STR=$(swaymsg -t get_tree | grep discord || true)
+      if [ "$STR" == "" ]; then
+          exec discord
+      else
+          exec swaymsg '[app_id=discord]' kill
+      fi
+  elif [[ $spotifyplayer -eq 1 ]]; then
+      STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
+      CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
+      if [ "$CHECK" == "" ]; then
+          exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player & sleep 1
+      fi
+      if [ "$STR" == "" ]; then
+          exec swaymsg '[title="spotifytui"]' scratchpad show
+      else
+          exec swaymsg '[title="spotifytui"]' scratchpad show
+      fi
+  fi
+#+end_src
+
+#+begin_src nix :tangle pkgs/swarselcheck/default.nix
+  { writeShellApplication, kitty, element-desktop-wayland, discord, spotify-player, sway, jq}:
+
+  writeShellApplication {
+    name = "swarselcheck";
+    runtimeInputs = [ kitty element-desktop-wayland discord spotify-player jq ];
+    text = builtins.readFile ../../scripts/swarselcheck.sh;
+  }
+
+#+end_src
+
+**** waybarupdate
+
+#+begin_src shell :tangle scripts/waybarupdate.sh
+  CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
+  CSE=$(git --git-dir="$HOME"/Documents/GitHub/CSE_TUWIEN/.git --work-tree="$HOME"/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
+  PASS=$(( $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l) ))
+
+  if [[ $CFG != 0 ]]; then
+      CFG_STR='CONFIG'
+  else
+      CFG_STR=''
+  fi
+
+  if [[ $CSE != 0 ]]; then
+      CSE_STR=' CSE'
+  else
+      CSE_STR=''
+  fi
+
+  if [[ $PASS != 0 ]]; then
+      PASS_STR=' PASS'
+  else
+      PASS_STR=''
+  fi
+
+  OUT="$CFG_STR""$CSE_STR""$PASS_STR"
+  echo "$OUT"
+
+#+end_src
+
+#+begin_src nix :tangle pkgs/waybarupdate/default.nix
+  { writeShellApplication, git}:
+
+  writeShellApplication {
+    name = "waybarupdate";
+    runtimeInputs = [ git ];
+    text = builtins.readFile ../../scripts/waybarupdate.sh;
+  }
+
+#+end_src
+
+**** opacitytoggle
+
+#+begin_src shell :tangle scripts/opacitytoggle.sh
+  if swaymsg opacity plus 0.01 -q; then
+          swaymsg opacity 1
+  else
+          swaymsg opacity 0.95
+  fi
+#+end_src
+
+#+begin_src nix :tangle pkgs/opacitytoggle/default.nix
+  { writeShellApplication, sway}:
+
+  writeShellApplication {
+    name = "opacitytoggle";
+    runtimeInputs = [ sway ];
+    text = builtins.readFile ../../scripts/opacitytoggle.sh;
+  }
 #+end_src
 
 
@@ -5817,7 +6004,6 @@ This section sets up all the imports that are used in the home-manager section.
           "flakes"
           "ca-derivations"
         ];
-        warn-dirty = false;
       };
     };
 
@@ -6015,17 +6201,15 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 #+begin_src nix :tangle profiles/common/home/packages.nix
 
     pass-fuzzel
-    pass-fuzzel-otp
     cura5
     cdw
     cdb
     bak
     timer
-
-    #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-    (pkgs.writeShellScriptBin "e" ''
-      bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-    '')
+    e
+    swarselcheck
+    waybarupdate
+    opacitytoggle
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -6343,7 +6527,7 @@ Also, we link some files to the users XDG configuration home:
   _ :
   {
     home.sessionVariables = {
-      EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
+      EDITOR = "e -w";
     };
   }
 #+end_src
@@ -6392,8 +6576,8 @@ nix-index provides a way to find out which packages are provided by which deriva
   {pkgs, ...}:
   {
     programs.nix-index =
-      let
-        command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+    let
+        commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
           mkdir -p $out/etc/profile.d
           substitute ${../../../scripts/command-not-found.sh}                  \
             $out/etc/profile.d/command-not-found.sh             \
@@ -6401,11 +6585,12 @@ nix-index provides a way to find out which packages are provided by which deriva
             --replace @tput@ ${pkgs.ncurses}/bin/tput
         '';
       in
+
       {
         enable = true;
         package = pkgs.symlinkJoin {
           name = "nix-index";
-          paths = [ command-not-found ];
+          paths = [ commandNotFound ];
         };
       };
   }
@@ -6701,7 +6886,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         hg = "history | grep";
         hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
         nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
+        edithome = "e -w ~/.dotfiles/SwarselSystems.org";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";
@@ -6993,7 +7178,7 @@ The rest of this configuration is found here:
         };
 
         "custom/configwarn" = {
-          exec = "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+          exec = "waybarupdate";
           interval = 60;
         };
 
@@ -7112,6 +7297,7 @@ The rest of this configuration is found here:
           on-click = "pamixer -t";
           on-click-right = "pavucontrol";
         };
+
         memory = {
           interval = 5;
           format = " {}%";
@@ -7383,7 +7569,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
 #+begin_src nix :tangle profiles/common/home/sway.nix
-  { config, pkgs, lib, ... }: with lib;
+  { config, pkgs, lib, ... }:
     let
       inherit (config.swarselsystems) monitors;
       eachMonitor = _name: monitor: {
@@ -7394,8 +7580,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         inherit (monitor) name;
         value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
       };
-      workplaceSets = mapAttrs' eachOutput monitors;
-      workplaceOutputs = map (key: getAttr key workplaceSets) (attrNames workplaceSets);
+      workplaceSets = lib.mapAttrs' eachOutput monitors;
+      workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
     in
   {
     wayland.windowManager.sway = {
@@ -7416,7 +7602,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           let
             inherit (config.wayland.windowManager.sway.config) modifier;
           in
-          recursiveUpdate {
+          lib.recursiveUpdate {
             "${modifier}+q" = "kill";
             "${modifier}+f" = "exec firefox";
             "${modifier}+Space" = "exec fuzzel";
@@ -7424,24 +7610,21 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
             "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
             "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-            "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
-            "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
-            "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
-            "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
-            "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
-            "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
+            "${modifier}+m" = "exec swarselcheck -s";
+            "${modifier}+x" = "exec swarselcheck -k";
+            "${modifier}+d" = "exec swarselcheck -d";
+            "${modifier}+w" = "exec swarselcheck -e";
+            "${modifier}+Shift+t" = "exec opacitytoggle";
             "${modifier}+Shift+F12" = "move scratchpad";
             "${modifier}+F12" = "scratchpad show";
             "${modifier}+c" = "exec qalculate-gtk";
             "${modifier}+p" = "exec pass-fuzzel";
-            "${modifier}+o" = "exec pass-fuzzel-otp";
+            "${modifier}+o" = "exec pass-fuzzel --otp";
             "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-            "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
+            "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
             "${modifier}+Escape" = "mode $exit";
-            # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
             "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-            "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
             "${modifier}+1" = "workspace 1:一";
             "${modifier}+Shift+1" = "move container to workspace 1:一";
             "${modifier}+2" = "workspace 2:二";
@@ -7462,8 +7645,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "${modifier}+Shift+9" = "move container to workspace 9:九";
             "${modifier}+0" = "workspace 10:十";
             "${modifier}+Shift+0" = "move container to workspace 10:十";
-            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";
@@ -7484,6 +7665,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
+            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+            "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+            "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+            "XF86Display" = "exec wl-mirror eDP-1";
           } config.swarselsystems.keybindings;
         modes = {
           resize = {
@@ -7496,7 +7683,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
         defaultWorkspace = "workspace 1:一";
-        output = mapAttrs' eachMonitor monitors;
+        output = lib.mapAttrs' eachMonitor monitors;
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign = workplaceOutputs;
         startup = config.swarselsystems.startup ++ [
@@ -8151,7 +8338,6 @@ Lastly, individual messages can be reenabled using the =(advice-remove '<FUNCTIO
   (advice-add 'org-unlogged-message :around #'suppress-messages)
   (advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
   (advice-add 'push-mark  :around #'suppress-messages)
-  (advice-add 'timer-event-handler  :around #'suppress-messages)
   (advice-add 'evil-insert  :around #'suppress-messages)
   (advice-add 'evil-visual-char  :around #'suppress-messages)
 
@@ -11452,7 +11638,6 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
           "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
           "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
           "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
         };
 
         startup = [

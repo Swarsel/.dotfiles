@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }: with lib;
+{ config, pkgs, lib, ... }:
 let
   inherit (config.swarselsystems) monitors;
   eachMonitor = _name: monitor: {
@@ -9,8 +9,8 @@ let
     inherit (monitor) name;
     value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
   };
-  workplaceSets = mapAttrs' eachOutput monitors;
-  workplaceOutputs = map (key: getAttr key workplaceSets) (attrNames workplaceSets);
+  workplaceSets = lib.mapAttrs' eachOutput monitors;
+  workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
 in
 {
   wayland.windowManager.sway = {
@@ -31,7 +31,7 @@ in
         let
           inherit (config.wayland.windowManager.sway.config) modifier;
         in
-        recursiveUpdate
+        lib.recursiveUpdate
           {
             "${modifier}+q" = "kill";
             "${modifier}+f" = "exec firefox";
@@ -40,24 +40,21 @@ in
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
             "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
             "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-            "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
-            "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
-            "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
-            "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
-            "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
-            "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
+            "${modifier}+m" = "exec swarselcheck -s";
+            "${modifier}+x" = "exec swarselcheck -k";
+            "${modifier}+d" = "exec swarselcheck -d";
+            "${modifier}+w" = "exec swarselcheck -e";
+            "${modifier}+Shift+t" = "exec opacitytoggle";
             "${modifier}+Shift+F12" = "move scratchpad";
             "${modifier}+F12" = "scratchpad show";
             "${modifier}+c" = "exec qalculate-gtk";
             "${modifier}+p" = "exec pass-fuzzel";
-            "${modifier}+o" = "exec pass-fuzzel-otp";
+            "${modifier}+o" = "exec pass-fuzzel --otp";
             "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-            "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
+            "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
             "${modifier}+Escape" = "mode $exit";
-            # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
             "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-            "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
             "${modifier}+1" = "workspace 1:一";
             "${modifier}+Shift+1" = "move container to workspace 1:一";
             "${modifier}+2" = "workspace 2:二";
@@ -78,8 +75,6 @@ in
             "${modifier}+Shift+9" = "move container to workspace 9:九";
             "${modifier}+0" = "workspace 10:十";
             "${modifier}+Shift+0" = "move container to workspace 10:十";
-            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";
@@ -100,6 +95,12 @@ in
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
+            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+            "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+            "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+            "XF86Display" = "exec wl-mirror eDP-1";
           }
           config.swarselsystems.keybindings;
       modes = {
@@ -113,7 +114,7 @@ in
         };
       };
       defaultWorkspace = "workspace 1:一";
-      output = mapAttrs' eachMonitor monitors;
+      output = lib.mapAttrs' eachMonitor monitors;
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [

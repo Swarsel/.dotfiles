@@ -6,7 +6,7 @@
       hg = "history | grep";
       hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
       nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
+      edithome = "e -w ~/.dotfiles/SwarselSystems.org";
       magit = "emacsclient -nc -e \"(magit-status)\"";
       config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
       g = "git";

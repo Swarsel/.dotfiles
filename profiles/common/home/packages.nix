@@ -147,17 +147,15 @@
     noto-fonts-cjk-sans
 
     pass-fuzzel
-    pass-fuzzel-otp
     cura5
     cdw
     cdb
     bak
     timer
-
-    #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-    (pkgs.writeShellScriptBin "e" ''
-      bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-    '')
+    e
+    swarselcheck
+    waybarupdate
+    opacitytoggle
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
