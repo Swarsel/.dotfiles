@@ -4234,6 +4234,11 @@ As such, I also define three additional overlays:
   {
     pass-fuzzel = callPackage ./pass-fuzzel { };
     pass-fuzzel-otp = callPackage ./pass-fuzzel-otp { };
+    cura5 = callPackage ./cura5 { };
+    cdw = callPackage ./cdw { };
+    cdb = callPackage ./cdb { };
+    bak = callPackage ./bak { };
+    timer = callPackage ./timer { };
   }
 
 #+end_src
@@ -4315,6 +4320,112 @@ As such, I also define three additional overlays:
       }
 
 #+end_src
+
+**** cura5
+
+
+#+begin_src nix :tangle pkgs/cura5/default.nix
+
+  {appimageTools, fetchurl, writeScriptBin, pkgs}:
+
+
+    let
+      cura5 = appimageTools.wrapType2 rec {
+        name = "cura5";
+        version = "5.4.0";
+        src = fetchurl {
+          url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+          hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+        };
+        extraPkgs = pkgs: with pkgs; [ ];
+      };
+    in
+      writeScriptBin "cura" ''
+      #! ${pkgs.bash}/bin/bash
+      # AppImage version of Cura loses current working directory and treats all paths relative to $HOME.
+      # So we convert each of the files passed as argument to an absolute path.
+      # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+      args=()
+      for a in "$@"; do
+          if [ -e "$a" ]; then
+             a="$(realpath "$a")"
+          fi
+          args+=("$a")
+      done
+      exec "${cura5}/bin/cura5" "''${args[@]}"
+    ''
+
+#+end_src
+
+**** cdw
+
+
+#+begin_src nix :tangle pkgs/cdw/default.nix
+
+  {writeShellApplication, fzf}:
+
+      writeShellApplication {
+        name = "cdw";
+        runtimeInputs = [ fzf ];
+        text = ''
+          cd "$(git worktree list | fzf | awk '{print $1}')"
+        '';
+      }
+
+
+#+end_src
+
+**** cdb
+
+
+#+begin_src nix :tangle pkgs/cdb/default.nix
+
+  {writeShellApplication, fzf}:
+
+      writeShellApplication {
+        name = "cdb";
+        runtimeInputs = [ fzf ];
+        text = ''
+          git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
+        '';
+      }
+
+#+end_src
+
+**** bak
+
+
+#+begin_src nix :tangle pkgs/bak/default.nix
+
+  {writeShellApplication}:
+
+  writeShellApplication {
+        name = "bak";
+        text = ''
+          cp "$1"{,.bak}
+        '';
+      }
+
+
+#+end_src
+
+**** timer
+
+
+#+begin_src nix :tangle pkgs/timer/default.nix
+
+  {writeShellApplication, speechd}:
+
+      writeShellApplication {
+        name = "timer";
+        runtimeInputs = [ speechd ];
+        text = ''
+      sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
+        '';
+      }
+
+#+end_src
+
 
 *** Overlays
 
@@ -5903,44 +6014,17 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
 #+begin_src nix :tangle profiles/common/home/packages.nix
 
-pass-fuzzel
-pass-fuzzel-otp
-
-  # cura
-  (
-    let
-      cura5 = appimageTools.wrapType2 rec {
-        name = "cura5";
-        version = "5.4.0";
-        src = fetchurl {
-          url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-          hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-        };
-        extraPkgs = pkgs: with pkgs; [ ];
-      };
-    in
-      writeScriptBin "cura" ''
-      #! ${pkgs.bash}/bin/bash
-      # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-      # So we convert each of the files passed as argument to an absolute path.
-      # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-      args=()
-      for a in "$@"; do
-          if [ -e "$a" ]; then
-             a="$(realpath "$a")"
-          fi
-          args+=("$a")
-      done
-      exec "${cura5}/bin/cura5" "''${args[@]}"
-    ''
-  )
+    pass-fuzzel
+    pass-fuzzel-otp
+    cura5
+    cdw
+    cdb
+    bak
+    timer
 
     #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
     (pkgs.writeShellScriptBin "e" ''
       bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-    '')
-    (pkgs.writeShellScriptBin "timer" ''
-      sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
     '')
 
     (pkgs.writeScriptBin "project" ''
@@ -5973,28 +6057,8 @@ pass-fuzzel-otp
 
 
 
-    (pkgs.writeShellApplication {
-      name = "cdw";
-      runtimeInputs = [ pkgs.fzf ];
-      text = ''
-        cd "$(git worktree list | fzf | awk '{print $1}')"
-      '';
-    })
 
-    (pkgs.writeShellApplication {
-      name = "cdb";
-      runtimeInputs = [ pkgs.fzf ];
-      text = ''
-        git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
-      '';
-    })
 
-    (pkgs.writeShellApplication {
-      name = "bak";
-      text = ''
-        cp "$1"{,.bak}
-      '';
-    })
 
   ];
    }
