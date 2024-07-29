@@ -596,7 +596,7 @@ create a new one."
   (global-evil-surround-mode 1))
 
 ;; set the NixOS wordlist by hand
-(setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
+(setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
 (dolist (face '(default fixed-pitch))
   (set-face-attribute face nil
