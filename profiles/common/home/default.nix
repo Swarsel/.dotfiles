@@ -27,6 +27,7 @@
     ./mako.nix
     ./sway.nix
     ./gpg-agent.nix
+    ./gammastep.nix
   ];
 
   nix = {

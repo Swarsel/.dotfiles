@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-25 Do 17:05 -->
+<!-- 2024-07-31 Mi 01:14 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org4adbe28">2.3.3. General (outputs)</a></li>
+<li><a href="#org9f1051f">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,23 +241,23 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#orgc141d21">3.2. Overlays, packages, and modules</a>
+<li><a href="#orgfe2df35">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#org1a87142">3.2.1. Packages</a></li>
-<li><a href="#orgfa72648">3.2.2. Overlays</a></li>
-<li><a href="#org7748217">3.2.3. Modules</a></li>
+<li><a href="#org696174c">3.2.1. Packages</a></li>
+<li><a href="#orgc525c69">3.2.2. Overlays</a></li>
+<li><a href="#org7465114">3.2.3. Modules</a></li>
 </ul>
 </li>
-<li><a href="#orgd4f98ca">3.3. NixOS</a>
+<li><a href="#org212c310">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#org773d4d6">3.3.2. Optional</a></li>
+<li><a href="#orgf6d8136">3.3.2. Optional</a></li>
 </ul>
 </li>
-<li><a href="#orga9f212b">3.4. Home-manager</a>
+<li><a href="#orgd8ffc85">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#orgec559c1">3.4.2. Optional</a></li>
+<li><a href="#org52db1a7">3.4.2. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -310,7 +310,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#org4df1290">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#org6d6600d">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -370,7 +370,7 @@
 </div>
 </div>
 <p>
-<b>This file has 42739 words spanning 11576 lines and was last revised on 2024-07-25 17:05:22 +0200.</b>
+<b>This file has 43474 words spanning 11870 lines and was last revised on 2024-07-31 01:14:17 +0200.</b>
 </p>
 
 <p>
@@ -420,7 +420,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-25 17:05:22 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-31 01:14:17 +0200)
 </p></li>
 </ul>
 
@@ -993,20 +993,20 @@ pkgsFor = lib.genAttrs (import systems) (
 );
 
 # pkgs for home-manager builds
-homepkgs = import nixpkgs { system = "x86_64-linux";
-                            overlays = [ inputs.emacs-overlay.overlay
-                                         inputs.nur.overlay
-                                         inputs.nixgl.overlay
-                                         (final: _prev: {
-                                           stable = import inputs.nixpkgs-stable {
-                                             inherit (final) system config;
-                                           };
-                                         })
-                                       ];
-                            config.allowUnfree = true;
-                          };
+# homepkgs = import nixpkgs { system = "x86_64-linux";
+#                             overlays = [ inputs.emacs-overlay.overlay
+#                                          inputs.nur.overlay
+#                                          inputs.nixgl.overlay
+#                                          (final: _prev: {
+#                                            stable = import inputs.nixpkgs-stable {
+#                                              inherit (final) system config;
+#                                            };
+#                                          })
+#                                        ];
+#                             config.allowUnfree = true;
+#                           };
 
-# NixOS modules that can only be used on NixOS systems
+# # NixOS modules that can only be used on NixOS systems
 nixModules = [
   inputs.stylix.nixosModules.stylix
   inputs.sops-nix.nixosModules.sops
@@ -1030,8 +1030,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org4adbe28" class="outline-4">
-<h4 id="org4adbe28"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-org9f1051f" class="outline-4">
+<h4 id="org9f1051f"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1215,9 +1215,10 @@ In contrast, this defines home-manager systems, which I only have one of.
 <div class="org-src-container">
 <pre class="src src-nix">
 "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
- pkgs = homepkgs;
+ pkgs = pkgsFor.x86_64-linux;
+ extraSpecialArgs = { inherit inputs outputs; };
   modules = homeModules ++ mixedModules ++ [
-    ./profiles/home-manager/home.nix
+    ./profiles/home-manager
   ];
 };
 
@@ -2410,122 +2411,28 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org54c1fcc"></a>Home-manager only<br />
-<ol class="org-ol">
-<li><a id="h:483a26b5-5a40-4417-9ffb-67cc2cf07161"></a>Home manager<br />
-<div class="outline-text-6" id="text-h:483a26b5-5a40-4417-9ffb-67cc2cf07161">
-<p>
-Special things to note here: We are running xcape to allow <code>CAPS</code> to act as <code>CTRL</code> and <code>ESC</code>. Also we are using <code>nixGL</code> in most places.
-</p>
-
+<li><a id="org176b596"></a>Home-manager only<br />
+<div class="outline-text-5" id="text-3-1-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
-{ config, pkgs, ... }:
-
+{ inputs, outputs, config, ... }:
 {
-  programs.home-manager.enable = true;
-  home.username = "swarsel";
-  home.homeDirectory = "/home/swarsel";
 
-  home.stateVersion = "23.05"; # Please read the comment before changing.
-
-  stylix.image = ../../wallpaper/surfacewp.png;
-
-  enable = true;
-  base16Scheme = ../../../wallpaper/swarsel.yaml;
-  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-  polarity = "dark";
-  opacity.popups = 0.5;
-  cursor = {
-    package = pkgs.capitaine-cursors;
-    name = "capitaine-cursors";
-    size = 16;
-  };
-  fonts = {
-    sizes = {
-      terminal = 10;
-      applications = 11;
-    };
-    serif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    sansSerif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    monospace = {
-      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-      name = "FiraCode Nerd Font Mono";
-    };
-
-    emoji = {
-      package = pkgs.noto-fonts-emoji;
-      name = "Noto Color Emoji";
-    };
-  };
-
+  imports = builtins.attrValues outputs.homeManagerModules;
 
   nixpkgs = {
+    inherit (outputs) overlays;
     config = {
       allowUnfree = true;
-      allowUnfreePredicate = _: true;
     };
   };
+
   services.xcape = {
     enable = true;
     mapExpression = {
       Control_L = "Escape";
     };
   };
-  #keyboard config
-  home.keyboard.layout = "us";
-
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # waybar config
-  programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-
-  programs.waybar.settings.mainBar.temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon3/temp3_input";
-  programs.waybar.settings.mainBar.modules-right = ["custom/outer-left-arrow-dark" "mpris" "custom/left-arrow-light"
-                                                    "network"
-                                                    "custom/left-arrow-dark"
-                                                    "pulseaudio"
-                                                    "custom/left-arrow-light"
-                                                    "battery"
-                                                    "custom/left-arrow-dark"
-                                                    "temperature"
-                                                    "custom/left-arrow-light"
-                                                    "disk"
-                                                    "custom/left-arrow-dark"
-                                                    "memory"
-                                                    "custom/left-arrow-light"
-                                                    "cpu"
-                                                    "custom/left-arrow-dark"
-                                                    "tray"
-                                                    "custom/left-arrow-light"
-                                                    "clock#2"
-                                                    "custom/left-arrow-dark"
-                                                    "clock#1" ];
-  services.blueman-applet.enable = true;
-  home.packages = with pkgs; [
-    # nixgl.auto.nixGLDefault
-    evince
-    # nodejs_20
-
-    # messaging
-    # we use gomuks for RAM preservation, but keep schildi around for files and images
-  ];
 
   programs.zsh.initExtra = "
 export GPG_TTY=\"$(tty)\"
@@ -2533,49 +2440,42 @@ export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
       ";
 
-  # sway config
-  wayland.windowManager.sway= {
-    config = rec {
-      input = {
-        "*" = {
-          xkb_layout = "us";
-          xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-      };
-
-      output = {
-        eDP-1 = {
-          mode = "2160x1440@59.955Hz";
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
-        };
-      };
-
-      keybindings = let
-        inherit (config.wayland.windowManager.sway.config) modifier;
-      in {
-      };
-
-      startup = [
-      ];
-
+  swarselsystems = {
+    isLaptop = true;
+    isNixos = false;
+    wallpaper = ../../wallpaper/surfacewp.png;
+    temperatureHwmon = {
+      isAbsolutePath = true;
+      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+      input-filename = "temp1_input";
     };
-
+    monitors = {
+      main = {
+        name = "California Institute of Technology 0x1407 Unknown";
+        mode = "1920x1080"; # TEMPLATE
+        scale = "1";
+        position = "2560,0";
+        workspace = "2:二";
+        output = "eDP-1";
+      };
+    };
+    inputs =  {
+      "1:1:AT_Translated_Set_2_keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
+    };
+    keybindings = {
+    };
   };
+
 }
+
 
 </pre>
 </div>
 </div>
-</li>
-</ol>
 </li>
 <li><a id="h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4"></a>Threed (Surface Pro 3)<br />
 <div class="outline-text-5" id="text-h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4">
@@ -2810,17 +2710,18 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ inputs, outputs, config, ... }:
+{ inputs, outputs, config, pkgs, ... }:
 {
 
   imports = [
     inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
 
     ./hardware-configuration.nix
-    ./nixos.nix
 
     ../optional/nixos/steam.nix
     ../optional/nixos/virtualbox.nix
+    ../optional/nixos/autologin.nix
+    ../optional/nixos/nswitch-rcm.nix
 
     inputs.home-manager.nixosModules.home-manager
     {
@@ -2832,18 +2733,43 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
 
 
   nixpkgs = {
-    overlays = outputs.overlays;
+    inherit (outputs) overlays;
     config = {
       allowUnfree = true;
     };
   };
 
-  #  ------   -----
-  # | DP-4 | |eDP-1|
-  #  ------   -----
+  boot = {
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
+  };
+
+
+  networking = {
+    hostName = "fourside";
+    firewall.enable = true;
+  };
+
+  hardware.graphics.extraPackages = with pkgs; [
+    vulkan-loader
+    vulkan-validation-layers
+    vulkan-extension-layer
+  ];
+
+  services = {
+    thinkfan.enable = false;
+    fwupd.enable = true;
+  };
 
   swarselsystems = {
     wallpaper = ../../wallpaper/lenovowp.png;
+    hasBluetooth = true;
+    hasFingerprint = true;
+    trackpoint = {
+      isAvailable = true;
+      device = "TPPS/2 Elan TrackPoint";
+    };
   };
 
   home-manager.users.swarsel.swarselsystems = {
@@ -2854,6 +2780,9 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
       path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
       input-filename = "temp1_input";
     };
+  #  ------   -----
+  # | DP-4 | |eDP-1|
+  #  ------   -----
     monitors = {
       main = {
         name = "California Institute of Technology 0x1407 Unknown";
@@ -2880,10 +2809,6 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
       };
     };
     keybindings = {
-      "Mod4+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-      "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-      "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-      "XF86Display" = "exec wl-mirror eDP-1";
       # these are left open to use
       # "XF86WLAN" = "exec wl-mirror eDP-1";
       # "XF86Messenger" = "exec wl-mirror eDP-1";
@@ -2892,107 +2817,14 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
       # "XF86HomePage" = "exec wtype -P Escape -p Escape";
       # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
       # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-      "XF86AudioMute" = "exec pactl set-sink-mute alsa_output.pci-0000_08_00.6.HiFi__Speaker__sink toggle &amp;&amp; exec pactl set-sink-mute alsa_output.usb-Lenovo_ThinkPad_Thunderbolt_4_Dock_USB_Audio_000000000000-00.analog-stereo toggle";
     };
   };
-
 }
 
 
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:ab6fefc4-aabd-456c-8a21-5fcb20c02869"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:ab6fefc4-aabd-456c-8a21-5fcb20c02869">
-<p>
-Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, ... }:
-
-{
-
-
-  boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-    # kernelPackages = pkgs.linuxPackages_latest;
-  };
-
-
-  networking = {
-    hostName = "fourside"; # Define your hostname.
-    nftables.enable = true;
-    enableIPv6 = false;
-    firewall.checkReversePath = false;
-    firewall = {
-      enable = true;
-      allowedUDPPorts = [ 4380 27036 14242 34197 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-      allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-      allowedTCPPortRanges = [
-        { from = 27015; to = 27030; } # barotrauma
-        { from = 27036; to = 27037; } # barotrauma
-      ];
-      allowedUDPPortRanges = [
-        { from = 27000; to = 27031; } # barotrauma
-        { from = 58962; to = 58964; } # barotrauma
-      ];
-    };
-  };
-
-
-
-  hardware = {
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-      extraPackages = with pkgs; [
-        vulkan-loader
-        vulkan-validation-layers
-        vulkan-extension-layer
-      ];
-    };
-    bluetooth.enable = true;
-    trackpoint = {
-      enable = true;
-      device = "TPPS/2 Elan TrackPoint";
-    };
-  };
-
-
-  # Configure keymap in X11 (only used for login)
-
-  services.thinkfan = {
-    enable = false;
-  };
-  services.power-profiles-daemon.enable = true;
-  services.fprintd.enable = true;
-  services.fwupd.enable = true;
-
-  services.nswitch-rcm = {
-    enable = true;
-    package = pkgs.fetchurl {
-      url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
-      hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
-    };
-  };
-
-
-  environment.systemPackages = with pkgs; [
-  ];
-
-  system.stateVersion = "23.05";
-
-
-}
-
-</pre>
-</div>
-</div>
-</li>
-</ol>
 </li>
 <li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Winters (Framwork Laptop 16)<br />
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
@@ -5371,8 +5203,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orgc141d21" class="outline-3">
-<h3 id="orgc141d21"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
+<div id="outline-container-orgfe2df35" class="outline-3">
+<h3 id="orgfe2df35"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -5391,19 +5223,430 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-org1a87142" class="outline-4">
-<h4 id="org1a87142"><span class="section-number-4">3.2.1.</span> Packages</h4>
+<div id="outline-container-org696174c" class="outline-4">
+<h4 id="org696174c"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
-_ : rec { }
+{pkgs, ...}:
+let
+  inherit (pkgs) callPackage;
+in
+{
+  pass-fuzzel = callPackage ./pass-fuzzel { };
+  cura5 = callPackage ./cura5 { };
+  cdw = callPackage ./cdw { };
+  cdb = callPackage ./cdb { };
+  bak = callPackage ./bak { };
+  timer = callPackage ./timer { };
+  e = callPackage ./e { };
+  swarselcheck = callPackage ./swarselcheck { };
+  waybarupdate = callPackage ./waybarupdate { };
+  opacitytoggle = callPackage ./opacitytoggle { };
+}
 
 </pre>
 </div>
 </div>
+<ol class="org-ol">
+<li><a id="org54579f8"></a>pass-fuzzel<br />
+<div class="outline-text-5" id="text-3-2-1-1">
+<div class="org-src-container">
+<pre class="src src-shell"># Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
+shopt -s nullglob globstar
+
+otp=0
+typeit=0
+while :; do
+    case ${1:-} in
+        -t|--type) typeit=1
+                   ;;
+        -o|--otp) otp=1
+                  ;;
+        *) break
+    esac
+    shift
+done
+
+export PASSWORD_STORE_DIR=~/.local/share/password-store
+prefix=${PASSWORD_STORE_DIR-~/.local/share/password-store}
+if [[ $otp -eq 0 ]]; then
+    password_files=( "$prefix"/**/*.gpg )
+else
+    password_files=( "$prefix"/otp/**/*.gpg )
+fi
+password_files=( "${password_files[@]#"$prefix"/}" )
+password_files=( "${password_files[@]%.gpg}" )
+
+password=$(printf '%s\n' "${password_files[@]}" | fuzzel --dmenu "$@")
+
+[[ -n $password ]] || exit
+if [[ $otp -eq 0 ]]; then
+    if [[ $typeit -eq 0 ]]; then
+        pass show -c "$password" &amp;&gt;/tmp/pass-fuzzel
+    else
+        pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+    fi
+else
+    if [[ $typeit -eq 0 ]]; then
+        pass otp -c "$password" &amp;&gt;/tmp/pass-fuzzel
+    else
+        pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+    fi
+fi
+notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
+</pre>
 </div>
-<div id="outline-container-orgfa72648" class="outline-4">
-<h4 id="orgfa72648"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+
+<div class="org-src-container">
+<pre class="src src-nix">{writeShellApplication, libnotify, pass, fuzzel, wtype}:
+
+writeShellApplication {
+  name = "pass-fuzzel";
+  runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
+  text = builtins.readFile ../../scripts/pass-fuzzel.sh;
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgc0e96ba"></a>cura5<br />
+<div class="outline-text-5" id="text-3-2-1-2">
+<div class="org-src-container">
+<pre class="src src-nix">
+{appimageTools, fetchurl, writeScriptBin, pkgs}:
+
+
+let
+  cura5 = appimageTools.wrapType2 rec {
+    name = "cura5";
+    version = "5.4.0";
+    src = fetchurl {
+      url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
+      hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
+    };
+    extraPkgs = pkgs: with pkgs; [ ];
+  };
+in
+writeScriptBin "cura" ''
+    #! ${pkgs.bash}/bin/bash
+    # AppImage version of Cura loses current working directory and treats all paths relative to $HOME.
+    # So we convert each of the files passed as argument to an absolute path.
+    # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
+    args=()
+    for a in "$@"; do
+        if [ -e "$a" ]; then
+           a="$(realpath "$a")"
+        fi
+        args+=("$a")
+    done
+    exec "${cura5}/bin/cura5" "''${args[@]}"
+  ''
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org41be88e"></a>cdw<br />
+<div class="outline-text-5" id="text-3-2-1-3">
+<div class="org-src-container">
+<pre class="src src-nix">
+{writeShellApplication, fzf}:
+
+writeShellApplication {
+  name = "cdw";
+  runtimeInputs = [ fzf ];
+  text = ''
+        cd "$(git worktree list | fzf | awk '{print $1}')"
+      '';
+}
+
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org58a8aa8"></a>cdb<br />
+<div class="outline-text-5" id="text-3-2-1-4">
+<div class="org-src-container">
+<pre class="src src-nix">
+{writeShellApplication, fzf}:
+
+writeShellApplication {
+  name = "cdb";
+  runtimeInputs = [ fzf ];
+  text = ''
+        git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
+      '';
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgc6b8064"></a>bak<br />
+<div class="outline-text-5" id="text-3-2-1-5">
+<div class="org-src-container">
+<pre class="src src-nix">
+{writeShellApplication}:
+
+writeShellApplication {
+  name = "bak";
+  text = ''
+        cp "$1"{,.bak}
+      '';
+}
+
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org55dc1e5"></a>timer<br />
+<div class="outline-text-5" id="text-3-2-1-6">
+<div class="org-src-container">
+<pre class="src src-nix">
+{writeShellApplication, speechd}:
+
+writeShellApplication {
+  name = "timer";
+  runtimeInputs = [ speechd ];
+  text = ''
+    sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
+      '';
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org7f4342e"></a>e<br />
+<div class="outline-text-5" id="text-3-2-1-7">
+<div class="org-src-container">
+<pre class="src src-shell">wait=0
+while :; do
+    case ${1:-} in
+        -w|--wait) wait=1
+                   ;;
+        *) break
+    esac
+    shift
+done
+
+STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true )
+if [ "$STR" == "" ]; then
+    swaymsg '[title="kittyterm"]' scratchpad show
+    emacsclient -c -a "" "$@"
+    swaymsg '[title="kittyterm"]' scratchpad show
+else
+    if [[ $wait -eq 0 ]]; then
+        emacsclient -n -c -a "" "$@"
+    else
+        emacsclient -c -a "" "$@"
+    fi
+fi
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, emacs-pgtk, sway, jq}:
+
+writeShellApplication {
+  name = "e";
+  runtimeInputs = [ emacs-pgtk sway jq ];
+  text = builtins.readFile ../../scripts/e.sh;
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org15dbf04"></a>command-not-found<br />
+<div class="outline-text-5" id="text-3-2-1-8">
+<div class="org-src-container">
+<pre class="src src-shell"># Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
+command_not_found_handle () {
+    if [ -n "${MC_SID-}" ] || ! [ -t 1 ]; then
+        &gt;&amp;2 echo "$1: command not found"
+        return 127
+    fi
+
+    echo -n "searching nix-index..."
+    ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --top-level --whole-name --at-root "/bin/$1")
+
+    case $(echo -n "$ATTRS" | grep -c "^") in
+        0)
+            &gt;&amp;2 echo -ne "$(@tput@ el1)\r"
+            &gt;&amp;2 echo "$1: command not found"
+            ;;
+        *)
+            &gt;&amp;2 echo -ne "$(@tput@ el1)\r"
+            &gt;&amp;2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
+            &gt;&amp;2 echo "It is provided by the following derivation(s):"
+            while read -r ATTR; do
+                ATTR=${ATTR%.out}
+                &gt;&amp;2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
+            done &lt;&lt;&lt; "$ATTRS"
+    esac
+
+    return 127
+}
+
+command_not_found_handler () {
+    command_not_found_handle "$@"
+    return $?
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org26f4194"></a>swarselcheck<br />
+<div class="outline-text-5" id="text-3-2-1-9">
+<div class="org-src-container">
+<pre class="src src-shell">kitty=0
+element=0
+discord=0
+spotifyplayer=0
+while :; do
+    case ${1:-} in
+        -k|--kitty) kitty=1
+                   ;;
+        -e|--element) element=1
+                   ;;
+        -d|--discord) discord=1
+                   ;;
+        -s|--spotifyplayer) spotifyplayer=1
+                   ;;
+        *) break
+    esac
+    shift
+done
+
+if [[ $kitty -eq 1 ]]; then
+    STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
+    CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
+    if [ "$CHECK" == "" ]; then
+        exec kitty -T kittyterm &amp; sleep 1
+    fi
+    if [ "$STR" == "" ]; then
+        exec swaymsg '[title="kittyterm"]' scratchpad show
+    else
+        exec swaymsg '[title="kittyterm"]' scratchpad show
+    fi
+elif [[ $element -eq 1 ]]; then
+    STR=$(swaymsg -t get_tree | grep Element || true)
+    if [ "$STR" == "" ]; then
+        exec element-desktop
+    else
+        exec swaymsg '[app_id=Element]' kill
+    fi
+elif [[ $discord -eq 1 ]]; then
+    STR=$(swaymsg -t get_tree | grep discord || true)
+    if [ "$STR" == "" ]; then
+        exec discord
+    else
+        exec swaymsg '[app_id=discord]' kill
+    fi
+elif [[ $spotifyplayer -eq 1 ]]; then
+    STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
+    CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
+    if [ "$CHECK" == "" ]; then
+        exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player &amp; sleep 1
+    fi
+    if [ "$STR" == "" ]; then
+        exec swaymsg '[title="spotifytui"]' scratchpad show
+    else
+        exec swaymsg '[title="spotifytui"]' scratchpad show
+    fi
+fi
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, kitty, element-desktop-wayland, discord, spotify-player, sway, jq}:
+
+writeShellApplication {
+  name = "swarselcheck";
+  runtimeInputs = [ kitty element-desktop-wayland discord spotify-player jq ];
+  text = builtins.readFile ../../scripts/swarselcheck.sh;
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org3e9e024"></a>waybarupdate<br />
+<div class="outline-text-5" id="text-3-2-1-10">
+<div class="org-src-container">
+<pre class="src src-shell">CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
+CSE=$(git --git-dir="$HOME"/Documents/GitHub/CSE_TUWIEN/.git --work-tree="$HOME"/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
+PASS=$(( $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l) ))
+
+if [[ $CFG != 0 ]]; then
+    CFG_STR='CONFIG'
+else
+    CFG_STR=''
+fi
+
+if [[ $CSE != 0 ]]; then
+    CSE_STR=' CSE'
+else
+    CSE_STR=''
+fi
+
+if [[ $PASS != 0 ]]; then
+    PASS_STR=' PASS'
+else
+    PASS_STR=''
+fi
+
+OUT="$CFG_STR""$CSE_STR""$PASS_STR"
+echo "$OUT"
+
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, git}:
+
+writeShellApplication {
+  name = "waybarupdate";
+  runtimeInputs = [ git ];
+  text = builtins.readFile ../../scripts/waybarupdate.sh;
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org4bf1cdb"></a>opacitytoggle<br />
+<div class="outline-text-5" id="text-3-2-1-11">
+<div class="org-src-container">
+<pre class="src src-shell">if swaymsg opacity plus 0.01 -q; then
+        swaymsg opacity 1
+else
+        swaymsg opacity 0.95
+fi
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, sway}:
+
+writeShellApplication {
+  name = "opacitytoggle";
+  runtimeInputs = [ sway ];
+  text = builtins.readFile ../../scripts/opacitytoggle.sh;
+}
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div id="outline-container-orgc525c69" class="outline-4">
+<h4 id="orgc525c69"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5436,15 +5679,15 @@ _ : rec { }
 </div>
 </div>
 </div>
-<div id="outline-container-org7748217" class="outline-4">
-<h4 id="org7748217"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div id="outline-container-org7465114" class="outline-4">
+<h4 id="org7465114"><span class="section-number-4">3.2.3.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-2-3">
 <p>
 In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org358b940"></a>NixOS<br />
+<li><a id="orga167816"></a>NixOS<br />
 <div class="outline-text-5" id="text-3-2-3-1">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -5453,12 +5696,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 <div class="org-src-container">
 <pre class="src src-nix">{
   wallpaper = import ./wallpaper.nix;
+  hardware = import ./hardware.nix;
 }
 </pre>
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org014ab6a"></a>Wallpaper<br />
+<li><a id="org5654c6a"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5474,9 +5718,27 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
+<li><a id="org7098a41"></a>Hardware<br />
+<div class="outline-text-6" id="text-3-2-3-1-2">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.hasBluetooth = lib.mkEnableOption "bluetooth availability";
+  options.swarselsystems.hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
+  options.swarselsystems.trackpoint.isAvailable = lib.mkEnableOption "trackpoint availability";
+  options.swarselsystems.trackpoint.device = lib.mkOption {
+    type = lib.types.str;
+    default = "";
+  };
+  }
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
-<li><a id="orgcd79db9"></a>home-manager<br />
+<li><a id="org56b1bfb"></a>home-manager<br />
 <div class="outline-text-5" id="text-3-2-3-2">
 <div class="org-src-container">
 <pre class="src src-nix">{
@@ -5493,7 +5755,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgad2c727"></a>Laptop<br />
+<li><a id="org46487d1"></a>Laptop<br />
 <div class="outline-text-6" id="text-3-2-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5528,7 +5790,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgc65ca75"></a>Hardware<br />
+<li><a id="orgf2ef030"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5552,7 +5814,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org8aab025"></a>Waybar<br />
+<li><a id="orgfa1c57f"></a>Waybar<br />
 <div class="outline-text-6" id="text-3-2-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">  { lib, config, ... }:
@@ -5592,10 +5854,10 @@ in
 </div>
 </div>
 </li>
-<li><a id="org534b750"></a>Monitors<br />
+<li><a id="org268bfcc"></a>Monitors<br />
 <div class="outline-text-6" id="text-3-2-3-2-4">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix">{ lib, ... }:
 let
   inherit (lib) mkOption types;
 in
@@ -5609,12 +5871,12 @@ in
 </div>
 </div>
 </li>
-<li><a id="org8d2f5af"></a>Input<br />
+<li><a id="orgc9c1fe3"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 let
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkOption types;
 in
 {
   options.swarselsystems.inputs = mkOption {
@@ -5644,13 +5906,12 @@ in
     default = { };
   };
 
-
 }
 </pre>
 </div>
 </div>
 </li>
-<li><a id="org3cc09df"></a>Nixos<br />
+<li><a id="org7c9caf9"></a>Nixos<br />
 <div class="outline-text-6" id="text-3-2-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5666,18 +5927,32 @@ in
     { command = "sleep 60 &amp;&amp; OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
     { command = "sleep 60 &amp;&amp; element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
     ];
-
+  options.swarselsystems.swayfxConfig = lib.mkOption {
+    type = lib.types.str;
+    default = "
+          blur enable
+          blur_xray disable
+          blur_passes 1
+          blur_radius 1
+          shadows enable
+          corner_radius 2
+          titlebar_separator disable
+          default_dim_inactive 0.02
+      ";
+    internal = true;
+  };
+  config.swarselsystems.swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
 }
 </pre>
 </div>
 </div>
 </li>
-<li><a id="orgf027e52"></a>System startup<br />
+<li><a id="org4786bad"></a>System startup<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix">{ lib, ... }:
 let
-  inherit (lib) mkIf mkOption types;
+  inherit (lib) mkOption types;
 in
 {
 
@@ -5697,7 +5972,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgbf2ce3c"></a>Wallpaper<br />
+<li><a id="org56b2f86"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5718,8 +5993,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orgd4f98ca" class="outline-3">
-<h3 id="orgd4f98ca"><span class="section-number-3">3.3.</span> NixOS</h3>
+<div id="outline-container-org212c310" class="outline-3">
+<h3 id="org212c310"><span class="section-number-3">3.3.</span> NixOS</h3>
 <div class="outline-text-3" id="text-3-3">
 </div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-4">
@@ -5730,15 +6005,19 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="h:45e4315b-0929-4c47-b65a-c8f0a685f4df"></a>Imports, enable home-manager module<br />
-<div class="outline-text-5" id="text-h:45e4315b-0929-4c47-b65a-c8f0a685f4df">
+<li><a id="orge1c2f88"></a>Imports, enable home-manager module, stateVersion<br />
+<div class="outline-text-5" id="text-3-3-1-1">
+<p>
+:CUSTOM<sub>ID</sub>: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
+</p>
+
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module
 </p>
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }:
+{ lib, ... }:
 {
   imports = [
     ./xserver.nix
@@ -5764,13 +6043,17 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
     ./hardwarecompatibility.nix
     ./login.nix
     ./stylix.nix
+    ./power-profiles-daemon.nix
   ];
 
+  nix.settings.trusted-users = [ "swarsel" ];
 
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
   };
+
+  system.stateVersion = lib.mkDefault "23.05";
 }
 
 </pre>
@@ -5788,7 +6071,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   services.xserver = {
     xkb = {
@@ -5859,7 +6142,7 @@ Needed for control over system-wide privileges etc.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   security.polkit.enable = true;
 }
@@ -5874,7 +6157,7 @@ The nix store fills up over time, until <code>/boot/efi</code> is filled. This s
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   nix.gc = {
     automatic = true;
@@ -5894,7 +6177,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   nix.optimise = {
     automatic = true;
@@ -5913,7 +6196,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   # systemd
   systemd.extraConfig = ''
@@ -5932,7 +6215,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ...}:
+<pre class="src src-nix">{ pkgs, config, lib, ...}:
 {
 
   hardware = {
@@ -5941,6 +6224,13 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
       enable32Bit = true;
     };
 
+    trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+      enable = true;
+      inherit (config.swarselsystems.trackpoint) device;
+    };
+
+    keyboard.qmk.enable = true;
+
     pulseaudio= {
       enable = true;
       package = pkgs.pulseaudioFull;
@@ -5948,7 +6238,8 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
     enableAllFirmware = true;
 
-    bluetooth = {
+    bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
+      enable = true;
       powerOnBoot = true;
       settings = {
         General = {
@@ -5957,6 +6248,8 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
       };
     };
   };
+
+  services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
 }
 </pre>
 </div>
@@ -5969,9 +6262,18 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, ...}:
+<pre class="src src-nix">{ lib, config, ...}:
 {
-  networking.networkmanager = {
+  networking = {
+    nftables.enable = lib.mkDefault true;
+    enableIPv6 = lib.mkDefault true;
+    firewall = {
+      checkReversePath = lib.mkDefault false;
+      enable = lib.mkDefault true;
+      allowedUDPPorts = [ 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+    };
+
+    networkmanager = {
     enable = true;
     ensureProfiles = {
       environmentFiles = [
@@ -6173,6 +6475,7 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
       };
     };
   };
+  };
 
   systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
 }
@@ -6187,7 +6490,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   time = {
     timeZone = "Europe/Vienna";
@@ -6266,7 +6569,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </div>
 </div>
 </li>
-<li><a id="orgc94132b"></a>Theme (stylix)<br />
+<li><a id="orge064e23"></a>Theme (stylix)<br />
 <div class="outline-text-5" id="text-3-3-1-4">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
@@ -6274,7 +6577,7 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, pkgs, home-manager, config, ... }:
+<pre class="src src-nix">{ pkgs, home-manager, config, ... }:
 {
   stylix = {
 
@@ -6366,6 +6669,11 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
     # pinentry
 
+    # keyboards
+    qmk
+    vial
+    via
+
     # theme related
     adwaita-icon-theme
 
@@ -6437,7 +6745,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs = {
     dconf.enable = true;
@@ -6449,7 +6757,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org529d729"></a>zsh<br />
+<li><a id="org54c4d2f"></a>zsh<br />
 <div class="outline-text-6" id="text-3-3-1-6-1">
 <p>
 Do not touch this.
@@ -6467,11 +6775,11 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="org24ef28a"></a>syncthing<br />
+<li><a id="org08852d1"></a>syncthing<br />
 <div class="outline-text-6" id="text-3-3-1-6-2">
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }:
+_ :
 {
   services.syncthing = {
     enable = true;
@@ -6536,7 +6844,7 @@ Enables the blueman service including the nice system tray icon.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   services.blueman.enable = true;
 }
@@ -6544,7 +6852,7 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="org1300d78"></a>Network devices<br />
+<li><a id="org52ba0c6"></a>Network devices<br />
 <div class="outline-text-6" id="text-3-3-1-7-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
@@ -6596,7 +6904,7 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org26d6861"></a>Avahi (device discovery)<br />
+<li><a id="org974730b"></a>Avahi (device discovery)<br />
 <div class="outline-text-7" id="text-3-3-1-7-2-3">
 <p>
 Avahi is the service used for the network discovery.
@@ -6623,7 +6931,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   services.gvfs.enable = true;
 }
@@ -6672,9 +6980,20 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 </li>
+<li><a id="orgfad9390"></a>power-profiles-daemon<br />
+<div class="outline-text-6" id="text-3-3-1-7-5">
+<div class="org-src-container">
+<pre class="src src-nix">_ :
+{
+  services.power-profiles-daemon.enable = true;
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
-<li><a id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"></a>Hardware compatibility settings (Yubikey, Ledger) - udev rules<br />
+<li><a id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"></a>Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules<br />
 <div class="outline-text-5" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -6705,6 +7024,9 @@ Also, this is a good place to setup the udev rules.
   services.udev.packages = with pkgs; [
     yubikey-personalization
     ledger-udev-rules
+    qmk-udev-rules
+    vial
+    via
   ];
 }
 </pre>
@@ -6745,16 +7067,30 @@ This section houses the greetd related settings. I do not really want to use a d
 </li>
 </ol>
 </div>
-<div id="outline-container-org773d4d6" class="outline-4">
-<h4 id="org773d4d6"><span class="section-number-4">3.3.2.</span> Optional</h4>
+<div id="outline-container-orgf6d8136" class="outline-4">
+<h4 id="orgf6d8136"><span class="section-number-4">3.3.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="orgc7b47a1"></a>steam<br />
+<li><a id="org5381905"></a>gaming<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 {
+  networking = {
+    firewall = {
+      allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
+      allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedTCPPortRanges = [
+        { from = 27015; to = 27030; } # barotrauma
+        { from = 27036; to = 27037; } # barotrauma
+      ];
+      allowedUDPPortRanges = [
+        { from = 27000; to = 27031; } # barotrauma
+        { from = 58962; to = 58964; } # barotrauma
+      ];
+    };
+  };
 
   programs.steam = {
     enable = true;
@@ -6769,10 +7105,10 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org5f16529"></a>VirtualBox<br />
+<li><a id="org400a8c9"></a>VirtualBox<br />
 <div class="outline-text-5" id="text-3-3-2-2">
 <div class="org-src-container">
-<pre class="src src-nix">  { ... }:
+<pre class="src src-nix">  _ :
   {
       virtualisation.virtualbox = {
         host = {
@@ -6789,12 +7125,42 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org535a06a"></a>Auto-login<br /></li>
+<li><a id="orgd9955ea"></a>Auto-login<br />
+<div class="outline-text-5" id="text-3-3-2-3">
+<div class="org-src-container">
+<pre class="src src-nix">_ :
+{
+  services = {
+    getty.autologinUser = "swarsel";
+    greetd.settings.initial_session.user = "swarsel";
+  };
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org3f4e53d"></a>nswitch-rcm<br />
+<div class="outline-text-5" id="text-3-3-2-4">
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+  services.nswitch-rcm = {
+    enable = true;
+    package = pkgs.fetchurl {
+      url = "https://github.com/Atmosphere-NX/Atmosphere/releases/download/1.3.2/fusee.bin";
+      hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
 </div>
-<div id="outline-container-orga9f212b" class="outline-3">
-<h3 id="orga9f212b"><span class="section-number-3">3.4.</span> Home-manager</h3>
+<div id="outline-container-orgd8ffc85" class="outline-3">
+<h3 id="orgd8ffc85"><span class="section-number-3">3.4.</span> Home-manager</h3>
 <div class="outline-text-3" id="text-3-4">
 </div>
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-4">
@@ -6802,14 +7168,14 @@ This section houses the greetd related settings. I do not really want to use a d
 <div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
 <ol class="org-ol">
-<li><a id="org9e66466"></a>Imports<br />
+<li><a id="org50ac476"></a>Imports<br />
 <div class="outline-text-5" id="text-3-4-1-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, outputs, ... }:
+<pre class="src src-nix">{ lib, pkgs, config, ... }:
 {
   imports = [
     ./packages.nix
@@ -6838,6 +7204,7 @@ This section sets up all the imports that are used in the home-manager section.
     ./mako.nix
     ./sway.nix
     ./gpg-agent.nix
+    ./gammastep.nix
   ];
 
   nix = {
@@ -6848,19 +7215,16 @@ This section sets up all the imports that are used in the home-manager section.
         "flakes"
         "ca-derivations"
       ];
-      warn-dirty = false;
     };
   };
 
-  programs = {
-    git.enable = true;
-  };
+  programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
   home = {
     username = lib.mkDefault "swarsel";
     homeDirectory = lib.mkDefault "/home/${config.home.username}";
     stateVersion = lib.mkDefault "23.05";
-    keyboard.layout = "us"; # TEMPLATE
+    keyboard.layout = "us";
     sessionVariables = {
       FLAKE = "$HOME/.dotfiles";
     };
@@ -7044,42 +7408,17 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
 <li><a id="h:96cbea91-ff13-4120-b8a9-496b2fa96e70"></a>Self-defined<br />
 <div class="outline-text-6" id="text-h:96cbea91-ff13-4120-b8a9-496b2fa96e70">
 <div class="org-src-container">
-<pre class="src src-nix"># cura
-(
-  let
-    cura5 = appimageTools.wrapType2 rec {
-      name = "cura5";
-      version = "5.4.0";
-      src = fetchurl {
-        url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-modern.AppImage";
-        hash = "sha256-QVv7Wkfo082PH6n6rpsB79st2xK2+Np9ivBg/PYZd74=";
-      };
-      extraPkgs = pkgs: with pkgs; [ ];
-    };
-  in
-  writeScriptBin "cura" ''
-    #! ${pkgs.bash}/bin/bash
-    # AppImage version of Cura loses current working directory and treats all paths relateive to $HOME.
-    # So we convert each of the files passed as argument to an absolute path.
-    # This fixes use cases like `cd /path/to/my/files; cura mymodel.stl anothermodel.stl`.
-    args=()
-    for a in "$@"; do
-        if [ -e "$a" ]; then
-           a="$(realpath "$a")"
-        fi
-        args+=("$a")
-    done
-    exec "${cura5}/bin/cura5" "''${args[@]}"
-  ''
-)
-
-  #E: hides scratchpad depending on state, calls emacsclient for edit and then restores the scratchpad state
-  (pkgs.writeShellScriptBin "e" ''
-    bash ~/.dotfiles/scripts/editor_nowait.sh "$@"
-  '')
-  (pkgs.writeShellScriptBin "timer" ''
-    sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
-  '')
+<pre class="src src-nix">
+  pass-fuzzel
+  cura5
+  cdw
+  cdb
+  bak
+  timer
+  e
+  swarselcheck
+  waybarupdate
+  opacitytoggle
 
   (pkgs.writeScriptBin "project" ''
     #! ${pkgs.bash}/bin/bash
@@ -7109,94 +7448,13 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     direnv allow
   '')
 
-  (pkgs.writeShellApplication {
-    name = "pass-fuzzel";
-    runtimeInputs = [ pkgs.pass pkgs.fuzzel ];
-    text = ''
-      shopt -s nullglob globstar
 
-      typeit=0
-      if [[ $# -ge 1 &amp;&amp; $1 == "--type" ]]; then
-        typeit=1
-        shift
-      fi
 
-      export PASSWORD_STORE_DIR=~/.local/share/password-store
-      prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-      password_files=( "$prefix"/**/*.gpg )
-      password_files=( "''${password_files[@]#"$prefix"/}" )
-      password_files=( "''${password_files[@]%.gpg}" )
 
-      password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
 
-      [[ -n $password ]] || exit
-
-      if [[ $typeit -eq 0 ]]; then
-        pass show -c "$password" &amp;&gt;/tmp/pass-fuzzel
-      else
-        pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-      fi
-      notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
-    '';
-  })
-
-  (pkgs.writeShellApplication {
-    name = "pass-fuzzel-otp";
-    runtimeInputs = [ pkgs.fuzzel (pkgs.pass.withExtensions (exts: [ exts.pass-otp ])) ];
-    text = ''
-      shopt -s nullglob globstar
-
-      typeit=0
-      if [[ $# -ge 1 &amp;&amp; $1 == "--type" ]]; then
-        typeit=1
-        shift
-      fi
-
-      export PASSWORD_STORE_DIR=~/.local/share/password-store
-      prefix=''${PASSWORD_STORE_DIR-~/.local/share/password-store}
-      password_files=( "$prefix"/otp/**/*.gpg )
-      password_files=( "''${password_files[@]#"$prefix"/}" )
-      password_files=( "''${password_files[@]%.gpg}" )
-
-      password=$(printf '%s\n' "''${password_files[@]}" | fuzzel --dmenu "$@")
-
-      [[ -n $password ]] || exit
-
-      if [[ $typeit -eq 0 ]]; then
-        pass otp -c "$password" &amp;&gt;/tmp/pass-fuzzel
-      else
-        pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
-      fi
-      notify-send -u critical -a pass -t 1000 "Copied/Typed OTPassword"
-    '';
-  })
-
-  (pkgs.writeShellApplication {
-    name = "cdw";
-    runtimeInputs = [ pkgs.fzf ];
-    text = ''
-      cd "$(git worktree list | fzf | awk '{print $1}')"
-    '';
-  })
-
-  (pkgs.writeShellApplication {
-    name = "cdb";
-    runtimeInputs = [ pkgs.fzf ];
-    text = ''
-      git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
-    '';
-  })
-
-  (pkgs.writeShellApplication {
-    name = "bak";
-    text = ''
-      cp "$1"{,.bak}
-    '';
-  })
 
 ];
  }
-
 </pre>
 </div>
 </div>
@@ -7249,7 +7507,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">  { ... }:
+<pre class="src src-nix">  _ :
   {
     programs.ssh = {
       enable = true;
@@ -7436,7 +7694,7 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }:
+_ :
 {
   xdg.desktopEntries = {
 
@@ -7499,7 +7757,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }:
+_ :
 {
 home.file = {
   "init.el" = {
@@ -7542,10 +7800,10 @@ Also, we link some files to the users XDG configuration home:
 <li><a id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"></a>Sourcing environment variables<br />
 <div class="outline-text-5" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   home.sessionVariables = {
-    EDITOR = "bash ~/.dotfiles/scripts/editor.sh";
+    EDITOR = "e -w";
   };
 }
 </pre>
@@ -7566,7 +7824,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs = {
     bottom.enable = true;
@@ -7591,7 +7849,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </li>
 </ol>
 </li>
-<li><a id="orgd1753e7"></a>nix-index<br />
+<li><a id="org087d11d"></a>nix-index<br />
 <div class="outline-text-5" id="text-3-4-1-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -7601,8 +7859,8 @@ nix-index provides a way to find out which packages are provided by which deriva
 <pre class="src src-nix">{pkgs, ...}:
 {
   programs.nix-index =
-    let
-      command-not-found = pkgs.runCommandLocal "command-not-found.sh" { } ''
+  let
+      commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
         mkdir -p $out/etc/profile.d
         substitute ${../../../scripts/command-not-found.sh}                  \
           $out/etc/profile.d/command-not-found.sh             \
@@ -7610,11 +7868,12 @@ nix-index provides a way to find out which packages are provided by which deriva
           --replace @tput@ ${pkgs.ncurses}/bin/tput
       '';
     in
+
     {
       enable = true;
       package = pkgs.symlinkJoin {
         name = "nix-index";
-        paths = [ command-not-found ];
+        paths = [ commandNotFound ];
       };
     };
 }
@@ -7650,7 +7909,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs.direnv = {
     enable = true;
@@ -7668,7 +7927,7 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs.eza = {
     enable = true;
@@ -7691,7 +7950,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs.git = {
     enable = true;
@@ -7741,7 +8000,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs.fuzzel = {
     enable = true;
@@ -7766,7 +8025,7 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">  { ... }:
+<pre class="src src-nix">  _ :
   {
     programs.starship = {
       enable = true;
@@ -7887,7 +8146,7 @@ The theme is handled by stylix.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   programs.kitty = {
     enable = true;
@@ -7922,7 +8181,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
       hg = "history | grep";
       hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
       nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      edithome = "bash ~/.dotfiles/scripts/editor.sh ~/.dotfiles/Nix.org";
+      edithome = "e -w ~/.dotfiles/SwarselSystems.org";
       magit = "emacsclient -nc -e \"(magit-status)\"";
       config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
       g = "git";
@@ -8223,7 +8482,7 @@ programs.waybar = {
       };
 
       "custom/configwarn" = {
-        exec = "bash ~/.dotfiles/scripts/checkconfigstatus.sh";
+        exec = "waybarupdate";
         interval = 60;
       };
 
@@ -8342,6 +8601,7 @@ programs.waybar = {
         on-click = "pamixer -t";
         on-click-right = "pavucontrol";
       };
+
       memory = {
         interval = 5;
         format = " {}%";
@@ -8543,7 +8803,7 @@ Used for storing sessions in e.g. Nextcloud
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ ... }:
+_ :
 {
 services.gnome-keyring = {
   enable = true;
@@ -8560,7 +8820,7 @@ This enables phone/computer communication, including sending clipboard, files et
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   services.kdeconnect = {
     enable = true;
@@ -8582,7 +8842,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ ... }:
+<pre class="src src-nix">_ :
 {
   services.mako = {
     enable = true;
@@ -8630,25 +8890,25 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, lib, ... }: with lib;
+<pre class="src src-nix">{ config, pkgs, lib, ... }:
   let
-    monitors = config.swarselsystems.monitors;
+    inherit (config.swarselsystems) monitors;
     eachMonitor = _name: monitor: {
-      name = monitor.name;
+      inherit (monitor) name;
       value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
     };
     eachOutput = _name: monitor: {
-      name = monitor.name;
+      inherit (monitor) name;
       value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
     };
-    workplaceSets = (mapAttrs' eachOutput monitors);
-    workplaceOutputs = (map (key: getAttr key workplaceSets) (attrNames workplaceSets));
+    workplaceSets = lib.mapAttrs' eachOutput monitors;
+    workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
   in
 {
   wayland.windowManager.sway = {
     enable = true;
     checkConfig = false; # delete this line once SwayFX is fixed upstream
-    package = pkgs.swayfx;
+    package = lib.mkIf config.swarselsystems.isNixos pkgs.swayfx;
     systemd = {
       enable = true;
       xdgAutostart = true;
@@ -8663,7 +8923,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         let
           inherit (config.wayland.windowManager.sway.config) modifier;
         in
-        recursiveUpdate {
+        lib.recursiveUpdate {
           "${modifier}+q" = "kill";
           "${modifier}+f" = "exec firefox";
           "${modifier}+Space" = "exec fuzzel";
@@ -8671,24 +8931,21 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
           "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
           "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-          "${modifier}+Shift+s" = "exec \"bash ~/.dotfiles/scripts/checkspotify.sh\"";
-          "${modifier}+m" = "exec \"bash ~/.dotfiles/scripts/checkspotifytui.sh\"";
-          "${modifier}+x" = "exec \"bash ~/.dotfiles/scripts/checkkitty.sh\"";
-          "${modifier}+d" = "exec \"bash ~/.dotfiles/scripts/checkdiscord.sh\"";
-          "${modifier}+Shift+r" = "exec \"bash ~/.dotfiles/scripts/restart.sh\"";
-          "${modifier}+Shift+t" = "exec \"bash ~/.dotfiles/scripts/toggle_opacity.sh\"";
+          "${modifier}+m" = "exec swarselcheck -s";
+          "${modifier}+x" = "exec swarselcheck -k";
+          "${modifier}+d" = "exec swarselcheck -d";
+          "${modifier}+w" = "exec swarselcheck -e";
+          "${modifier}+Shift+t" = "exec opacitytoggle";
           "${modifier}+Shift+F12" = "move scratchpad";
           "${modifier}+F12" = "scratchpad show";
           "${modifier}+c" = "exec qalculate-gtk";
           "${modifier}+p" = "exec pass-fuzzel";
-          "${modifier}+o" = "exec pass-fuzzel-otp";
+          "${modifier}+o" = "exec pass-fuzzel --otp";
           "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-          "${modifier}+Shift+o" = "exec pass-fuzzel-otp --type";
+          "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
           "${modifier}+Escape" = "mode $exit";
-          # "${modifier}+Shift+Escape" = "exec com.github.stsdc.monitor";
           "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
           "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-          "${modifier}+i" = "exec \"bash ~/.dotfiles/scripts/startup.sh\"";
           "${modifier}+1" = "workspace 1:一";
           "${modifier}+Shift+1" = "move container to workspace 1:一";
           "${modifier}+2" = "workspace 2:二";
@@ -8709,8 +8966,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           "${modifier}+Shift+9" = "move container to workspace 9:九";
           "${modifier}+0" = "workspace 10:十";
           "${modifier}+Shift+0" = "move container to workspace 10:十";
-          "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-          "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
           "${modifier}+Left" = "focus left";
           "${modifier}+Right" = "focus right";
           "${modifier}+Down" = "focus down";
@@ -8731,6 +8986,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
           "${modifier}+r" = "mode resize";
           "${modifier}+Return" = "exec kitty";
+          "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
+          "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+          "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+          "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+          "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+          "XF86Display" = "exec wl-mirror eDP-1";
         } config.swarselsystems.keybindings;
       modes = {
         resize = {
@@ -8743,7 +9004,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         };
       };
       defaultWorkspace = "workspace 1:一";
-      output = (mapAttrs' eachMonitor monitors);
+      output = lib.mapAttrs' eachMonitor monitors;
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [
@@ -8812,13 +9073,13 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             };
           }
           {
-            command = "opacity 0.8, sticky enable, border normal, move container to scratchpad";
+            command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
             criteria = {
               title = "^kittyterm$";
             };
           }
           {
-            command = "opacity 0.95, sticky enable, border normal, move container to scratchpad";
+            command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
             criteria = {
               title = "^spotifytui$";
             };
@@ -8838,7 +9099,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             };
           }
           {
-            command = "sticky enable";
+            command = "resize set width 60 ppt height 60 ppt, sticky enable";
             criteria = {
               app_id = "discord";
             };
@@ -8879,16 +9140,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     extraConfig =
       let
         inherit (config.wayland.windowManager.sway.config) modifier;
-        swayfxSettings = "
-          blur enable
-          blur_xray disable
-          blur_passes 1
-          blur_radius 1
-          shadows enable
-          corner_radius 2
-          titlebar_separator disable
-          default_dim_inactive 0.02
-      ";
+        swayfxSettings = config.swarselsystems.swayfxConfig;
       in
       "
         exec_always autotiling
@@ -8918,7 +9170,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </div>
 </div>
 </li>
-<li><a id="org0920ff5"></a>gpg-agent<br />
+<li><a id="org20b9e2f"></a>gpg-agent<br />
 <div class="outline-text-5" id="text-3-4-1-25">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -8940,14 +9192,30 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
+<li><a id="orgb2c135f"></a>gammastep<br />
+<div class="outline-text-5" id="text-3-4-1-26">
+<div class="org-src-container">
+<pre class="src src-nix">_:
+{
+  services.gammastep = {
+    enable = true;
+    provider = "manual";
+    latitude = 48.210033;
+    longitude = 16.363449;
+  };
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
-<div id="outline-container-orgec559c1" class="outline-4">
-<h4 id="orgec559c1"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<div id="outline-container-org52db1a7" class="outline-4">
+<h4 id="org52db1a7"><span class="section-number-4">3.4.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-4-2">
 </div>
 <ol class="org-ol">
-<li><a id="org3e7f5d7"></a>Gaming<br />
+<li><a id="org89ac483"></a>Gaming<br />
 <div class="outline-text-5" id="text-3-4-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9004,6 +9272,16 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 <pre class="src src-nix">
 {
   description = "SwarseFlake - Nix Flake for all SwarselSystems";
+
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+    ];
+
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+  };
 
   inputs = {
 
@@ -9102,20 +9380,20 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       );
 
       # pkgs for home-manager builds
-      homepkgs = import nixpkgs { system = "x86_64-linux";
-                                  overlays = [ inputs.emacs-overlay.overlay
-                                               inputs.nur.overlay
-                                               inputs.nixgl.overlay
-                                               (final: _prev: {
-                                                 stable = import inputs.nixpkgs-stable {
-                                                   inherit (final) system config;
-                                                 };
-                                               })
-                                             ];
-                                  config.allowUnfree = true;
-                                };
+      # homepkgs = import nixpkgs { system = "x86_64-linux";
+      #                             overlays = [ inputs.emacs-overlay.overlay
+      #                                          inputs.nur.overlay
+      #                                          inputs.nixgl.overlay
+      #                                          (final: _prev: {
+      #                                            stable = import inputs.nixpkgs-stable {
+      #                                              inherit (final) system config;
+      #                                            };
+      #                                          })
+      #                                        ];
+      #                             config.allowUnfree = true;
+      #                           };
 
-      # NixOS modules that can only be used on NixOS systems
+      # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
         inputs.sops-nix.nixosModules.sops
@@ -9308,9 +9586,10 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       homeConfigurations = {
 
          "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = homepkgs;
+          pkgs = pkgsFor.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
            modules = homeModules ++ mixedModules ++ [
-             ./profiles/home-manager/home.nix
+             ./profiles/home-manager
            ];
          };
 
@@ -9754,7 +10033,6 @@ Lastly, individual messages can be reenabled using the <code>(advice-remove '&lt
 (advice-add 'org-unlogged-message :around #'suppress-messages)
 (advice-add 'magit-auto-revert-mode--init-kludge  :around #'suppress-messages)
 (advice-add 'push-mark  :around #'suppress-messages)
-(advice-add 'timer-event-handler  :around #'suppress-messages)
 (advice-add 'evil-insert  :around #'suppress-messages)
 (advice-add 'evil-visual-char  :around #'suppress-messages)
 
@@ -9883,7 +10161,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
                         swarsel-swarsel-org-filepath)
       ;; Dynamic scoping to the rescue
       (let ((org-confirm-babel-evaluate nil))
-        (org-html-export-to-html)
+        ;; (org-html-export-to-html)
         (org-babel-tangle)
         (swarsel/run-formatting))))
 
@@ -9998,7 +10276,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="orgd21bf52"></a>Nix common prefix bracketer<br />
+<li><a id="orgd8f6292"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -10031,7 +10309,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orgf545847"></a>Nix formatters<br />
+<li><a id="org761c1ee"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -10601,7 +10879,7 @@ This should setup a wordlist that can be used as a dictionary. However, for some
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 ;; set the NixOS wordlist by hand
-(setq ispell-alternate-dictionary "/nix/store/gjmvnbs97cnw19wnqh9m075cdbhy8r8g-wordlist-WORDLIST")
+(setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
 </pre>
 </div>
@@ -11604,8 +11882,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-org4df1290" class="outline-4">
-<h4 id="org4df1290"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-org6d6600d" class="outline-4">
+<h4 id="org6d6600d"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13399,7 +13677,6 @@ gpgconf --launch gpg-agent
         "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
         "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
         "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-        "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkgomuks.sh\"";
       };
 
       startup = [
@@ -13620,7 +13897,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-25 Do 17:05</p>
+<p class="date">Created: 2024-07-31 Mi 01:14</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

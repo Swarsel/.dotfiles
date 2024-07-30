@@ -6004,6 +6004,7 @@ This section sets up all the imports that are used in the home-manager section.
       ./mako.nix
       ./sway.nix
       ./gpg-agent.nix
+      ./gammastep.nix
     ];
 
     nix = {
@@ -7874,6 +7875,20 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       allow-emacs-pinentry
     '';
   };
+  }
+#+end_src
+
+**** gammastep
+
+#+begin_src nix :tangle profiles/common/home/gammastep.nix
+  _:
+  {
+    services.gammastep = {
+      enable = true;
+      provider = "manual";
+      latitude = 48.210033;
+      longitude = 16.363449;
+    };
   }
 #+end_src
 
