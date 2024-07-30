@@ -12,6 +12,8 @@
       inherit (config.swarselsystems.trackpoint) device;
     };
 
+    keyboard.qmk.enable = true;
+
     pulseaudio = {
       enable = true;
       package = pkgs.pulseaudioFull;

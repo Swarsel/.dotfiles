@@ -9,5 +9,8 @@
   services.udev.packages = with pkgs; [
     yubikey-personalization
     ledger-udev-rules
+    qmk-udev-rules
+    vial
+    via
   ];
 }

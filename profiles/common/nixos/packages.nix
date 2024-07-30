@@ -19,6 +19,11 @@
 
     # pinentry
 
+    # keyboards
+    qmk
+    vial
+    via
+
     # theme related
     adwaita-icon-theme
 

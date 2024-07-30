@@ -5148,6 +5148,8 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
         inherit (config.swarselsystems.trackpoint) device;
       };
 
+      keyboard.qmk.enable = true;
+
       pulseaudio= {
         enable = true;
         package = pkgs.pulseaudioFull;
@@ -5530,6 +5532,11 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
       # pinentry
 
+      # keyboards
+      qmk
+      vial
+      via
+
       # theme related
       adwaita-icon-theme
 
@@ -5817,7 +5824,7 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
   }
 #+end_src
 
-**** Hardware compatibility settings (Yubikey, Ledger) - udev rules
+**** Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
 :END:
@@ -5843,6 +5850,9 @@ Also, this is a good place to setup the udev rules.
     services.udev.packages = with pkgs; [
       yubikey-personalization
       ledger-udev-rules
+      qmk-udev-rules
+      vial
+      via
     ];
   }
 #+end_src
