@@ -25,6 +25,7 @@
     ./login.nix
     ./stylix.nix
     ./power-profiles-daemon.nix
+    ./impermanence.nix
   ];
 
   nix.settings.trusted-users = [ "swarsel" ];

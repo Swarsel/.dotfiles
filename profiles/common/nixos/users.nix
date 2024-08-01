@@ -1,11 +1,11 @@
-{ pkgs, config, ... }:
+{ pkgs, config, lib, ... }:
 {
   users = {
-    mutableUsers = false;
+    mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
     users.swarsel = {
       isNormalUser = true;
       description = "Leon S";
-      hashedPasswordFile = config.sops.secrets.swarseluser.path;
+      hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
       extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
       packages = with pkgs; [ ];
     };

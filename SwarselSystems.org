@@ -481,6 +481,9 @@ A short overview over each input and what it does:
      url =  "github:nix-community/disko";
      inputs.nixpkgs.follows = "nixpkgs";
   };
+
+  impermanence.url = "github:nix-community/impermanence";
+
 #+end_src
 *** let
 :PROPERTIES:
@@ -521,6 +524,8 @@ Lastly I define some common module lists that I can simply load depending on the
   # # NixOS modules that can only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
     ./profiles/common/nixos
@@ -613,19 +618,26 @@ This section is the biggest pain point of the configuration. For every system, I
     ];
   };
 
-  winters = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
+  nbl-imba-2 = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
     modules = nixModules ++ [
-      inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-      ./profiles/winters/nixos.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/winters/home.nix
-        ];
-      }
+      ./profiles/nbl-imba-2
     ];
   };
+
+  # winters = nixpkgs.lib.nixosSystem {
+  #   specialArgs = { inherit inputs; };
+  #   modules = nixModules ++ [
+  #     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
+  #     ./profiles/winters/nixos.nix
+  #     inputs.home-manager.nixosModules.home-manager
+  #     {
+  #       home-manager.users.swarsel.imports = mixedModules ++ [
+  #         ./profiles/winters/home.nix
+  #       ];
+  #     }
+  #   ];
+  # };
 
   nginx = nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
@@ -2128,6 +2140,126 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
         };
       };
     }
+
+
+#+end_src
+
+**** nbl-imba-2 (Framework Laptop 16)
+:PROPERTIES:
+:CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
+:END:
+
+My work machine.
+
+
+#+begin_src nix :tangle profiles/nbl-imba-2/default.nix
+
+  { inputs, outputs, config, pkgs, ... }:
+  {
+
+    imports = [
+      inputs.nixos-hardware.nixosModules.framework-16-7040-amd
+
+      ./hardware-configuration.nix
+
+      ../optional/nixos/steam.nix
+      # ../optional/nixos/virtualbox.nix
+      ../optional/nixos/autologin.nix
+      ../optional/nixos/nswitch-rcm.nix
+      ../optional/nixos/work.nix
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+          ../optional/home/gaming.nix
+          ../optional/home/work.nix
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+      supportedFilesystems = [ "btrfs" ];
+      kernelPackages = pkgs.linuxPackages_latest;
+      kernelParams = [
+        "resume_offset=533760"
+      ];
+      resumeDevice = "/dev/disk/by-label/nixos";
+    };
+
+
+    networking = {
+      hostName = "nbl-imba-2";
+      fqdn = "nbl-imba-2.imp.univie.ac.at";
+      firewall.enable = true;
+    };
+
+    hardware.graphics.extraPackages = with pkgs; [
+      vulkan-loader
+      vulkan-validation-layers
+      vulkan-extension-layer
+    ];
+
+    services = {
+      fwupd.enable = true;
+    };
+
+    swarselsystems = {
+      wallpaper = ../../wallpaper/lenovowp.png;
+      hasBluetooth = true;
+      hasFingerprint = true;
+      initialSetup = true;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = true;
+      isNixos = true;
+      # temperatureHwmon = {
+      #   isAbsolutePath = true;
+      #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+      #   input-filename = "temp1_input";
+      # };
+    #  ------   -----
+    # | DP-4 | |eDP-1|
+    #  ------   -----
+      # monitors = {
+      #   main = {
+      #     name = "California Institute of Technology 0x1407 Unknown";
+      #     mode = "1920x1080"; # TEMPLATE
+      #     scale = "1";
+      #     position = "2560,0";
+      #     workspace = "2:二";
+      #     output = "eDP-1";
+      #   };
+      #   homedesktop = {
+      #     name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+      #     mode = "2560x1440";
+      #     scale = "1";
+      #     position = "0,0";
+      #     workspace = "1:一";
+      #     output = "DP-4";
+      #   };
+      # };
+      # inputs =  {
+      #   "1:1:AT_Translated_Set_2_keyboard" = {
+      #     xkb_layout = "us";
+      #     xkb_options = "grp:win_space_toggle";
+      #     xkb_variant = "altgr-intl";
+      #   };
+      # };
+      keybindings = {
+      };
+    };
+  }
 
 
 #+end_src
@@ -4657,6 +4789,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   {
     wallpaper = import ./wallpaper.nix;
     hardware = import ./hardware.nix;
+    setup = import ./setup.nix;
+    impermanence = import ./impermanence.nix;
   }
 #+end_src
 
@@ -4689,6 +4823,26 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       default = "";
     };
     }
+#+end_src
+
+***** Setup
+
+#+begin_src nix :tangle modules/nixos/setup.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+  }
+#+end_src
+
+***** Impermanence
+
+#+begin_src nix :tangle modules/nixos/impermanence.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.impermanence = lib.mkEnableOption "use impermanence on this system";
+  }
 #+end_src
 
 
@@ -4830,7 +4984,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     options.swarselsystems.kyria = mkOption {
       type = types.attrsOf (types.attrsOf types.str );
       default = {
-        "36125:53060:splitkb.com_Kyria_rev3" = {
+        "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
           xkb_layout = "us";
           xkb_variant = "altgr-intl";
         };
@@ -4970,6 +5124,7 @@ First, we enable the use of =home-manager= as a NixoS module
       ./login.nix
       ./stylix.nix
       ./power-profiles-daemon.nix
+      ./impermanence.nix
     ];
 
     nix.settings.trusted-users = [ "swarsel" ];
@@ -5016,14 +5171,14 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 This ensures that all user-configuration happens here in the config file.
 
 #+begin_src nix :tangle profiles/common/nixos/users.nix
-  { pkgs, config, ... }:
+  { pkgs, config, lib, ... }:
   {
     users = {
-      mutableUsers = false;
+      mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
       users.swarsel = {
         isNormalUser = true;
         description = "Leon S";
-        hashedPasswordFile = config.sops.secrets.swarseluser.path;
+        hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
         extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
         packages = with pkgs; [ ];
       };
@@ -5887,6 +6042,102 @@ This section houses the greetd related settings. I do not really want to use a d
     '';
   }
 #+end_src
+
+
+**** Impermanence
+
+#+begin_src nix :tangle profiles/common/nixos/impermanence.nix
+  { config, lib, ... }:
+  {
+
+    security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
+      # rollback results in sudo lectures after each reboot
+      Defaults lecture = never
+    '';
+
+     # This script does the actual wipe of the system
+    # So if it doesn't run, the btrfs system effectively acts like a normal system
+    # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
+
+    boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
+      description = "Rollback BTRFS root subvolume to a pristine state";
+      wantedBy = ["initrd.target"];
+      # make sure it's done after encryption
+      # i.e. LUKS/TPM process
+      after = ["systemd-cryptsetup@enc.service"];
+      # mount the root fs before clearing
+      before = ["sysroot.mount"];
+      unitConfig.DefaultDependencies = "no";
+      serviceConfig.Type = "oneshot";
+      script = ''
+        mkdir -p /mnt
+
+        # We first mount the btrfs root to /mnt
+        # so we can manipulate btrfs subvolumes.
+        mount -o subvol=/ /dev/mapper/enc /mnt
+        btrfs subvolume list -o /mnt/root
+
+        # While we're tempted to just delete /root and create
+        # a new snapshot from /root-blank, /root is already
+        # populated at this point with a number of subvolumes,
+        # which makes `btrfs subvolume delete` fail.
+        # So, we remove them first.
+        #
+        # /root contains subvolumes:
+        # - /root/var/lib/portables
+        # - /root/var/lib/machines
+
+        btrfs subvolume list -o /mnt/root |
+        cut -f9 -d' ' |
+        while read subvolume; do
+          echo "deleting /$subvolume subvolume..."
+          # btrfs subvolume delete "/mnt/$subvolume"
+        done &&
+        echo "deleting /root subvolume..." &&
+        # btrfs subvolume delete /mnt/root
+
+        echo "restoring blank /root subvolume..."
+        # btrfs subvolume snapshot /mnt/root-blank /mnt/root
+
+        # Once we're done rolling back to a blank snapshot,
+        # we can unmount /mnt and continue on the boot process.
+        umount /mnt
+      '';
+    };
+
+
+    environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+      directories =
+        [
+          "/.cache/nix/"
+          "/srv"
+          "/etc/nixos"
+          "/etc/nix"
+          "/etc/NetworkManager/system-connections"
+          "/etc/secureboot"
+          "/var/db/sudo/"
+          "/var/cache/"
+          "/var/lib/"
+        ];
+
+      files = [
+        # important state
+        "/etc/machine-id"
+        # ssh stuff
+        /*
+        "/etc/ssh/ssh_host_ed25519_key"
+        "/etc/ssh/ssh_host_ed25519_key.pub"
+        "/etc/ssh/ssh_host_rsa_key"
+        "/etc/ssh/ssh_host_rsa_key.pub"
+        ,*/
+      ];
+    };
+
+  }
+#+end_src
+
+
+
 *** Optional
 
 **** gaming
@@ -5962,6 +6213,16 @@ This section houses the greetd related settings. I do not really want to use a d
         hash = "sha256-5AXzNsny45SPLIrvWJA9/JlOCal5l6Y++Cm+RtlJppI=";
       };
     };
+  }
+#+end_src
+
+**** work
+
+#+begin_src nix :tangle profiles/optional/nixos/work.nix
+  { pkgs, ... }:
+  {
+    programs._1password.enable = true;
+    programs._1password-gui.enable = true;
   }
 #+end_src
 
@@ -6064,6 +6325,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       picard-tools
       audacity
       sox
+      google-chrome
 
       # printing
       cups
@@ -7923,6 +8185,21 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       (prismlauncher.override {
         glfw = pkgs.glfw-wayland-minecraft;
       })
+     ];
+   }
+
+#+end_src
+
+**** Work
+
+#+begin_src nix :tangle profiles/optional/home/work.nix
+
+  { pkgs, ... }:
+
+   {
+     home.packages = with pkgs; [
+       teams-for-linux
+       google-chrome
      ];
    }
 

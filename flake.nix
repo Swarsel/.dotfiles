@@ -85,6 +85,9 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    impermanence.url = "github:nix-community/impermanence";
+
   };
 
   outputs =
@@ -124,6 +127,8 @@
       # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
+        inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ./profiles/common/nixos
@@ -212,19 +217,26 @@
           ];
         };
 
-        winters = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
+        nbl-imba-2 = lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
           modules = nixModules ++ [
-            inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-            ./profiles/winters/nixos.nix
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/winters/home.nix
-              ];
-            }
+            ./profiles/nbl-imba-2
           ];
         };
+
+        # winters = nixpkgs.lib.nixosSystem {
+        #   specialArgs = { inherit inputs; };
+        #   modules = nixModules ++ [
+        #     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
+        #     ./profiles/winters/nixos.nix
+        #     inputs.home-manager.nixosModules.home-manager
+        #     {
+        #       home-manager.users.swarsel.imports = mixedModules ++ [
+        #         ./profiles/winters/home.nix
+        #       ];
+        #     }
+        #   ];
+        # };
 
         nginx = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
