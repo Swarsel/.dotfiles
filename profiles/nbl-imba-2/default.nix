@@ -1,4 +1,4 @@
-{ inputs, outputs, config, pkgs, ... }:
+{ inputs, outputs, config, pkgs, lib, ... }:
 {
 
   imports = [
@@ -33,8 +33,12 @@
   networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
-    loader.systemd-boot.enable = true;
+    loader.systemd-boot.enable = lib.mkForce false;
     loader.efi.canTouchEfiVariables = true;
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/etc/secureboot";
+    };
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = pkgs.linuxPackages_latest;
     kernelParams = [

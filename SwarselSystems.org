@@ -524,7 +524,7 @@ Lastly I define some common module lists that I can simply load depending on the
   # # NixOS modules that can only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
-    # inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.lanzaboote.nixosModules.lanzaboote
     inputs.disko.nixosModules.disko
     # inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
@@ -2008,7 +2008,7 @@ My work machine.
 
 #+begin_src nix :tangle profiles/nbl-imba-2/default.nix
 
-  { inputs, outputs, config, pkgs, ... }:
+  { inputs, outputs, config, pkgs, lib, ... }:
   {
 
     imports = [
@@ -2043,8 +2043,12 @@ My work machine.
     networking.networkmanager.wifi.scanRandMacAddress = false;
 
     boot = {
-      loader.systemd-boot.enable = true;
+      loader.systemd-boot.enable = lib.mkForce false;
       loader.efi.canTouchEfiVariables = true;
+      lanzaboote = {
+        enable = true;
+        pkiBundle = "/etc/secureboot";
+      };
       supportedFilesystems = [ "btrfs" ];
       kernelPackages = pkgs.linuxPackages_latest;
       kernelParams = [
@@ -5419,6 +5423,9 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       ledger-live-desktop
 
       # pinentry
+
+      # secure boot
+      sbctl
 
       nix-index
 

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-08-04 So 11:19 -->
+<!-- 2024-08-05 Mo 01:47 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org7d97199">2.3.3. General (outputs)</a></li>
+<li><a href="#org59e1672">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,23 +241,23 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#orgb993252">3.2. Overlays, packages, and modules</a>
+<li><a href="#orga22da0e">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#org4571a22">3.2.1. Packages</a></li>
-<li><a href="#org2a91ec7">3.2.2. Overlays</a></li>
-<li><a href="#org996e8c9">3.2.3. Modules</a></li>
+<li><a href="#org1d39c2f">3.2.1. Packages</a></li>
+<li><a href="#org7948822">3.2.2. Overlays</a></li>
+<li><a href="#orga2cb516">3.2.3. Modules</a></li>
 </ul>
 </li>
-<li><a href="#org3e1e1d4">3.3. NixOS</a>
+<li><a href="#orgbcb6c79">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#orgfd86213">3.3.2. Optional</a></li>
+<li><a href="#orgfadfa03">3.3.2. Optional</a></li>
 </ul>
 </li>
-<li><a href="#org9769f53">3.4. Home-manager</a>
+<li><a href="#org1a12c08">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#org2e99c12">3.4.2. Optional</a></li>
+<li><a href="#orgb11bfe1">3.4.2. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -310,7 +310,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#org0aae2aa">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#orgd534915">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -370,7 +370,7 @@
 </div>
 </div>
 <p>
-<b>This file has 43594 words spanning 11906 lines and was last revised on 2024-08-04 11:19:26 +0200.</b>
+<b>This file has 43858 words spanning 12026 lines and was last revised on 2024-08-05 01:47:51 +0200.</b>
 </p>
 
 <p>
@@ -420,7 +420,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-04 11:19:26 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-05 01:47:51 +0200)
 </p></li>
 </ul>
 
@@ -1012,7 +1012,7 @@ pkgsFor = lib.genAttrs (import systems) (
 # # NixOS modules that can only be used on NixOS systems
 nixModules = [
   inputs.stylix.nixosModules.stylix
-  # inputs.lanzaboote.nixosModules.lanzaboote
+  inputs.lanzaboote.nixosModules.lanzaboote
   inputs.disko.nixosModules.disko
   # inputs.impermanence.nixosModules.impermanence
   inputs.sops-nix.nixosModules.sops
@@ -1036,8 +1036,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org7d97199" class="outline-4">
-<h4 id="org7d97199"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-org59e1672" class="outline-4">
+<h4 id="org59e1672"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2424,7 +2424,7 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org066c787"></a>Home-manager only<br />
+<li><a id="org44d9b52"></a>Home-manager only<br />
 <div class="outline-text-5" id="text-3-1-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2625,7 +2625,7 @@ My work machine.
 
 <div class="org-src-container">
 <pre class="src src-nix">
-{ inputs, outputs, config, pkgs, ... }:
+{ inputs, outputs, config, pkgs, lib, ... }:
 {
 
   imports = [
@@ -2660,8 +2660,12 @@ My work machine.
   networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
-    loader.systemd-boot.enable = true;
+    loader.systemd-boot.enable = lib.mkForce false;
     loader.efi.canTouchEfiVariables = true;
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/etc/secureboot";
+    };
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = pkgs.linuxPackages_latest;
     kernelParams = [
@@ -4854,8 +4858,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orgb993252" class="outline-3">
-<h3 id="orgb993252"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
+<div id="outline-container-orga22da0e" class="outline-3">
+<h3 id="orga22da0e"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -4874,8 +4878,8 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-org4571a22" class="outline-4">
-<h4 id="org4571a22"><span class="section-number-4">3.2.1.</span> Packages</h4>
+<div id="outline-container-org1d39c2f" class="outline-4">
+<h4 id="org1d39c2f"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -4894,13 +4898,14 @@ in
   swarselcheck = callPackage ./swarselcheck { };
   waybarupdate = callPackage ./waybarupdate { };
   opacitytoggle = callPackage ./opacitytoggle { };
+  fs-diff = callPackage ./fs-diff { };
 }
 
 </pre>
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgb5d0486"></a>pass-fuzzel<br />
+<li><a id="org5d1d291"></a>pass-fuzzel<br />
 <div class="outline-text-5" id="text-3-2-1-1">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
@@ -4962,7 +4967,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orgcc555e7"></a>cura5<br />
+<li><a id="orga2aefa0"></a>cura5<br />
 <div class="outline-text-5" id="text-3-2-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -4999,7 +5004,7 @@ writeScriptBin "cura" ''
 </div>
 </div>
 </li>
-<li><a id="org6b9d7a1"></a>cdw<br />
+<li><a id="orgfc6efed"></a>cdw<br />
 <div class="outline-text-5" id="text-3-2-1-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5018,7 +5023,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org4c50997"></a>cdb<br />
+<li><a id="org0eec0e1"></a>cdb<br />
 <div class="outline-text-5" id="text-3-2-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5036,7 +5041,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org8ce64bc"></a>bak<br />
+<li><a id="org5e99dd6"></a>bak<br />
 <div class="outline-text-5" id="text-3-2-1-5">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5054,7 +5059,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org6b4c815"></a>timer<br />
+<li><a id="orge74725f"></a>timer<br />
 <div class="outline-text-5" id="text-3-2-1-6">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5072,7 +5077,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orgaf05ba9"></a>e<br />
+<li><a id="orgb940f3f"></a>e<br />
 <div class="outline-text-5" id="text-3-2-1-7">
 <div class="org-src-container">
 <pre class="src src-shell">wait=0
@@ -5113,7 +5118,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org27e3231"></a>command-not-found<br />
+<li><a id="org2909dca"></a>command-not-found<br />
 <div class="outline-text-5" id="text-3-2-1-8">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
@@ -5152,7 +5157,7 @@ command_not_found_handler () {
 </div>
 </div>
 </li>
-<li><a id="orgbd42be5"></a>swarselcheck<br />
+<li><a id="orga265088"></a>swarselcheck<br />
 <div class="outline-text-5" id="text-3-2-1-9">
 <div class="org-src-container">
 <pre class="src src-shell">kitty=0
@@ -5227,7 +5232,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org10d3408"></a>waybarupdate<br />
+<li><a id="org6e308a6"></a>waybarupdate<br />
 <div class="outline-text-5" id="text-3-2-1-10">
 <div class="org-src-container">
 <pre class="src src-shell">CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
@@ -5271,7 +5276,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org0744cd9"></a>opacitytoggle<br />
+<li><a id="org7aa5b0b"></a>opacitytoggle<br />
 <div class="outline-text-5" id="text-3-2-1-11">
 <div class="org-src-container">
 <pre class="src src-shell">if swaymsg opacity plus 0.01 -q; then
@@ -5294,10 +5299,47 @@ writeShellApplication {
 </div>
 </div>
 </li>
+<li><a id="org7924bcd"></a>fs-diff<br />
+<div class="outline-text-5" id="text-3-2-1-12">
+<div class="org-src-container">
+<pre class="src src-shell">set -euo pipefail
+
+OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
+OLD_TRANSID=${OLD_TRANSID#transid marker was }
+
+sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
+sed '$d' |
+cut -f17- -d' ' |
+sort |
+uniq |
+while read -r path; do
+  path="/$path"
+  if [ -L "$path" ]; then
+    : # The path is a symbolic link, so is probably handled by NixOS already
+  elif [ -d "$path" ]; then
+    : # The path is a directory, ignore
+  else
+    echo "$path"
+  fi
+done
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, sway}:
+
+writeShellApplication {
+  name = "fs-diff";
+  text = builtins.readFile ../../scripts/fs-diff.sh;
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
-<div id="outline-container-org2a91ec7" class="outline-4">
-<h4 id="org2a91ec7"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-org7948822" class="outline-4">
+<h4 id="org7948822"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5330,15 +5372,15 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org996e8c9" class="outline-4">
-<h4 id="org996e8c9"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div id="outline-container-orga2cb516" class="outline-4">
+<h4 id="orga2cb516"><span class="section-number-4">3.2.3.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-2-3">
 <p>
 In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org5cda604"></a>NixOS<br />
+<li><a id="org1b02368"></a>NixOS<br />
 <div class="outline-text-5" id="text-3-2-3-1">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -5356,7 +5398,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org57784ce"></a>Wallpaper<br />
+<li><a id="org33c8f0d"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5372,7 +5414,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orga48aee0"></a>Hardware<br />
+<li><a id="org6185325"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5390,7 +5432,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org25330c1"></a>Setup<br />
+<li><a id="orgb7a0d34"></a>Setup<br />
 <div class="outline-text-6" id="text-3-2-3-1-3">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5402,7 +5444,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org632741f"></a>Impermanence<br />
+<li><a id="orgdcf1079"></a>Impermanence<br />
 <div class="outline-text-6" id="text-3-2-3-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5414,7 +5456,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org55a9424"></a>Filesystem<br />
+<li><a id="org0c54955"></a>Filesystem<br />
 <div class="outline-text-6" id="text-3-2-3-1-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5428,7 +5470,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </li>
 </ol>
 </li>
-<li><a id="org368bce4"></a>home-manager<br />
+<li><a id="org5410ed3"></a>home-manager<br />
 <div class="outline-text-5" id="text-3-2-3-2">
 <div class="org-src-container">
 <pre class="src src-nix">{
@@ -5446,7 +5488,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org5c495c9"></a>Laptop<br />
+<li><a id="orgbd310be"></a>Laptop<br />
 <div class="outline-text-6" id="text-3-2-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5481,7 +5523,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgf91262e"></a>Hardware<br />
+<li><a id="orgcaef45e"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5505,7 +5547,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgcbcf472"></a>Waybar<br />
+<li><a id="org9762c41"></a>Waybar<br />
 <div class="outline-text-6" id="text-3-2-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">  { lib, config, ... }:
@@ -5545,7 +5587,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org5ae3b89"></a>Monitors<br />
+<li><a id="org782eeaf"></a>Monitors<br />
 <div class="outline-text-6" id="text-3-2-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5562,7 +5604,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgaf3cf27"></a>Input<br />
+<li><a id="orgf41e0e8"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5602,7 +5644,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgfae6f66"></a>Nixos<br />
+<li><a id="orga955555"></a>Nixos<br />
 <div class="outline-text-6" id="text-3-2-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5638,7 +5680,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org3ea6a4e"></a>System startup<br />
+<li><a id="org014c8f4"></a>System startup<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5663,7 +5705,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org81db542"></a>Wallpaper<br />
+<li><a id="org142340f"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5679,7 +5721,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org140a9e9"></a>Filesystem<br />
+<li><a id="org2861992"></a>Filesystem<br />
 <div class="outline-text-6" id="text-3-2-3-2-9">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5696,8 +5738,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-org3e1e1d4" class="outline-3">
-<h3 id="org3e1e1d4"><span class="section-number-3">3.3.</span> NixOS</h3>
+<div id="outline-container-orgbcb6c79" class="outline-3">
+<h3 id="orgbcb6c79"><span class="section-number-3">3.3.</span> NixOS</h3>
 <div class="outline-text-3" id="text-3-3">
 </div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-4">
@@ -5708,7 +5750,7 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orga3c4c22"></a>Imports, enable home-manager module, stateVersion<br />
+<li><a id="orgb3b95f5"></a>Imports, enable home-manager module, stateVersion<br />
 <div class="outline-text-5" id="text-3-3-1-1">
 <p>
 :CUSTOM<sub>ID</sub>: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
@@ -6275,7 +6317,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org1d94428"></a>Theme (stylix)<br />
+<li><a id="org18621ef"></a>Theme (stylix)<br />
 <div class="outline-text-5" id="text-3-3-1-13">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
@@ -6375,6 +6417,11 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
     # pinentry
 
+    # secure boot
+    sbctl
+
+    nix-index
+
     # keyboards
     qmk
     vial
@@ -6463,7 +6510,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgdee0eab"></a>zsh<br />
+<li><a id="orgc529bf9"></a>zsh<br />
 <div class="outline-text-6" id="text-3-3-1-15-1">
 <p>
 Do not touch this.
@@ -6481,7 +6528,7 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="org4bbdd3e"></a>syncthing<br />
+<li><a id="org7bcf6b9"></a>syncthing<br />
 <div class="outline-text-6" id="text-3-3-1-15-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -6558,7 +6605,7 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="orgbb5f52c"></a>Network devices<br />
+<li><a id="org7604e3f"></a>Network devices<br />
 <div class="outline-text-6" id="text-3-3-1-16-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
@@ -6610,7 +6657,7 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org6a5fdf6"></a>Avahi (device discovery)<br />
+<li><a id="org632d420"></a>Avahi (device discovery)<br />
 <div class="outline-text-7" id="text-3-3-1-16-2-3">
 <p>
 Avahi is the service used for the network discovery.
@@ -6686,7 +6733,7 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 </li>
-<li><a id="org5c8680d"></a>power-profiles-daemon<br />
+<li><a id="orgea1c86c"></a>power-profiles-daemon<br />
 <div class="outline-text-6" id="text-3-3-1-16-5">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
@@ -6771,39 +6818,80 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org5a71a0d"></a>nix-ld<br />
+<li><a id="org794dd5a"></a>nix-ld<br />
 <div class="outline-text-5" id="text-3-3-1-19">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 {
-  programs.nix-ld. = {
+  programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
+      SDL
+      SDL2
+      SDL2_image
+      SDL2_mixer
+      SDL2_ttf
+      SDL_image
+      SDL_mixer
+      SDL_ttf
       alsa-lib
+      alsaLib
       at-spi2-atk
       at-spi2-core
       atk
+      bzip2
       cairo
       cups
       curl
       dbus
+      dbus-glib
       expat
+      ffmpeg
+      flac
       fontconfig
+      freeglut
       freetype
       fuse3
       gdk-pixbuf
+      glew110
       glib
+      gnome2.GConf
+      gnome2.pango
+      gtk2
       gtk3
       icu
       libGL
+      libappindicator-gtk2
       libappindicator-gtk3
+      libcaca
+      libcanberra
+      libcap
+      libdbusmenu-gtk2
       libdrm
+      libelf
+      libgcrypt
       libglvnd
+      libidn
+      libindicator-gtk2
+      libjpeg
+      libmikmod
       libnotify
+      libogg
+      libpng
+      libpng12
       libpulseaudio
+      librsvg
+      libsamplerate
+      libtheora
+      libtiff
+      libudev0-shim
       libunwind
       libusb1
       libuuid
+      libva
+      libvdpau
+      libvorbis
+      libvpx
       libxkbcommon
       libxml2
       mesa
@@ -6812,9 +6900,32 @@ This section houses the greetd related settings. I do not really want to use a d
       openssl
       pango
       pipewire
+      pixman
+      speex
       stdenv.cc.cc
       systemd
+      tbb
       vulkan-loader
+      xorg.libICE
+      xorg.libSM
+      xorg.libX11
+      xorg.libXScrnSaver
+      xorg.libXcomposite
+      xorg.libXcursor
+      xorg.libXdamage
+      xorg.libXext
+      xorg.libXfixes
+      xorg.libXft
+      xorg.libXi
+      xorg.libXinerama
+      xorg.libXmu
+      xorg.libXrandr
+      xorg.libXrender
+      xorg.libXt
+      xorg.libXtst
+      xorg.libXxf86vm
+      xorg.libxcb
+      xorg.libxshmfence
       zlib
     ];
   };
@@ -6823,7 +6934,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="orgaffacb7"></a>Impermanence<br />
+<li><a id="orge4b7ec7"></a>Impermanence<br />
 <div class="outline-text-5" id="text-3-3-1-20">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, ... }:
@@ -6919,12 +7030,12 @@ This section houses the greetd related settings. I do not really want to use a d
 </li>
 </ol>
 </div>
-<div id="outline-container-orgfd86213" class="outline-4">
-<h4 id="orgfd86213"><span class="section-number-4">3.3.2.</span> Optional</h4>
+<div id="outline-container-orgfadfa03" class="outline-4">
+<h4 id="orgfadfa03"><span class="section-number-4">3.3.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="org0520246"></a>gaming<br />
+<li><a id="org49bc089"></a>gaming<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -6957,7 +7068,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="orgc105431"></a>VirtualBox<br />
+<li><a id="org52debdd"></a>VirtualBox<br />
 <div class="outline-text-5" id="text-3-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">  _ :
@@ -6977,7 +7088,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org8d10708"></a>Auto-login<br />
+<li><a id="orgef10983"></a>Auto-login<br />
 <div class="outline-text-5" id="text-3-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
@@ -6991,7 +7102,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org2ac2285"></a>nswitch-rcm<br />
+<li><a id="org59ff091"></a>nswitch-rcm<br />
 <div class="outline-text-5" id="text-3-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7008,7 +7119,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org39e8603"></a>work<br />
+<li><a id="org325ce43"></a>work<br />
 <div class="outline-text-5" id="text-3-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7026,8 +7137,8 @@ This section houses the greetd related settings. I do not really want to use a d
 </ol>
 </div>
 </div>
-<div id="outline-container-org9769f53" class="outline-3">
-<h3 id="org9769f53"><span class="section-number-3">3.4.</span> Home-manager</h3>
+<div id="outline-container-org1a12c08" class="outline-3">
+<h3 id="org1a12c08"><span class="section-number-3">3.4.</span> Home-manager</h3>
 <div class="outline-text-3" id="text-3-4">
 </div>
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-4">
@@ -7035,7 +7146,7 @@ This section houses the greetd related settings. I do not really want to use a d
 <div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
 <ol class="org-ol">
-<li><a id="org2aa16a7"></a>Imports<br />
+<li><a id="org82fcb93"></a>Imports<br />
 <div class="outline-text-5" id="text-3-4-1-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -7288,6 +7399,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
   swarselcheck
   waybarupdate
   opacitytoggle
+  fs-diff
 
   (pkgs.writeScriptBin "project" ''
     #! ${pkgs.bash}/bin/bash
@@ -7725,7 +7837,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </li>
 </ol>
 </li>
-<li><a id="orgcfa7a72"></a>nix-index<br />
+<li><a id="org844ae12"></a>nix-index<br />
 <div class="outline-text-5" id="text-3-4-1-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -8067,6 +8179,8 @@ Here we set some aliases (some of them should be shellApplications instead) as w
       hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
       cd = "z";
       cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 &amp;&amp; echo /home/swarsel/.dotfiles) | fzf )\"";
+      nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+      fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
     };
     autosuggestion.enable = true;
     enableCompletion = true;
@@ -9046,7 +9160,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </div>
 </div>
 </li>
-<li><a id="org59c5560"></a>gpg-agent<br />
+<li><a id="orgc810cc9"></a>gpg-agent<br />
 <div class="outline-text-5" id="text-3-4-1-25">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -9068,7 +9182,7 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
-<li><a id="orgfa6a9e7"></a>gammastep<br />
+<li><a id="orgb3100d7"></a>gammastep<br />
 <div class="outline-text-5" id="text-3-4-1-26">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -9086,12 +9200,12 @@ services.gpg-agent = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org2e99c12" class="outline-4">
-<h4 id="org2e99c12"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<div id="outline-container-orgb11bfe1" class="outline-4">
+<h4 id="orgb11bfe1"><span class="section-number-4">3.4.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-4-2">
 </div>
 <ol class="org-ol">
-<li><a id="org49e662c"></a>Gaming<br />
+<li><a id="org563ad79"></a>Gaming<br />
 <div class="outline-text-5" id="text-3-4-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9127,7 +9241,7 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
-<li><a id="org9aa1afe"></a>Work<br />
+<li><a id="org93288cb"></a>Work<br />
 <div class="outline-text-5" id="text-3-4-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9138,6 +9252,15 @@ services.gpg-agent = {
      teams-for-linux
      google-chrome
    ];
+
+   programs.ssh = {
+     matchBlocks = {
+       "*.vbc.ac.at" = {
+         user = "dc_adm_schwarzaeugl";
+       };
+     };
+   };
+
  }
 
 </pre>
@@ -9292,7 +9415,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
-        # inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.lanzaboote.nixosModules.lanzaboote
         inputs.disko.nixosModules.disko
         # inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
@@ -10182,7 +10305,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="orgd4a4c03"></a>Nix common prefix bracketer<br />
+<li><a id="orgeff26c0"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -10215,7 +10338,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orgefceb3d"></a>Nix formatters<br />
+<li><a id="orgd8d349a"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11788,8 +11911,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-org0aae2aa" class="outline-4">
-<h4 id="org0aae2aa"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-orgd534915" class="outline-4">
+<h4 id="orgd534915"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13804,7 +13927,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-08-04 So 11:19</p>
+<p class="date">Created: 2024-08-05 Mo 01:47</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
