@@ -127,8 +127,9 @@
       # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
-        inputs.lanzaboote.nixosModules.lanzaboote
-        inputs.impermanence.nixosModules.impermanence
+        # inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.disko.nixosModules.disko
+        # inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ./profiles/common/nixos

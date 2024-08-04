@@ -5,6 +5,7 @@
     inputs.nixos-hardware.nixosModules.framework-16-7040-amd
 
     ./hardware-configuration.nix
+    ./disk-config.nix
 
     ../optional/nixos/steam.nix
     # ../optional/nixos/virtualbox.nix
@@ -28,6 +29,8 @@
       allowUnfree = true;
     };
   };
+
+  networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
     loader.systemd-boot.enable = true;
@@ -55,6 +58,9 @@
 
   services = {
     fwupd.enable = true;
+    udev.extraRules = ''
+      ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
+    '';
   };
 
   swarselsystems = {
@@ -62,11 +68,14 @@
     hasBluetooth = true;
     hasFingerprint = true;
     initialSetup = true;
+    impermanence = false;
+    isBtrfs = true;
   };
 
   home-manager.users.swarsel.swarselsystems = {
     isLaptop = true;
     isNixos = true;
+    isBtrfs = true;
     # temperatureHwmon = {
     #   isAbsolutePath = true;
     #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
@@ -75,31 +84,45 @@
     #  ------   -----
     # | DP-4 | |eDP-1|
     #  ------   -----
-    # monitors = {
-    #   main = {
-    #     name = "California Institute of Technology 0x1407 Unknown";
-    #     mode = "1920x1080"; # TEMPLATE
-    #     scale = "1";
-    #     position = "2560,0";
-    #     workspace = "2:二";
-    #     output = "eDP-1";
-    #   };
-    #   homedesktop = {
-    #     name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-    #     mode = "2560x1440";
-    #     scale = "1";
-    #     position = "0,0";
-    #     workspace = "1:一";
-    #     output = "DP-4";
-    #   };
-    # };
-    # inputs =  {
-    #   "1:1:AT_Translated_Set_2_keyboard" = {
-    #     xkb_layout = "us";
-    #     xkb_options = "grp:win_space_toggle";
-    #     xkb_variant = "altgr-intl";
-    #   };
-    # };
+    monitors = {
+      main = {
+        name = "BOE 0x0BC9 Unknown";
+        mode = "2560x1600"; # TEMPLATE
+        scale = "1";
+        position = "2560,0";
+        workspace = "2:二";
+        output = "eDP-2";
+      };
+      homedesktop = {
+        name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+        mode = "2560x1440";
+        scale = "1";
+        position = "0,0";
+        workspace = "1:一";
+        output = "DP-11";
+      };
+      workdesktop = {
+        name = "LG Electronics LG Ultra HD 0x000305A6";
+        mode = "2560x1440";
+        scale = "1";
+        position = "0,0";
+        workspace = "1:一";
+        output = "DP-10";
+      };
+    };
+    inputs = {
+      "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
+      "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+        dwt = "enabled";
+        tap = "enabled";
+        natural_scroll = "enabled";
+        middle_emulation = "enabled";
+      };
+    };
     keybindings = { };
   };
 }

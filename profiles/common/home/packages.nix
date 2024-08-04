@@ -31,6 +31,7 @@
     nixpkgs-fmt
     deadnix
     statix
+    nix-tree
 
     # local file sharing
     wormhole-rs

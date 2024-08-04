@@ -7,4 +7,5 @@
   waybar = import ./waybar.nix;
   startup = import ./startup.nix;
   wallpaper = import ./wallpaper.nix;
+  filesystem = import ./filesystem.nix;
 }

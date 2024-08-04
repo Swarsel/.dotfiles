@@ -5,7 +5,8 @@
 
 {
   imports =
-    [ (modulesPath + "/installer/scan/not-detected.nix")
+    [
+      (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
   boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "usbhid" "sd_mod" ];
@@ -13,50 +14,57 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=root" ];
-    };
+  # fileSystems."/" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=root" ];
+  #   };
 
-  boot.initrd.luks.devices."cryptroot".device = "/dev/disk/by-uuid/98b9bf76-ca01-49f5-91ee-1884ae9ce383";
+  # boot.initrd.luks.devices."cryptroot".device = "/dev/disk/by-uuid/98b9bf76-ca01-49f5-91ee-1884ae9ce383";
 
-  fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/5236-F44A";
-      fsType = "vfat";
-    };
+  # fileSystems."/boot" =
+  #   {
+  #     device = "/dev/disk/by-uuid/5236-F44A";
+  #     fsType = "vfat";
+  #   };
 
-  fileSystems."/home" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=home" ];
-    };
+  # fileSystems."/home" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=home" ];
+  #   };
 
-  fileSystems."/nix" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=nix" ];
-    };
+  # fileSystems."/nix" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=nix" ];
+  #   };
 
-  fileSystems."/persist" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=persist" ];
-    };
+  # fileSystems."/persist" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=persist" ];
+  #   };
 
-  fileSystems."/swap" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=swap" ];
-    };
+  # fileSystems."/swap" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=swap" ];
+  #   };
 
-  fileSystems."/var/log" =
-    { device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
-      fsType = "btrfs";
-      options = [ "subvol=log" ];
-    };
+  # fileSystems."/var/log" =
+  #   {
+  #     device = "/dev/disk/by-uuid/3554892c-9d0b-49b2-b74a-8b5ef45569f7";
+  #     fsType = "btrfs";
+  #     options = [ "subvol=log" ];
+  #   };
 
-  swapDevices = [ ];
+  # swapDevices = [ ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's

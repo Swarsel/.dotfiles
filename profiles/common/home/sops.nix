@@ -1,8 +1,15 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  mkIfElse = p: yes: no: lib.mkMerge [
+    (lib.mkIf p yes)
+    (lib.mkIf (!p) no)
+  ];
+in
 {
   sops = {
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-    defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+    defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+
     validateSopsFiles = false;
     secrets = {
       mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };

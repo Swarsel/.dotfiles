@@ -25,7 +25,7 @@
 
       # We first mount the btrfs root to /mnt
       # so we can manipulate btrfs subvolumes.
-      mount -o subvol=/ /dev/mapper/enc /mnt
+      mount -o subvol=/ /dev/mapper/cryptroot /mnt
       btrfs subvolume list -o /mnt/root
 
       # While we're tempted to just delete /root and create
@@ -58,12 +58,14 @@
 
 
   environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+    hideMounts = true;
     directories =
       [
         "/.cache/nix/"
         "/srv"
         "/etc/nixos"
         "/etc/nix"
+        "/home/swarsel/.dotfiles"
         "/etc/NetworkManager/system-connections"
         "/etc/secureboot"
         "/var/db/sudo/"
@@ -72,8 +74,6 @@
       ];
 
     files = [
-      # important state
-      "/etc/machine-id"
       # ssh stuff
       /*
       "/etc/ssh/ssh_host_ed25519_key"

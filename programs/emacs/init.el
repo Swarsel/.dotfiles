@@ -1716,6 +1716,7 @@ create a new one."
   (setq org-caldav-calendars
         '((:calendar-id "personal"
                         :inbox "~/Calendars/leon_cal.org")))
+  (setq org-caldav-files '("~/Calendars/leon_cal.org"))
   ;; (setq org-caldav-backup-file "~/org-caldav/org-caldav-backup.org")
   ;; (setq org-caldav-save-directory "~/org-caldav/")
 

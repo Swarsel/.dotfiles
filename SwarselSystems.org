@@ -524,8 +524,9 @@ Lastly I define some common module lists that I can simply load depending on the
   # # NixOS modules that can only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.impermanence.nixosModules.impermanence
+    # inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    # inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
     ./profiles/common/nixos
@@ -1872,153 +1873,6 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 
 #+end_src
 
-**** Threed (Surface Pro 3)
-:PROPERTIES:
-:CUSTOM_ID: h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4
-:END:
-
-New setup for the SP3, this time using NixOS - another machine will take over the HM-only config for compatibility in the future.
-
-***** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:980f1aca-28b3-4ed7-ae7f-6d8cdc28dea1
-:END:
-
-#+begin_src nix :noweb yes :tangle profiles/threed/nixos.nix
-{ lib, pkgs, ... }:
-
-{
-  <<wrap>>
-
-  services = {
-    getty.autologinUser = "swarsel";
-    greetd.settings.initial_session.user = "swarsel";
-  };
-
-  hardware.bluetooth.enable = true;
-
-  # Bootloader
-  boot = {
-    loader.systemd-boot.enable = lib.mkForce false;
-    lanzaboote = {
-      enable = true;
-      pkiBundle = "/etc/secureboot";
-    };
-    loader.efi.canTouchEfiVariables = true;
-    # use bootspec instead of lzbt for secure boot. This is not a generally needed setting
-    bootspec.enable = true;
-    # kernelPackages = pkgs.linuxPackages_latest;
-  };
-
-  networking = {
-    hostName = "threed";
-    enableIPv6 = false;
-    firewall.enable = false;
-  };
-
-  stylix.image = ../../wallpaper/surfacewp.png;
-  <<theme>>
-
-  users.users.swarsel = {
-    isNormalUser = true;
-    description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-    packages = with pkgs; [ ];
-  };
-
-  environment.systemPackages = with pkgs; [
-  ];
-
-  system.stateVersion = "23.05";
-
-}
-
-#+end_src
-
-***** Home Manager
-:PROPERTIES:
-:CUSTOM_ID: h:449c20d8-338a-483c-a6f0-9a164a6071d6
-:END:
-#+begin_src nix :noweb yes :tangle profiles/threed/home.nix
-  { config, pkgs, ... }:
-
-  {
-
-    <<gpgagent>>
-
-    home = {
-      username = "swarsel";
-      homeDirectory = "/home/swarsel";
-      stateVersion = "23.05"; # Please read the comment before changing.
-      keyboard.layout = "us";
-      packages = with pkgs; [
-      ];
-    };
-
-    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-    programs.waybar.settings.mainBar = {
-      cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-      temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
-    };
-    <<waybarlaptop>>
-
-    wayland.windowManager.sway = {
-      config = rec {
-        input = {
-          "*" = {
-            xkb_layout = "us";
-            xkb_options = "grp:win_space_toggle";
-            xkb_variant = "altgr-intl";
-          };
-          "type:touchpad" = {
-            dwt = "enabled";
-            tap = "enabled";
-            natural_scroll = "enabled";
-            middle_emulation = "enabled";
-          };
-        };
-
-        output = {
-          eDP-1 = {
-            mode = "2160x1440@59.955Hz";
-            scale = "1";
-            bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
-          };
-        };
-
-        keybindings =
-          let
-            inherit (config.wayland.windowManager.sway.config) modifier;
-          in
-          {
-            "${modifier}+F2" = "exec brightnessctl set +5%";
-            "${modifier}+F1" = "exec brightnessctl set 5%-";
-            "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
-            "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
-            "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
-            "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-            "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-            "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-          };
-
-        startup = [
-          <<startupnixos>>
-        ];
-
-        keycodebindings = {
-          "124" = "exec systemctl suspend";
-        };
-      };
-
-      extraConfig = "
-        exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
-        exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
-        ";
-    };
-  }
-#+end_src
-
 **** Fourside (Lenovo Thinkpad P14s Gen2)
 :PROPERTIES:
 :CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
@@ -2161,6 +2015,7 @@ My work machine.
       inputs.nixos-hardware.nixosModules.framework-16-7040-amd
 
       ./hardware-configuration.nix
+      ./disk-config.nix
 
       ../optional/nixos/steam.nix
       # ../optional/nixos/virtualbox.nix
@@ -2184,6 +2039,8 @@ My work machine.
         allowUnfree = true;
       };
     };
+
+    networking.networkmanager.wifi.scanRandMacAddress = false;
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -2211,6 +2068,9 @@ My work machine.
 
     services = {
       fwupd.enable = true;
+      udev.extraRules = ''
+         ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
+      '';
     };
 
     swarselsystems = {
@@ -2218,11 +2078,14 @@ My work machine.
       hasBluetooth = true;
       hasFingerprint = true;
       initialSetup = true;
+      impermanence = false;
+      isBtrfs = true;
     };
 
     home-manager.users.swarsel.swarselsystems = {
       isLaptop = true;
       isNixos = true;
+      isBtrfs = true;
       # temperatureHwmon = {
       #   isAbsolutePath = true;
       #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
@@ -2231,240 +2094,50 @@ My work machine.
     #  ------   -----
     # | DP-4 | |eDP-1|
     #  ------   -----
-      # monitors = {
-      #   main = {
-      #     name = "California Institute of Technology 0x1407 Unknown";
-      #     mode = "1920x1080"; # TEMPLATE
-      #     scale = "1";
-      #     position = "2560,0";
-      #     workspace = "2:二";
-      #     output = "eDP-1";
-      #   };
-      #   homedesktop = {
-      #     name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-      #     mode = "2560x1440";
-      #     scale = "1";
-      #     position = "0,0";
-      #     workspace = "1:一";
-      #     output = "DP-4";
-      #   };
-      # };
-      # inputs =  {
-      #   "1:1:AT_Translated_Set_2_keyboard" = {
-      #     xkb_layout = "us";
-      #     xkb_options = "grp:win_space_toggle";
-      #     xkb_variant = "altgr-intl";
-      #   };
-      # };
+      monitors = {
+        main = {
+          name = "BOE 0x0BC9 Unknown";
+          mode = "2560x1600"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-2";
+        };
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-11";
+        };
+        workdesktop = {
+          name = "LG Electronics LG Ultra HD 0x000305A6";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-10";
+        };
+      };
+      inputs =  {
+        "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+        "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+          dwt = "enabled";
+          tap = "enabled";
+          natural_scroll = "enabled";
+          middle_emulation = "enabled";
+        };
+      };
       keybindings = {
       };
     };
   }
 
-
-#+end_src
-
-**** Winters (Framwork Laptop 16)
-:PROPERTIES:
-:CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
-:END:
-
-My work machine.
-
-***** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:ab6fefc4-aabd-456c-8a21-5fcb20c02869
-:END:
-
-Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
-
-#+begin_src nix :noweb yes :tangle profiles/winters/nixos.nix
-  { pkgs, ... }:
-
-  {
-
-    # <<wrap>>
-    imports =
-      [
-        ./hardware-configuration.nix
-      ];
-
-    services = {
-      getty.autologinUser = "swarsel";
-      greetd.settings.initial_session.user = "swarsel";
-    };
-
-    boot = {
-      loader.systemd-boot.enable = true;
-      loader.efi.canTouchEfiVariables = true;
-      kernelPackages = pkgs.linuxPackages_latest;
-    };
-
-    networking = {
-      hostName = "winters"; # Define your hostname.
-      nftables.enable = true;
-      enableIPv6 = true;
-      firewall.checkReversePath = "strict";
-      firewall = {
-        enable = true;
-        allowedUDPPorts = [ ];
-        allowedTCPPorts = [ ];
-        allowedTCPPortRanges = [
-        ];
-        allowedUDPPortRanges = [
-        ];
-      };
-    };
-
-    virtualisation.virtualbox = {
-      host = {
-        enable = true;
-        enableExtensionPack = true;
-      };
-      # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-      guest = {
-        enable = false;
-      };
-    };
-
-    stylix.image = ../../wallpaper/lenovowp.png;
-    <<theme>>
-
-    hardware = {
-      graphics = {
-        enable = true;
-        enable32Bit = true;
-        extraPackages = with pkgs; [
-        ];
-      };
-      bluetooth.enable = true;
-    };
-
-    programs.steam = {
-      enable = true;
-      extraCompatPackages = [
-        pkgs.proton-ge-bin
-      ];
-    };
-
-    services.power-profiles-daemon.enable = true;
-
-    users.users.swarsel = {
-      isNormalUser = true;
-      description = "Leon S";
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
-      packages = with pkgs; [ ];
-    };
-
-    environment.systemPackages = with pkgs; [
-      sbctl
-      teams-for-linux
-      # gog games installing
-      heroic
-      # minecraft
-      temurin-bin-17
-      (prismlauncher.override {
-        glfw = pkgs.glfw-wayland-minecraft;
-      })
-    ];
-
-    system.stateVersion = "23.05";
-
-
-  }
-
-#+end_src
-
-***** TODO Home Manager
-:PROPERTIES:
-:CUSTOM_ID: h:85f7110c-2f25-4506-b64a-fce29f29d0d0
-:END:
-
-TODO: Adjust =hwmon= path, I/O modules and XF86 keys once laptop arrives.
-
-#+begin_src nix :noweb yes :tangle profiles/winters/home.nix
-  { config, pkgs, ... }:
-
-  {
-
-    <<gpgagent>>
-    home = {
-      username = "swarsel";
-      homeDirectory = "/home/swarsel";
-      stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-      keyboard.layout = "us"; # TEMPLATE
-      packages = with pkgs; [
-      ];
-    };
-    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-    # waybar config - TEMPLATE - update for cores and temp
-    programs.waybar.settings.mainBar = {
-      cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-
-      temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      temperature.input-filename = "temp1_input";
-    };
-
-    <<waybarlaptop>>
-
-    wayland.windowManager.sway = {
-      config = rec {
-        # update for actual inputs here,
-        input = {
-          "36125:53060:splitkb.com_Kyria_rev3" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1:1:AT_Translated_Set_2_keyboard" = {
-            # TEMPLATE
-            xkb_layout = "us";
-            xkb_options = "grp:win_space_toggle";
-            xkb_variant = "altgr-intl";
-          };
-          "type:touchpad" = {
-            dwt = "enabled";
-            tap = "enabled";
-            natural_scroll = "enabled";
-            middle_emulation = "enabled";
-          };
-
-        };
-
-        output = {
-          eDP-1 = {
-            mode = "1920x1080"; # TEMPLATE
-            scale = "1";
-            position = "1920,0";
-            # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          };
-          # external monitor
-          HDMI-A-1 = {
-            mode = "2560x1440";
-            scale = "1";
-            # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-            position = "0,0";
-          };
-        };
-
-        workspaceOutputAssign = [
-          { output = "eDP-1"; workspace = "1:一"; }
-          { output = "HDMI-A-1"; workspace = "2:二"; }
-        ];
-
-
-        # keybindings = let
-        # inherit (config.wayland.windowManager.sway.config) modifier;
-        # in {
-
-        # };
-
-        startup = [
-          <<startupnixos>>
-        ];
-      };
-    };
-  }
 
 #+end_src
 
@@ -4791,6 +4464,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     hardware = import ./hardware.nix;
     setup = import ./setup.nix;
     impermanence = import ./impermanence.nix;
+    filesystem = import ./filesystem.nix;
   }
 #+end_src
 
@@ -4845,6 +4519,16 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   }
 #+end_src
 
+***** Filesystem
+
+#+begin_src nix :tangle modules/nixos/filesystem.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+  }
+#+end_src
+
 
 **** home-manager
 
@@ -4858,6 +4542,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     waybar = import ./waybar.nix;
     startup = import ./startup.nix;
     wallpaper = import ./wallpaper.nix;
+    filesystem = import ./filesystem.nix;
   }
 #+end_src
 
@@ -5079,6 +4764,16 @@ in
 
 #+end_src
 
+***** Filesystem
+
+#+begin_src nix :tangle modules/home/filesystem.nix
+  { lib, ... }:
+
+  {
+    options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+  }
+#+end_src
+
 ** NixOS
 *** Common
 :PROPERTIES:
@@ -5139,12 +4834,7 @@ First, we enable the use of =home-manager= as a NixoS module
 
   #+end_src
 
-**** General
-:PROPERTIES:
-:CUSTOM_ID: h:5a114da6-ef8d-404d-b31b-b51472908e77
-:END:
-
-***** Setup login keymap
+**** Setup login keymap
 :PROPERTIES:
 :CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
 :END:
@@ -5163,7 +4853,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
   }
   #+end_src
 
-***** Make users non-mutable
+**** Make users non-mutable
 :PROPERTIES:
 :CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
 :END:
@@ -5186,7 +4876,7 @@ This ensures that all user-configuration happens here in the config file.
   }
 #+end_src
 
-***** Environment setup
+**** Environment setup
 :PROPERTIES:
 :CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
 :END:
@@ -5212,7 +4902,7 @@ Next, we will setup some environment variables that need to be set on the system
   }
 #+end_src
 
-***** Enable PolicyKit
+**** Enable PolicyKit
 :PROPERTIES:
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
@@ -5226,7 +4916,7 @@ Needed for control over system-wide privileges etc.
   }
 #+end_src
 
-***** Enable automatic garbage collection
+**** Enable automatic garbage collection
 :PROPERTIES:
 :CUSTOM_ID: h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee
 :END:
@@ -5245,7 +4935,7 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
   }
 #+end_src
 
-***** Enable automatic store optimisation
+**** Enable automatic store optimisation
 :PROPERTIES:
 :CUSTOM_ID: h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8
 :END:
@@ -5263,7 +4953,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 
 #+end_src
 
-***** Reduce systemd timeouts
+**** Reduce systemd timeouts
 :PROPERTIES:
 :CUSTOM_ID: h:12858442-c129-4aa1-9c9c-a0916e36b302
 :END:
@@ -5281,7 +4971,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
   }
 #+end_src
 
-***** Hardware settings
+**** Hardware settings
 :PROPERTIES:
 :CUSTOM_ID: h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b
 :END:
@@ -5327,7 +5017,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   }
 #+end_src
 
-***** Common network settings
+**** Common network settings
 :PROPERTIES:
 :CUSTOM_ID: h:7d696b64-debe-4a95-80b5-1e510156a6c6
 :END:
@@ -5554,7 +5244,7 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
   }
 #+end_src
 
-***** Time, locale settings
+**** Time, locale settings
 :PROPERTIES:
 :CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
 :END:
@@ -5599,12 +5289,19 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - update entry for sops.age.sshKeyPaths
 
 #+begin_src nix :tangle profiles/common/nixos/sops.nix
-  { config, ... }:
+  { config, lib, ... }:
+  let
+    mkIfElse = p: yes: no: lib.mkMerge [
+      (lib.mkIf p yes)
+      (lib.mkIf (!p) no)
+    ];
+  in
   {
     sops = {
 
       age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
-      defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+      defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+
       validateSopsFiles = false;
 
       secrets = {
@@ -6074,7 +5771,7 @@ This section houses the greetd related settings. I do not really want to use a d
 
         # We first mount the btrfs root to /mnt
         # so we can manipulate btrfs subvolumes.
-        mount -o subvol=/ /dev/mapper/enc /mnt
+        mount -o subvol=/ /dev/mapper/cryptroot /mnt
         btrfs subvolume list -o /mnt/root
 
         # While we're tempted to just delete /root and create
@@ -6107,12 +5804,14 @@ This section houses the greetd related settings. I do not really want to use a d
 
 
     environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+      hideMounts = true;
       directories =
         [
           "/.cache/nix/"
           "/srv"
           "/etc/nixos"
           "/etc/nix"
+          "/home/swarsel/.dotfiles"
           "/etc/NetworkManager/system-connections"
           "/etc/secureboot"
           "/var/db/sudo/"
@@ -6121,8 +5820,6 @@ This section houses the greetd related settings. I do not really want to use a d
         ];
 
       files = [
-        # important state
-        "/etc/machine-id"
         # ssh stuff
         /*
         "/etc/ssh/ssh_host_ed25519_key"
@@ -6223,6 +5920,9 @@ This section houses the greetd related settings. I do not really want to use a d
   {
     programs._1password.enable = true;
     programs._1password-gui.enable = true;
+    environment.systemPackages = with pkgs; [
+    ];
+
   }
 #+end_src
 
@@ -6344,6 +6044,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       nixpkgs-fmt
       deadnix
       statix
+      nix-tree
 
       # local file sharing
       wormhole-rs
@@ -6536,11 +6237,18 @@ I use sops-nix to handle secrets that I want to have available on my machines at
  Since we are using the home-manager implementation here, we need to specify the runtime path.
 
 #+begin_src nix :tangle profiles/common/home/sops.nix
-    { config, ... }:
+    { config, lib, ... }:
+  let
+    mkIfElse = p: yes: no: lib.mkMerge [
+      (lib.mkIf p yes)
+      (lib.mkIf (!p) no)
+    ];
+  in
     {
       sops = {
         age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-        defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+        defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+
         validateSopsFiles = false;
         secrets = {
           mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
@@ -11468,6 +11176,7 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
     (setq org-caldav-calendars
           '((:calendar-id "personal"
                           :inbox "~/Calendars/leon_cal.org")))
+    (setq org-caldav-files '("~/Calendars/leon_cal.org"))
     ;; (setq org-caldav-backup-file "~/org-caldav/org-caldav-backup.org")
     ;; (setq org-caldav-save-directory "~/org-caldav/")
 
@@ -11863,7 +11572,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
     #keyboard config
     home.keyboard.layout = "us";
 
-    sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+    sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
 
     # waybar config
     programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";

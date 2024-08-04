@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-07-31 Mi 01:14 -->
+<!-- 2024-08-04 So 11:19 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -223,7 +223,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org9f1051f">2.3.3. General (outputs)</a></li>
+<li><a href="#org7d97199">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,23 +241,23 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#orgfe2df35">3.2. Overlays, packages, and modules</a>
+<li><a href="#orgb993252">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#org696174c">3.2.1. Packages</a></li>
-<li><a href="#orgc525c69">3.2.2. Overlays</a></li>
-<li><a href="#org7465114">3.2.3. Modules</a></li>
+<li><a href="#org4571a22">3.2.1. Packages</a></li>
+<li><a href="#org2a91ec7">3.2.2. Overlays</a></li>
+<li><a href="#org996e8c9">3.2.3. Modules</a></li>
 </ul>
 </li>
-<li><a href="#org212c310">3.3. NixOS</a>
+<li><a href="#org3e1e1d4">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#orgf6d8136">3.3.2. Optional</a></li>
+<li><a href="#orgfd86213">3.3.2. Optional</a></li>
 </ul>
 </li>
-<li><a href="#orgd8ffc85">3.4. Home-manager</a>
+<li><a href="#org9769f53">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#org52db1a7">3.4.2. Optional</a></li>
+<li><a href="#org2e99c12">3.4.2. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -310,7 +310,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#org6d6600d">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#org0aae2aa">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -370,7 +370,7 @@
 </div>
 </div>
 <p>
-<b>This file has 43474 words spanning 11870 lines and was last revised on 2024-07-31 01:14:17 +0200.</b>
+<b>This file has 43594 words spanning 11906 lines and was last revised on 2024-08-04 11:19:26 +0200.</b>
 </p>
 
 <p>
@@ -420,7 +420,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-07-31 01:14:17 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-04 11:19:26 +0200)
 </p></li>
 </ul>
 
@@ -964,6 +964,9 @@ disko = {
    url =  "github:nix-community/disko";
    inputs.nixpkgs.follows = "nixpkgs";
 };
+
+impermanence.url = "github:nix-community/impermanence";
+
 </pre>
 </div>
 </div>
@@ -1009,6 +1012,9 @@ pkgsFor = lib.genAttrs (import systems) (
 # # NixOS modules that can only be used on NixOS systems
 nixModules = [
   inputs.stylix.nixosModules.stylix
+  # inputs.lanzaboote.nixosModules.lanzaboote
+  inputs.disko.nixosModules.disko
+  # inputs.impermanence.nixosModules.impermanence
   inputs.sops-nix.nixosModules.sops
   inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
   ./profiles/common/nixos
@@ -1030,8 +1036,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org9f1051f" class="outline-4">
-<h4 id="org9f1051f"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-org7d97199" class="outline-4">
+<h4 id="org7d97199"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1107,19 +1113,26 @@ fourside = lib.nixosSystem {
   ];
 };
 
-winters = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs; };
+nbl-imba-2 = lib.nixosSystem {
+  specialArgs = { inherit inputs outputs; };
   modules = nixModules ++ [
-    inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-    ./profiles/winters/nixos.nix
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = mixedModules ++ [
-        ./profiles/winters/home.nix
-      ];
-    }
+    ./profiles/nbl-imba-2
   ];
 };
+
+# winters = nixpkgs.lib.nixosSystem {
+#   specialArgs = { inherit inputs; };
+#   modules = nixModules ++ [
+#     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
+#     ./profiles/winters/nixos.nix
+#     inputs.home-manager.nixosModules.home-manager
+#     {
+#       home-manager.users.swarsel.imports = mixedModules ++ [
+#         ./profiles/winters/home.nix
+#       ];
+#     }
+#   ];
+# };
 
 nginx = nixpkgs.lib.nixosSystem {
   specialArgs = { inherit inputs; };
@@ -2411,7 +2424,7 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org176b596"></a>Home-manager only<br />
+<li><a id="org066c787"></a>Home-manager only<br />
 <div class="outline-text-5" id="text-3-1-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2476,229 +2489,6 @@ gpgconf --launch gpg-agent
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4"></a>Threed (Surface Pro 3)<br />
-<div class="outline-text-5" id="text-h:7b1a8f91-ef43-433c-ba4c-c5baf50e1de4">
-<p>
-New setup for the SP3, this time using NixOS - another machine will take over the HM-only config for compatibility in the future.
-</p>
-</div>
-<ol class="org-ol">
-<li><a id="h:980f1aca-28b3-4ed7-ae7f-6d8cdc28dea1"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:980f1aca-28b3-4ed7-ae7f-6d8cdc28dea1">
-<div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, ... }:
-
-{
-
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-
-
-  services = {
-    getty.autologinUser = "swarsel";
-    greetd.settings.initial_session.user = "swarsel";
-  };
-
-  hardware.bluetooth.enable = true;
-
-  # Bootloader
-  boot = {
-    loader.systemd-boot.enable = lib.mkForce false;
-    lanzaboote = {
-      enable = true;
-      pkiBundle = "/etc/secureboot";
-    };
-    loader.efi.canTouchEfiVariables = true;
-    # use bootspec instead of lzbt for secure boot. This is not a generally needed setting
-    bootspec.enable = true;
-    # kernelPackages = pkgs.linuxPackages_latest;
-  };
-
-  networking = {
-    hostName = "threed";
-    enableIPv6 = false;
-    firewall.enable = false;
-  };
-
-  stylix.image = ../../wallpaper/surfacewp.png;
-
-  enable = true;
-  base16Scheme = ../../../wallpaper/swarsel.yaml;
-  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-  polarity = "dark";
-  opacity.popups = 0.5;
-  cursor = {
-    package = pkgs.capitaine-cursors;
-    name = "capitaine-cursors";
-    size = 16;
-  };
-  fonts = {
-    sizes = {
-      terminal = 10;
-      applications = 11;
-    };
-    serif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    sansSerif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    monospace = {
-      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-      name = "FiraCode Nerd Font Mono";
-    };
-
-    emoji = {
-      package = pkgs.noto-fonts-emoji;
-      name = "Noto Color Emoji";
-    };
-  };
-
-
-  users.users.swarsel = {
-    isNormalUser = true;
-    description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-    packages = with pkgs; [ ];
-  };
-
-  environment.systemPackages = with pkgs; [
-  ];
-
-  system.stateVersion = "23.05";
-
-}
-
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:449c20d8-338a-483c-a6f0-9a164a6071d6"></a>Home Manager<br />
-<div class="outline-text-6" id="text-h:449c20d8-338a-483c-a6f0-9a164a6071d6">
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, ... }:
-
-{
-
-
-
-
-  home = {
-    username = "swarsel";
-    homeDirectory = "/home/swarsel";
-    stateVersion = "23.05"; # Please read the comment before changing.
-    keyboard.layout = "us";
-    packages = with pkgs; [
-    ];
-  };
-
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  programs.waybar.settings.mainBar = {
-    cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-    temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
-  };
-
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-
-  wayland.windowManager.sway = {
-    config = rec {
-      input = {
-        "*" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-      };
-
-      output = {
-        eDP-1 = {
-          mode = "2160x1440@59.955Hz";
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/surfacewp.png fill";
-        };
-      };
-
-      keybindings =
-        let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-        in
-        {
-          "${modifier}+F2" = "exec brightnessctl set +5%";
-          "${modifier}+F1" = "exec brightnessctl set 5%-";
-          "${modifier}+n" = "exec sway output eDP-1 transform normal, splith";
-          "${modifier}+Ctrl+p" = "exec wl-mirror eDP-1";
-          "${modifier}+t" = "exec sway output eDP-1 transform 90, splitv";
-          "${modifier}+XF86AudioLowerVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-          "${modifier}+XF86AudioRaiseVolume" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-        };
-
-      startup = [
-
-        { command = "nextcloud --background"; }
-        { command = "discord --start-minimized"; }
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-
-      ];
-
-      keycodebindings = {
-        "124" = "exec systemctl suspend";
-      };
-    };
-
-    extraConfig = "
-      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05 map_to_output eDP-1
-      exec swaymsg input 7062:6917:NTRG0001:01_1B96:1B05_Stylus map_to_output eDP-1
-      ";
-  };
-}
-</pre>
-</div>
-</div>
-</li>
-</ol>
 </li>
 <li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Fourside (Lenovo Thinkpad P14s Gen2)<br />
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
@@ -2826,288 +2616,149 @@ This is basically just adjusted to the core count, path to the <code>hwmon</code
 </div>
 </div>
 </li>
-<li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Winters (Framwork Laptop 16)<br />
+<li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>nbl-imba-2 (Framework Laptop 16)<br />
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
 My work machine.
 </p>
-</div>
-<ol class="org-ol">
-<li><a id="h:ab6fefc4-aabd-456c-8a21-5fcb20c02869"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:ab6fefc4-aabd-456c-8a21-5fcb20c02869">
-<p>
-Mostly just sets some opened ports for several games, enables virtualbox (which I do not want everywhere because of resource considerations) and enables thinkfan, which allows for better fan control on Lenovo Thinkpad machines.
-</p>
+
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ... }:
-
+<pre class="src src-nix">
+{ inputs, outputs, config, pkgs, ... }:
 {
 
-  # 
-  # imports =
-  #   [
-  #     ./hardware-configuration.nix
-  #   ];
-  # 
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    inputs.nixos-hardware.nixosModules.framework-16-7040-amd
 
-  services = {
-    getty.autologinUser = "swarsel";
-    greetd.settings.initial_session.user = "swarsel";
+    ./hardware-configuration.nix
+    ./disk-config.nix
+
+    ../optional/nixos/steam.nix
+    # ../optional/nixos/virtualbox.nix
+    ../optional/nixos/autologin.nix
+    ../optional/nixos/nswitch-rcm.nix
+    ../optional/nixos/work.nix
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+        ../optional/home/gaming.nix
+        ../optional/home/work.nix
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
+  ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+  nixpkgs = {
+    inherit (outputs) overlays;
+    config = {
+      allowUnfree = true;
+    };
   };
+
+  networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
+    supportedFilesystems = [ "btrfs" ];
     kernelPackages = pkgs.linuxPackages_latest;
+    kernelParams = [
+      "resume_offset=533760"
+    ];
+    resumeDevice = "/dev/disk/by-label/nixos";
   };
+
 
   networking = {
-    hostName = "winters"; # Define your hostname.
-    nftables.enable = true;
-    enableIPv6 = true;
-    firewall.checkReversePath = "strict";
-    firewall = {
-      enable = true;
-      allowedUDPPorts = [ ];
-      allowedTCPPorts = [ ];
-      allowedTCPPortRanges = [
-      ];
-      allowedUDPPortRanges = [
-      ];
-    };
+    hostName = "nbl-imba-2";
+    fqdn = "nbl-imba-2.imp.univie.ac.at";
+    firewall.enable = true;
   };
 
-  virtualisation.virtualbox = {
-    host = {
-      enable = true;
-      enableExtensionPack = true;
-    };
-    # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-    guest = {
-      enable = false;
-    };
-  };
-
-  stylix.image = ../../wallpaper/lenovowp.png;
-
-  enable = true;
-  base16Scheme = ../../../wallpaper/swarsel.yaml;
-  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-  polarity = "dark";
-  opacity.popups = 0.5;
-  cursor = {
-    package = pkgs.capitaine-cursors;
-    name = "capitaine-cursors";
-    size = 16;
-  };
-  fonts = {
-    sizes = {
-      terminal = 10;
-      applications = 11;
-    };
-    serif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    sansSerif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    monospace = {
-      package = pkgs.nerdfonts.override { fonts = [ "FiraCode" ]; };
-      name = "FiraCode Nerd Font Mono";
-    };
-
-    emoji = {
-      package = pkgs.noto-fonts-emoji;
-      name = "Noto Color Emoji";
-    };
-  };
-
-
-  hardware = {
-    graphics = {
-      enable = true;
-      enable32Bit = true;
-      extraPackages = with pkgs; [
-      ];
-    };
-    bluetooth.enable = true;
-  };
-
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = [
-      pkgs.proton-ge-bin
-    ];
-  };
-
-  services.power-profiles-daemon.enable = true;
-
-  users.users.swarsel = {
-    isNormalUser = true;
-    description = "Leon S";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
-    packages = with pkgs; [ ];
-  };
-
-  environment.systemPackages = with pkgs; [
-    sbctl
-    teams-for-linux
-    # gog games installing
-    heroic
-    # minecraft
-    temurin-bin-17
-    (prismlauncher.override {
-      glfw = pkgs.glfw-wayland-minecraft;
-    })
+  hardware.graphics.extraPackages = with pkgs; [
+    vulkan-loader
+    vulkan-validation-layers
+    vulkan-extension-layer
   ];
 
-  system.stateVersion = "23.05";
-
-
-}
-
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:85f7110c-2f25-4506-b64a-fce29f29d0d0"></a><span class="todo TODO">TODO</span> Home Manager<br />
-<div class="outline-text-6" id="text-h:85f7110c-2f25-4506-b64a-fce29f29d0d0">
-<p>
-TODO: Adjust <code>hwmon</code> path, I/O modules and XF86 keys once laptop arrives.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, ... }:
-
-{
-
-
-
-  home = {
-    username = "swarsel";
-    homeDirectory = "/home/swarsel";
-    stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-    keyboard.layout = "us"; # TEMPLATE
-    packages = with pkgs; [
-    ];
-  };
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # waybar config - TEMPLATE - update for cores and temp
-  programs.waybar.settings.mainBar = {
-    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-
-    temperature.hwmon-path.abs = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-    temperature.input-filename = "temp1_input";
+  services = {
+    fwupd.enable = true;
+    udev.extraRules = ''
+       ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
+    '';
   };
 
+  swarselsystems = {
+    wallpaper = ../../wallpaper/lenovowp.png;
+    hasBluetooth = true;
+    hasFingerprint = true;
+    initialSetup = true;
+    impermanence = false;
+    isBtrfs = true;
+  };
 
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-
-  wayland.windowManager.sway = {
-    config = rec {
-      # update for actual inputs here,
-      input = {
-        "36125:53060:splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          # TEMPLATE
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-
+  home-manager.users.swarsel.swarselsystems = {
+    isLaptop = true;
+    isNixos = true;
+    isBtrfs = true;
+    # temperatureHwmon = {
+    #   isAbsolutePath = true;
+    #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+    #   input-filename = "temp1_input";
+    # };
+  #  ------   -----
+  # | DP-4 | |eDP-1|
+  #  ------   -----
+    monitors = {
+      main = {
+        name = "BOE 0x0BC9 Unknown";
+        mode = "2560x1600"; # TEMPLATE
+        scale = "1";
+        position = "2560,0";
+        workspace = "2:二";
+        output = "eDP-2";
       };
-
-      output = {
-        eDP-1 = {
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "1920,0";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-        };
-        # external monitor
-        HDMI-A-1 = {
-          mode = "2560x1440";
-          scale = "1";
-          # bg = "~/.dotfiles/wallpaper/lenovowp.png fill";
-          position = "0,0";
-        };
+      homedesktop = {
+        name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+        mode = "2560x1440";
+        scale = "1";
+        position = "0,0";
+        workspace = "1:一";
+        output = "DP-11";
       };
-
-      workspaceOutputAssign = [
-        { output = "eDP-1"; workspace = "1:一"; }
-        { output = "HDMI-A-1"; workspace = "2:二"; }
-      ];
-
-
-      # keybindings = let
-      # inherit (config.wayland.windowManager.sway.config) modifier;
-      # in {
-
-      # };
-
-      startup = [
-
-        { command = "nextcloud --background"; }
-        { command = "discord --start-minimized"; }
-        { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-
-      ];
+      workdesktop = {
+        name = "LG Electronics LG Ultra HD 0x000305A6";
+        mode = "2560x1440";
+        scale = "1";
+        position = "0,0";
+        workspace = "1:一";
+        output = "DP-10";
+      };
+    };
+    inputs =  {
+      "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
+      "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+        dwt = "enabled";
+        tap = "enabled";
+        natural_scroll = "enabled";
+        middle_emulation = "enabled";
+      };
+    };
+    keybindings = {
     };
   };
 }
 
+
 </pre>
 </div>
 </div>
-</li>
-</ol>
 </li>
 </ol>
 </div>
@@ -5203,8 +4854,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orgfe2df35" class="outline-3">
-<h3 id="orgfe2df35"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
+<div id="outline-container-orgb993252" class="outline-3">
+<h3 id="orgb993252"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -5223,8 +4874,8 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-org696174c" class="outline-4">
-<h4 id="org696174c"><span class="section-number-4">3.2.1.</span> Packages</h4>
+<div id="outline-container-org4571a22" class="outline-4">
+<h4 id="org4571a22"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5249,7 +4900,7 @@ in
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org54579f8"></a>pass-fuzzel<br />
+<li><a id="orgb5d0486"></a>pass-fuzzel<br />
 <div class="outline-text-5" id="text-3-2-1-1">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
@@ -5311,7 +4962,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orgc0e96ba"></a>cura5<br />
+<li><a id="orgcc555e7"></a>cura5<br />
 <div class="outline-text-5" id="text-3-2-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5348,7 +4999,7 @@ writeScriptBin "cura" ''
 </div>
 </div>
 </li>
-<li><a id="org41be88e"></a>cdw<br />
+<li><a id="org6b9d7a1"></a>cdw<br />
 <div class="outline-text-5" id="text-3-2-1-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5367,7 +5018,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org58a8aa8"></a>cdb<br />
+<li><a id="org4c50997"></a>cdb<br />
 <div class="outline-text-5" id="text-3-2-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5385,7 +5036,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orgc6b8064"></a>bak<br />
+<li><a id="org8ce64bc"></a>bak<br />
 <div class="outline-text-5" id="text-3-2-1-5">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5403,7 +5054,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org55dc1e5"></a>timer<br />
+<li><a id="org6b4c815"></a>timer<br />
 <div class="outline-text-5" id="text-3-2-1-6">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5421,7 +5072,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org7f4342e"></a>e<br />
+<li><a id="orgaf05ba9"></a>e<br />
 <div class="outline-text-5" id="text-3-2-1-7">
 <div class="org-src-container">
 <pre class="src src-shell">wait=0
@@ -5462,7 +5113,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org15dbf04"></a>command-not-found<br />
+<li><a id="org27e3231"></a>command-not-found<br />
 <div class="outline-text-5" id="text-3-2-1-8">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
@@ -5501,7 +5152,7 @@ command_not_found_handler () {
 </div>
 </div>
 </li>
-<li><a id="org26f4194"></a>swarselcheck<br />
+<li><a id="orgbd42be5"></a>swarselcheck<br />
 <div class="outline-text-5" id="text-3-2-1-9">
 <div class="org-src-container">
 <pre class="src src-shell">kitty=0
@@ -5576,7 +5227,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org3e9e024"></a>waybarupdate<br />
+<li><a id="org10d3408"></a>waybarupdate<br />
 <div class="outline-text-5" id="text-3-2-1-10">
 <div class="org-src-container">
 <pre class="src src-shell">CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
@@ -5620,7 +5271,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org4bf1cdb"></a>opacitytoggle<br />
+<li><a id="org0744cd9"></a>opacitytoggle<br />
 <div class="outline-text-5" id="text-3-2-1-11">
 <div class="org-src-container">
 <pre class="src src-shell">if swaymsg opacity plus 0.01 -q; then
@@ -5645,8 +5296,8 @@ writeShellApplication {
 </li>
 </ol>
 </div>
-<div id="outline-container-orgc525c69" class="outline-4">
-<h4 id="orgc525c69"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-org2a91ec7" class="outline-4">
+<h4 id="org2a91ec7"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5679,15 +5330,15 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org7465114" class="outline-4">
-<h4 id="org7465114"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div id="outline-container-org996e8c9" class="outline-4">
+<h4 id="org996e8c9"><span class="section-number-4">3.2.3.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-2-3">
 <p>
 In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orga167816"></a>NixOS<br />
+<li><a id="org5cda604"></a>NixOS<br />
 <div class="outline-text-5" id="text-3-2-3-1">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -5697,12 +5348,15 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 <pre class="src src-nix">{
   wallpaper = import ./wallpaper.nix;
   hardware = import ./hardware.nix;
+  setup = import ./setup.nix;
+  impermanence = import ./impermanence.nix;
+  filesystem = import ./filesystem.nix;
 }
 </pre>
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org5654c6a"></a>Wallpaper<br />
+<li><a id="org57784ce"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5718,7 +5372,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org7098a41"></a>Hardware<br />
+<li><a id="orga48aee0"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5736,9 +5390,45 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
+<li><a id="org25330c1"></a>Setup<br />
+<div class="outline-text-6" id="text-3-2-3-1-3">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org632741f"></a>Impermanence<br />
+<div class="outline-text-6" id="text-3-2-3-1-4">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.impermanence = lib.mkEnableOption "use impermanence on this system";
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org55a9424"></a>Filesystem<br />
+<div class="outline-text-6" id="text-3-2-3-1-5">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
-<li><a id="org56b1bfb"></a>home-manager<br />
+<li><a id="org368bce4"></a>home-manager<br />
 <div class="outline-text-5" id="text-3-2-3-2">
 <div class="org-src-container">
 <pre class="src src-nix">{
@@ -5750,12 +5440,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   waybar = import ./waybar.nix;
   startup = import ./startup.nix;
   wallpaper = import ./wallpaper.nix;
+  filesystem = import ./filesystem.nix;
 }
 </pre>
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org46487d1"></a>Laptop<br />
+<li><a id="org5c495c9"></a>Laptop<br />
 <div class="outline-text-6" id="text-3-2-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5790,7 +5481,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgf2ef030"></a>Hardware<br />
+<li><a id="orgf91262e"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5814,7 +5505,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgfa1c57f"></a>Waybar<br />
+<li><a id="orgcbcf472"></a>Waybar<br />
 <div class="outline-text-6" id="text-3-2-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">  { lib, config, ... }:
@@ -5854,7 +5545,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org268bfcc"></a>Monitors<br />
+<li><a id="org5ae3b89"></a>Monitors<br />
 <div class="outline-text-6" id="text-3-2-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5871,7 +5562,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgc9c1fe3"></a>Input<br />
+<li><a id="orgaf3cf27"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5886,7 +5577,7 @@ in
   options.swarselsystems.kyria = mkOption {
     type = types.attrsOf (types.attrsOf types.str );
     default = {
-      "36125:53060:splitkb.com_Kyria_rev3" = {
+      "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
         xkb_layout = "us";
         xkb_variant = "altgr-intl";
       };
@@ -5911,7 +5602,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org7c9caf9"></a>Nixos<br />
+<li><a id="orgfae6f66"></a>Nixos<br />
 <div class="outline-text-6" id="text-3-2-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5947,7 +5638,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org4786bad"></a>System startup<br />
+<li><a id="org3ea6a4e"></a>System startup<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5972,7 +5663,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org56b2f86"></a>Wallpaper<br />
+<li><a id="org81db542"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5988,13 +5679,25 @@ in
 </div>
 </div>
 </li>
+<li><a id="org140a9e9"></a>Filesystem<br />
+<div class="outline-text-6" id="text-3-2-3-2-9">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+
+{
+  options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
 </ol>
 </div>
 </div>
-<div id="outline-container-org212c310" class="outline-3">
-<h3 id="org212c310"><span class="section-number-3">3.3.</span> NixOS</h3>
+<div id="outline-container-org3e1e1d4" class="outline-3">
+<h3 id="org3e1e1d4"><span class="section-number-3">3.3.</span> NixOS</h3>
 <div class="outline-text-3" id="text-3-3">
 </div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-4">
@@ -6005,7 +5708,7 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orge1c2f88"></a>Imports, enable home-manager module, stateVersion<br />
+<li><a id="orga3c4c22"></a>Imports, enable home-manager module, stateVersion<br />
 <div class="outline-text-5" id="text-3-3-1-1">
 <p>
 :CUSTOM<sub>ID</sub>: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
@@ -6044,6 +5747,8 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
     ./login.nix
     ./stylix.nix
     ./power-profiles-daemon.nix
+    # ./impermanence.nix
+    ./nix-ld.nix
   ];
 
   nix.settings.trusted-users = [ "swarsel" ];
@@ -6060,12 +5765,8 @@ First, we enable the use of <code>home-manager</code> as a NixoS module
 </div>
 </div>
 </li>
-<li><a id="h:5a114da6-ef8d-404d-b31b-b51472908e77"></a>General<br />
-<div class="outline-text-5" id="text-h:5a114da6-ef8d-404d-b31b-b51472908e77">
-</div>
-<ol class="org-ol">
 <li><a id="h:7248f338-8cad-4443-9060-deae7955b26f"></a>Setup login keymap<br />
-<div class="outline-text-6" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
+<div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
 </p>
@@ -6085,20 +5786,20 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </div>
 </li>
 <li><a id="h:48959890-fbc7-4d28-b33c-f33e028ab473"></a>Make users non-mutable<br />
-<div class="outline-text-6" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
+<div class="outline-text-5" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
 <p>
 This ensures that all user-configuration happens here in the config file.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, config, ... }:
+<pre class="src src-nix">{ pkgs, config, lib, ... }:
 {
   users = {
-    mutableUsers = false;
+    mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
     users.swarsel = {
       isNormalUser = true;
       description = "Leon S";
-      hashedPasswordFile = config.sops.secrets.swarseluser.path;
+      hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
       extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
       packages = with pkgs; [ ];
     };
@@ -6109,7 +5810,7 @@ This ensures that all user-configuration happens here in the config file.
 </div>
 </li>
 <li><a id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"></a>Environment setup<br />
-<div class="outline-text-6" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
+<div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 </p>
@@ -6136,7 +5837,7 @@ Next, we will setup some environment variables that need to be set on the system
 </div>
 </li>
 <li><a id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"></a>Enable PolicyKit<br />
-<div class="outline-text-6" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
+<div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
 Needed for control over system-wide privileges etc.
 </p>
@@ -6151,7 +5852,7 @@ Needed for control over system-wide privileges etc.
 </div>
 </li>
 <li><a id="h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee"></a>Enable automatic garbage collection<br />
-<div class="outline-text-6" id="text-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">
+<div class="outline-text-5" id="text-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">
 <p>
 The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
 </p>
@@ -6171,7 +5872,7 @@ The nix store fills up over time, until <code>/boot/efi</code> is filled. This s
 </div>
 </li>
 <li><a id="h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8"></a>Enable automatic store optimisation<br />
-<div class="outline-text-6" id="text-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">
+<div class="outline-text-5" id="text-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">
 <p>
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 </p>
@@ -6190,7 +5891,7 @@ This enables hardlinking identical files in the nix store, to save on disk space
 </div>
 </li>
 <li><a id="h:12858442-c129-4aa1-9c9c-a0916e36b302"></a>Reduce systemd timeouts<br />
-<div class="outline-text-6" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
+<div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
 <p>
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason <code>a stop job is running for session 1 of user ...</code>. I do not want to wait that long and am confident no important data is lost by doing this.
 </p>
@@ -6209,7 +5910,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </div>
 </li>
 <li><a id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"></a>Hardware settings<br />
-<div class="outline-text-6" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
+<div class="outline-text-5" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
 <p>
 Enable OpenGL, Sound, Bluetooth and various drivers.
 </p>
@@ -6256,7 +5957,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </div>
 </li>
 <li><a id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"></a>Common network settings<br />
-<div class="outline-text-6" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
+<div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
 Here I only enable <code>networkmanager</code>. Most of the 'real' network config is done in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
 </p>
@@ -6484,7 +6185,7 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 </div>
 </li>
 <li><a id="h:852d59ab-63c3-4831-993d-b5e23b877796"></a>Time, locale settings<br />
-<div class="outline-text-6" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
+<div class="outline-text-5" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
 <p>
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 </p>
@@ -6516,8 +6217,6 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </div>
 </div>
 </li>
-</ol>
-</li>
 <li><a id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"></a>sops<br />
 <div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
@@ -6532,12 +6231,19 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, ... }:
+<pre class="src src-nix">{ config, lib, ... }:
+let
+  mkIfElse = p: yes: no: lib.mkMerge [
+    (lib.mkIf p yes)
+    (lib.mkIf (!p) no)
+  ];
+in
 {
   sops = {
 
     age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
-    defaultSopsFile = "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+    defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+
     validateSopsFiles = false;
 
     secrets = {
@@ -6569,8 +6275,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </div>
 </div>
 </li>
-<li><a id="orge064e23"></a>Theme (stylix)<br />
-<div class="outline-text-5" id="text-3-3-1-4">
+<li><a id="org1d94428"></a>Theme (stylix)<br />
+<div class="outline-text-5" id="text-3-3-1-13">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
 <code>theme</code> is defined in <a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">Theme (stylix)</a>.
@@ -6757,8 +6463,8 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org54c4d2f"></a>zsh<br />
-<div class="outline-text-6" id="text-3-3-1-6-1">
+<li><a id="orgdee0eab"></a>zsh<br />
+<div class="outline-text-6" id="text-3-3-1-15-1">
 <p>
 Do not touch this.
 </p>
@@ -6775,8 +6481,8 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="org08852d1"></a>syncthing<br />
-<div class="outline-text-6" id="text-3-3-1-6-2">
+<li><a id="org4bbdd3e"></a>syncthing<br />
+<div class="outline-text-6" id="text-3-3-1-15-2">
 <div class="org-src-container">
 <pre class="src src-nix">
 _ :
@@ -6852,8 +6558,8 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="org52ba0c6"></a>Network devices<br />
-<div class="outline-text-6" id="text-3-3-1-7-2">
+<li><a id="orgbb5f52c"></a>Network devices<br />
+<div class="outline-text-6" id="text-3-3-1-16-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
 </p>
@@ -6904,8 +6610,8 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org974730b"></a>Avahi (device discovery)<br />
-<div class="outline-text-7" id="text-3-3-1-7-2-3">
+<li><a id="org6a5fdf6"></a>Avahi (device discovery)<br />
+<div class="outline-text-7" id="text-3-3-1-16-2-3">
 <p>
 Avahi is the service used for the network discovery.
 </p>
@@ -6980,8 +6686,8 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 </li>
-<li><a id="orgfad9390"></a>power-profiles-daemon<br />
-<div class="outline-text-6" id="text-3-3-1-7-5">
+<li><a id="org5c8680d"></a>power-profiles-daemon<br />
+<div class="outline-text-6" id="text-3-3-1-16-5">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
 {
@@ -7065,14 +6771,160 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
+<li><a id="org5a71a0d"></a>nix-ld<br />
+<div class="outline-text-5" id="text-3-3-1-19">
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+  programs.nix-ld. = {
+    enable = true;
+    libraries = with pkgs; [
+      alsa-lib
+      at-spi2-atk
+      at-spi2-core
+      atk
+      cairo
+      cups
+      curl
+      dbus
+      expat
+      fontconfig
+      freetype
+      fuse3
+      gdk-pixbuf
+      glib
+      gtk3
+      icu
+      libGL
+      libappindicator-gtk3
+      libdrm
+      libglvnd
+      libnotify
+      libpulseaudio
+      libunwind
+      libusb1
+      libuuid
+      libxkbcommon
+      libxml2
+      mesa
+      nspr
+      nss
+      openssl
+      pango
+      pipewire
+      stdenv.cc.cc
+      systemd
+      vulkan-loader
+      zlib
+    ];
+  };
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgaffacb7"></a>Impermanence<br />
+<div class="outline-text-5" id="text-3-3-1-20">
+<div class="org-src-container">
+<pre class="src src-nix">{ config, lib, ... }:
+{
+
+  security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
+    # rollback results in sudo lectures after each reboot
+    Defaults lecture = never
+  '';
+
+   # This script does the actual wipe of the system
+  # So if it doesn't run, the btrfs system effectively acts like a normal system
+  # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
+
+  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
+    description = "Rollback BTRFS root subvolume to a pristine state";
+    wantedBy = ["initrd.target"];
+    # make sure it's done after encryption
+    # i.e. LUKS/TPM process
+    after = ["systemd-cryptsetup@enc.service"];
+    # mount the root fs before clearing
+    before = ["sysroot.mount"];
+    unitConfig.DefaultDependencies = "no";
+    serviceConfig.Type = "oneshot";
+    script = ''
+      mkdir -p /mnt
+
+      # We first mount the btrfs root to /mnt
+      # so we can manipulate btrfs subvolumes.
+      mount -o subvol=/ /dev/mapper/cryptroot /mnt
+      btrfs subvolume list -o /mnt/root
+
+      # While we're tempted to just delete /root and create
+      # a new snapshot from /root-blank, /root is already
+      # populated at this point with a number of subvolumes,
+      # which makes `btrfs subvolume delete` fail.
+      # So, we remove them first.
+      #
+      # /root contains subvolumes:
+      # - /root/var/lib/portables
+      # - /root/var/lib/machines
+
+      btrfs subvolume list -o /mnt/root |
+      cut -f9 -d' ' |
+      while read subvolume; do
+        echo "deleting /$subvolume subvolume..."
+        # btrfs subvolume delete "/mnt/$subvolume"
+      done &amp;&amp;
+      echo "deleting /root subvolume..." &amp;&amp;
+      # btrfs subvolume delete /mnt/root
+
+      echo "restoring blank /root subvolume..."
+      # btrfs subvolume snapshot /mnt/root-blank /mnt/root
+
+      # Once we're done rolling back to a blank snapshot,
+      # we can unmount /mnt and continue on the boot process.
+      umount /mnt
+    '';
+  };
+
+
+  environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+    hideMounts = true;
+    directories =
+      [
+        "/.cache/nix/"
+        "/srv"
+        "/etc/nixos"
+        "/etc/nix"
+        "/home/swarsel/.dotfiles"
+        "/etc/NetworkManager/system-connections"
+        "/etc/secureboot"
+        "/var/db/sudo/"
+        "/var/cache/"
+        "/var/lib/"
+      ];
+
+    files = [
+      # ssh stuff
+      /*
+      "/etc/ssh/ssh_host_ed25519_key"
+      "/etc/ssh/ssh_host_ed25519_key.pub"
+      "/etc/ssh/ssh_host_rsa_key"
+      "/etc/ssh/ssh_host_rsa_key.pub"
+      */
+    ];
+  };
+
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
-<div id="outline-container-orgf6d8136" class="outline-4">
-<h4 id="orgf6d8136"><span class="section-number-4">3.3.2.</span> Optional</h4>
+<div id="outline-container-orgfd86213" class="outline-4">
+<h4 id="orgfd86213"><span class="section-number-4">3.3.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="org5381905"></a>gaming<br />
+<li><a id="org0520246"></a>gaming<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7105,7 +6957,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org400a8c9"></a>VirtualBox<br />
+<li><a id="orgc105431"></a>VirtualBox<br />
 <div class="outline-text-5" id="text-3-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">  _ :
@@ -7125,7 +6977,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="orgd9955ea"></a>Auto-login<br />
+<li><a id="org8d10708"></a>Auto-login<br />
 <div class="outline-text-5" id="text-3-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
@@ -7139,7 +6991,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org3f4e53d"></a>nswitch-rcm<br />
+<li><a id="org2ac2285"></a>nswitch-rcm<br />
 <div class="outline-text-5" id="text-3-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7156,11 +7008,26 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
+<li><a id="org39e8603"></a>work<br />
+<div class="outline-text-5" id="text-3-3-2-5">
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+  programs._1password.enable = true;
+  programs._1password-gui.enable = true;
+  environment.systemPackages = with pkgs; [
+  ];
+
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </div>
 </div>
-<div id="outline-container-orgd8ffc85" class="outline-3">
-<h3 id="orgd8ffc85"><span class="section-number-3">3.4.</span> Home-manager</h3>
+<div id="outline-container-org9769f53" class="outline-3">
+<h3 id="org9769f53"><span class="section-number-3">3.4.</span> Home-manager</h3>
 <div class="outline-text-3" id="text-3-4">
 </div>
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-4">
@@ -7168,7 +7035,7 @@ This section houses the greetd related settings. I do not really want to use a d
 <div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
 <ol class="org-ol">
-<li><a id="org50ac476"></a>Imports<br />
+<li><a id="org2aa16a7"></a>Imports<br />
 <div class="outline-text-5" id="text-3-4-1-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -7267,6 +7134,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     picard-tools
     audacity
     sox
+    google-chrome
 
     # printing
     cups
@@ -7285,6 +7153,7 @@ Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-e
     nixpkgs-fmt
     deadnix
     statix
+    nix-tree
 
     # local file sharing
     wormhole-rs
@@ -7481,11 +7350,18 @@ Since we are using the home-manager implementation here, we need to specify the 
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">  { config, ... }:
+<pre class="src src-nix">  { config, lib, ... }:
+let
+  mkIfElse = p: yes: no: lib.mkMerge [
+    (lib.mkIf p yes)
+    (lib.mkIf (!p) no)
+  ];
+in
   {
     sops = {
       age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-      defaultSopsFile = "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+      defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+
       validateSopsFiles = false;
       secrets = {
         mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
@@ -7849,7 +7725,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </li>
 </ol>
 </li>
-<li><a id="org087d11d"></a>nix-index<br />
+<li><a id="orgcfa7a72"></a>nix-index<br />
 <div class="outline-text-5" id="text-3-4-1-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -9170,7 +9046,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </div>
 </div>
 </li>
-<li><a id="org20b9e2f"></a>gpg-agent<br />
+<li><a id="org59c5560"></a>gpg-agent<br />
 <div class="outline-text-5" id="text-3-4-1-25">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -9192,7 +9068,7 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
-<li><a id="orgb2c135f"></a>gammastep<br />
+<li><a id="orgfa6a9e7"></a>gammastep<br />
 <div class="outline-text-5" id="text-3-4-1-26">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -9210,12 +9086,12 @@ services.gpg-agent = {
 </li>
 </ol>
 </div>
-<div id="outline-container-org52db1a7" class="outline-4">
-<h4 id="org52db1a7"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<div id="outline-container-org2e99c12" class="outline-4">
+<h4 id="org2e99c12"><span class="section-number-4">3.4.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-4-2">
 </div>
 <ol class="org-ol">
-<li><a id="org89ac483"></a>Gaming<br />
+<li><a id="org49e662c"></a>Gaming<br />
 <div class="outline-text-5" id="text-3-4-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9244,6 +9120,23 @@ services.gpg-agent = {
     (prismlauncher.override {
       glfw = pkgs.glfw-wayland-minecraft;
     })
+   ];
+ }
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org9aa1afe"></a>Work<br />
+<div class="outline-text-5" id="text-3-4-2-2">
+<div class="org-src-container">
+<pre class="src src-nix">
+{ pkgs, ... }:
+
+ {
+   home.packages = with pkgs; [
+     teams-for-linux
+     google-chrome
    ];
  }
 
@@ -9357,6 +9250,9 @@ This tangles the flake.nix file; This block only needs to be touched when updati
        url =  "github:nix-community/disko";
        inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    impermanence.url = "github:nix-community/impermanence";
+
   };
 
   outputs =
@@ -9396,6 +9292,9 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       # # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
+        # inputs.lanzaboote.nixosModules.lanzaboote
+        inputs.disko.nixosModules.disko
+        # inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ./profiles/common/nixos
@@ -9484,19 +9383,26 @@ This tangles the flake.nix file; This block only needs to be touched when updati
           ];
         };
 
-        winters = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
+        nbl-imba-2 = lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
           modules = nixModules ++ [
-            inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-            ./profiles/winters/nixos.nix
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/winters/home.nix
-              ];
-            }
+            ./profiles/nbl-imba-2
           ];
         };
+
+        # winters = nixpkgs.lib.nixosSystem {
+        #   specialArgs = { inherit inputs; };
+        #   modules = nixModules ++ [
+        #     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
+        #     ./profiles/winters/nixos.nix
+        #     inputs.home-manager.nixosModules.home-manager
+        #     {
+        #       home-manager.users.swarsel.imports = mixedModules ++ [
+        #         ./profiles/winters/home.nix
+        #       ];
+        #     }
+        #   ];
+        # };
 
         nginx = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
@@ -10276,7 +10182,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="orgd8f6292"></a>Nix common prefix bracketer<br />
+<li><a id="orgd4a4c03"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -10309,7 +10215,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="org761c1ee"></a>Nix formatters<br />
+<li><a id="orgefceb3d"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11882,8 +11788,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-org6d6600d" class="outline-4">
-<h4 id="org6d6600d"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-org0aae2aa" class="outline-4">
+<h4 id="org0aae2aa"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13159,6 +13065,7 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
   (setq org-caldav-calendars
         '((:calendar-id "personal"
                         :inbox "~/Calendars/leon_cal.org")))
+  (setq org-caldav-files '("~/Calendars/leon_cal.org"))
   ;; (setq org-caldav-backup-file "~/org-caldav/org-caldav-backup.org")
   ;; (setq org-caldav-save-directory "~/org-caldav/")
 
@@ -13600,7 +13507,7 @@ Special things to note here: We are running xcape to allow <code>CAPS</code> to 
   #keyboard config
   home.keyboard.layout = "us";
 
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+  sops.age.sshKeyPaths = [ "/etc/ssh/sops" ];
 
   # waybar config
   programs.waybar.settings.mainBar.cpu.format = "{icon0} {icon1} {icon2} {icon3}";
@@ -13897,7 +13804,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-07-31 Mi 01:14</p>
+<p class="date">Created: 2024-08-04 So 11:19</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
