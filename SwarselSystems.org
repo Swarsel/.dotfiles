@@ -4819,7 +4819,8 @@ First, we enable the use of =home-manager= as a NixoS module
       ./login.nix
       ./stylix.nix
       ./power-profiles-daemon.nix
-      ./impermanence.nix
+      # ./impermanence.nix
+      ./nix-ld.nix
     ];
 
     nix.settings.trusted-users = [ "swarsel" ];
@@ -5384,6 +5385,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
       # pinentry
 
+      nix-index
+
       # keyboards
       qmk
       vial
@@ -5740,6 +5743,119 @@ This section houses the greetd related settings. I do not really want to use a d
   }
 #+end_src
 
+**** nix-ld
+
+#+begin_src nix :tangle profiles/common/nixos/nix-ld.nix
+  { pkgs, ... }:
+  {
+    programs.nix-ld = {
+      enable = true;
+      libraries = with pkgs; [
+        SDL
+        SDL2
+        SDL2_image
+        SDL2_mixer
+        SDL2_ttf
+        SDL_image
+        SDL_mixer
+        SDL_ttf
+        alsa-lib
+        alsaLib
+        at-spi2-atk
+        at-spi2-core
+        atk
+        bzip2
+        cairo
+        cups
+        curl
+        dbus
+        dbus-glib
+        expat
+        ffmpeg
+        flac
+        fontconfig
+        freeglut
+        freetype
+        fuse3
+        gdk-pixbuf
+        glew110
+        glib
+        gnome2.GConf
+        gnome2.pango
+        gtk2
+        gtk3
+        icu
+        libGL
+        libappindicator-gtk2
+        libappindicator-gtk3
+        libcaca
+        libcanberra
+        libcap
+        libdbusmenu-gtk2
+        libdrm
+        libelf
+        libgcrypt
+        libglvnd
+        libidn
+        libindicator-gtk2
+        libjpeg
+        libmikmod
+        libnotify
+        libogg
+        libpng
+        libpng12
+        libpulseaudio
+        librsvg
+        libsamplerate
+        libtheora
+        libtiff
+        libudev0-shim
+        libunwind
+        libusb1
+        libuuid
+        libva
+        libvdpau
+        libvorbis
+        libvpx
+        libxkbcommon
+        libxml2
+        mesa
+        nspr
+        nss
+        openssl
+        pango
+        pipewire
+        pixman
+        speex
+        stdenv.cc.cc
+        systemd
+        tbb
+        vulkan-loader
+        xorg.libICE
+        xorg.libSM
+        xorg.libX11
+        xorg.libXScrnSaver
+        xorg.libXcomposite
+        xorg.libXcursor
+        xorg.libXdamage
+        xorg.libXext
+        xorg.libXfixes
+        xorg.libXft
+        xorg.libXi
+        xorg.libXinerama
+        xorg.libXmu
+        xorg.libXrandr
+        xorg.libXrender
+        xorg.libXt
+        xorg.libXtst
+        xorg.libXxf86vm
+        xorg.libxcb
+        xorg.libxshmfence
+        zlib
+      ];
+    };
+  }
+#+end_src
 
 **** Impermanence
 
@@ -6877,6 +6993,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
         cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+        nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
       };
       autosuggestion.enable = true;
       enableCompletion = true;

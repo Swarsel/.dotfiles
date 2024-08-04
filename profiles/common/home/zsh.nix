@@ -16,6 +16,7 @@
       hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
       cd = "z";
       cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+      nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
     };
     autosuggestion.enable = true;
     enableCompletion = true;

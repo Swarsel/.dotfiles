@@ -19,6 +19,8 @@
 
     # pinentry
 
+    nix-index
+
     # keyboards
     qmk
     vial
