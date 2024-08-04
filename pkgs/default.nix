@@ -13,4 +13,5 @@ in
   swarselcheck = callPackage ./swarselcheck { };
   waybarupdate = callPackage ./waybarupdate { };
   opacitytoggle = callPackage ./opacitytoggle { };
+  fs-diff = callPackage ./fs-diff { };
 }

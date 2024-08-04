@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-# fs-diff.sh
 set -euo pipefail
 
 OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
@@ -10,7 +8,7 @@ sed '$d' |
 cut -f17- -d' ' |
 sort |
 uniq |
-while read path; do
+while read -r path; do
   path="/$path"
   if [ -L "$path" ]; then
     : # The path is a symbolic link, so is probably handled by NixOS already

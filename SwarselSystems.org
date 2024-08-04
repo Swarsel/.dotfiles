@@ -4041,6 +4041,7 @@ As such, I also define three additional overlays:
     swarselcheck = callPackage ./swarselcheck { };
     waybarupdate = callPackage ./waybarupdate { };
     opacitytoggle = callPackage ./opacitytoggle { };
+    fs-diff = callPackage ./fs-diff { };
   }
 
 #+end_src
@@ -4415,6 +4416,40 @@ As such, I also define three additional overlays:
     name = "opacitytoggle";
     runtimeInputs = [ sway ];
     text = builtins.readFile ../../scripts/opacitytoggle.sh;
+  }
+#+end_src
+
+**** fs-diff
+
+#+begin_src shell :tangle scripts/fs-diff.sh
+set -euo pipefail
+
+OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
+OLD_TRANSID=${OLD_TRANSID#transid marker was }
+
+sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
+sed '$d' |
+cut -f17- -d' ' |
+sort |
+uniq |
+while read -r path; do
+  path="/$path"
+  if [ -L "$path" ]; then
+    : # The path is a symbolic link, so is probably handled by NixOS already
+  elif [ -d "$path" ]; then
+    : # The path is a directory, ignore
+  else
+    echo "$path"
+  fi
+done
+#+end_src
+
+#+begin_src nix :tangle pkgs/fs-diff/default.nix
+  { writeShellApplication, sway}:
+
+  writeShellApplication {
+    name = "fs-diff";
+    text = builtins.readFile ../../scripts/fs-diff.sh;
   }
 #+end_src
 
@@ -6300,6 +6335,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
     swarselcheck
     waybarupdate
     opacitytoggle
+    fs-diff
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -6994,6 +7030,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         cd = "z";
         cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+        fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
       };
       autosuggestion.enable = true;
       enableCompletion = true;

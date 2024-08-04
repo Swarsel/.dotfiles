@@ -158,6 +158,7 @@
     swarselcheck
     waybarupdate
     opacitytoggle
+    fs-diff
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash

@@ -19,6 +19,9 @@
 
     # pinentry
 
+    # secure boot
+    sbctl
+
     nix-index
 
     # keyboards
