@@ -21,6 +21,7 @@
       EnableTrackingProtection = true;
     };
     profiles.default = {
+      id = 0;
       isDefault = true;
       userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
@@ -33,7 +34,6 @@
         translate-web-pages
         ublock-origin
         reddit-enhancement-suite
-        pushbullet
         sponsorblock
         web-archives
         single-file
