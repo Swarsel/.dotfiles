@@ -35,6 +35,7 @@ in
           {
             "${modifier}+q" = "kill";
             "${modifier}+f" = "exec firefox";
+            "${modifier}+Shift+f" = "exec swaymsg fullscreen";
             "${modifier}+Space" = "exec fuzzel";
             "${modifier}+Shift+Space" = "floating toggle";
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-08-05 Mo 01:47 -->
+<!-- 2024-08-06 Di 14:08 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -211,6 +211,7 @@
 <li><a href="#h:47749e76-3f25-485a-9e98-c7ce3a4ad444">2.1.3. Waybar items - PC</a></li>
 <li><a href="#h:515cfeb6-3b16-4fb2-9222-3557555a6cc1">2.1.4. Sway Startup commands</a></li>
 <li><a href="#h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103">2.1.5. gpg-agent</a></li>
+<li><a href="#org70af279">2.1.6. firefox profile</a></li>
 </ul>
 </li>
 <li><a href="#h:996e9c5f-ed65-4f4f-b043-5a901ed74358">2.2. NixOS</a>
@@ -223,7 +224,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org59e1672">2.3.3. General (outputs)</a></li>
+<li><a href="#orgb62e6c7">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -241,23 +242,23 @@
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a></li>
 </ul>
 </li>
-<li><a href="#orga22da0e">3.2. Overlays, packages, and modules</a>
+<li><a href="#orge909e70">3.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#org1d39c2f">3.2.1. Packages</a></li>
-<li><a href="#org7948822">3.2.2. Overlays</a></li>
-<li><a href="#orga2cb516">3.2.3. Modules</a></li>
+<li><a href="#orge201cf9">3.2.1. Packages</a></li>
+<li><a href="#org2db21e5">3.2.2. Overlays</a></li>
+<li><a href="#orgadaae06">3.2.3. Modules</a></li>
 </ul>
 </li>
-<li><a href="#orgbcb6c79">3.3. NixOS</a>
+<li><a href="#orgc2c0c41">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#orgfadfa03">3.3.2. Optional</a></li>
+<li><a href="#org12d2eb8">3.3.2. Optional</a></li>
 </ul>
 </li>
-<li><a href="#org1a12c08">3.4. Home-manager</a>
+<li><a href="#orgaad9783">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#orgb11bfe1">3.4.2. Optional</a></li>
+<li><a href="#orga44fec7">3.4.2. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -310,7 +311,7 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgd534915">4.4.3. nixpkgs-fmt</a></li>
+<li><a href="#org2ff9c1b">4.4.3. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.4. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.5. Olivetti</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.6. darkroom</a></li>
@@ -370,7 +371,7 @@
 </div>
 </div>
 <p>
-<b>This file has 43858 words spanning 12026 lines and was last revised on 2024-08-05 01:47:51 +0200.</b>
+<b>This file has 44130 words spanning 12134 lines and was last revised on 2024-08-06 14:08:16 +0200.</b>
 </p>
 
 <p>
@@ -420,7 +421,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-05 01:47:51 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-06 14:08:16 +0200)
 </p></li>
 </ul>
 
@@ -686,6 +687,87 @@ I also enable the extra socket here for ssh agent forwarding. But I have not ful
 
 <div class="org-src-container">
 <pre class="src src-nix">
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org70af279" class="outline-4">
+<h4 id="org70af279"><span class="section-number-4">2.1.6.</span> firefox profile</h4>
+<div class="outline-text-4" id="text-2-1-6">
+<div class="org-src-container">
+<pre class="src src-nix">
+isDefault = false;
+userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+  tridactyl
+  browserpass
+  clearurls
+  darkreader
+  enhancer-for-youtube
+  istilldontcareaboutcookies
+  translate-web-pages
+  ublock-origin
+  reddit-enhancement-suite
+  sponsorblock
+  web-archives
+  single-file
+  widegithub
+  enhanced-github
+  unpaywall
+  don-t-fuck-with-paste
+  plasma-integration
+];
+
+search.engines = {
+  "Nix Packages" = {
+    urls = [{
+      template = "https://search.nixos.org/packages";
+      params = [
+        { name = "type"; value = "packages"; }
+        { name = "query"; value = "{searchTerms}"; }
+      ];
+    }];
+    icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+    definedAliases = [ "@np" ];
+  };
+
+  "NixOS Wiki" = {
+    urls = [{
+      template = "https://nixos.wiki/index.php?search={searchTerms}";
+    }];
+    iconUpdateURL = "https://nixos.wiki/favicon.png";
+    updateInterval = 24 * 60 * 60 * 1000; # every day
+    definedAliases = [ "@nw" ];
+  };
+
+  "NixOS Options" = {
+    urls = [{
+      template = "https://search.nixos.org/options";
+      params = [
+        { name = "query"; value = "{searchTerms}"; }
+      ];
+    }];
+
+    icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+    definedAliases = [ "@no" ];
+  };
+
+  "Home Manager Options" = {
+    urls = [{
+      template = "https://home-manager-options.extranix.com/";
+      params = [
+        { name = "query"; value = "{searchTerms}"; }
+      ];
+    }];
+
+    icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+    definedAliases = [ "@hm" "@ho" "@hmo" ];
+  };
+
+  "Google".metaData.alias = "@g";
+};
+search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
 
 </pre>
 </div>
@@ -1036,8 +1118,8 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org59e1672" class="outline-4">
-<h4 id="org59e1672"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div id="outline-container-orgb62e6c7" class="outline-4">
+<h4 id="orgb62e6c7"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
 <div class="outline-text-4" id="text-2-3-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2424,7 +2506,7 @@ in
 </li>
 </ol>
 </li>
-<li><a id="org44d9b52"></a>Home-manager only<br />
+<li><a id="orge07e612"></a>Home-manager only<br />
 <div class="outline-text-5" id="text-3-1-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2732,13 +2814,21 @@ My work machine.
         workspace = "1:一";
         output = "DP-11";
       };
-      workdesktop = {
+      work_back_middle = {
         name = "LG Electronics LG Ultra HD 0x000305A6";
         mode = "2560x1440";
         scale = "1";
-        position = "0,0";
+        position = "5120,0";
         workspace = "1:一";
         output = "DP-10";
+      };
+      work_front_left = {
+        name = "LG Electronics LG Ultra HD 0x0007AB45";
+        mode = "3840x2160";
+        scale = "1";
+        position = "5120,0";
+        workspace = "1:一";
+        output = "DP-7";
       };
     };
     inputs =  {
@@ -2755,6 +2845,7 @@ My work machine.
       };
     };
     keybindings = {
+      "Mod4+Ctrl+p" = "exec wl-mirror eDP-2";
     };
   };
 }
@@ -4858,8 +4949,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orga22da0e" class="outline-3">
-<h3 id="orga22da0e"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
+<div id="outline-container-orge909e70" class="outline-3">
+<h3 id="orge909e70"><span class="section-number-3">3.2.</span> Overlays, packages, and modules</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -4878,8 +4969,8 @@ These are for packages that are on nixpkgs, but do not fit my usecase, meaning I
 This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.</li>
 </ol>
 </div>
-<div id="outline-container-org1d39c2f" class="outline-4">
-<h4 id="org1d39c2f"><span class="section-number-4">3.2.1.</span> Packages</h4>
+<div id="outline-container-orge201cf9" class="outline-4">
+<h4 id="orge201cf9"><span class="section-number-4">3.2.1.</span> Packages</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -4905,7 +4996,7 @@ in
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org5d1d291"></a>pass-fuzzel<br />
+<li><a id="orgae64bb0"></a>pass-fuzzel<br />
 <div class="outline-text-5" id="text-3-2-1-1">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
@@ -4967,7 +5058,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orga2aefa0"></a>cura5<br />
+<li><a id="orgb8ad807"></a>cura5<br />
 <div class="outline-text-5" id="text-3-2-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5004,7 +5095,7 @@ writeScriptBin "cura" ''
 </div>
 </div>
 </li>
-<li><a id="orgfc6efed"></a>cdw<br />
+<li><a id="org4b44699"></a>cdw<br />
 <div class="outline-text-5" id="text-3-2-1-3">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5023,7 +5114,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org0eec0e1"></a>cdb<br />
+<li><a id="org267b7df"></a>cdb<br />
 <div class="outline-text-5" id="text-3-2-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5041,7 +5132,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org5e99dd6"></a>bak<br />
+<li><a id="orgf300d85"></a>bak<br />
 <div class="outline-text-5" id="text-3-2-1-5">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5059,7 +5150,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orge74725f"></a>timer<br />
+<li><a id="orgc48f47b"></a>timer<br />
 <div class="outline-text-5" id="text-3-2-1-6">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5077,7 +5168,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="orgb940f3f"></a>e<br />
+<li><a id="org95ec856"></a>e<br />
 <div class="outline-text-5" id="text-3-2-1-7">
 <div class="org-src-container">
 <pre class="src src-shell">wait=0
@@ -5118,7 +5209,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org2909dca"></a>command-not-found<br />
+<li><a id="org6581fbc"></a>command-not-found<br />
 <div class="outline-text-5" id="text-3-2-1-8">
 <div class="org-src-container">
 <pre class="src src-shell"># Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
@@ -5157,7 +5248,7 @@ command_not_found_handler () {
 </div>
 </div>
 </li>
-<li><a id="orga265088"></a>swarselcheck<br />
+<li><a id="orgdbad866"></a>swarselcheck<br />
 <div class="outline-text-5" id="text-3-2-1-9">
 <div class="org-src-container">
 <pre class="src src-shell">kitty=0
@@ -5232,7 +5323,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org6e308a6"></a>waybarupdate<br />
+<li><a id="orge2d259c"></a>waybarupdate<br />
 <div class="outline-text-5" id="text-3-2-1-10">
 <div class="org-src-container">
 <pre class="src src-shell">CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
@@ -5276,7 +5367,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org7aa5b0b"></a>opacitytoggle<br />
+<li><a id="org5bfc8b5"></a>opacitytoggle<br />
 <div class="outline-text-5" id="text-3-2-1-11">
 <div class="org-src-container">
 <pre class="src src-shell">if swaymsg opacity plus 0.01 -q; then
@@ -5299,7 +5390,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org7924bcd"></a>fs-diff<br />
+<li><a id="org98458eb"></a>fs-diff<br />
 <div class="outline-text-5" id="text-3-2-1-12">
 <div class="org-src-container">
 <pre class="src src-shell">set -euo pipefail
@@ -5338,8 +5429,8 @@ writeShellApplication {
 </li>
 </ol>
 </div>
-<div id="outline-container-org7948822" class="outline-4">
-<h4 id="org7948822"><span class="section-number-4">3.2.2.</span> Overlays</h4>
+<div id="outline-container-org2db21e5" class="outline-4">
+<h4 id="org2db21e5"><span class="section-number-4">3.2.2.</span> Overlays</h4>
 <div class="outline-text-4" id="text-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -5372,15 +5463,15 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orga2cb516" class="outline-4">
-<h4 id="orga2cb516"><span class="section-number-4">3.2.3.</span> Modules</h4>
+<div id="outline-container-orgadaae06" class="outline-4">
+<h4 id="orgadaae06"><span class="section-number-4">3.2.3.</span> Modules</h4>
 <div class="outline-text-4" id="text-3-2-3">
 <p>
 In this section I define custom modules under the <code>swarsel</code> attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org1b02368"></a>NixOS<br />
+<li><a id="org9c6abce"></a>NixOS<br />
 <div class="outline-text-5" id="text-3-2-3-1">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -5398,7 +5489,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="org33c8f0d"></a>Wallpaper<br />
+<li><a id="org3e3ebd9"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5414,7 +5505,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org6185325"></a>Hardware<br />
+<li><a id="org15a9961"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-1-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5432,7 +5523,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgb7a0d34"></a>Setup<br />
+<li><a id="org4edb827"></a>Setup<br />
 <div class="outline-text-6" id="text-3-2-3-1-3">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5444,7 +5535,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgdcf1079"></a>Impermanence<br />
+<li><a id="orgab42906"></a>Impermanence<br />
 <div class="outline-text-6" id="text-3-2-3-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5456,7 +5547,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org0c54955"></a>Filesystem<br />
+<li><a id="orga946ce3"></a>Filesystem<br />
 <div class="outline-text-6" id="text-3-2-3-1-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5470,7 +5561,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </li>
 </ol>
 </li>
-<li><a id="org5410ed3"></a>home-manager<br />
+<li><a id="orgc83e559"></a>home-manager<br />
 <div class="outline-text-5" id="text-3-2-3-2">
 <div class="org-src-container">
 <pre class="src src-nix">{
@@ -5488,7 +5579,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgbd310be"></a>Laptop<br />
+<li><a id="orgb597861"></a>Laptop<br />
 <div class="outline-text-6" id="text-3-2-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5523,7 +5614,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="orgcaef45e"></a>Hardware<br />
+<li><a id="org45d83af"></a>Hardware<br />
 <div class="outline-text-6" id="text-3-2-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5547,7 +5638,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </div>
 </div>
 </li>
-<li><a id="org9762c41"></a>Waybar<br />
+<li><a id="org6b5917f"></a>Waybar<br />
 <div class="outline-text-6" id="text-3-2-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">  { lib, config, ... }:
@@ -5587,7 +5678,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org782eeaf"></a>Monitors<br />
+<li><a id="org50160b5"></a>Monitors<br />
 <div class="outline-text-6" id="text-3-2-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5604,7 +5695,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgf41e0e8"></a>Input<br />
+<li><a id="org18618af"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5644,7 +5735,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orga955555"></a>Nixos<br />
+<li><a id="org9310534"></a>Nixos<br />
 <div class="outline-text-6" id="text-3-2-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5680,7 +5771,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org014c8f4"></a>System startup<br />
+<li><a id="orgde4b959"></a>System startup<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5705,7 +5796,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org142340f"></a>Wallpaper<br />
+<li><a id="org69d2ff3"></a>Wallpaper<br />
 <div class="outline-text-6" id="text-3-2-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5721,7 +5812,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org2861992"></a>Filesystem<br />
+<li><a id="org33855fd"></a>Filesystem<br />
 <div class="outline-text-6" id="text-3-2-3-2-9">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -5738,8 +5829,8 @@ in
 </ol>
 </div>
 </div>
-<div id="outline-container-orgbcb6c79" class="outline-3">
-<h3 id="orgbcb6c79"><span class="section-number-3">3.3.</span> NixOS</h3>
+<div id="outline-container-orgc2c0c41" class="outline-3">
+<h3 id="orgc2c0c41"><span class="section-number-3">3.3.</span> NixOS</h3>
 <div class="outline-text-3" id="text-3-3">
 </div>
 <div id="outline-container-h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f" class="outline-4">
@@ -5750,7 +5841,7 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="orgb3b95f5"></a>Imports, enable home-manager module, stateVersion<br />
+<li><a id="org1541710"></a>Imports, enable home-manager module, stateVersion<br />
 <div class="outline-text-5" id="text-3-3-1-1">
 <p>
 :CUSTOM<sub>ID</sub>: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
@@ -6317,7 +6408,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org18621ef"></a>Theme (stylix)<br />
+<li><a id="org4f0f399"></a>Theme (stylix)<br />
 <div class="outline-text-5" id="text-3-3-1-13">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
@@ -6510,7 +6601,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <ol class="org-ol">
-<li><a id="orgc529bf9"></a>zsh<br />
+<li><a id="org5531717"></a>zsh<br />
 <div class="outline-text-6" id="text-3-3-1-15-1">
 <p>
 Do not touch this.
@@ -6528,7 +6619,7 @@ Do not touch this.
 </div>
 </div>
 </li>
-<li><a id="org7bcf6b9"></a>syncthing<br />
+<li><a id="org5a7bdc0"></a>syncthing<br />
 <div class="outline-text-6" id="text-3-3-1-15-2">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -6605,7 +6696,7 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 </li>
-<li><a id="org7604e3f"></a>Network devices<br />
+<li><a id="orga334a2a"></a>Network devices<br />
 <div class="outline-text-6" id="text-3-3-1-16-2">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
@@ -6657,7 +6748,7 @@ services.printing = {
 </div>
 </div>
 </li>
-<li><a id="org632d420"></a>Avahi (device discovery)<br />
+<li><a id="orgc667adf"></a>Avahi (device discovery)<br />
 <div class="outline-text-7" id="text-3-3-1-16-2-3">
 <p>
 Avahi is the service used for the network discovery.
@@ -6733,7 +6824,7 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 </li>
-<li><a id="orgea1c86c"></a>power-profiles-daemon<br />
+<li><a id="org2ba1144"></a>power-profiles-daemon<br />
 <div class="outline-text-6" id="text-3-3-1-16-5">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
@@ -6818,7 +6909,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org794dd5a"></a>nix-ld<br />
+<li><a id="orge523f97"></a>nix-ld<br />
 <div class="outline-text-5" id="text-3-3-1-19">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -6934,7 +7025,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="orge4b7ec7"></a>Impermanence<br />
+<li><a id="org54ca968"></a>Impermanence<br />
 <div class="outline-text-5" id="text-3-3-1-20">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, ... }:
@@ -7030,12 +7121,12 @@ This section houses the greetd related settings. I do not really want to use a d
 </li>
 </ol>
 </div>
-<div id="outline-container-orgfadfa03" class="outline-4">
-<h4 id="orgfadfa03"><span class="section-number-4">3.3.2.</span> Optional</h4>
+<div id="outline-container-org12d2eb8" class="outline-4">
+<h4 id="org12d2eb8"><span class="section-number-4">3.3.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="org49bc089"></a>gaming<br />
+<li><a id="org1aca4fe"></a>gaming<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7068,7 +7159,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org52debdd"></a>VirtualBox<br />
+<li><a id="org4e9bfa3"></a>VirtualBox<br />
 <div class="outline-text-5" id="text-3-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">  _ :
@@ -7088,7 +7179,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="orgef10983"></a>Auto-login<br />
+<li><a id="orgfe7594c"></a>Auto-login<br />
 <div class="outline-text-5" id="text-3-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">_ :
@@ -7102,7 +7193,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org59ff091"></a>nswitch-rcm<br />
+<li><a id="org9234716"></a>nswitch-rcm<br />
 <div class="outline-text-5" id="text-3-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7119,7 +7210,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 </li>
-<li><a id="org325ce43"></a>work<br />
+<li><a id="orga4450db"></a>work<br />
 <div class="outline-text-5" id="text-3-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -7137,8 +7228,8 @@ This section houses the greetd related settings. I do not really want to use a d
 </ol>
 </div>
 </div>
-<div id="outline-container-org1a12c08" class="outline-3">
-<h3 id="org1a12c08"><span class="section-number-3">3.4.</span> Home-manager</h3>
+<div id="outline-container-orgaad9783" class="outline-3">
+<h3 id="orgaad9783"><span class="section-number-3">3.4.</span> Home-manager</h3>
 <div class="outline-text-3" id="text-3-4">
 </div>
 <div id="outline-container-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e" class="outline-4">
@@ -7146,7 +7237,7 @@ This section houses the greetd related settings. I do not really want to use a d
 <div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
 <ol class="org-ol">
-<li><a id="org82fcb93"></a>Imports<br />
+<li><a id="org5af4730"></a>Imports<br />
 <div class="outline-text-5" id="text-3-4-1-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -7837,7 +7928,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </li>
 </ol>
 </li>
-<li><a id="org844ae12"></a>nix-index<br />
+<li><a id="orga3ee454"></a>nix-index<br />
 <div class="outline-text-5" id="text-3-4-1-10">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -8699,6 +8790,7 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
       EnableTrackingProtection = true;
     };
     profiles.default = {
+      id = 0;
       isDefault = true;
       userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
@@ -8711,7 +8803,6 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
         translate-web-pages
         ublock-origin
         reddit-enhancement-suite
-        pushbullet
         sponsorblock
         web-archives
         single-file
@@ -8916,6 +9007,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         lib.recursiveUpdate {
           "${modifier}+q" = "kill";
           "${modifier}+f" = "exec firefox";
+          "${modifier}+Shift+f" = "exec swaymsg fullscreen";
           "${modifier}+Space" = "exec fuzzel";
           "${modifier}+Shift+Space" = "floating toggle";
           "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
@@ -9160,7 +9252,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </div>
 </div>
 </li>
-<li><a id="orgc810cc9"></a>gpg-agent<br />
+<li><a id="orgc4f660b"></a>gpg-agent<br />
 <div class="outline-text-5" id="text-3-4-1-25">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -9182,7 +9274,7 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
-<li><a id="orgb3100d7"></a>gammastep<br />
+<li><a id="org346dbf9"></a>gammastep<br />
 <div class="outline-text-5" id="text-3-4-1-26">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -9200,12 +9292,12 @@ services.gpg-agent = {
 </li>
 </ol>
 </div>
-<div id="outline-container-orgb11bfe1" class="outline-4">
-<h4 id="orgb11bfe1"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<div id="outline-container-orga44fec7" class="outline-4">
+<h4 id="orga44fec7"><span class="section-number-4">3.4.2.</span> Optional</h4>
 <div class="outline-text-4" id="text-3-4-2">
 </div>
 <ol class="org-ol">
-<li><a id="org563ad79"></a>Gaming<br />
+<li><a id="org6c2f236"></a>Gaming<br />
 <div class="outline-text-5" id="text-3-4-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9241,27 +9333,263 @@ services.gpg-agent = {
 </div>
 </div>
 </li>
-<li><a id="org93288cb"></a>Work<br />
+<li><a id="orgcbb94cf"></a>Work<br />
 <div class="outline-text-5" id="text-3-4-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">
 { pkgs, ... }:
 
- {
-   home.packages = with pkgs; [
-     teams-for-linux
-     google-chrome
-   ];
+{
+  home.packages = with pkgs; [
+    teams-for-linux
+    google-chrome
+    thunderbird
+    ansible
+    dig
+  ];
 
-   programs.ssh = {
-     matchBlocks = {
-       "*.vbc.ac.at" = {
-         user = "dc_adm_schwarzaeugl";
-       };
-     };
-   };
+  programs.ssh = {
+    matchBlocks = {
+      "*.vbc.ac.at" = {
+        user = "dc_adm_schwarzaeugl";
+      };
+    };
+  };
 
- }
+  programs.firefox = {
+    profiles = {
+      dc_adm = {
+        id = 1;
+
+        isDefault = false;
+        userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+          tridactyl
+          browserpass
+          clearurls
+          darkreader
+          enhancer-for-youtube
+          istilldontcareaboutcookies
+          translate-web-pages
+          ublock-origin
+          reddit-enhancement-suite
+          sponsorblock
+          web-archives
+          single-file
+          widegithub
+          enhanced-github
+          unpaywall
+          don-t-fuck-with-paste
+          plasma-integration
+        ];
+
+        search.engines = {
+          "Nix Packages" = {
+            urls = [{
+              template = "https://search.nixos.org/packages";
+              params = [
+                { name = "type"; value = "packages"; }
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@np" ];
+          };
+
+          "NixOS Wiki" = {
+            urls = [{
+              template = "https://nixos.wiki/index.php?search={searchTerms}";
+            }];
+            iconUpdateURL = "https://nixos.wiki/favicon.png";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@nw" ];
+          };
+
+          "NixOS Options" = {
+            urls = [{
+              template = "https://search.nixos.org/options";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@no" ];
+          };
+
+          "Home Manager Options" = {
+            urls = [{
+              template = "https://home-manager-options.extranix.com/";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@hm" "@ho" "@hmo" ];
+          };
+
+          "Google".metaData.alias = "@g";
+        };
+        search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+
+      };
+      cl_adm = {
+        id = 2;
+
+        isDefault = false;
+        userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+          tridactyl
+          browserpass
+          clearurls
+          darkreader
+          enhancer-for-youtube
+          istilldontcareaboutcookies
+          translate-web-pages
+          ublock-origin
+          reddit-enhancement-suite
+          sponsorblock
+          web-archives
+          single-file
+          widegithub
+          enhanced-github
+          unpaywall
+          don-t-fuck-with-paste
+          plasma-integration
+        ];
+
+        search.engines = {
+          "Nix Packages" = {
+            urls = [{
+              template = "https://search.nixos.org/packages";
+              params = [
+                { name = "type"; value = "packages"; }
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@np" ];
+          };
+
+          "NixOS Wiki" = {
+            urls = [{
+              template = "https://nixos.wiki/index.php?search={searchTerms}";
+            }];
+            iconUpdateURL = "https://nixos.wiki/favicon.png";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@nw" ];
+          };
+
+          "NixOS Options" = {
+            urls = [{
+              template = "https://search.nixos.org/options";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@no" ];
+          };
+
+          "Home Manager Options" = {
+            urls = [{
+              template = "https://home-manager-options.extranix.com/";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@hm" "@ho" "@hmo" ];
+          };
+
+          "Google".metaData.alias = "@g";
+        };
+        search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+
+      };
+      ws_adm = {
+        id = 3;
+
+        isDefault = false;
+        userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+          tridactyl
+          browserpass
+          clearurls
+          darkreader
+          enhancer-for-youtube
+          istilldontcareaboutcookies
+          translate-web-pages
+          ublock-origin
+          reddit-enhancement-suite
+          sponsorblock
+          web-archives
+          single-file
+          widegithub
+          enhanced-github
+          unpaywall
+          don-t-fuck-with-paste
+          plasma-integration
+        ];
+
+        search.engines = {
+          "Nix Packages" = {
+            urls = [{
+              template = "https://search.nixos.org/packages";
+              params = [
+                { name = "type"; value = "packages"; }
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@np" ];
+          };
+
+          "NixOS Wiki" = {
+            urls = [{
+              template = "https://nixos.wiki/index.php?search={searchTerms}";
+            }];
+            iconUpdateURL = "https://nixos.wiki/favicon.png";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@nw" ];
+          };
+
+          "NixOS Options" = {
+            urls = [{
+              template = "https://search.nixos.org/options";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@no" ];
+          };
+
+          "Home Manager Options" = {
+            urls = [{
+              template = "https://home-manager-options.extranix.com/";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@hm" "@ho" "@hmo" ];
+          };
+
+          "Google".metaData.alias = "@g";
+        };
+        search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+
+      };
+    };
+  };
+
+}
 
 </pre>
 </div>
@@ -10305,7 +10633,7 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </div>
 </div>
 </li>
-<li><a id="orgeff26c0"></a>Nix common prefix bracketer<br />
+<li><a id="orgdc626b2"></a>Nix common prefix bracketer<br />
 <div class="outline-text-5" id="text-4-2-1-15">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -10338,7 +10666,7 @@ This function searches for common delimiters in region and removes them, summari
 </div>
 </div>
 </li>
-<li><a id="orgd8d349a"></a>Nix formatters<br />
+<li><a id="org198c549"></a>Nix formatters<br />
 <div class="outline-text-5" id="text-4-2-1-16">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11911,8 +12239,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgd534915" class="outline-4">
-<h4 id="orgd534915"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
+<div id="outline-container-org2ff9c1b" class="outline-4">
+<h4 id="org2ff9c1b"><span class="section-number-4">4.4.3.</span> nixpkgs-fmt</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 Adds functions for formatting nix code.
@@ -13927,7 +14255,7 @@ My laptop, sadly soon to be replaced by a new one, since most basic functions ar
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-08-05 Mo 01:47</p>
+<p class="date">Created: 2024-08-06 Di 14:08</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

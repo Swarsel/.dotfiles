@@ -2193,13 +2193,21 @@ My work machine.
           workspace = "1:一";
           output = "DP-11";
         };
-        workdesktop = {
+        work_back_middle = {
           name = "LG Electronics LG Ultra HD 0x000305A6";
           mode = "2560x1440";
           scale = "1";
-          position = "0,0";
+          position = "5120,0";
           workspace = "1:一";
           output = "DP-10";
+        };
+        work_front_left = {
+          name = "LG Electronics LG Ultra HD 0x0007AB45";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-7";
         };
       };
       inputs =  {
@@ -2216,6 +2224,7 @@ My work machine.
         };
       };
       keybindings = {
+        "Mod4+Ctrl+p" = "exec wl-mirror eDP-2";
       };
     };
   }
@@ -7825,6 +7834,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           lib.recursiveUpdate {
             "${modifier}+q" = "kill";
             "${modifier}+f" = "exec firefox";
+            "${modifier}+Shift+f" = "exec swaymsg fullscreen";
             "${modifier}+Space" = "exec fuzzel";
             "${modifier}+Shift+Space" = "floating toggle";
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";

@@ -105,13 +105,21 @@
         workspace = "1:一";
         output = "DP-11";
       };
-      workdesktop = {
+      work_back_middle = {
         name = "LG Electronics LG Ultra HD 0x000305A6";
         mode = "2560x1440";
         scale = "1";
-        position = "0,0";
+        position = "5120,0";
         workspace = "1:一";
         output = "DP-10";
+      };
+      work_front_left = {
+        name = "LG Electronics LG Ultra HD 0x0007AB45";
+        mode = "3840x2160";
+        scale = "1";
+        position = "5120,0";
+        workspace = "1:一";
+        output = "DP-7";
       };
     };
     inputs = {
@@ -127,6 +135,8 @@
         middle_emulation = "enabled";
       };
     };
-    keybindings = { };
+    keybindings = {
+      "Mod4+Ctrl+p" = "exec wl-mirror eDP-2";
+    };
   };
 }
