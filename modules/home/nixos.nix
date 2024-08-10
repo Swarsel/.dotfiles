@@ -15,15 +15,15 @@
   options.swarselsystems.swayfxConfig = lib.mkOption {
     type = lib.types.str;
     default = "
-          blur enable
-          blur_xray disable
-          blur_passes 1
-          blur_radius 1
-          shadows enable
-          corner_radius 2
-          titlebar_separator disable
-          default_dim_inactive 0.02
-      ";
+            blur enable
+            blur_xray disable
+            blur_passes 1
+            blur_radius 1
+            shadows enable
+            corner_radius 2
+            titlebar_separator disable
+            default_dim_inactive 0.02
+        ";
     internal = true;
   };
   config.swarselsystems.swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";

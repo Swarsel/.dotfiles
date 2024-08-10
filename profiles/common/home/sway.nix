@@ -255,29 +255,29 @@ in
         swayfxSettings = config.swarselsystems.swayfxConfig;
       in
       "
-        exec_always autotiling
-        set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
-        mode $exit {
+          exec_always autotiling
+          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+          mode $exit {
 
-            bindsym --to-code {
-                s exec \"systemctl suspend\", mode \"default\"
-                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize && systemctl suspend \", mode \"default \"
-                p exec \"systemctl poweroff\"
-                r exec \"systemctl reboot\"
-                u exec \"swaymsg exit\"
+              bindsym --to-code {
+                  s exec \"systemctl suspend\", mode \"default\"
+                  l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize && systemctl suspend \", mode \"default \"
+                  p exec \"systemctl poweroff\"
+                  r exec \"systemctl reboot\"
+                  u exec \"swaymsg exit\"
 
-                Return mode \"default\"
-                Escape mode \"default\"
-                ${modifier}+Escape mode \"default\"
-            }
-        }
+                  Return mode \"default\"
+                  Escape mode \"default\"
+                  ${modifier}+Escape mode \"default\"
+              }
+          }
 
-        exec systemctl --user import-environment
+          exec systemctl --user import-environment
 
 
 
-        ${swayfxSettings}
+          ${swayfxSettings}
 
-        ";
+          ";
   };
 }

@@ -3,45 +3,7 @@ let
   matrixDomain = "matrix2.swarsel.win";
 in
 {
-
-
-  services = {
-    xserver.xkb = {
-      layout = "us";
-      variant = "altgr-intl";
-    };
-    openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
-    };
-  };
-
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
-  proxmoxLXC = {
-    manageNetwork = true; # manage network myself
-    manageHostName = false; # manage hostname myself
-  };
-
-  networking = {
-    useDHCP = true;
-    enableIPv6 = false;
-  };
-
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    ../../../secrets/keys/authorized_keys
-  ];
-
-  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-  environment.shellAliases = {
-    nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-  };
-
+  << vminitbare>>
 
   imports = [
     (modulesPath + "/virtualisation/proxmox-lxc.nix")

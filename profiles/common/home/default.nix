@@ -2,6 +2,7 @@
 {
   imports = [
     ./packages.nix
+    ./custom-packages.nix
     ./sops.nix
     ./ssh.nix
     ./stylix.nix
