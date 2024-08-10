@@ -136,14 +136,14 @@
     mu
 
     # latex and related packages
-    (pkgs.texlive.combine {
+    (texlive.combine {
       inherit (pkgs.texlive) scheme-full
         dvisvgm dvipng# for preview and export as html
         wrapfig amsmath ulem hyperref capt-of;
     })
 
     # font stuff
-    (nerdfonts.override { fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ]; })
+    nerdfonts # has overrides
     noto-fonts-emoji
     font-awesome_5
     noto-fonts

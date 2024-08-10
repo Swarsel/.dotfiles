@@ -19,9 +19,7 @@
     heroic
 
     # minecraft
+    prismlauncher # has overrides
     temurin-bin-17
-    (prismlauncher.override {
-      glfw = pkgs.glfw-wayland-minecraft;
-    })
   ];
 }

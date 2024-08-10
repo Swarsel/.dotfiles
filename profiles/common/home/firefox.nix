@@ -2,13 +2,7 @@
 {
   programs.firefox = {
     enable = true;
-    package = pkgs.firefox.override {
-      nativeMessagingHosts = [
-        pkgs.tridactyl-native
-        pkgs.browserpass
-        pkgs.plasma5Packages.plasma-browser-integration
-      ];
-    };
+    package = pkgs.firefox; # uses overrides
     policies = {
       CaptivePortal = false;
       DisableFirefoxStudies = true;

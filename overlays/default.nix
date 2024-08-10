@@ -1,9 +1,25 @@
 { inputs, ... }: {
   additions = final: _prev: import ../pkgs { pkgs = final; };
   modifications = final: _prev: {
-    # example = prev.example.overrideAttrs (oldAttrs: rec {
-    # ...
-    # });
+    vesktop = _prev.vesktop.override {
+      withSystemVencord = true;
+    };
+
+    nerdfonts = _prev.nerdfonts.override {
+      fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ];
+    };
+
+    firefox = _prev.firefox.override {
+      nativeMessagingHosts = [
+        _prev.tridactyl-native
+        _prev.browserpass
+        _prev.plasma5Packages.plasma-browser-integration
+      ];
+    };
+
+    prismlauncher = _prev.prismlauncher.override {
+      glfw = _prev.glfw-wayland-minecraft;
+    };
 
     # river = prev.river.overrideAttrs (oldAttrs: rec {
     #   pname = "river";
