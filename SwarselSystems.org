@@ -4147,6 +4147,7 @@ As such, I also define three additional overlays:
     waybarupdate = callPackage ./waybarupdate { };
     opacitytoggle = callPackage ./opacitytoggle { };
     fs-diff = callPackage ./fs-diff { };
+    update-checker = callPackage ./update-checker { };
   }
 
 #+end_src
@@ -4558,35 +4559,80 @@ done
   }
 #+end_src
 
+**** update-checker
+
+#+begin_src shell :tangle scripts/update-checker.sh
+
+  updates="$(cd ~/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$HOSTNAME".config.system.build.toplevel && nvd diff /run/current-system ./result | grep -c '\[U')"
+
+  alt="has-updates"
+  if [[ $updates -eq 0 ]]; then
+      alt="updated"
+  fi
+
+  tooltip="System updated"
+  if [[ $updates != 0 ]]; then
+  	tooltip=$(cd ~/.dotfiles && nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' )
+  fi
+
+  echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
+
+#+end_src
+
+#+begin_src nix :tangle pkgs/update-checker/default.nix
+  { writeShellApplication, sway}:
+
+  writeShellApplication {
+    name = "update-checker";
+    text = builtins.readFile ../../scripts/update-checker.sh;
+  }
+#+end_src
+
 
 *** Overlays
 
 #+begin_src nix :tangle overlays/default.nix
 
-  { inputs, ... }: {
-  additions = final: _prev: import ../pkgs { pkgs = final; };
-  modifications = final: _prev: {
-    # example = prev.example.overrideAttrs (oldAttrs: rec {
-    # ...
-    # });
+      { inputs, ... }: {
+      additions = final: _prev: import ../pkgs { pkgs = final; };
+      modifications = final: _prev: {
+        vesktop = _prev.vesktop.override {
+          withSystemVencord = true;
+        };
 
-    # river = prev.river.overrideAttrs (oldAttrs: rec {
-    #   pname = "river";
-    #   version = "git";
-    #   src = prev.fetchFromGitHub {
-    #     owner = "riverwm";
-    #     repo = pname;
-    #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
-    #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
-    #     fetchSubmodules = true;
-    #   };
-    # });
-  };
+        nerdfonts = _prev.nerdfonts.override {
+          fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ];
+        };
 
-  nixpkgs-stable = final: _prev: {
-    stable = import inputs.nixpkgs-stable { inherit (final) system; };
-  };
-}
+        firefox = _prev.firefox.override {
+          nativeMessagingHosts = [
+            _prev.tridactyl-native
+            _prev.browserpass
+            _prev.plasma5Packages.plasma-browser-integration
+          ];
+        };
+
+        prismlauncher = _prev.prismlauncher.override {
+          glfw = _prev.glfw-wayland-minecraft;
+        };
+
+        # river = prev.river.overrideAttrs (oldAttrs: rec {
+        #   pname = "river";
+        #   version = "git";
+        #   src = prev.fetchFromGitHub {
+        #     owner = "riverwm";
+        #     repo = pname;
+        #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
+        #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
+        #     fetchSubmodules = true;
+        #   };
+        # });
+      };
+
+      nixpkgs-stable = final: _prev: {
+        stable = import inputs.nixpkgs-stable { inherit (final) system; };
+      };
+    }
 
 #+end_src
 
@@ -6609,6 +6655,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
     waybarupdate
     opacitytoggle
     fs-diff
+    update-checker
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -7593,6 +7640,19 @@ The rest of this configuration is found here:
           interval = 60;
         };
 
+        "custom/nix-updates" = {
+          exec = "update-checker";
+          on-click = "update-checker && notify-send 'The system has been updated'";
+          interval = 3600;
+          tooltip = true;
+          return-type = "json";
+          format = "{} {icon} ?";
+          format-icons = {
+            has-updates = "";
+            updated= "";
+          };
+        };
+
         "group/hardware" = {
           orientation = "inherit";
           drawer = {
@@ -7602,6 +7662,8 @@ The rest of this configuration is found here:
             "tray"
             "temperature"
             "power-profiles-daemon"
+            "custom/left-arrow-light"
+            "custom/left-arrow-dark"
             "custom/left-arrow-light"
             "disk"
             "custom/left-arrow-dark"
@@ -8408,10 +8470,12 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     nixConfig = {
       extra-substituters = [
         "https://nix-community.cachix.org"
+        "https://cache.ngi0.nixos.org/"
       ];
 
       extra-trusted-public-keys = [
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
       ];
     };
 

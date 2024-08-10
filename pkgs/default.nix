@@ -14,4 +14,5 @@ in
   waybarupdate = callPackage ./waybarupdate { };
   opacitytoggle = callPackage ./opacitytoggle { };
   fs-diff = callPackage ./fs-diff { };
+  update-checker = callPackage ./update-checker { };
 }

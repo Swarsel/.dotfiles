@@ -29,6 +29,19 @@
           interval = 60;
         };
 
+        "custom/nix-updates" = {
+          exec = "update-checker";
+          on-click = "update-checker && notify-send 'The system has been updated'";
+          interval = 3600;
+          tooltip = true;
+          return-type = "json";
+          format = "{} {icon} ?";
+          format-icons = {
+            has-updates = "";
+            updated = "";
+          };
+        };
+
         "group/hardware" = {
           orientation = "inherit";
           drawer = {
@@ -38,6 +51,8 @@
             "tray"
             "temperature"
             "power-profiles-daemon"
+            "custom/left-arrow-light"
+            "custom/left-arrow-dark"
             "custom/left-arrow-light"
             "disk"
             "custom/left-arrow-dark"
@@ -158,6 +173,13 @@
           # on-click-right= "com.github.stsdc.monitor";
           on-click-right = "kitty -o confirm_os_window_close=0 btm";
 
+        };
+        "custom/vpn" = {
+          format = "VPN ";
+          exec = "echo '{\"class\": \"connected\"}'";
+          exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+          return-type = "json";
+          interval = 5;
         };
         battery = {
           states = {
