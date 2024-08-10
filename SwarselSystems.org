@@ -6205,6 +6205,20 @@ This section houses the greetd related settings. I do not really want to use a d
   }
 #+end_src
 
+**** Summary of nixos-rebuild diff
+
+#+begin_src nix :tangle profiles/common/nixos/nvd-rebuild.nix
+  { pkgs, ... }:
+  {
+    system.activationScripts.diff = {
+      supportsDryActivation = true;
+      text = ''
+        ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff \
+             /run/current-system "$systemConfig"
+      '';
+    };
+  }
+#+end_src
 
 **** gnome-keyring
 
@@ -6508,6 +6522,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       util-linux
       nmap
       lsof
+      nvd
 
       # nix
       alejandra

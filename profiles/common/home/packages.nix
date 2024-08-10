@@ -6,7 +6,7 @@
     # audio stuff
     spek # spectrum analyzer
     losslessaudiochecker
-    ffmpeg_5-full
+    ffmpeg_7-full
     flac
     mediainfo
     picard-tools
@@ -25,6 +25,7 @@
     util-linux
     nmap
     lsof
+    nvd
 
     # nix
     alejandra
@@ -48,7 +49,7 @@
     xournalpp
     obsidian
     spotify
-    discord
+    vesktop # discord client
     stable.nextcloud-client
     spotify-player
     element-desktop-wayland
@@ -159,6 +160,7 @@
     waybarupdate
     opacitytoggle
     fs-diff
+    update-checker
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
