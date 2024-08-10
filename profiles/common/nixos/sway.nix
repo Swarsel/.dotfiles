@@ -9,10 +9,6 @@
       gtk = true;
     };
 
-    extraOptions = [
-      "--unsupported-gpu"
-    ];
-
     extraSessionCommands = ''
       export XDG_SESSION_DESKTOP=sway
       export SDL_VIDEODRIVER=wayland

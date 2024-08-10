@@ -90,6 +90,7 @@ window.addEventListener('load', addDarkmodeWidget);
 </script>
 #+end_export
 
+The rest of this file will now contain actual code that is used in the configuration.
 
 * Noweb-Ref blocks
 :PROPERTIES:
@@ -161,115 +162,12 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
     };
 
 #+end_src
-*** Waybar items - LAPTOPS
-:PROPERTIES:
-:CUSTOM_ID: h:f3cf9bdc-6826-4d8e-ba5a-253ef098a9b8
-:END:
-
-This noweb-ref block defines some aspects of my waybar configuration. Mainly, it adds the =battery= module to the waybar, which is no needed on PCs.
-
-The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7f0c5697c690][Waybar]]
-
-#+begin_src nix :tangle no :noweb-ref waybarlaptop
-
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/vpn"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-#+end_src
-*** Waybar items - PC
-:PROPERTIES:
-:CUSTOM_ID: h:47749e76-3f25-485a-9e98-c7ce3a4ad444
-:END:
-
-As stated above, this is the waybar configuration for PCs now. Here we do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
-
-The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7f0c5697c690][Waybar]]
-
-#+begin_src nix :tangle no :noweb-ref waybarpc
-
-  programs.waybar.settings.mainBar."custom/pseudobat" = {
-    format = "";
-    on-click-right = "wlogout -p layer-shell";
-  };
-  programs.waybar.settings.mainBar.modules-right = [
-    "custom/outer-left-arrow-dark"
-    "mpris"
-    "custom/left-arrow-light"
-    "network"
-    "custom/vpn"
-    "custom/left-arrow-dark"
-    "pulseaudio"
-    "custom/left-arrow-light"
-    "custom/pseudobat"
-    "battery"
-    "custom/left-arrow-dark"
-    "group/hardware"
-    "custom/left-arrow-light"
-    "clock#2"
-    "custom/left-arrow-dark"
-    "clock#1"
-  ];
-
-#+end_src
-*** Sway Startup commands
-:PROPERTIES:
-:CUSTOM_ID: h:515cfeb6-3b16-4fb2-9222-3557555a6cc1
-:END:
-
-This defines programs I want to have starting when I start the system
-
-Part of the startup is also defined in [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The distinction is as follows. As this configuration also needs to work on systems that are running only home manager, I probably need to run nixGL or something similar on those systems to get these graphic apps to display properly. In this section we only define such graphical programs, in the other location we only put shell applications and such.
-
-These other apps currently include:
-- spotifytui
-- kitty
-
-Do not that =syncthingtray= is also not mentioned here. It is installed as a home manager package that automatically starts at system start.
-
-#+begin_src nix :tangle no :noweb-ref startupnixos
-
-{ command = "nextcloud --background"; }
-{ command = "vesktop --start-minimized"; }
-{ command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-{ command = "ANKI_WAYLAND=1 anki"; }
-{ command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-{ command = "nm-applet"; }
-
-#+end_src
-
-*** gpg-agent
-:PROPERTIES:
-:CUSTOM_ID: h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103
-:END:
-
-This section holds most of the configuration needed for the gpg-agent. This allows me to use my Yubikey during normal system operation as well in Emacs (with some extra configuration here: [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]])
-
-Also, there are some more NixOS related options here: [[#h:7a89b5e3-b700-4167-8b14-2b8172f33936][Yubikey settings]]
-
-I also enable the extra socket here for ssh agent forwarding. But I have not fully gotten it to work yet.
-
-#+begin_src nix :tangle no :noweb-ref gpgagent
-
-
-#+end_src
-
 *** firefox profile
+:PROPERTIES:
+:CUSTOM_ID: h:d9861165-2a10-44d9-831d-0fe23cc5473f
+:END:
+
+At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
 
 #+begin_src nix :tangle no :noweb-ref firefoxprofile
 
@@ -354,24 +252,6 @@ I also enable the extra socket here for ssh agent forwarding. But I have not ful
 :END:
 
 These settings are to be used only on full NixOS setups.
-
-*** Wrap with hardware-configuration
-:PROPERTIES:
-:CUSTOM_ID: h:4ae8b4ed-47a8-4d79-a12c-894118ea57e1
-:END:
-
-This handles the automactically generated =/etc/nixos/hardware-configuration.nix= file that sets some hardware specific settings automatically upon creating the NixOS system.
-
-This sections used to handle more imports, but at the moment, it is now pretty useless really.
-
-#+begin_src nix :tangle no :noweb-ref wrap
-
-  imports =
-    [
-      ./hardware-configuration.nix
-    ];
-
-#+end_src
 
 *** Virtual hosts init
 :PROPERTIES:
@@ -486,6 +366,8 @@ A short overview over each input and what it does:
   This provides a database for =nix-index= that is updated weekly. This allows for declarative management, without needing to run the =nix-index= command for database assembly.
 - [[https://github.com/nix-community/disko][disko]]
   disko provides declarative disk partitioning, which I use for impermanence as well as [[https://github.com/nix-community/nixos-anywhere][nixos-anywhere]].
+- [[https://github.com/nix-community/impermanence][Impermanence]]
+  Some of my machines are using a btrfs filesystem that wipes the root directory on each reboot. This forces me to pay more attention in keeping my system declarative as well as helping me keeping the system uncluttered. However, it is a chore to make sure that important files are not deleted. This flake helps with this problem, allowing me to select files and directories for persisting.
 
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
@@ -588,21 +470,7 @@ Lastly I define some common module lists that I can simply load depending on the
     }
   );
 
-  # pkgs for home-manager builds
-  # homepkgs = import nixpkgs { system = "x86_64-linux";
-  #                             overlays = [ inputs.emacs-overlay.overlay
-  #                                          inputs.nur.overlay
-  #                                          inputs.nixgl.overlay
-  #                                          (final: _prev: {
-  #                                            stable = import inputs.nixpkgs-stable {
-  #                                              inherit (final) system config;
-  #                                            };
-  #                                          })
-  #                                        ];
-  #                             config.allowUnfree = true;
-  #                           };
-
-  # # NixOS modules that can only be used on NixOS systems
+  # NixOS modules that can only be used on NixOS systems
   nixModules = [
     inputs.stylix.nixosModules.stylix
     inputs.lanzaboote.nixosModules.lanzaboote
@@ -628,6 +496,18 @@ Lastly I define some common module lists that I can simply load depending on the
 #+end_src
 *** General (outputs)
 
+In this section I am creating some attributes that define general concepts of my configuration:
+
+- =nixosModules= imports self-defined options that I only want to use on NixOS systems. All modules are held as separately as possible, to allow for easier sharing with other people mostly.
+- =homeManagerModules= imports modules that are to be used on NixOS and non-NixOS systems. These are mostly used to define outputs (monitors), keyboards and special commands for machines.
+- =packages= holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and firefox addons.
+- =devShells= provides a development shell that can be used as a bootstrap for new installs using =nix develop= while inside the flake directory.
+- =formatter= provides the formatter that is to be used on =.nix= files. At the moment this is not used anywhere.
+- =overlays= imports a few community overlays (such as the emacs-overlay) and also three overlays of my own:
+  1) =additions= holds derivations that I am adding myself to nixpkgs - i.e. this is where the packages defined in =/pkgs= get added to nixpkgs.
+  2) =modifications= holds derivations that I have performed overrides on. The list of interesting attribute overrides can be found by looking at the source code of a derivation and looking at the start of the file for lines of the form =<name> ? <val>=. But this can also be used to, for example, fetch a different version of a package instead.
+  3) =nixpkgs-stable= holds the newest version of stable nixpkgs. I only use this on packages that seem broken on unstable, which are not many.
+
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
 
   inherit lib;
@@ -640,7 +520,6 @@ Lastly I define some common module lists that I can simply load depending on the
     (pkgs:
       {
         default = pkgs.mkShell {
-          # Enable experimental features without having to specify the argument
           NIX_CONFIG = "experimental-features = nix-command flakes";
           nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
         };
@@ -655,8 +534,6 @@ Lastly I define some common module lists that I can simply load depending on the
     inputs.nixgl.overlay
   ];
 
-
-
 #+end_src
 
 *** nixosConfigurations
@@ -664,150 +541,136 @@ Lastly I define some common module lists that I can simply load depending on the
 :CUSTOM_ID: h:9c9b9e3b-8771-44fa-ba9e-5056ae809655
 :END:
 
-This section is the biggest pain point of the configuration. For every system, I have one of these. I know there are better ways to go about this, but I did not find the time yet to look into this further. For now, enjoy this meter-long list
+This section used to be much longer, since I performed all of my imports right here in the past. Since then, I have however refactored and now my important hosts can be defined in little space. Once I have fully transitioned my server to NixOS too this section will become even smaller once more.
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
 
-  sandbox = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.disko.nixosModules.disko
-      ./profiles/sandbox/disk-config.nix
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/sandbox/nixos.nix
-    ];
-  };
+    sandbox = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.disko.nixosModules.disko
+        ./profiles/sandbox/disk-config.nix
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/sandbox/nixos.nix
+      ];
+    };
 
-  threed = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = nixModules ++ [
-      inputs.lanzaboote.nixosModules.lanzaboote
-      ./profiles/threed/nixos.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/threed/home.nix
-        ];
-      }
-    ];
-  };
+    threed = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = nixModules ++ [
+        inputs.lanzaboote.nixosModules.lanzaboote
+        ./profiles/threed/nixos.nix
+        inputs.home-manager.nixosModules.home-manager
+        {
+          home-manager.users.swarsel.imports = mixedModules ++ [
+            ./profiles/threed/home.nix
+          ];
+        }
+      ];
+    };
 
-  fourside = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
-    modules = nixModules ++ [
-      ./profiles/fourside
-    ];
-  };
+    fourside = lib.nixosSystem {
+      specialArgs = { inherit inputs outputs; };
+      modules = nixModules ++ [
+        ./profiles/fourside
+      ];
+    };
 
-  nbl-imba-2 = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
-    modules = nixModules ++ [
-      ./profiles/nbl-imba-2
-    ];
-  };
-
-  # winters = nixpkgs.lib.nixosSystem {
-  #   specialArgs = { inherit inputs; };
-  #   modules = nixModules ++ [
-  #     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-  #     ./profiles/winters/nixos.nix
-  #     inputs.home-manager.nixosModules.home-manager
-  #     {
-  #       home-manager.users.swarsel.imports = mixedModules ++ [
-  #         ./profiles/winters/home.nix
-  #       ];
-  #     }
-  #   ];
-  # };
+    nbl-imba-2 = lib.nixosSystem {
+      specialArgs = { inherit inputs outputs; };
+      modules = nixModules ++ [
+        ./profiles/nbl-imba-2
+      ];
+    };
 
   nginx = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/nginx/nixos.nix
-    ];
-  };
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/nginx/nixos.nix
+      ];
+    };
 
-  calibre = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/calibre/nixos.nix
-    ];
-  };
+    calibre = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/calibre/nixos.nix
+      ];
+    };
 
-  jellyfin = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      ./profiles/server1/jellyfin/nixos.nix
-    ];
-  };
+    jellyfin = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        ./profiles/server1/jellyfin/nixos.nix
+      ];
+    };
 
-  transmission = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/transmission/nixos.nix
-    ];
-  };
+    transmission = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/transmission/nixos.nix
+      ];
+    };
 
-  matrix = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/matrix/nixos.nix
-    ];
-  };
+    matrix = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/matrix/nixos.nix
+      ];
+    };
 
-  sound = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/sound/nixos.nix
-    ];
-  };
+    sound = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/sound/nixos.nix
+      ];
+    };
 
-  spotifyd = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/spotifyd/nixos.nix
-    ];
-  };
+    spotifyd = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/spotifyd/nixos.nix
+      ];
+    };
 
-  paperless = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/server1/paperless/nixos.nix
-    ];
-  };
+    paperless = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/server1/paperless/nixos.nix
+      ];
+    };
 
-  #ovm swarsel
-  sync = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/remote/oracle/sync/nixos.nix
-    ];
-  };
+    #ovm swarsel
+    sync = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/remote/oracle/sync/nixos.nix
+      ];
+    };
 
-  #ovm swarsel
-  swatrix = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/remote/oracle/matrix/nixos.nix
-    ];
-  };
+    #ovm swarsel
+    swatrix = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ./profiles/remote/oracle/matrix/nixos.nix
+      ];
+    };
 #+end_src
 *** homeConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
 :END:
 
-In contrast, this defines home-manager systems, which I only have one of.
+In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
 
 #+begin_src nix :tangle no :noweb-ref flakehomeconf
 
@@ -843,7 +706,7 @@ Nix on Android also demands an own flake output, which is provided here.
 :CUSTOM_ID: h:6a08495a-8566-4bb5-9fac-b03df01f6c81
 :END:
 
-This builds my proxmox template. It is defined as a separate output so that I can already apply some rudimentary configuration before even setting up the system.
+This builds my Proxmox template. It is defined as a separate output so that I can already apply some rudimentary configuration before even setting up the system.
 
 Usage:
 
@@ -881,184 +744,83 @@ This section mainly exists house different `configuration.nix` files for system 
 
 Important: Think about if a settings really needs to go into this area - chances are that the settings can also go to the general settings, which is to be preferred in order to reduce code duplication.
 
-*** Template (for new machines)
-:PROPERTIES:
-:CUSTOM_ID: h:29a3066d-4da6-4f61-b835-5e4a43e2d34d
-:END:
-
-This section holds the minimum configuration that is needed on a new host. These assume a NixOS machine (so not standalone home-manager on a non-NixOS host), as this is the setting that I will most likely use in the future now. All of these blocks need to be updated, with entries called TEMPLATE mostly needed to be filled with host-/user-specific values or other inputs. If TEMPLATE is given in a comment section, see the provided values as likely defaults. The TEMPLATE comments should afterwards be deleted for clarity.
-
-If a non-NixOS host must be used, check the Surface configuration for pointers. Most likely the waybar settings need to be adjusted, since non-NixOS (as of writing this) fails to display drawers in the waybar properly.
-
-No matter what you do, check the initial /etc/nixos/configuration.nix for notable changes that might emerge in future versions of nix.
-
-**** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:91c428e5-f56e-4d36-b08f-7819b2979b23
-:END:
-
-#+begin_src nix :noweb yes :tangle profiles/TEMPLATE/nixos.nix
-{ pkgs, ... }:
-
-{
-
-  <<wrap>>
-
-  services = {
-    getty.autologinUser = "TEMPLATE";
-    greetd.settings.initial_session.user = "TEMPLATE";
-  };
-
-  # Bootloader
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/sda"; # TEMPLATE - if only one disk, this will work
-    useOSProber = true;
-  };
-
-  # --------------------------------------
-  # you might need a configuration like this instead:
-  # Bootloader
-  # boot = {
-  #   kernelPackages = pkgs.linuxPackages_latest;
-  #   loader.grub = {
-  #     enable = true;
-  #     devices = ["nodev" ];
-  #     useOSProber = true;
-  #   };
-  # };
-  # --------------------------------------
-
-  networking.hostName = "TEMPLATE"; # Define your hostname.
-
-  stylix.image = ../../wallpaper/TEMPLATEwp.png;
-  <<theme>>
-
-  # Configure keymap in X11 (only used for login)
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "altgr-intl";
-  };
-
-  users.users.TEMPLATE = {
-    isNormalUser = true;
-    description = "TEMPLATE";
-    extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" ];
-    packages = with pkgs; [ ];
-  };
-
-  environment.systemPackages = with pkgs; [
-  ];
-
-  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-}
-
-#+end_src
-
-**** Home Manager
-:PROPERTIES:
-:CUSTOM_ID: h:a08e51ee-88eb-4241-917d-68b4bdbcf171
-:END:
-#+begin_src nix :noweb yes :tangle profiles/TEMPLATE/home.nix
-{ config, pkgs, ... }:
-
-{
-
-  <<gpgagent>>
-  home = {
-    username = "TEMPLATE";
-    homeDirectory = "/home/TEMPLATE";
-    stateVersion = "23.05"; # TEMPLATE -- Please read the comment before changing.
-    keyboard.layout = "us"; # TEMPLATE
-    home.packages = with pkgs; [
-      # ---------------------------------------------------------------
-      # if schildichat works on this machine, use it, otherwise go for element
-      # element-desktop
-      # ---------------------------------------------------------------
-    ];
-  };
-  # update path if the sops private key is stored somewhere else
-  sops.age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
-
-  # waybar config - TEMPLATE - update for cores and temp
-  programs.waybar.settings.mainBar = {
-    #cpu.format = "{icon0} {icon1} {icon2} {icon3}";
-    cpu.format = "{icon0} {icon1} {icon2} {icon3} {icon4} {icon5} {icon6} {icon7}";
-    temperature.hwmon-path = "/sys/devices/platform/coretemp.0/hwmon/hwmon1/temp3_input";
-  };
-
-  # -----------------------------------------------------------------
-  # is this machine always connected to power? If yes, use this block:
-  # <<waybarpc>>
-  # -----------------------------------------------------------------
-
-  # -----------------------------------------------------------------
-  # if not always connected to power (laptop), use this (default):
-  <<waybarlaptop>>
-  # -----------------------------------------------------------------
-
-  wayland.windowManager.sway = {
-    config = rec {
-      # update for actual inputs here,
-      input = {
-        "36125:53060:splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          # TEMPLATE
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          # xkb_options = "ctrl:nocaps,grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-        };
-
-      };
-
-      output = {
-        DP-1 = {
-          mode = "2560x1440"; # TEMPLATE
-          scale = "1";
-          bg = "~/.dotfiles/wallpaper/TEMPLATE.png fill";
-        };
-      };
-
-      keybindings =
-        let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-        in
-        {
-          # TEMPLATE
-          "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkschildi.sh\"";
-          # "${modifier}+w" = "exec \"bash ~/.dotfiles/scripts/checkelement.sh\"";
-        };
-
-      startup = [
-        <<startupnixos>>
-      ];
-    };
-  };
-}
-
-#+end_src
-
 *** Physical hosts
 :PROPERTIES:
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
 :END:
+**** Home-manager only
+:PROPERTIES:
+:CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
+:END:
+
+This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
+
+#+begin_src nix :tangle profiles/home-manager/default.nix
+  { inputs, outputs, config, ... }:
+  {
+
+    imports = builtins.attrValues outputs.homeManagerModules;
+
+    nixpkgs = {
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+
+    programs.zsh.initExtra = "
+    export GPG_TTY=\"$(tty)\"
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    gpgconf --launch gpg-agent
+          ";
+
+    swarselsystems = {
+      isLaptop = true;
+      isNixos = false;
+      wallpaper = ../../wallpaper/surfacewp.png;
+      temperatureHwmon = {
+        isAbsolutePath = true;
+        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+        input-filename = "temp1_input";
+      };
+      monitors = {
+        main = {
+          name = "California Institute of Technology 0x1407 Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-1";
+        };
+      };
+      inputs = {
+        "1:1:AT_Translated_Set_2_keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+      };
+      keybindings = { };
+    };
+
+  }
+
+
+#+end_src
+
 **** Sandbox (Lenovo Y510P)
 :PROPERTIES:
 :CUSTOM_ID: h:60cf171f-2ec9-418f-8f67-85d159efe9d0
 :END:
 
-My old laptop, replaced by a new one, since most basic functions have stopped to work lately. However, it is still good as a dummy server for testing things out before having them go live.
+My old laptop, replaced by a new one, since most basic functions have stopped to work lately. However, it is still good as a dummy server for testing things out before having them go live. This configuration often changes when I am testing things - at the moment it is not even transitioned to the new module system however.
 
 ***** NixOS
 :PROPERTIES:
@@ -1889,77 +1651,12 @@ My old laptop, replaced by a new one, since most basic functions have stopped to
 
 #+end_src
 
-**** Home-manager only
-
-
-#+begin_src nix :tangle profiles/home-manager/default.nix
-  { inputs, outputs, config, ... }:
-  {
-
-    imports = builtins.attrValues outputs.homeManagerModules;
-
-    nixpkgs = {
-      inherit (outputs) overlays;
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    services.xcape = {
-      enable = true;
-      mapExpression = {
-        Control_L = "Escape";
-      };
-    };
-
-    programs.zsh.initExtra = "
-    export GPG_TTY=\"$(tty)\"
-    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-    gpgconf --launch gpg-agent
-          ";
-
-    swarselsystems = {
-      isLaptop = true;
-      isNixos = false;
-      wallpaper = ../../wallpaper/surfacewp.png;
-      temperatureHwmon = {
-        isAbsolutePath = true;
-        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-        input-filename = "temp1_input";
-      };
-      monitors = {
-        main = {
-          name = "California Institute of Technology 0x1407 Unknown";
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          workspace = "2:二";
-          output = "eDP-1";
-        };
-      };
-      inputs = {
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-      };
-      keybindings = { };
-    };
-
-  }
-
-
-#+end_src
-
 **** Fourside (Lenovo Thinkpad P14s Gen2)
 :PROPERTIES:
 :CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
 :END:
 
-My new main machine.
-This is basically just adjusted to the core count, path to the =hwmon= (this was very bothersome on this machine due to changing address), as well as making use of the top-row function keys.
-
+This is my private main machine. I am not using hardware encryption here as I personally do not really care. However, I want to setup impermanence on this one as soon as I get the chance.
 
 #+begin_src nix :tangle profiles/fourside/default.nix
   { inputs, outputs, config, pkgs, ... }:
@@ -2081,7 +1778,7 @@ This is basically just adjusted to the core count, path to the =hwmon= (this was
 :CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
 :END:
 
-My work machine.
+My work machine. Built for more security, this is the gold standard of my configurations at the moment.
 
 
 #+begin_src nix :tangle profiles/nbl-imba-2/default.nix
@@ -3030,7 +2727,7 @@ Make sure to also do this for doublepuppet.yaml
     matrixDomain = "matrix2.swarsel.win";
   in
   {
-    << vminitbare>>
+    <<vminitbare>>
 
     imports = [
       (modulesPath + "/virtualisation/proxmox-lxc.nix")
@@ -4113,6 +3810,9 @@ Lastly, the machine that runs matrix needs to regularly update, as otherwise you
 
 #+end_src
 ** Overlays, packages, and modules
+:PROPERTIES:
+:CUSTOM_ID: h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d
+:END:
 
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
 
@@ -4126,6 +3826,11 @@ As such, I also define three additional overlays:
    This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
 
 *** Packages
+:PROPERTIES:
+:CUSTOM_ID: h:64a5cc16-6b16-4802-b421-c67ccef853e1
+:END:
+
+This is the central station for self-defined packages. These are all referenced in =default.nix=. Wherever possible, I am keeping the shell version of these scripts in this file as well and then read it using =builtin.readFile= in the NixOS configurations. This lets me keep full control in this one file but also keep the separate files uncluttered.
 
 #+begin_src nix :tangle pkgs/default.nix
   { pkgs, ... }:
@@ -4150,6 +3855,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** pass-fuzzel
+:PROPERTIES:
+:CUSTOM_ID: h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3
+:END:
+
+This app allows me, in conjunction with my Yubikey, to quickly enter passwords when the need arises. Normal and TOTP passwords are supported, and they can either be printed directly or copied to the clipboard.
 
 #+begin_src shell :tangle scripts/pass-fuzzel.sh
   # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
@@ -4209,6 +3919,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** cura5
+:PROPERTIES:
+:CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
+:END:
+
+The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newer AppImage here and use that instead.
 
 
 #+begin_src nix :tangle pkgs/cura5/default.nix
@@ -4244,6 +3959,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** cdw
+:PROPERTIES:
+:CUSTOM_ID: h:73b14c7a-5444-4fed-b7ac-d65542cdeda3
+:END:
+
+This script allows for quick git worktree switching.
 
 
 #+begin_src nix :tangle pkgs/cdw/default.nix
@@ -4261,7 +3981,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** cdb
+:PROPERTIES:
+:CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
+:END:
 
+This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/cdb/default.nix
   { writeShellApplication, fzf }:
@@ -4277,6 +4001,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** bak
+:PROPERTIES:
+:CUSTOM_ID: h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3
+:END:
+
+This script lets me quickly backup files by appending =.bak= to the filename.
 
 
 #+begin_src nix :tangle pkgs/bak/default.nix
@@ -4293,6 +4022,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** timer
+:PROPERTIES:
+:CUSTOM_ID: h:3c72d263-411c-44f0-90ff-55f14d4d9d49
+:END:
+
+This app starts a configuratble timer and uses TTS to say something once the timer runs out.
 
 
 #+begin_src nix :tangle pkgs/timer/default.nix
@@ -4309,6 +4043,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** e
+:PROPERTIES:
+:CUSTOM_ID: h:1834df06-9238-4efa-9af6-851dafe66c68
+:END:
+
+This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After emacs closes, the kittyterm window is then shown again if it was visible earlier.
 
 #+begin_src shell :tangle scripts/e.sh
   wait=0
@@ -4347,6 +4086,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** command-not-found
+:PROPERTIES:
+:CUSTOM_ID: h:10268005-a9cd-4a00-967c-cbe975c552fa
+:END:
+
+The normal =command-not-found.sh= uses the outdated =nix-shell= commands as suggestions. This version supplies me with the more modern =nixpkgs#<name>= version.
 
 
 #+begin_src shell :tangle scripts/command-not-found.sh
@@ -4385,6 +4129,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** swarselcheck
+:PROPERTIES:
+:CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
+:END:
+
+This app checks for different apps that I keep around in the scratchpad for quick viewing and hiding (messengers and music players mostly) and then behaves like the kittyterm hider that I described in [[#h:1834df06-9238-4efa-9af6-851dafe66c68][e]].
 
 #+begin_src shell :tangle scripts/swarselcheck.sh
   kitty=0
@@ -4457,6 +4206,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** waybarupdate
+:PROPERTIES:
+:CUSTOM_ID: h:f93f66f9-6b8b-478e-b139-b2f382c1f25e
+:END:
+
+This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
 
 #+begin_src shell :tangle scripts/waybarupdate.sh
   CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
@@ -4498,6 +4252,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** opacitytoggle
+:PROPERTIES:
+:CUSTOM_ID: h:a1d94db2-837a-40c4-bbd8-81ce847440ee
+:END:
+
+This app quickly toggles between 5% and 0% transparency.
 
 #+begin_src shell :tangle scripts/opacitytoggle.sh
   if swaymsg opacity plus 0.01 -q; then
@@ -4518,6 +4277,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 **** fs-diff
+:PROPERTIES:
+:CUSTOM_ID: h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0
+:END:
+
+This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
 
 #+begin_src shell :tangle scripts/fs-diff.sh
 set -euo pipefail
@@ -4552,6 +4316,11 @@ done
 #+end_src
 
 **** update-checker
+:PROPERTIES:
+:CUSTOM_ID: h:4d864147-f9ef-46da-9b4f-4e7996a65157
+:END:
+
+This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
 #+begin_src shell :tangle scripts/update-checker.sh
 
@@ -4577,7 +4346,12 @@ done
 #+end_src
 
 
-*** Overlays
+*** Overlays (additions, overrides, nixpkgs-stable)
+:PROPERTIES:
+:CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
+:END:
+
+This file now holds all of the "nixpkgs-changes" that I am using across the configurations. Most notable here are the =modifications=, where I am editing derivations according to my needs.
 
 #+begin_src nix :tangle overlays/default.nix
   { inputs, ... }: {
@@ -4624,10 +4398,16 @@ done
 #+end_src
 
 *** Modules
+:PROPERTIES:
+:CUSTOM_ID: h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc
+:END:
 
 In this section I define custom modules under the =swarsel= attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 
 **** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:14e68518-8ec7-48ec-b208-0e3d6d49954d
+:END:
 
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
 
@@ -4643,6 +4423,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 
 ***** Wallpaper
+:PROPERTIES:
+:CUSTOM_ID: h:bd7517c6-0e0a-4063-bc81-e62cd24e7170
+:END:
+
+This lets me set the wallpaper that I want to use. Duplicated with home-manager options because mixing system and user level configuration is not a good idea.
 
 #+begin_src nix :tangle modules/nixos/wallpaper.nix
   { lib, ... }:
@@ -4657,6 +4442,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Hardware
+:PROPERTIES:
+:CUSTOM_ID: h:c6a138ff-f07f-4cae-95b9-b6daa2b11463
+:END:
+
+This lets me set some basic flags about the hardware of the configured systems.
 
 #+begin_src nix :tangle modules/nixos/hardware.nix
   { lib, ... }:
@@ -4673,6 +4463,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Setup
+:PROPERTIES:
+:CUSTOM_ID: h:f4f22166-e345-43e6-b15f-b7f5bb886554
+:END:
+
+I usually use =mutableUsers = false= in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
 
 #+begin_src nix :tangle modules/nixos/setup.nix
   { lib, ... }:
@@ -4683,6 +4478,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Impermanence
+:PROPERTIES:
+:CUSTOM_ID: h:e591075d-4a77-4add-bbc8-b711998fa97f
+:END:
+
+Option to enable impermanence configurations. This could also be done via optional imports, but impermanence is a "big enough" change to warrant a line in the machine =default.nix=.
 
 #+begin_src nix :tangle modules/nixos/impermanence.nix
   { lib, ... }:
@@ -4693,6 +4493,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Filesystem
+:PROPERTIES:
+:CUSTOM_ID: h:f77358ee-a80c-403a-be9d-04e7052bc556
+:END:
+
+This lets me quickly set flags for "special" file systems. These options mostly function in conjunction with other settings (for example, the =isBtrfs= function is mostly used for impermanence configuration).
 
 #+begin_src nix :tangle modules/nixos/filesystem.nix
   { lib, ... }:
@@ -4704,6 +4509,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 
 **** home-manager
+:PROPERTIES:
+:CUSTOM_ID: h:ced5841f-c088-4d88-b3a1-7d62aad8837b
+:END:
+
+This holds modules that are to be used on most hosts. These are also the most important options to configure, as these allow me easy access to monitor, keyboard, and other setups.
 
 #+BEGIN_src nix :tangle modules/home/default.nix
   {
@@ -4720,6 +4530,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Laptop
+:PROPERTIES:
+:CUSTOM_ID: h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1
+:END:
+
+Laptops are not always plugged in, so they should show a battery icon in Waybar. Also, most laptops have a touchpad which usually needs to be configured.
 
 #+begin_src nix :tangle modules/home/laptop.nix
   { lib, config, ... }:
@@ -4754,6 +4569,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Hardware
+:PROPERTIES:
+:CUSTOM_ID: h:5f0bf0e2-a096-4b07-affb-6beba7786fab
+:END:
+
+This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
 
 #+begin_src nix :tangle modules/home/hardware.nix
   { lib, ... }:
@@ -4776,6 +4596,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Waybar
+:PROPERTIES:
+:CUSTOM_ID: h:a9530c81-1976-442b-b597-0b4bed6baf25
+:END:
+
+These are explicit waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
+
+The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7f0c5697c690][Waybar]]
 
 #+begin_src nix :tangle modules/home/waybar.nix
   { lib, config, ... }:
@@ -4815,6 +4642,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Monitors
+:PROPERTIES:
+:CUSTOM_ID: h:dfd5c190-f213-45e1-b17c-e650b7b94b38
+:END:
+
+This allows me to define my monitors in the machine's =default.nix=.
 
 #+begin_src nix :tangle modules/home/monitors.nix
   { lib, ... }:
@@ -4830,6 +4662,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Input
+:PROPERTIES:
+:CUSTOM_ID: h:880df388-4050-4955-9663-9c1c197f5ae9
+:END:
+
+This allows me to configure input options. Here, I am globally defining my split keyboards. Then, I am joining some attribute sets so that they can be easier used in the rest of the configurations.
 
 #+begin_src nix :tangle modules/home/input.nix
   { lib, config, ... }:
@@ -4868,7 +4705,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** Nixos
+:PROPERTIES:
+:CUSTOM_ID: h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568
+:END:
 
+These are some extra options that will be used if the machine also runs NixOS. For example, non-NixOS hosts need =nixGL= prepended to most graphic commands, and =swayfx= works less nicely on these machines.
 
 #+begin_src nix :noweb yes :tangle modules/home/nixos.nix
   { lib, config, ... }:
@@ -4904,6 +4745,19 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 ***** System startup
+:PROPERTIES:
+:CUSTOM_ID: h:0809445e-9a24-4700-8675-03fb8f4beab8
+:END:
+
+This defines programs I want to have starting when I start the system
+
+Part of the startup is also defined in [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The distinction is as follows. As this configuration also needs to work on systems that are running only home manager, I probably need to run nixGL or something similar on those systems to get these graphic apps to display properly. In this section we only define such graphical programs, in the other location we only put shell applications and such.
+
+These other apps currently include:
+- spotifytui
+- kitty
+
+Do not that =syncthingtray= is also not mentioned here. It is installed as a home manager package that automatically starts at system start.
 
 #+begin_src nix :tangle modules/home/startup.nix
 { lib, ... }:
@@ -4927,6 +4781,11 @@ in
 #+end_src
 
 ***** Wallpaper
+:PROPERTIES:
+:CUSTOM_ID: h:21e344a8-8212-463f-9c01-7dbca28515b6
+:END:
+
+Again, I set the wallpaper here for =stylix=.
 
 #+begin_src nix :tangle modules/home/wallpaper.nix
   { lib, ... }:
@@ -4941,6 +4800,11 @@ in
 #+end_src
 
 ***** Filesystem
+:PROPERTIES:
+:CUSTOM_ID: h:c4982d06-1962-439c-9eed-cdec52491dee
+:END:
+
+Another duplicated option for the filesystem.
 
 #+begin_src nix :tangle modules/home/filesystem.nix
   { lib, ... }:
@@ -4951,6 +4815,11 @@ in
 #+end_src
 
 ** NixOS
+:PROPERTIES:
+:CUSTOM_ID: h:6da812f5-358c-49cb-aff2-0a94f20d70b3
+:END:
+
+Here we have NixOS options. All options are split into smaller files that are loaded by the general =default.nix=. Common files are used by all user hosts equally, optionals need to be added to the machine's =default.nix= on a case-by-case basis.
 *** Common
 :PROPERTIES:
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
@@ -4959,12 +4828,19 @@ in
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
 **** Imports, enable home-manager module, stateVersion
+:PROPERTIES:
+:CUSTOM_ID: h:ae1f4d4d-02a9-403f-8179-78889ce57fb8
+:END:
 
 :PROPERTIES:
 :CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
 :END:
 
-First, we enable the use of =home-manager= as a NixoS module
+First, we enable the use of =home-manager= as a NixoS module.
+
+Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
+
+Also, the system state version is set here. No need to touch it.
 
 #+begin_src nix :tangle profiles/common/nixos/default.nix
   { lib, inputs, ... }:
@@ -5228,6 +5104,11 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 #+end_src
 
 **** Pipewire
+:PROPERTIES:
+:CUSTOM_ID: h:aa433f5e-a455-4414-b76b-0a2692fa06aa
+:END:
+
+Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
 
 #+begin_src nix :tangle profiles/common/nixos/pipewire.nix
   _: {
@@ -5560,6 +5441,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   #+end_src
 
 **** Theme (stylix)
+:PROPERTIES:
+:CUSTOM_ID: h:e6e44705-94af-49fe-9ca0-0629d0f7d932
+:END:
 
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
@@ -5709,6 +5593,9 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 #+end_src
 
 ***** zsh
+:PROPERTIES:
+:CUSTOM_ID: h:7daa06ff-d3b0-4491-97ce-770b749c52f9
+:END:
 Do not touch this.
 
 #+begin_src nix :tangle profiles/common/nixos/zsh.nix
@@ -5721,6 +5608,9 @@ Do not touch this.
   }
 #+end_src
 ***** syncthing
+:PROPERTIES:
+:CUSTOM_ID: h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8
+:END:
 
 #+begin_src nix :tangle profiles/common/nixos/syncthing.nix
 
@@ -5793,8 +5683,11 @@ Enables the blueman service including the nice system tray icon.
 #+end_src
 
 ***** safeeyes
+:PROPERTIES:
+:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
+:END:
 
-Enables the blueman service including the nice system tray icon.
+A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
 
 #+begin_src nix :tangle profiles/common/nixos/safeeyes.nix
   _:
@@ -5804,6 +5697,9 @@ Enables the blueman service including the nice system tray icon.
 #+end_src
 
 ***** Network devices
+:PROPERTIES:
+:CUSTOM_ID: h:73ed28cb-2f82-47b2-8bc5-208278b55788
+:END:
 
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
 ****** Scanners
@@ -5852,6 +5748,9 @@ This allows me to use my big scanner/printer's printing function over the networ
 #+end_src
 
 ****** Avahi (device discovery)
+:PROPERTIES:
+:CUSTOM_ID: h:80decee9-9151-4892-967e-73d103205770
+:END:
 
 Avahi is the service used for the network discovery.
 
@@ -5919,6 +5818,17 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 #+end_src
 
 ***** power-profiles-daemon
+:PROPERTIES:
+:CUSTOM_ID: h:82fbba41-3a46-4db7-aade-49e4c23fc475
+:END:
+
+This enables power profile management. The available modes are:
+
+- power-saver
+- balanced
+- performance
+
+Most of the time I am using =power-saver=, however, it is good to be able to choose.
 
 #+begin_src nix :tangle profiles/common/nixos/power-profiles-daemon.nix
   _:
@@ -5992,6 +5902,15 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 
 **** nix-ld
+:PROPERTIES:
+:CUSTOM_ID: h:404cc18b-b5f8-48d9-a407-a0fd70d57f46
+:END:
+
+This provides libraries for binaries that are not patched for use on NixOS. This really makes the biggest gripe with NixOS go away, that being having to run a binary that is only found in a single spot. It is most of the times possible to patch such a file, but this makes such a situation take much less time to resolve.
+
+Only some binaries that touch system settings might still not work, apart from that, the list of libraries I have curated here should be quite exhaustive.
+
+When a program does not work, start with =nix-ldd <program>=. This will tell you which library is missing. Afterwards, continue with =nix-locate <program>= to find which packages provide that library. Add it to libraries below and rebuild. After a reboot, it will be visible using =nix-ldd=. It can also be useful to take a look at =ldd= to see which libraries are needed in general.
 
 #+begin_src nix :tangle profiles/common/nixos/nix-ld.nix
   { pkgs, ... }:
@@ -6106,6 +6025,13 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 
 **** Impermanence
+:PROPERTIES:
+:CUSTOM_ID: h:e7668594-fa8b-4d36-a695-a58222478988
+:END:
+
+This is where the impermanence magic happens. When this is enabled, the root directory is rolled back to a blanket state on each reboot.
+
+Normally, doing that also resets the lecture that happens on the first use of =sudo=, so we disable that at this point. Also, here we can set files to be persisted. Do note that you should still pay attention to files that need sudo access, as these need to be copied manually.
 
 #+begin_src nix :tangle profiles/common/nixos/impermanence.nix
   { config, lib, ... }:
@@ -6198,6 +6124,11 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 
 **** Summary of nixos-rebuild diff
+:PROPERTIES:
+:CUSTOM_ID: h:b751d77d-246c-4bd6-b689-3467d82bf9c3
+:END:
+
+This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
 
 #+begin_src nix :tangle profiles/common/nixos/nvd-rebuild.nix
   { pkgs, ... }:
@@ -6213,8 +6144,11 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 
 **** gnome-keyring
+:PROPERTIES:
+:CUSTOM_ID: h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f
+:END:
 
-Used for storing sessions in e.g. Nextcloud
+Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
 
 #+begin_src nix :tangle profiles/common/nixos/gnome-keyring.nix
   _:
@@ -6228,8 +6162,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** Sway
+:PROPERTIES:
+:CUSTOM_ID: h:f78ffdd3-232b-4313-bd89-d6fb331fef22
+:END:
 
-
+This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
 #+begin_src nix :tangle profiles/common/nixos/sway.nix
   { pkgs, ... }:
@@ -6242,10 +6179,6 @@ Used for storing sessions in e.g. Nextcloud
         base = true;
         gtk = true;
       };
-
-      extraOptions = [
-        "--unsupported-gpu"
-      ];
 
       extraSessionCommands = ''
         export XDG_SESSION_DESKTOP=sway
@@ -6261,8 +6194,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** xdg-portal
+:PROPERTIES:
+:CUSTOM_ID: h:872d5f46-2ffd-4076-9a2c-98783dd29434
+:END:
 
-
+This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
 
 #+begin_src nix :tangle profiles/common/nixos/xdg-portal.nix
   { pkgs, ... }:
@@ -6288,8 +6224,24 @@ Used for storing sessions in e.g. Nextcloud
 
 
 *** Optional
+:PROPERTIES:
+:CUSTOM_ID: h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589
+:END:
+
+These sets of configuration do not need to be deployed on every host, for a multitude of reasons.
+
+- The gaming set is not needed on weak machines, and also not on my work machine.
+- The VirtualBox package takes forever to build, and I do not need virtual machines on every host.
+- There are some hosts that I do not want to autologin to.
+- =nswitch-rcm= is a tool I wrote for easy payload flashing of a Nintendo Switch in RCM mode. However, that is not needed on every machine.
+- The work profile is only used on my work laptop.
 
 **** gaming
+:PROPERTIES:
+:CUSTOM_ID: h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431
+:END:
+
+This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in [[#h:84fd7029-ecb6-4131-9333-289982f24ffa][Gaming]] (home-manager side).
 
 #+begin_src nix :tangle profiles/optional/nixos/gaming.nix
   { pkgs, ... }:
@@ -6321,6 +6273,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** VirtualBox
+:PROPERTIES:
+:CUSTOM_ID: h:b3523246-14e9-4284-ba22-cebc5ca36732
+:END:
+
+This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
 
 #+begin_src nix :tangle profiles/optional/nixos/virtualbox.nix
   _:
@@ -6339,6 +6296,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** Auto-login
+:PROPERTIES:
+:CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
+:END:
+
+Auto login for the initial session.
 
 #+begin_src nix :tangle profiles/optional/nixos/autologin.nix
   _:
@@ -6351,6 +6313,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** nswitch-rcm
+:PROPERTIES:
+:CUSTOM_ID: h:5c41c4ee-22ca-405b-9e4f-cc4051634edd
+:END:
+
+This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 
 #+begin_src nix :tangle profiles/optional/nixos/nswitch-rcm.nix
   { pkgs, ... }:
@@ -6366,6 +6333,11 @@ Used for storing sessions in e.g. Nextcloud
 #+end_src
 
 **** work
+:PROPERTIES:
+:CUSTOM_ID: h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf
+:END:
+
+Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
 #+begin_src nix :tangle profiles/optional/nixos/work.nix
   { pkgs, ... }:
@@ -6380,35 +6352,27 @@ Used for storing sessions in e.g. Nextcloud
     environment.systemPackages = with pkgs; [
     ];
 
-    # xdg.portal = {
-    #   enable = true;
-    #   config = {
-    #     common = {
-    #       default = "wlr";
-    #     };
-    #   };
-    #   wlr.enable = true;
-    #   wlr.settings.screencast = {
-    #     output_name = "eDP-2";
-    #     chooser_type = "simple";
-    #     chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
-    #   };
-    # };
-
-
-    # services.dbus.enable = true;
 
   }
 #+end_src
 
 ** Home-manager
+:PROPERTIES:
+:CUSTOM_ID: h:08ded95b-9c43-475d-a0b2-fc088a512287
+:END:
+
+The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20d70b3][NixOS]] section.
+
 *** Common
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
 :END:
 **** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:16fd2e85-fdd4-440a-81f0-65b9b098a43a
+:END:
 
-This section sets up all the imports that are used in the home-manager section.
+This section sets up all the imports that are used in the home-manager section. Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix :tangle profiles/common/home/default.nix
   { lib, pkgs, config, ... }:
@@ -6485,6 +6449,8 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 :PROPERTIES:
 :CUSTOM_ID: h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75
 :END:
+
+This holds packages that I can use as provided, or with small modifications (as in the =texlive= package that needs special configuration).
 
 #+begin_src nix :tangle profiles/common/home/packages.nix
   { pkgs, ... }:
@@ -6646,9 +6612,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 :CUSTOM_ID: h:96cbea91-ff13-4120-b8a9-496b2fa96e70
 :END:
 
-
-
-
+This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. This is a good idea so that I do not lose track of package names I have defined myself, as this was once a problem in the past already.
 
 #+begin_src nix :tangle profiles/common/home/custom-packages.nix
   { pkgs, ... }:
@@ -6906,14 +6870,6 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
         categories = [ "Application" ];
       };
 
-      # schlidichat = {
-      #   name = "SchildiChat Matrix Client";
-      #   genericName = "SchildiChat";
-      #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-      #   terminal = false;
-      #   categories = [ "Application"];
-      # };
-
       element = {
         name = "Element Matrix Client";
         genericName = "Element";
@@ -6984,6 +6940,8 @@ Also, we link some files to the users XDG configuration home:
 :CUSTOM_ID: h:4486b02f-4fb8-432b-bfa2-2e786206341d
 :END:
 
+Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
+
 #+begin_src nix :tangle profiles/common/home/env.nix
   _:
   {
@@ -6993,14 +6951,7 @@ Also, we link some files to the users XDG configuration home:
   }
 #+end_src
 
-**** Programs
-:PROPERTIES:
-:CUSTOM_ID: h:070a75ce-e209-4cda-aa25-e979bbf75d47
-:END:
-
-This houses the configurations for all programs managed by home-manager.
-
-***** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf
+**** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf
 :PROPERTIES:
 :CUSTOM_ID: h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde
 :END:
@@ -7030,6 +6981,9 @@ This section is for programs that require no further configuration. zsh Integrat
 #+end_src
 
 **** nix-index
+:PROPERTIES:
+:CUSTOM_ID: h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748
+:END:
 
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
@@ -8331,6 +8285,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 **** gpg-agent
+:PROPERTIES:
+:CUSTOM_ID: h:7d384e3b-1be7-4644-b304-ada4af0b692b
+:END:
+
+Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 
 #+begin_src nix :tangle profiles/common/home/gpg-agent.nix
   { pkgs, ... }:
@@ -8351,6 +8310,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 **** gammastep
+:PROPERTIES:
+:CUSTOM_ID: h:74e236be-a977-4d38-b8c5-0b9feef8af91
+:END:
+
+This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix :tangle profiles/common/home/gammastep.nix
   _:
@@ -8365,8 +8329,18 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 *** Optional
+:PROPERTIES:
+:CUSTOM_ID: h:be623200-557e-4bb7-bb11-1ec5d76c6b8b
+:END:
+
+Akin to the optional NixOS modules.
 
 **** Gaming
+:PROPERTIES:
+:CUSTOM_ID: h:84fd7029-ecb6-4131-9333-289982f24ffa
+:END:
+
+The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming]].
 
 #+begin_src nix :tangle profiles/optional/home/gaming.nix
   { pkgs, ... }:
@@ -8398,6 +8372,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 **** Work
+:PROPERTIES:
+:CUSTOM_ID: h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6
+:END:
+
+The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix :tangle profiles/optional/home/work.nix :noweb yes
 { pkgs, ... }:
@@ -9103,6 +9082,9 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 #+end_src
 
 **** Nix common prefix bracketer
+:PROPERTIES:
+:CUSTOM_ID: h:79288251-3b8d-4bc4-ae2c-448fce709fbd
+:END:
 
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
 
@@ -9132,6 +9114,9 @@ This function searches for common delimiters in region and removes them, summari
 #+end_src
 
 **** Nix formatters
+:PROPERTIES:
+:CUSTOM_ID: h:a6b9dd66-571b-4916-8793-65b6a17afd76
+:END:
 
 This formats the org code block at =point= in accordance to the =nixpkgs-fmt= formatter
 
@@ -10569,6 +10554,9 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 
 #+end_src
 *** nixpkgs-fmt
+:PROPERTIES:
+:CUSTOM_ID: h:5ca7484b-b9d6-4023-88d1-a1e37d5df249
+:END:
 
 Adds functions for formatting nix code.
 
@@ -11836,6 +11824,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 #+end_src
 
 *** ansible
+:PROPERTIES:
+:CUSTOM_ID: h:672ddd5c-7679-44a2-9085-936e9198fc2b
+:END:
 
 #+begin_src emacs-lisp
 

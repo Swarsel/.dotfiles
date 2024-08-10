@@ -112,21 +112,7 @@
         }
       );
 
-      # pkgs for home-manager builds
-      # homepkgs = import nixpkgs { system = "x86_64-linux";
-      #                             overlays = [ inputs.emacs-overlay.overlay
-      #                                          inputs.nur.overlay
-      #                                          inputs.nixgl.overlay
-      #                                          (final: _prev: {
-      #                                            stable = import inputs.nixpkgs-stable {
-      #                                              inherit (final) system config;
-      #                                            };
-      #                                          })
-      #                                        ];
-      #                             config.allowUnfree = true;
-      #                           };
-
-      # # NixOS modules that can only be used on NixOS systems
+      # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
         inputs.lanzaboote.nixosModules.lanzaboote
@@ -162,7 +148,6 @@
         (pkgs:
           {
             default = pkgs.mkShell {
-              # Enable experimental features without having to specify the argument
               NIX_CONFIG = "experimental-features = nix-command flakes";
               nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
             };
@@ -176,8 +161,6 @@
         inputs.emacs-overlay.overlay
         inputs.nixgl.overlay
       ];
-
-
 
       # NixOS setups - run home-manager as a NixOS module for better compatibility
       # another benefit - full rebuild on nixos-rebuild switch
@@ -226,20 +209,6 @@
             ./profiles/nbl-imba-2
           ];
         };
-
-        # winters = nixpkgs.lib.nixosSystem {
-        #   specialArgs = { inherit inputs; };
-        #   modules = nixModules ++ [
-        #     inputs.nixos-hardware.nixosModules.framework-16-inch-7040-amd
-        #     ./profiles/winters/nixos.nix
-        #     inputs.home-manager.nixosModules.home-manager
-        #     {
-        #       home-manager.users.swarsel.imports = mixedModules ++ [
-        #         ./profiles/winters/home.nix
-        #       ];
-        #     }
-        #   ];
-        # };
 
         nginx = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };

@@ -18,14 +18,6 @@ _:
       categories = [ "Application" ];
     };
 
-    # schlidichat = {
-    #   name = "SchildiChat Matrix Client";
-    #   genericName = "SchildiChat";
-    #   exec = "schildichat-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-    #   terminal = false;
-    #   categories = [ "Application"];
-    # };
-
     element = {
       name = "Element Matrix Client";
       genericName = "Element";
