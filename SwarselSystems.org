@@ -5848,7 +5848,6 @@ It makes sense to house these settings in their own section, since they are all 
 
 The exception is the system packages, since that cannot be defined twice in the same file (common.nix). The comment is left in as a remider for that.
 
-The rest of the gpg-agent related settings are here: [[#h:66fd578f-d4a0-4e17-bf3d-a9eb64bc7103][gpg-agent]]
 Also, this is a good place to setup the udev rules.
 
 #+begin_src nix :tangle profiles/common/nixos/hardwarecompatibility.nix
@@ -7565,9 +7564,9 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
 
-The rest of this configuration is found here:
-- [[#h:47749e76-3f25-485a-9e98-c7ce3a4ad444][Waybar items - PC]]
-- [[#h:f3cf9bdc-6826-4d8e-ba5a-253ef098a9b8][Waybar items - LAPTOPS]]
+The rest of the related configuration is found here:
+- [[#h:a9530c81-1976-442b-b597-0b4bed6baf25][Waybar]]
+- [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
   { config, lib, pkgs, ... }:
@@ -10322,6 +10321,8 @@ It also offers a very useful utility of exporting org-mode buffers to different 
      ))
 
   (push '("conf-unix" . conf-unix) org-src-lang-modes)
+
+  (setq org-export-with-broken-links mark)
 
 #+end_src
 
