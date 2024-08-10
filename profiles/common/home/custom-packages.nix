@@ -14,6 +14,7 @@
     opacitytoggle
     fs-diff
     update-checker
+    github-notifications
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash

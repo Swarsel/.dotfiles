@@ -12,7 +12,7 @@
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-        modules-center = [ "sway/mode" "custom/configwarn" "custom/nix-updates" ];
+        modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
         };
@@ -29,13 +29,41 @@
           interval = 60;
         };
 
+        "custom/scratchpad-indicator" = {
+          interval = 3;
+          exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
+          format = "{} ";
+          on-click = "swaymsg 'scratchpad show'";
+          on-click-right = "swaymsg 'move scratchpad'";
+        };
+
+        "custom/github" = {
+          format = "{}  ";
+          return-type = "json";
+          interval = 60;
+          exec = "github-notifications";
+          on-click = "xdg-open https://github.com/notifications";
+        };
+
         "custom/nix-updates" = {
           exec = "update-checker";
           on-click = "update-checker && notify-send 'The system has been updated'";
           interval = 3600;
           tooltip = true;
           return-type = "json";
-          format = "{} ";
+          format = "{} {icon}";
+          format-icon = {
+            "has-updates" = "";
+            "updated" = " ";
+          };
+        };
+
+        idle_inhibitor = {
+          format = "{icon}";
+          format-icons = {
+            activated = "";
+            deactivated = "";
+          };
         };
 
         "group/hardware" = {
@@ -49,6 +77,7 @@
             "power-profiles-daemon"
             "custom/left-arrow-light"
             "custom/left-arrow-dark"
+            "custom/scratchpad-indicator"
             "custom/left-arrow-light"
             "disk"
             "custom/left-arrow-dark"
@@ -56,7 +85,16 @@
             "custom/left-arrow-light"
             "cpu"
             "custom/left-arrow-dark"
+            "backlight/slider"
+            "idle_inhibitor"
           ];
+        };
+
+        "backlight/slider" = {
+          min = 0;
+          max = 100;
+          orientation = "horizontal";
+          device = "intel_backlight";
         };
 
         power-profiles-daemon = {

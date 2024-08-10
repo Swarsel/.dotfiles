@@ -15,4 +15,5 @@ in
   opacitytoggle = callPackage ./opacitytoggle { };
   fs-diff = callPackage ./fs-diff { };
   update-checker = callPackage ./update-checker { };
+  github-notifications = callPackage ./github-notifications { };
 }
