@@ -950,7 +950,7 @@ create a new one."
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
-(setq org-export-with-broken-links mark)
+(setq org-export-with-broken-links 'mark)
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
