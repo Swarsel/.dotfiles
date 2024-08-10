@@ -177,6 +177,7 @@ The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7
     "mpris"
     "custom/left-arrow-light"
     "network"
+    "custom/vpn"
     "custom/left-arrow-dark"
     "pulseaudio"
     "custom/left-arrow-light"
@@ -211,6 +212,7 @@ The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7
     "mpris"
     "custom/left-arrow-light"
     "network"
+    "custom/vpn"
     "custom/left-arrow-dark"
     "pulseaudio"
     "custom/left-arrow-light"
@@ -7799,6 +7801,13 @@ The rest of this configuration is found here:
           # on-click-right= "com.github.stsdc.monitor";
           on-click-right = "kitty -o confirm_os_window_close=0 btm";
 
+        };
+        "custom/vpn" = {
+          format = "VPN ";
+          exec = "echo '{\"class\": \"connected\"}'";
+          exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+          return-type = "json";
+          interval = 5;
         };
         battery = {
           states = {
