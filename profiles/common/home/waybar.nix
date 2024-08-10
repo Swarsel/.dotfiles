@@ -175,7 +175,7 @@
 
         };
         "custom/vpn" = {
-          format = "VPN ";
+          format = "()";
           exec = "echo '{\"class\": \"connected\"}'";
           exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
           return-type = "json";

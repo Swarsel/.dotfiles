@@ -17,6 +17,7 @@ in
       "mpris"
       "custom/left-arrow-light"
       "network"
+      "custom/vpn"
       "custom/left-arrow-dark"
       "pulseaudio"
       "custom/left-arrow-light"
