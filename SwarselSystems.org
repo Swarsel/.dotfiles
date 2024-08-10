@@ -5527,6 +5527,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # pinentry
       dbus
       swaylock-effects
+      syncthingtray-minimal
 
       # secure boot
       sbctl
@@ -5666,22 +5667,22 @@ Do not touch this.
         folders = {
           "Default Folder" = {
             path = "/home/swarsel/Sync";
-            devices = [ "sync (@oracle) magicant" ];
+            devices = [ "sync (@oracle)" "magicant" ];
             id = "default";
           };
           "Obsidian" = {
             path = "/home/swarsel/Nextcloud/Obsidian";
-            devices = [ "sync (@oracle) magicant" ];
+            devices = [ "sync (@oracle)" "magicant" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
             path = "/home/swarsel/Nextcloud/Org";
-            devices = [ "sync (@oracle) magicant" ];
+            devices = [ "sync (@oracle)" "magicant" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
             path = "/home/swarsel/Vpn";
-            devices = [ "sync (@oracle) magicant" ];
+            devices = [ "sync (@oracle)" "magicant" ];
             id = "hgp9s-fyq3p";
           };
         };
@@ -6603,7 +6604,6 @@ This holds packages that I can use as provided, or with small modifications (as 
       # gnome.gnome-clocks
       # wlogout
       # jdiskreport
-      syncthingtray
       # monitor
 
       #keychain
@@ -6880,45 +6880,45 @@ Some programs lack a dmenu launcher - I define them myself here.
 TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
 #+begin_src nix :tangle profiles/common/home/desktop.nix
-  _:
-  {
-    xdg.desktopEntries = {
+    _:
+    {
+      xdg.desktopEntries = {
 
-      cura = {
-        name = "Ultimaker Cura";
-        genericName = "Cura";
-        exec = "cura";
-        terminal = false;
-        categories = [ "Application" ];
+        cura = {
+          name = "Ultimaker Cura";
+          genericName = "Cura";
+          exec = "cura";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        anki = {
+          name = "Anki Flashcards";
+          genericName = "Anki";
+          exec = "anki";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        element = {
+          name = "Element Matrix Client";
+          genericName = "Element";
+          exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        emacsclient-newframe = {
+          name = "Emacs (Client, New Frame)";
+          genericName = "Emacs (Client, New Frame)";
+          exec = "emacsclient -r %u";
+          icon = "emacs";
+          terminal = false;
+          categories = [ "Development" "TextEditor" ];
+        };
+
       };
-
-      anki = {
-        name = "Anki Flashcards";
-        genericName = "Anki";
-        exec = "anki";
-        terminal = false;
-        categories = [ "Application" ];
-      };
-
-      element = {
-        name = "Element Matrix Client";
-        genericName = "Element";
-        exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-        terminal = false;
-        categories = [ "Application" ];
-      };
-
-      emacsclient-newframe = {
-        name = "Emacs (Client, New Frame)";
-        genericName = "Emacs (Client, New Frame)";
-        exec = "emacsclient -r %u";
-        icon = "emacs";
-        terminal = false;
-        categories = [ "Development" "TextEditor" ];
-      };
-
-    };
-  }
+    }
 #+end_src
 
 **** Linking dotfiles
@@ -6950,6 +6950,10 @@ As for the `home.sessionVariables`, it should be noted that environment variable
       ".gitmessage" = {
         source = ../../../programs/git/.gitmessage;
         target = ".gitmessage";
+      };
+      "swayidle/config" = {
+        source = ../../../programs/swayidle/config;
+        target = ".config/swayidle/config";
       };
     };
 
@@ -8342,7 +8346,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             }
 
             exec systemctl --user import-environment
-
+            exec swayidle -w
 
 
             ${swayfxSettings}

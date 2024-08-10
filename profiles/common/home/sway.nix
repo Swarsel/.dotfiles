@@ -273,7 +273,7 @@ in
           }
 
           exec systemctl --user import-environment
-
+          exec swayidle -w
 
 
           ${swayfxSettings}

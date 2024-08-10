@@ -120,7 +120,6 @@
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
-    syncthingtray
     # monitor
 
     #keychain

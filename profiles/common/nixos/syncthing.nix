@@ -21,22 +21,22 @@ _:
       folders = {
         "Default Folder" = {
           path = "/home/swarsel/Sync";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "default";
         };
         "Obsidian" = {
           path = "/home/swarsel/Nextcloud/Obsidian";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "yjvni-9eaa7";
         };
         "Org" = {
           path = "/home/swarsel/Nextcloud/Org";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "a7xnl-zjj3d";
         };
         "Vpn" = {
           path = "/home/swarsel/Vpn";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "hgp9s-fyq3p";
         };
       };

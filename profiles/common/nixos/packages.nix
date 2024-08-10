@@ -21,6 +21,7 @@
     # pinentry
     dbus
     swaylock-effects
+    syncthingtray-minimal
 
     # secure boot
     sbctl

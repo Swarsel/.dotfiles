@@ -18,6 +18,10 @@ _:
       source = ../../../programs/git/.gitmessage;
       target = ".gitmessage";
     };
+    "swayidle/config" = {
+      source = ../../../programs/swayidle/config;
+      target = ".config/swayidle/config";
+    };
   };
 
   xdg.configFile = {
