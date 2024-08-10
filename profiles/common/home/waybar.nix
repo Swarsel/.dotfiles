@@ -1,15 +1,18 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 {
   programs.waybar = {
 
     enable = true;
-    # systemd.enable = true;
+    systemd = {
+      enable = true;
+      target = "sway-sessions.target";
+    };
     settings = {
       mainBar = {
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-        modules-center = [ "sway/mode" "custom/configwarn" ];
+        modules-center = [ "sway/mode" "custom/configwarn" "custom/nix-updates" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
         };

@@ -243,7 +243,7 @@ Do not that =syncthingtray= is also not mentioned here. It is installed as a hom
 #+begin_src nix :tangle no :noweb-ref startupnixos
 
 { command = "nextcloud --background"; }
-{ command = "discord --start-minimized"; }
+{ command = "vesktop --start-minimized"; }
 { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
 { command = "ANKI_WAYLAND=1 anki"; }
 { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
@@ -4396,7 +4396,7 @@ As such, I also define three additional overlays:
 #+begin_src shell :tangle scripts/swarselcheck.sh
   kitty=0
   element=0
-  discord=0
+  vesktop=0
   spotifyplayer=0
   while :; do
       case ${1:-} in
@@ -4404,7 +4404,7 @@ As such, I also define three additional overlays:
                      ;;
           -e|--element) element=1
                      ;;
-          -d|--discord) discord=1
+          -d|--vesktop) vesktop=1
                      ;;
           -s|--spotifyplayer) spotifyplayer=1
                      ;;
@@ -4431,12 +4431,12 @@ As such, I also define three additional overlays:
       else
           exec swaymsg '[app_id=Element]' kill
       fi
-  elif [[ $discord -eq 1 ]]; then
-      STR=$(swaymsg -t get_tree | grep discord || true)
+  elif [[ $vesktop -eq 1 ]]; then
+      STR=$(swaymsg -t get_tree | grep vesktop || true)
       if [ "$STR" == "" ]; then
-          exec discord
+          exec vesktop
       else
-          exec swaymsg '[app_id=discord]' kill
+          exec swaymsg '[app_id=vesktop]' kill
       fi
   elif [[ $spotifyplayer -eq 1 ]]; then
       STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
@@ -4453,11 +4453,11 @@ As such, I also define three additional overlays:
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarselcheck/default.nix
-  { writeShellApplication, kitty, element-desktop-wayland, discord, spotify-player, sway, jq}:
+  { writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, sway, jq}:
 
   writeShellApplication {
     name = "swarselcheck";
-    runtimeInputs = [ kitty element-desktop-wayland discord spotify-player jq ];
+    runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];
     text = builtins.readFile ../../scripts/swarselcheck.sh;
   }
 
@@ -4842,7 +4842,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
         { command = "sleep 60 && nixGL nextcloud --background";
       }
-      { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+      { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
       { command = "sleep 60 && nixGL syncthingtray --wait"; }
       { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
       { command = "nm-applet --indicator"; }
@@ -4880,7 +4880,7 @@ in
     type = types.listOf (types.attrsOf types.str);
     default = [
       { command = "nextcloud --background"; }
-      { command = "discord --start-minimized"; }
+      { command = "vesktop --start-minimized"; }
       { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
       { command = "ANKI_WAYLAND=1 anki"; }
       { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
@@ -4946,12 +4946,14 @@ First, we enable the use of =home-manager= as a NixoS module
       ./network.nix
       ./time.nix
       ./hardware.nix
+      ./pipewire.nix
       ./sops.nix
       ./packages.nix
       ./programs.nix
       ./zsh.nix
       ./syncthing.nix
       ./blueman.nix
+      ./safeeyes.nix
       ./networkdevices.nix
       ./gvfs.nix
       ./interceptiontools.nix
@@ -4960,11 +4962,30 @@ First, we enable the use of =home-manager= as a NixoS module
       ./stylix.nix
       ./power-profiles-daemon.nix
       # ./impermanence.nix
+      ./nvd-rebuild.nix
       ./nix-ld.nix
       ./gnome-keyring.nix
+      ./sway.nix
+      ./xdg-portal.nix
     ];
 
-    nix.settings.trusted-users = [ "swarsel" ];
+    nix = let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+        ];
+        trusted-users = [ "swarsel" ];
+        flake-registry = "";
+        warn-dirty = false;
+      };
+      channel.enable = false;
+      registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
+      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+    };
 
     home-manager = {
       useGlobalPkgs = true;
@@ -5137,8 +5158,10 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
       keyboard.qmk.enable = true;
 
-      pulseaudio= {
-        enable = true;
+
+
+      pulseaudio = {
+        enable = lib.mkIf (!config.services.pipewire.enable) true;
         package = pkgs.pulseaudioFull;
       };
 
@@ -5159,6 +5182,24 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   }
 #+end_src
 
+**** Pipewire
+
+#+begin_src nix :tangle profiles/common/nixos/pipewire.nix
+  _ : {
+        security.rtkit.enable = true; # this is required for pipewire real-time access
+
+        services.pipewire = {
+          enable = true;
+          pulse.enable = true;
+          jack.enable = true;
+          audio.enable = true;
+          alsa = {
+            enable = true;
+            support32Bit = true;
+          };
+        };
+  }
+#+end_src
 **** Common network settings
 :PROPERTIES:
 :CUSTOM_ID: h:7d696b64-debe-4a95-80b5-1e510156a6c6
@@ -5525,6 +5566,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       ledger-live-desktop
 
       # pinentry
+      dbus
+      swaylock-effects
 
       # secure boot
       sbctl
@@ -5700,6 +5743,17 @@ Enables the blueman service including the nice system tray icon.
   _ :
   {
     services.blueman.enable = true;
+  }
+#+end_src
+
+***** safeeyes
+
+Enables the blueman service including the nice system tray icon.
+
+#+begin_src nix :tangle profiles/common/nixos/safeeyes.nix
+  _ :
+  {
+    services.safeeyes.enable = true;
   }
 #+end_src
 
@@ -6113,6 +6167,65 @@ Used for storing sessions in e.g. Nextcloud
   }
 #+end_src
 
+**** Sway
+
+
+
+#+begin_src nix :tangle profiles/common/nixos/sway.nix
+  { pkgs, ... }:
+  {
+
+    programs.sway = {
+      enable = true;
+      package = pkgs.swayfx;
+      wrapperFeatures = {
+        base = true;
+        gtk = true;
+      };
+
+      extraOptions = [
+        "--unsupported-gpu"
+      ];
+
+      extraSessionCommands = ''
+        export XDG_SESSION_DESKTOP=sway
+        export SDL_VIDEODRIVER=wayland
+        export QT_QPA_PLATFORM=wayland-egl
+        export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+        export MOZ_ENABLE_WAYLAND=1
+        export MOZ_DISABLE_RDD_SANDBOX=1
+      '';
+    };
+
+  }
+#+end_src
+
+**** xdg-portal
+
+
+
+#+begin_src nix :tangle profiles/common/nixos/xdg-portal.nix
+  { pkgs, ... }:
+  {
+
+  xdg.portal = {
+    enable = true;
+    config = {
+      common = {
+        default = "wlr";
+      };
+    };
+    wlr.enable = true;
+    wlr.settings.screencast = {
+      output_name = "eDP-1";
+      chooser_type = "simple";
+      chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
+    };
+  };
+
+  }
+#+end_src
+
 
 *** Optional
 
@@ -6363,7 +6476,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
       xournalpp
       obsidian
       spotify
-      discord
+      vesktop # discord client
       stable.nextcloud-client
       spotify-player
       element-desktop-wayland
@@ -7440,18 +7553,21 @@ The rest of this configuration is found here:
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
 
-  { config, lib,  ... }:
+  { config, lib, pkgs, ... }:
   {
   programs.waybar = {
 
     enable = true;
-    # systemd.enable = true;
+    systemd = {
+      enable = true;
+      target = "sway-sessions.target";
+    };
     settings = {
       mainBar = {
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-        modules-center = [ "sway/mode" "custom/configwarn" ];
+        modules-center = [ "sway/mode" "custom/configwarn" "custom/nix-updates" ];
         "sway/mode" = {
           format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
         };
@@ -7873,7 +7989,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     wayland.windowManager.sway = {
       enable = true;
       checkConfig = false; # delete this line once SwayFX is fixed upstream
-      package = lib.mkIf config.swarselsystems.isNixos pkgs.swayfx;
+      package = lib.mkIf config.swarselsystems.isNixos null;
       systemd = {
         enable = true;
         xdgAutostart = true;
@@ -8002,7 +8118,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             { title = "(?:Open|Save) (?:File|Folder|As)"; }
             { title = "^Add$"; }
             { title = "com-jgoodies-jdiskreport-JDiskReport"; }
-            { app_id = "discord"; }
+            { app_id = "vesktop"; }
             { window_role = "pop-up"; }
             { window_role = "bubble"; }
             { window_role = "dialog"; }
@@ -8067,7 +8183,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             {
               command = "resize set width 60 ppt height 60 ppt, sticky enable";
               criteria = {
-                app_id = "discord";
+                app_id = "vesktop";
               };
             }
             {
@@ -12016,7 +12132,7 @@ Special things to note here: We are running xcape to allow =CAPS= to act as =CTR
         startup = [
           { command = "sleep 60 && nixGL nextcloud --background";}
           # { command = "sleep 60 && nixGL spotify";}
-          { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
+          { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland";}
           # { command = "sleep 60 && nixGL schildichat-desktop --hidden";}
           { command = "sleep 60 && nixGL syncthingtray --wait"; }
           { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki";}

@@ -1,6 +1,6 @@
 kitty=0
 element=0
-discord=0
+vesktop=0
 spotifyplayer=0
 while :; do
     case ${1:-} in
@@ -8,7 +8,7 @@ while :; do
                    ;;
         -e|--element) element=1
                    ;;
-        -d|--discord) discord=1
+        -d|--vesktop) vesktop=1
                    ;;
         -s|--spotifyplayer) spotifyplayer=1
                    ;;
@@ -35,12 +35,12 @@ elif [[ $element -eq 1 ]]; then
     else
         exec swaymsg '[app_id=Element]' kill
     fi
-elif [[ $discord -eq 1 ]]; then
-    STR=$(swaymsg -t get_tree | grep discord || true)
+elif [[ $vesktop -eq 1 ]]; then
+    STR=$(swaymsg -t get_tree | grep vesktop || true)
     if [ "$STR" == "" ]; then
-        exec discord
+        exec vesktop
     else
-        exec swaymsg '[app_id=discord]' kill
+        exec swaymsg '[app_id=vesktop]' kill
     fi
 elif [[ $spotifyplayer -eq 1 ]]; then
     STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)

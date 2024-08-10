@@ -5,7 +5,7 @@
     {
       command = "sleep 60 && nixGL nextcloud --background";
     }
-    { command = "sleep 60 && nixGL discord --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
+    { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
     { command = "sleep 60 && nixGL syncthingtray --wait"; }
     { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
     { command = "nm-applet --indicator"; }

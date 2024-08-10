@@ -16,7 +16,7 @@ in
   wayland.windowManager.sway = {
     enable = true;
     checkConfig = false; # delete this line once SwayFX is fixed upstream
-    package = lib.mkIf config.swarselsystems.isNixos pkgs.swayfx;
+    package = lib.mkIf config.swarselsystems.isNixos null;
     systemd = {
       enable = true;
       xdgAutostart = true;
@@ -112,6 +112,7 @@ in
           Return = "mode default";
           Right = "resize grow width 10 px or 10 ppt";
           Up = "resize shrink height 10 px or 10 ppt";
+          Tab = "move position center, resize set width 50 ppt height 50 ppt";
         };
       };
       defaultWorkspace = "workspace 1:一";
@@ -147,7 +148,7 @@ in
           { title = "(?:Open|Save) (?:File|Folder|As)"; }
           { title = "^Add$"; }
           { title = "com-jgoodies-jdiskreport-JDiskReport"; }
-          { app_id = "discord"; }
+          { app_id = "vesktop"; }
           { window_role = "pop-up"; }
           { window_role = "bubble"; }
           { window_role = "dialog"; }
@@ -212,7 +213,7 @@ in
           {
             command = "resize set width 60 ppt height 60 ppt, sticky enable";
             criteria = {
-              app_id = "discord";
+              app_id = "vesktop";
             };
           }
           {
@@ -255,22 +256,25 @@ in
       in
       "
         exec_always autotiling
-        set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
+        set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
         mode $exit {
 
             bindsym --to-code {
                 s exec \"systemctl suspend\", mode \"default\"
+                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize && systemctl suspend \", mode \"default \"
                 p exec \"systemctl poweroff\"
                 r exec \"systemctl reboot\"
-                l exec \"swaymsg exit\"
+                u exec \"swaymsg exit\"
 
                 Return mode \"default\"
                 Escape mode \"default\"
-                ${modifier}+x mode \"default\"
+                ${modifier}+Escape mode \"default\"
             }
         }
 
         exec systemctl --user import-environment
+
+
 
         ${swayfxSettings}
 

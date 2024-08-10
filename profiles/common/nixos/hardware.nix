@@ -14,8 +14,10 @@
 
     keyboard.qmk.enable = true;
 
+
+
     pulseaudio = {
-      enable = true;
+      enable = lib.mkIf (!config.services.pipewire.enable) true;
       package = pkgs.pulseaudioFull;
     };
 
