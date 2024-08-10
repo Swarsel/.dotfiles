@@ -9,6 +9,7 @@
     yubioath-flutter
     yubikey-manager
     yubikey-manager-qt
+    yubikey-touch-detector
     yubico-piv-tool
     cfssl
     pcsctools
@@ -18,6 +19,8 @@
     ledger-live-desktop
 
     # pinentry
+    dbus
+    swaylock-effects
 
     # secure boot
     sbctl

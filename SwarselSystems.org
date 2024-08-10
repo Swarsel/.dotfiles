@@ -4932,7 +4932,7 @@ First, we enable the use of =home-manager= as a NixoS module
 
 #+begin_src nix :tangle profiles/common/nixos/default.nix
 
-  { lib, ... }:
+  { lib, inputs, ... }:
   {
     imports = [
       ./xserver.nix
@@ -5065,7 +5065,7 @@ Next, we will setup some environment variables that need to be set on the system
   }
 #+end_src
 
-**** Enable PolicyKit
+**** Security
 :PROPERTIES:
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
@@ -5075,7 +5075,15 @@ Needed for control over system-wide privileges etc.
 #+begin_src nix :tangle profiles/common/nixos/polkit.nix
   _ :
   {
+
+    security.pam.services = {
+      login.u2fAuth = true;
+      sudo.u2fAuth = true;
+      swaylock.u2fAuth = true;
+      swaylock.fprintAuth = false;
+    };
     security.polkit.enable = true;
+
   }
 #+end_src
 
@@ -5557,6 +5565,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       yubioath-flutter
       yubikey-manager
       yubikey-manager-qt
+      yubikey-touch-detector
       yubico-piv-tool
       cfssl
       pcsctools
@@ -8226,22 +8235,25 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         in
         "
           exec_always autotiling
-          set $exit \"exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout\"
+          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
           mode $exit {
 
               bindsym --to-code {
                   s exec \"systemctl suspend\", mode \"default\"
+                  l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize && systemctl suspend \", mode \"default \"
                   p exec \"systemctl poweroff\"
                   r exec \"systemctl reboot\"
-                  l exec \"swaymsg exit\"
+                  u exec \"swaymsg exit\"
 
                   Return mode \"default\"
                   Escape mode \"default\"
-                  ${modifier}+x mode \"default\"
+                  ${modifier}+Escape mode \"default\"
               }
           }
 
           exec systemctl --user import-environment
+
+
 
           ${swayfxSettings}
 
