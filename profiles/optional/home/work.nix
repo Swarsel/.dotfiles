@@ -36,6 +36,7 @@
           reddit-enhancement-suite
           sponsorblock
           web-archives
+          onepassword-password-manager
           single-file
           widegithub
           enhanced-github
@@ -112,6 +113,7 @@
           reddit-enhancement-suite
           sponsorblock
           web-archives
+          onepassword-password-manager
           single-file
           widegithub
           enhanced-github
@@ -188,6 +190,7 @@
           reddit-enhancement-suite
           sponsorblock
           web-archives
+          onepassword-password-manager
           single-file
           widegithub
           enhanced-github
@@ -246,6 +249,16 @@
         };
         search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
 
+      };
+    };
+  };
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-wlr ];
+    config = {
+      common = {
+        default = "wlr";
       };
     };
   };

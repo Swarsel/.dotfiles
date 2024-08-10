@@ -8,7 +8,7 @@ in
 {
   sops = {
 
-    age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+    age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;

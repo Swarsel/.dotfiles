@@ -27,6 +27,7 @@
     ./power-profiles-daemon.nix
     # ./impermanence.nix
     ./nix-ld.nix
+    ./gnome-keyring.nix
   ];
 
   nix.settings.trusted-users = [ "swarsel" ];

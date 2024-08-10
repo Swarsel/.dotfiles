@@ -34,6 +34,7 @@
 
     # kde-connect
     xdg-desktop-portal
+    xdg-desktop-portal-wlr
 
     # bluetooth
     bluez
@@ -59,6 +60,8 @@
     clang-tools
     # + cuda
     cudatoolkit
+    # ansible
+    ansible-language-server
     #lsp-bridge / python
     gcc
     gdb

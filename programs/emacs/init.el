@@ -1446,6 +1446,9 @@ create a new one."
 
 (use-package eglot
   :ensure nil
+  :config
+  (add-to-list 'eglot-server-programs
+       '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
   :hook
   ((python-mode
     python-ts-mode
@@ -1457,6 +1460,7 @@ create a new one."
     rustic-mode
     tex-mode
     LaTeX-mode
+    yaml-ts-mode
     ) . (lambda () (progn
                      (eglot-ensure)
                      (add-hook 'before-save-hook 'eglot-format nil 'local))))
@@ -1817,3 +1821,7 @@ create a new one."
             (lambda (&rest _) (browse-url "swarsel.win")))
            )
           )))
+
+(use-package ansible
+    :hook
+    (yaml-ts-mode . ansible))

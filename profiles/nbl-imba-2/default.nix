@@ -121,9 +121,22 @@
         workspace = "1:一";
         output = "DP-7";
       };
+      work_back_right = {
+        name = "HP Inc. HP Z32 CN41212T55";
+        mode = "3840x2160";
+        scale = "1";
+        position = "5120,0";
+        workspace = "1:一";
+        output = "DP-3";
+      };
     };
     inputs = {
       "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
+      "1133:45081:MX_Master_2S_Keyboard" = {
         xkb_layout = "us";
         xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";

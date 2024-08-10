@@ -285,6 +285,7 @@ I also enable the extra socket here for ssh agent forwarding. But I have not ful
     reddit-enhancement-suite
     sponsorblock
     web-archives
+    onepassword-password-manager
     single-file
     widegithub
     enhanced-github
@@ -2209,9 +2210,22 @@ My work machine.
           workspace = "1:一";
           output = "DP-7";
         };
+        work_back_right = {
+          name = "HP Inc. HP Z32 CN41212T55";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-3";
+        };
       };
       inputs =  {
         "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+        "1133:45081:MX_Master_2S_Keyboard" = {
           xkb_layout = "us";
           xkb_options = "grp:win_space_toggle";
           xkb_variant = "altgr-intl";
@@ -4947,6 +4961,7 @@ First, we enable the use of =home-manager= as a NixoS module
       ./power-profiles-daemon.nix
       # ./impermanence.nix
       ./nix-ld.nix
+      ./gnome-keyring.nix
     ];
 
     nix.settings.trusted-users = [ "swarsel" ];
@@ -5426,7 +5441,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     sops = {
 
-      age.sshKeyPaths = [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
@@ -5526,6 +5541,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
       # kde-connect
       xdg-desktop-portal
+      xdg-desktop-portal-wlr
 
       # bluetooth
       bluez
@@ -5551,6 +5567,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       clang-tools
       # + cuda
       cudatoolkit
+      # ansible
+      ansible-language-server
       #lsp-bridge / python
       gcc
       gdb
@@ -6079,6 +6097,22 @@ This section houses the greetd related settings. I do not really want to use a d
 #+end_src
 
 
+**** gnome-keyring
+
+Used for storing sessions in e.g. Nextcloud
+
+#+begin_src nix :tangle profiles/common/nixos/gnome-keyring.nix
+
+  _ :
+  {
+  services.gnome.gnome-keyring = {
+    enable = true;
+  };
+
+  programs.seahorse.enable = true;
+  }
+#+end_src
+
 
 *** Optional
 
@@ -6163,10 +6197,33 @@ This section houses the greetd related settings. I do not really want to use a d
 #+begin_src nix :tangle profiles/optional/nixos/work.nix
   { pkgs, ... }:
   {
+    # boot.initrd.luks.yubikeySupport = true;
     programs._1password.enable = true;
-    programs._1password-gui.enable = true;
+    programs._1password-gui = {
+      enable = true;
+      polkitPolicyOwners = [ "swarsel" ];
+    };
+
     environment.systemPackages = with pkgs; [
     ];
+
+    # xdg.portal = {
+    #   enable = true;
+    #   config = {
+    #     common = {
+    #       default = "wlr";
+    #     };
+    #   };
+    #   wlr.enable = true;
+    #   wlr.settings.screencast = {
+    #     output_name = "eDP-2";
+    #     chooser_type = "simple";
+    #     chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
+    #   };
+    # };
+
+
+    # services.dbus.enable = true;
 
   }
 #+end_src
@@ -7720,9 +7777,9 @@ Used for storing sessions in e.g. Nextcloud
 
 #+begin_src nix :tangle profiles/common/home/gnome-keyring.nix
 
-  _ :
+  { lib, config, ...} :
   {
-  services.gnome-keyring = {
+  services.gnome-keyring = lib.mkIf (!config.swarselsystems.isNixos) {
     enable = true;
   };
   }
@@ -8183,6 +8240,16 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         ws_adm = {
           id = 3;
           <<firefoxprofile>>
+        };
+      };
+    };
+
+    xdg.portal = {
+      enable = true;
+      extraPortals = [ pkgs.xdg-desktop-portal-wlr ];
+      config = {
+        common = {
+          default = "wlr";
         };
       };
     };
@@ -10994,6 +11061,9 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
 
   (use-package eglot
     :ensure nil
+    :config
+    (add-to-list 'eglot-server-programs
+         '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
     :hook
     ((python-mode
       python-ts-mode
@@ -11005,6 +11075,7 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
       rustic-mode
       tex-mode
       LaTeX-mode
+      yaml-ts-mode
       ) . (lambda () (progn
                        (eglot-ensure)
                        (add-hook 'before-save-hook 'eglot-format nil 'local))))
@@ -11569,6 +11640,19 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 
 #+end_src
+
+*** ansible
+
+#+begin_src emacs-lisp
+
+  (use-package ansible
+      :hook
+      (yaml-ts-mode . ansible))
+
+
+
+#+end_src
+
 * Wiki
 :PROPERTIES:
 :CUSTOM_ID: h:c4c37b94-0760-4bff-9917-f1b0f023f6c3
