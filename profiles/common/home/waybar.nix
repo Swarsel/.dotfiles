@@ -35,11 +35,7 @@
           interval = 3600;
           tooltip = true;
           return-type = "json";
-          format = "{} {icon} ?";
-          format-icons = {
-            has-updates = "";
-            updated = "";
-          };
+          format = "{} ";
         };
 
         "group/hardware" = {
