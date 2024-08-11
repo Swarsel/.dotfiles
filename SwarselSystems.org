@@ -4906,6 +4906,7 @@ Also, the system state version is set here. No need to touch it.
       ./gnome-keyring.nix
       ./sway.nix
       ./xdg-portal.nix
+      # ./yubikey-touch-detector.nix
     ];
 
     nix =
@@ -6421,6 +6422,7 @@ This section sets up all the imports that are used in the home-manager section. 
       ./gpg-agent.nix
       ./gammastep.nix
       ./safeeyes.nix
+      ./yubikey-touch-detector.nix
     ];
 
     nix = {
@@ -8058,6 +8060,40 @@ A friend of mine used this service and I used to make fun of him. But I have to 
   _:
   {
     services.safeeyes.enable = true;
+  }
+#+end_src
+
+***** yubikey-touch-detector
+
+#+begin_src nix :tangle profiles/common/home/yubikey-touch-detector.nix
+  { pkgs, ... }:
+  {
+    systemd.user.services.yubikey-touch-detector = {
+      Unit = {
+        Description = "Detects when your YubiKey is waiting for a touch";
+        Requires = [ "yubikey-touch-detector.socket" ];
+      };
+      Service = {
+        ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
+        EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
+      };
+      Install = {
+        Also = [ "yubikey-touch-detector.socket" ];
+        WantedBy = [ "default.target" ];
+      };
+    };
+    systemd.user.sockets.yubikey-touch-detector = {
+      Unit = {
+        Description = "Unix socket activation for YubiKey touch detector service";
+      };
+      Socket = {
+        ListenStream = "%t/yubikey-touch-detector.socket";
+        RemoveOnStop = true;
+      };
+      Install = {
+        WantedBy = [ "sockets.target" ];
+      };
+    };
   }
 #+end_src
 

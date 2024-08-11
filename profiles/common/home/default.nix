@@ -30,6 +30,7 @@
     ./gpg-agent.nix
     ./gammastep.nix
     ./safeeyes.nix
+    ./yubikey-touch-detector.nix
   ];
 
   nix = {

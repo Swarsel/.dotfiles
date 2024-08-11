@@ -32,6 +32,7 @@
     ./gnome-keyring.nix
     ./sway.nix
     ./xdg-portal.nix
+    # ./yubikey-touch-detector.nix
   ];
 
   nix =
