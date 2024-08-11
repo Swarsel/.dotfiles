@@ -4799,8 +4799,8 @@ in
     type = types.listOf (types.attrsOf types.str);
     default = [
       { command = "nextcloud --background"; }
-      { command = "vesktop --start-minimized"; }
-      { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
       { command = "ANKI_WAYLAND=1 anki"; }
       { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
       { command = "nm-applet"; }
@@ -4893,7 +4893,6 @@ Also, the system state version is set here. No need to touch it.
       ./zsh.nix
       ./syncthing.nix
       ./blueman.nix
-      ./safeeyes.nix
       ./networkdevices.nix
       ./gvfs.nix
       ./interceptiontools.nix
@@ -5712,20 +5711,6 @@ Enables the blueman service including the nice system tray icon.
   }
 #+end_src
 
-***** safeeyes
-:PROPERTIES:
-:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
-:END:
-
-A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
-
-#+begin_src nix :tangle profiles/common/nixos/safeeyes.nix
-  _:
-  {
-    services.safeeyes.enable = true;
-  }
-#+end_src
-
 ***** Network devices
 :PROPERTIES:
 :CUSTOM_ID: h:73ed28cb-2f82-47b2-8bc5-208278b55788
@@ -6435,6 +6420,7 @@ This section sets up all the imports that are used in the home-manager section. 
       ./sway.nix
       ./gpg-agent.nix
       ./gammastep.nix
+      ./safeeyes.nix
     ];
 
     nix = {
@@ -8061,6 +8047,20 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
+***** safeeyes
+:PROPERTIES:
+:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
+:END:
+
+A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
+
+#+begin_src nix :tangle profiles/common/home/safeeyes.nix
+  _:
+  {
+    services.safeeyes.enable = true;
+  }
+#+end_src
+
 **** Sway
 :PROPERTIES:
 :CUSTOM_ID: h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20
@@ -8399,6 +8399,7 @@ This service changes the screen hue at night. I am not sure if that really does 
     };
   }
 #+end_src
+
 
 *** Optional
 :PROPERTIES:

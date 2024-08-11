@@ -19,7 +19,6 @@
     ./zsh.nix
     ./syncthing.nix
     ./blueman.nix
-    ./safeeyes.nix
     ./networkdevices.nix
     ./gvfs.nix
     ./interceptiontools.nix

@@ -29,6 +29,7 @@
     ./sway.nix
     ./gpg-agent.nix
     ./gammastep.nix
+    ./safeeyes.nix
   ];
 
   nix = {
