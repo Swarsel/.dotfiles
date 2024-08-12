@@ -1,4 +1,4 @@
-_:
+{ lib, ... }:
 {
   programs.git = {
     enable = true;
@@ -19,8 +19,8 @@ _:
       key = "0x76FD3810215AE097";
       signByDefault = true;
     };
-    userEmail = "leon.schwarzaeugl@gmail.com";
-    userName = "Swarsel";
+    userEmail = lib.mkDefault "leon.schwarzaeugl@gmail.com";
+    userName = "Leon Schwarzäugl";
     difftastic.enable = true;
     lfs.enable = true;
     includes = [

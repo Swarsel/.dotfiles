@@ -263,4 +263,6 @@
     };
   };
 
+  programs.git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
+
 }

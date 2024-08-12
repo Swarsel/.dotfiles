@@ -7103,7 +7103,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix :tangle profiles/common/home/git.nix
-  _:
+  { lib, ... }:
   {
     programs.git = {
       enable = true;
@@ -7124,8 +7124,8 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
         key = "0x76FD3810215AE097";
         signByDefault = true;
       };
-      userEmail = "leon.schwarzaeugl@gmail.com";
-      userName = "Swarsel";
+      userEmail = lib.mkDefault "leon.schwarzaeugl@gmail.com";
+      userName = "Leon Schwarzäugl";
       difftastic.enable = true;
       lfs.enable = true;
       includes = [
@@ -8208,9 +8208,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
               "${modifier}+r" = "mode resize";
               "${modifier}+Return" = "exec kitty";
-              "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-              "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-              "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+              # "XF86AudioRaiseVolume" = "exec pa 5%";
+              "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+              # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+              "XF86AudioLowerVolume" = "exec pamixer -d 5";
+              # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+              "XF86AudioMute" = "exec pamixer -t";
               "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
               "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
               "XF86Display" = "exec wl-mirror eDP-1";
@@ -8536,6 +8539,8 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
     };
   };
+
+  programs.git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
 }
 

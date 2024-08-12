@@ -96,9 +96,12 @@ in
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
-            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-            "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            # "XF86AudioRaiseVolume" = "exec pa 5%";
+            "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+            # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+            "XF86AudioLowerVolume" = "exec pamixer -d 5";
+            # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            "XF86AudioMute" = "exec pamixer -t";
             "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
             "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
             "XF86Display" = "exec wl-mirror eDP-1";
