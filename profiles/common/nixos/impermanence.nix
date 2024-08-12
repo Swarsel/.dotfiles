@@ -10,6 +10,8 @@
   # So if it doesn't run, the btrfs system effectively acts like a normal system
   # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
 
+  boot.initrd.systemd.enable = true;
+
   boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
     description = "Rollback BTRFS root subvolume to a pristine state";
     wantedBy = [ "initrd.target" ];
@@ -61,16 +63,16 @@
     hideMounts = true;
     directories =
       [
-        "/.cache/nix/"
+        "/.cache/nix"
         "/srv"
         "/etc/nixos"
         "/etc/nix"
         "/home/swarsel/.dotfiles"
         "/etc/NetworkManager/system-connections"
         "/etc/secureboot"
-        "/var/db/sudo/"
-        "/var/cache/"
-        "/var/lib/"
+        "/var/db/sudo"
+        "/var/cache"
+        "/var/lib"
       ];
 
     files = [

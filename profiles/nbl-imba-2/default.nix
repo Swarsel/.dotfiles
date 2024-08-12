@@ -71,7 +71,6 @@
     wallpaper = ../../wallpaper/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
-    initialSetup = true;
     impermanence = false;
     isBtrfs = true;
   };
