@@ -33,6 +33,7 @@
     ./sway.nix
     ./xdg-portal.nix
     # ./yubikey-touch-detector.nix
+    ./safeeyes.nix
   ];
 
   nix =

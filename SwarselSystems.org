@@ -4908,6 +4908,7 @@ Also, the system state version is set here. No need to touch it.
       ./sway.nix
       ./xdg-portal.nix
       # ./yubikey-touch-detector.nix
+      ./safeeyes.nix
     ];
 
     nix =
@@ -6240,6 +6241,20 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
   }
 #+end_src
 
+**** safeeyes
+:PROPERTIES:
+:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
+:END:
+
+A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
+
+#+begin_src nix :tangle profiles/common/nixos/safeeyes.nix
+  _:
+  {
+    services.safeeyes.enable = true;
+  }
+#+end_src
+
 
 *** Optional
 :PROPERTIES:
@@ -6424,7 +6439,7 @@ This section sets up all the imports that are used in the home-manager section. 
       ./sway.nix
       ./gpg-agent.nix
       ./gammastep.nix
-      ./safeeyes.nix
+      # ./safeeyes.nix
       ./yubikey-touch-detector.nix
     ];
 
@@ -8049,20 +8064,6 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
         group-by=category
       '';
     };
-  }
-#+end_src
-
-***** safeeyes
-:PROPERTIES:
-:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
-:END:
-
-A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
-
-#+begin_src nix :tangle profiles/common/home/safeeyes.nix
-  _:
-  {
-    services.safeeyes.enable = true;
   }
 #+end_src
 

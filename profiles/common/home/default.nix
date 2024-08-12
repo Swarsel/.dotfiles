@@ -29,7 +29,7 @@
     ./sway.nix
     ./gpg-agent.nix
     ./gammastep.nix
-    ./safeeyes.nix
+    # ./safeeyes.nix
     ./yubikey-touch-detector.nix
   ];
 
