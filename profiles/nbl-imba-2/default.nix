@@ -132,12 +132,10 @@
     inputs = {
       "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
         xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";
       };
       "1133:45081:MX_Master_2S_Keyboard" = {
         xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";
       };
       "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
@@ -145,6 +143,10 @@
         tap = "enabled";
         natural_scroll = "enabled";
         middle_emulation = "enabled";
+      };
+      "1133:50504:Logitech_USB_Receiver" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
       };
     };
     keybindings = {
