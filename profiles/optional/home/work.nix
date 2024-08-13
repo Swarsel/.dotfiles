@@ -263,6 +263,35 @@
     };
   };
 
+  xdg.desktopEntries =
+    let
+      terminal = false;
+      categories = [ "Application" ];
+      icon = "firefox";
+    in
+    {
+      firefox_dc = {
+        name = "Firefox (dc_adm)";
+        genericName = "Firefox dc";
+        exec = "firefox -p dc_adm";
+        inherit terminal categories icon;
+      };
+
+      firefox_ws = {
+        name = "Firefox (ws_adm)";
+        genericName = "Firefox ws";
+        exec = "firefox -p ws_adm";
+        inherit terminal categories icon;
+      };
+
+      firefox_cl = {
+        name = "Firefox (cl_adm)";
+        genericName = "Firefox cl";
+        exec = "firefox -p cl_adm";
+        inherit terminal categories icon;
+      };
+    };
+
   programs.git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
 }
