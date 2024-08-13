@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-08-10 Sa 19:22 -->
+<!-- 2024-08-13 Di 23:29 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -219,7 +219,7 @@
 <ul>
 <li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3.1. Inputs</a></li>
 <li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3.2. let</a></li>
-<li><a href="#org729041d">2.3.3. General (outputs)</a></li>
+<li><a href="#h:54cd8f65-a3ba-43c3-ae37-5f04383fe720">2.3.3. General (outputs)</a></li>
 <li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.3.4. nixosConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.3.5. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.3.6. nixOnDroidConfigurations</a></li>
@@ -350,7 +350,7 @@
 </div>
 </div>
 <p>
-<b>This file has 44864 words spanning 11840 lines and was last revised on 2024-08-10 19:22:18 +0200.</b>
+<b>This file has 45330 words spanning 11987 lines and was last revised on 2024-08-13 23:29:28 +0200.</b>
 </p>
 
 <p>
@@ -400,7 +400,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-10 19:22:18 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-13 23:29:28 +0200)
 </p></li>
 </ul>
 
@@ -412,7 +412,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/jpzmfjay3cyza16ay1fn550l8dhdqwgm-emacs-pgtk-20240717.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/jh4xny0q3is65dfk9nfmiiipxfvqzl8p-emacs-pgtk-20240810.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -940,9 +940,9 @@ mixedModules = [
 </div>
 </div>
 </div>
-<div id="outline-container-org729041d" class="outline-4">
-<h4 id="org729041d"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
-<div class="outline-text-4" id="text-2-3-3">
+<div id="outline-container-h:54cd8f65-a3ba-43c3-ae37-5f04383fe720" class="outline-4">
+<h4 id="h:54cd8f65-a3ba-43c3-ae37-5f04383fe720"><span class="section-number-4">2.3.3.</span> General (outputs)</h4>
+<div class="outline-text-4" id="text-h:54cd8f65-a3ba-43c3-ae37-5f04383fe720">
 <p>
 In this section I am creating some attributes that define general concepts of my configuration:
 </p>
@@ -2330,7 +2330,6 @@ My work machine. Built for more security, this is the gold standard of my config
     wallpaper = ../../wallpaper/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
-    initialSetup = true;
     impermanence = false;
     isBtrfs = true;
   };
@@ -2392,12 +2391,10 @@ My work machine. Built for more security, this is the gold standard of my config
     inputs = {
       "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
         xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";
       };
       "1133:45081:MX_Master_2S_Keyboard" = {
         xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
         xkb_variant = "altgr-intl";
       };
       "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
@@ -2405,6 +2402,10 @@ My work machine. Built for more security, this is the gold standard of my config
         tap = "enabled";
         natural_scroll = "enabled";
         middle_emulation = "enabled";
+      };
+      "1133:50504:Logitech_USB_Receiver" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
       };
     };
     keybindings = {
@@ -4557,6 +4558,7 @@ in
   opacitytoggle = callPackage ./opacitytoggle { };
   fs-diff = callPackage ./fs-diff { };
   update-checker = callPackage ./update-checker { };
+  github-notifications = callPackage ./github-notifications { };
 }
 
 </pre>
@@ -5050,14 +5052,21 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 <div class="org-src-container">
 <pre class="src src-shell">
-updates="$(cd ~/.dotfiles &amp;&amp; nix flake lock --update-input nixpkgs &amp;&amp; nix build .#nixosConfigurations."$HOSTNAME".config.system.build.toplevel &amp;&amp; nvd diff /run/current-system ./result | grep -c '\[U')"
+updates="$( { cd /home/swarsel/.dotfiles &amp;&amp; nix flake lock --update-input nixpkgs &amp;&amp; nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &amp;&amp;  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
+
+alt="has-updates"
+if [[ $updates -eq 0 ]]; then
+    alt="updated"
+fi
 
 tooltip="System updated"
 if [[ $updates != 0 ]]; then
-  tooltip=$(cd ~/.dotfiles &amp;&amp; nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i&lt;NF; i++) printf $i " "; if (NF &gt;= 3) print $NF; }' ORS='\\n' )
+    tooltip=$(cd ~/.dotfiles &amp;&amp; nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i&lt;NF; i++) printf $i " "; if (NF &gt;= 3) print $NF; }' ORS='\\n' )
+    echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
+else
+    echo "{ \"text\":\"\", \"alt\":\"$alt\", \"tooltip\":\"\" }"
 fi
 
-echo "{ \"text\":\"$updates\", \"tooltip\":\"$tooltip\" }"
 
 </pre>
 </div>
@@ -5069,6 +5078,31 @@ writeShellApplication {
   name = "update-checker";
   runtimeInputs = [ nvd ];
   text = builtins.readFile ../../scripts/update-checker.sh;
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="h:a9398c4e-4d3b-4942-b03c-192f9c0517e5"></a>github-notifications<br />
+<div class="outline-text-5" id="text-h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">
+<p>
+This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, jq }:
+
+writeShellApplication {
+  name = "github-notifications";
+  runtimeInputs = [ jq ];
+  text = ''
+       count=$(curl -u Swarsel:"$(cat /run/user/1000/secrets/github_notif)" https://api.github.com/notifications | jq '. | length')
+
+       if [[ "$count" != "0" ]]; then
+           echo "{\"text\":\"$count\"}"
+       fi
+  '';
 }
 </pre>
 </div>
@@ -5525,8 +5559,8 @@ in
     type = types.listOf (types.attrsOf types.str);
     default = [
       { command = "nextcloud --background"; }
-      { command = "vesktop --start-minimized"; }
-      { command = "element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
       { command = "ANKI_WAYLAND=1 anki"; }
       { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
       { command = "nm-applet"; }
@@ -5633,7 +5667,6 @@ Also, the system state version is set here. No need to touch it.
     ./zsh.nix
     ./syncthing.nix
     ./blueman.nix
-    ./safeeyes.nix
     ./networkdevices.nix
     ./gvfs.nix
     ./interceptiontools.nix
@@ -5647,6 +5680,8 @@ Also, the system state version is set here. No need to touch it.
     ./gnome-keyring.nix
     ./sway.nix
     ./xdg-portal.nix
+    # ./yubikey-touch-detector.nix
+    ./safeeyes.nix
   ];
 
   nix =
@@ -6328,6 +6363,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     # pinentry
     dbus
     swaylock-effects
+    syncthingtray-minimal
 
     # secure boot
     sbctl
@@ -6470,22 +6506,22 @@ _:
       folders = {
         "Default Folder" = {
           path = "/home/swarsel/Sync";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "default";
         };
         "Obsidian" = {
           path = "/home/swarsel/Nextcloud/Obsidian";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "yjvni-9eaa7";
         };
         "Org" = {
           path = "/home/swarsel/Nextcloud/Org";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "a7xnl-zjj3d";
         };
         "Vpn" = {
           path = "/home/swarsel/Vpn";
-          devices = [ "sync (@oracle) magicant" ];
+          devices = [ "sync (@oracle)" "magicant" ];
           id = "hgp9s-fyq3p";
         };
       };
@@ -6515,21 +6551,6 @@ Enables the blueman service including the nice system tray icon.
 <pre class="src src-nix">_:
 {
   services.blueman.enable = true;
-}
-</pre>
-</div>
-</div>
-</li>
-<li><a id="h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4"></a>safeeyes<br />
-<div class="outline-text-6" id="text-h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4">
-<p>
-A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">_:
-{
-  services.safeeyes.enable = true;
 }
 </pre>
 </div>
@@ -6913,6 +6934,8 @@ Normally, doing that also resets the lecture that happens on the first use of <c
   # So if it doesn't run, the btrfs system effectively acts like a normal system
   # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
 
+  boot.initrd.systemd.enable = true;
+
   boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
     description = "Rollback BTRFS root subvolume to a pristine state";
     wantedBy = [ "initrd.target" ];
@@ -6964,16 +6987,16 @@ Normally, doing that also resets the lecture that happens on the first use of <c
     hideMounts = true;
     directories =
       [
-        "/.cache/nix/"
+        "/.cache/nix"
         "/srv"
         "/etc/nixos"
         "/etc/nix"
         "/home/swarsel/.dotfiles"
         "/etc/NetworkManager/system-connections"
         "/etc/secureboot"
-        "/var/db/sudo/"
-        "/var/cache/"
-        "/var/lib/"
+        "/var/db/sudo"
+        "/var/cache"
+        "/var/lib"
       ];
 
     files = [
@@ -7090,6 +7113,21 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
     };
   };
 
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4"></a>safeeyes<br />
+<div class="outline-text-5" id="text-h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4">
+<p>
+A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">_:
+{
+  services.safeeyes.enable = true;
 }
 </pre>
 </div>
@@ -7291,6 +7329,8 @@ This section sets up all the imports that are used in the home-manager section. 
     ./sway.nix
     ./gpg-agent.nix
     ./gammastep.nix
+    # ./safeeyes.nix
+    ./yubikey-touch-detector.nix
   ];
 
   nix = {
@@ -7465,7 +7505,6 @@ This holds packages that I can use as provided, or with small modifications (as 
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
-    syncthingtray
     # monitor
 
     #keychain
@@ -7522,6 +7561,7 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
     opacitytoggle
     fs-diff
     update-checker
+    github-notifications
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -7602,6 +7642,7 @@ in
       nautilus = { path = "/run/user/1000/secrets/nautilus"; };
       leon = { path = "/run/user/1000/secrets/leon"; };
       swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
+      github_notif = { path = "/run/user/1000/secrets/github_notif"; };
       caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
     };
   };
@@ -7877,6 +7918,10 @@ As for the `home.sessionVariables`, it should be noted that environment variable
       source = ../../../programs/git/.gitmessage;
       target = ".gitmessage";
     };
+    "swayidle/config" = {
+      source = ../../../programs/swayidle/config;
+      target = ".config/swayidle/config";
+    };
   };
 
 </pre>
@@ -8044,7 +8089,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix">{ lib, ... }:
 {
   programs.git = {
     enable = true;
@@ -8065,8 +8110,8 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
       key = "0x76FD3810215AE097";
       signByDefault = true;
     };
-    userEmail = "leon.schwarzaeugl@gmail.com";
-    userName = "Swarsel";
+    userEmail = lib.mkDefault "leon.schwarzaeugl@gmail.com";
+    userName = "Leon Schwarzäugl";
     difftastic.enable = true;
     lfs.enable = true;
     includes = [
@@ -8567,7 +8612,7 @@ The rest of the related configuration is found here:
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-        modules-center = [ "sway/mode" "custom/configwarn" "custom/nix-updates" ];
+        modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
         "sway/mode" = {
           format = "&lt;span style=\"italic\" font-weight=\"bold\"&gt;{}&lt;/span&gt;";
         };
@@ -8584,13 +8629,41 @@ The rest of the related configuration is found here:
           interval = 60;
         };
 
+        "custom/scratchpad-indicator" = {
+          interval = 3;
+          exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. &gt;= 1)'";
+          format = "{} ";
+          on-click = "swaymsg 'scratchpad show'";
+          on-click-right = "swaymsg 'move scratchpad'";
+        };
+
+        "custom/github" = {
+          format = "{}  ";
+          return-type = "json";
+          interval = 60;
+          exec = "github-notifications";
+          on-click = "xdg-open https://github.com/notifications";
+        };
+
         "custom/nix-updates" = {
           exec = "update-checker";
           on-click = "update-checker &amp;&amp; notify-send 'The system has been updated'";
           interval = 3600;
           tooltip = true;
           return-type = "json";
-          format = "{} ";
+          format = "{} {icon}";
+          format-icon = {
+            "has-updates" = "";
+            "updated" = " ";
+          };
+        };
+
+        idle_inhibitor = {
+          format = "{icon}";
+          format-icons = {
+            activated = "";
+            deactivated = "";
+          };
         };
 
         "group/hardware" = {
@@ -8604,6 +8677,7 @@ The rest of the related configuration is found here:
             "power-profiles-daemon"
             "custom/left-arrow-light"
             "custom/left-arrow-dark"
+            "custom/scratchpad-indicator"
             "custom/left-arrow-light"
             "disk"
             "custom/left-arrow-dark"
@@ -8611,7 +8685,16 @@ The rest of the related configuration is found here:
             "custom/left-arrow-light"
             "cpu"
             "custom/left-arrow-dark"
+            "backlight/slider"
+            "idle_inhibitor"
           ];
+        };
+
+        "backlight/slider" = {
+          min = 0;
+          max = 100;
+          orientation = "horizontal";
+          device = "intel_backlight";
         };
 
         power-profiles-daemon = {
@@ -8986,6 +9069,42 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </li>
+<li><a id="h:1598c90b-f195-41a0-9132-94612edf3586"></a>yubikey-touch-detector<br />
+<div class="outline-text-6" id="text-h:1598c90b-f195-41a0-9132-94612edf3586">
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, ... }:
+{
+  systemd.user.services.yubikey-touch-detector = {
+    Unit = {
+      Description = "Detects when your YubiKey is waiting for a touch";
+      Requires = [ "yubikey-touch-detector.socket" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.yubikey-touch-detector}/bin/yubikey-touch-detector --libnotify";
+      EnvironmentFile = "-%E/yubikey-touch-detector/service.conf";
+    };
+    Install = {
+      Also = [ "yubikey-touch-detector.socket" ];
+      WantedBy = [ "default.target" ];
+    };
+  };
+  systemd.user.sockets.yubikey-touch-detector = {
+    Unit = {
+      Description = "Unix socket activation for YubiKey touch detector service";
+    };
+    Socket = {
+      ListenStream = "%t/yubikey-touch-detector.socket";
+      RemoveOnStop = true;
+    };
+    Install = {
+      WantedBy = [ "sockets.target" ];
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</li>
 </ol>
 </li>
 <li><a id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"></a>Sway<br />
@@ -9097,9 +9216,12 @@ in
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
-            "XF86AudioRaiseVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ +5%";
-            "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-            "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            # "XF86AudioRaiseVolume" = "exec pa 5%";
+            "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+            # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+            "XF86AudioLowerVolume" = "exec pamixer -d 5";
+            # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+            "XF86AudioMute" = "exec pamixer -t";
             "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
             "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
             "XF86Display" = "exec wl-mirror eDP-1";
@@ -9274,7 +9396,7 @@ in
           }
 
           exec systemctl --user import-environment
-
+          exec swayidle -w
 
 
           ${swayfxSettings}
@@ -9641,15 +9763,36 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
     };
   };
 
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-wlr ];
-    config = {
-      common = {
-        default = "wlr";
+  xdg.desktopEntries =
+    let
+      terminal = false;
+      categories = [ "Application" ];
+      icon = "firefox";
+    in
+    {
+      firefox_dc = {
+        name = "Firefox (dc_adm)";
+        genericName = "Firefox dc";
+        exec = "firefox -p dc_adm";
+        inherit terminal categories icon;
+      };
+
+      firefox_ws = {
+        name = "Firefox (ws_adm)";
+        genericName = "Firefox ws";
+        exec = "firefox -p ws_adm";
+        inherit terminal categories icon;
+      };
+
+      firefox_cl = {
+        name = "Firefox (cl_adm)";
+        genericName = "Firefox cl";
+        exec = "firefox -p cl_adm";
+        inherit terminal categories icon;
       };
     };
-  };
+
+  programs.git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
 }
 
@@ -12022,7 +12165,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
-(setq org-export-with-broken-links mark)
+(setq org-export-with-broken-links 'mark)
 
 </pre>
 </div>
@@ -13695,7 +13838,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-08-10 Sa 19:22</p>
+<p class="date">Created: 2024-08-13 Di 23:29</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

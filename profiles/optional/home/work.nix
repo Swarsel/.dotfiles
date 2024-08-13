@@ -253,16 +253,6 @@
     };
   };
 
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-wlr ];
-    config = {
-      common = {
-        default = "wlr";
-      };
-    };
-  };
-
   xdg.desktopEntries =
     let
       terminal = false;
