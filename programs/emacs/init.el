@@ -1537,11 +1537,11 @@ create a new one."
    ("M-e" . dirvish-emerge-menu)
    ("M-j" . dirvish-fd-jump)))
 
-(use-package pdf-tools
-  :init
-  (if (not (boundp 'pdf-tools-directory))
-      (pdf-tools-install))
-  :mode ("\\.pdf" . pdf-view-mode))
+;; (use-package pdf-tools
+;;   :init
+;;   (if (not (boundp 'pdf-tools-directory))
+;;       (pdf-tools-install))
+;;   :mode ("\\.pdf" . pdf-view-mode))
 
 (use-package ein)
 

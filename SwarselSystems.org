@@ -1841,11 +1841,6 @@ My work machine. Built for more security, this is the gold standard of my config
       firewall.enable = true;
     };
 
-    hardware.graphics.extraPackages = with pkgs; [
-      vulkan-loader
-      vulkan-validation-layers
-      vulkan-extension-layer
-    ];
 
     services = {
       fwupd.enable = true;
@@ -4329,7 +4324,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 #+begin_src shell :tangle scripts/update-checker.sh
 
-  updates="$( { cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
+  updates="$( { cd /home/swarsel/.dotfiles && nix flake update && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
 
   alt="has-updates"
   if [[ $updates -eq 0 ]]; then
@@ -11523,11 +11518,11 @@ This enables pdf-previewing in dirvish and gives a much better pdf-viewer than i
 
 #+begin_src emacs-lisp
 
-  (use-package pdf-tools
-    :init
-    (if (not (boundp 'pdf-tools-directory))
-        (pdf-tools-install))
-    :mode ("\\.pdf" . pdf-view-mode))
+  ;; (use-package pdf-tools
+  ;;   :init
+  ;;   (if (not (boundp 'pdf-tools-directory))
+  ;;       (pdf-tools-install))
+  ;;   :mode ("\\.pdf" . pdf-view-mode))
 
 #+end_src
 
