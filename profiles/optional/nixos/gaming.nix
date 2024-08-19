@@ -21,4 +21,11 @@
       pkgs.proton-ge-bin
     ];
   };
+
+  hardware.xone.enable = true;
+
+  environment.systemPackages = [
+    linuxKernel.packages.linux_6_10.xone
+  ];
+
 }
