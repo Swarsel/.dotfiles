@@ -11,6 +11,18 @@
 
   programs.ssh = {
     matchBlocks = {
+      "uc" = {
+        host = "uc.clip.vbc.ac.at";
+        user = "stack";
+      };
+      "staging-uc" = {
+        host = "uc.staging.clip.vbc.ac.at";
+        user = "stack";
+      };
+      "cbe" = {
+        host = "cbe.vbc.ac.at";
+        user = "dc_adm_schwarzaeugl";
+      };
       "*.vbc.ac.at" = {
         user = "dc_adm_schwarzaeugl";
       };
