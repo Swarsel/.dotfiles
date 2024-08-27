@@ -132,6 +132,7 @@ in
       };
       assigns = {
         "1:一" = [{ app_id = "firefox"; }];
+        "10:十" = [{ app_id = "teams-for-linux"; }];
       };
       floating = {
         border = 1;

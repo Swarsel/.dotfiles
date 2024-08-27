@@ -325,7 +325,7 @@ create a new one."
       "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
       "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
       "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-      "on" '((lambda () (interactive) (nixpkgs-fmt)) :which-key "format nix-block")
+      "on" '((lambda () (interactive) (nixpkgs-fmt-region)) :which-key "format nix-block")
       ;; "c"  '(:ignore c :which-key "capture")
       ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
       ;; "cs" '(markdown-download-screenshot :which-key "screenshot")

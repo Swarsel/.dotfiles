@@ -56,6 +56,10 @@
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
 
+  nixpkgs.config.permittedInsecurePackages = [
+    "jitsi-meet-1.0.8043"
+  ];
+
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;

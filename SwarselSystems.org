@@ -1869,13 +1869,23 @@ My work machine. Built for more security, this is the gold standard of my config
       #  ------   -----
       # | DP-4 | |eDP-1|
       #  ------   -----
+      startup = [
+      { command = "nextcloud --background"; }
+      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      { command = "ANKI_WAYLAND=1 anki"; }
+      { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+      { command = "nm-applet"; }
+      { command = "teams-for-linux"; }
+      { command = "1password"; }
+    ];
       monitors = {
         main = {
           name = "BOE 0x0BC9 Unknown";
           mode = "2560x1600"; # TEMPLATE
           scale = "1";
           position = "2560,0";
-          workspace = "2:二";
+          workspace = "10:十";
           output = "eDP-2";
         };
         homedesktop = {
@@ -1910,6 +1920,14 @@ My work machine. Built for more security, this is the gold standard of my config
           workspace = "1:一";
           output = "DP-3";
         };
+        work_middle_middle = {
+          name = "HP Inc. HP 732pk CNC4080YL5";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-9";
+        };
       };
       inputs = {
         "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
@@ -1927,6 +1945,10 @@ My work machine. Built for more security, this is the gold standard of my config
           middle_emulation = "enabled";
         };
         "1133:50504:Logitech_USB_Receiver" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        "1133:45944:MX_KEYS_S" = {
           xkb_layout = "us";
           xkb_variant = "altgr-intl";
         };
@@ -4324,7 +4346,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 #+begin_src shell :tangle scripts/update-checker.sh
 
-  updates="$( { cd /home/swarsel/.dotfiles && nix flake update && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
+  updates="$( { cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
 
   alt="has-updates"
   if [[ $updates -eq 0 ]]; then
@@ -4931,6 +4953,10 @@ Also, the system state version is set here. No need to touch it.
         registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
         nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };
+
+    nixpkgs.config.permittedInsecurePackages = [
+      "jitsi-meet-1.0.8043"
+    ];
 
     home-manager = {
       useGlobalPkgs = true;
@@ -7668,7 +7694,7 @@ The rest of the related configuration is found here:
             "custom/nix-updates" = {
               exec = "update-checker";
               on-click = "update-checker && notify-send 'The system has been updated'";
-              interval = 3600;
+              interval = "once";
               tooltip = true;
               return-type = "json";
               format = "{} {icon}";
@@ -8256,6 +8282,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         };
         assigns = {
           "1:一" = [{ app_id = "firefox"; }];
+          "10:十" = [{ app_id = "teams-for-linux"; }];
         };
         floating = {
           border = 1;
@@ -8512,24 +8539,27 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
   home.packages = with pkgs; [
     teams-for-linux
     google-chrome
-    thunderbird
-    ansible
+    shellcheck
     dig
   ];
 
   programs.ssh = {
     matchBlocks = {
       "uc" = {
-        host = "uc.clip.vbc.ac.at";
-          user = "stack";
+        hostname = "uc.clip.vbc.ac.at";
+        user = "stack";
       };
-      "staging-uc" = {
-        host = "uc.staging.clip.vbc.ac.at";
+      "uc-stg" = {
+        hostname = "uc.staging.clip.vbc.ac.at";
         user = "stack";
       };
       "cbe" = {
-        host = "cbe.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
+        hostname = "cbe.vbc.ac.at";
+        user = "dc_adm_schwarzaeugl";
+      };
+      "cbe-stg" = {
+        hostname = "cbe.staging.vbc.ac.at";
+        user = "dc_adm_schwarzaeugl";
       };
       "*.vbc.ac.at" = {
         user = "dc_adm_schwarzaeugl";
@@ -8541,15 +8571,15 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
     profiles = {
       dc_adm = {
         id = 1;
-        <<firefoxprofile>>
+        # <<firefoxprofile>>
       };
       cl_adm = {
         id = 2;
-        <<firefoxprofile>>
+        # <<firefoxprofile>>
       };
       ws_adm = {
         id = 3;
-        <<firefoxprofile>>
+        # <<firefoxprofile>>
       };
     };
   };
@@ -9354,7 +9384,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
         "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
         "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
         "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-        "on" '((lambda () (interactive) (nixpkgs-fmt)) :which-key "format nix-block")
+        "on" '((lambda () (interactive) (nixpkgs-fmt-region)) :which-key "format nix-block")
         ;; "c"  '(:ignore c :which-key "capture")
         ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
         ;; "cs" '(markdown-download-screenshot :which-key "screenshot")

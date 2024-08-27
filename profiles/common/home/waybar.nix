@@ -48,7 +48,7 @@
         "custom/nix-updates" = {
           exec = "update-checker";
           on-click = "update-checker && notify-send 'The system has been updated'";
-          interval = 3600;
+          interval = "once";
           tooltip = true;
           return-type = "json";
           format = "{} {icon}";

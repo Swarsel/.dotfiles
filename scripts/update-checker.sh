@@ -1,4 +1,4 @@
-updates="$( { cd /home/swarsel/.dotfiles && nix flake update && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
+updates="$( { cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
 
 alt="has-updates"
 if [[ $updates -eq 0 ]]; then

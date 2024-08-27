@@ -82,13 +82,23 @@
     #  ------   -----
     # | DP-4 | |eDP-1|
     #  ------   -----
+    startup = [
+      { command = "nextcloud --background"; }
+      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+      { command = "ANKI_WAYLAND=1 anki"; }
+      { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+      { command = "nm-applet"; }
+      { command = "teams-for-linux"; }
+      { command = "1password"; }
+    ];
     monitors = {
       main = {
         name = "BOE 0x0BC9 Unknown";
         mode = "2560x1600"; # TEMPLATE
         scale = "1";
         position = "2560,0";
-        workspace = "2:二";
+        workspace = "10:十";
         output = "eDP-2";
       };
       homedesktop = {
@@ -123,6 +133,14 @@
         workspace = "1:一";
         output = "DP-3";
       };
+      work_middle_middle = {
+        name = "HP Inc. HP 732pk CNC4080YL5";
+        mode = "3840x2160";
+        scale = "1";
+        position = "5120,0";
+        workspace = "1:一";
+        output = "DP-9";
+      };
     };
     inputs = {
       "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
@@ -140,6 +158,10 @@
         middle_emulation = "enabled";
       };
       "1133:50504:Logitech_USB_Receiver" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
+      };
+      "1133:45944:MX_KEYS_S" = {
         xkb_layout = "us";
         xkb_variant = "altgr-intl";
       };
