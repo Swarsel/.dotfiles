@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-08-13 Di 23:29 -->
+<!-- 2024-08-27 Di 23:42 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -350,7 +350,7 @@
 </div>
 </div>
 <p>
-<b>This file has 45330 words spanning 11987 lines and was last revised on 2024-08-13 23:29:28 +0200.</b>
+<b>This file has 45507 words spanning 12037 lines and was last revised on 2024-08-27 23:41:55 +0200.</b>
 </p>
 
 <p>
@@ -400,7 +400,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-13 23:29:28 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-27 23:41:55 +0200)
 </p></li>
 </ul>
 
@@ -412,7 +412,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/jh4xny0q3is65dfk9nfmiiipxfvqzl8p-emacs-pgtk-20240810.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/frxxsgm1rw0drr8la1cxm6cmq5iw89r0-emacs-pgtk-20240816.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -2313,11 +2313,6 @@ My work machine. Built for more security, this is the gold standard of my config
     firewall.enable = true;
   };
 
-  hardware.graphics.extraPackages = with pkgs; [
-    vulkan-loader
-    vulkan-validation-layers
-    vulkan-extension-layer
-  ];
 
   services = {
     fwupd.enable = true;
@@ -2346,13 +2341,23 @@ My work machine. Built for more security, this is the gold standard of my config
     #  ------   -----
     # | DP-4 | |eDP-1|
     #  ------   -----
+    startup = [
+    { command = "nextcloud --background"; }
+    { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+    { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+    { command = "ANKI_WAYLAND=1 anki"; }
+    { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+    { command = "nm-applet"; }
+    { command = "teams-for-linux"; }
+    { command = "1password"; }
+  ];
     monitors = {
       main = {
         name = "BOE 0x0BC9 Unknown";
         mode = "2560x1600"; # TEMPLATE
         scale = "1";
         position = "2560,0";
-        workspace = "2:二";
+        workspace = "10:十";
         output = "eDP-2";
       };
       homedesktop = {
@@ -2387,6 +2392,14 @@ My work machine. Built for more security, this is the gold standard of my config
         workspace = "1:一";
         output = "DP-3";
       };
+      work_middle_middle = {
+        name = "HP Inc. HP 732pk CNC4080YL5";
+        mode = "3840x2160";
+        scale = "1";
+        position = "5120,0";
+        workspace = "1:一";
+        output = "DP-9";
+      };
     };
     inputs = {
       "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
@@ -2404,6 +2417,10 @@ My work machine. Built for more security, this is the gold standard of my config
         middle_emulation = "enabled";
       };
       "1133:50504:Logitech_USB_Receiver" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
+      };
+      "1133:45944:MX_KEYS_S" = {
         xkb_layout = "us";
         xkb_variant = "altgr-intl";
       };
@@ -5704,6 +5721,10 @@ Also, the system state version is set here. No need to touch it.
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
 
+  nixpkgs.config.permittedInsecurePackages = [
+    "jitsi-meet-1.0.8043"
+  ];
+
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -7181,6 +7202,13 @@ This opens a few gaming ports and installs the steam configuration suite for gam
       pkgs.proton-ge-bin
     ];
   };
+
+  hardware.xone.enable = true;
+
+  environment.systemPackages = [
+    linuxKernel.packages.linux_6_10.xone
+    ];
+
 }
 
 
@@ -8648,7 +8676,7 @@ The rest of the related configuration is found here:
         "custom/nix-updates" = {
           exec = "update-checker";
           on-click = "update-checker &amp;&amp; notify-send 'The system has been updated'";
-          interval = 3600;
+          interval = "once";
           tooltip = true;
           return-type = "json";
           format = "{} {icon}";
@@ -9252,6 +9280,7 @@ in
       };
       assigns = {
         "1:一" = [{ app_id = "firefox"; }];
+        "10:十" = [{ app_id = "teams-for-linux"; }];
       };
       floating = {
         border = 1;
@@ -9514,13 +9543,28 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
   home.packages = with pkgs; [
     teams-for-linux
     google-chrome
-    thunderbird
-    ansible
+    shellcheck
     dig
   ];
 
   programs.ssh = {
     matchBlocks = {
+      "uc" = {
+        hostname = "uc.clip.vbc.ac.at";
+        user = "stack";
+      };
+      "uc-stg" = {
+        hostname = "uc.staging.clip.vbc.ac.at";
+        user = "stack";
+      };
+      "cbe" = {
+        hostname = "cbe.vbc.ac.at";
+        user = "dc_adm_schwarzaeugl";
+      };
+      "cbe-stg" = {
+        hostname = "cbe.staging.vbc.ac.at";
+        user = "dc_adm_schwarzaeugl";
+      };
       "*.vbc.ac.at" = {
         user = "dc_adm_schwarzaeugl";
       };
@@ -10893,104 +10937,110 @@ I also define some keybinds to some combinations directly. Those are used mostly
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-;; Make ESC quit prompts
-(global-set-key (kbd "&lt;escape&gt;") 'keyboard-escape-quit)
+  ;; Make ESC quit prompts
+  (global-set-key (kbd "&lt;escape&gt;") 'keyboard-escape-quit)
 
-;; Set up general keybindings
-(use-package general
-  :config
-  (general-create-definer swarsel/leader-keys
-    :keymaps '(normal insert visual emacs)
-    :prefix "SPC"
-    :global-prefix "C-SPC")
+  ;; Set up general keybindings
+  (use-package general
+    :config
+    (general-create-definer swarsel/leader-keys
+      :keymaps '(normal insert visual emacs)
+      :prefix "SPC"
+      :global-prefix "C-SPC")
 
-  (swarsel/leader-keys
-    "e"  '(:ignore e :which-key "evil")
-    "eo" '(evil-jump-backward :which-key "cursor jump backwards")
-    "eO" '(evil-jump-forward :which-key "cursor jump forwards")
-    "t"  '(:ignore t :which-key "toggles")
-    "ts" '(hydra-text-scale/body :which-key "scale text")
-    "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
-    "tl" '(display-line-numbers-mode :which-key "line numbers")
-    "tp" '(evil-cleverparens-mode :wk "cleverparens")
-    "to" '(olivetti-mode :wk "olivetti")
-    "td" '(darkroom-tentative-mode :wk "darkroom")
-    "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
-    "m"  '(:ignore m :which-key "modes/programs")
-    "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
-    "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-    "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
-    "mp" '(popper-toggle :which-key "popper")
-    "md" '(dirvish :which-key "dirvish")
-    "o"  '(:ignore o :which-key "org")
-    "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
-    "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
-    "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
-    "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
-    "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-    ;; "c"  '(:ignore c :which-key "capture")
-    ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-    ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
-    "l"  '(:ignore l :which-key "links")
-    "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
-    "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
-    "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
-    "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
-    "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-    ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-    ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
-    "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
-    "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-    ;; "a"   '(:ignore a :which-key "anki")
-    ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
-    ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-    ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
-    "h"   '(:ignore h :which-key "help")
-    "hy"  '(yas-describe-tables :which-key "yas tables")
-    "hb"  '(embark-bindings :which-key "current key bindings")
-    "h"   '(:ignore t :which-key "describe")
-    "he"  'view-echo-area-messages
-    "hf"  'describe-function
-    "hF"  'describe-face
-    "hl"  '(view-lossage :which-key "show command keypresses")
-    "hL"  'find-library
-    "hm"  'describe-mode
-    "ho"  'describe-symbol
-    "hk"  'describe-key
-    "hK"  'describe-keymap
-    "hp"  'describe-package
-    "hv"  'describe-variable
-    "hd"  'devdocs-lookup
-    "w"   '(:ignore t :which-key "window")
-    "wl"  'windmove-right
-    "wh"  'windmove-left
-    "wk"  'windmove-up
-    "wj"  'windmove-down
-    "wr"  'winner-redo
-    "wd"  'delete-window
-    "w="  'balance-windows-area
-    "wD"  'kill-buffer-and-window
-    "wu"  'winner-undo
-    "wr"  'winner-redo
-    "w/"  'evil-window-vsplit
-    "w-"  'evil-window-split
-    "wm"  '(delete-other-windows :wk "maximize")
-    "&lt;right&gt;" 'up-list
-    "&lt;left&gt;" 'down-list
-    ))
+    (swarsel/leader-keys
+      "e"  '(:ignore e :which-key "evil")
+      "eo" '(evil-jump-backward :which-key "cursor jump backwards")
+      "eO" '(evil-jump-forward :which-key "cursor jump forwards")
+      "t"  '(:ignore t :which-key "toggles")
+      "ts" '(hydra-text-scale/body :which-key "scale text")
+      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+      "tl" '(display-line-numbers-mode :which-key "line numbers")
+      "tp" '(evil-cleverparens-mode :wk "cleverparens")
+      "to" '(olivetti-mode :wk "olivetti")
+      "td" '(darkroom-tentative-mode :wk "darkroom")
+      "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
+      "m"  '(:ignore m :which-key "modes/programs")
+      "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
+      "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+      "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
+      "mp" '(popper-toggle :which-key "popper")
+      "md" '(dirvish :which-key "dirvish")
+      "o"  '(:ignore o :which-key "org")
+      "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+      "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
+      "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
+      "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
+      "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
+      "on" '((lambda () (interactive) (nixpkgs-fmt-region)) :which-key "format nix-block")
+      ;; "c"  '(:ignore c :which-key "capture")
+      ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
+      ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
+      "l"  '(:ignore l :which-key "links")
+      "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
+      "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+      "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
+      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
+      "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
+      ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
+      ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
+      "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
+      "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
+      ;; "a"   '(:ignore a :which-key "anki")
+      ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
+      ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
+      ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
+      "h"   '(:ignore h :which-key "help")
+      "hy"  '(yas-describe-tables :which-key "yas tables")
+      "hb"  '(embark-bindings :which-key "current key bindings")
+      "h"   '(:ignore t :which-key "describe")
+      "he"  'view-echo-area-messages
+      "hf"  'describe-function
+      "hF"  'describe-face
+      "hl"  '(view-lossage :which-key "show command keypresses")
+      "hL"  'find-library
+      "hm"  'describe-mode
+      "ho"  'describe-symbol
+      "hk"  'describe-key
+      "hK"  'describe-keymap
+      "hp"  'describe-package
+      "hv"  'describe-variable
+      "hd"  'devdocs-lookup
+      "w"   '(:ignore t :which-key "window")
+      "wl"  'windmove-right
+      "w &lt;right&gt;"  'windmove-right
+      "wh"  'windmove-left
+      "w &lt;left&gt;"  'windmove-left
+      "wk"  'windmove-up
+      "w &lt;up&gt;"  'windmove-up
+      "wj"  'windmove-down
+      "w &lt;down&gt;"  'windmove-down
+      "wr"  'winner-redo
+      "wd"  'delete-window
+      "w="  'balance-windows-area
+      "wD"  'kill-buffer-and-window
+      "wu"  'winner-undo
+      "wr"  'winner-redo
+      "w/"  'evil-window-vsplit
+"w\\"  'evil-window-vsplit
+      "w-"  'evil-window-split
+      "wm"  '(delete-other-windows :wk "maximize")
+      "&lt;right&gt;" 'up-list
+      "&lt;left&gt;" 'down-list
+      ))
 
-;; General often used hotkeys
-(general-define-key
- "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
- ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
- ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
- ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
- "C-c d" 'crux-duplicate-current-line-or-region
- "C-c D" 'crux-duplicate-and-comment-current-line-or-region
- "&lt;DUMMY-m&gt;" 'swarsel/last-buffer
- "M-\\" 'indent-region
- "C-&lt;f9&gt;" 'my-python-shell-run
- )
+  ;; General often used hotkeys
+  (general-define-key
+   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+   ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
+   ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
+   ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
+   "C-c d" 'crux-duplicate-current-line-or-region
+   "C-c D" 'crux-duplicate-and-comment-current-line-or-region
+   "&lt;DUMMY-m&gt;" 'swarsel/last-buffer
+   "M-\\" 'indent-region
+   "C-&lt;f9&gt;" 'my-python-shell-run
+   )
 
 </pre>
 </div>
@@ -13317,11 +13367,11 @@ This enables pdf-previewing in dirvish and gives a much better pdf-viewer than i
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-(use-package pdf-tools
-  :init
-  (if (not (boundp 'pdf-tools-directory))
-      (pdf-tools-install))
-  :mode ("\\.pdf" . pdf-view-mode))
+;; (use-package pdf-tools
+;;   :init
+;;   (if (not (boundp 'pdf-tools-directory))
+;;       (pdf-tools-install))
+;;   :mode ("\\.pdf" . pdf-view-mode))
 
 </pre>
 </div>
@@ -13838,7 +13888,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-08-13 Di 23:29</p>
+<p class="date">Created: 2024-08-27 Di 23:42</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
