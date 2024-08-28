@@ -6,6 +6,7 @@
     google-chrome
     shellcheck
     dig
+    docker
   ];
 
   programs.ssh = {
