@@ -7,7 +7,7 @@ let
   };
   eachOutput = _name: monitor: {
     inherit (monitor) name;
-    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
+    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
   };
   workplaceSets = lib.mapAttrs' eachOutput monitors;
   workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
@@ -76,6 +76,10 @@ in
             "${modifier}+Shift+9" = "move container to workspace 9:九";
             "${modifier}+0" = "workspace 10:十";
             "${modifier}+Shift+0" = "move container to workspace 10:十";
+            "${modifier}+Ctrl+m" = "workspace 11:M";
+            "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
+            "${modifier}+Ctrl+s" = "workspace 12:S";
+            "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";

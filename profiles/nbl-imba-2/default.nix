@@ -133,12 +133,21 @@
         workspace = "1:一";
         output = "DP-3";
       };
-      work_middle_middle = {
+      work_middle_middle_main = {
         name = "HP Inc. HP 732pk CNC4080YL5";
         mode = "3840x2160";
         scale = "1";
-        position = "5120,0";
+        position = "-1280,0";
         workspace = "1:一";
+        output = "DP-8";
+      };
+      work_middle_middle_side = {
+        name = "Hewlett Packard HP Z24i CN44250RDT";
+        mode = "1920x1200";
+        transform = "270";
+        scale = "1";
+        position = "-2480,0";
+        workspace = "12:S";
         output = "DP-9";
       };
     };
