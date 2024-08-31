@@ -2,7 +2,7 @@
 
 {
   home.packages = with pkgs; [
-    teams-for-linux
+    stable.teams-for-linux
     google-chrome
     shellcheck
     dig

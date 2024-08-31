@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-08-27 Di 23:42 -->
+<!-- 2024-08-31 Sa 18:00 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -350,7 +350,7 @@
 </div>
 </div>
 <p>
-<b>This file has 45507 words spanning 12037 lines and was last revised on 2024-08-27 23:41:55 +0200.</b>
+<b>This file has 45632 words spanning 12064 lines and was last revised on 2024-08-31 18:00:48 +0200.</b>
 </p>
 
 <p>
@@ -400,7 +400,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-27 23:41:55 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-08-31 18:00:48 +0200)
 </p></li>
 </ul>
 
@@ -412,7 +412,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/frxxsgm1rw0drr8la1cxm6cmq5iw89r0-emacs-pgtk-20240816.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/bjzr50zcpb5dqwybljizsvzs7pzx3jk5-emacs-pgtk-20240827.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --with-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -2392,12 +2392,21 @@ My work machine. Built for more security, this is the gold standard of my config
         workspace = "1:一";
         output = "DP-3";
       };
-      work_middle_middle = {
+      work_middle_middle_main = {
         name = "HP Inc. HP 732pk CNC4080YL5";
         mode = "3840x2160";
         scale = "1";
-        position = "5120,0";
+        position = "-1280,0";
         workspace = "1:一";
+        output = "DP-8";
+      };
+      work_middle_middle_side = {
+        name = "Hewlett Packard HP Z24i CN44250RDT";
+        mode = "1920x1200";
+        transform = "270";
+        scale = "1";
+        position = "-2480,0";
+        workspace = "12:S";
         output = "DP-9";
       };
     };
@@ -5723,6 +5732,7 @@ Also, the system state version is set here. No need to touch it.
 
   nixpkgs.config.permittedInsecurePackages = [
     "jitsi-meet-1.0.8043"
+    "electron-29.4.6"
   ];
 
   home-manager = {
@@ -5772,7 +5782,7 @@ This ensures that all user-configuration happens here in the config file.
       isNormalUser = true;
       description = "Leon S";
       hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-      extraGroups = [ "networkmanager" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+      extraGroups = [ "networkmanager" "root" "docker""wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
       packages = with pkgs; [ ];
     };
   };
@@ -7294,11 +7304,20 @@ Integrates 1password mostly. There are more options at <a href="#h:f0b2ea93-94c8
     enable = true;
     polkitPolicyOwners = [ "swarsel" ];
   };
-
+  virtualisation.docker.enable = true;
   environment.systemPackages = with pkgs; [
+    python39
+    docker
   ];
 
-
+  specialisation = {
+    cgroup_v1.configuration = {
+      boot.kernelParams = [
+        "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
+        "systemd.unified_cgroup_hierarchy=0"
+      ];
+    };
+  };
 }
 </pre>
 </div>
@@ -9155,7 +9174,7 @@ let
   };
   eachOutput = _name: monitor: {
     inherit (monitor) name;
-    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "position" ];
+    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
   };
   workplaceSets = lib.mapAttrs' eachOutput monitors;
   workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
@@ -9224,6 +9243,10 @@ in
             "${modifier}+Shift+9" = "move container to workspace 9:九";
             "${modifier}+0" = "workspace 10:十";
             "${modifier}+Shift+0" = "move container to workspace 10:十";
+            "${modifier}+Ctrl+m" = "workspace 11:M";
+            "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
+            "${modifier}+Ctrl+s" = "workspace 12:S";
+            "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";
@@ -9541,10 +9564,11 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
 
 {
   home.packages = with pkgs; [
-    teams-for-linux
+    stable.teams-for-linux
     google-chrome
     shellcheck
     dig
+    docker
   ];
 
   programs.ssh = {
@@ -10968,12 +10992,15 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "md" '(dirvish :which-key "dirvish")
       "o"  '(:ignore o :which-key "org")
       "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+      "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
+      "oa" '((lambda () (interactive) (org-refile)) :which-key "org-refile")
       "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
       "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
       "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
       "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
       "on" '((lambda () (interactive) (nixpkgs-fmt-region)) :which-key "format nix-block")
-      ;; "c"  '(:ignore c :which-key "capture")
+      "c"  '(:ignore c :which-key "capture")
+      "ct" '((lambda () (interactive) (org-capture nil "tt")) :which-key "task")
       ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
       ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
       "l"  '(:ignore l :which-key "links")
@@ -13888,7 +13915,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-08-27 Di 23:42</p>
+<p class="date">Created: 2024-08-31 Sa 18:00</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
