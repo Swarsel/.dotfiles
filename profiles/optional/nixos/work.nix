@@ -12,5 +12,12 @@
     docker
   ];
 
-
+  specialisation = {
+    cgroup_v1.configuration = {
+      boot.kernelParams = [
+        "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
+        "systemd.unified_cgroup_hierarchy=0"
+      ];
+    };
+  };
 }

@@ -13,10 +13,6 @@
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
-  boot.kernelParams = [
-    "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
-    "systemd.unified_cgroup_hierarchy=0"
-  ];
   boot.initrd.luks.devices."cryptroot" = {
     # improve performance on ssds
     bypassWorkqueues = true;
