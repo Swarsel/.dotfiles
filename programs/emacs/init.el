@@ -1836,3 +1836,6 @@ create a new one."
 (use-package ansible
     :hook
     (yaml-ts-mode . ansible))
+
+(use-package vterm
+    :ensure t)

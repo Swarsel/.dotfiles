@@ -2,11 +2,11 @@ _:
 {
   programs.kitty = {
     enable = true;
-    keybindings = {
-      "ctrl+shift+left" = "no_op";
-      "ctrl+shift+right" = "no_op";
-      "ctrl+shift+home" = "no_op";
-      "ctrl+shift+end" = "no_op";
+    keybindings = { };
+    settings = {
+      scrollback_lines = 10000;
+      enable_audio_bell = false;
+      notify_on_cmd_finish = "always 20";
     };
   };
 }
