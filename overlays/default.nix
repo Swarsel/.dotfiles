@@ -37,4 +37,9 @@
   nixpkgs-stable = final: _prev: {
     stable = import inputs.nixpkgs-stable { inherit (final) system; };
   };
+
+  zjstatus = final: _prev: {
+    zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
+  };
+
 }

@@ -31,6 +31,8 @@
     ./gammastep.nix
     # ./safeeyes.nix
     ./yubikey-touch-detector.nix
+    ./zellij.nix
+    ./tmux.nix
   ];
 
   nix = {

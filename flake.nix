@@ -90,6 +90,9 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
+    zjstatus = {
+      url = "github:dj95/zjstatus";
+    };
   };
 
   outputs =
@@ -157,6 +160,7 @@
         (import ./overlays { inherit inputs; }).additions
         (import ./overlays { inherit inputs; }).modifications
         (import ./overlays { inherit inputs; }).nixpkgs-stable
+        (import ./overlays { inherit inputs; }).zjstatus
         inputs.nur.overlay
         inputs.emacs-overlay.overlay
         inputs.nixgl.overlay
