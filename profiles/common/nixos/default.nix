@@ -34,6 +34,7 @@
     ./xdg-portal.nix
     # ./yubikey-touch-detector.nix
     ./safeeyes.nix
+    ./lid.nix
   ];
 
   nix =

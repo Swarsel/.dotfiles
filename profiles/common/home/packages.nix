@@ -12,7 +12,6 @@
     picard-tools
     audacity
     sox
-    google-chrome
 
     # printing
     cups

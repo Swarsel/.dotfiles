@@ -4941,6 +4941,7 @@ Also, the system state version is set here. No need to touch it.
       ./xdg-portal.nix
       # ./yubikey-touch-detector.nix
       ./safeeyes.nix
+      ./lid.nix
     ];
 
     nix =
@@ -5013,7 +5014,7 @@ This ensures that all user-configuration happens here in the config file.
         isNormalUser = true;
         description = "Leon S";
         hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-        extraGroups = [ "networkmanager" "root" "docker""wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+        extraGroups = [ "networkmanager" "docker" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
         packages = with pkgs; [ ];
       };
     };
@@ -5148,7 +5149,6 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
       keyboard.qmk.enable = true;
 
 
-
       pulseaudio = {
         enable = lib.mkIf (!config.services.pipewire.enable) true;
         package = pkgs.pulseaudioFull;
@@ -5187,6 +5187,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
       pulse.enable = true;
       jack.enable = true;
       audio.enable = true;
+      wireplumber.enable = true;
       alsa = {
         enable = true;
         support32Bit = true;
@@ -5748,6 +5749,7 @@ Enables the blueman service including the nice system tray icon.
   _:
   {
     services.blueman.enable = true;
+    services.hardware.bolt.enable = true;
   }
 #+end_src
 
@@ -6292,6 +6294,39 @@ A friend of mine used this service and I used to make fun of him. But I have to 
   }
 #+end_src
 
+**** Handle lid switch correctly
+
+This turns off the display when the lid is closed.
+
+#+begin_src nix :tangle profiles/common/nixos/lid.nix
+  { config, pkgs, ... }:
+  {
+    services.logind = {
+      lidSwitch = "suspend";
+      lidSwitchDocked = "ignore";
+    };
+    services.acpid = {
+      enable = true;
+      lidEventCommands =
+        ''
+          export PATH=$PATH:/run/current-system/sw/bin
+          export WAYLAND_DISPLAY=wayland-1
+          export XDG_RUNTIME_DIR=/run/user/1000
+          export SWAYSOCK=$(ls /run/user/1000/sway-ipc.* | head -n 1)
+
+          LID_STATE=$(cat /proc/acpi/button/lid/*/state | grep -q closed && echo "closed" || echo "open")
+          DOCKED=$(swaymsg -t get_outputs | grep -q 'HDMI\|DP' && echo "docked" || echo "undocked")
+
+          if [ "$LID_STATE" == "closed" ] && [ "$DOCKED" == "docked" ]; then
+              swaymsg output eDP-2 disable
+          else
+              swaymsg output eDP-2 enable
+          fi
+        '';
+    };
+  }
+#+end_src
+
 
 *** Optional
 :PROPERTIES:
@@ -6420,6 +6455,7 @@ Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8
   { pkgs, ... }:
   {
     # boot.initrd.luks.yubikeySupport = true;
+    programs.browserpass.enable = true;
     programs._1password.enable = true;
     programs._1password-gui = {
       enable = true;
@@ -6555,7 +6591,6 @@ This holds packages that I can use as provided, or with small modifications (as 
       picard-tools
       audacity
       sox
-      google-chrome
 
       # printing
       cups
@@ -7663,270 +7698,270 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
-    { config, lib, pkgs, ... }:
-    {
-      programs.waybar = {
+{ config, lib, pkgs, ... }:
+{
+  programs.waybar = {
 
-        enable = true;
-        systemd = {
-          enable = true;
-          target = "sway-sessions.target";
+    enable = true;
+    systemd = {
+      enable = true;
+      target = "sway-sessions.target";
+    };
+    settings = {
+      mainBar = {
+        layer = "top";
+        position = "top";
+        modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
+        modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
+        "sway/mode" = {
+          format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
         };
-        settings = {
-          mainBar = {
-            layer = "top";
-            position = "top";
-            modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-            modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
-            "sway/mode" = {
-              format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
-            };
 
-            modules-right = config.swarselsystems.waybarModules;
+        modules-right = config.swarselsystems.waybarModules;
 
-            "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
-              format = "";
-              on-click-right = "wlogout -p layer-shell";
-            };
+        "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
+          format = "";
+          on-click-right = "wlogout -p layer-shell";
+        };
 
-            "custom/configwarn" = {
-              exec = "waybarupdate";
-              interval = 60;
-            };
+        "custom/configwarn" = {
+          exec = "waybarupdate";
+          interval = 60;
+        };
 
-            "custom/scratchpad-indicator" = {
-              interval = 3;
-              exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
-              format = "{} ";
-              on-click = "swaymsg 'scratchpad show'";
-              on-click-right = "swaymsg 'move scratchpad'";
-            };
+        "custom/scratchpad-indicator" = {
+          interval = 3;
+          exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
+          format = "{} ";
+          on-click = "swaymsg 'scratchpad show'";
+          on-click-right = "swaymsg 'move scratchpad'";
+        };
 
-            "custom/github" = {
-              format = "{}  ";
-              return-type = "json";
-              interval = 60;
-              exec = "github-notifications";
-              on-click = "xdg-open https://github.com/notifications";
-            };
+        "custom/github" = {
+          format = "{}  ";
+          return-type = "json";
+          interval = 60;
+          exec = "github-notifications";
+          on-click = "xdg-open https://github.com/notifications";
+        };
 
-            "custom/nix-updates" = {
-              exec = "update-checker";
-              on-click = "update-checker && notify-send 'The system has been updated'";
-              interval = "once";
-              tooltip = true;
-              return-type = "json";
-              format = "{} {icon}";
-              format-icon = {
-                "has-updates" = "";
-                "updated" = " ";
-              };
-            };
+        # "custom/nix-updates" = {
+        #   exec = "update-checker";
+        #   on-click = "update-checker && notify-send 'The system has been updated'";
+        #   interval = "once";
+        #   tooltip = true;
+        #   return-type = "json";
+        #   format = "{} {icon}";
+        #   format-icon = {
+        #     "has-updates" = "";
+        #     "updated" = " ";
+        #   };
+        # };
 
-            idle_inhibitor = {
-              format = "{icon}";
-              format-icons = {
-                activated = "";
-                deactivated = "";
-              };
-            };
-
-            "group/hardware" = {
-              orientation = "inherit";
-              drawer = {
-                "transition-left-to-right" = false;
-              };
-              modules = [
-                "tray"
-                "temperature"
-                "power-profiles-daemon"
-                "custom/left-arrow-light"
-                "custom/left-arrow-dark"
-                "custom/scratchpad-indicator"
-                "custom/left-arrow-light"
-                "disk"
-                "custom/left-arrow-dark"
-                "memory"
-                "custom/left-arrow-light"
-                "cpu"
-                "custom/left-arrow-dark"
-                "backlight/slider"
-                "idle_inhibitor"
-              ];
-            };
-
-            "backlight/slider" = {
-              min = 0;
-              max = 100;
-              orientation = "horizontal";
-              device = "intel_backlight";
-            };
-
-            power-profiles-daemon = {
-              format = "{icon}";
-              tooltip-format = "Power profile: {profile}\nDriver: {driver}";
-              tooltip = true;
-              format-icons = {
-                "default" = "";
-                "performance" = "";
-                "balanced" = "";
-                "power-saver" = "";
-              };
-            };
-
-            temperature = {
-              hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
-              hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
-              input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
-              critical-threshold = 80;
-              format-critical = " {temperatureC}°C";
-              format = " {temperatureC}°C";
-
-            };
-
-            mpris = {
-              format = "{player_icon} {title} <small>[{position}/{length}]</small>";
-              format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
-              player-icons = {
-                "default" = "▶ ";
-                "mpv" = "🎵 ";
-                "spotify" = " ";
-              };
-              status-icons = {
-                "paused" = " ";
-              };
-              interval = 1;
-              title-len = 20;
-              artist-len = 20;
-              album-len = 10;
-            };
-            "custom/left-arrow-dark" = {
-              format = "";
-              tooltip = false;
-            };
-            "custom/outer-left-arrow-dark" = {
-              format = "";
-              tooltip = false;
-            };
-            "custom/left-arrow-light" = {
-              format = "";
-              tooltip = false;
-            };
-            "custom/right-arrow-dark" = {
-              format = "";
-              tooltip = false;
-            };
-            "custom/outer-right-arrow-dark" = {
-              format = "";
-              tooltip = false;
-            };
-            "custom/right-arrow-light" = {
-              format = "";
-              tooltip = false;
-            };
-            "sway/workspaces" = {
-              disable-scroll = true;
-              format = "{name}";
-            };
-
-            "clock#1" = {
-              min-length = 8;
-              interval = 1;
-              format = "{:%H:%M:%S}";
-              # on-click-right= "gnome-clocks";
-              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-            };
-
-            "clock#2" = {
-              format = "{:%d. %B %Y}";
-              # on-click-right= "gnome-clocks";
-              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-            };
-
-            pulseaudio = {
-              format = "{icon} {volume:2}%";
-              format-bluetooth = "{icon} {volume}%";
-              format-muted = "MUTE";
-              format-icons = {
-                headphones = "";
-                default = [
-                  ""
-                  ""
-                ];
-              };
-              scroll-step = 1;
-              on-click = "pamixer -t";
-              on-click-right = "pavucontrol";
-            };
-
-            memory = {
-              interval = 5;
-              format = " {}%";
-              tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
-            };
-            cpu = {
-              format = config.swarselsystems.cpuString;
-              min-length = 6;
-              interval = 5;
-              format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
-              # on-click-right= "com.github.stsdc.monitor";
-              on-click-right = "kitty -o confirm_os_window_close=0 btm";
-
-            };
-            "custom/vpn" = {
-              format = "()";
-              exec = "echo '{\"class\": \"connected\"}'";
-              exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
-              return-type = "json";
-              interval = 5;
-            };
-            battery = {
-              states = {
-                "warning" = 60;
-                "error" = 30;
-                "critical" = 15;
-              };
-              interval = 5;
-              format = "{icon} {capacity}%";
-              format-charging = "{capacity}% ";
-              format-plugged = "{capacity}% ";
-              format-icons = [
-                ""
-                ""
-                ""
-                ""
-                ""
-              ];
-              on-click-right = "wlogout -p layer-shell";
-            };
-            disk = {
-              interval = 30;
-              format = "Disk {percentage_used:2}%";
-              path = "/";
-              states = {
-                "warning" = 80;
-                "critical" = 90;
-              };
-              tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
-            };
-            tray = {
-              icon-size = 20;
-            };
-            network = {
-              interval = 5;
-              format-wifi = "{signalStrength}% ";
-              format-ethernet = "";
-              format-linked = "{ifname} (No IP) ";
-              format-disconnected = "Disconnected ⚠";
-              format-alt = "{ifname}: {ipaddr}/{cidr}";
-              tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-              tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-            };
+        idle_inhibitor = {
+          format = "{icon}";
+          format-icons = {
+            activated = "";
+            deactivated = "";
           };
         };
-        style = builtins.readFile ../../../programs/waybar/style.css;
+
+        "group/hardware" = {
+          orientation = "inherit";
+          drawer = {
+            "transition-left-to-right" = false;
+          };
+          modules = [
+            "tray"
+            "temperature"
+            "power-profiles-daemon"
+            "custom/left-arrow-light"
+            "custom/left-arrow-dark"
+            "custom/scratchpad-indicator"
+            "custom/left-arrow-light"
+            "disk"
+            "custom/left-arrow-dark"
+            "memory"
+            "custom/left-arrow-light"
+            "cpu"
+            "custom/left-arrow-dark"
+            "backlight/slider"
+            "idle_inhibitor"
+          ];
+        };
+
+        "backlight/slider" = {
+          min = 0;
+          max = 100;
+          orientation = "horizontal";
+          device = "intel_backlight";
+        };
+
+        power-profiles-daemon = {
+          format = "{icon}";
+          tooltip-format = "Power profile: {profile}\nDriver: {driver}";
+          tooltip = true;
+          format-icons = {
+            "default" = "";
+            "performance" = "";
+            "balanced" = "";
+            "power-saver" = "";
+          };
+        };
+
+        temperature = {
+          hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
+          hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
+          input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
+          critical-threshold = 80;
+          format-critical = " {temperatureC}°C";
+          format = " {temperatureC}°C";
+
+        };
+
+        mpris = {
+          format = "{player_icon} {title} <small>[{position}/{length}]</small>";
+          format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+          player-icons = {
+            "default" = "▶ ";
+            "mpv" = "🎵 ";
+            "spotify" = " ";
+          };
+          status-icons = {
+            "paused" = " ";
+          };
+          interval = 1;
+          title-len = 20;
+          artist-len = 20;
+          album-len = 10;
+        };
+        "custom/left-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/outer-left-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/left-arrow-light" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/right-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/outer-right-arrow-dark" = {
+          format = "";
+          tooltip = false;
+        };
+        "custom/right-arrow-light" = {
+          format = "";
+          tooltip = false;
+        };
+        "sway/workspaces" = {
+          disable-scroll = true;
+          format = "{name}";
+        };
+
+        "clock#1" = {
+          min-length = 8;
+          interval = 1;
+          format = "{:%H:%M:%S}";
+          # on-click-right= "gnome-clocks";
+          tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        };
+
+        "clock#2" = {
+          format = "{:%d. %B %Y}";
+          # on-click-right= "gnome-clocks";
+          tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        };
+
+        pulseaudio = {
+          format = "{icon} {volume:2}%";
+          format-bluetooth = "{icon} {volume}%";
+          format-muted = "MUTE";
+          format-icons = {
+            headphones = "";
+            default = [
+              ""
+              ""
+            ];
+          };
+          scroll-step = 1;
+          on-click = "pamixer -t";
+          on-click-right = "pavucontrol";
+        };
+
+        memory = {
+          interval = 5;
+          format = " {}%";
+          tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
+        };
+        cpu = {
+          format = config.swarselsystems.cpuString;
+          min-length = 6;
+          interval = 5;
+          format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
+          # on-click-right= "com.github.stsdc.monitor";
+          on-click-right = "kitty -o confirm_os_window_close=0 btm";
+
+        };
+        "custom/vpn" = {
+          format = "()";
+          exec = "echo '{\"class\": \"connected\"}'";
+          exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+          return-type = "json";
+          interval = 5;
+        };
+        battery = {
+          states = {
+            "warning" = 60;
+            "error" = 30;
+            "critical" = 15;
+          };
+          interval = 5;
+          format = "{icon} {capacity}%";
+          format-charging = "{capacity}% ";
+          format-plugged = "{capacity}% ";
+          format-icons = [
+            ""
+            ""
+            ""
+            ""
+            ""
+          ];
+          on-click-right = "wlogout -p layer-shell";
+        };
+        disk = {
+          interval = 30;
+          format = "Disk {percentage_used:2}%";
+          path = "/";
+          states = {
+            "warning" = 80;
+            "critical" = 90;
+          };
+          tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
+        };
+        tray = {
+          icon-size = 20;
+        };
+        network = {
+          interval = 5;
+          format-wifi = "{signalStrength}% ";
+          format-ethernet = "";
+          format-linked = "{ifname} (No IP) ";
+          format-disconnected = "Disconnected ⚠";
+          format-alt = "{ifname}: {ipaddr}/{cidr}";
+          tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+          tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+        };
       };
-    }
+    };
+    style = builtins.readFile ../../../programs/waybar/style.css;
+  };
+}
 #+end_src
 
 **** Firefox
@@ -8249,6 +8284,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
               "${modifier}+Ctrl+s" = "workspace 12:S";
               "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
+              "${modifier}+Ctrl+e" = "workspace 13:E";
+              "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
+              "${modifier}+Ctrl+t" = "workspace 14:T";
+              "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
               "${modifier}+Left" = "focus left";
               "${modifier}+Right" = "focus right";
               "${modifier}+Down" = "focus down";
@@ -8353,6 +8392,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               command = "opacity 0.99";
               criteria = {
                 app_id = "firefox";
+              };
+            }
+            {
+              command = "opacity 0.99";
+              criteria = {
+                app_id = "chromium-browser";
               };
             }
             {
@@ -8561,50 +8606,71 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
   {
     home.packages = with pkgs; [
       stable.teams-for-linux
-      google-chrome
       shellcheck
       dig
       docker
     ];
 
-    programs.ssh = {
-      matchBlocks = {
-        "uc" = {
-          hostname = "uc.clip.vbc.ac.at";
-          user = "stack";
-        };
-        "uc-stg" = {
-          hostname = "uc.staging.clip.vbc.ac.at";
-          user = "stack";
-        };
-        "cbe" = {
-          hostname = "cbe.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
-        };
-        "cbe-stg" = {
-          hostname = "cbe.staging.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
-        };
-        "*.vbc.ac.at" = {
-          user = "dc_adm_schwarzaeugl";
+    programs = {
+      git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
+
+      ssh = {
+        matchBlocks = {
+          "uc" = {
+            hostname = "uc.clip.vbc.ac.at";
+            user = "stack";
+          };
+          "uc-stg" = {
+            hostname = "uc.staging.clip.vbc.ac.at";
+            user = "stack";
+          };
+          "cbe" = {
+            hostname = "cbe.vbc.ac.at";
+            user = "dc_adm_schwarzaeugl";
+          };
+          "cbe-stg" = {
+            hostname = "cbe.staging.vbc.ac.at";
+            user = "dc_adm_schwarzaeugl";
+          };
+          "*.vbc.ac.at" = {
+            user = "dc_adm_schwarzaeugl";
+          };
         };
       };
-    };
 
-    programs.firefox = {
-      profiles = {
-        dc_adm = {
-          id = 1;
-          <<firefoxprofile>>
+      firefox = {
+        profiles = {
+          dc_adm = {
+            id = 1;
+            <<firefoxprofile>>
+          };
+          cl_adm = {
+            id = 2;
+            <<firefoxprofile>>
+          };
+          ws_adm = {
+            id = 3;
+            <<firefoxprofile>>
+          };
         };
-        cl_adm = {
-          id = 2;
-          <<firefoxprofile>>
-        };
-        ws_adm = {
-          id = 3;
-          <<firefoxprofile>>
-        };
+      };
+
+      chromium = {
+        enable = true;
+        package = pkgs.chromium;
+
+        extensions = [
+          # 1password
+          "gejiddohjgogedgjnonbofjigllpkmbf"
+          # dark reader
+          "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+          # ublock origin
+          "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+          # i still dont care about cookies
+          "edibdbjcniadpccecjdfdjjppcpchdlm"
+          # browserpass
+          "naepdomgkenhinolocfifgehidddafch"
+        ];
       };
     };
 
@@ -8637,7 +8703,6 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
       };
 
-    programs.git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
   }
 

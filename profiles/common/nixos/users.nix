@@ -6,7 +6,7 @@
       isNormalUser = true;
       description = "Leon S";
       hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-      extraGroups = [ "networkmanager" "root" "docker" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
+      extraGroups = [ "networkmanager" "docker" "wheel" "lp" "audio" "video" "vboxusers" "scanner" ];
       packages = with pkgs; [ ];
     };
   };

@@ -80,6 +80,10 @@ in
             "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
             "${modifier}+Ctrl+s" = "workspace 12:S";
             "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
+            "${modifier}+Ctrl+e" = "workspace 13:E";
+            "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
+            "${modifier}+Ctrl+t" = "workspace 14:T";
+            "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";
@@ -184,6 +188,12 @@ in
             command = "opacity 0.99";
             criteria = {
               app_id = "firefox";
+            };
+          }
+          {
+            command = "opacity 0.99";
+            criteria = {
+              app_id = "chromium-browser";
             };
           }
           {
