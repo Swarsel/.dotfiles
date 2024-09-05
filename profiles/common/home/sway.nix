@@ -84,6 +84,8 @@ in
             "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
             "${modifier}+Ctrl+t" = "workspace 14:T";
             "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
+            "${modifier}+Ctrl+l" = "workspace 15:L";
+            "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";

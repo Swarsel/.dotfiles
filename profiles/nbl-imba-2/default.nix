@@ -98,7 +98,7 @@
         mode = "2560x1600"; # TEMPLATE
         scale = "1";
         position = "2560,0";
-        workspace = "10:十";
+        workspace = "15:L";
         output = "eDP-2";
       };
       homedesktop = {
@@ -149,6 +149,14 @@
         position = "-2480,0";
         workspace = "12:S";
         output = "DP-9";
+      };
+      work_seminary = {
+        name = "Applied Creative Technology Transmitter QUATTRO201811";
+        mode = "1280x720";
+        scale = "1";
+        position = "10000,10000";
+        workspace = "12:S";
+        output = "DP-4";
       };
     };
     inputs = {
