@@ -29,6 +29,7 @@
     hostName = "winters";
     hostId = "b7778a4a";
     firewall.enable = true;
+    allowPing = true;
   };
 
 

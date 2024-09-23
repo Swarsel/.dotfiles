@@ -2032,6 +2032,7 @@ My work machine. Built for more security, this is the gold standard of my config
       hostName = "winters";
       hostId = "b7778a4a";
       firewall.enable = true;
+      allowPing = true;
     };
 
 
@@ -6587,27 +6588,23 @@ Also, the system state version is set here. No need to touch it.
   { pkgs, lib, config, ... }:
   {
     services = {
-      # Network shares
       # add a user with sudo smbpasswd -a <user>
       samba = {
         package = pkgs.samba4Full;
-        extraConfig = ''
-          workgroup = WORKGROUP
-          server role = standalone server
-          dns proxy = no
+        # extraConfig = ''
+        #   workgroup = WORKGROUP
+        #   server role = standalone server
+        #   dns proxy = no
 
-          pam password change = yes
-          map to guest = bad user
-          create mask = 0664
-          force create mode = 0664
-          directory mask = 0775
-          force directory mode = 0775
-          follow symlinks = yes
-        '';
+        #   pam password change = yes
+        #   map to guest = bad user
+        #   create mask = 0664
+        #   force create mode = 0664
+        #   directory mask = 0775
+        #   force directory mode = 0775
+        #   follow symlinks = yes
+        # '';
 
-        # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
-        # Required for samba to register mDNS records for auto discovery
-        # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
         enable = true;
         openFirewall = true;
         shares.Eternor = {
@@ -6617,23 +6614,21 @@ Also, the system state version is set here. No need to touch it.
           path = "/Vault/Eternor";
           writable = "true";
           comment = "Eternor";
-          "valid users" = "@Swarsel";
+          "valid users" = "Swarsel";
         };
       };
 
 
       avahi = {
         publish.enable = true;
-        publish.userServices = true;
-        # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
+        publish.userServices = true; # Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
         nssmdns4 = true;
-        # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
         enable = true;
         openFirewall = true;
       };
 
-      samba-wsdd = {
         # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
+      samba-wsdd = {
         enable = true;
         openFirewall = true;
       };
@@ -6820,22 +6815,24 @@ Also, the system state version is set here. No need to touch it.
 
       hardware.enableAllFirmware = true;
 
+      networking.firewall.allowedTCPPorts = [ 4040 ];
+
       services.navidrome = {
         enable = true;
         openFirewall = true;
         settings = {
           Address = "0.0.0.0";
           Port = 4040;
-          MusicFolder = "/media";
+          MusicFolder = "/Vault/Eternor/Musik";
           EnableSharing = true;
           EnableTranscodingConfig = true;
           Scanner.GroupAlbumReleases = true;
           ScanSchedule = "@every 1d";
           # Insert these values locally as sops-nix does not work for them
-          # LastFM.ApiKey = TEMPLATE;
-          # LastFM.Secret = TEMPLATE;
-          # Spotify.ID = TEMPLATE;
-          # Spotify.Secret = TEMPLATE;
+          LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
+          LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;
+          Spotify.ID = builtins.readFile /home/swarsel/api/spotify-id;
+          Spotify.Secret = builtins.readFile /home/swarsel/api/spotify-secret;
           UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
           UIWelcomeMessage = "~SwarselSound~";
         };

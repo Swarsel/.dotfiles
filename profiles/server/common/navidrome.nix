@@ -27,22 +27,24 @@
 
     hardware.enableAllFirmware = true;
 
+    networking.firewall.allowedTCPPorts = [ 4040 ];
+
     services.navidrome = {
       enable = true;
       openFirewall = true;
       settings = {
         Address = "0.0.0.0";
         Port = 4040;
-        MusicFolder = "/media";
+        MusicFolder = "/Vault/Eternor/Musik";
         EnableSharing = true;
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
         ScanSchedule = "@every 1d";
         # Insert these values locally as sops-nix does not work for them
-        # LastFM.ApiKey = TEMPLATE;
-        # LastFM.Secret = TEMPLATE;
-        # Spotify.ID = TEMPLATE;
-        # Spotify.Secret = TEMPLATE;
+        LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
+        LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;
+        Spotify.ID = builtins.readFile /home/swarsel/api/spotify-id;
+        Spotify.Secret = builtins.readFile /home/swarsel/api/spotify-secret;
         UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
         UIWelcomeMessage = "~SwarselSound~";
       };
