@@ -29,6 +29,7 @@
 
     services.navidrome = {
       enable = true;
+      openFirewall = true;
       settings = {
         Address = "0.0.0.0";
         Port = 4040;
@@ -55,7 +56,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.13:4040";
+              proxyPass = "http://192.168.1.2:4040";
               proxyWebsockets = true;
               extraConfig = ''
                 proxy_redirect          http:// https://;

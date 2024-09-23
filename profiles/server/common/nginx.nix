@@ -3,6 +3,9 @@
   environment.systemPackages = with pkgs; [
     lego
   ];
+
+  users.users.acme = { };
+
   sops = {
     secrets.dnstokenfull = { owner = "acme"; };
     templates."certs.secret".content = ''

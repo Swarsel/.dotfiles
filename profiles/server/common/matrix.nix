@@ -151,6 +151,7 @@ in
 
     services.mautrix-whatsapp = {
       enable = true;
+      registerToSynapse = true;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -197,6 +198,7 @@ in
 
     services.mautrix-signal = {
       enable = true;
+      registerToSynapse = true;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -258,7 +260,7 @@ in
           acmeRoot = null;
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://192.168.1.23:8008";
+              proxyPass = "http://192.168.1.2:8008";
               extraConfig = ''
                 client_max_body_size 0;
               '';

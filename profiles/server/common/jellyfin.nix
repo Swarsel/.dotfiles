@@ -19,7 +19,7 @@
     services.jellyfin = {
       enable = true;
       user = "jellyfin";
-      # openFirewall = true; # this works only for the default ports
+      openFirewall = true; # this works only for the default ports
     };
 
     services.nginx = {
@@ -30,7 +30,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.16:8096";
+              proxyPass = "http://192.168.1.2:8096";
               extraConfig = ''
                 client_max_body_size 0;
               '';

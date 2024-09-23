@@ -4,7 +4,8 @@
 # for a more complex example.
 keys:
   - &admin_swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
-  - &server_nixos age1zdjm8qa5t25mca0xxhhkpuh85mgg4l267mqjj2pdttksq7zg4unqdmqyp4
+  - &server_sandbox age1zdjm8qa5t25mca0xxhhkpuh85mgg4l267mqjj2pdttksq7zg4unqdmqyp4
+  - &server_nixos age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
   - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
   - &server_fourside age1s3faa0due0fvp9qu2rd8ex0upg4mcms8wl936yazylv72r6nn3rq2xv5g0
   - &server_stand age1hkajkcje5xvg8jd4zj2e0s9tndpv36hwhn7p38x9lyq2z8g7v45q2nhlej
@@ -26,6 +27,7 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_nixos
+      - *server_sandbox
       - *server_surface
       - *server_stand
       - *server_fourside
@@ -36,10 +38,17 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_nixos
+      - *server_sandbox
       - *server_surface
       - *server_stand
       - *server_fourside
       - *server_transmiss
+  - path_regex: secrets/server/winters/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *admin_swarsel
+      age:
+      - *server_nixos
   - path_regex: secrets/surface/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
