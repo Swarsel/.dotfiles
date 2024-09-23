@@ -10,6 +10,7 @@
     ./packages.nix
     ./sops.nix
     ./ssh.nix
+    ./nfs.nix
     ./nginx.nix
     ./kavita.nix
     ./jellyfin.nix
