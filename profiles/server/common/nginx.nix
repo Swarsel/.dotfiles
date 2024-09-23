@@ -4,10 +4,11 @@
     lego
   ];
 
-  users.users.acme = { };
+  # users.users.acme = {};
 
   sops = {
-    secrets.dnstokenfull = { owner = "acme"; };
+    # secrets.dnstokenfull = { owner = "acme"; };
+    secrets.dnstokenfull = { };
     templates."certs.secret".content = ''
       CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
     '';

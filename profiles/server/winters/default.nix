@@ -41,12 +41,12 @@
     flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;
-      kavita = true;
-      navidrome = true;
-      jellyfin = true;
-      spotifyd = true;
-      mpd = true;
-      matrix = true;
+      kavita = false;
+      navidrome = false;
+      jellyfin = false;
+      spotifyd = false;
+      mpd = false;
+      matrix = false;
     };
     shellAliases = {
       nswitch = "cd /.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
