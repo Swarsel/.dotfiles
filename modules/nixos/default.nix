@@ -4,4 +4,5 @@
   setup = import ./setup.nix;
   impermanence = import ./impermanence.nix;
   filesystem = import ./filesystem.nix;
+  input = import ./input.nix;
 }

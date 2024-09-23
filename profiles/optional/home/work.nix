@@ -6,6 +6,7 @@
     shellcheck
     dig
     docker
+    postman
   ];
 
   programs = {

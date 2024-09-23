@@ -53,6 +53,7 @@ in
             "${modifier}+o" = "exec pass-fuzzel --otp";
             "${modifier}+Shift+p" = "exec pass-fuzzel --type";
             "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
+            "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
             "${modifier}+Escape" = "mode $exit";
             "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
@@ -157,6 +158,7 @@ in
           { title = "Syncthing Tray"; }
           { app_id = "SchildiChat"; }
           { app_id = "Element"; }
+          { class = "1Password"; }
           { app_id = "com.nextcloud.desktopclient.nextcloud"; }
           { app_id = "gnome-system-monitor"; }
           { title = "(?:Open|Save) (?:File|Folder|As)"; }

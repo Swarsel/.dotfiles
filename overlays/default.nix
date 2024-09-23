@@ -17,11 +17,11 @@
       ];
     };
 
-    prismlauncher = _prev.prismlauncher.override {
-      glfw = _prev.glfw-wayland-minecraft;
-    };
+    # prismlauncher = _prev.prismlauncher.override {
+    #   glfw = _prev.glfw-wayland-minecraft;
+    # };
 
-    # river = prev.river.overrideAttrs (oldAttrs: rec {
+    # #river = prev.river.overrideAttrs (oldAttrs: rec {
     #   pname = "river";
     #   version = "git";
     #   src = prev.fetchFromGitHub {
@@ -35,7 +35,10 @@
   };
 
   nixpkgs-stable = final: _prev: {
-    stable = import inputs.nixpkgs-stable { inherit (final) system; };
+    stable = import inputs.nixpkgs-stable {
+      inherit (final) system;
+      config.allowUnfree = true;
+    };
   };
 
   zjstatus = final: _prev: {

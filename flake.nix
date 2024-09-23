@@ -98,6 +98,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , nixpkgs-stable
     , home-manager
     , systems
     , ...
@@ -211,6 +212,13 @@
           specialArgs = { inherit inputs outputs; };
           modules = nixModules ++ [
             ./profiles/nbl-imba-2
+          ];
+        };
+
+        winters = lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            ./profiles/server/winters
           ];
         };
 

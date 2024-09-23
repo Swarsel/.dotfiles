@@ -92,6 +92,7 @@
       { command = "teams-for-linux"; }
       { command = "1password"; }
     ];
+    sharescreen = "eDP-2";
     monitors = {
       main = {
         name = "BOE 0x0BC9 Unknown";
@@ -139,7 +140,7 @@
         scale = "1";
         position = "-1280,0";
         workspace = "1:一";
-        output = "DP-8";
+        output = "DP-9";
       };
       work_middle_middle_side = {
         name = "Hewlett Packard HP Z24i CN44250RDT";
@@ -148,13 +149,13 @@
         scale = "1";
         position = "-2480,0";
         workspace = "12:S";
-        output = "DP-9";
+        output = "DP-8";
       };
       work_seminary = {
         name = "Applied Creative Technology Transmitter QUATTRO201811";
         mode = "1280x720";
         scale = "1";
-        position = "10000,10000";
+        position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
         workspace = "12:S";
         output = "DP-4";
       };
@@ -184,7 +185,13 @@
       };
     };
     keybindings = {
-      "Mod4+Ctrl+p" = "exec wl-mirror eDP-2";
+      "Mod4+Ctrl+Shift+p" = "exec screenshare";
+    };
+    shellAliases = {
+      ans2-15_3-9 = ". ~/.venvs/ansible39_2_15_0/bin/activate";
+      ans3-9 = ". ~/.venvs/ansible39/bin/activate";
+      ans = ". ~/.venvs/ansible/bin/activate";
+      ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
     };
   };
 }

@@ -591,6 +591,13 @@ This section used to be much longer, since I performed all of my imports right h
       ];
     };
 
+    winters = lib.nixosSystem {
+      specialArgs = { inherit inputs outputs; };
+      modules = [
+        ./profiles/server/winters
+      ];
+    };
+
   nginx = nixpkgs.lib.nixosSystem {
       specialArgs = { inherit inputs; };
       modules = [
@@ -1883,6 +1890,7 @@ My work machine. Built for more security, this is the gold standard of my config
       { command = "teams-for-linux"; }
       { command = "1password"; }
     ];
+      sharescreen = "eDP-2";
       monitors = {
         main = {
           name = "BOE 0x0BC9 Unknown";
@@ -1930,7 +1938,7 @@ My work machine. Built for more security, this is the gold standard of my config
           scale = "1";
           position = "-1280,0";
           workspace = "1:一";
-          output = "DP-8";
+          output = "DP-9";
         };
         work_middle_middle_side = {
           name = "Hewlett Packard HP Z24i CN44250RDT";
@@ -1939,13 +1947,13 @@ My work machine. Built for more security, this is the gold standard of my config
           scale = "1";
           position = "-2480,0";
           workspace = "12:S";
-          output = "DP-9";
+          output = "DP-8";
         };
         work_seminary = {
           name = "Applied Creative Technology Transmitter QUATTRO201811";
           mode = "1280x720";
           scale = "1";
-          position = "10000,10000";
+          position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
           workspace = "12:S";
           output = "DP-4";
         };
@@ -1975,9 +1983,77 @@ My work machine. Built for more security, this is the gold standard of my config
         };
       };
       keybindings = {
-        "Mod4+Ctrl+p" = "exec wl-mirror eDP-2";
+        "Mod4+Ctrl+Shift+p" = "exec screenshare";
+      };
+      shellAliases = {
+        ans2-15_3-9 = ". ~/.venvs/ansible39_2_15_0/bin/activate";
+        ans3-9 = ". ~/.venvs/ansible39/bin/activate";
+        ans = ". ~/.venvs/ansible/bin/activate";
+        ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
       };
     };
+  }
+
+
+#+end_src
+
+**** Winters (Server)
+
+
+#+begin_src nix :tangle profiles/server/winters/default.nix
+  { inputs, outputs, config, pkgs, lib, ... }:
+  {
+
+    imports = [
+      inputs.sops-nix.nixosModules.sops
+
+      ./hardware-configuration.nix
+
+      ../../optional/nixos/autologin.nix
+      ../../server/common
+
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+    };
+
+    networking = {
+      hostName = "winters";
+      firewall.enable = true;
+    };
+
+
+    swarselsystems = {
+      hasBluetooth = false;
+      hasFingerprint = false;
+      impermanence = false;
+      isBtrfs = false;
+      server = {
+        enable = true;
+        kavita = true;
+        navidrome = true;
+        jellyfin = true;
+        spotifyd = true;
+        mpd = true;
+        matrix = true;
+      };
+      shellAliases = {
+        nswitch = "cd /.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      };
+    };
+
   }
 
 
@@ -3893,6 +3969,7 @@ This is the central station for self-defined packages. These are all referenced 
     fs-diff = callPackage ./fs-diff { };
     update-checker = callPackage ./update-checker { };
     github-notifications = callPackage ./github-notifications { };
+    screenshare = callPackage ./screenshare { };
   }
 
 #+end_src
@@ -4419,6 +4496,30 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
+**** screenshare
+
+
+#+begin_src shell :tangle scripts/screenshare.sh
+
+  SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
+
+  wl-mirror "$SHARESCREEN" & sleep 0.1
+  swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
+  swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+
+#+end_src
+
+
+#+begin_src nix :tangle pkgs/screenshare/default.nix
+  { writeShellApplication, sway }:
+
+  writeShellApplication {
+    name = "screenshare";
+    runtimeInputs = [ sway ];
+    text = builtins.readFile ../../scripts/screenshare.sh;
+  }
+#+end_src
+
 
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
@@ -4447,11 +4548,11 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
         ];
       };
 
-      prismlauncher = _prev.prismlauncher.override {
-        glfw = _prev.glfw-wayland-minecraft;
-      };
+      # prismlauncher = _prev.prismlauncher.override {
+      #   glfw = _prev.glfw-wayland-minecraft;
+      # };
 
-      # river = prev.river.overrideAttrs (oldAttrs: rec {
+      # #river = prev.river.overrideAttrs (oldAttrs: rec {
       #   pname = "river";
       #   version = "git";
       #   src = prev.fetchFromGitHub {
@@ -4465,7 +4566,10 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
     };
 
     nixpkgs-stable = final: _prev: {
-      stable = import inputs.nixpkgs-stable { inherit (final) system; };
+      stable = import inputs.nixpkgs-stable {
+        inherit (final) system;
+        config.allowUnfree = true;
+      };
     };
 
     zjstatus = final: _prev: {
@@ -4497,6 +4601,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     setup = import ./setup.nix;
     impermanence = import ./impermanence.nix;
     filesystem = import ./filesystem.nix;
+    input = import ./input.nix;
   }
 #+end_src
 
@@ -4553,6 +4658,29 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 
   {
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+    options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
+    options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
+    options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
+    options.swarselsystems.server.navidrome = lib.mkEnableOption "enable navidrome on server";
+    options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
+    options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
+    options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
+  }
+#+end_src
+
+***** Input
+
+
+#+begin_src nix :tangle modules/nixos/input.nix
+  { lib, config, ... }:
+  let
+    inherit (lib) mkOption types;
+  in
+  {
+    options.swarselsystems.shellAliases = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+    };
   }
 #+end_src
 
@@ -4737,6 +4865,10 @@ This allows me to define my monitors in the machine's =default.nix=.
       type = types.attrsOf (types.attrsOf types.str);
       default = { };
     };
+    options.swarselsystems.sharescreen = mkOption {
+      type = types.str;
+      default = "";
+    };
   }
 #+end_src
 
@@ -4779,7 +4911,10 @@ This allows me to configure input options. Here, I am globally defining my split
       type = types.attrsOf types.str;
       default = { };
     };
-
+    options.swarselsystems.shellAliases = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+    };
   }
 #+end_src
 
@@ -5686,7 +5821,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 Do not touch this.
 
 #+begin_src nix :tangle profiles/common/nixos/zsh.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
     programs.zsh.enable = true;
     users.defaultUserShell = pkgs.zsh;
@@ -6344,6 +6479,689 @@ This turns off the display when the lid is closed.
   }
 #+end_src
 
+*** Server
+**** Imports, stateVersion
+
+First, we enable the use of =home-manager= as a NixoS module.
+
+Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
+
+Also, the system state version is set here. No need to touch it.
+
+#+begin_src nix :tangle profiles/server/common/default.nix
+  { lib, config, inputs, ... }:
+  {
+    imports = [
+      ../../common/nixos/xserver.nix
+      ../../common/nixos/gc.nix
+      ../../common/nixos/store.nix
+      ../../common/nixos/time.nix
+      ../../common/nixos/pipewire.nix
+      ./packages.nix
+      ./sops.nix
+      ./ssh.nix
+      ./nginx.nix
+      ./kavita.nix
+      ./jellyfin.nix
+      ./navidrome.nix
+      ./spotifyd.nix
+      ./mpd.nix
+      ./matrix.nix
+    ];
+
+    nix =
+      let
+        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+      in
+      {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+            "ca-derivations"
+          ];
+          trusted-users = [ "swarsel" ];
+          flake-registry = "";
+          warn-dirty = false;
+        };
+        channel.enable = false;
+        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+      };
+
+    environment.shellAliases = lib.recursiveUpdate {
+      npswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+    }
+    config.swarselsystems.shellAliases;
+
+    nixpkgs.config.permittedInsecurePackages = [
+      "olm-3.2.16"
+    ];
+
+    system.stateVersion = lib.mkDefault "23.05";
+  }
+
+  #+end_src
+
+**** System Packages
+
+#+begin_src nix :tangle profiles/server/common/packages.nix
+  { pkgs, ... }:
+  {
+    environment.systemPackages = with pkgs; [
+      gnupg
+      nix-index
+      ssh-to-age
+      git
+    ];
+  }
+#+end_src
+
+**** sops
+
+#+begin_src nix :tangle profiles/server/common/sops.nix
+  { pkgs, ... }:
+  {
+      sops = {
+    age.sshKeyPaths = [ "/etc/ssh/sops" ];
+    defaultSopsFile = "/.dotfiles/secrets/server/secrets.yaml";
+    validateSopsFiles = false;
+  };
+
+  }
+#+end_src
+
+**** NGINX
+
+#+begin_src nix :tangle profiles/server/common/nginx.nix
+{ pkgs, config, ... }:
+{
+  environment.systemPackages = with pkgs; [
+    lego
+  ];
+  sops = {
+    secrets.dnstokenfull = { owner = "acme"; };
+    templates."certs.secret".content = ''
+      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+    '';
+  };
+
+  security.acme = {
+    acceptTerms = true;
+    preliminarySelfsigned = false;
+    defaults.email = "mrswarsel@gmail.com";
+    defaults.dnsProvider = "cloudflare";
+    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+  };
+
+  services.nginx = {
+    enable = true;
+    recommendedProxySettings = true;
+    recommendedTlsSettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
+    # virtualHosts are defined in the respective sections
+  };
+
+}
+#+end_src
+
+**** ssh
+
+#+begin_src nix :tangle profiles/server/common/ssh.nix
+  _ :
+  {
+    services.openssh = {
+      enable = true;
+      settings.PermitRootLogin = "yes";
+    };
+    users.users.root.openssh.authorizedKeys.keyFiles = [
+      ../../../secrets/keys/authorized_keys
+    ];
+
+  }
+#+end_src
+
+**** kavita
+
+#+begin_src nix :tangle profiles/server/common/kavita.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.kavita {
+    environment.systemPackages = with pkgs; [
+      calibre
+    ];
+
+    sops.secrets.kavita = { owner = "kavita"; };
+
+    services.kavita = {
+      enable = true;
+      user = "kavita";
+      settings.Port = 8080;
+      tokenKeyFile = config.sops.secrets.kavita.path;
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "scroll.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.22:8080";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+}
+#+end_src
+
+**** jellyfin
+
+#+begin_src nix :tangle profiles/server/common/jellyfin.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.jellyfin {
+    users.users.jellyfin = {
+      extraGroups = [ "video" "render" ];
+    };
+    nixpkgs.config.packageOverrides = pkgs: {
+      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    };
+    hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver # LIBVA_DRIVER_NAME=iHD
+        vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+    };
+    services.jellyfin = {
+      enable = true;
+      user = "jellyfin";
+      # openFirewall = true; # this works only for the default ports
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "screen.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.16:8096";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+
+}
+#+end_src
+
+**** navidrome
+
+#+begin_src nix :tangle profiles/server/common/navidrome.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.navidrome {
+    environment.systemPackages = with pkgs; [
+      pciutils
+      alsa-utils
+      mpv
+    ];
+
+    users = {
+      groups = {
+        navidrome = {
+          gid = 61593;
+        };
+      };
+
+      users = {
+        navidrome = {
+          isSystemUser = true;
+          uid = 61593;
+          group = "navidrome";
+          extraGroups = [ "audio" "utmp" ];
+        };
+      };
+    };
+
+
+    hardware.enableAllFirmware = true;
+
+    services.navidrome = {
+      enable = true;
+      settings = {
+        Address = "0.0.0.0";
+        Port = 4040;
+        MusicFolder = "/media";
+        EnableSharing = true;
+        EnableTranscodingConfig = true;
+        Scanner.GroupAlbumReleases = true;
+        ScanSchedule = "@every 1d";
+        # Insert these values locally as sops-nix does not work for them
+        # LastFM.ApiKey = TEMPLATE;
+        # LastFM.Secret = TEMPLATE;
+        # Spotify.ID = TEMPLATE;
+        # Spotify.Secret = TEMPLATE;
+        UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
+        UIWelcomeMessage = "~SwarselSound~";
+      };
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "sound.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.13:4040";
+              proxyWebsockets = true;
+              extraConfig = ''
+                proxy_redirect          http:// https://;
+                proxy_read_timeout      600s;
+                proxy_send_timeout      600s;
+                proxy_buffering         off;
+                proxy_request_buffering off;
+                client_max_body_size    0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+
+
+}
+#+end_src
+
+**** spotifyd
+
+#+begin_src nix :tangle profiles/server/common/spotifyd.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.spotifyd {
+    users.groups.spotifyd = {
+      gid = 65136;
+    };
+
+    users.users.spotifyd = {
+      isSystemUser = true;
+      uid = 65136;
+      group = "spotifyd";
+      extraGroups = [ "audio" "utmp" ];
+    };
+    services.spotifyd = {
+      enable = true;
+      settings = {
+        global = {
+          dbus_type = "session";
+          use_mpris = false;
+          device = "default:CARD=PCH";
+          device_name = "SwarselSpot";
+          mixer = "alsa";
+          zeroconf_port = 1025;
+        };
+      };
+    };
+  };
+
+}
+#+end_src
+
+**** mpd
+
+#+begin_src nix :tangle profiles/server/common/mpd.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.mpd {
+    users = {
+      groups = {
+        mpd = { };
+      };
+
+      users = {
+        mpd = {
+          isSystemUser = true;
+          group = "mpd";
+          extraGroups = [ "audio" "utmp" ];
+        };
+      };
+    };
+
+    sops = {
+      secrets.mpdpass = { owner = "mpd"; };
+    };
+
+    environment.systemPackages = with pkgs; [
+      pciutils
+      alsa-utils
+      mpv
+    ];
+
+    services.mpd = {
+      enable = true;
+      musicDirectory = "/media";
+      user = "mpd";
+      group = "mpd";
+      network = {
+        port = 3254;
+        listenAddress = "any";
+      };
+      credentials = [
+        {
+          passwordFile = config.sops.secrets.mpdpass.path;
+          permissions = [
+            "read"
+            "add"
+            "control"
+            "admin"
+          ];
+        }
+      ];
+    };
+  };
+
+}
+#+end_src
+
+**** matrix
+
+#+begin_src nix :tangle profiles/server/common/matrix.nix
+{ config, lib, pkgs, modulesPath, sops, ... }:
+let
+  matrixDomain = "swatrix.swarsel.win";
+in
+{
+
+  config = lib.mkIf config.swarselsystems.server.matrix {
+    environment.systemPackages = with pkgs; [
+      matrix-synapse
+      lottieconverter
+      ffmpeg
+    ];
+
+    sops = {
+      secrets = {
+        matrixsharedsecret = { owner = "matrix-synapse"; };
+        mautrixtelegram_as = { owner = "matrix-synapse"; };
+        mautrixtelegram_hs = { owner = "matrix-synapse"; };
+        mautrixtelegram_api_id = { owner = "matrix-synapse"; };
+        mautrixtelegram_api_hash = { owner = "matrix-synapse"; };
+      };
+      templates = {
+        "matrix_user_register.sh".content = ''
+          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+        '';
+        matrixshared = {
+          owner = "matrix-synapse";
+          content = ''
+            registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+          '';
+        };
+        mautrixtelegram = {
+          owner = "matrix-synapse";
+          content = ''
+            MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
+            MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+          '';
+        };
+      };
+    };
+
+    services.postgresql = {
+      enable = true;
+      initialScript = pkgs.writeText "synapse-init.sql" ''
+        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+          TEMPLATE template0
+          LC_COLLATE = "C"
+          LC_CTYPE = "C";
+      '';
+    };
+
+    services.matrix-synapse = {
+      enable = true;
+      settings = {
+        app_service_config_files = [
+          "/var/lib/matrix-synapse/telegram-registration.yaml"
+          "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+          "/var/lib/matrix-synapse/signal-registration.yaml"
+          "/var/lib/matrix-synapse/doublepuppet.yaml"
+        ];
+        server_name = matrixDomain;
+        public_baseurl = "https://${matrixDomain}";
+        listeners = [
+          {
+            port = 8008;
+            bind_addresses = [ "0.0.0.0" ];
+            type = "http";
+            tls = false;
+            x_forwarded = true;
+            resources = [
+              {
+                names = [ "client" "federation" ];
+                compress = true;
+              }
+            ];
+          }
+        ];
+      };
+      extraConfigFiles = [
+        config.sops.templates.matrixshared.path
+      ];
+    };
+
+    services.mautrix-telegram = {
+      enable = true;
+      environmentFile = config.sops.templates.mautrixtelegram.path;
+      settings = {
+        homeserver = {
+          address = "http://localhost:8008";
+          domain = matrixDomain;
+        };
+        appservice = {
+          address = "http://localhost:29317";
+          hostname = "0.0.0.0";
+          port = "29317";
+          provisioning.enabled = true;
+          id = "telegram";
+          # ephemeral_events = true; # not needed due to double puppeting
+          public = {
+            enabled = false;
+          };
+          database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+        };
+        bridge = {
+          relaybot.authless_portals = true;
+          allow_avatar_remove = true;
+          allow_contact_info = true;
+          sync_channel_members = true;
+          startup_sync = true;
+          sync_create_limit = 0;
+          sync_direct_chats = true;
+          telegram_link_preview = true;
+          permissions = {
+            "*" = "relaybot";
+            "@swarsel:${matrixDomain}" = "admin";
+          };
+          animated_sticker = {
+            target = "gif";
+            args = {
+              width = 256;
+              height = 256;
+              fps = 30; # only for webm
+              background = "020202"; # only for gif, transparency not supported
+            };
+          };
+        };
+      };
+    };
+    systemd.services.mautrix-telegram.path = with pkgs; [
+      lottieconverter # for animated stickers conversion, unfree package
+      ffmpeg # if converting animated stickers to webm (very slow!)
+    ];
+
+    services.mautrix-whatsapp = {
+      enable = true;
+      settings = {
+        homeserver = {
+          address = "http://localhost:8008";
+          domain = matrixDomain;
+        };
+        appservice = {
+          address = "http://localhost:29318";
+          hostname = "0.0.0.0";
+          port = 29318;
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+          };
+        };
+        bridge = {
+          displayname_template = "{{or .FullName .PushName .JID}} (WA)";
+          history_sync = {
+            backfill = true;
+            max_initial_conversations = -1;
+            message_count = -1;
+            request_full_sync = true;
+            full_sync_config = {
+              days_limit = 900;
+              size_mb_limit = 5000;
+              storage_quota_mb = 5000;
+            };
+          };
+          login_shared_secret_map = {
+            matrixDomain = "as_token:doublepuppet";
+          };
+          sync_manual_marked_unread = true;
+          send_presence_on_typing = true;
+          parallel_member_sync = true;
+          url_previews = true;
+          caption_in_message = true;
+          extev_polls = true;
+          permissions = {
+            "*" = "relaybot";
+            "@swarsel:${matrixDomain}" = "admin";
+          };
+        };
+      };
+    };
+
+    services.mautrix-signal = {
+      enable = true;
+      settings = {
+        homeserver = {
+          address = "http://localhost:8008";
+          domain = matrixDomain;
+        };
+        appservice = {
+
+          address = "http://localhost:29328";
+          hostname = "0.0.0.0";
+          port = 29328;
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+          };
+        };
+        bridge = {
+          displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
+          login_shared_secret_map = {
+            matrixDomain = "as_token:doublepuppet";
+          };
+          caption_in_message = true;
+          permissions = {
+            "*" = "relaybot";
+            "@swarsel:${matrixDomain}" = "admin";
+          };
+        };
+      };
+    };
+
+    # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+    # messages out after a while.
+
+    systemd.timers."restart-bridges" = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "1d";
+        OnUnitActiveSec = "1d";
+        Unit = "restart-bridges.service";
+      };
+    };
+
+    systemd.services."restart-bridges" = {
+      script = ''
+        systemctl restart mautrix-whatsapp.service
+        systemctl restart mautrix-signal.service
+        systemctl restart mautrix-telegram.service
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+      };
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "swatrix.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "~ ^(/_matrix|/_synapse/client)" = {
+              proxyPass = "http://192.168.1.23:8008";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+
+
+}
+
+#+end_src
+
 
 *** Optional
 :PROPERTIES:
@@ -6773,6 +7591,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       fs-diff
       update-checker
       github-notifications
+      screenshare
 
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash
@@ -7441,11 +8260,11 @@ zsh is the most convenient shell for me and it happens to be super neat to confi
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
 
 #+begin_src nix :tangle profiles/common/home/zsh.nix
-  { pkgs, ... }:
+  { config, pkgs, lib, ... }:
   {
     programs.zsh = {
       enable = true;
-      shellAliases = {
+      shellAliases = lib.recursiveUpdate {
         hg = "history | grep";
         hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
         nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
@@ -7462,7 +8281,10 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-      };
+        lt = "ls -lath";
+        oldshell = "nix shell github:nixos/nixpkgs/\"$1\" \"$2\"";
+      }
+        config.swarselsystems.shellAliases;
       autosuggestion.enable = true;
       enableCompletion = true;
       syntaxHighlighting.enable = true;
@@ -8607,6 +9429,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+o" = "exec pass-fuzzel --otp";
               "${modifier}+Shift+p" = "exec pass-fuzzel --type";
               "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
+              "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
               "${modifier}+Escape" = "mode $exit";
               "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
               "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
@@ -8711,6 +9534,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             { title = "Syncthing Tray"; }
             { app_id = "SchildiChat"; }
             { app_id = "Element"; }
+            { class = "1Password"; }
             { app_id = "com.nextcloud.desktopclient.nextcloud"; }
             { app_id = "gnome-system-monitor"; }
             { title = "(?:Open|Save) (?:File|Folder|As)"; }
@@ -8961,6 +9785,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       shellcheck
       dig
       docker
+      postman
     ];
 
     programs = {
@@ -9098,6 +9923,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
     outputs =
       inputs@{ self
       , nixpkgs
+      , nixpkgs-stable
       , home-manager
       , systems
       , ...

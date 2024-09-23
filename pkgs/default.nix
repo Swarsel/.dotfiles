@@ -16,4 +16,5 @@ in
   fs-diff = callPackage ./fs-diff { };
   update-checker = callPackage ./update-checker { };
   github-notifications = callPackage ./github-notifications { };
+  screenshare = callPackage ./screenshare { };
 }

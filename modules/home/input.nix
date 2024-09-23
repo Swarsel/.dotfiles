@@ -29,5 +29,8 @@ in
     type = types.attrsOf types.str;
     default = { };
   };
-
+  options.swarselsystems.shellAliases = mkOption {
+    type = types.attrsOf types.str;
+    default = { };
+  };
 }
