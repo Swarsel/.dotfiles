@@ -28,6 +28,7 @@
 
   networking = {
     hostName = "winters";
+    hostId = "b7778a4a";
     firewall.enable = true;
   };
 
@@ -37,7 +38,6 @@
     hasFingerprint = false;
     impermanence = false;
     isBtrfs = false;
-    initialSetup = true;
     flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;
