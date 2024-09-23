@@ -6,6 +6,7 @@
     ../../common/nixos/store.nix
     ../../common/nixos/time.nix
     ../../common/nixos/pipewire.nix
+    ../../common/nixos/users.nix
     ./packages.nix
     ./sops.nix
     ./ssh.nix
