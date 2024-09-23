@@ -23,7 +23,7 @@
       # Required for samba to register mDNS records for auto discovery
       # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
       enable = true;
-      # openFirewall = true;
+      openFirewall = true;
       shares.Eternor = {
         browseable = "yes";
         "read only" = "no";
@@ -43,11 +43,13 @@
       nssmdns4 = true;
       # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
       enable = true;
+      openFirewall = true;
     };
 
     samba-wsdd = {
       # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
       enable = true;
+      openFirewall = true;
     };
   };
 }
