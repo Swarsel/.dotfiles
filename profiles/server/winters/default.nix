@@ -48,9 +48,6 @@
       mpd = false;
       matrix = false;
     };
-    shellAliases = {
-      nswitch = "cd /.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
   };
 
 }
