@@ -5,7 +5,7 @@ in
 
 {
   options.swarselsystems.flakePath = mkOption {
-    type = types.attrsOf types.str;
+    type = types.str;
     default = "";
   };
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
