@@ -5166,6 +5166,8 @@ This ensures that all user-configuration happens here in the config file.
 #+begin_src nix :tangle profiles/common/nixos/users.nix
   { pkgs, config, lib, ... }:
   {
+    sops.secrets.swarseluser = { neededForUsers = true; };
+
     users = {
       mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
       users.swarsel = {
@@ -5641,7 +5643,6 @@ I use sops-nix to handle secrets that I want to have available on my machines at
       validateSopsFiles = false;
 
       secrets = {
-        swarseluser = { neededForUsers = true; };
         ernest = { };
         frauns = { };
         hotspot = { };

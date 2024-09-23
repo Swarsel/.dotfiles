@@ -14,7 +14,6 @@ in
     validateSopsFiles = false;
 
     secrets = {
-      swarseluser = { neededForUsers = true; };
       ernest = { };
       frauns = { };
       hotspot = { };
