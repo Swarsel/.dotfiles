@@ -1,6 +1,10 @@
 { lib, ... }:
 
 {
+  options.swarselsystems.flakePath = mkOption {
+    type = types.attrsOf types.str;
+    default = "";
+  };
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
   options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
   options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";

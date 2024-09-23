@@ -2,7 +2,7 @@
 {
   sops = {
     age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "/.dotfiles/secrets/server/winters/secrets.yaml";
+    defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
     validateSopsFiles = false;
   };
 

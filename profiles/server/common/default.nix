@@ -41,8 +41,8 @@
 
   environment.shellAliases = lib.recursiveUpdate
     {
-      npswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      nswitch = "cd ${config.swarselsystems.flakePath}; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     }
     config.swarselsystems.shellAliases;
 

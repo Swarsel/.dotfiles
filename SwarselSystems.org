@@ -2040,6 +2040,8 @@ My work machine. Built for more security, this is the gold standard of my config
       hasFingerprint = false;
       impermanence = false;
       isBtrfs = false;
+      initialSetup = true;
+      flakePath = "/home/swarsel/.dotfiles";
       server = {
         enable = true;
         kavita = true;
@@ -4657,6 +4659,10 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
   { lib, ... }:
 
   {
+    options.swarselsystems.flakePath = mkOption {
+      type = types.attrsOf types.str;
+      default = "";
+    };
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
     options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
     options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
@@ -6531,8 +6537,8 @@ Also, the system state version is set here. No need to touch it.
       };
 
     environment.shellAliases = lib.recursiveUpdate {
-      npswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      nswitch = "cd /.dotfiles; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      nswitch = "cd ${config.swarselsystems.flakePath}; nixos-rebuild --flake .#$(hostname) switch; cd -;";
     }
     config.swarselsystems.shellAliases;
 
@@ -6566,7 +6572,7 @@ Also, the system state version is set here. No need to touch it.
   {
       sops = {
     age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "/.dotfiles/secrets/server/winters/secrets.yaml";
+    defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
     validateSopsFiles = false;
   };
 
