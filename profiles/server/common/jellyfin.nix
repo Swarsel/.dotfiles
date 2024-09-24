@@ -2,7 +2,7 @@
 {
   config = lib.mkIf config.swarselsystems.server.jellyfin {
     users.users.jellyfin = {
-      extraGroups = [ "video" "render" ];
+      extraGroups = [ "video" "render" "users" ];
     };
     nixpkgs.config.packageOverrides = pkgs: {
       vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };

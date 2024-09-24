@@ -29,7 +29,7 @@
     hostName = "winters";
     hostId = "b7778a4a";
     firewall.enable = true;
-    allowPing = true;
+    firewall.allowedTCPPorts = [ 80 443 ];
   };
 
 
@@ -42,7 +42,7 @@
     server = {
       enable = true;
       kavita = false;
-      navidrome = false;
+      navidrome = true;
       jellyfin = false;
       spotifyd = false;
       mpd = false;

@@ -1938,7 +1938,7 @@ My work machine. Built for more security, this is the gold standard of my config
           scale = "1";
           position = "-1280,0";
           workspace = "1:一";
-          output = "DP-9";
+          output = "DP-8";
         };
         work_middle_middle_side = {
           name = "Hewlett Packard HP Z24i CN44250RDT";
@@ -1947,7 +1947,7 @@ My work machine. Built for more security, this is the gold standard of my config
           scale = "1";
           position = "-2480,0";
           workspace = "12:S";
-          output = "DP-8";
+          output = "DP-9";
         };
         work_seminary = {
           name = "Applied Creative Technology Transmitter QUATTRO201811";
@@ -2032,7 +2032,7 @@ My work machine. Built for more security, this is the gold standard of my config
       hostName = "winters";
       hostId = "b7778a4a";
       firewall.enable = true;
-      allowPing = true;
+      firewall.allowedTCPPorts = [ 80 443 ];
     };
 
 
@@ -2045,7 +2045,7 @@ My work machine. Built for more security, this is the gold standard of my config
       server = {
         enable = true;
         kavita = false;
-        navidrome = false;
+        navidrome = true;
         jellyfin = false;
         spotifyd = false;
         mpd = false;
@@ -6505,6 +6505,7 @@ Also, the system state version is set here. No need to touch it.
       ../../common/nixos/time.nix
       ../../common/nixos/pipewire.nix
       ../../common/nixos/users.nix
+      ../../common/nixos/nix-ld.nix
       ./packages.nix
       ./sops.nix
       ./ssh.nix
@@ -6697,41 +6698,43 @@ Also, the system state version is set here. No need to touch it.
 **** kavita
 
 #+begin_src nix :tangle profiles/server/common/kavita.nix
-{ pkgs, lib, config, ... }:
-{
-  config = lib.mkIf config.swarselsystems.server.kavita {
-    environment.systemPackages = with pkgs; [
-      calibre
-    ];
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.kavita {
+      environment.systemPackages = with pkgs; [
+        calibre
+      ];
 
-    sops.secrets.kavita = { owner = "kavita"; };
+      sops.secrets.kavita = { owner = "kavita"; };
 
-    services.kavita = {
-      enable = true;
-      user = "kavita";
-      settings.Port = 8080;
-      tokenKeyFile = config.sops.secrets.kavita.path;
-    };
+      networking.firewall.allowedTCPPorts = [ 8080 ];
 
-    services.nginx = {
-      virtualHosts = {
-        "scroll.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://192.168.1.2:8080";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
+      services.kavita = {
+        enable = true;
+        user = "kavita";
+        settings.Port = 8080;
+        tokenKeyFile = config.sops.secrets.kavita.path;
+      };
+
+      services.nginx = {
+        virtualHosts = {
+          "scroll.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://192.168.1.2:8080";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
             };
           };
         };
       };
     };
-  };
-}
+  }
 #+end_src
 
 **** jellyfin
@@ -6741,7 +6744,7 @@ Also, the system state version is set here. No need to touch it.
 {
   config = lib.mkIf config.swarselsystems.server.jellyfin {
     users.users.jellyfin = {
-      extraGroups = [ "video" "render" ];
+      extraGroups = [ "video" "render" "users" ];
     };
     nixpkgs.config.packageOverrides = pkgs: {
       vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
@@ -6807,13 +6810,16 @@ Also, the system state version is set here. No need to touch it.
             isSystemUser = true;
             uid = 61593;
             group = "navidrome";
-            extraGroups = [ "audio" "utmp" ];
+            extraGroups = [ "audio" "utmp" "users" ];
           };
         };
       };
 
 
-      hardware.enableAllFirmware = true;
+      hardware = {
+        opengl.enable = true;
+        enableAllFirmware = true;
+      };
 
       networking.firewall.allowedTCPPorts = [ 4040 ];
 
@@ -6821,13 +6827,21 @@ Also, the system state version is set here. No need to touch it.
         enable = true;
         openFirewall = true;
         settings = {
+          LogLevel = "trace";
           Address = "0.0.0.0";
           Port = 4040;
           MusicFolder = "/Vault/Eternor/Musik";
           EnableSharing = true;
           EnableTranscodingConfig = true;
           Scanner.GroupAlbumReleases = true;
-          ScanSchedule = "@every 1d";
+          ScanSchedule = "@every 24h";
+          Jukebox = {
+            Enabled = true;
+            Default = "pch";
+            Devices = [
+              "pch"
+            ];
+          };
           # Insert these values locally as sops-nix does not work for them
           LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
           LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;

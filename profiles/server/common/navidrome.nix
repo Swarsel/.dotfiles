@@ -19,13 +19,16 @@
           isSystemUser = true;
           uid = 61593;
           group = "navidrome";
-          extraGroups = [ "audio" "utmp" ];
+          extraGroups = [ "audio" "utmp" "users" ];
         };
       };
     };
 
 
-    hardware.enableAllFirmware = true;
+    hardware = {
+      opengl.enable = true;
+      enableAllFirmware = true;
+    };
 
     networking.firewall.allowedTCPPorts = [ 4040 ];
 
@@ -33,13 +36,21 @@
       enable = true;
       openFirewall = true;
       settings = {
+        LogLevel = "trace";
         Address = "0.0.0.0";
         Port = 4040;
         MusicFolder = "/Vault/Eternor/Musik";
         EnableSharing = true;
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
-        ScanSchedule = "@every 1d";
+        ScanSchedule = "@every 24h";
+        Jukebox = {
+          Enabled = true;
+          Default = "pch";
+          Devices = [
+            "pch"
+          ];
+        };
         # Insert these values locally as sops-nix does not work for them
         LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
         LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;

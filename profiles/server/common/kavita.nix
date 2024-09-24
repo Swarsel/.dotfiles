@@ -7,6 +7,8 @@
 
     sops.secrets.kavita = { owner = "kavita"; };
 
+    networking.firewall.allowedTCPPorts = [ 8080 ];
+
     services.kavita = {
       enable = true;
       user = "kavita";
