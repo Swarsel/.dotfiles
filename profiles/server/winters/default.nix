@@ -28,7 +28,7 @@
   networking = {
     hostName = "winters";
     hostId = "b7778a4a";
-    firewall.enable = true;
+    firewall.enable = false;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 

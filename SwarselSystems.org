@@ -409,7 +409,7 @@ A short overview over each input and what it does:
 
   # nix for android
   nix-on-droid = {
-    url = "github:t184256/nix-on-droid/release-23.05";
+    url = "github:nix-community/nix-on-droid/release-24.05";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -449,6 +449,11 @@ A short overview over each input and what it does:
 
   zjstatus = {
     url = "github:dj95/zjstatus";
+  };
+
+  fw-fanctrl = {
+    url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+    inputs.nixpkgs.follows = "nixpkgs";
   };
 #+end_src
 *** let
@@ -709,7 +714,7 @@ Nix on Android also demands an own flake output, which is provided here.
 
   default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
     modules = [
-      ./profiles/mysticant/configuration.nix
+      ./profiles/mysticant
     ];
   };
 
@@ -1801,6 +1806,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
     imports = [
       inputs.nixos-hardware.nixosModules.framework-16-7040-amd
+      inputs.fw-fanctrl.nixosModules.default
 
       ./hardware-configuration.nix
       ./disk-config.nix
@@ -1845,6 +1851,7 @@ My work machine. Built for more security, this is the gold standard of my config
       resumeDevice = "/dev/disk/by-label/nixos";
     };
 
+    programs.fw-fanctrl.enable = true;
 
     networking = {
       hostName = "nbl-imba-2";
@@ -2031,7 +2038,7 @@ My work machine. Built for more security, this is the gold standard of my config
     networking = {
       hostName = "winters";
       hostId = "b7778a4a";
-      firewall.enable = true;
+      firewall.enable = false;
       firewall.allowedTCPPorts = [ 80 443 ];
     };
 
@@ -2053,6 +2060,63 @@ My work machine. Built for more security, this is the gold standard of my config
       };
     };
 
+  }
+
+
+#+end_src
+
+**** Magicant (Phone)
+
+
+#+begin_src nix :tangle profiles/mysticant/default.nix
+
+  { pkgs, ... }: {
+    environment = {
+      packages = with pkgs; [
+        vim
+        git
+        openssh
+        toybox
+        dig
+        man
+        gnupg
+      ];
+
+      etcBackupExtension = ".bak";
+      extraOutputsToInstall = [
+        "doc"
+        "info"
+        "devdoc"
+      ];
+      motd = null;
+    };
+
+    home-manager.config = {
+
+      imports = [
+        ../common/home/ssh.nix
+      ];
+      services.ssh-agent.enable = true;
+
+    };
+
+    android-integration = {
+      termux-open.enable = true;
+      termux-xdg-open.enable = true;
+      termux-open-url.enable = true;
+      termux-reload-settings.enable = true;
+      termux-setup-storage.enable = true;
+    };
+
+    # Backup etc files instead of failing to activate generation if a file already exists in /etc
+
+    # Read the changelog before changing this value
+    system.stateVersion = "23.05";
+
+    # Set up nix for flakes
+    nix.extraOptions = ''
+      experimental-features = nix-command flakes
+    '';
   }
 
 
@@ -6574,8 +6638,8 @@ Also, the system state version is set here. No need to touch it.
       };
 
     environment.shellAliases = lib.recursiveUpdate {
-      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      nswitch = "cd ${config.swarselsystems.flakePath}; nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      nswitch = "cd ${config.swarselsystems.flakePath}; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
     }
     config.swarselsystems.shellAliases;
 
@@ -6721,9 +6785,11 @@ Also, the system state version is set here. No need to touch it.
     };
     users.users.swarsel.openssh.authorizedKeys.keyFiles = [
       ../../../secrets/keys/authorized_keys
+      ../../../secrets/keys/mysticant.pub
     ];
     users.users.root.openssh.authorizedKeys.keyFiles = [
       ../../../secrets/keys/authorized_keys
+      ../../../secrets/keys/mysticant.pub
     ];
 
   }
@@ -6851,7 +6917,7 @@ Also, the system state version is set here. No need to touch it.
 
 
       hardware = {
-        opengl.enable = true;
+        # opengl.enable = true;
         enableAllFirmware = true;
       };
 
@@ -6861,7 +6927,7 @@ Also, the system state version is set here. No need to touch it.
         enable = true;
         openFirewall = true;
         settings = {
-          LogLevel = "trace";
+          LogLevel = "error";
           Address = "0.0.0.0";
           Port = 4040;
           MusicFolder = "/Vault/Eternor/Musik";
@@ -6870,11 +6936,12 @@ Also, the system state version is set here. No need to touch it.
           Scanner.GroupAlbumReleases = true;
           ScanSchedule = "@every 24h";
           MPVPath = "${pkgs.mpv}/bin/mpv";
+          MPVCommandTemplate = "mpv --audio-device=%d --no-audio-display --pause %f";
           Jukebox = {
             Enabled = true;
             Default = "pch";
             Devices = [
-              "pch"
+              [ "pch" "alsa/sysdefault:CARD=PCH" ]
             ];
           };
           # Insert these values locally as sops-nix does not work for them
@@ -7012,6 +7079,14 @@ Also, the system state version is set here. No need to touch it.
   { config, lib, pkgs, modulesPath, sops, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
+    baseUrl = "https://${matrixDomain}";
+    clientConfig."m.homeserver".base_url = baseUrl;
+    serverConfig."m.server" = "${matrixDomain}:443";
+    mkWellKnown = data: ''
+    default_type application/json;
+    add_header Access-Control-Allow-Origin *;
+    return 200 '${builtins.toJSON data}';
+  '';
   in
   {
 
@@ -7162,7 +7237,7 @@ Also, the system state version is set here. No need to touch it.
 
       services.mautrix-whatsapp = {
         enable = true;
-        registerToSynapse = true;
+        registerToSynapse = false;
         settings = {
           homeserver = {
             address = "http://localhost:8008";
@@ -7209,7 +7284,7 @@ Also, the system state version is set here. No need to touch it.
 
       services.mautrix-signal = {
         enable = true;
-        registerToSynapse = true;
+        registerToSynapse = false;
         settings = {
           homeserver = {
             address = "http://localhost:8008";
@@ -7269,13 +7344,30 @@ Also, the system state version is set here. No need to touch it.
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
+            listen = [
+              {
+                addr = "0.0.0.0";
+                port = 8448;
+                ssl = true;
+                extraParameters = [
+                  "default_server"
+                ];
+              }
+              {
+                addr = "0.0.0.0";
+                port = 443;
+                ssl = true;
+              }
+            ];
             locations = {
               "~ ^(/_matrix|/_synapse/client)" = {
-                proxyPass = "http://192.168.1.2:8008";
+                proxyPass = "http://localhost:8008";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
               };
+              "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+              "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
             };
           };
         };

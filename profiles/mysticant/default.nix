@@ -20,7 +20,12 @@
   };
 
   home-manager.config = {
+
+    imports = [
+      ../common/home/ssh.nix
+    ];
     services.ssh-agent.enable = true;
+
   };
 
   android-integration = {

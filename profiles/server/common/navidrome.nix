@@ -26,7 +26,7 @@
 
 
     hardware = {
-      opengl.enable = true;
+      # opengl.enable = true;
       enableAllFirmware = true;
     };
 
@@ -36,7 +36,7 @@
       enable = true;
       openFirewall = true;
       settings = {
-        LogLevel = "trace";
+        LogLevel = "error";
         Address = "0.0.0.0";
         Port = 4040;
         MusicFolder = "/Vault/Eternor/Musik";
@@ -45,11 +45,12 @@
         Scanner.GroupAlbumReleases = true;
         ScanSchedule = "@every 24h";
         MPVPath = "${pkgs.mpv}/bin/mpv";
+        MPVCommandTemplate = "mpv --audio-device=%d --no-audio-display --pause %f";
         Jukebox = {
           Enabled = true;
           Default = "pch";
           Devices = [
-            "pch"
+            [ "pch" "alsa/sysdefault:CARD=PCH" ]
           ];
         };
         # Insert these values locally as sops-nix does not work for them

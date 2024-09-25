@@ -1,6 +1,14 @@
 { config, lib, pkgs, modulesPath, sops, ... }:
 let
   matrixDomain = "swatrix.swarsel.win";
+  baseUrl = "https://${matrixDomain}";
+  clientConfig."m.homeserver".base_url = baseUrl;
+  serverConfig."m.server" = "${matrixDomain}:443";
+  mkWellKnown = data: ''
+    default_type application/json;
+    add_header Access-Control-Allow-Origin *;
+    return 200 '${builtins.toJSON data}';
+  '';
 in
 {
 
@@ -151,7 +159,7 @@ in
 
     services.mautrix-whatsapp = {
       enable = true;
-      registerToSynapse = true;
+      registerToSynapse = false;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -198,7 +206,7 @@ in
 
     services.mautrix-signal = {
       enable = true;
-      registerToSynapse = true;
+      registerToSynapse = false;
       settings = {
         homeserver = {
           address = "http://localhost:8008";
@@ -258,13 +266,30 @@ in
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
+          listen = [
+            {
+              addr = "0.0.0.0";
+              port = 8448;
+              ssl = true;
+              extraParameters = [
+                "default_server"
+              ];
+            }
+            {
+              addr = "0.0.0.0";
+              port = 443;
+              ssl = true;
+            }
+          ];
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://192.168.1.2:8008";
+              proxyPass = "http://localhost:8008";
               extraConfig = ''
                 client_max_body_size 0;
               '';
             };
+            "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+            "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
           };
         };
       };

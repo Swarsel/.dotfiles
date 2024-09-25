@@ -3,6 +3,7 @@
 
   imports = [
     inputs.nixos-hardware.nixosModules.framework-16-7040-amd
+    inputs.fw-fanctrl.nixosModules.default
 
     ./hardware-configuration.nix
     ./disk-config.nix
@@ -47,6 +48,7 @@
     resumeDevice = "/dev/disk/by-label/nixos";
   };
 
+  programs.fw-fanctrl.enable = true;
 
   networking = {
     hostName = "nbl-imba-2";

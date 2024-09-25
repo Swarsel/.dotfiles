@@ -52,7 +52,7 @@
 
     # nix for android
     nix-on-droid = {
-      url = "github:t184256/nix-on-droid/release-23.05";
+      url = "github:nix-community/nix-on-droid/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -92,6 +92,11 @@
 
     zjstatus = {
       url = "github:dj95/zjstatus";
+    };
+
+    fw-fanctrl = {
+      url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -323,7 +328,7 @@
 
         default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
           modules = [
-            ./profiles/mysticant/configuration.nix
+            ./profiles/mysticant
           ];
         };
 
