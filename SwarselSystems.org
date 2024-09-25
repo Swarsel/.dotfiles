@@ -1937,7 +1937,7 @@ My work machine. Built for more security, this is the gold standard of my config
           mode = "3840x2160";
           scale = "1";
           position = "-1280,0";
-          workspace = "1:一";
+          workspace = "11:M";
           output = "DP-8";
         };
         work_middle_middle_side = {
@@ -2049,7 +2049,7 @@ My work machine. Built for more security, this is the gold standard of my config
         jellyfin = false;
         spotifyd = false;
         mpd = false;
-        matrix = false;
+        matrix = true;
       };
     };
 
@@ -4502,9 +4502,14 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
   SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
-  wl-mirror "$SHARESCREEN" & sleep 0.1
-  swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
-  swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+  if [[ "$1" == "start" ]]; then
+      wl-mirror "$SHARESCREEN" & sleep 0.1
+      swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
+      swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+      swaymsg output eDP-2 mode 1280x800
+  else
+      swaymsg output eDP-2 mode 2560x1600
+  fi
 
 #+end_src
 
@@ -5516,6 +5521,29 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
               };
             };
 
+            wireguardvpn = {
+              connection = {
+                id = "HomeVPN";
+                type = "wireguard";
+                autoconnect = "false";
+                interface-name = "wg1";
+              };
+              wireguard = { private-key = "$WIREGUARDPRIV"; };
+              "wireguard-peer.$WIREGUARDPUB" = {
+                endpoint= "$WIREGUARDENDPOINT";
+                allowed-ips= "0.0.0.0/0";
+              };
+              ipv4 = {
+                method = "ignore";
+                address1 = "192.168.3.3/32";
+              };
+              ipv6 = {
+                addr-gen-mode = "stable-privacy";
+                method = "ignore";
+              };
+              proxy = { };
+            };
+
             "sweden-aes-128-cbc-udp-dns" = {
               connection = {
                 autoconnect = "false";
@@ -5651,6 +5679,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         handyhotspot = { };
         vpnuser = { };
         vpnpass = { };
+        wireguardpriv = { };
+        wireguardpub = { };
+        wireguardendpoint = { };
       };
       templates = {
         "network-manager.env".content = ''
@@ -5662,6 +5693,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
           VPNUSER=${config.sops.placeholder.vpnuser}
           VPNPASS=${config.sops.placeholder.vpnpass}
+          WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
+          WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
+          WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
         '';
       };
     };
@@ -9553,6 +9587,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
               "${modifier}+Ctrl+l" = "workspace 15:L";
               "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
+              "${modifier}+Ctrl+f" = "workspace 16:F";
+              "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
               "${modifier}+Left" = "focus left";
               "${modifier}+Right" = "focus right";
               "${modifier}+Down" = "focus down";
@@ -9608,8 +9644,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           titlebar = false;
         };
         assigns = {
-          "1:一" = [{ app_id = "firefox"; }];
-          "10:十" = [{ app_id = "teams-for-linux"; }];
+          "16:F" = [{ app_id = "firefox"; }];
+          "15:L" = [{ app_id = "teams-for-linux"; }];
         };
         floating = {
           border = 1;
@@ -12964,7 +13000,7 @@ While we are at it, we are also setting up a persistent undo-file for every file
 #+begin_src emacs-lisp
 
   (use-package undo-tree
-    ;; :init (global-undo-tree-mode)
+    :init (global-undo-tree-mode)
     :bind (:map undo-tree-visualizer-mode-map
                 ("h" . undo-tree-visualize-switch-branch-left)
                 ("l" . undo-tree-visualize-switch-branch-left)
@@ -12973,10 +13009,10 @@ While we are at it, we are also setting up a persistent undo-file for every file
     :config
     (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo"))))
 
-  (add-hook 'prog-mode-hook 'undo-tree-mode)
-  (add-hook 'text-mode-hook 'undo-tree-mode)
-  (add-hook 'org-mode-hook 'undo-tree-mode)
-  (add-hook 'latex-mode-hook 'undo-tree-mode)
+  ;; (add-hook 'prog-mode-hook 'undo-tree-mode)
+  ;; (add-hook 'text-mode-hook 'undo-tree-mode)
+  ;; (add-hook 'org-mode-hook 'undo-tree-mode)
+  ;; (add-hook 'latex-mode-hook 'undo-tree-mode)
 #+end_src
 *** Hydra
 :PROPERTIES:

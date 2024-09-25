@@ -139,7 +139,7 @@
         mode = "3840x2160";
         scale = "1";
         position = "-1280,0";
-        workspace = "1:一";
+        workspace = "11:M";
         output = "DP-8";
       };
       work_middle_middle_side = {

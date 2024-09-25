@@ -87,6 +87,8 @@ in
             "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
             "${modifier}+Ctrl+l" = "workspace 15:L";
             "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
+            "${modifier}+Ctrl+f" = "workspace 16:F";
+            "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
             "${modifier}+Left" = "focus left";
             "${modifier}+Right" = "focus right";
             "${modifier}+Down" = "focus down";
@@ -142,8 +144,8 @@ in
         titlebar = false;
       };
       assigns = {
-        "1:一" = [{ app_id = "firefox"; }];
-        "10:十" = [{ app_id = "teams-for-linux"; }];
+        "16:F" = [{ app_id = "firefox"; }];
+        "15:L" = [{ app_id = "teams-for-linux"; }];
       };
       floating = {
         border = 1;

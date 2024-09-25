@@ -46,7 +46,7 @@
       jellyfin = false;
       spotifyd = false;
       mpd = false;
-      matrix = false;
+      matrix = true;
     };
   };
 

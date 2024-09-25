@@ -22,6 +22,9 @@ in
       handyhotspot = { };
       vpnuser = { };
       vpnpass = { };
+      wireguardpriv = { };
+      wireguardpub = { };
+      wireguardendpoint = { };
     };
     templates = {
       "network-manager.env".content = ''
@@ -33,6 +36,9 @@ in
         HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
         VPNUSER=${config.sops.placeholder.vpnuser}
         VPNPASS=${config.sops.placeholder.vpnpass}
+        WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
+        WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
+        WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
       '';
     };
   };

@@ -151,6 +151,29 @@
             };
           };
 
+          wireguardvpn = {
+            connection = {
+              id = "HomeVPN";
+              type = "wireguard";
+              autoconnect = "false";
+              interface-name = "wg1";
+            };
+            wireguard = { private-key = "$WIREGUARDPRIV"; };
+            "wireguard-peer.$WIREGUARDPUB" = {
+              endpoint = "$WIREGUARDENDPOINT";
+              allowed-ips = "0.0.0.0/0";
+            };
+            ipv4 = {
+              method = "ignore";
+              address1 = "192.168.3.3/32";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "ignore";
+            };
+            proxy = { };
+          };
+
           "sweden-aes-128-cbc-udp-dns" = {
             connection = {
               autoconnect = "false";

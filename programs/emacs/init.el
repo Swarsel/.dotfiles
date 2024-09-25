@@ -1549,7 +1549,7 @@ create a new one."
 (use-package ein)
 
 (use-package undo-tree
-  ;; :init (global-undo-tree-mode)
+  :init (global-undo-tree-mode)
   :bind (:map undo-tree-visualizer-mode-map
               ("h" . undo-tree-visualize-switch-branch-left)
               ("l" . undo-tree-visualize-switch-branch-left)
@@ -1558,10 +1558,10 @@ create a new one."
   :config
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo"))))
 
-(add-hook 'prog-mode-hook 'undo-tree-mode)
-(add-hook 'text-mode-hook 'undo-tree-mode)
-(add-hook 'org-mode-hook 'undo-tree-mode)
-(add-hook 'latex-mode-hook 'undo-tree-mode)
+;; (add-hook 'prog-mode-hook 'undo-tree-mode)
+;; (add-hook 'text-mode-hook 'undo-tree-mode)
+;; (add-hook 'org-mode-hook 'undo-tree-mode)
+;; (add-hook 'latex-mode-hook 'undo-tree-mode)
 
 (use-package hydra)
 
