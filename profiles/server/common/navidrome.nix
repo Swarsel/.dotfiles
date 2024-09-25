@@ -19,7 +19,7 @@
           isSystemUser = true;
           uid = 61593;
           group = "navidrome";
-          extraGroups = [ "audio" "utmp" "users" ];
+          extraGroups = [ "audio" "utmp" "users" "pipewire" ];
         };
       };
     };
@@ -44,6 +44,7 @@
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
         ScanSchedule = "@every 24h";
+        MPVPath = "${pkgs.mpv}/bin/mpv";
         Jukebox = {
           Enabled = true;
           Default = "pch";
