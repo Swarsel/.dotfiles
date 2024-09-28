@@ -11,6 +11,9 @@
       group = "spotifyd";
       extraGroups = [ "audio" "utmp" ];
     };
+
+    networking.firewall.allowedTCPPorts = [ 1025 ];
+
     services.spotifyd = {
       enable = true;
       settings = {
