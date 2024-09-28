@@ -9,10 +9,12 @@
       isSystemUser = true;
       uid = 65136;
       group = "spotifyd";
-      extraGroups = [ "audio" "utmp" ];
+      extraGroups = [ "audio" "utmp" "pipewire" ];
     };
 
     networking.firewall.allowedTCPPorts = [ 1025 ];
+
+    services.pipewire.systemWide = true;
 
     services.spotifyd = {
       enable = true;
@@ -20,7 +22,7 @@
         global = {
           dbus_type = "session";
           use_mpris = false;
-          device = "default:CARD=PCH";
+          device = "sysdefault:CARD=PCH";
           device_name = "SwarselSpot";
           mixer = "alsa";
           zeroconf_port = 1025;
