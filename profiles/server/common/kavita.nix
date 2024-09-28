@@ -5,6 +5,11 @@
       calibre
     ];
 
+
+    users.users.jellyfin = {
+      extraGroups = [ "users" ];
+    };
+
     sops.secrets.kavita = { owner = "kavita"; };
 
     networking.firewall.allowedTCPPorts = [ 8080 ];
