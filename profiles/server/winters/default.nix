@@ -28,7 +28,7 @@
   networking = {
     hostName = "winters";
     hostId = "b7778a4a";
-    firewall.enable = false;
+    firewall.enable = true;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 
@@ -41,10 +41,10 @@
     flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;
-      kavita = false;
+      kavita = true;
       navidrome = true;
-      jellyfin = false;
-      spotifyd = false;
+      jellyfin = true;
+      spotifyd = true;
       mpd = false;
       matrix = true;
     };
