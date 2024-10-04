@@ -17,7 +17,7 @@ in
       leon = { path = "/run/user/1000/secrets/leon"; };
       swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
       github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-      caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+      # caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
     };
   };
 }

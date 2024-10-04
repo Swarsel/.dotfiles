@@ -460,7 +460,7 @@ create a new one."
 
 ;; use UTF-8 everywhere
 (set-language-environment "UTF-8")
-
+(profiler-start 'cpu)
 ;; set default font size
 (defvar swarsel/default-font-size 130)
 (setq swarsel-standard-font "FiraCode Nerd Font Mono"
@@ -479,7 +479,9 @@ create a new one."
 (setq require-final-newline t)
 (winner-mode 1)
 (setq load-prefer-newer t)
-
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+(global-so-long-mode)
 (setq undo-limit 80000000
       evil-want-fine-undo t
       auto-save-default t
@@ -497,8 +499,8 @@ create a new one."
       initial-scratch-message nil)
 
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-(add-hook 'text-mode-hook 'display-line-numbers-mode)
-(global-visual-line-mode 1)
+;; (add-hook 'text-mode-hook 'display-line-numbers-mode)
+;; (global-visual-line-mode 1)
 
 (setq custom-safe-themes t)
 
@@ -507,6 +509,21 @@ create a new one."
 (when (native-comp-available-p)
   (setq native-comp-async-report-warnings-errors 'silent) ; Emacs 28 with native compilation
   (setq native-compile-prune-cache t)) ; Emacs 29
+
+(setq garbage-collection-messages t)
+(defmacro k-time (&rest body)
+  "Measure and return the time it takes evaluating BODY."
+  `(let ((time (current-time)))
+     ,@body
+     (float-time (time-since time))))
+
+
+;; When idle for 15sec run the GC no matter what.
+(defvar k-gc-timer
+  (run-with-idle-timer 15 t
+                       (lambda ()
+                         (message "Garbage Collector has run for %.06fsec"
+                                  (k-time (garbage-collect))))))
 
 (setq-default indent-tabs-mode nil
               tab-width 2)
@@ -556,7 +573,7 @@ create a new one."
   (setq evil-want-C-i-jump nil) ; jumping with C-i
   (setq evil-want-Y-yank-to-eol t) ; give Y some utility
   (setq evil-shift-width 2) ; uniform indent
-  (setq evil-respect-visual-line-mode t) ; i am torn on this one
+  (setq evil-respect-visual-line-mode nil) ; i am torn on this one
   (setq evil-split-window-below t)
   (setq evil-vsplit-window-right t)
   :config
@@ -817,8 +834,11 @@ create a new one."
 
 (setq-default indicate-buffer-boundaries t)
 
-(setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
-      auth-source-cache-expiry nil) ; default is 2h
+;; (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
+      ;; auth-source-cache-expiry nil) ; default is 2h
+
+(setq auth-sources '( "~/.emacs.d/.authinfo")
+      auth-source-cache-expiry nil)
 
 (use-package org
   ;;:diminish (org-indent-mode)
@@ -1044,10 +1064,10 @@ create a new one."
   (setq visual-fill-column-width 90)
   (setq indicate-buffer-boundaries nil)
   (setq inhibit-message nil)
-  (breadcrumb-mode 0)
+  ;; (breadcrumb-mode 0)
   (org-display-inline-images)
   (global-hl-line-mode 0)
-  (display-line-numbers-mode 0)
+  ;; (display-line-numbers-mode 0)
   (org-modern-mode 0)
   (evil-insert-state 1)
   (beginning-of-buffer)
@@ -1071,9 +1091,9 @@ create a new one."
   (setq visual-fill-column-width 150)
   (setq indicate-buffer-boundaries t)
   (setq inhibit-message nil)
-  (breadcrumb-mode 1)
+  ;; (breadcrumb-mode 1)
   (global-hl-line-mode 1)
-  (display-line-numbers-mode 1)
+  ;; (display-line-numbers-mode 1)
   (org-remove-inline-images)
   (org-modern-mode 1)
   (evil-normal-state 1)
@@ -1485,7 +1505,8 @@ create a new one."
 (defalias 'start-lsp-server #'eglot)
 
 (use-package breadcrumb
-  :config (breadcrumb-mode))
+  ;; :config (breadcrumb-mode)
+  )
 
 (setq backup-by-copying-when-linked t)
 
@@ -1839,3 +1860,24 @@ create a new one."
 
 (use-package vterm
     :ensure t)
+
+(use-package mmm-mode)
+(setq mmm-global-mode 'maybe)
+(mmm-add-mode-ext-class 'org-mode nil 'org-nix)
+(mmm-add-mode-ext-class 'org-mode nil 'org-elisp)
+
+(mmm-add-group
+ 'org-nix
+ '((nix-src-block
+    :submode nix-mode
+    :face org-block
+    :front "#\\+BEGIN_SRC nix.*\n"
+    :back "#\\+END_SRC")))
+
+(mmm-add-group
+ 'org-elisp
+ '((elisp-src-block
+    :submode emacs-lisp-mode
+    :face org-block
+    :front "#\\+BEGIN_SRC emacs-lisp.*\n"
+    :back "#\\+END_SRC")))

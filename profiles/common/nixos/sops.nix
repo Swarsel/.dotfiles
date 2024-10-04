@@ -25,6 +25,12 @@ in
       wireguardpriv = { };
       wireguardpub = { };
       wireguardendpoint = { };
+      stashuser = { };
+      stashpass = { };
+      githubforgeuser = { };
+      githubforgepass = { };
+      gitlabforgeuser = { };
+      gitlabforgepass = { };
     };
     templates = {
       "network-manager.env".content = ''
@@ -40,6 +46,14 @@ in
         WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
         WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
       '';
+      ".authinfo" = {
+        path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
+        content = ''
+          machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
+          machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password glpat-72Wpzs2uuz--LfNHZFzW ${config.sops.placeholder.githubforgepass}
+          machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
+        '';
+      };
     };
   };
 }

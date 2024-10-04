@@ -47,7 +47,7 @@
   };
 
   services.emacs = {
-    enable = true;
+    enable = false;
     # socketActivation.enable = false;
     # startWithUserSession = "graphical";
   };

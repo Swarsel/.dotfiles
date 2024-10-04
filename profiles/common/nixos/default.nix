@@ -35,6 +35,7 @@
     # ./yubikey-touch-detector.nix
     ./safeeyes.nix
     ./lid.nix
+    ./emacs.nix
   ];
 
   nix =

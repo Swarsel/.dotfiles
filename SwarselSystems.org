@@ -5169,6 +5169,7 @@ Also, the system state version is set here. No need to touch it.
       # ./yubikey-touch-detector.nix
       ./safeeyes.nix
       ./lid.nix
+      ./emacs.nix
     ];
 
     nix =
@@ -5746,6 +5747,12 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         wireguardpriv = { };
         wireguardpub = { };
         wireguardendpoint = { };
+        stashuser = { };
+        stashpass = { };
+        githubforgeuser = { };
+        githubforgepass = { };
+        gitlabforgeuser = { };
+        gitlabforgepass = { };
       };
       templates = {
         "network-manager.env".content = ''
@@ -5761,6 +5768,14 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
           WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
         '';
+        ".authinfo" = {
+          path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
+          content = ''
+            machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
+            machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password glpat-72Wpzs2uuz--LfNHZFzW ${config.sops.placeholder.githubforgepass}
+            machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
+          '';
+        };
       };
     };
   }
@@ -6581,6 +6596,18 @@ This turns off the display when the lid is closed.
           fi
         '';
     };
+  }
+#+end_src
+
+**** Emacs
+#+begin_src nix :tangle profiles/common/nixos/emacs.nix
+  _:
+  {
+
+      services.emacs = {
+        enable = true;
+      };
+
   }
 #+end_src
 
@@ -7891,7 +7918,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         leon = { path = "/run/user/1000/secrets/leon"; };
         swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
         github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-        caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+        # caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
       };
     };
   }
@@ -9078,7 +9105,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
     };
 
     services.emacs = {
-      enable = true;
+      enable = false;
       # socketActivation.enable = false;
       # startWithUserSession = "graphical";
     };
@@ -10215,23 +10242,24 @@ In the end, we need to restore those values to values that will work during norm
 Also packed into the hook function is the line =(fset 'epg-wait-for-status 'ignore)=. This line is needed at the end of the configuration in order to allow for my Yubikey to be used to encrypt and decrypt =.gpg= files. Without it, Emacs will just hang forever and basically crash.
 
 #+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
-  (defvar swarsel-file-name-handler-alist file-name-handler-alist)
-  (defvar swarsel-vc-handled-backends vc-handled-backends)
+    (defvar swarsel-file-name-handler-alist file-name-handler-alist)
+    (defvar swarsel-vc-handled-backends vc-handled-backends)
 
-  (setq gc-cons-threshold most-positive-fixnum
-        gc-cons-percentage 0.6
-        file-name-handler-alist nil
-        vc-handled-backends nil)
+    (setq gc-cons-threshold most-positive-fixnum
+          gc-cons-percentage 0.6
+          file-name-handler-alist nil
+          vc-handled-backends nil)
 
-  (add-hook 'emacs-startup-hook
-            (lambda ()
-              (progn
-                (setq gc-cons-threshold (* 1000 1000 8)
-                      gc-cons-percentage 0.1
-                      file-name-handler-alist swarsel-file-name-handler-alist
-                      vc-handled-backends swarsel-vc-handled-backends)
-                (fset 'epg-wait-for-status 'ignore)
-                )))
+    (add-hook 'emacs-startup-hook
+              (lambda ()
+                (progn
+                  ;; (setq gc-cons-threshold (* 1000 1000 8)
+                     (setq gc-cons-threshold #x40000000
+                        gc-cons-percentage 0.1
+                        file-name-handler-alist swarsel-file-name-handler-alist
+                        vc-handled-backends swarsel-vc-handled-backends)
+                  (fset 'epg-wait-for-status 'ignore)
+                  )))
 
 #+end_src
 *** Setup frames
@@ -11073,7 +11101,7 @@ Here I set up some things that are too minor to put under other categories.
 
   ;; use UTF-8 everywhere
   (set-language-environment "UTF-8")
-
+  (profiler-start 'cpu)
   ;; set default font size
   (defvar swarsel/default-font-size 130)
   (setq swarsel-standard-font "FiraCode Nerd Font Mono"
@@ -11092,7 +11120,9 @@ Here I set up some things that are too minor to put under other categories.
   (setq require-final-newline t)
   (winner-mode 1)
   (setq load-prefer-newer t)
-
+  (setq-default bidi-paragraph-direction 'left-to-right)
+  (setq bidi-inhibit-bpa t)
+  (global-so-long-mode)
   (setq undo-limit 80000000
         evil-want-fine-undo t
         auto-save-default t
@@ -11110,8 +11140,8 @@ Here I set up some things that are too minor to put under other categories.
         initial-scratch-message nil)
 
   (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-  (add-hook 'text-mode-hook 'display-line-numbers-mode)
-  (global-visual-line-mode 1)
+  ;; (add-hook 'text-mode-hook 'display-line-numbers-mode)
+  ;; (global-visual-line-mode 1)
 
 #+end_src
 
@@ -11143,7 +11173,24 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
     (setq native-compile-prune-cache t)) ; Emacs 29
 
 #+end_src
+*** Better garbage collection
+#+begin_src emacs-lisp
+(setq garbage-collection-messages t)
+(defmacro k-time (&rest body)
+  "Measure and return the time it takes evaluating BODY."
+  `(let ((time (current-time)))
+     ,@body
+     (float-time (time-since time))))
 
+
+;; When idle for 15sec run the GC no matter what.
+(defvar k-gc-timer
+  (run-with-idle-timer 15 t
+                       (lambda ()
+                         (message "Garbage Collector has run for %.06fsec"
+                                  (k-time (garbage-collect))))))
+
+#+end_src
 *** Indentation
 :PROPERTIES:
 :CUSTOM_ID: h:6527b3ce-b76d-431a-9960-a57da7c53e1b
@@ -11234,7 +11281,7 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
     (setq evil-want-C-i-jump nil) ; jumping with C-i
     (setq evil-want-Y-yank-to-eol t) ; give Y some utility
     (setq evil-shift-width 2) ; uniform indent
-    (setq evil-respect-visual-line-mode t) ; i am torn on this one
+    (setq evil-respect-visual-line-mode nil) ; i am torn on this one
     (setq evil-split-window-below t)
     (setq evil-vsplit-window-right t)
     :config
@@ -11758,9 +11805,11 @@ This defines the authentication sources used by =org-calfw= ([[#h:c760f04e-622f-
 
 #+begin_src emacs-lisp
 
-  (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
-        auth-source-cache-expiry nil) ; default is 2h
+  ;; (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
+        ;; auth-source-cache-expiry nil) ; default is 2h
 
+  (setq auth-sources '( "~/.emacs.d/.authinfo")
+        auth-source-cache-expiry nil)
 #+end_src
 ** Modules
 :PROPERTIES:
@@ -12171,10 +12220,10 @@ Recently I have grown fond of holding presentations using Emacs :)
     (setq visual-fill-column-width 90)
     (setq indicate-buffer-boundaries nil)
     (setq inhibit-message nil)
-    (breadcrumb-mode 0)
+    ;; (breadcrumb-mode 0)
     (org-display-inline-images)
     (global-hl-line-mode 0)
-    (display-line-numbers-mode 0)
+    ;; (display-line-numbers-mode 0)
     (org-modern-mode 0)
     (evil-insert-state 1)
     (beginning-of-buffer)
@@ -12198,9 +12247,9 @@ Recently I have grown fond of holding presentations using Emacs :)
     (setq visual-fill-column-width 150)
     (setq indicate-buffer-boundaries t)
     (setq inhibit-message nil)
-    (breadcrumb-mode 1)
+    ;; (breadcrumb-mode 1)
     (global-hl-line-mode 1)
-    (display-line-numbers-mode 1)
+    ;; (display-line-numbers-mode 1)
     (org-remove-inline-images)
     (org-modern-mode 1)
     (evil-normal-state 1)
@@ -12978,8 +13027,9 @@ This simple shows the path to the current file on the top of the buffer - I just
 
 #+begin_src emacs-lisp
 
-  (use-package breadcrumb
-    :config (breadcrumb-mode))
+    (use-package breadcrumb
+      ;; :config (breadcrumb-mode)
+      )
 
 #+end_src
 
@@ -13541,5 +13591,32 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 (use-package vterm
     :ensure t)
+
+#+end_src
+
+*** mmm-mode
+
+#+begin_src emacs-lisp
+
+  (use-package mmm-mode)
+  (setq mmm-global-mode 'maybe)
+  (mmm-add-mode-ext-class 'org-mode nil 'org-nix)
+  (mmm-add-mode-ext-class 'org-mode nil 'org-elisp)
+
+  (mmm-add-group
+   'org-nix
+   '((nix-src-block
+      :submode nix-mode
+      :face org-block
+      :front "#\\+BEGIN_SRC nix.*\n"
+      :back "#\\+END_SRC")))
+
+  (mmm-add-group
+   'org-elisp
+   '((elisp-src-block
+      :submode emacs-lisp-mode
+      :face org-block
+      :front "#\\+BEGIN_SRC emacs-lisp.*\n"
+      :back "#\\+END_SRC")))
 
 #+end_src
