@@ -229,7 +229,7 @@ in
           };
           caption_in_message = true;
           permissions = {
-            "*" = "relaybot";
+            "*" = "relay";
             "@swarsel:${matrixDomain}" = "admin";
           };
         };

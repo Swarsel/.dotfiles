@@ -2058,6 +2058,8 @@ My work machine. Built for more security, this is the gold standard of my config
         mpd = false;
         matrix = true;
         nextcloud = true;
+        immich = true;
+        paperless = true;
       };
     };
 
@@ -4742,7 +4744,9 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
     options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
     options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
-    options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloid on server";
+    options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
+    options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
+    options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
   }
 #+end_src
 
@@ -6634,6 +6638,7 @@ Also, the system state version is set here. No need to touch it.
       ./mpd.nix
       ./matrix.nix
       ./nextcloud.nix
+      ./immich.nix
     ];
 
     nix =
@@ -6725,7 +6730,7 @@ Also, the system state version is set here. No need to touch it.
 
         enable = true;
         openFirewall = true;
-        shares.Eternor = {
+        settingssys.Eternor = {
           browseable = "yes";
           "read only" = "no";
           "guest ok" = "no";
@@ -7336,7 +7341,7 @@ Also, the system state version is set here. No need to touch it.
             };
             caption_in_message = true;
             permissions = {
-              "*" = "relaybot";
+              "*" = "relay";
               "@swarsel:${matrixDomain}" = "admin";
             };
           };
@@ -7419,14 +7424,15 @@ Also, the system state version is set here. No need to touch it.
 
       services.nextcloud = {
         enable = true;
+        packages = pkgs.nextcloud30;
         hostName = "stash.swarsel.win";
         home = "/Vault/apps/nextcloud";
         datadir = "/Vault/data/nextcloud";
-        https: true;
+        https = true;
         configureRedis = true;
         maxUploadSize = "4G";
         extraApps = {
-          inherit (pkgs.nextcloud30Packages.apps) mail calendar contact cospend phonetrack polls tasks;
+          inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks;
         };
         config = {
           adminuser = "admin";
@@ -7441,21 +7447,50 @@ Also, the system state version is set here. No need to touch it.
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
+            # config is automatically added by nixos nextcloud config.
+            # hence, only provide certificate
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
+**** immich
+
+#+begin_src nix :tangle profiles/server/common/immich.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.immich {
+
+    users.users.immich = {
+      extraGroups = [ "users" ];
+    };
+
+      # sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
+
+      services.immich = {
+        enable = true;
+        port = 3001
+        openFirewall = true;
+        mediaLocation = "/Vault/Eternor/Bilder";
+        home = "/Vault/apps/nextcloud";
+      };
+
+
+      services.nginx = {
+        virtualHosts = {
+          "shots.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "https://192.168.1.5";
+                proxyPass = "http://192.168.1.2:3001";
                 extraConfig = ''
-                  client_max_body_size 0;
+                  client_max_body_size    0;
                 '';
-              };
-              # "/push/" = {
-              # proxyPass = "http://192.168.2.5:7867";
-              # };
-              "/.well-known/carddav" = {
-                return = "301 $scheme://$host/remote.php/dav";
-              };
-              "/.well-known/caldav" = {
-                return = "301 $scheme://$host/remote.php/dav";
               };
             };
           };

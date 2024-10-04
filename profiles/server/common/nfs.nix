@@ -20,7 +20,7 @@
 
       enable = true;
       openFirewall = true;
-      shares.Eternor = {
+      settingssys.Eternor = {
         browseable = "yes";
         "read only" = "no";
         "guest ok" = "no";

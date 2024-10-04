@@ -6,14 +6,15 @@
 
     services.nextcloud = {
       enable = true;
+      packages = pkgs.nextcloud30;
       hostName = "stash.swarsel.win";
       home = "/Vault/apps/nextcloud";
       datadir = "/Vault/data/nextcloud";
-      https: true;
+      https = true;
       configureRedis = true;
       maxUploadSize = "4G";
       extraApps = {
-        inherit (pkgs.nextcloud30Packages.apps) mail calendar contact cospend phonetrack polls tasks;
+        inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks;
       };
       config = {
         adminuser = "admin";
@@ -28,23 +29,8 @@
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://192.168.1.5";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-            # "/push/" = {
-            # proxyPass = "http://192.168.2.5:7867";
-            # };
-            "/.well-known/carddav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-            "/.well-known/caldav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-          };
+          # config is automatically added by nixos nextcloud config.
+          # hence, only provide certificate
         };
       };
     };

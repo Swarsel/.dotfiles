@@ -20,6 +20,7 @@
     ./mpd.nix
     ./matrix.nix
     ./nextcloud.nix
+    ./immich.nix
   ];
 
   nix =

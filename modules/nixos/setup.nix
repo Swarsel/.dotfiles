@@ -16,5 +16,7 @@ in
   options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
   options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
   options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
-  options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloid on server";
+  options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
+  options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
+  options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
 }

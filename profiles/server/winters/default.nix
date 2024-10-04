@@ -48,6 +48,8 @@
       mpd = false;
       matrix = true;
       nextcloud = true;
+      immich = true;
+      paperless = true;
     };
   };
 
