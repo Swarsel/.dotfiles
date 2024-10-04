@@ -47,6 +47,7 @@
       spotifyd = true;
       mpd = false;
       matrix = true;
+      nextcloud = true;
     };
   };
 

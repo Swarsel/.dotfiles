@@ -2057,6 +2057,7 @@ My work machine. Built for more security, this is the gold standard of my config
         spotifyd =true;
         mpd = false;
         matrix = true;
+        nextcloud = true;
       };
     };
 
@@ -2266,6 +2267,7 @@ In the long run, I am thinking about a transition to kubernetes or using just a 
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
       virtualHosts = {
+
 
         "stash.swarsel.win" = {
           enableACME = true;
@@ -4740,6 +4742,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
     options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
     options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
+    options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloid on server";
   }
 #+end_src
 
@@ -5169,7 +5172,6 @@ Also, the system state version is set here. No need to touch it.
       # ./yubikey-touch-detector.nix
       ./safeeyes.nix
       ./lid.nix
-      ./emacs.nix
     ];
 
     nix =
@@ -5769,10 +5771,11 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
         '';
         ".authinfo" = {
+          owner = "swarsel";
           path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
           content = ''
             machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
-            machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password glpat-72Wpzs2uuz--LfNHZFzW ${config.sops.placeholder.githubforgepass}
+            machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password ${config.sops.placeholder.githubforgepass}
             machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
           '';
         };
@@ -6599,18 +6602,6 @@ This turns off the display when the lid is closed.
   }
 #+end_src
 
-**** Emacs
-#+begin_src nix :tangle profiles/common/nixos/emacs.nix
-  _:
-  {
-
-      services.emacs = {
-        enable = true;
-      };
-
-  }
-#+end_src
-
 *** Server
 **** Imports, stateVersion
 
@@ -6642,6 +6633,7 @@ Also, the system state version is set here. No need to touch it.
       ./spotifyd.nix
       ./mpd.nix
       ./matrix.nix
+      ./nextcloud.nix
     ];
 
     nix =
@@ -7414,6 +7406,64 @@ Also, the system state version is set here. No need to touch it.
 
   }
 
+#+end_src
+
+**** nextcloud
+
+#+begin_src nix :tangle profiles/server/common/nextcloud.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.nextcloud {
+
+      sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
+
+      services.nextcloud = {
+        enable = true;
+        hostName = "stash.swarsel.win";
+        home = "/Vault/apps/nextcloud";
+        datadir = "/Vault/data/nextcloud";
+        https: true;
+        configureRedis = true;
+        maxUploadSize = "4G";
+        extraApps = {
+          inherit (pkgs.nextcloud30Packages.apps) mail calendar contact cospend phonetrack polls tasks;
+        };
+        config = {
+          adminuser = "admin";
+          adminpassFile = config.sops.secrets.nextcloudadminpass.path;
+        };
+      };
+
+
+      services.nginx = {
+        virtualHosts = {
+          "stash.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://192.168.1.5";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+              # "/push/" = {
+              # proxyPass = "http://192.168.2.5:7867";
+              # };
+              "/.well-known/carddav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+              "/.well-known/caldav" = {
+                return = "301 $scheme://$host/remote.php/dav";
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
 #+end_src
 
 
@@ -8514,75 +8564,91 @@ zsh is the most convenient shell for me and it happens to be super neat to confi
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
 
 #+begin_src nix :tangle profiles/common/home/zsh.nix
-  { config, pkgs, lib, ... }:
-  {
-    programs.zsh = {
-      enable = true;
-      shellAliases = lib.recursiveUpdate {
-        hg = "history | grep";
-        hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
-        nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch-stay = "cd ~/.dotfiles; git restore flake.lock; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        edithome = "e -w ~/.dotfiles/SwarselSystems.org";
-        magit = "emacsclient -nc -e \"(magit-status)\"";
-        config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
-        g = "git";
-        c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
-        passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
-        passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-        hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-        cd = "z";
-        cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
-        nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
-        fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-        lt = "ls -lath";
-        oldshell = "nix shell github:nixos/nixpkgs/\"$1\" \"$2\"";
-      }
-        config.swarselsystems.shellAliases;
-      autosuggestion.enable = true;
-      enableCompletion = true;
-      syntaxHighlighting.enable = true;
-      autocd = false;
-      cdpath = [
-        "~/.dotfiles"
-        # "~/Documents/GitHub"
-      ];
-      defaultKeymap = "emacs";
-      dirHashes = {
-        dl = "$HOME/Downloads";
-        gh = "$HOME/Documents/GitHub";
-      };
-      history = {
-        expireDuplicatesFirst = true;
-        path = "$HOME/.histfile";
-        save = 10000;
-        size = 10000;
-      };
-      historySubstringSearch.enable = true;
-      plugins = [
-        {
-          name = "fzf-tab";
-          src = pkgs.zsh-fzf-tab;
+    { config, pkgs, lib, ... }:
+    {
+      programs.zsh = {
+        enable = true;
+        shellAliases = lib.recursiveUpdate {
+          hg = "history | grep";
+          hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
+          nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+          nswitch-stay = "cd ~/.dotfiles; git restore flake.lock; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+          edithome = "e -w ~/.dotfiles/SwarselSystems.org";
+          magit = "emacsclient -nc -e \"(magit-status)\"";
+          config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+          g = "git";
+          c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
+          passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+          passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+          hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
+          cd = "z";
+          cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+          nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+          fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
+          lt = "ls -lath";
+          oldshell = "nix shell github:nixos/nixpkgs/\"$1\" \"$2\"";
         }
-      ];
-      initExtra = ''
-            bindkey "^[[1;5D" backward-word
-            bindkey "^[[1;5C" forward-word
+          config.swarselsystems.shellAliases;
+        autosuggestion.enable = true;
+        enableCompletion = true;
+        syntaxHighlighting.enable = true;
+        autocd = false;
+        cdpath = [
+          "~/.dotfiles"
+          # "~/Documents/GitHub"
+        ];
+        defaultKeymap = "emacs";
+        dirHashes = {
+          dl = "$HOME/Downloads";
+          gh = "$HOME/Documents/GitHub";
+        };
+        history = {
+          expireDuplicatesFirst = true;
+          path = "$HOME/.histfile";
+          save = 10000;
+          size = 10000;
+        };
+        historySubstringSearch.enable = true;
+        plugins = [
+          {
+            name = "fzf-tab";
+            src = pkgs.zsh-fzf-tab;
+          }
+        ];
+        initExtra = ''
+              bindkey "^[[1;5D" backward-word
+              bindkey "^[[1;5C" forward-word
 
-            vterm_printf() {
-              if [ -n "$TMUX" ] && ([ "''${TERM%%-*}" = "tmux" ] || [ "''${TERM%%-*}" = "screen" ]); then
-                # Tell tmux to pass the escape sequences through
-                printf "\ePtmux;\e\e]%s\007\e\\" "$1"
-              elif [ "''${TERM%%-*}" = "screen" ]; then
-                # GNU screen (screen, screen-256color, screen-256color-bce)
-                printf "\eP\e]%s\007\e\\" "$1"
-              else
-                printf "\e]%s\e\\" "$1"
-              fi
-                       }
-      '';
-    };
+              vterm_printf() {
+                if [ -n "$TMUX" ] && ([ "''${TERM%%-*}" = "tmux" ] || [ "''${TERM%%-*}" = "screen" ]); then
+                  # Tell tmux to pass the escape sequences through
+                  printf "\ePtmux;\e\e]%s\007\e\\" "$1"
+                elif [ "''${TERM%%-*}" = "screen" ]; then
+                  # GNU screen (screen, screen-256color, screen-256color-bce)
+                  printf "\eP\e]%s\007\e\\" "$1"
+                else
+                  printf "\e]%s\e\\" "$1"
+                fi
+                         }
+  vterm_prompt_end() {
+      vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
   }
+  setopt PROMPT_SUBST
+  PROMPT=$PROMPT'%{$(vterm_prompt_end)%}'
+
+  vterm_cmd() {
+    local vterm_elisp
+    vterm_elisp=""
+    while [ $# -gt 0 ]; do
+        vterm_elisp="$vterm_elisp""$(printf '"%s" ' "$(printf "%s" "$1" | sed -e 's|\\|\\\\|g' -e 's|"|\\"|g')")"
+        shift
+    done
+    vterm_printf "51;E$vterm_elisp"
+}
+
+        '';
+      };
+    }
 #+end_src
 
 **** zellij
@@ -9105,7 +9171,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
     };
 
     services.emacs = {
-      enable = false;
+      enable = true;
       # socketActivation.enable = false;
       # startWithUserSession = "graphical";
     };
@@ -12855,6 +12921,8 @@ Tramp allows for SSH access of files over Emacs. I have no ideas what the option
                              "-o ControlMaster=auto -o ControlPersist=yes"))
     )
 
+  (setq vterm-tramp-shells '(("ssh" "'sh'")))
+
 
 
 #+end_src
@@ -13589,34 +13657,114 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 #+begin_src emacs-lisp
 
-(use-package vterm
-    :ensure t)
+  (use-package vterm
+      :ensure t)
 
-#+end_src
+  (defun sudo-find-file (file-name)
+  "Like find file, but opens the file as root."
+  (interactive "FSudo Find File: ")
+  (let ((tramp-file-name (concat "/sudo::" (expand-file-name file-name))))
+    (find-file tramp-file-name)))
+  ;;; vterm/config.el -*- lexical-binding: t; -*-
 
-*** mmm-mode
+    ;; Original functions overwrites tramp path with a guessed path.
+    ;; However it breaks if remote fqdn/hostname is not resolvale by local machine
+    ;; could also break on port forwarding, multihops,
+    ;; custom protocol such as: docker, vagrant, ...
+    ;; *if* you try to shell-side configure them.
+    ;; Easily testable with vagrant ssh port on localhost.
+    ;; My workflow is to open a tramp dired on / of the remote to get a
+    ;; "foothold" then open vterms from there.
+    (defun vterm--get-directory (path)
+      "[OVERLOADED] Get normalized directory to PATH."
+      (when path
+        (let (directory)
+          (if (string-match "^\\(.*?\\)@\\(.*?\\):\\(.*?\\)$" path)
+              (progn
+                (let ((user (match-string 1 path))
+                      (host (match-string 2 path))
+                      (dir (match-string 3 path)))
+                  (if (and (string-equal user user-login-name)
+                           (string-equal host (system-name)))
+                      (progn
+                        (when (file-directory-p dir)
+                          (setq directory (file-name-as-directory dir))))
+                    (setq directory
+                          ;; Bellow is what i altered
+                          (file-name-as-directory (concat (file-remote-p default-directory) dir))))))
+            (when (file-directory-p path)
+              (setq directory (file-name-as-directory path))))
+          directory)))
+    ;; Injects the payload to the vterm buffer.
+    (defun me/vterm-load-config ()
+      "Pass local configuration files to vterm.
 
-#+begin_src emacs-lisp
+  Allows remote vterm to be shell-side configured,
+  without altering remote config.
+  Also adds my personal configuration that does not rely
+  too much on external packages.
+  Prints a reasuring message to proove good faith."
+      (interactive)
+      (let (;; Bellow messages to reassure other users that look at history
+            (reasuring-message (format "Configuring shell of user %s to be emacs comptible"
+                                       user-full-name))
+            (reasuring-notice "This action is shell local, it will not affect other shells")
+            ;; Bellow lies my configuration
+            (basic-func-script (f-read-text (concat (getenv "HOME")
+                                                    "/.emacs.d/shells/sources/functions.sh")))
+            ;; Bellow lies the vterm shell-side configuration
+            ;; Must be sourced last
+            (vterm-func-script (f-read-text (concat
+                                             (file-name-directory (find-library-name "vterm"))
+                                             "/etc/emacs-vterm-bash.sh"))))
+        (vterm-insert (format "# START: %s\n" reasuring-message))
+        (vterm-insert (format "# %s\n" reasuring-notice))
+        ;; Create one single block in history
+        (vterm-insert "{\n")
+        (vterm-insert basic-func-script)
+        (vterm-insert vterm-func-script)
+        (vterm-insert "}\n")
+        ;; End the single block in history
+        (vterm-insert (format "# %s\n" reasuring-notice))
+        (vterm-insert (format "# STOP: %s\n" reasuring-message))
+        )
+      )
 
-  (use-package mmm-mode)
-  (setq mmm-global-mode 'maybe)
-  (mmm-add-mode-ext-class 'org-mode nil 'org-nix)
-  (mmm-add-mode-ext-class 'org-mode nil 'org-elisp)
+    ;; find-file-other-window does not works great on remote:
+    ;; if given an absolute path on a remote host,
+    ;; the path will be understood as a local file since no
+    ;; tramp prefix is present, and bash does not care
+    ;; about tramp prefixes.
+    ;; Bellow we solve context before sending it to
+    ;; ffow
+    (defun me/vterm--find-file-other-window-wrapper (file)
+      "Help vterm find a FILE."
+      (find-file-other-window (me/vterm--ffow-resolver file)))
+    (defun me/vterm--ffow-resolver (file)
+      "Help vterm resolve FILE."
+      (cond
+       ;; "/sudo::"
+       ;; doom--sudo-file-path do the trick for us
+       ((s-starts-with-p "/sudo::" file)
+         (sudo-find-file
+          (concat (file-remote-p default-directory)
+                  (substring-no-properties file 7))))
+       ;; "/" means we want the "Relative root"
+       ;; try appending the remote prefix if relevent
+       ((s-starts-with-p "/" file)
+        (concat (file-remote-p default-directory) file))
+       ;; we got a relative path
+       ;; we don't need to help ffow to find it
+       (t
+        file)))
 
-  (mmm-add-group
-   'org-nix
-   '((nix-src-block
-      :submode nix-mode
-      :face org-block
-      :front "#\\+BEGIN_SRC nix.*\n"
-      :back "#\\+END_SRC")))
+    ;; The variable vterm-eval-cmds is a SERIOUSLY SENSIBLE variable !
+    ;; Do not be the guy that adds RCE into their config !
 
-  (mmm-add-group
-   'org-elisp
-   '((elisp-src-block
-      :submode emacs-lisp-mode
-      :face org-block
-      :front "#\\+BEGIN_SRC emacs-lisp.*\n"
-      :back "#\\+END_SRC")))
-
+    ;; Allow customed ffow to be called from vterm
+    ;; ffow should be as safe as find-file which is already trusted
+    ;; we append our resolver that only manipulate strings,
+    ;; Proove me wrong but i think it's safe.
+    (add-to-list 'vterm-eval-cmds '("find-file-other-window"
+                                    me/vterm--find-file-other-window-wrapper))
 #+end_src

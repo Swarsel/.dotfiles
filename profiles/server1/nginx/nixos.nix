@@ -70,6 +70,7 @@
     recommendedGzipSettings = true;
     virtualHosts = {
 
+
       "stash.swarsel.win" = {
         enableACME = true;
         forceSSL = true;

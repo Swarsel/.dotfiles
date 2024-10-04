@@ -19,6 +19,7 @@
     ./spotifyd.nix
     ./mpd.nix
     ./matrix.nix
+    ./nextcloud.nix
   ];
 
   nix =
