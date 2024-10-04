@@ -10,10 +10,9 @@
 
     services.immich = {
       enable = true;
-      port = 3001
-        openFirewall = true;
-      mediaLocation = "/Vault/Eternor/Bilder";
-      home = "/Vault/apps/nextcloud";
+      port = 3001;
+      openFirewall = true;
+      mediaLocation = "/Vault/Eternor/Immich";
     };
 
 
@@ -25,7 +24,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.2:3001";
+              proxyPass = "http://[::1]:3001";
               extraConfig = ''
                 client_max_body_size    0;
               '';

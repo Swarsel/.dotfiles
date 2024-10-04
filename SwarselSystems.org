@@ -6639,6 +6639,7 @@ Also, the system state version is set here. No need to touch it.
       ./matrix.nix
       ./nextcloud.nix
       ./immich.nix
+      ./paperless.nix
     ];
 
     nix =
@@ -6730,7 +6731,7 @@ Also, the system state version is set here. No need to touch it.
 
         enable = true;
         openFirewall = true;
-        settingssys.Eternor = {
+        settings.Eternor = {
           browseable = "yes";
           "read only" = "no";
           "guest ok" = "no";
@@ -7424,7 +7425,7 @@ Also, the system state version is set here. No need to touch it.
 
       services.nextcloud = {
         enable = true;
-        packages = pkgs.nextcloud30;
+        package = pkgs.nextcloud30;
         hostName = "stash.swarsel.win";
         home = "/Vault/apps/nextcloud";
         datadir = "/Vault/data/nextcloud";
@@ -7472,10 +7473,9 @@ Also, the system state version is set here. No need to touch it.
 
       services.immich = {
         enable = true;
-        port = 3001
+        port = 3001;
         openFirewall = true;
-        mediaLocation = "/Vault/Eternor/Bilder";
-        home = "/Vault/apps/nextcloud";
+        mediaLocation = "/Vault/Eternor/Immich";
       };
 
 
@@ -7487,7 +7487,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.1.2:3001";
+                proxyPass = "http://[::1]:3001";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
@@ -7499,6 +7499,59 @@ Also, the system state version is set here. No need to touch it.
     };
 
   }
+#+end_src
+
+**** paperless
+
+#+begin_src nix :tangle profiles/server/common/paperless.nix
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.immich {
+
+    users.users.paperless = {
+      extraGroups = [ "users" ];
+    };
+
+
+    sops.secrets.paperless_admin = { owner = "paperless"; };
+
+    services.paperless = {
+      enable = true;
+      mediaDir = "/Vault/Eternor/Dokumente";
+      user = "paperless";
+      port = 28981;
+      passwordFile = config.sops.secrets.paperless_admin.path;
+      address = "0.0.0.0";
+      extraConfig = {
+        PAPERLESS_OCR_LANGUAGE = "deu+eng";
+        PAPERLESS_URL = "scan.swarsel.win";
+        PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
+          optimize = 1;
+          pdfa_image_compression = "lossless";
+        };
+      };
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "scan.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://192.168.1.2:28981";
+              extraConfig = ''
+                client_max_body_size    0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+
+}
 #+end_src
 
 
