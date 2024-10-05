@@ -9,6 +9,6 @@ ip route replace default via $GATEWAYIP table $VPNUSER
 ip route append default via 127.0.0.1 dev lo table $VPNUSER
 ip route flush cache
 
-/etc/openvpn/update-resolv-conf
+bash /etc/openvpn/update-resolv-conf
 
 exit 0

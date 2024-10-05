@@ -22,6 +22,7 @@
     ./nextcloud.nix
     ./immich.nix
     ./paperless.nix
+    ./transmission.nix
   ];
 
   nix =

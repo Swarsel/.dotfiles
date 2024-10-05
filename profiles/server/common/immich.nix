@@ -3,7 +3,7 @@
   config = lib.mkIf config.swarselsystems.server.immich {
 
     users.users.immich = {
-      extraGroups = [ "users" ];
+      extraGroups = [ "video" "render" "users" ];
     };
 
     # sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
@@ -13,6 +13,7 @@
       port = 3001;
       openFirewall = true;
       mediaLocation = "/Vault/Eternor/Immich";
+      environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://127.0.0.1:3003";
     };
 
 
@@ -24,15 +25,25 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://[::1]:3001";
+              proxyPass = "http://127.0.0.1:3001";
               extraConfig = ''
                 client_max_body_size    0;
+
+                proxy_http_version 1.1;
+                proxy_set_header   Upgrade    $http_upgrade;
+                proxy_set_header   Connection "upgrade";
+                proxy_redirect     off;
+
+                proxy_read_timeout 600s;
+                proxy_send_timeout 600s;
+                send_timeout       600s;
               '';
             };
           };
         };
       };
     };
+
   };
 
 }

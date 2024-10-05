@@ -283,7 +283,8 @@ in
           ];
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://localhost:8008";
+              # proxyPass = "http://localhost:8008";
+              proxyPass = "http://192.168.1.2:8008";
               extraConfig = ''
                 client_max_body_size 0;
               '';

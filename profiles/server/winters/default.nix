@@ -29,6 +29,7 @@
     hostName = "winters";
     hostId = "b7778a4a";
     firewall.enable = true;
+    enableIPv6 = false;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 
@@ -50,6 +51,7 @@
       nextcloud = true;
       immich = true;
       paperless = true;
+      transmission = true;
     };
   };
 

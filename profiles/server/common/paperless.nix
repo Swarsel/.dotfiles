@@ -11,14 +11,15 @@
 
     services.paperless = {
       enable = true;
-      mediaDir = "/Vault/Eternor/Dokumente";
+      mediaDir = "/Vault/Eternor/Paperless";
+      dataDir = "/Vault/data/paperless";
       user = "paperless";
       port = 28981;
       passwordFile = config.sops.secrets.paperless_admin.path;
       address = "0.0.0.0";
-      extraConfig = {
+      settings = {
         PAPERLESS_OCR_LANGUAGE = "deu+eng";
-        PAPERLESS_URL = "scan.swarsel.win";
+        PAPERLESS_URL = "https://scan.swarsel.win";
         PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
           optimize = 1;
           pdfa_image_compression = "lossless";
