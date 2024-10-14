@@ -71,10 +71,7 @@ in
 
       set -g mouse on
 
-      # Change splits to match nvim and easier to remember
       # Open new split at cwd of current split
-      unbind %
-      unbind '"'
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
 
@@ -89,21 +86,12 @@ in
       # Escape turns on copy mode
       bind Escape copy-mode
 
-      # Easier reload of config
-      bind r source-file ~/.config/tmux/tmux.conf
-
       set-option -g status-position top
 
       # make Prefix p paste the buffer.
       unbind p
       bind p paste-buffer
 
-      # Bind Keys
-      bind-key -T prefix C-g split-window \
-        "$SHELL --login -i -c 'navi --print | head -c -1 | tmux load-buffer -b tmp - ; tmux paste-buffer -p -t {last} -b tmp -d'"
-      bind-key -T prefix C-l switch -t notes
-      bind-key -T prefix C-d switch -t dotfiles
-      bind-key e send-keys "tmux capture-pane -p -S - | nvim -c 'set buftype=nofile' +" Enter
     '';
   };
 }

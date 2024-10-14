@@ -1812,7 +1812,8 @@ My work machine. Built for more security, this is the gold standard of my config
       ./disk-config.nix
 
       ../optional/nixos/steam.nix
-      # ../optional/nixos/virtualbox.nix
+      ../optional/nixos/virtualbox.nix
+      # ../optional/nixos/vmware.nix
       ../optional/nixos/autologin.nix
       ../optional/nixos/nswitch-rcm.nix
       ../optional/nixos/work.nix
@@ -7520,55 +7521,56 @@ Also, the system state version is set here. No need to touch it.
 **** paperless
 
 #+begin_src nix :tangle profiles/server/common/paperless.nix
-{ pkgs, lib, config, ... }:
-{
-  config = lib.mkIf config.swarselsystems.server.immich {
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.immich {
 
-    users.users.paperless = {
-      extraGroups = [ "users" ];
-    };
+      users.users.paperless = {
+        extraGroups = [ "users" ];
+      };
 
 
-    sops.secrets.paperless_admin = { owner = "paperless"; };
+      sops.secrets.paperless_admin = { owner = "paperless"; };
 
-    services.paperless = {
-      enable = true;
-      mediaDir = "/Vault/Eternor/Paperless";
-      dataDir = "/Vault/data/paperless";
-      user = "paperless";
-      port = 28981;
-      passwordFile = config.sops.secrets.paperless_admin.path;
-      address = "0.0.0.0";
-      settings = {
-        PAPERLESS_OCR_LANGUAGE = "deu+eng";
-        PAPERLESS_URL = "https://scan.swarsel.win";
-        PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
-          optimize = 1;
-          pdfa_image_compression = "lossless";
+      services.paperless = {
+        enable = true;
+        mediaDir = "/Vault/Eternor/Paperless";
+        dataDir = "/Vault/data/paperless";
+        user = "paperless";
+        port = 28981;
+        passwordFile = config.sops.secrets.paperless_admin.path;
+        address = "0.0.0.0";
+        settings = {
+          PAPERLESS_OCR_LANGUAGE = "deu+eng";
+          PAPERLESS_URL = "https://scan.swarsel.win";
+          PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
+            optimize = 1;
+            invalidate_digital_signatures = true;
+            pdfa_image_compression = "lossless";
+          };
         };
       };
-    };
 
-    services.nginx = {
-      virtualHosts = {
-        "scan.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://192.168.1.2:28981";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
+      services.nginx = {
+        virtualHosts = {
+          "scan.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://192.168.1.2:28981";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
             };
           };
         };
       };
     };
-  };
 
-}
+  }
 #+end_src
 
 **** transmission
@@ -7703,6 +7705,20 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
   }
 #+end_src
 
+**** VmWare
+
+
+This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
+
+#+begin_src nix :tangle profiles/optional/nixos/vmware.nix
+  _:
+  {
+
+    virtualisation.vmware.host.enable = true;
+    virtualisation.vmware.guest.enable = true;
+  }
+#+end_src
+
 **** Auto-login
 :PROPERTIES:
 :CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
@@ -7759,9 +7775,23 @@ Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8
     };
     virtualisation.docker.enable = true;
     environment.systemPackages = with pkgs; [
+      # (python39.withPackages (ps: with ps; [
+      # cryptography
+      # ]))
+      #   docker
       python39
-      docker
+      qemu
+      packer
+      gnumake
+      libisoburn
+      govc
     ];
+
+    services.openssh = {
+      enable = true;
+      extraConfig = ''
+      '';
+    };
 
     specialisation = {
       cgroup_v1.configuration = {
@@ -9087,10 +9117,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 
         set -g mouse on
 
-        # Change splits to match nvim and easier to remember
         # Open new split at cwd of current split
-        unbind %
-        unbind '"'
         bind | split-window -h -c "#{pane_current_path}"
         bind - split-window -v -c "#{pane_current_path}"
 
@@ -9105,21 +9132,12 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         # Escape turns on copy mode
         bind Escape copy-mode
 
-        # Easier reload of config
-        bind r source-file ~/.config/tmux/tmux.conf
-
         set-option -g status-position top
 
         # make Prefix p paste the buffer.
         unbind p
         bind p paste-buffer
 
-        # Bind Keys
-        bind-key -T prefix C-g split-window \
-          "$SHELL --login -i -c 'navi --print | head -c -1 | tmux load-buffer -b tmp - ; tmux paste-buffer -p -t {last} -b tmp -d'"
-        bind-key -T prefix C-l switch -t notes
-        bind-key -T prefix C-d switch -t dotfiles
-        bind-key e send-keys "tmux capture-pane -p -S - | nvim -c 'set buftype=nofile' +" Enter
       '';
     };
   }

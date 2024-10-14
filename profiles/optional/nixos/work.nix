@@ -9,9 +9,23 @@
   };
   virtualisation.docker.enable = true;
   environment.systemPackages = with pkgs; [
+    # (python39.withPackages (ps: with ps; [
+    # cryptography
+    # ]))
+    #   docker
     python39
-    docker
+    qemu
+    packer
+    gnumake
+    libisoburn
+    govc
   ];
+
+  services.openssh = {
+    enable = true;
+    extraConfig = ''
+    '';
+  };
 
   specialisation = {
     cgroup_v1.configuration = {

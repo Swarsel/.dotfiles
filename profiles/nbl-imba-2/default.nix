@@ -9,7 +9,8 @@
     ./disk-config.nix
 
     ../optional/nixos/steam.nix
-    # ../optional/nixos/virtualbox.nix
+    ../optional/nixos/virtualbox.nix
+    # ../optional/nixos/vmware.nix
     ../optional/nixos/autologin.nix
     ../optional/nixos/nswitch-rcm.nix
     ../optional/nixos/work.nix

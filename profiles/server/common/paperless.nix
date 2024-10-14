@@ -22,6 +22,7 @@
         PAPERLESS_URL = "https://scan.swarsel.win";
         PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
           optimize = 1;
+          invalidate_digital_signatures = true;
           pdfa_image_compression = "lossless";
         };
       };
