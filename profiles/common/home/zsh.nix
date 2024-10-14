@@ -51,10 +51,42 @@
       }
     ];
     initExtra = ''
-                    bindkey "^[[1;5D" backward-word
-                    bindkey "^[[1;5C" forward-word
+      bindkey "^[[1;5D" backward-word
+      bindkey "^[[1;5C" forward-word
 
-                    vterm_printf() {
+      my-backward-delete-word() {
+          # Copy the global WORDCHARS variable to a local variable. That way any
+          # modifications are scoped to this function only
+          local WORDCHARS=$WORDCHARS
+          # Use bash string manipulation to remove `:` so our delete will stop at it
+          WORDCHARS="''${WORDCHARS//:}"
+          # Use bash string manipulation to remove `/` so our delete will stop at it
+          WORDCHARS="''${WORDCHARS//\/}"
+          # Use bash string manipulation to remove `.` so our delete will stop at it
+          WORDCHARS="''${WORDCHARS//.}"
+          # zle <widget-name> will run an existing widget.
+          zle backward-delete-word
+      }
+      zle -N my-backward-delete-word
+      bindkey '^H' my-backward-delete-word
+
+      # This will be our `ctrl+alt+w` command
+      my-backward-delete-whole-word() {
+          # Copy the global WORDCHARS variable to a local variable. That way any
+          # modifications are scoped to this function only
+          local WORDCHARS=$WORDCHARS
+          # Use bash string manipulation to add `:` to WORDCHARS if it's not present
+          # already.
+          [[ ! $WORDCHARS == *":"* ]] && WORDCHARS="$WORDCHARS"":"
+          # zle <widget-name> will run that widget.
+          zle backward-delete-word
+      }
+      # `zle -N` will create a new widget that we can use on the command line
+      zle -N my-backward-delete-whole-word
+      # bind this new widget to `ctrl+alt+w`
+      bindkey '^W' my-backward-delete-whole-word
+
+      vterm_printf() {
                       if [ -n "$TMUX" ] && ([ "''${TERM%%-*}" = "tmux" ] || [ "''${TERM%%-*}" = "screen" ]); then
                         # Tell tmux to pass the escape sequences through
                         printf "\ePtmux;\e\e]%s\007\e\\" "$1"
@@ -65,13 +97,13 @@
                         printf "\e]%s\e\\" "$1"
                       fi
                                }
-        vterm_prompt_end() {
+      vterm_prompt_end() {
             vterm_printf "51;A$(whoami)@$(hostname):$(pwd)"
-        }
-        setopt PROMPT_SUBST
-        PROMPT=$PROMPT'%{$(vterm_prompt_end)%}'
+      }
+      setopt PROMPT_SUBST
+      PROMPT=$PROMPT'%{$(vterm_prompt_end)%}'
 
-        vterm_cmd() {
+      vterm_cmd() {
           local vterm_elisp
           vterm_elisp=""
           while [ $# -gt 0 ]; do
