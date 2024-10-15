@@ -1275,12 +1275,12 @@ create a new one."
   (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
   (global-highlight-parentheses-mode t))
 
-(electric-pair-mode 1)
-(setq electric-pair-preserve-balance t)
-(setq electric-pair-skip-self nil)
-(setq electric-pair-delete-adjacent-pairs t)
+;; (electric-pair-mode 1)
+;; (setq electric-pair-preserve-balance t)
+;; (setq electric-pair-skip-self nil)
+;; (setq electric-pair-delete-adjacent-pairs t)
 ;; don't skip newline when auto-pairing parenthesis
-(setq electric-pair-skip-whitespace-chars '(9 32))
+;; (setq electric-pair-skip-whitespace-chars '(9 32))
 
 ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
 (add-hook 'org-mode-hook (lambda ()

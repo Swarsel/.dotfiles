@@ -4,11 +4,12 @@
     enable = true;
     package = pkgs.firefox; # uses overrides
     policies = {
-      CaptivePortal = false;
+      # CaptivePortal = false;
       DisableFirefoxStudies = true;
       DisablePocket = true;
       DisableTelemetry = true;
       DisableFirefoxAccounts = false;
+      DisplayBookmarksToolbar = "always";
       NoDefaultBookmarks = true;
       OfferToSaveLogins = false;
       OfferToSaveLoginsDefault = false;

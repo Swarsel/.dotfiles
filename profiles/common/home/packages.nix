@@ -12,6 +12,7 @@
     picard-tools
     audacity
     sox
+    feishin
 
     # printing
     cups

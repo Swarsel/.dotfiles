@@ -7919,6 +7919,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       picard-tools
       audacity
       sox
+      feishin
 
       # printing
       cups
@@ -9684,11 +9685,12 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
       enable = true;
       package = pkgs.firefox; # uses overrides
       policies = {
-        CaptivePortal = false;
+        # CaptivePortal = false;
         DisableFirefoxStudies = true;
         DisablePocket = true;
         DisableTelemetry = true;
         DisableFirefoxAccounts = false;
+        DisplayBookmarksToolbar = "always";
         NoDefaultBookmarks = true;
         OfferToSaveLogins = false;
         OfferToSaveLoginsDefault = false;
@@ -9938,7 +9940,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           lib.recursiveUpdate
             {
               "${modifier}+q" = "kill";
-              "${modifier}+f" = "exec firefox";
+              "${modifier}+f" = "exec firefox -p cl_adm";
               "${modifier}+Shift+f" = "exec swaymsg fullscreen";
               "${modifier}+Space" = "exec fuzzel";
               "${modifier}+Shift+Space" = "floating toggle";
@@ -10359,6 +10361,11 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
             id = 3;
             <<firefoxprofile>>
           };
+          # i need this profile because xdg-open uses cl_adm profile no matter what i do
+          cl_adm_real = {
+            id = 4;
+            <<firefoxprofile>>
+          };
         };
       };
 
@@ -10403,9 +10410,16 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
 
         firefox_cl = {
-          name = "Firefox (cl_adm)";
+          name = "Firefox (Main)";
           genericName = "Firefox cl";
           exec = "firefox -p cl_adm";
+          inherit terminal categories icon;
+        };
+
+        firefox_cl_real = {
+          name = "Firefox (cl_adm)";
+          genericName = "Firefox";
+          exec = "firefox -p cl_adm_real";
           inherit terminal categories icon;
         };
       };
@@ -12929,12 +12943,12 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
     (setq highlight-parentheses-background-colors '("magenta" "blue" "cyan" "green" "yellow" "orange" "red"))
     (global-highlight-parentheses-mode t))
 
-  (electric-pair-mode 1)
-  (setq electric-pair-preserve-balance t)
-  (setq electric-pair-skip-self nil)
-  (setq electric-pair-delete-adjacent-pairs t)
+  ;; (electric-pair-mode 1)
+  ;; (setq electric-pair-preserve-balance t)
+  ;; (setq electric-pair-skip-self nil)
+  ;; (setq electric-pair-delete-adjacent-pairs t)
   ;; don't skip newline when auto-pairing parenthesis
-  (setq electric-pair-skip-whitespace-chars '(9 32))
+  ;; (setq electric-pair-skip-whitespace-chars '(9 32))
 
   ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
   (add-hook 'org-mode-hook (lambda ()
