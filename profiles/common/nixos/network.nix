@@ -6,7 +6,13 @@
     firewall = {
       checkReversePath = lib.mkDefault false;
       enable = lib.mkDefault true;
-      allowedUDPPorts = [ 51820 ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      allowedUDPPorts = [ 51820 ]; # 51820: wireguard
+      allowedTCPPortRanges = [
+        { from = 1714; to = 1764; } # kde-connect
+      ];
+      allowedUDPPortRanges = [
+        { from = 1714; to = 1764; } # kde-connect
+      ];
     };
 
     networkmanager = {
