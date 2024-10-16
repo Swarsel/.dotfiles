@@ -2,6 +2,23 @@
 {
   config = lib.mkIf config.swarselsystems.server.transmission {
 
+    # this user/group section is probably unneeded
+    users = {
+      groups = {
+        dockeruser = {
+          gid = 1155;
+        };
+      };
+      users = {
+        dockeruser = {
+          isSystemUser = true;
+          uid = 1155;
+          group = "docker";
+          extraGroups = [ "users" ];
+        };
+      };
+    };
+
     virtualisation.docker.enable = true;
     environment.systemPackages = with pkgs; [
       docker
