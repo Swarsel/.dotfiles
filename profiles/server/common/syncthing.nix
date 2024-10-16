@@ -13,9 +13,9 @@
       configDir = "/Vault/apps/syncthing";
       guiAddress = "0.0.0.0:8384";
       openDefaultPorts = true;
-      urAccepted = -1;
       relay.enable = false;
       settings = {
+        urAccepted = -1;
         devices = {
           "magicant" = {
             id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
