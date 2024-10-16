@@ -24,7 +24,22 @@
   services.openssh = {
     enable = true;
     extraConfig = ''
-    '';
+      '';
+  };
+
+  services.syncthing = {
+    settings = {
+      "winters" = {
+        id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+      };
+      folders = {
+        "Documents" = {
+          path = "/home/swarsel/Documents";
+          devices = [ "magicant" "winters" ];
+          id = "hgr3d-pfu3w";
+        };
+      };
+    };
   };
 
   specialisation = {
@@ -35,4 +50,6 @@
       ];
     };
   };
+
+
 }

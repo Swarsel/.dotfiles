@@ -17,29 +17,29 @@ _:
         "sync (@oracle)" = {
           id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
         };
-        "server1" = {
-          id = "ZXWVC4X-IIARITZ-MERZPHN-HD55Y6G-QJM2GTB-6BWYXMR-DTO3TS2-QDBREQQ";
+        "winters" = {
+          id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
         };
       };
       folders = {
         "Default Folder" = {
           path = "/home/swarsel/Sync";
-          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" "winters" ];
           id = "default";
         };
         "Obsidian" = {
           path = "/home/swarsel/Nextcloud/Obsidian";
-          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" "winters" ];
           id = "yjvni-9eaa7";
         };
         "Org" = {
           path = "/home/swarsel/Nextcloud/Org";
-          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" "winters" ];
           id = "a7xnl-zjj3d";
         };
         "Vpn" = {
           path = "/home/swarsel/Vpn";
-          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" "winters" ];
           id = "hgp9s-fyq3p";
         };
       };

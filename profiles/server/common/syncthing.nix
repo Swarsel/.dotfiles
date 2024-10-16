@@ -49,6 +49,11 @@
             devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
             id = "hgp9s-fyq3p";
           };
+          "Documents" = {
+            path = "/Vault/data/syncthing/Documents";
+            devices = [ "magicant" "nbl-imba-2" ];
+            id = "hgr3d-pfu3w";
+          };
         };
       };
     };
