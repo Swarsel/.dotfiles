@@ -43,57 +43,57 @@
       radarr = {
         enable = true;
         openFirewall = true;
-        dataDir = "/Vault/apps/radarr"
-          };
-        readarr = {
-          enable = true;
-          openFirewall = true;
-          dataDir = "/Vault/apps/readarr"
-            };
-          sonarr = {
-            enable = true;
-            openFirewall = true;
-            dataDir = "/Vault/apps/sonarr"
-              };
-            lidarr = {
-              enable = true;
-              openFirewall = true;
-              dataDir = "/Vault/apps/lidarr"
-                };
-              prowlarr = {
-                enable = true;
-                openFirewall = true;
-              };
+        dataDir = "/Vault/apps/radarr";
+      };
+      readarr = {
+        enable = true;
+        openFirewall = true;
+        dataDir = "/Vault/apps/readarr";
+      };
+      sonarr = {
+        enable = true;
+        openFirewall = true;
+        dataDir = "/Vault/apps/sonarr";
+      };
+      lidarr = {
+        enable = true;
+        openFirewall = true;
+        dataDir = "/Vault/apps/lidarr";
+      };
+      prowlarr = {
+        enable = true;
+        openFirewall = true;
+      };
 
-              nginx = {
-                virtualHosts = {
-                  "store.swarsel.win" = {
-                    enableACME = false;
-                    forceSSL = false;
-                    acmeRoot = null;
-                    locations = {
-                      "/" = {
-                        proxyPass = "http://127.0.0.1:9091";
-                        extraConfig = ''
-                          client_max_body_size    0;
-                        '';
-                      };
-                      "/radarr" = {
-                        proxyPass = "http://127.0.0.1:8080";
-                        extraConfig = ''
-                          client_max_body_size    0;
-                        '';
-                      };
-                      "/sonarr" = {
-                        proxyPass = "http://127.0.0.1:8080";
-                        extraConfig = ''
-                          client_max_body_size    0;
-                        '';
-                      };
-                    };
-                  };
-                };
+      nginx = {
+        virtualHosts = {
+          "store.swarsel.win" = {
+            enableACME = false;
+            forceSSL = false;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:9091";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/radarr" = {
+                proxyPass = "http://127.0.0.1:8080";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/sonarr" = {
+                proxyPass = "http://127.0.0.1:8080";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
               };
             };
           };
-        }
+        };
+      };
+    };
+  };
+}
