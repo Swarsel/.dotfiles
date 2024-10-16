@@ -8,6 +8,11 @@
         dockeruser = {
           gid = 1155;
         };
+        radarr = { };
+        readarr = { };
+        sonarr = { };
+        lidarr = { };
+        prowlarr = { };
       };
       users = {
         dockeruser = {
@@ -18,22 +23,27 @@
         };
         radarr = {
           isSystemUser = true;
+          group = "radarr";
           extraGroups = [ "users" ];
         };
         readarr = {
           isSystemUser = true;
+          group = "readarr";
           extraGroups = [ "users" ];
         };
         sonarr = {
           isSystemUser = true;
+          group = "sonarr";
           extraGroups = [ "users" ];
         };
         lidarr = {
           isSystemUser = true;
+          group = "lidarr";
           extraGroups = [ "users" ];
         };
         prowlarr = {
           isSystemUser = true;
+          group = "prowlarr";
           extraGroups = [ "users" ];
         };
       };
