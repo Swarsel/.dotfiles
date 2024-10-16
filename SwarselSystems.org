@@ -7682,9 +7682,9 @@ Also, the system state version is set here. No need to touch it.
 **** syncthing
 
 #+begin_src nix :tangle profiles/server/common/syncthing.nix
-  { pkgs, lib, config, ... }:
-  {
-    config = lib.mkIf config.swarselsystems.server.syncthing {
+{ pkgs, lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.syncthing {
 
     users.users.syncthing = {
       extraGroups = [ "users" ];
@@ -7737,8 +7737,8 @@ Also, the system state version is set here. No need to touch it.
       };
     };
 
-      services.nginx = {
-        virtualHosts = {
+    services.nginx = {
+      virtualHosts = {
         "storync.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
@@ -7754,8 +7754,9 @@ Also, the system state version is set here. No need to touch it.
         };
       };
     };
+  };
 
-  }
+}
 #+end_src
 
 
