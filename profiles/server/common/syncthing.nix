@@ -31,26 +31,48 @@
         folders = {
           "Default Folder" = {
             path = "/Vault/data/syncthing/Sync";
+            type = "receiveonly";
+            versioning = null;
             devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
             id = "default";
           };
           "Obsidian" = {
             path = "/Vault/data/syncthing/Obsidian";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
             devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
             path = "/Vault/data/syncthing/Org";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
             devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
             path = "/Vault/data/syncthing/Vpn";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
             devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
             id = "hgp9s-fyq3p";
           };
           "Documents" = {
             path = "/Vault/data/syncthing/Documents";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
             devices = [ "magicant" "nbl-imba-2" ];
             id = "hgr3d-pfu3w";
           };
