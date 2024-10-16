@@ -13,6 +13,7 @@ in
       { command = "ANKI_WAYLAND=1 anki"; }
       { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
       { command = "nm-applet"; }
+      { command = "feishin"; }
     ];
   };
 }

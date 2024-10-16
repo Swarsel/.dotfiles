@@ -50,7 +50,7 @@
     obsidian
     spotify
     vesktop # discord client
-    stable.nextcloud-client
+    nextcloud-client
     spotify-player
     element-desktop-wayland
     nicotine-plus

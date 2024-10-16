@@ -168,6 +168,7 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
 :END:
 
 At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
+Set in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
 #+begin_src nix :tangle no :noweb-ref firefoxprofile
 
@@ -5075,6 +5076,7 @@ in
       { command = "ANKI_WAYLAND=1 anki"; }
       { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
       { command = "nm-applet"; }
+      { command = "feishin"; }
     ];
   };
 }
@@ -5179,6 +5181,7 @@ Also, the system state version is set here. No need to touch it.
       ./xdg-portal.nix
       # ./yubikey-touch-detector.nix
       ./safeeyes.nix
+      ./distrobox.nix
       ./lid.nix
     ];
 
@@ -5900,7 +5903,10 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # + cuda
       cudatoolkit
       # ansible
+      ansible_2_15
+      ansible-lint
       ansible-language-server
+      molecule
       #lsp-bridge / python
       gcc
       gdb
@@ -6580,6 +6586,25 @@ A friend of mine used this service and I used to make fun of him. But I have to 
   _:
   {
     services.safeeyes.enable = true;
+  }
+#+end_src
+
+**** Podmam (distrobox)
+
+I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
+
+#+begin_src nix :tangle profiles/common/nixos/distrobox.nix
+  { pkgs, ... }:
+  {
+    environment.systemPackages = with pkgs; [
+      distrobox
+      boxbuddy
+      ];
+
+    virtualisation.podman = {
+      enable = true;
+    };
+
   }
 #+end_src
 
@@ -7963,7 +7988,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       obsidian
       spotify
       vesktop # discord client
-      stable.nextcloud-client
+      nextcloud-client
       spotify-player
       element-desktop-wayland
       nicotine-plus
@@ -8390,6 +8415,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 #+end_src
 
 Also, we link some files to the users XDG configuration home:
+Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
 #+begin_src nix :tangle profiles/common/home/symlink.nix
     xdg.configFile = {
@@ -10935,11 +10961,11 @@ Used here: [[#h:877c9401-a354-4e44-a235-db1a90d19e00][General org-mode]]
     (org-indent-mode)
     (variable-pitch-mode 1)
     ;;(auto-fill-mode 0)
-    (setq display-line-numbers-type 'relative
-          display-line-numbers-current-absolute 1
-          display-line-numbers-width-start nil
-          display-line-numbers-width 6
-          display-line-numbers-grow-only 1)
+    ;; (setq display-line-numbers-type 'relative
+    ;;       display-line-numbers-current-absolute 1
+    ;;       display-line-numbers-width-start nil
+    ;;       display-line-numbers-width 6
+    ;;       display-line-numbers-grow-only 1)
     (add-hook 'org-tab-first-hook 'org-end-of-line)
     (visual-line-mode 1))
 
@@ -11567,39 +11593,46 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
 
 #+begin_src emacs-lisp
 
-  ;; Emulate vim in emacs
-  (use-package evil
-    :init
-    (setq evil-want-integration t) ; loads evil
-    (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
-    (setq evil-want-C-u-scroll t) ; scrolling using C-u
-    (setq evil-want-C-i-jump nil) ; jumping with C-i
-    (setq evil-want-Y-yank-to-eol t) ; give Y some utility
-    (setq evil-shift-width 2) ; uniform indent
-    (setq evil-respect-visual-line-mode nil) ; i am torn on this one
-    (setq evil-split-window-below t)
-    (setq evil-vsplit-window-right t)
-    :config
-    (evil-mode 1)
-    (define-key evil-normal-state-map (kbd "C-z") nil)
-    (define-key evil-insert-state-map (kbd "C-z") nil)
-    (define-key evil-visual-state-map (kbd "C-z") nil)
-    (define-key evil-motion-state-map (kbd "C-z") nil)
-    (define-key evil-operator-state-map (kbd "C-z") nil)
-    (define-key evil-replace-state-map (kbd "C-z") nil)
-    (define-key global-map (kbd "C-z") nil)
-    (evil-set-undo-system 'undo-tree)
+    ;; Emulate vim in emacs
+    (use-package evil
+      :init
+      (setq evil-want-integration t) ; loads evil
+      (setq evil-want-keybinding nil) ; loads "helpful bindings" for other modes
+      (setq evil-want-C-u-scroll t) ; scrolling using C-u
+      (setq evil-want-C-i-jump nil) ; jumping with C-i
+      (setq evil-want-Y-yank-to-eol t) ; give Y some utility
+      (setq evil-shift-width 2) ; uniform indent
+      (setq evil-respect-visual-line-mode nil) ; i am torn on this one
+      (setq evil-split-window-below t)
+      (setq evil-vsplit-window-right t)
+      :config
+      (evil-mode 1)
 
-    ;; Don't use evil-mode in these contexts, or use it in a specific mode
-    (evil-set-initial-state 'messages-buffer-mode 'emacs)
-    (evil-set-initial-state 'dashboard-mode 'emacs)
-    (evil-set-initial-state 'dired-mode 'emacs)
-    (evil-set-initial-state 'cfw:details-mode 'emacs)
-    (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
-    (evil-set-initial-state 'mu4e-headers-mode 'normal)
-    (evil-set-initial-state 'python-inferior-mode 'normal)
-    (add-hook 'org-capture-mode-hook 'evil-insert-state)
-    (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
+      ;; make normal mode respect wrapped lines
+      (define-key evil-normal-state-map (kbd "j") 'evil-next-visual-line)
+      (define-key evil-normal-state-map (kbd "<down>") 'evil-next-visual-line)
+      (define-key evil-normal-state-map (kbd "k") 'evil-previous-visual-line)
+      (define-key evil-normal-state-map (kbd "<up>") 'evil-previous-visual-line)
+
+      (define-key evil-normal-state-map (kbd "C-z") nil)
+      (define-key evil-insert-state-map (kbd "C-z") nil)
+      (define-key evil-visual-state-map (kbd "C-z") nil)
+      (define-key evil-motion-state-map (kbd "C-z") nil)
+      (define-key evil-operator-state-map (kbd "C-z") nil)
+      (define-key evil-replace-state-map (kbd "C-z") nil)
+      (define-key global-map (kbd "C-z") nil)
+      (evil-set-undo-system 'undo-tree)
+
+      ;; Don't use evil-mode in these contexts, or use it in a specific mode
+      (evil-set-initial-state 'messages-buffer-mode 'emacs)
+      (evil-set-initial-state 'dashboard-mode 'emacs)
+      (evil-set-initial-state 'dired-mode 'emacs)
+      (evil-set-initial-state 'cfw:details-mode 'emacs)
+      (evil-set-initial-state 'Custom-mode 'emacs) ; god knows why this mode is in uppercase
+      (evil-set-initial-state 'mu4e-headers-mode 'normal)
+      (evil-set-initial-state 'python-inferior-mode 'normal)
+      (add-hook 'org-capture-mode-hook 'evil-insert-state)
+      (add-to-list 'evil-buffer-regexps '("COMMIT_EDITMSG" . insert)))
 
 #+end_src
 **** evil-collection
@@ -12594,6 +12627,33 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
     :mode "\\.nix\\'")
 
 #+end_src
+*** HCL Mode
+
+This adds support for Hashicorp Configuration Language. I need this at work.
+
+#+begin_src emacs-lisp
+
+  (use-package hcl-mode
+    :mode "\\.hcl\\'"
+    :config
+    (setq hcl-indent-level 2))
+
+#+end_src
+*** Terraform Mode
+
+This adds support for Terraform configuration files. I need this at work.
+
+#+begin_src emacs-lisp
+
+  (use-package terraform-mode
+    :mode "\\.tf\\'"
+    :config
+    (setq terraform-indent-level 2)
+    (setq terraform-format-on-save t))
+
+  (add-hook 'terraform-mode-hook #'outline-minor-mode)
+
+#+end_src
 *** nixpkgs-fmt
 :PROPERTIES:
 :CUSTOM_ID: h:5ca7484b-b9d6-4023-88d1-a1e37d5df249
@@ -12958,10 +13018,10 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
   ;; (setq electric-pair-skip-whitespace-chars '(9 32))
 
   ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
-  (add-hook 'org-mode-hook (lambda ()
-                             (setq-local electric-pair-inhibit-predicate
-                                         `(lambda (c)
-                                            (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+  ;; (add-hook 'org-mode-hook (lambda ()
+  ;;                            (setq-local electric-pair-inhibit-predicate
+  ;;                                        `(lambda (c)
+  ;;                                           (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
 
 
@@ -13747,7 +13807,7 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
     :init
     ;; set org-caldav-sync-initalization
     (setq swarsel-caldav-synced 0)
-    (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsele")
+    (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsel")
     (setq org-caldav-calendars
           '((:calendar-id "personal"
                           :inbox "~/Calendars/leon_cal.org")))
@@ -13863,21 +13923,6 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
               (lambda (&rest _) (browse-url "swarsel.win")))
              )
             )))
-
-
-#+end_src
-
-*** ansible
-:PROPERTIES:
-:CUSTOM_ID: h:672ddd5c-7679-44a2-9085-936e9198fc2b
-:END:
-
-#+begin_src emacs-lisp
-
-  (use-package ansible
-      :hook
-      (yaml-ts-mode . ansible))
-
 
 
 #+end_src

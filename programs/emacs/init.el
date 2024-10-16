@@ -160,11 +160,11 @@ create a new one."
   (org-indent-mode)
   (variable-pitch-mode 1)
   ;;(auto-fill-mode 0)
-  (setq display-line-numbers-type 'relative
-        display-line-numbers-current-absolute 1
-        display-line-numbers-width-start nil
-        display-line-numbers-width 6
-        display-line-numbers-grow-only 1)
+  ;; (setq display-line-numbers-type 'relative
+  ;;       display-line-numbers-current-absolute 1
+  ;;       display-line-numbers-width-start nil
+  ;;       display-line-numbers-width 6
+  ;;       display-line-numbers-grow-only 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
   (visual-line-mode 1))
 
@@ -578,6 +578,13 @@ create a new one."
   (setq evil-vsplit-window-right t)
   :config
   (evil-mode 1)
+
+  ;; make normal mode respect wrapped lines
+  (define-key evil-normal-state-map (kbd "j") 'evil-next-visual-line)
+  (define-key evil-normal-state-map (kbd "<down>") 'evil-next-visual-line)
+  (define-key evil-normal-state-map (kbd "k") 'evil-previous-visual-line)
+  (define-key evil-normal-state-map (kbd "<up>") 'evil-previous-visual-line)
+
   (define-key evil-normal-state-map (kbd "C-z") nil)
   (define-key evil-insert-state-map (kbd "C-z") nil)
   (define-key evil-visual-state-map (kbd "C-z") nil)
@@ -1132,6 +1139,19 @@ create a new one."
 (use-package nix-mode
   :mode "\\.nix\\'")
 
+(use-package hcl-mode
+  :mode "\\.hcl\\'"
+  :config
+  (setq hcl-indent-level 2))
+
+(use-package terraform-mode
+  :mode "\\.tf\\'"
+  :config
+  (setq terraform-indent-level 2)
+  (setq terraform-format-on-save t))
+
+(add-hook 'terraform-mode-hook #'outline-minor-mode)
+
 (use-package nixpkgs-fmt)
 
 (setq markdown-command "pandoc")
@@ -1283,10 +1303,10 @@ create a new one."
 ;; (setq electric-pair-skip-whitespace-chars '(9 32))
 
 ;; in org-mode buffers, do not pair < and > in order not to interfere with org-tempo
-(add-hook 'org-mode-hook (lambda ()
-                           (setq-local electric-pair-inhibit-predicate
-                                       `(lambda (c)
-                                          (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
+;; (add-hook 'org-mode-hook (lambda ()
+;;                            (setq-local electric-pair-inhibit-predicate
+;;                                        `(lambda (c)
+;;                                           (if (char-equal c ?<) t (,electric-pair-inhibit-predicate c))))))
 
 (use-package rainbow-mode
   :config (rainbow-mode))
@@ -1750,7 +1770,7 @@ create a new one."
   :init
   ;; set org-caldav-sync-initalization
   (setq swarsel-caldav-synced 0)
-  (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsele")
+  (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsel")
   (setq org-caldav-calendars
         '((:calendar-id "personal"
                         :inbox "~/Calendars/leon_cal.org")))
@@ -1855,10 +1875,6 @@ create a new one."
             (lambda (&rest _) (browse-url "swarsel.win")))
            )
           )))
-
-(use-package ansible
-    :hook
-    (yaml-ts-mode . ansible))
 
 (use-package vterm
     :ensure t)

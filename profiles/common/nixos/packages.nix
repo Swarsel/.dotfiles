@@ -65,7 +65,10 @@
     # + cuda
     cudatoolkit
     # ansible
+    ansible_2_15
+    ansible-lint
     ansible-language-server
+    molecule
     #lsp-bridge / python
     gcc
     gdb
