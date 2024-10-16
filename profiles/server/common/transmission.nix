@@ -94,13 +94,31 @@
                 '';
               };
               "/radarr" = {
-                proxyPass = "http://127.0.0.1:8080";
+                proxyPass = "http://127.0.0.1:7878";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/readarr" = {
+                proxyPass = "http://127.0.0.1:8787";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/sonarr" = {
-                proxyPass = "http://127.0.0.1:8080";
+                proxyPass = "http://127.0.0.1:8989";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/lidarr" = {
+                proxyPass = "http://127.0.0.1:8686";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/prowlarr" = {
+                proxyPass = "http://127.0.0.1:9696";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
