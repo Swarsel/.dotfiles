@@ -52,6 +52,7 @@
       immich = true;
       paperless = true;
       transmission = true;
+      syncthing = true;
     };
   };
 

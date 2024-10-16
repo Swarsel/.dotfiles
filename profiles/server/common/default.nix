@@ -23,6 +23,7 @@
     ./immich.nix
     ./paperless.nix
     ./transmission.nix
+    ./syncthing.nix
   ];
 
   nix =

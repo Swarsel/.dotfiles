@@ -20,4 +20,5 @@ in
   options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
   options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
   options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
+  options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
 }

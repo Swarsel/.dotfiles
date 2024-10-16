@@ -9,6 +9,9 @@ _:
     settings = {
       devices = {
         "magicant" = {
+          id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+        };
+        "zenfone9" = {
           id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
         };
         "sync (@oracle)" = {
@@ -21,22 +24,22 @@ _:
       folders = {
         "Default Folder" = {
           path = "/home/swarsel/Sync";
-          devices = [ "sync (@oracle)" "magicant" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
           id = "default";
         };
         "Obsidian" = {
           path = "/home/swarsel/Nextcloud/Obsidian";
-          devices = [ "sync (@oracle)" "magicant" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
           id = "yjvni-9eaa7";
         };
         "Org" = {
           path = "/home/swarsel/Nextcloud/Org";
-          devices = [ "sync (@oracle)" "magicant" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
           id = "a7xnl-zjj3d";
         };
         "Vpn" = {
           path = "/home/swarsel/Vpn";
-          devices = [ "sync (@oracle)" "magicant" ];
+          devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
           id = "hgp9s-fyq3p";
         };
       };

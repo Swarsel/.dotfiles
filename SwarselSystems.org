@@ -2064,6 +2064,7 @@ My work machine. Built for more security, this is the gold standard of my config
         immich = true;
         paperless = true;
         transmission = true;
+        syncthing = true;
       };
     };
 
@@ -4752,6 +4753,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
     options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
     options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
+    options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
   }
 #+end_src
 
@@ -5990,6 +5992,9 @@ Do not touch this.
       settings = {
         devices = {
           "magicant" = {
+            id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+          };
+          "zenfone9" = {
             id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
           };
           "sync (@oracle)" = {
@@ -6002,22 +6007,22 @@ Do not touch this.
         folders = {
           "Default Folder" = {
             path = "/home/swarsel/Sync";
-            devices = [ "sync (@oracle)" "magicant" ];
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
             id = "default";
           };
           "Obsidian" = {
             path = "/home/swarsel/Nextcloud/Obsidian";
-            devices = [ "sync (@oracle)" "magicant" ];
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
             path = "/home/swarsel/Nextcloud/Org";
-            devices = [ "sync (@oracle)" "magicant" ];
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
             path = "/home/swarsel/Vpn";
-            devices = [ "sync (@oracle)" "magicant" ];
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" ];
             id = "hgp9s-fyq3p";
           };
         };
@@ -6676,6 +6681,7 @@ Also, the system state version is set here. No need to touch it.
       ./immich.nix
       ./paperless.nix
       ./transmission.nix
+      ./syncthing.nix
     ];
 
     nix =
@@ -7654,6 +7660,85 @@ Also, the system state version is set here. No need to touch it.
     };
   }
 
+#+end_src
+
+**** syncthing
+
+#+begin_src nix :tangle profiles/server/common/syncthing.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.syncthing {
+
+    users.users.syncthing = {
+      extraGroups = [ "users" ];
+    };
+
+    services.syncthing = {
+      enable = true;
+      user = "syncthing";
+      dataDir = "/Vault/data/syncthing";
+      configDir = "/Vault/apps/syncthing";
+      guiAddress = "0.0.0.0:8384";
+      openDefaultPorts = true;
+      settings = {
+        devices = {
+          "magicant" = {
+            id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+          };
+          "zenfone9" = {
+            id = "SEH2NMT-IVRQUU5-VPW2HUQ-3GQYDBF-F6H6OY6-X3DZTUZ-LCRE2DJ-QNIXIQ2";
+          };
+          "sync (@oracle)" = {
+            id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
+          };
+          "nbl-imba-2" = {
+            id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
+          };
+        };
+        folders = {
+          "Default Folder" = {
+            path = "/Vault/data/syncthing/Sync";
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            id = "default";
+          };
+          "Obsidian" = {
+            path = "/Vault/data/syncthing/Obsidian";
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            id = "yjvni-9eaa7";
+          };
+          "Org" = {
+            path = "/Vault/data/syncthing/Org";
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            id = "a7xnl-zjj3d";
+          };
+          "Vpn" = {
+            path = "/Vault/data/syncthing/Vpn";
+            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            id = "hgp9s-fyq3p";
+          };
+        };
+      };
+    };
+
+      services.nginx = {
+        virtualHosts = {
+        "storync.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://localhost:8384/";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+      };
+    };
+
+  }
 #+end_src
 
 
