@@ -17,18 +17,23 @@
           extraGroups = [ "users" ];
         };
         radarr = {
+          isSystemUser = true;
           extraGroups = [ "users" ];
         };
         readarr = {
+          isSystemUser = true;
           extraGroups = [ "users" ];
         };
         sonarr = {
+          isSystemUser = true;
           extraGroups = [ "users" ];
         };
         lidarr = {
+          isSystemUser = true;
           extraGroups = [ "users" ];
         };
         prowlarr = {
+          isSystemUser = true;
           extraGroups = [ "users" ];
         };
       };
