@@ -252,7 +252,7 @@
       homeConfigurations = {
 
         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.x86_64-linux;
+          pkgs = pkgsFor.aarch64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = homeModules ++ mixedModules ++ [
             ./profiles/home-manager
