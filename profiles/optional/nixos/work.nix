@@ -1,13 +1,45 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
-  # boot.initrd.luks.yubikeySupport = true;
-  programs.browserpass.enable = true;
-  programs._1password.enable = true;
-  programs._1password-gui = {
-    enable = true;
-    polkitPolicyOwners = [ "swarsel" ];
+  sops = {
+    secrets = {
+      clad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      dcad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      wsad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      imbad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+    };
   };
+
+  # boot.initrd.luks.yubikeySupport = true;
+  programs = {
+    zsh.shellInit = ''
+      export CLAD="$(cat ${config.sops.secrets.clad.path})"
+      export DCAD="$(cat ${config.sops.secrets.dcad.path})"
+      export WSAD="$(cat ${config.sops.secrets.wsad.path})"
+      export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
+    '';
+
+    browserpass.enable = true;
+    _1password.enable = true;
+    _1password-gui = {
+      enable = true;
+      polkitPolicyOwners = [ "swarsel" ];
+    };
+  };
+
   virtualisation.docker.enable = true;
+
   environment.systemPackages = with pkgs; [
     # (python39.withPackages (ps: with ps; [
     # cryptography
@@ -21,27 +53,31 @@
     govc
   ];
 
-  services.openssh = {
-    enable = true;
-    extraConfig = ''
-      '';
-  };
 
-  services.syncthing = {
-    settings = {
-      "winters" = {
-        id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-      };
-      folders = {
-        "Documents" = {
-          path = "/home/swarsel/Documents";
-          devices = [ "magicant" "winters" ];
-          id = "hgr3d-pfu3w";
+  services = {
+    openssh = {
+      enable = true;
+      extraConfig = ''
+      '';
+    };
+
+    syncthing = {
+      settings = {
+        "winters" = {
+          id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+        };
+        folders = {
+          "Documents" = {
+            path = "/home/swarsel/Documents";
+            devices = [ "magicant" "winters" ];
+            id = "hgr3d-pfu3w";
+          };
         };
       };
     };
   };
 
+  # cgroups v1 is required for centos7 dockers
   specialisation = {
     cgroup_v1.configuration = {
       boot.kernelParams = [
@@ -50,6 +86,5 @@
       ];
     };
   };
-
 
 }

@@ -227,69 +227,6 @@
           ];
         };
 
-        nginx = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/nginx/nixos.nix
-          ];
-        };
-
-        calibre = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/calibre/nixos.nix
-          ];
-        };
-
-        jellyfin = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ./profiles/server1/jellyfin/nixos.nix
-          ];
-        };
-
-        transmission = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/transmission/nixos.nix
-          ];
-        };
-
-        matrix = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/matrix/nixos.nix
-          ];
-        };
-
-        sound = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/sound/nixos.nix
-          ];
-        };
-
-        spotifyd = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/spotifyd/nixos.nix
-          ];
-        };
-
-        paperless = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/server1/paperless/nixos.nix
-          ];
-        };
-
         #ovm swarsel
         sync = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
@@ -326,7 +263,8 @@
 
       nixOnDroidConfigurations = {
 
-        default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+        mysticant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+          pkgs = pkgsFor.aarch64-linux;
           modules = [
             ./profiles/mysticant
           ];
