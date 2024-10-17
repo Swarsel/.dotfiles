@@ -252,7 +252,7 @@
       homeConfigurations = {
 
         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.aarch64-linux;
+          pkgs = pkgsFor.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = homeModules ++ mixedModules ++ [
             ./profiles/home-manager
@@ -263,7 +263,8 @@
 
       nixOnDroidConfigurations = {
 
-        default = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+        mysticant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+          pkgs = pkgsFor.aarch64-linux;
           modules = [
             ./profiles/mysticant
           ];
