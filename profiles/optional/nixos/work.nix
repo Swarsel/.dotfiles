@@ -2,10 +2,22 @@
 {
   sops = {
     secrets = {
-      clad = { sopsFile = ../../../secrets/work/secrets.yaml; };
-      dcad = { sopsFile = ../../../secrets/work/secrets.yaml; };
-      wsad = { sopsFile = ../../../secrets/work/secrets.yaml; };
-      imbad = { sopsFile = ../../../secrets/work/secrets.yaml; };
+      clad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      dcad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      wsad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
+      imbad = {
+        owner = "swarsel";
+        sopsFile = ../../../secrets/work/secrets.yaml;
+      };
     };
   };
 
