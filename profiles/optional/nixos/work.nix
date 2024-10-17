@@ -1,5 +1,14 @@
 { pkgs, ... }:
 {
+  sops = {
+    secrets = {
+      clad = { };
+      dcad = { };
+      wsad = { };
+      imbad = { };
+    };
+  };
+
   # boot.initrd.luks.yubikeySupport = true;
   programs.browserpass.enable = true;
   programs._1password.enable = true;
