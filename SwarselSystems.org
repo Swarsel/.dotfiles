@@ -1993,7 +1993,7 @@ My work machine. Built for more security, this is the gold standard of my config
         vim
         git
         openssh
-        toybox
+        # toybox
         dig
         man
         gnupg
@@ -6698,28 +6698,39 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 :CUSTOM_ID: h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf
 :END:
 
-Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
+Options that I need specifically at work. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
 #+begin_src nix :tangle profiles/optional/nixos/work.nix
-  { pkgs, ... }:
+  { pkgs, config, ... }:
   {
     sops = {
       secrets = {
-        clad = { };
-        dcad = { };
-        wsad = { };
-        imbad= { };
+        clad = { sopsFile = ../../../secrets/work/secrets.yaml; };
+        dcad = { sopsFile = ../../../secrets/work/secrets.yaml; };
+        wsad = { sopsFile = ../../../secrets/work/secrets.yaml; };
+        imbad= { sopsFile = ../../../secrets/work/secrets.yaml; };
       };
     };
 
     # boot.initrd.luks.yubikeySupport = true;
-    programs.browserpass.enable = true;
-    programs._1password.enable = true;
-    programs._1password-gui = {
-      enable = true;
-      polkitPolicyOwners = [ "swarsel" ];
+    programs = {
+      zsh.shellInit = ''
+        export CLAD="$(cat ${config.sops.secrets.clad.path})"
+        export DCAD="$(cat ${config.sops.secrets.dcad.path})"
+        export WSAD="$(cat ${config.sops.secrets.wsad.path})"
+        export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
+      '';
+
+      browserpass.enable = true;
+      _1password.enable = true;
+      _1password-gui = {
+        enable = true;
+        polkitPolicyOwners = [ "swarsel" ];
+      };
     };
+
     virtualisation.docker.enable = true;
+
     environment.systemPackages = with pkgs; [
       # (python39.withPackages (ps: with ps; [
       # cryptography
@@ -6733,27 +6744,31 @@ Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8
       govc
     ];
 
-    services.openssh = {
-      enable = true;
-      extraConfig = ''
-        '';
-    };
 
-    services.syncthing = {
-      settings = {
-        "winters" = {
-          id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-        };
-        folders = {
-          "Documents" = {
-            path = "/home/swarsel/Documents";
-            devices = [ "magicant" "winters" ];
-            id = "hgr3d-pfu3w";
+    services = {
+      openssh = {
+        enable = true;
+        extraConfig = ''
+        '';
+      };
+
+      syncthing = {
+        settings = {
+          "winters" = {
+            id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+          };
+          folders = {
+            "Documents" = {
+              path = "/home/swarsel/Documents";
+              devices = [ "magicant" "winters" ];
+              id = "hgr3d-pfu3w";
+            };
           };
         };
       };
     };
 
+    # cgroups v1 is required for centos7 dockers
     specialisation = {
       cgroup_v1.configuration = {
         boot.kernelParams = [
@@ -6762,7 +6777,6 @@ Integrates 1password mostly. There are more options at [[#h:f0b2ea93-94c8-48d8-8
         ];
       };
     };
-
 
   }
 #+end_src

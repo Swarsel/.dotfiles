@@ -4,7 +4,7 @@
       vim
       git
       openssh
-      toybox
+      # toybox
       dig
       man
       gnupg
