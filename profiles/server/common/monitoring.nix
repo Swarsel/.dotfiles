@@ -24,20 +24,20 @@
             {
               name = "prometheus";
               type = "prometheus";
-              url = "http://localhost:9090";
-              editable = false;
+              url = "https://status.swarsel.win/prometheus";
+              editable = true;
               access = "proxy";
+              basicAuth = true;
+              basicAuthUser = "admin";
+              basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
               jsonData = {
                 httpMethod = "POST";
                 manageAlerts = true;
                 prometheusType = "Prometheus";
-                prometheusVersion = "2.51.0";
+                prometheusVersion = ">2.50.x";
                 cacheLevel = "High";
                 disableRecordingRules = false;
                 incrementalQueryOverlapWindow = "10m";
-                basicAuth = true;
-                basicAuthUser = "admin";
-                basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
               };
             }
           ];
