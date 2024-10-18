@@ -12,6 +12,20 @@
   programs = {
     git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
+    zsh = {
+      cdpath = [
+        "~/Documents/Work"
+      ];
+      dirHashes = {
+        d = "$HOME/.dotfiles";
+        w = "$HOME/Documents/Work";
+        s = "$HOME/.dotfiles/secrets";
+        pr = "$HOME/Documents/Private";
+        ac = "$HOME/.ansible/collections/ansible_collections/vbc/linux/roles";
+      };
+    };
+
+
     ssh = {
       matchBlocks = {
         "uc" = {

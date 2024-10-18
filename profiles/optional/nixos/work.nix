@@ -28,6 +28,8 @@
       export DCAD="$(cat ${config.sops.secrets.dcad.path})"
       export WSAD="$(cat ${config.sops.secrets.wsad.path})"
       export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
+      export DCUSER="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
+      export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args"',"\"'-O'\""
     '';
 
     browserpass.enable = true;
