@@ -118,6 +118,8 @@
         nginx = {
           enable = true;
           port = 9113;
+          sslVerify = false;
+          scrapeUri = "http://localhost/nginx_status";
         };
         nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
           enable = true;
