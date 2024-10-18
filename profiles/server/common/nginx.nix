@@ -24,6 +24,7 @@
 
   services.nginx = {
     enable = true;
+    statusPage = true;
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
     recommendedOptimisation = true;
