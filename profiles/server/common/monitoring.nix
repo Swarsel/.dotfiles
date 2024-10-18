@@ -10,6 +10,11 @@
         owner = "grafana";
       };
     };
+
+    users.users.nextcloud-exporter = {
+      extraGroups = [ "nextcloud" ];
+    };
+
     users.users.grafana = {
       extraGroups = [ "users" ];
     };
@@ -79,6 +84,18 @@
             targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
           }];
         }
+        {
+          job_name = "nginx";
+          static_configs = [{
+            targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
+          }];
+        }
+        {
+          job_name = "nextcloud";
+          static_configs = [{
+            targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
+          }];
+        }
       ];
       exporters = {
         node = {
@@ -93,6 +110,21 @@
           pools = [
             "Vault"
           ];
+        };
+        restic = {
+          enable = false;
+          port = 9753;
+        };
+        nginx = {
+          enable = true;
+          port = 9113;
+        };
+        nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
+          enable = true;
+          port = 9205;
+          url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
+          username = "admin";
+          passwordFile = config.sops.secrets.nextcloudadminpass.path;
         };
       };
     };
