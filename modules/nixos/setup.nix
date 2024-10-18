@@ -21,4 +21,5 @@ in
   options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
   options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
   options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
+  options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
 }
