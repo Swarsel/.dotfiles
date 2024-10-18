@@ -2,7 +2,11 @@
 {
   config = lib.mkIf config.swarselsystems.server.nextcloud {
 
-    sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
+    sops.secrets.nextcloudadminpass = {
+      owner = "nextcloud";
+      group = "nextcloud";
+      mode = "0440";
+    };
 
     services.nextcloud = {
       enable = true;
