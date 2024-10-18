@@ -1975,6 +1975,7 @@ My work machine. Built for more security, this is the gold standard of my config
         paperless = true;
         transmission = true;
         syncthing = true;
+        monitoring = true;
       };
     };
 
@@ -3460,6 +3461,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
     options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
     options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
+    options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
   }
 #+end_src
 
@@ -5388,6 +5390,7 @@ Also, the system state version is set here. No need to touch it.
       ./paperless.nix
       ./transmission.nix
       ./syncthing.nix
+      ./monitoring.nix
     ];
 
     nix =
@@ -6550,6 +6553,54 @@ Also, the system state version is set here. No need to touch it.
             locations = {
               "/" = {
                 proxyPass = "http://localhost:8384/";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
+**** monitoring
+
+#+begin_src nix :tangle profiles/server/common/monitoring.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.monitoring {
+
+      sops.secrets = {
+        grafanaadminpass = {
+          owner = "grafana";
+        }
+        }
+      users.users.grafana = {
+        extraGroups = [ "users" ];
+      };
+
+      services.grafana = {
+        enable = true;
+        dataDir = "/Vault/data/grafana";
+        admin_password = "$__file{/run/secrets/grafanaadminpass}";
+        settings = {
+          http_port = 3000;
+          http_addr = "127.0.0.1";
+        };
+      };
+
+      services.nginx = {
+        virtualHosts = {
+          "status.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:3000/";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';

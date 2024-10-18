@@ -53,6 +53,7 @@
       paperless = true;
       transmission = true;
       syncthing = true;
+      monitoring = true;
     };
   };
 

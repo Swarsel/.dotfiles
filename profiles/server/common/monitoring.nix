@@ -5,8 +5,8 @@
     sops.secrets = {
       grafanaadminpass = {
         owner = "grafana";
-      }
-        }
+      };
+    };
         users.users.grafana = {
         extraGroups = [ "users" ];
     };
@@ -14,10 +14,12 @@
     services.grafana = {
       enable = true;
       dataDir = "/Vault/data/grafana";
-      admin_password = "$__file{/run/secrets/grafanaadminpass}";
       settings = {
-        http_port = 3000;
-        http_addr = "127.0.0.1";
+        security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
+        server = {
+          http_port = 3000;
+          http_addr = "127.0.0.1";
+        };
       };
     };
 
