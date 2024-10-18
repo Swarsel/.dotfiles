@@ -6577,6 +6577,9 @@ Also, the system state version is set here. No need to touch it.
         grafanaadminpass = {
           owner = "grafana";
         };
+        prometheusadminpass = {
+          owner = "grafana";
+        };
       };
       users.users.grafana = {
         extraGroups = [ "users" ];
@@ -6588,7 +6591,7 @@ Also, the system state version is set here. No need to touch it.
         provision = {
           enable = true;
           datasources.settings = {
-            datasources = {
+            datasources = [
               prometheus = {
                 name = "prometheus";
                 type = "prometheus";
@@ -6603,17 +6606,21 @@ Also, the system state version is set here. No need to touch it.
                   cacheLevel = "High";
                   disableRecordingRules = false;
                   incrementalQueryOverlapWindow = "10m";
+                  basicAuth = true;
+                  basicAuthUser = "admin";
+                  basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
                 };
-              };
-            };
+              }
+            ];
           };
         };
+
         settings = {
           security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
           server = {
             http_port = 3000;
             http_addr = "127.0.0.1";
-            protocol = "https";
+            protocol = "http";
             domain = "status.swarsel.win";
           };
         };

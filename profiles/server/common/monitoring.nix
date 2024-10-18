@@ -6,6 +6,9 @@
       grafanaadminpass = {
         owner = "grafana";
       };
+      prometheusadminpass = {
+        owner = "grafana";
+      };
     };
     users.users.grafana = {
       extraGroups = [ "users" ];
@@ -17,32 +20,36 @@
       provision = {
         enable = true;
         datasources.settings = {
-          datasources = {
+          datasources = [
             prometheus = {
-              name = "prometheus";
-              type = "prometheus";
-              url = "http://localhost:9090";
-              editable = true;
-              access = "proxy";
-              jsonData = {
-                httpMethod = "POST";
-                manageAlerts = true;
-                prometheusType = "Prometheus";
-                prometheusVersion = "2.51.0";
-                cacheLevel = "High";
-                disableRecordingRules = false;
-                incrementalQueryOverlapWindow = "10m";
-              };
+            name = "prometheus";
+            type = "prometheus";
+            url = "http://localhost:9090";
+            editable = true;
+            access = "proxy";
+            jsonData = {
+              httpMethod = "POST";
+              manageAlerts = true;
+              prometheusType = "Prometheus";
+              prometheusVersion = "2.51.0";
+              cacheLevel = "High";
+              disableRecordingRules = false;
+              incrementalQueryOverlapWindow = "10m";
+              basicAuth = true;
+              basicAuthUser = "admin";
+              basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
             };
-          };
+          }
+          ];
         };
       };
+
       settings = {
         security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
         server = {
           http_port = 3000;
           http_addr = "127.0.0.1";
-          protocol = "https";
+          protocol = "http";
           domain = "status.swarsel.win";
         };
       };
