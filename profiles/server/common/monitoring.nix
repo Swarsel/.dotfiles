@@ -96,31 +96,31 @@
         };
       };
     };
-  };
 
-  services.nginx = {
-    virtualHosts = {
-      "status.swarsel.win" = {
-        enableACME = true;
-        forceSSL = true;
-        acmeRoot = null;
-        locations = {
-          "/" = {
-            proxyPass = "http://localhost:3000";
-            extraConfig = ''
-              client_max_body_size 0;
-            '';
-          };
-          "/prometheus" = {
-            proxyPass = "http://localhost:9090";
-            extraConfig = ''
-              client_max_body_size 0;
-            '';
+
+    services.nginx = {
+      virtualHosts = {
+        "status.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://localhost:3000";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+            "/prometheus" = {
+              proxyPass = "http://localhost:9090";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
           };
         };
       };
     };
   };
-};
 
 }
