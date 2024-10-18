@@ -25,7 +25,7 @@
               name = "prometheus";
               type = "prometheus";
               url = "http://localhost:9090";
-              editable = true;
+              editable = false;
               access = "proxy";
               jsonData = {
                 httpMethod = "POST";
