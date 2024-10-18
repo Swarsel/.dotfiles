@@ -14,7 +14,6 @@
     services.grafana = {
       enable = true;
       dataDir = "/Vault/data/grafana";
-      admin_password = "$__file{/run/secrets/grafanaadminpass}";
       settings = {
         security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
         server = {
