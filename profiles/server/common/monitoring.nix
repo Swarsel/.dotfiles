@@ -7,8 +7,8 @@
         owner = "grafana";
       };
     };
-        users.users.grafana = {
-        extraGroups = [ "users" ];
+    users.users.grafana = {
+      extraGroups = [ "users" ];
     };
 
     services.grafana = {
@@ -19,6 +19,24 @@
         server = {
           http_port = 3000;
           http_addr = "127.0.0.1";
+          protocol = "https";
+          domain = "status.swarsel.win";
+          root_url = "%(protocol)s://%(domain)s:%(http_port)s/grafana/";
+        };
+      };
+    };
+
+    services.prometheus = {
+      webExternalUrl = "https://status.swarsel.win/prometheus";
+      port = 9090;
+      listenAddress = "127.0.0.1";
+      exporters = {
+        zfs = {
+          enable = true;
+          port = 9134;
+          pools = [
+            "Vault"
+          ];
         };
       };
     };
@@ -30,8 +48,14 @@
           forceSSL = true;
           acmeRoot = null;
           locations = {
-            "/" = {
-              proxyPass = "http://localhost:3000/";
+            "/grafana" = {
+              proxyPass = "http://localhost:3000/grafana/";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+            "/prometheus" = {
+              proxyPass = "http://localhost:9090/prometheus/";
               extraConfig = ''
                 client_max_body_size 0;
               '';
