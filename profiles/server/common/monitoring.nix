@@ -21,25 +21,25 @@
         enable = true;
         datasources.settings = {
           datasources = [
-            prometheus = {
-            name = "prometheus";
-            type = "prometheus";
-            url = "http://localhost:9090";
-            editable = true;
-            access = "proxy";
-            jsonData = {
-              httpMethod = "POST";
-              manageAlerts = true;
-              prometheusType = "Prometheus";
-              prometheusVersion = "2.51.0";
-              cacheLevel = "High";
-              disableRecordingRules = false;
-              incrementalQueryOverlapWindow = "10m";
-              basicAuth = true;
-              basicAuthUser = "admin";
-              basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
-            };
-          }
+            {
+              name = "prometheus";
+              type = "prometheus";
+              url = "http://localhost:9090";
+              editable = true;
+              access = "proxy";
+              jsonData = {
+                httpMethod = "POST";
+                manageAlerts = true;
+                prometheusType = "Prometheus";
+                prometheusVersion = "2.51.0";
+                cacheLevel = "High";
+                disableRecordingRules = false;
+                incrementalQueryOverlapWindow = "10m";
+                basicAuth = true;
+                basicAuthUser = "admin";
+                basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
+              };
+            }
           ];
         };
       };
