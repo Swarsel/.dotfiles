@@ -21,15 +21,16 @@
           http_addr = "127.0.0.1";
           protocol = "https";
           domain = "status.swarsel.win";
-          root_url = "%(protocol)s://%(domain)s:%(http_port)s/grafana/";
         };
       };
     };
 
     services.prometheus = {
+      enable = true;
       webExternalUrl = "https://status.swarsel.win/prometheus";
       port = 9090;
       listenAddress = "127.0.0.1";
+      webConfigFile = /../../programs/server/prometheus/web.config;
       exporters = {
         zfs = {
           enable = true;
@@ -49,13 +50,13 @@
           acmeRoot = null;
           locations = {
             "/grafana" = {
-              proxyPass = "http://localhost:3000/grafana/";
+              proxyPass = "http://localhost:3000";
               extraConfig = ''
                 client_max_body_size 0;
               '';
             };
             "/prometheus" = {
-              proxyPass = "http://localhost:9090/prometheus/";
+              proxyPass = "http://localhost:9090";
               extraConfig = ''
                 client_max_body_size 0;
               '';
