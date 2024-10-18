@@ -1807,6 +1807,7 @@ My work machine. Built for more security, this is the gold standard of my config
       { command = "nm-applet"; }
       { command = "teams-for-linux"; }
       { command = "1password"; }
+      { command = "feishin"; }
     ];
       sharescreen = "eDP-2";
       monitors = {
@@ -6731,6 +6732,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         export DCAD="$(cat ${config.sops.secrets.dcad.path})"
         export WSAD="$(cat ${config.sops.secrets.wsad.path})"
         export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
+        export DCUSER="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
+        export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args"',"\"'-O'\""
       '';
 
       browserpass.enable = true;
@@ -9257,6 +9260,20 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
     programs = {
       git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
+
+      zsh = {
+        cdpath = [
+          "~/Documents/Work"
+        ];
+        dirHashes = {
+          d = "$HOME/.dotfiles";
+          w = "$HOME/Documents/Work";
+          s = "$HOME/.dotfiles/secrets";
+          pr = "$HOME/Documents/Private";
+          ac = "$HOME/.ansible/collections/ansible_collections/vbc/linux/roles";
+        };
+      };
+
 
       ssh = {
         matchBlocks = {

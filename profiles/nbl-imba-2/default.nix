@@ -94,6 +94,7 @@
       { command = "nm-applet"; }
       { command = "teams-for-linux"; }
       { command = "1password"; }
+      { command = "feishin"; }
     ];
     sharescreen = "eDP-2";
     monitors = {
