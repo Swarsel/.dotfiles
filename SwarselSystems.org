@@ -3461,6 +3461,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
     options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
     options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
+    options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
     options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
   }
 #+end_src
@@ -5390,6 +5391,7 @@ Also, the system state version is set here. No need to touch it.
       ./paperless.nix
       ./transmission.nix
       ./syncthing.nix
+      ./restic.nix
       ./monitoring.nix
     ];
 
@@ -6567,6 +6569,18 @@ Also, the system state version is set here. No need to touch it.
         };
       };
     };
+
+  }
+#+end_src
+
+**** restic
+
+#+begin_src nix :tangle profiles/server/common/restic.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.restic {
+
+      # TODO
 
   }
 #+end_src
