@@ -24,6 +24,7 @@
     ./paperless.nix
     ./transmission.nix
     ./syncthing.nix
+    ./restic.nix
     ./monitoring.nix
   ];
 
