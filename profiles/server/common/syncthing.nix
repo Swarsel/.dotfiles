@@ -11,7 +11,7 @@
       user = "syncthing";
       dataDir = "/Vault/data/syncthing";
       configDir = "/Vault/apps/syncthing";
-      guiAddress = "0.0.0.0:8384";
+      guiAddress = "127.0.0.1:8384";
       openDefaultPorts = true;
       relay.enable = false;
       settings = {

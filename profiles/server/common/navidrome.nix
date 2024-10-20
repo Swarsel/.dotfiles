@@ -37,7 +37,7 @@
       openFirewall = true;
       settings = {
         LogLevel = "error";
-        Address = "0.0.0.0";
+        Address = "127.0.0.1";
         Port = 4040;
         MusicFolder = "/Vault/Eternor/Musik";
         EnableSharing = true;
@@ -71,7 +71,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.2:4040";
+              proxyPass = "http://localhost:4040";
               proxyWebsockets = true;
               extraConfig = ''
                 proxy_redirect          http:// https://;
