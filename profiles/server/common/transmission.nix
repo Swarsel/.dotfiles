@@ -87,46 +87,46 @@
             forceSSL = false;
             acmeRoot = null;
             locations = {
-              "/" {
-              proxyPass = "http://localhost:9091";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
-            };
-            "/radarr" = {
-              proxyPass = "http://localhost:7878";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
-            };
-            "/readarr" = {
-              proxyPass = "http://localhost:8787";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
-            };
-            "/sonarr" = {
-              proxyPass = "http://localhost:8989";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
-            };
-            "/lidarr" = {
-              proxyPass = "http://localhost:8686";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
-            };
-            "/prowlarr" = {
-              proxyPass = "http://localhost:9696";
-              extraConfig = ''
-                client_max_body_size    0;
-              '';
+              "/" = {
+                proxyPass = "http://localhost:9091";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/radarr" = {
+                proxyPass = "http://localhost:7878";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/readarr" = {
+                proxyPass = "http://localhost:8787";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/sonarr" = {
+                proxyPass = "http://localhost:8989";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/lidarr" = {
+                proxyPass = "http://localhost:8686";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+              "/prowlarr" = {
+                proxyPass = "http://localhost:9696";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
             };
           };
         };
       };
     };
   };
-};
 }
