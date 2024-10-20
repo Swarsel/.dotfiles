@@ -1,9 +1,8 @@
 { pkgs, lib, config, ... }:
 {
-  config = lib.mkIf config.swarselsystems.server.restic
-    {
+  config = lib.mkIf config.swarselsystems.server.restic {
 
-      # TODO
+    # TODO
 
-    }
-    }
+  };
+}
