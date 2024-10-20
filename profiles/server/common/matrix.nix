@@ -279,7 +279,7 @@ in
               ];
             }
             {
-              addr = "::";
+              addr = "[::0]";
               port = 8448;
               ssl = true;
               extraParameters = [
@@ -292,7 +292,7 @@ in
               ssl = true;
             }
             {
-              addr = "::";
+              addr = "[::0]";
               port = 443;
               ssl = true;
             }
