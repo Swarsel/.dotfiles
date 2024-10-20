@@ -16,7 +16,7 @@
       user = "paperless";
       port = 28981;
       passwordFile = config.sops.secrets.paperless_admin.path;
-      address = "0.0.0.0";
+      address = "127.0.0.1";
       settings = {
         PAPERLESS_OCR_LANGUAGE = "deu+eng";
         PAPERLESS_URL = "https://scan.swarsel.win";
@@ -36,7 +36,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.2:28981";
+              proxyPass = "http://localhost:28981";
               extraConfig = ''
                 client_max_body_size    0;
               '';

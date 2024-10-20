@@ -89,7 +89,10 @@ in
         listeners = [
           {
             port = 8008;
-            bind_addresses = [ "0.0.0.0" ];
+            bind_addresses = [
+              "127.0.0.1"
+              "::1"
+            ];
             type = "http";
             tls = false;
             x_forwarded = true;
@@ -117,7 +120,7 @@ in
         };
         appservice = {
           address = "http://localhost:29317";
-          hostname = "0.0.0.0";
+          hostname = "localhost";
           port = "29317";
           provisioning.enabled = true;
           id = "telegram";
@@ -167,7 +170,7 @@ in
         };
         appservice = {
           address = "http://localhost:29318";
-          hostname = "0.0.0.0";
+          hostname = "127.0.0.1";
           port = 29318;
           database = {
             type = "postgres";
@@ -215,7 +218,7 @@ in
         appservice = {
 
           address = "http://localhost:29328";
-          hostname = "0.0.0.0";
+          hostname = "127.0.0.1";
           port = 29328;
           database = {
             type = "postgres";
@@ -276,7 +279,20 @@ in
               ];
             }
             {
+              addr = "[::0]";
+              port = 8448;
+              ssl = true;
+              extraParameters = [
+                "default_server"
+              ];
+            }
+            {
               addr = "0.0.0.0";
+              port = 443;
+              ssl = true;
+            }
+            {
+              addr = "[::0]";
               port = 443;
               ssl = true;
             }
@@ -284,7 +300,7 @@ in
           locations = {
             "~ ^(/_matrix|/_synapse/client)" = {
               # proxyPass = "http://localhost:8008";
-              proxyPass = "http://192.168.1.2:8008";
+              proxyPass = "http://localhost:8008";
               extraConfig = ''
                 client_max_body_size 0;
               '';

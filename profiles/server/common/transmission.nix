@@ -88,37 +88,37 @@
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://127.0.0.1:9091";
+                proxyPass = "http://localhost:9091";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
-              "= /radarr" = {
-                proxyPass = "http://127.0.0.1:7878/";
+              "/radarr" = {
+                proxyPass = "http://localhost:7878";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
-              "= /readarr" = {
-                proxyPass = "http://127.0.0.1:8787/";
+              "/readarr" = {
+                proxyPass = "http://localhost:8787";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
-              "= /sonarr" = {
-                proxyPass = "http://127.0.0.1:8989/";
+              "/sonarr" = {
+                proxyPass = "http://localhost:8989";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
-              "= /lidarr" = {
-                proxyPass = "http://127.0.0.1:8686/";
+              "/lidarr" = {
+                proxyPass = "http://localhost:8686";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
-              "= /prowlarr" = {
-                proxyPass = "http://127.0.0.1:9696/";
+              "/prowlarr" = {
+                proxyPass = "http://localhost:9696";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';

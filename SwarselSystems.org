@@ -1951,7 +1951,7 @@ My work machine. Built for more security, this is the gold standard of my config
       hostName = "winters";
       hostId = "b7778a4a";
       firewall.enable = true;
-      enableIPv6 = false;
+      enableIPv6 = true;
       firewall.allowedTCPPorts = [ 80 443 ];
     };
 
@@ -5608,7 +5608,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.1.2:8080";
+                proxyPass = "http://localhost:8080";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -5656,7 +5656,7 @@ Also, the system state version is set here. No need to touch it.
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://192.168.1.2:8096";
+              proxyPass = "http://localhost:8096";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -5712,7 +5712,7 @@ Also, the system state version is set here. No need to touch it.
         openFirewall = true;
         settings = {
           LogLevel = "error";
-          Address = "0.0.0.0";
+          Address = "127.0.0.1";
           Port = 4040;
           MusicFolder = "/Vault/Eternor/Musik";
           EnableSharing = true;
@@ -5746,7 +5746,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.1.2:4040";
+                proxyPass = "http://localhost:4040";
                 proxyWebsockets = true;
                 extraConfig = ''
                   proxy_redirect          http:// https://;
@@ -5872,10 +5872,10 @@ Also, the system state version is set here. No need to touch it.
     clientConfig."m.homeserver".base_url = baseUrl;
     serverConfig."m.server" = "${matrixDomain}:443";
     mkWellKnown = data: ''
-    default_type application/json;
-    add_header Access-Control-Allow-Origin *;
-    return 200 '${builtins.toJSON data}';
-  '';
+      default_type application/json;
+      add_header Access-Control-Allow-Origin *;
+      return 200 '${builtins.toJSON data}';
+    '';
   in
   {
 
@@ -5956,7 +5956,10 @@ Also, the system state version is set here. No need to touch it.
           listeners = [
             {
               port = 8008;
-              bind_addresses = [ "0.0.0.0" ];
+              bind_addresses = [
+                "127.0.0.1"
+                "::1"
+              ];
               type = "http";
               tls = false;
               x_forwarded = true;
@@ -5984,7 +5987,7 @@ Also, the system state version is set here. No need to touch it.
           };
           appservice = {
             address = "http://localhost:29317";
-            hostname = "0.0.0.0";
+            hostname = "localhost";
             port = "29317";
             provisioning.enabled = true;
             id = "telegram";
@@ -6034,7 +6037,7 @@ Also, the system state version is set here. No need to touch it.
           };
           appservice = {
             address = "http://localhost:29318";
-            hostname = "0.0.0.0";
+            hostname = "127.0.0.1";
             port = 29318;
             database = {
               type = "postgres";
@@ -6082,7 +6085,7 @@ Also, the system state version is set here. No need to touch it.
           appservice = {
 
             address = "http://localhost:29328";
-            hostname = "0.0.0.0";
+            hostname = "127.0.0.1";
             port = 29328;
             database = {
               type = "postgres";
@@ -6143,7 +6146,20 @@ Also, the system state version is set here. No need to touch it.
                 ];
               }
               {
+                addr = "[::0]";
+                port = 8448;
+                ssl = true;
+                extraParameters = [
+                  "default_server"
+                ];
+              }
+              {
                 addr = "0.0.0.0";
+                port = 443;
+                ssl = true;
+              }
+              {
+                addr = "[::0]";
                 port = 443;
                 ssl = true;
               }
@@ -6151,7 +6167,7 @@ Also, the system state version is set here. No need to touch it.
             locations = {
               "~ ^(/_matrix|/_synapse/client)" = {
                 # proxyPass = "http://localhost:8008";
-                proxyPass = "http://192.168.1.2:8008";
+                proxyPass = "http://localhost:8008";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -6235,7 +6251,7 @@ Also, the system state version is set here. No need to touch it.
         port = 3001;
         openFirewall = true;
         mediaLocation = "/Vault/Eternor/Immich";
-        environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://127.0.0.1:3003";
+        environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
       };
 
 
@@ -6247,7 +6263,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://127.0.0.1:3001";
+                proxyPass = "http://localhost:3001";
                 extraConfig = ''
                   client_max_body_size    0;
 
@@ -6292,7 +6308,7 @@ Also, the system state version is set here. No need to touch it.
         user = "paperless";
         port = 28981;
         passwordFile = config.sops.secrets.paperless_admin.path;
-        address = "0.0.0.0";
+        address = "127.0.0.1";
         settings = {
           PAPERLESS_OCR_LANGUAGE = "deu+eng";
           PAPERLESS_URL = "https://scan.swarsel.win";
@@ -6312,7 +6328,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://192.168.1.2:28981";
+                proxyPass = "http://localhost:28981";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
@@ -6419,37 +6435,37 @@ Also, the system state version is set here. No need to touch it.
               acmeRoot = null;
               locations = {
                 "/" = {
-                  proxyPass = "http://127.0.0.1:9091";
+                  proxyPass = "http://localhost:9091";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
-                "= /radarr" = {
-                  proxyPass = "http://127.0.0.1:7878/";
+                "/radarr" = {
+                  proxyPass = "http://localhost:7878";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
-                "= /readarr" = {
-                  proxyPass = "http://127.0.0.1:8787/";
+                "/readarr" = {
+                  proxyPass = "http://localhost:8787";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
-                "= /sonarr" = {
-                  proxyPass = "http://127.0.0.1:8989/";
+                "/sonarr" = {
+                  proxyPass = "http://localhost:8989";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
-                "= /lidarr" = {
-                  proxyPass = "http://127.0.0.1:8686/";
+                "/lidarr" = {
+                  proxyPass = "http://localhost:8686";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
-                "= /prowlarr" = {
-                  proxyPass = "http://127.0.0.1:9696/";
+                "/prowlarr" = {
+                  proxyPass = "http://localhost:9696";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
@@ -6559,7 +6575,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8384/";
+                proxyPass = "http://localhost:8384";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -6582,6 +6598,7 @@ Also, the system state version is set here. No need to touch it.
 
       # TODO
 
+    };
   }
 #+end_src
 

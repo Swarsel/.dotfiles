@@ -13,7 +13,7 @@
       port = 3001;
       openFirewall = true;
       mediaLocation = "/Vault/Eternor/Immich";
-      environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://127.0.0.1:3003";
+      environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
     };
 
 
@@ -25,7 +25,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://127.0.0.1:3001";
+              proxyPass = "http://localhost:3001";
               extraConfig = ''
                 client_max_body_size    0;
 

@@ -90,7 +90,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:8384/";
+              proxyPass = "http://localhost:8384";
               extraConfig = ''
                 client_max_body_size 0;
               '';
