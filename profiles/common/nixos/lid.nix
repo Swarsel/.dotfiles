@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+_:
 {
   services.logind = {
     lidSwitch = "suspend";

@@ -4,6 +4,7 @@
   monitors = import ./monitors.nix;
   input = import ./input.nix;
   nixos = import ./nixos.nix;
+  darwin = import ./darwin.nix;
   waybar = import ./waybar.nix;
   startup = import ./startup.nix;
   wallpaper = import ./wallpaper.nix;

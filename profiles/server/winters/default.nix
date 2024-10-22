@@ -1,4 +1,4 @@
-{ inputs, outputs, config, pkgs, lib, ... }:
+{ inputs, outputs, config, ... }:
 {
 
   imports = [
@@ -54,6 +54,7 @@
       transmission = true;
       syncthing = true;
       monitoring = true;
+      jenkins = false;
     };
   };
 

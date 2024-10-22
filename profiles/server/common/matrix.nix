@@ -1,4 +1,4 @@
-{ config, lib, pkgs, modulesPath, sops, ... }:
+{ config, lib, pkgs, sops, ... }:
 let
   matrixDomain = "swatrix.swarsel.win";
   baseUrl = "https://${matrixDomain}";

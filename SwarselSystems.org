@@ -117,49 +117,49 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
 
 #+begin_src nix :tangle no :noweb-ref theme
 
-    enable = true;
-    base16Scheme = ../../../wallpaper/swarsel.yaml;
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-    polarity = "dark";
-    opacity.popups = 0.5;
-    cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
-      size = 16;
+  enable = true;
+  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
     };
-    fonts = {
-      sizes = {
-        terminal = 10;
-        applications = 11;
-      };
-      serif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      sansSerif = {
-        # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-        package = pkgs.cantarell-fonts;
-        # package = pkgs.montserrat;
-        name = "Cantarell";
-        # name = "FiraCode Nerd Font Propo";
-        # name = "Montserrat";
-      };
-
-      monospace = {
-        package = pkgs.nerdfonts; # has overrides
-        name = "FiraCode Nerd Font Mono";
-      };
-
-      emoji = {
-        package = pkgs.noto-fonts-emoji;
-        name = "Noto Color Emoji";
-      };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
     };
+
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
+
+    monospace = {
+      package = pkgs.nerdfonts; # has overrides
+      name = "FiraCode Nerd Font Mono";
+    };
+
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
+    };
+  };
 
 #+end_src
 *** firefox profile
@@ -456,6 +456,12 @@ A short overview over each input and what it does:
     url = "github:TamtamHero/fw-fanctrl/packaging/nix";
     inputs.nixpkgs.follows = "nixpkgs";
   };
+
+  nix-darwin = {
+    url = "github:lnl7/nix-darwin";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
 #+end_src
 *** let
 :PROPERTIES:
@@ -641,6 +647,24 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 
 #+end_src
 
+*** darwinConfigurations
+:PROPERTIES:
+:CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
+:END:
+
+In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
+
+#+begin_src nix :tangle no :noweb-ref flakemacconf
+
+  "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
+   specialArgs = { inherit inputs outputs; };
+    modules = [
+      ./profiles/nbm-imba-166
+    ];
+  };
+
+#+end_src
+
 *** nixOnDroidConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:5f6ef553-59f9-4239-b6f3-63d33b57f335
@@ -670,8 +694,6 @@ Nix on Android also demands an own flake output, which is provided here.
 :END:
 
 This section mainly exists house different `configuration.nix` files for system level configurations of NixOS systems as well as `home.nix` for user level configurations on all systems.
-
-Important: Think about if a settings really needs to go into this area - chances are that the settings can also go to the general settings, which is to be preferred in order to reduce code duplication.
 
 *** Physical hosts
 :PROPERTIES:
@@ -1799,16 +1821,16 @@ My work machine. Built for more security, this is the gold standard of my config
       # | DP-4 | |eDP-1|
       #  ------   -----
       startup = [
-      { command = "nextcloud --background"; }
-      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-      { command = "ANKI_WAYLAND=1 anki"; }
-      { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-      { command = "nm-applet"; }
-      { command = "teams-for-linux"; }
-      { command = "1password"; }
-      { command = "feishin"; }
-    ];
+        { command = "nextcloud --background"; }
+        { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+        { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+        { command = "teams-for-linux"; }
+        { command = "1password"; }
+        { command = "feishin"; }
+      ];
       sharescreen = "eDP-2";
       monitors = {
         main = {
@@ -1920,7 +1942,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 #+begin_src nix :tangle profiles/server/winters/default.nix
-  { inputs, outputs, config, pkgs, lib, ... }:
+  { inputs, outputs, config, ... }:
   {
 
     imports = [
@@ -1967,7 +1989,7 @@ My work machine. Built for more security, this is the gold standard of my config
         kavita = true;
         navidrome = true;
         jellyfin = true;
-        spotifyd =true;
+        spotifyd = true;
         mpd = false;
         matrix = true;
         nextcloud = true;
@@ -1976,12 +1998,56 @@ My work machine. Built for more security, this is the gold standard of my config
         transmission = true;
         syncthing = true;
         monitoring = true;
+        jenkins = false;
       };
     };
 
   }
 
 
+#+end_src
+
+**** nbm-imba-166 (MacBook Pro)
+
+
+#+begin_src nix :tangle profiles/nbm-imba-166/default.nix
+  { inputs, outputs, config, pkgs, lib, ... }:
+  {
+
+    imports = [
+      inputs.home-manager.darwinModules.home-manager
+      {
+        home-manager.useGlobalPkgs = true;
+        home-manager.useUserPackages = true;
+        home-manager.users."leon.schwarzaeugl".imports = [
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+    nix.settings.experimental-features = "nix-command flakes";
+    nixpkgs = {
+      hostPlatform = "x86_64-darwin";
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    # Auto upgrade nix package and the daemon service.
+    services.nix-daemon.enable = true;
+    services.karabiner-elements.enable = true;
+
+    home-manager.users."leon.schwarzaeugl".home.stateVersion = "23.05";
+    home-manager.users."leon.schwarzaeugl".swarselsystems = {
+      isDarwin = true;
+      isLaptop = true;
+      isNixos = false;
+      isBtrfs = false;
+    };
+
+    system.stateVersion = 4;
+
+  }
 #+end_src
 
 **** Magicant (Phone)
@@ -3094,7 +3160,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarselcheck/default.nix
-  { writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, sway, jq }:
+  { writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
 
   writeShellApplication {
     name = "swarselcheck";
@@ -3206,7 +3272,7 @@ done
 #+end_src
 
 #+begin_src nix :tangle pkgs/fs-diff/default.nix
-  { writeShellApplication, sway }:
+  { writeShellApplication }:
 
   writeShellApplication {
     name = "fs-diff";
@@ -3266,11 +3332,11 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
     name = "github-notifications";
     runtimeInputs = [ jq ];
     text = ''
-         count=$(curl -u Swarsel:"$(cat /run/user/1000/secrets/github_notif)" https://api.github.com/notifications | jq '. | length')
+      count=$(curl -u Swarsel:"$(cat /run/user/1000/secrets/github_notif)" https://api.github.com/notifications | jq '. | length')
 
-         if [[ "$count" != "0" ]]; then
-             echo "{\"text\":\"$count\"}"
-         fi
+      if [[ "$count" != "0" ]]; then
+          echo "{\"text\":\"$count\"}"
+      fi
     '';
   }
 #+end_src
@@ -3315,7 +3381,7 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 #+begin_src nix :tangle overlays/default.nix
   { inputs, ... }: {
     additions = final: _prev: import ../pkgs { pkgs = final; };
-    modifications = final: _prev: {
+    modifications = _: _prev: {
       vesktop = _prev.vesktop.override {
         withSystemVencord = true;
       };
@@ -3356,7 +3422,7 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
       };
     };
 
-    zjstatus = final: _prev: {
+    zjstatus = _: _prev: {
       zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
     };
 
@@ -3463,6 +3529,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
     options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
     options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
+    options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
   }
 #+end_src
 
@@ -3470,7 +3537,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 
 
 #+begin_src nix :tangle modules/nixos/input.nix
-  { lib, config, ... }:
+  { lib, ... }:
   let
     inherit (lib) mkOption types;
   in
@@ -3527,6 +3594,7 @@ This holds modules that are to be used on most hosts. These are also the most im
     monitors = import ./monitors.nix;
     input = import ./input.nix;
     nixos = import ./nixos.nix;
+    darwin = import ./darwin.nix;
     waybar = import ./waybar.nix;
     startup = import ./startup.nix;
     wallpaper = import ./wallpaper.nix;
@@ -3753,6 +3821,15 @@ These are some extra options that will be used if the machine also runs NixOS. F
       internal = true;
     };
     config.swarselsystems.swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
+  }
+#+end_src
+
+***** darwin
+
+#+begin_src nix :noweb yes :tangle modules/home/darwin.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
   }
 #+end_src
 
@@ -4325,8 +4402,8 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
               };
               wireguard = { private-key = "$WIREGUARDPRIV"; };
               "wireguard-peer.$WIREGUARDPUB" = {
-                endpoint= "$WIREGUARDENDPOINT";
-                allowed-ips= "0.0.0.0/0";
+                endpoint = "$WIREGUARDENDPOINT";
+                allowed-ips = "0.0.0.0/0";
               };
               ipv4 = {
                 method = "ignore";
@@ -4675,7 +4752,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 Do not touch this.
 
 #+begin_src nix :tangle profiles/common/nixos/zsh.nix
-  { lib, config, pkgs, ... }:
+  { pkgs, ... }:
   {
     programs.zsh.enable = true;
     users.defaultUserShell = pkgs.zsh;
@@ -4689,7 +4766,6 @@ Do not touch this.
 :END:
 
 #+begin_src nix :tangle profiles/common/nixos/syncthing.nix
-
   _:
   {
     services.syncthing = {
@@ -5313,7 +5389,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
     environment.systemPackages = with pkgs; [
       distrobox
       boxbuddy
-      ];
+    ];
 
     virtualisation.podman = {
       enable = true;
@@ -5327,7 +5403,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 This turns off the display when the lid is closed.
 
 #+begin_src nix :tangle profiles/common/nixos/lid.nix
-  { config, pkgs, ... }:
+  _:
   {
     services.logind = {
       lidSwitch = "suspend";
@@ -5365,68 +5441,70 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 Also, the system state version is set here. No need to touch it.
 
 #+begin_src nix :tangle profiles/server/common/default.nix
-  { lib, config, inputs, ... }:
-  {
-    imports = [
-      ../../common/nixos/xserver.nix
-      ../../common/nixos/gc.nix
-      ../../common/nixos/store.nix
-      ../../common/nixos/time.nix
-      ../../common/nixos/pipewire.nix
-      ../../common/nixos/users.nix
-      ../../common/nixos/nix-ld.nix
-      ./packages.nix
-      ./sops.nix
-      ./ssh.nix
-      ./nfs.nix
-      ./nginx.nix
-      ./kavita.nix
-      ./jellyfin.nix
-      ./navidrome.nix
-      ./spotifyd.nix
-      ./mpd.nix
-      ./matrix.nix
-      ./nextcloud.nix
-      ./immich.nix
-      ./paperless.nix
-      ./transmission.nix
-      ./syncthing.nix
-      ./restic.nix
-      ./monitoring.nix
-    ];
+{ lib, config, inputs, ... }:
+{
+  imports = [
+    ../../common/nixos/xserver.nix
+    ../../common/nixos/gc.nix
+    ../../common/nixos/store.nix
+    ../../common/nixos/time.nix
+    ../../common/nixos/pipewire.nix
+    ../../common/nixos/users.nix
+    ../../common/nixos/nix-ld.nix
+    ./packages.nix
+    ./sops.nix
+    ./ssh.nix
+    ./nfs.nix
+    ./nginx.nix
+    ./kavita.nix
+    ./jellyfin.nix
+    ./navidrome.nix
+    ./spotifyd.nix
+    ./mpd.nix
+    ./matrix.nix
+    ./nextcloud.nix
+    ./immich.nix
+    ./paperless.nix
+    ./transmission.nix
+    ./syncthing.nix
+    ./restic.nix
+    ./monitoring.nix
+    ./jenkins.nix
+  ];
 
-    nix =
-      let
-        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-      in
-      {
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-            "ca-derivations"
-          ];
-          trusted-users = [ "swarsel" ];
-          flake-registry = "";
-          warn-dirty = false;
-        };
-        channel.enable = false;
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+        ];
+        trusted-users = [ "swarsel" ];
+        flake-registry = "";
+        warn-dirty = false;
       };
+      channel.enable = false;
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+    };
 
-    environment.shellAliases = lib.recursiveUpdate {
+  environment.shellAliases = lib.recursiveUpdate
+    {
       npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
       nswitch = "cd ${config.swarselsystems.flakePath}; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
     }
     config.swarselsystems.shellAliases;
 
-    nixpkgs.config.permittedInsecurePackages = [
-      "olm-3.2.16"
-    ];
+  nixpkgs.config.permittedInsecurePackages = [
+    "olm-3.2.16"
+  ];
 
-    system.stateVersion = lib.mkDefault "23.05";
-  }
+  system.stateVersion = lib.mkDefault "23.05";
+}
 
   #+end_src
 
@@ -5448,13 +5526,13 @@ Also, the system state version is set here. No need to touch it.
 **** sops
 
 #+begin_src nix :tangle profiles/server/common/sops.nix
-  { pkgs, config, ... }:
+  { config, ... }:
   {
-      sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
-    validateSopsFiles = false;
-  };
+    sops = {
+      age.sshKeyPaths = [ "/etc/ssh/sops" ];
+      defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
+      validateSopsFiles = false;
+    };
 
   }
 #+end_src
@@ -5462,7 +5540,7 @@ Also, the system state version is set here. No need to touch it.
 **** nfs/samba (smb)
 
 #+begin_src nix :tangle profiles/server/common/nfs.nix
-  { pkgs, lib, config, ... }:
+  { pkgs, ... }:
   {
     services = {
       # add a user with sudo smbpasswd -a <user>
@@ -5504,7 +5582,7 @@ Also, the system state version is set here. No need to touch it.
         openFirewall = true;
       };
 
-        # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
+      # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
       samba-wsdd = {
         enable = true;
         openFirewall = true;
@@ -5526,7 +5604,7 @@ Also, the system state version is set here. No need to touch it.
 
     sops = {
       # secrets.dnstokenfull = { owner = "acme"; };
-      secrets.dnstokenfull = {};
+      secrets.dnstokenfull = { };
       templates."certs.secret".content = ''
         CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
       '';
@@ -5556,7 +5634,7 @@ Also, the system state version is set here. No need to touch it.
 **** ssh
 
 #+begin_src nix :tangle profiles/server/common/ssh.nix
-  _ :
+  _:
   {
     services.openssh = {
       enable = true;
@@ -5770,7 +5848,7 @@ Also, the system state version is set here. No need to touch it.
 **** spotifyd
 
 #+begin_src nix :tangle profiles/server/common/spotifyd.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.spotifyd {
       users.groups.spotifyd = {
@@ -5865,7 +5943,7 @@ Also, the system state version is set here. No need to touch it.
 **** matrix
 
 #+begin_src nix :tangle profiles/server/common/matrix.nix
-  { config, lib, pkgs, modulesPath, sops, ... }:
+  { config, lib, pkgs, sops, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
     baseUrl = "https://${matrixDomain}";
@@ -6236,7 +6314,7 @@ Also, the system state version is set here. No need to touch it.
 **** immich
 
 #+begin_src nix :tangle profiles/server/common/immich.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.immich {
 
@@ -6290,9 +6368,9 @@ Also, the system state version is set here. No need to touch it.
 **** paperless
 
 #+begin_src nix :tangle profiles/server/common/paperless.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
-    config = lib.mkIf config.swarselsystems.server.immich {
+    config = lib.mkIf config.swarselsystems.server.paperless {
 
       users.users.paperless = {
         extraGroups = [ "users" ];
@@ -6355,11 +6433,11 @@ Also, the system state version is set here. No need to touch it.
           dockeruser = {
             gid = 1155;
           };
-          radarr = {};
-          readarr = {};
-          sonarr = {};
-          lidarr = {};
-          prowlarr = {};
+          radarr = { };
+          readarr = { };
+          sonarr = { };
+          lidarr = { };
+          prowlarr = { };
         };
         users = {
           dockeruser = {
@@ -6483,7 +6561,7 @@ Also, the system state version is set here. No need to touch it.
 **** syncthing
 
 #+begin_src nix :tangle profiles/server/common/syncthing.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.syncthing {
 
@@ -6500,7 +6578,7 @@ Also, the system state version is set here. No need to touch it.
         openDefaultPorts = true;
         relay.enable = false;
         settings = {
-        urAccepted = -1;
+          urAccepted = -1;
           devices = {
             "magicant" = {
               id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
@@ -6592,7 +6670,7 @@ Also, the system state version is set here. No need to touch it.
 **** restic
 
 #+begin_src nix :tangle profiles/server/common/restic.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.restic {
 
@@ -6605,7 +6683,7 @@ Also, the system state version is set here. No need to touch it.
 **** monitoring
 
 #+begin_src nix :tangle profiles/server/common/monitoring.nix
-  { pkgs, lib, config, ... }:
+  { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.monitoring {
 
@@ -6767,6 +6845,46 @@ Also, the system state version is set here. No need to touch it.
   }
 #+end_src
 
+**** Jenkins
+
+#+begin_src nix :tangle profiles/server/common/jenkins.nix
+  { pkgs, lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.jenkins {
+
+      services.jenkins = {
+        enable = true;
+        withCLI = true;
+        port = 8088;
+        packages = [ pkgs.stdenv pkgs.git pkgs.jdk17 config.programs.ssh.package pkgs.nix ];
+        listenAddress = "127.0.0.1";
+        home = "/Vault/apps/jenkins";
+      };
+
+
+
+      services.nginx = {
+        virtualHosts = {
+          "servant.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:8088";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
 
 *** Optional
 :PROPERTIES:
@@ -6817,7 +6935,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 
     environment.systemPackages = [
       linuxKernel.packages.linux_6_10.xone
-      ];
+    ];
 
   }
 
@@ -6922,7 +7040,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
           owner = "swarsel";
           sopsFile = ../../../secrets/work/secrets.yaml;
         };
-        imbad= {
+        imbad = {
           owner = "swarsel";
           sopsFile = ../../../secrets/work/secrets.yaml;
         };
@@ -6934,10 +7052,12 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       zsh.shellInit = ''
         export CLAD="$(cat ${config.sops.secrets.clad.path})"
         export DCAD="$(cat ${config.sops.secrets.dcad.path})"
+        export GOVC_PASSWORD="$(cat ${config.sops.secrets.dcad.path})"
         export WSAD="$(cat ${config.sops.secrets.wsad.path})"
         export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
         export DCUSER="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
-        export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args"',"\"'-O'\""
+        export GOVC_USERNAME="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
+        export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args","'-O'"'
       '';
 
       browserpass.enable = true;
@@ -6961,6 +7081,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       gnumake
       libisoburn
       govc
+      terraform
     ];
 
 
@@ -6968,7 +7089,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       openssh = {
         enable = true;
         extraConfig = ''
-        '';
+          '';
       };
 
       syncthing = {
@@ -7529,7 +7650,7 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 #+begin_src nix :tangle profiles/common/home/symlink.nix
     xdg.configFile = {
       "tridactyl/tridactylrc".source = ../../../programs/firefox/tridactyl/tridactylrc;
-    "tridactyl/themes/base16-codeschool.css".source = ../../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+      "tridactyl/themes/base16-codeschool.css".source = ../../../programs/firefox/tridactyl/themes/base16-codeschool.css;
     };
   }
 #+end_src
@@ -7872,8 +7993,7 @@ The theme is handled by stylix.
   {
     programs.kitty = {
       enable = true;
-      keybindings = {
-      };
+      keybindings = { };
       settings = {
         scrollback_lines = 10000;
         enable_audio_bell = false;
@@ -8015,39 +8135,40 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 
 **** zellij
 #+begin_src nix :tangle profiles/common/home/zellij.nix
-  { pkgs, config, ... }:
-  let
-    inherit (config.lib.stylix) colors;
-    sesh = pkgs.writeScriptBin "sesh" ''
-      #! /usr/bin/env sh
+  _:
+  # { pkgs, config, ... }:
+  # let
+  # inherit (config.lib.stylix) colors;
+  #   sesh = pkgs.writeScriptBin "sesh" ''
+  #     #! /usr/bin/env sh
 
-      # Taken from https://github.com/zellij-org/zellij/issues/884#issuecomment-1851136980
-      # select a directory using zoxide
-      ZOXIDE_RESULT=$(zoxide query --interactive)
-      # checks whether a directory has been selected
-      if [[ -z "$ZOXIDE_RESULT" ]]; then
-      	# if there was no directory, select returns without executing
-      	exit 0
-      fi
-      # extracts the directory name from the absolute path
-      SESSION_TITLE=$(echo "$ZOXIDE_RESULT" | sed 's#.*/##')
+  #     # Taken from https://github.com/zellij-org/zellij/issues/884#issuecomment-1851136980
+  #     # select a directory using zoxide
+  #     ZOXIDE_RESULT=$(zoxide query --interactive)
+  #     # checks whether a directory has been selected
+  #     if [[ -z "$ZOXIDE_RESULT" ]]; then
+  #     	# if there was no directory, select returns without executing
+  #     	exit 0
+  #     fi
+  #     # extracts the directory name from the absolute path
+  #     SESSION_TITLE=$(echo "$ZOXIDE_RESULT" | sed 's#.*/##')
 
-      # get the list of sessions
-      SESSION_LIST=$(zellij list-sessions -n | awk '{print $1}')
+  #     # get the list of sessions
+  #     SESSION_LIST=$(zellij list-sessions -n | awk '{print $1}')
 
-      # checks if SESSION_TITLE is in the session list
-      if echo "$SESSION_LIST" | grep -q "^$SESSION_TITLE$"; then
-      	# if so, attach to existing session
-      	zellij attach "$SESSION_TITLE"
-      else
-      	# if not, create a new session
-      	echo "Creating new session $SESSION_TITLE and CD $ZOXIDE_RESULT"
-      	cd $ZOXIDE_RESULT
-      	zellij attach -c "$SESSION_TITLE"
-      fi
-    '';
+  #     # checks if SESSION_TITLE is in the session list
+  #     if echo "$SESSION_LIST" | grep -q "^$SESSION_TITLE$"; then
+  #     	# if so, attach to existing session
+  #     	zellij attach "$SESSION_TITLE"
+  #     else
+  #     	# if not, create a new session
+  #     	echo "Creating new session $SESSION_TITLE and CD $ZOXIDE_RESULT"
+  #     	cd $ZOXIDE_RESULT
+  #     	zellij attach -c "$SESSION_TITLE"
+  #     fi
+  #   '';
 
-  in
+  # in
   {
     programs.zellij = {
       enable = true;
@@ -8056,162 +8177,162 @@ Here we set some aliases (some of them should be shellApplications instead) as w
       # pkgs.tmate
       # sesh
     ];
-  #   xdg.configFile."zellij/config.kdl".source = ../../../programs/zellij/config.kdl;
-  #   xdg.configFile."zellij/layouts/default.kdl".text = ''
-  #     layout {
-  #         swap_tiled_layout name="vertical" {
-  #             tab max_panes=5 {
-  #                 pane split_direction="vertical" {
-  #                     pane
-  #                     pane { children; }
-  #                 }
-  #             }
-  #             tab max_panes=8 {
-  #                 pane split_direction="vertical" {
-  #                     pane { children; }
-  #                     pane { pane; pane; pane; pane; }
-  #                 }
-  #             }
-  #             tab max_panes=12 {
-  #                 pane split_direction="vertical" {
-  #                     pane { children; }
-  #                     pane { pane; pane; pane; pane; }
-  #                     pane { pane; pane; pane; pane; }
-  #                 }
-  #             }
-  #         }
+    #   xdg.configFile."zellij/config.kdl".source = ../../../programs/zellij/config.kdl;
+    #   xdg.configFile."zellij/layouts/default.kdl".text = ''
+    #     layout {
+    #         swap_tiled_layout name="vertical" {
+    #             tab max_panes=5 {
+    #                 pane split_direction="vertical" {
+    #                     pane
+    #                     pane { children; }
+    #                 }
+    #             }
+    #             tab max_panes=8 {
+    #                 pane split_direction="vertical" {
+    #                     pane { children; }
+    #                     pane { pane; pane; pane; pane; }
+    #                 }
+    #             }
+    #             tab max_panes=12 {
+    #                 pane split_direction="vertical" {
+    #                     pane { children; }
+    #                     pane { pane; pane; pane; pane; }
+    #                     pane { pane; pane; pane; pane; }
+    #                 }
+    #             }
+    #         }
 
-  #         swap_tiled_layout name="horizontal" {
-  #             tab max_panes=5 {
-  #                 pane
-  #                 pane
-  #             }
-  #             tab max_panes=8 {
-  #                 pane {
-  #                     pane split_direction="vertical" { children; }
-  #                     pane split_direction="vertical" { pane; pane; pane; pane; }
-  #                 }
-  #             }
-  #             tab max_panes=12 {
-  #                 pane {
-  #                     pane split_direction="vertical" { children; }
-  #                     pane split_direction="vertical" { pane; pane; pane; pane; }
-  #                     pane split_direction="vertical" { pane; pane; pane; pane; }
-  #                 }
-  #             }
-  #         }
+    #         swap_tiled_layout name="horizontal" {
+    #             tab max_panes=5 {
+    #                 pane
+    #                 pane
+    #             }
+    #             tab max_panes=8 {
+    #                 pane {
+    #                     pane split_direction="vertical" { children; }
+    #                     pane split_direction="vertical" { pane; pane; pane; pane; }
+    #                 }
+    #             }
+    #             tab max_panes=12 {
+    #                 pane {
+    #                     pane split_direction="vertical" { children; }
+    #                     pane split_direction="vertical" { pane; pane; pane; pane; }
+    #                     pane split_direction="vertical" { pane; pane; pane; pane; }
+    #                 }
+    #             }
+    #         }
 
-  #         swap_tiled_layout name="stacked" {
-  #             tab min_panes=5 {
-  #                 pane split_direction="vertical" {
-  #                     pane
-  #                     pane stacked=true { children; }
-  #                 }
-  #             }
-  #         }
+    #         swap_tiled_layout name="stacked" {
+    #             tab min_panes=5 {
+    #                 pane split_direction="vertical" {
+    #                     pane
+    #                     pane stacked=true { children; }
+    #                 }
+    #             }
+    #         }
 
-  #         swap_floating_layout name="staggered" {
-  #             floating_panes
-  #         }
+    #         swap_floating_layout name="staggered" {
+    #             floating_panes
+    #         }
 
-  #         swap_floating_layout name="enlarged" {
-  #             floating_panes max_panes=10 {
-  #                 pane { x "5%"; y 1; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 2; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 3; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 4; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 5; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 6; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 7; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 8; width "90%"; height "90%"; }
-  #                 pane { x "5%"; y 9; width "90%"; height "90%"; }
-  #                 pane focus=true { x 10; y 10; width "90%"; height "90%"; }
-  #             }
-  #         }
+    #         swap_floating_layout name="enlarged" {
+    #             floating_panes max_panes=10 {
+    #                 pane { x "5%"; y 1; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 2; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 3; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 4; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 5; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 6; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 7; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 8; width "90%"; height "90%"; }
+    #                 pane { x "5%"; y 9; width "90%"; height "90%"; }
+    #                 pane focus=true { x 10; y 10; width "90%"; height "90%"; }
+    #             }
+    #         }
 
-  #         swap_floating_layout name="spread" {
-  #             floating_panes max_panes=1 {
-  #                 pane {y "50%"; x "50%"; }
-  #             }
-  #             floating_panes max_panes=2 {
-  #                 pane { x "1%"; y "25%"; width "45%"; }
-  #                 pane { x "50%"; y "25%"; width "45%"; }
-  #             }
-  #             floating_panes max_panes=3 {
-  #                 pane focus=true { y "55%"; width "45%"; height "45%"; }
-  #                 pane { x "1%"; y "1%"; width "45%"; }
-  #                 pane { x "50%"; y "1%"; width "45%"; }
-  #             }
-  #             floating_panes max_panes=4 {
-  #                 pane { x "1%"; y "55%"; width "45%"; height "45%"; }
-  #                 pane focus=true { x "50%"; y "55%"; width "45%"; height "45%"; }
-  #                 pane { x "1%"; y "1%"; width "45%"; height "45%"; }
-  #                 pane { x "50%"; y "1%"; width "45%"; height "45%"; }
-  #             }
-  #         }
+    #         swap_floating_layout name="spread" {
+    #             floating_panes max_panes=1 {
+    #                 pane {y "50%"; x "50%"; }
+    #             }
+    #             floating_panes max_panes=2 {
+    #                 pane { x "1%"; y "25%"; width "45%"; }
+    #                 pane { x "50%"; y "25%"; width "45%"; }
+    #             }
+    #             floating_panes max_panes=3 {
+    #                 pane focus=true { y "55%"; width "45%"; height "45%"; }
+    #                 pane { x "1%"; y "1%"; width "45%"; }
+    #                 pane { x "50%"; y "1%"; width "45%"; }
+    #             }
+    #             floating_panes max_panes=4 {
+    #                 pane { x "1%"; y "55%"; width "45%"; height "45%"; }
+    #                 pane focus=true { x "50%"; y "55%"; width "45%"; height "45%"; }
+    #                 pane { x "1%"; y "1%"; width "45%"; height "45%"; }
+    #                 pane { x "50%"; y "1%"; width "45%"; height "45%"; }
+    #             }
+    #         }
 
-  #         default_tab_template {
-  #             pane size=2 borderless=true {
-  #                 plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
-  #                     format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
-  #                     format_center ""
-  #                     format_right  "#[bg=#${colors.base00},fg=#${colors.base0D}]#[bg=#${colors.base0D},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base05},bold] {session} #[bg=#${colors.base03},fg=#${colors.base05},bold]"
-  #                     format_space  ""
-  #                     format_hide_on_overlength "true"
-  #                     format_precedence "crl"
+    #         default_tab_template {
+    #             pane size=2 borderless=true {
+    #                 plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
+    #                     format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
+    #                     format_center ""
+    #                     format_right  "#[bg=#${colors.base00},fg=#${colors.base0D}]#[bg=#${colors.base0D},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base05},bold] {session} #[bg=#${colors.base03},fg=#${colors.base05},bold]"
+    #                     format_space  ""
+    #                     format_hide_on_overlength "true"
+    #                     format_precedence "crl"
 
-  #                     border_enabled  "false"
-  #                     border_char     "─"
-  #                     border_format   "#[fg=#6C7086]{char}"
-  #                     border_position "top"
+    #                     border_enabled  "false"
+    #                     border_char     "─"
+    #                     border_format   "#[fg=#6C7086]{char}"
+    #                     border_position "top"
 
-  #                     mode_normal        "#[bg=#${colors.base0B},fg=#${colors.base02},bold] NORMAL#[bg=#${colors.base03},fg=#${colors.base0B}]█"
-  #                     mode_locked        "#[bg=#${colors.base04},fg=#${colors.base02},bold] LOCKED #[bg=#${colors.base03},fg=#${colors.base04}]█"
-  #                     mode_resize        "#[bg=#${colors.base08},fg=#${colors.base02},bold] RESIZE#[bg=#${colors.base03},fg=#${colors.base08}]█"
-  #                     mode_pane          "#[bg=#${colors.base0D},fg=#${colors.base02},bold] PANE#[bg=#${colors.base03},fg=#${colors.base0D}]█"
-  #                     mode_tab           "#[bg=#${colors.base07},fg=#${colors.base02},bold] TAB#[bg=#${colors.base03},fg=#${colors.base07}]█"
-  #                     mode_scroll        "#[bg=#${colors.base0A},fg=#${colors.base02},bold] SCROLL#[bg=#${colors.base03},fg=#${colors.base0A}]█"
-  #                     mode_enter_search  "#[bg=#${colors.base0D},fg=#${colors.base02},bold] ENT-SEARCH#[bg=#${colors.base03},fg=#${colors.base0D}]█"
-  #                     mode_search        "#[bg=#${colors.base0D},fg=#${colors.base02},bold] SEARCHARCH#[bg=#${colors.base03},fg=#${colors.base0D}]█"
-  #                     mode_rename_tab    "#[bg=#${colors.base07},fg=#${colors.base02},bold] RENAME-TAB#[bg=#${colors.base03},fg=#${colors.base07}]█"
-  #                     mode_rename_pane   "#[bg=#${colors.base0D},fg=#${colors.base02},bold] RENAME-PANE#[bg=#${colors.base03},fg=#${colors.base0D}]█"
-  #                     mode_session       "#[bg=#${colors.base0E},fg=#${colors.base02},bold] SESSION#[bg=#${colors.base03},fg=#${colors.base0E}]█"
-  #                     mode_move          "#[bg=#${colors.base0F},fg=#${colors.base02},bold] MOVE#[bg=#${colors.base03},fg=#${colors.base0F}]█"
-  #                     mode_prompt        "#[bg=#${colors.base0D},fg=#${colors.base02},bold] PROMPT#[bg=#${colors.base03},fg=#${colors.base0D}]█"
-  #                     mode_tmux          "#[bg=#${colors.base09},fg=#${colors.base02},bold] TMUX#[bg=#${colors.base03},fg=#${colors.base09}]█"
+    #                     mode_normal        "#[bg=#${colors.base0B},fg=#${colors.base02},bold] NORMAL#[bg=#${colors.base03},fg=#${colors.base0B}]█"
+    #                     mode_locked        "#[bg=#${colors.base04},fg=#${colors.base02},bold] LOCKED #[bg=#${colors.base03},fg=#${colors.base04}]█"
+    #                     mode_resize        "#[bg=#${colors.base08},fg=#${colors.base02},bold] RESIZE#[bg=#${colors.base03},fg=#${colors.base08}]█"
+    #                     mode_pane          "#[bg=#${colors.base0D},fg=#${colors.base02},bold] PANE#[bg=#${colors.base03},fg=#${colors.base0D}]█"
+    #                     mode_tab           "#[bg=#${colors.base07},fg=#${colors.base02},bold] TAB#[bg=#${colors.base03},fg=#${colors.base07}]█"
+    #                     mode_scroll        "#[bg=#${colors.base0A},fg=#${colors.base02},bold] SCROLL#[bg=#${colors.base03},fg=#${colors.base0A}]█"
+    #                     mode_enter_search  "#[bg=#${colors.base0D},fg=#${colors.base02},bold] ENT-SEARCH#[bg=#${colors.base03},fg=#${colors.base0D}]█"
+    #                     mode_search        "#[bg=#${colors.base0D},fg=#${colors.base02},bold] SEARCHARCH#[bg=#${colors.base03},fg=#${colors.base0D}]█"
+    #                     mode_rename_tab    "#[bg=#${colors.base07},fg=#${colors.base02},bold] RENAME-TAB#[bg=#${colors.base03},fg=#${colors.base07}]█"
+    #                     mode_rename_pane   "#[bg=#${colors.base0D},fg=#${colors.base02},bold] RENAME-PANE#[bg=#${colors.base03},fg=#${colors.base0D}]█"
+    #                     mode_session       "#[bg=#${colors.base0E},fg=#${colors.base02},bold] SESSION#[bg=#${colors.base03},fg=#${colors.base0E}]█"
+    #                     mode_move          "#[bg=#${colors.base0F},fg=#${colors.base02},bold] MOVE#[bg=#${colors.base03},fg=#${colors.base0F}]█"
+    #                     mode_prompt        "#[bg=#${colors.base0D},fg=#${colors.base02},bold] PROMPT#[bg=#${colors.base03},fg=#${colors.base0D}]█"
+    #                     mode_tmux          "#[bg=#${colors.base09},fg=#${colors.base02},bold] TMUX#[bg=#${colors.base03},fg=#${colors.base09}]█"
 
-  #                     // formatting for inactive tabs
-  #                     tab_normal              "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{floating_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
-  #                     tab_normal_fullscreen   "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{fullscreen_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
-  #                     tab_normal_sync         "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{sync_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     // formatting for inactive tabs
+    #                     tab_normal              "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{floating_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     tab_normal_fullscreen   "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{fullscreen_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     tab_normal_sync         "#[bg=#${colors.base03},fg=#${colors.base0D}]█#[bg=#${colors.base0D},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{sync_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
 
-  #                     // formatting for the current active tab
-  #                     tab_active              "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{floating_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
-  #                     tab_active_fullscreen   "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{fullscreen_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
-  #                     tab_active_sync         "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{sync_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     // formatting for the current active tab
+    #                     tab_active              "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{floating_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     tab_active_fullscreen   "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{fullscreen_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
+    #                     tab_active_sync         "#[bg=#${colors.base03},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base02},bold]{index} #[bg=#${colors.base02},fg=#${colors.base05},bold] {name}{sync_indicator}#[bg=#${colors.base03},fg=#${colors.base02},bold]█"
 
-  #                     // separator between the tabs
-  #                     tab_separator           "#[bg=#${colors.base00}] "
+    #                     // separator between the tabs
+    #                     tab_separator           "#[bg=#${colors.base00}] "
 
-  #                     // indicators
-  #                     tab_sync_indicator       " "
-  #                     tab_fullscreen_indicator " 󰊓"
-  #                     tab_floating_indicator   " 󰹙"
+    #                     // indicators
+    #                     tab_sync_indicator       " "
+    #                     tab_fullscreen_indicator " 󰊓"
+    #                     tab_floating_indicator   " 󰹙"
 
-  #                     command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
-  #                     command_git_branch_format      "#[fg=blue] {stdout} "
-  #                     command_git_branch_interval    "10"
-  #                     command_git_branch_rendermode  "static"
+    #                     command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
+    #                     command_git_branch_format      "#[fg=blue] {stdout} "
+    #                     command_git_branch_interval    "10"
+    #                     command_git_branch_rendermode  "static"
 
-  #                     datetime        "#[fg=#6C7086,bold] {format} "
-  #                     datetime_format "%A, %d %b %Y %H:%M"
-  #                     datetime_timezone "Europe/London"
-  #                 }
-  #             }
-  #             children
-  #         }
-  #     }
-  #   '';
+    #                     datetime        "#[fg=#6C7086,bold] {format} "
+    #                     datetime_format "%A, %d %b %Y %H:%M"
+    #                     datetime_timezone "Europe/London"
+    #                 }
+    #             }
+    #             children
+    #         }
+    #     }
+    #   '';
 
 
   }
@@ -8540,7 +8661,7 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 {
   programs.waybar = {
 
@@ -9046,7 +9167,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
 #+begin_src nix :tangle profiles/common/home/sway.nix
-  { config, pkgs, lib, ... }:
+  { config, lib, ... }:
   let
     inherit (config.swarselsystems) monitors;
     eachMonitor = _name: monitor: {
@@ -9625,6 +9746,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
       , nixpkgs
       , nixpkgs-stable
       , home-manager
+      , nix-darwin
       , systems
       , ...
       }:
@@ -9649,6 +9771,10 @@ This tangles the flake.nix file; This block only needs to be touched when updati
 
         homeConfigurations = {
            <<flakehomeconf>>
+        };
+
+        darwinConfigurations = {
+          <<flakemacconf>>
         };
 
         nixOnDroidConfigurations = {
@@ -10125,23 +10251,25 @@ This section handles everything that shoudld happen when I save =SwarselSystems.
 We set a hook that runs everytime we save the file. It would be a bit more efficient to only export and format when we enter a magit window for instance (since especially the html export takes times), however, since I cannot be sure to only ever commit from magit (I do indeed sometimes use git from the command line), I prefer this approach.
 
 #+begin_src emacs-lisp
-    (defun swarsel/run-formatting ()
-      (interactive)
-      (let ((default-directory (expand-file-name "~/.dotfiles")))
-        (shell-command "nixpkgs-fmt . > /dev/null")))
+      (defun swarsel/run-formatting ()
+        (interactive)
+        (let ((default-directory (expand-file-name "~/.dotfiles")))
+          (shell-command "nixpkgs-fmt . > /dev/null")))
 
-      (defun swarsel/org-babel-tangle-config ()
-        (when (string-equal (buffer-file-name)
-                            swarsel-swarsel-org-filepath)
-          ;; Dynamic scoping to the rescue
-          (let ((org-confirm-babel-evaluate nil))
-            ;; (org-html-export-to-html)
-            (org-babel-tangle)
-            (swarsel/run-formatting))))
+        (defun swarsel/org-babel-tangle-config ()
+        (interactive)
+          (when (string-equal (buffer-file-name)
+                              swarsel-swarsel-org-filepath)
+            ;; Dynamic scoping to the rescue
+            (let ((org-confirm-babel-evaluate nil))
+              ;; (org-html-export-to-html)
+              (org-babel-tangle)
+              ;; (swarsel/run-formatting)
+              )))
 
-      (setq org-html-htmlize-output-type nil)
+        (setq org-html-htmlize-output-type nil)
 
-      (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+        ;; (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 #+end_src
 
@@ -11507,18 +11635,19 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 - This configures the languages that babel recognizes.
 
 #+begin_src emacs-lisp
+  (setq org-src-preserve-indentation nil)
 
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (python . t)
-     (js . t)
-     (shell . t)
-     ))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (python . t)
+       (js . t)
+       (shell . t)
+       ))
 
-  (push '("conf-unix" . conf-unix) org-src-lang-modes)
+    (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
-  (setq org-export-with-broken-links 'mark)
+    (setq org-export-with-broken-links 'mark)
 
 #+end_src
 
@@ -12455,15 +12584,9 @@ The following block is mostly inspired from [[https://code.kulupu.party/thesuess
 #+end_src
 
 *** eglot
-:PROPERTIES:
-:CUSTOM_ID: h:316857e7-4df8-4ec5-b22e-6dac918fa937
-:END:
 
 After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say that =eglot= feels the most clean and fast to me.
 
-:PROPERTIES:
-:CUSTOM_ID: h:424fbc62-84e2-42c7-a1ca-e43ea04c43e5
-:END:
 
 #+begin_src emacs-lisp
 
@@ -12495,6 +12618,21 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
                 ("C-c ," . eglot-code-actions)))
 
   (defalias 'start-lsp-server #'eglot)
+
+#+end_src
+
+*** sideline-flymake
+
+This brings back warnings and errors on the sideline for eglot; a feature that I have been missing from lsp-mode for a while.
+
+#+begin_src emacs-lisp
+
+  (use-package sideline-flymake
+    :hook (flymake-mode . sideline-mode)
+    :init
+    (setq sideline-flymake-display-mode 'point) ; 'point to show errors only on point
+                                                ; 'line to show errors on the current line
+    (setq sideline-backends-right '(sideline-flymake)))
 
 #+end_src
 

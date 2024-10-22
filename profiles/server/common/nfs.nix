@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, ... }:
 {
   services = {
     # add a user with sudo smbpasswd -a <user>

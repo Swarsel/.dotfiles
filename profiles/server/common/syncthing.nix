@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.syncthing {
 

@@ -1,6 +1,6 @@
 { inputs, ... }: {
   additions = final: _prev: import ../pkgs { pkgs = final; };
-  modifications = final: _prev: {
+  modifications = _: _prev: {
     vesktop = _prev.vesktop.override {
       withSystemVencord = true;
     };
@@ -41,7 +41,7 @@
     };
   };
 
-  zjstatus = final: _prev: {
+  zjstatus = _: _prev: {
     zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
   };
 

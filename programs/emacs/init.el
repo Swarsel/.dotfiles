@@ -179,17 +179,19 @@ create a new one."
     (shell-command "nixpkgs-fmt . > /dev/null")))
 
   (defun swarsel/org-babel-tangle-config ()
+  (interactive)
     (when (string-equal (buffer-file-name)
                         swarsel-swarsel-org-filepath)
       ;; Dynamic scoping to the rescue
       (let ((org-confirm-babel-evaluate nil))
         ;; (org-html-export-to-html)
         (org-babel-tangle)
-        (swarsel/run-formatting))))
+        ;; (swarsel/run-formatting)
+        )))
 
   (setq org-html-htmlize-output-type nil)
 
-  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+  ;; (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 (defun org-fold-outer ()
   (interactive)
@@ -976,17 +978,19 @@ create a new one."
 
 (setq org-fold-core-style 'overlays)
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)
-   (js . t)
-   (shell . t)
-   ))
+(setq org-src-preserve-indentation nil)
 
-(push '("conf-unix" . conf-unix) org-src-lang-modes)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (js . t)
+     (shell . t)
+     ))
 
-(setq org-export-with-broken-links 'mark)
+  (push '("conf-unix" . conf-unix) org-src-lang-modes)
+
+  (setq org-export-with-broken-links 'mark)
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
@@ -1525,6 +1529,13 @@ create a new one."
               ("C-c ," . eglot-code-actions)))
 
 (defalias 'start-lsp-server #'eglot)
+
+(use-package sideline-flymake
+  :hook (flymake-mode . sideline-mode)
+  :init
+  (setq sideline-flymake-display-mode 'point) ; 'point to show errors only on point
+                                              ; 'line to show errors on the current line
+  (setq sideline-backends-right '(sideline-flymake)))
 
 (use-package breadcrumb
   ;; :config (breadcrumb-mode)

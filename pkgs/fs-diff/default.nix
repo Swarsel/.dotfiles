@@ -1,4 +1,4 @@
-{ writeShellApplication, sway }:
+{ writeShellApplication }:
 
 writeShellApplication {
   name = "fs-diff";

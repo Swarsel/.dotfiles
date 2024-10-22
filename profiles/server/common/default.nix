@@ -26,6 +26,7 @@
     ./syncthing.nix
     ./restic.nix
     ./monitoring.nix
+    ./jenkins.nix
   ];
 
   nix =

@@ -1,4 +1,4 @@
-{ writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, sway, jq }:
+{ writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
 
 writeShellApplication {
   name = "swarselcheck";

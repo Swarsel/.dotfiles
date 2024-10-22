@@ -23,4 +23,5 @@ in
   options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
   options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
   options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
+  options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
 }

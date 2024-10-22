@@ -1,6 +1,6 @@
-{ pkgs, lib, config, ... }:
+{ lib, config, ... }:
 {
-  config = lib.mkIf config.swarselsystems.server.immich {
+  config = lib.mkIf config.swarselsystems.server.paperless {
 
     users.users.paperless = {
       extraGroups = [ "users" ];

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, lib, ... }:
 let
   inherit (config.swarselsystems) monitors;
   eachMonitor = _name: monitor: {
