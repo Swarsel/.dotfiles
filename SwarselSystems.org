@@ -9829,24 +9829,27 @@ In the end, we need to restore those values to values that will work during norm
 Also packed into the hook function is the line =(fset 'epg-wait-for-status 'ignore)=. This line is needed at the end of the configuration in order to allow for my Yubikey to be used to encrypt and decrypt =.gpg= files. Without it, Emacs will just hang forever and basically crash.
 
 #+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
-    (defvar swarsel-file-name-handler-alist file-name-handler-alist)
-    (defvar swarsel-vc-handled-backends vc-handled-backends)
+  (defvar swarsel-file-name-handler-alist file-name-handler-alist)
+  (defvar swarsel-vc-handled-backends vc-handled-backends)
 
-    (setq gc-cons-threshold most-positive-fixnum
-          gc-cons-percentage 0.6
-          file-name-handler-alist nil
-          vc-handled-backends nil)
+  (setq gc-cons-threshold most-positive-fixnum
+        gc-cons-percentage 0.6
+        file-name-handler-alist nil
+        vc-handled-backends nil)
 
-    (add-hook 'emacs-startup-hook
-              (lambda ()
-                (progn
-                  ;; (setq gc-cons-threshold (* 1000 1000 8)
-                     (setq gc-cons-threshold #x40000000
-                        gc-cons-percentage 0.1
-                        file-name-handler-alist swarsel-file-name-handler-alist
-                        vc-handled-backends swarsel-vc-handled-backends)
-                  (fset 'epg-wait-for-status 'ignore)
-                  )))
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (progn
+                ;; (setq gc-cons-threshold (* 1000 1000 8)
+                ;; (setq gc-cons-threshold #x40000000
+                   (setq gc-cons-threshold (* 32 1024 1024)
+                      gc-cons-percentage 0.1
+                      jit-lock-defer-time 0.05
+                      read-process-output-max (* 1024 1024)
+                      file-name-handler-alist swarsel-file-name-handler-alist
+                      vc-handled-backends swarsel-vc-handled-backends)
+                (fset 'epg-wait-for-status 'ignore)
+                )))
 
 #+end_src
 *** Setup frames
@@ -10451,6 +10454,23 @@ This formats the org code block at =point= in accordance to the =nixpkgs-fmt= fo
             (call-interactively 'nixpkgs-fmt-region)))))
 #+end_src
 
+**** Disable garbace collection while minibuffer is active
+
+
+#+begin_src emacs-lisp
+
+    (defun swarsel/minibuffer-setup-hook ()
+      (setq gc-cons-threshold most-positive-fixnum))
+
+    (defun swarsel/minibuffer-exit-hook ()
+      (setq gc-cons-threshold (* 32 1024 1024)))
+
+    (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
+    (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
+
+
+#+end_src
+
 *** Custom Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5
@@ -10568,7 +10588,13 @@ I also define some keybinds to some combinations directly. Those are used mostly
      "<DUMMY-m>" 'swarsel/last-buffer
      "M-\\" 'indent-region
      "C-<f9>" 'my-python-shell-run
+     "<Paste>" 'yank
+     "<Cut>" 'kill-region
+     "<Copy>" 'kill-ring-save
+     "<undo>" 'evil-undo
+     "<redo>" 'evil-redo
      )
+
 
 #+end_src
 *** Directory setup / File structure
@@ -10688,49 +10714,56 @@ Here I set up some things that are too minor to put under other categories.
 
 #+begin_src emacs-lisp
 
-  ;; use UTF-8 everywhere
-  (set-language-environment "UTF-8")
-  (profiler-start 'cpu)
-  ;; set default font size
-  (defvar swarsel/default-font-size 130)
-  (setq swarsel-standard-font "FiraCode Nerd Font Mono"
-        swarsel-alt-font "FiraCode Nerd Font Mono")
+    ;; use UTF-8 everywhere
+    (set-language-environment "UTF-8")
+    (profiler-start 'cpu)
+    ;; set default font size
+    (defvar swarsel/default-font-size 130)
+    (setq swarsel-standard-font "FiraCode Nerd Font Mono"
+          swarsel-alt-font "FiraCode Nerd Font Mono")
 
-  ;; (defalias 'yes-or-no-p 'y-or-n-p)
-  ;;(setq-default show-trailing-whitespace t)
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
-  (global-hl-line-mode 1)
-  ;; (setq redisplay-dont-pause t) ;; obsolete
-  (setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
-  (global-subword-mode 1) ; Iterate through CamelCase words
-  (setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
-  (delete-selection-mode 1)
-  (setq vc-follow-symlinks t)
-  (setq require-final-newline t)
-  (winner-mode 1)
-  (setq load-prefer-newer t)
-  (setq-default bidi-paragraph-direction 'left-to-right)
-  (setq bidi-inhibit-bpa t)
-  (global-so-long-mode)
-  (setq undo-limit 80000000
-        evil-want-fine-undo t
-        auto-save-default t
-        password-cache-expiry nil
-        )
-  (setq browse-url-browser-function 'browse-url-firefox)
-  ;; disable a keybind that does more harm than good
-  (global-set-key [remap suspend-frame]
-                  (lambda ()
-                    (interactive)
-                    (message "This keybinding is disabled (was 'suspend-frame')")))
+    ;; (defalias 'yes-or-no-p 'y-or-n-p)
+    ;;(setq-default show-trailing-whitespace t)
+    (add-hook 'before-save-hook 'delete-trailing-whitespace)
+    (global-hl-line-mode 1)
+    ;; (setq redisplay-dont-pause t) ;; obsolete
+    (setq blink-cursor-mode nil) ;; blink-cursor is an unexpected source of slowdown
+    (global-subword-mode 1) ; Iterate through CamelCase words
+    (setq blink-matching-paren nil) ;; this makes the cursor jump around annoyingly
+    (delete-selection-mode 1)
+    (setq vc-follow-symlinks t)
+    (setq require-final-newline t)
+    (winner-mode 1)
+    (setq load-prefer-newer t)
+    (setq-default bidi-paragraph-direction 'left-to-right
+                  bidi-display-reordering 'left-to-right
+                  bidi-inhibit-bpa t)
+    (global-so-long-mode)
+    (setq process-adaptive-read-buffering nil) ;; not sure if this is a good idea
+    (setq fast-but-imprecise-scrolling t
+          redisplay-skip-fontification-on-input t
+          inhibit-compacting-font-caches t)
+    (setq idle-update-delay 1.0
+          which-func-update-delay 1.0)
+    (setq undo-limit 80000000
+          evil-want-fine-undo t
+          auto-save-default t
+          password-cache-expiry nil
+          )
+    (setq browse-url-browser-function 'browse-url-firefox)
+    ;; disable a keybind that does more harm than good
+    (global-set-key [remap suspend-frame]
+                    (lambda ()
+                      (interactive)
+                      (message "This keybinding is disabled (was 'suspend-frame')")))
 
-  (setq visible-bell nil)
-  (setq initial-major-mode 'fundamental-mode
-        initial-scratch-message nil)
+    (setq visible-bell nil)
+    (setq initial-major-mode 'fundamental-mode
+          initial-scratch-message nil)
 
-  (add-hook 'prog-mode-hook 'display-line-numbers-mode)
-  ;; (add-hook 'text-mode-hook 'display-line-numbers-mode)
-  ;; (global-visual-line-mode 1)
+    (add-hook 'prog-mode-hook 'display-line-numbers-mode)
+    ;; (add-hook 'text-mode-hook 'display-line-numbers-mode)
+    ;; (global-visual-line-mode 1)
 
 #+end_src
 

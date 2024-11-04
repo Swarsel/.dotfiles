@@ -292,6 +292,15 @@ create a new one."
           (org-babel-mark-block)
           (call-interactively 'nixpkgs-fmt-region)))))
 
+(defun swarsel/minibuffer-setup-hook ()
+  (setq gc-cons-threshold most-positive-fixnum))
+
+(defun swarsel/minibuffer-exit-hook ()
+  (setq gc-cons-threshold (* 32 1024 1024)))
+
+(add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
+(add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
+
 ;; Make ESC quit prompts
   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -398,6 +407,11 @@ create a new one."
    "<DUMMY-m>" 'swarsel/last-buffer
    "M-\\" 'indent-region
    "C-<f9>" 'my-python-shell-run
+   "<Paste>" 'yank
+   "<Cut>" 'kill-region
+   "<Copy>" 'kill-ring-save
+   "<undo>" 'evil-undo
+   "<redo>" 'evil-redo
    )
 
 ;; set Nextcloud directory for journals etc.
@@ -481,9 +495,16 @@ create a new one."
 (setq require-final-newline t)
 (winner-mode 1)
 (setq load-prefer-newer t)
-(setq-default bidi-paragraph-direction 'left-to-right)
-(setq bidi-inhibit-bpa t)
+(setq-default bidi-paragraph-direction 'left-to-right
+              bidi-display-reordering 'left-to-right
+              bidi-inhibit-bpa t)
 (global-so-long-mode)
+(setq process-adaptive-read-buffering nil) ;; not sure if this is a good idea
+(setq fast-but-imprecise-scrolling t
+      redisplay-skip-fontification-on-input t
+      inhibit-compacting-font-caches t)
+(setq idle-update-delay 1.0
+      which-func-update-delay 1.0)
 (setq undo-limit 80000000
       evil-want-fine-undo t
       auto-save-default t

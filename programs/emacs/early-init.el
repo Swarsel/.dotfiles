@@ -10,8 +10,11 @@
           (lambda ()
             (progn
               ;; (setq gc-cons-threshold (* 1000 1000 8)
-                 (setq gc-cons-threshold #x40000000
+              ;; (setq gc-cons-threshold #x40000000
+                 (setq gc-cons-threshold (* 32 1024 1024)
                     gc-cons-percentage 0.1
+                    jit-lock-defer-time 0.05
+                    read-process-output-max (* 1024 1024)
                     file-name-handler-alist swarsel-file-name-handler-alist
                     vc-handled-backends swarsel-vc-handled-backends)
               (fset 'epg-wait-for-status 'ignore)
