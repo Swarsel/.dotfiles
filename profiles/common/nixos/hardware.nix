@@ -2,10 +2,12 @@
 {
 
   hardware = {
+    # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
     graphics = {
       enable = true;
       enable32Bit = true;
     };
+
 
     trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
       enable = true;
@@ -24,6 +26,7 @@
 
     bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
       enable = true;
+      package = pkgs.stable.bluez;
       powerOnBoot = true;
       settings = {
         General = {

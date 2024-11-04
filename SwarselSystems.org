@@ -1784,6 +1784,16 @@ My work machine. Built for more security, this is the gold standard of my config
       resumeDevice = "/dev/disk/by-label/nixos";
     };
 
+    hardware = {
+      amdgpu = {
+        opencl.enable = true;
+        amdvlk = {
+          enable = true;
+          support32Bit.enable = true;
+        };
+      };
+    };
+
     programs.fw-fanctrl.enable = true;
 
     networking = {
@@ -4171,10 +4181,12 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   {
 
     hardware = {
+      # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
       graphics = {
         enable = true;
         enable32Bit = true;
       };
+
 
       trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
         enable = true;
