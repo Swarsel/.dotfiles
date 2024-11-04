@@ -14,6 +14,10 @@ in
         xkb_layout = "us";
         xkb_variant = "altgr-intl";
       };
+      "7504:24926:Kyria_Keyboard" = {
+        xkb_layout = "us";
+        xkb_variant = "altgr-intl";
+      };
     };
   };
   options.swarselsystems.touchpad = mkOption {
