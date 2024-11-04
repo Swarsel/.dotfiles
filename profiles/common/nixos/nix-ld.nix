@@ -80,6 +80,7 @@
       pixman
       speex
       stdenv.cc.cc
+      steamPackages.steam-fhsenv-without-steam
       systemd
       tbb
       vulkan-loader

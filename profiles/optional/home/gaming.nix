@@ -1,8 +1,7 @@
 { pkgs, ... }:
-
 {
   home.packages = with pkgs; [
-    lutris
+    stable.lutris
     wine
     libudev-zero
     dwarfs
