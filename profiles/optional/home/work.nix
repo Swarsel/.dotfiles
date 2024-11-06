@@ -7,6 +7,7 @@
     dig
     docker
     postman
+    rclone
   ];
 
   programs = {
