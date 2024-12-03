@@ -157,7 +157,7 @@ create a new one."
             [C-backspace] #'up-directory)
 
 (defun swarsel/org-mode-setup ()
-  (org-indent-mode)
+  ;; (org-indent-mode)
   (variable-pitch-mode 1)
   ;;(auto-fill-mode 0)
   ;; (setq display-line-numbers-type 'relative
@@ -1012,6 +1012,7 @@ create a new one."
   (push '("conf-unix" . conf-unix) org-src-lang-modes)
 
   (setq org-export-with-broken-links 'mark)
+  (setq org-confirm-babel-evaluate nil)
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
