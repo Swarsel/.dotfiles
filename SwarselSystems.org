@@ -9378,7 +9378,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           lib.recursiveUpdate
             {
               "${modifier}+q" = "kill";
-              "${modifier}+f" = "exec firefox -p cl_adm";
+              "${modifier}+f" = "exec firefox";
               "${modifier}+Shift+f" = "exec swaymsg fullscreen";
               "${modifier}+Space" = "exec fuzzel";
               "${modifier}+Shift+Space" = "floating toggle";
@@ -9816,11 +9816,6 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
             id = 3;
             <<firefoxprofile>>
           };
-          # i need this profile because xdg-open uses cl_adm profile no matter what i do
-          cl_adm_real = {
-            id = 4;
-            <<firefoxprofile>>
-          };
         };
       };
 
@@ -9871,18 +9866,12 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
 
         firefox_cl = {
-          name = "Firefox (Main)";
+          name = "Firefox (cl_adm)";
           genericName = "Firefox cl";
           exec = "firefox -p cl_adm";
           inherit terminal categories icon;
         };
 
-        firefox_cl_real = {
-          name = "Firefox (cl_adm)";
-          genericName = "Firefox";
-          exec = "firefox -p cl_adm_real";
-          inherit terminal categories icon;
-        };
       };
     };
 

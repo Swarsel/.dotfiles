@@ -34,7 +34,7 @@ in
         lib.recursiveUpdate
           {
             "${modifier}+q" = "kill";
-            "${modifier}+f" = "exec firefox -p cl_adm";
+            "${modifier}+f" = "exec firefox";
             "${modifier}+Shift+f" = "exec swaymsg fullscreen";
             "${modifier}+Space" = "exec fuzzel";
             "${modifier}+Shift+Space" = "floating toggle";
