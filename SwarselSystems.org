@@ -565,68 +565,77 @@ This section used to be much longer, since I performed all of my imports right h
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
 
-    sandbox = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [
-        inputs.disko.nixosModules.disko
-        ./profiles/sandbox/disk-config.nix
-        inputs.sops-nix.nixosModules.sops
-        ./profiles/sandbox/nixos.nix
-      ];
-    };
+  live = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
+    system = "x86_64-linux";
+    modules = nixModules ++ [
+      (nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix")
+      ./profiles/live
+    ];
+  };
 
-    threed = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = nixModules ++ [
-        inputs.lanzaboote.nixosModules.lanzaboote
-        ./profiles/threed/nixos.nix
-        inputs.home-manager.nixosModules.home-manager
-        {
-          home-manager.users.swarsel.imports = mixedModules ++ [
-            ./profiles/threed/home.nix
-          ];
-        }
-      ];
-    };
+  sandbox = nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit inputs; };
+    modules = [
+      inputs.disko.nixosModules.disko
+      ./profiles/sandbox/disk-config.nix
+      inputs.sops-nix.nixosModules.sops
+      ./profiles/sandbox/nixos.nix
+    ];
+  };
 
-    fourside = lib.nixosSystem {
-      specialArgs = { inherit inputs outputs; };
-      modules = nixModules ++ [
-        ./profiles/fourside
-      ];
-    };
+  threed = nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit inputs; };
+    modules = nixModules ++ [
+      inputs.lanzaboote.nixosModules.lanzaboote
+      ./profiles/threed/nixos.nix
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = mixedModules ++ [
+          ./profiles/threed/home.nix
+        ];
+      }
+    ];
+  };
 
-    nbl-imba-2 = lib.nixosSystem {
-      specialArgs = { inherit inputs outputs; };
-      modules = nixModules ++ [
-        ./profiles/nbl-imba-2
-      ];
-    };
+  fourside = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
+    modules = nixModules ++ [
+      ./profiles/fourside
+    ];
+  };
 
-    winters = lib.nixosSystem {
-      specialArgs = { inherit inputs outputs; };
-      modules = [
-        ./profiles/server/winters
-      ];
-    };
+  nbl-imba-2 = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
+    modules = nixModules ++ [
+      ./profiles/nbl-imba-2
+    ];
+  };
 
-    #ovm swarsel
-    sync = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [
-        inputs.sops-nix.nixosModules.sops
-        ./profiles/remote/oracle/sync/nixos.nix
-      ];
-    };
+  winters = lib.nixosSystem {
+    specialArgs = { inherit inputs outputs; };
+    modules = [
+      ./profiles/server/winters
+    ];
+  };
 
-    #ovm swarsel
-    swatrix = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      modules = [
-        inputs.sops-nix.nixosModules.sops
-        ./profiles/remote/oracle/matrix/nixos.nix
-      ];
-    };
+  #ovm swarsel
+  sync = nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit inputs; };
+    modules = [
+      inputs.sops-nix.nixosModules.sops
+      ./profiles/remote/oracle/sync/nixos.nix
+    ];
+  };
+
+  #ovm swarsel
+  swatrix = nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit inputs; };
+    modules = [
+      inputs.sops-nix.nixosModules.sops
+      ./profiles/remote/oracle/matrix/nixos.nix
+    ];
+  };
 #+end_src
 *** homeConfigurations
 :PROPERTIES:
@@ -699,6 +708,91 @@ This section mainly exists house different `configuration.nix` files for system 
 :PROPERTIES:
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
 :END:
+**** live (ISO)
+
+
+
+#+begin_src nix :tangle profiles/live/default.nix
+  { inputs, outputs, config, pkgs, lib, ... }:
+  {
+
+    imports = [
+
+      # ../optional/nixos/steam.nix
+      # ../optional/nixos/virtualbox.nix
+      # ../optional/nixos/vmware.nix
+      ../optional/nixos/autologin.nix
+      ../optional/nixos/nswitch-rcm.nix
+      # ../optional/nixos/work.nix
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+          ../optional/home/gaming.nix
+          # ../optional/home/work.nix
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+        allowBroken = true;
+      };
+    };
+
+    isoImage.makeEfiBootable = true;
+    isoImage.makeUsbBootable = true;
+
+    networking.networkmanager.wifi.scanRandMacAddress = false;
+
+    boot = {
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+    };
+
+    system.stateVersion = lib.mkForce "23.05";
+    services.getty.autologinUser = lib.mkForce "swarsel";
+
+    networking = {
+      hostName = "live";
+      wireless.enable = lib.mkForce false;
+      firewall.enable = true;
+    };
+
+
+    swarselsystems = {
+      wallpaper = ../../wallpaper/lenovowp.png;
+      hasBluetooth = true;
+      hasFingerprint = true;
+      impermanence = false;
+      initialSetup = true;
+      isBtrfs = false;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = false;
+      isNixos = true;
+      isBtrfs = false;
+      startup = [
+        { command = "nextcloud --background"; }
+        { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+        { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+        { command = "teams-for-linux"; }
+        { command = "1password"; }
+        { command = "feishin"; }
+      ];
+    };
+  }
+
+
+#+end_src
+
 **** Home-manager only
 :PROPERTIES:
 :CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
