@@ -7694,45 +7694,91 @@ Some programs lack a dmenu launcher - I define them myself here.
 TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
 #+begin_src nix :tangle profiles/common/home/desktop.nix
-    _:
-    {
-      xdg.desktopEntries = {
 
-        cura = {
-          name = "Ultimaker Cura";
-          genericName = "Cura";
-          exec = "cura";
-          terminal = false;
-          categories = [ "Application" ];
-        };
+  _:
+  {
+    xdg.desktopEntries = {
 
-        anki = {
-          name = "Anki Flashcards";
-          genericName = "Anki";
-          exec = "anki";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        element = {
-          name = "Element Matrix Client";
-          genericName = "Element";
-          exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-          terminal = false;
-          categories = [ "Application" ];
-        };
-
-        emacsclient-newframe = {
-          name = "Emacs (Client, New Frame)";
-          genericName = "Emacs (Client, New Frame)";
-          exec = "emacsclient -r %u";
-          icon = "emacs";
-          terminal = false;
-          categories = [ "Development" "TextEditor" ];
-        };
-
+      cura = {
+        name = "Ultimaker Cura";
+        genericName = "Cura";
+        exec = "cura";
+        terminal = false;
+        categories = [ "Application" ];
       };
-    }
+
+      anki = {
+        name = "Anki Flashcards";
+        genericName = "Anki";
+        exec = "anki";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      element = {
+        name = "Element Matrix Client";
+        genericName = "Element";
+        exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      emacsclient-newframe = {
+        name = "Emacs (Client, New Frame)";
+        genericName = "Emacs (Client, New Frame)";
+        exec = "emacsclient -r %u";
+        icon = "emacs";
+        terminal = false;
+        categories = [ "Development" "TextEditor" ];
+      };
+
+    };
+
+    xdg.mimeApps = {
+
+      enable = true;
+      defaultApplications = {
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
+        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+        "text/plain" = [ "emacsclient.desktop" ];
+        "text/csv" = [ "emacsclient.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
+        "application/x-extension-htm" = [ "firefox.desktop" ];
+        "application/x-extension-html" = [ "firefox.desktop" ];
+        "application/x-extension-shtml" = [ "firefox.desktop" ];
+        "application/xhtml+xml" = [ "firefox.desktop" ];
+        "application/x-extension-xhtml" = [ "firefox.desktop" ];
+        "application/x-extension-xht" = [ "firefox.desktop" ];
+        "image/png" = [ "imv.desktop" ];
+        "image/jpeg" = [ "imv.desktop" ];
+        "image/gif" = [ "imv.desktop" ];
+        "image/svg" = [ "imv.desktop" ];
+        "image/webp" = [ "firefox.desktop" ];
+        "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
+        "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
+        "audio/flac" = [ "mpv.desktop" ];
+        "audio/mp3" = [ "mpv.desktop" ];
+        "audio/ogg" = [ "mpv.desktop" ];
+        "audio/wav" = [ "mpv.desktop" ];
+        "video/mp4" = [ "umpv.desktop" ];
+        "video/mkv" = [ "umpv.desktop" ];
+        "video/flv" = [ "umpv.desktop" ];
+        "video/3gp" = [ "umpv.desktop" ];
+        "application/pdf" = [ "org.gnome.Evince.desktop" ];
+        "application/metalink+xml" = [ "emacsclient.desktop" ];
+        "application/sql" = [ "emacsclient.desktop" ];
+        "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
+        "application/msword" = [ "writer.desktop" ];
+        "application/vnd.ms-excel" = [ "calc.desktop" ];
+      };
+      associations = {
+        added = {
+          "application/x-zerosize" = [ "emacsclient.desktop" ];
+        };
+      };
+    };
+  }
 #+end_src
 
 **** Linking dotfiles
@@ -9796,7 +9842,13 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
     };
 
-    xdg.desktopEntries =
+    xdg = {
+      mimeApps = {
+        defaultApplications = {
+          "x-scheme-handler/msteams" = [ "teams-for-linux.desktop"] ;
+        };
+      };
+      desktopEntries =
       let
         terminal = false;
         categories = [ "Application" ];
