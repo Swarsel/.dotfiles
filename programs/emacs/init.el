@@ -1169,6 +1169,14 @@ create a new one."
   :config
   (setq hcl-indent-level 2))
 
+(use-package groovy-mode)
+
+(use-package jenkinsfile-mode
+  :mode "Jenkinsfile")
+
+(use-package dockerfile-mode
+  :mode "Dockerfile")
+
 (use-package terraform-mode
   :mode "\\.tf\\'"
   :config
