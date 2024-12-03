@@ -14,6 +14,7 @@
     moonlight-qt
     ns-usbloader
 
+    quark-goldleaf
     # gog games installing
     heroic
 
