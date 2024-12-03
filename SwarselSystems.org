@@ -7180,7 +7180,24 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       };
     };
 
-    virtualisation.docker.enable = true;
+    virtualisation = {
+      docker.enable = true;
+      libvirtd = {
+        enable = true;
+        qemu = {
+          package = pkgs.qemu_kvm;
+          runAsRoot = true;
+          swtpm.enable = true;
+          ovmf = {
+            enable = true;
+            packages = [(pkgs.OVMF.override {
+              secureBoot = true;
+              tpmSupport = true;
+            }).fd];
+          };
+        };
+      };
+    };
 
     environment.systemPackages = with pkgs; [
       # (python39.withPackages (ps: with ps; [
@@ -9693,6 +9710,8 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       docker
       postman
       rclone
+      awscli2
+      libguestfs-with-appliance
     ];
 
     programs = {
@@ -9812,7 +9831,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
           inherit terminal categories icon;
         };
       };
-
+    };
 
   }
 

@@ -8,6 +8,8 @@
     docker
     postman
     rclone
+    awscli2
+    libguestfs-with-appliance
   ];
 
   programs = {
@@ -384,7 +386,13 @@
     };
   };
 
-  xdg.desktopEntries =
+  xdg = {
+    mimeApps = {
+      defaultApplications = {
+        "x-scheme-handler/msteams" = [ "teams-for-linux.desktop"] ;
+      };
+    };
+    desktopEntries =
     let
       terminal = false;
       categories = [ "Application" ];
@@ -419,6 +427,6 @@
         inherit terminal categories icon;
       };
     };
-
+  };
 
 }
