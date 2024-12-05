@@ -1,4 +1,7 @@
-{ inputs, outputs, config, ... }:
+{ self, inputs, outputs, config, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
 
   imports = [
@@ -6,8 +9,15 @@
 
     ./hardware-configuration.nix
 
-    ../../optional/nixos/autologin.nix
-    ../../server/common
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/server/common/nixos"
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = [
+    "${profilesPath}/server/common/home"
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
 
   ] ++ (builtins.attrValues outputs.nixosModules);
 
@@ -55,6 +65,7 @@
       syncthing = true;
       monitoring = true;
       jenkins = false;
+      emacs = false;
     };
   };
 

@@ -1,6 +1,7 @@
-{ lib, inputs, ... }:
+_:
 {
   imports = [
+    ./settings.nix
     ./xserver.nix
     ./users.nix
     ./env.nix
@@ -38,35 +39,9 @@
     ./lid.nix
   ];
 
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "ca-derivations"
-        ];
-        trusted-users = [ "swarsel" ];
-        flake-registry = "";
-        warn-dirty = false;
-      };
-      channel.enable = false;
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-    };
-
   nixpkgs.config.permittedInsecurePackages = [
     "jitsi-meet-1.0.8043"
     "electron-29.4.6"
   ];
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-  };
-
-  system.stateVersion = lib.mkDefault "23.05";
 }

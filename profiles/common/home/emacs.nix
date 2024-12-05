@@ -1,11 +1,11 @@
-{ pkgs, ... }:
+{ self, pkgs, ... }:
 {
   # enable emacs overlay for bleeding edge features
   # also read init.el file and install use-package packages
   programs.emacs = {
     enable = true;
     package = pkgs.emacsWithPackagesFromUsePackage {
-      config = ../../../programs/emacs/init.el;
+      config = self + /programs/emacs/init.el;
       package = pkgs.emacs-pgtk;
       alwaysEnsure = true;
       alwaysTangle = true;

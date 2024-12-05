@@ -226,7 +226,7 @@
             proxy = { };
             wifi = {
               mode = "ap";
-              ssid = "Hotspot-fourside";
+              ssid = "Hotspot-swarsel";
             };
             wifi-security = {
               group = "ccmp;";

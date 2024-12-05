@@ -1,6 +1,7 @@
-{ lib, pkgs, config, ... }:
+_:
 {
-  imports = [
+  imports =  [
+    ./settings.nix
     ./packages.nix
     ./custom-packages.nix
     ./sops.nix
@@ -34,28 +35,4 @@
     ./zellij.nix
     ./tmux.nix
   ];
-
-  nix = {
-    package = lib.mkDefault pkgs.nix;
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-        "ca-derivations"
-      ];
-    };
-  };
-
-  programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
-
-  home = {
-    username = lib.mkDefault "swarsel";
-    homeDirectory = lib.mkDefault "/home/${config.home.username}";
-    stateVersion = lib.mkDefault "23.05";
-    keyboard.layout = "us";
-    sessionVariables = {
-      FLAKE = "$HOME/.dotfiles";
-    };
-  };
-
 }

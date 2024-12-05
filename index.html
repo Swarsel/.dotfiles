@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-03 Di 18:59 -->
+<!-- 2024-12-05 Do 02:11 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -246,14 +246,15 @@
 <li><a href="#h:6da812f5-358c-49cb-aff2-0a94f20d70b3">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#org307c249">3.3.2. Server</a></li>
+<li><a href="#org09c24ca">3.3.2. Server</a></li>
 <li><a href="#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">3.3.3. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:08ded95b-9c43-475d-a0b2-fc088a512287">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">3.4.2. Optional</a></li>
+<li><a href="#orgf4178bf">3.4.2. Server</a></li>
+<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">3.4.3. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -286,7 +287,7 @@
 <li><a href="#h:76a5bd78-a20d-4068-bea8-a38fdb26428e">4.3.1. General setup</a></li>
 <li><a href="#h:0debe8fd-b319-4ab7-a92c-784fa7896b75">4.3.2. Mark all themes as safe</a></li>
 <li><a href="#h:b587e869-9911-443b-bc6d-8fb3ce31908d">4.3.3. Show less compilation warnings</a></li>
-<li><a href="#org5658cc5">4.3.4. Better garbage collection</a></li>
+<li><a href="#org1f09bb9">4.3.4. Better garbage collection</a></li>
 <li><a href="#h:6527b3ce-b76d-431a-9960-a57da7c53e1b">4.3.5. Indentation</a></li>
 <li><a href="#h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90">4.3.6. Scrolling</a></li>
 <li><a href="#h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">4.3.7. Evil</a></li>
@@ -307,48 +308,49 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgd306719">4.4.3. HCL Mode</a></li>
-<li><a href="#org3c09021">4.4.4. Jenkinsfile/Groovy</a></li>
-<li><a href="#org2f1e7a4">4.4.5. Dockerfile</a></li>
-<li><a href="#orga9c5a59">4.4.6. Terraform Mode</a></li>
+<li><a href="#orgf4969dc">4.4.3. HCL Mode</a></li>
+<li><a href="#org536e4c8">4.4.4. Jenkinsfile/Groovy</a></li>
+<li><a href="#orgc0a399f">4.4.5. Dockerfile</a></li>
+<li><a href="#org13b1eb4">4.4.6. Terraform Mode</a></li>
 <li><a href="#h:5ca7484b-b9d6-4023-88d1-a1e37d5df249">4.4.7. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.8. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.9. Olivetti</a></li>
-<li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.10. darkroom</a></li>
-<li><a href="#h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">4.4.11. Ripgrep</a></li>
-<li><a href="#h:543641d0-02a9-459e-a2d6-96c8fcc06864">4.4.12. Tree-sitter</a></li>
-<li><a href="#h:82ddeef2-99f8-465b-ba36-07c3eaad717b">4.4.13. direnv (envrc)</a></li>
-<li><a href="#h:efb3f0fd-e846-4df9-ba48-2e45d776f68f">4.4.14. avy</a></li>
-<li><a href="#h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668">4.4.15. crdt (Collaborative Editing)</a></li>
-<li><a href="#h:d9a6cb44-736e-4608-951f-e928e1b757c0">4.4.16. devdocs</a></li>
-<li><a href="#h:5cde5032-251e-4cc4-9202-b4ce996f92c2">4.4.17. Projectile</a></li>
-<li><a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">4.4.18. Magit</a></li>
-<li><a href="#h:d78709dd-4f79-441c-9166-76f61f90359a">4.4.19. Yubikey support</a></li>
-<li><a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">4.4.20. Forge</a></li>
-<li><a href="#h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">4.4.21. git-timemachine</a></li>
-<li><a href="#h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">4.4.22. Delimiters (brackets): rainbow-delimiters, highlight-parentheses</a></li>
-<li><a href="#h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">4.4.23. rainbow-mode</a></li>
-<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">4.4.24. Corfu</a></li>
-<li><a href="#h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">4.4.25. cape</a></li>
-<li><a href="#h:3aa20438-edf6-4b13-a90d-3d5c51239c44">4.4.26. rust</a></li>
-<li><a href="#h:b9b27a88-06f3-470b-a604-a20b2079bc26">4.4.27. Tramp</a></li>
-<li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">4.4.28. diff-hl</a></li>
-<li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">4.4.29. Commenting</a></li>
-<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">4.4.30. yasnippet</a></li>
-<li><a href="#org943e3cb">4.4.31. eglot</a></li>
-<li><a href="#org3cb6eb4">4.4.32. sideline-flymake</a></li>
-<li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">4.4.33. Breadcrumb</a></li>
-<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.34. Prevent breaking of hardlinks</a></li>
-<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.35. Dirvish</a></li>
-<li><a href="#h:b108dd3e-f34d-4ed3-98df-0bf9de055889">4.4.36. pdf-tools: pdf-viewer and support for dirvish</a></li>
-<li><a href="#h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">4.4.37. Jupyter</a></li>
-<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">4.4.38. undo-tree</a></li>
-<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">4.4.39. Hydra</a></li>
-<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">4.4.40. External Applications</a></li>
-<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.41. Email</a></li>
-<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.42. Calendar</a></li>
-<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.43. Dashboard: emacs startup screen</a></li>
-<li><a href="#org00a9435">4.4.44. vterm</a></li>
+<li><a href="#orge431e2a">4.4.10. elfeed</a></li>
+<li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.11. darkroom</a></li>
+<li><a href="#h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">4.4.12. Ripgrep</a></li>
+<li><a href="#h:543641d0-02a9-459e-a2d6-96c8fcc06864">4.4.13. Tree-sitter</a></li>
+<li><a href="#h:82ddeef2-99f8-465b-ba36-07c3eaad717b">4.4.14. direnv (envrc)</a></li>
+<li><a href="#h:efb3f0fd-e846-4df9-ba48-2e45d776f68f">4.4.15. avy</a></li>
+<li><a href="#h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668">4.4.16. crdt (Collaborative Editing)</a></li>
+<li><a href="#h:d9a6cb44-736e-4608-951f-e928e1b757c0">4.4.17. devdocs</a></li>
+<li><a href="#h:5cde5032-251e-4cc4-9202-b4ce996f92c2">4.4.18. Projectile</a></li>
+<li><a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">4.4.19. Magit</a></li>
+<li><a href="#h:d78709dd-4f79-441c-9166-76f61f90359a">4.4.20. Yubikey support</a></li>
+<li><a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">4.4.21. Forge</a></li>
+<li><a href="#h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">4.4.22. git-timemachine</a></li>
+<li><a href="#h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">4.4.23. Delimiters (brackets): rainbow-delimiters, highlight-parentheses</a></li>
+<li><a href="#h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">4.4.24. rainbow-mode</a></li>
+<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">4.4.25. Corfu</a></li>
+<li><a href="#h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">4.4.26. cape</a></li>
+<li><a href="#h:3aa20438-edf6-4b13-a90d-3d5c51239c44">4.4.27. rust</a></li>
+<li><a href="#h:b9b27a88-06f3-470b-a604-a20b2079bc26">4.4.28. Tramp</a></li>
+<li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">4.4.29. diff-hl</a></li>
+<li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">4.4.30. Commenting</a></li>
+<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">4.4.31. yasnippet</a></li>
+<li><a href="#orgca6a02b">4.4.32. eglot</a></li>
+<li><a href="#org63b44ad">4.4.33. sideline-flymake</a></li>
+<li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">4.4.34. Breadcrumb</a></li>
+<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.35. Prevent breaking of hardlinks</a></li>
+<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.36. Dirvish</a></li>
+<li><a href="#h:b108dd3e-f34d-4ed3-98df-0bf9de055889">4.4.37. pdf-tools: pdf-viewer and support for dirvish</a></li>
+<li><a href="#h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">4.4.38. Jupyter</a></li>
+<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">4.4.39. undo-tree</a></li>
+<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">4.4.40. Hydra</a></li>
+<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">4.4.41. External Applications</a></li>
+<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.42. Email</a></li>
+<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.43. Calendar</a></li>
+<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.44. Dashboard: emacs startup screen</a></li>
+<li><a href="#org9b03013">4.4.45. vterm</a></li>
 </ul>
 </li>
 </ul>
@@ -357,7 +359,7 @@
 </div>
 </div>
 <p>
-<b>This file has 50557 words spanning 13534 lines and was last revised on 2024-12-03 18:58:56 +0100.</b>
+<b>This file has 48987 words spanning 12817 lines and was last revised on 2024-12-05 02:11:17 +0100.</b>
 </p>
 
 <p>
@@ -407,7 +409,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-03 18:58:56 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-05 02:11:17 +0100)
 </p></li>
 </ul>
 
@@ -958,6 +960,12 @@ mixedModules = [
   ./profiles/common/home
 ];
 
+# For adding things to _module.args (making arguments available globally)
+# moduleArgs = [
+#   {
+#     _module.args = { inherit self; };
+#   }
+# ];
 </pre>
 </div>
 </div>
@@ -987,6 +995,7 @@ In this section I am creating some attributes that define general concepts of my
 <pre class="src src-nix">
 inherit lib;
 inherit mixedModules;
+# inherit moduleArgs;
 nixosModules = import ./modules/nixos;
 homeManagerModules = import ./modules/home;
 
@@ -1033,46 +1042,15 @@ live = lib.nixosSystem {
   ];
 };
 
-sandbox = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs; };
-  modules = [
-    inputs.disko.nixosModules.disko
-    ./profiles/sandbox/disk-config.nix
-    inputs.sops-nix.nixosModules.sops
-    ./profiles/sandbox/nixos.nix
-  ];
-};
-
-threed = nixpkgs.lib.nixosSystem {
-  specialArgs = { inherit inputs; };
-  modules = nixModules ++ [
-    inputs.lanzaboote.nixosModules.lanzaboote
-    ./profiles/threed/nixos.nix
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = mixedModules ++ [
-        ./profiles/threed/home.nix
-      ];
-    }
-  ];
-};
-
-fourside = lib.nixosSystem {
-  specialArgs = { inherit inputs outputs; };
-  modules = nixModules ++ [
-    ./profiles/fourside
-  ];
-};
-
 nbl-imba-2 = lib.nixosSystem {
-  specialArgs = { inherit inputs outputs; };
+  specialArgs = { inherit self inputs outputs; };
   modules = nixModules ++ [
     ./profiles/nbl-imba-2
   ];
 };
 
 winters = lib.nixosSystem {
-  specialArgs = { inherit inputs outputs; };
+  specialArgs = { inherit self inputs outputs; };
   modules = [
     ./profiles/server/winters
   ];
@@ -1178,7 +1156,7 @@ This section mainly exists house different `configuration.nix` files for system 
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
 </div>
 <ol class="org-ol">
-<li><a id="org70b9a50"></a>live (ISO)<br />
+<li><a id="org179656f"></a>live (ISO)<br />
 <div class="outline-text-5" id="text-3-1-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ inputs, outputs, config, pkgs, lib, ... }:
@@ -1331,966 +1309,6 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 </div>
 </div>
 </li>
-<li><a id="h:60cf171f-2ec9-418f-8f67-85d159efe9d0"></a>Sandbox (Lenovo Y510P)<br />
-<div class="outline-text-5" id="text-h:60cf171f-2ec9-418f-8f67-85d159efe9d0">
-<p>
-My old laptop, replaced by a new one, since most basic functions have stopped to work lately. However, it is still good as a dummy server for testing things out before having them go live. This configuration often changes when I am testing things - at the moment it is not even transitioned to the new module system however.
-</p>
-</div>
-<ol class="org-ol">
-<li><a id="h:23b0f629-343c-42fa-bf9b-70bea341c0d2"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:23b0f629-343c-42fa-bf9b-70bea341c0d2">
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, sops, ... }:
-let
-  matrixDomain = "swatrix.swarsel.win";
-in
-{
-
-  imports = [
-    ./hardware-configuration.nix
-  ];
-
-  boot = {
-    zfs.forceImportRoot = false;
-    supportedFilesystems = [ "zfs" ];
-    kernelModules = [ "tun" ];
-    kernel.sysctl = {
-      "net.ipv4.conf.all.rp_filter" = 2;
-      "net.ipv4.conf.default.rp_filter" = 2;
-      "net.ipv4.conf.enp7s0.rp_filter" = 2;
-    };
-
-    loader.grub = {
-      enable = true;
-      device = "/dev/sda";
-      useOSProber = true;
-    };
-  };
-
-  networking = {
-    hostId = "8a8ad84a";
-    hostName = "sandbox"; # Define your hostname.
-    enableIPv6 = true;
-    firewall.enable = false;
-    firewall.extraCommands = ''
-      sudo iptables -A OUTPUT ! -o lo -m owner --uid-owner vpn -j DROP
-    '';
-    iproute2 = {
-      enable = true;
-      rttablesExtraConfig = ''
-        200     vpn
-      '';
-    };
-  };
-
-  nixpkgs.config.allowUnfree = true;
-
-  hardware = {
-    enableAllFirmware = true;
-    graphics = {
-      enable = true;
-      extraPackages = with pkgs; [
-        intel-media-driver # LIBVA_DRIVER_NAME=iHD
-        vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-        vaapiVdpau
-        libvdpau-va-gl
-      ];
-    };
-  };
-
-  users = {
-    groups = {
-      vpn = { };
-      mpd = { };
-      navidrome = {
-        gid = 61593;
-      };
-      spotifyd = {
-        gid = 65136;
-      };
-    };
-    users = {
-      jellyfin = {
-        extraGroups = [ "video" "render" ];
-      };
-      vpn = {
-        isNormalUser = true;
-        group = "vpn";
-        home = "/home/vpn";
-      };
-      navidrome = {
-        isSystemUser = true;
-        uid = 61593;
-        group = "navidrome";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      spotifyd = {
-        isSystemUser = true;
-        uid = 65136;
-        group = "spotifyd";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      mpd = {
-        isSystemUser = true;
-        group = "mpd";
-        extraGroups = [ "audio" "utmp" ];
-      };
-      swarsel = {
-        isNormalUser = true;
-        description = "Leon S";
-        extraGroups = [ "networkmanager" "wheel" "lp" ];
-        packages = with pkgs; [ ];
-      };
-      root = {
-        openssh.authorizedKeys.keyFiles = [
-          ../../secrets/keys/authorized_keys
-        ];
-      };
-    };
-  };
-
-  fileSystems."/mnt/Eternor" = {
-    device = "//192.168.1.3/Eternor";
-    fsType = "cifs";
-    options =
-      let
-        # this line prevents hanging on network split
-        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-      in
-      [ "${automount_opts},credentials=/etc/nixos/smb-secrets,uid=1000,gid=100" ];
-  };
-
-  environment = {
-    systemPackages = with pkgs; [
-      git
-      gnupg
-      ssh-to-age
-      lego
-      nginx
-      calibre
-      openvpn
-      jq
-      iptables
-      busybox
-      wireguard-tools
-      matrix-synapse
-      lottieconverter
-      ffmpeg
-      pciutils
-      alsa-utils
-      mpv
-      zfs
-    ];
-    etc = {
-      "openvpn/iptables.sh" =
-        {
-          source = ../../scripts/server1/iptables.sh;
-          mode = "0755";
-        };
-      "openvpn/update-resolv-conf" =
-        {
-          source = ../../scripts/server1/update-resolv-conf;
-          mode = "0755";
-        };
-      "openvpn/routing.sh" =
-        {
-          source = ../../scripts/server1/routing.sh;
-          mode = "0755";
-        };
-      "openvpn/ca.rsa.2048.crt" =
-        {
-          source = ../../secrets/certs/ca.rsa.2048.crt;
-          mode = "0644";
-        };
-      "openvpn/crl.rsa.2048.pem" =
-        {
-          source = ../../secrets/certs/crl.rsa.2048.pem;
-          mode = "0644";
-        };
-    };
-    shellAliases = {
-      nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-    };
-  };
-
-  systemd = {
-    timers."restart-bridges" = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "1d";
-        OnUnitActiveSec = "1d";
-        Unit = "restart-bridges.service";
-      };
-    };
-
-    services."restart-bridges" = {
-      script = ''
-        systemctl restart mautrix-whatsapp.service
-        systemctl restart mautrix-signal.service
-        systemctl restart mautrix-telegram.service
-      '';
-      serviceConfig = {
-        Type = "oneshot";
-        User = "root";
-      };
-    };
-  };
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
-  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-  documentation = {
-    enable = false;
-  };
-
-  sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "/root/.dotfiles/secrets/sandbox/secrets.yaml";
-    validateSopsFiles = false;
-    secrets = {
-      dnstokenfull = { owner = "acme"; };
-      kavita = { owner = "kavita"; };
-      vpnuser = { };
-      rpcuser = { owner = "vpn"; };
-      vpnpass = { };
-      rpcpass = { owner = "vpn"; };
-      vpnprot = { };
-      vpnloc = { };
-      mpdpass = { owner = "mpd"; };
-    };
-    templates = {
-      "transmission-rpc" = {
-        owner = "vpn";
-        content = builtins.toJSON {
-          rpc-username = config.sops.placeholder.rpcuser;
-          rpc-password = config.sops.placeholder.rpcpass;
-        };
-      };
-
-      pia.content = ''
-        ${config.sops.placeholder.vpnuser}
-        ${config.sops.placeholder.vpnpass}
-      '';
-
-      vpn.content = ''
-        client
-        dev tun
-        proto ${config.sops.placeholder.vpnprot}
-        remote ${config.sops.placeholder.vpnloc}
-        resolv-retry infinite
-        nobind
-        persist-key
-        persist-tun
-        cipher aes-128-cbc
-        auth sha1
-        tls-client
-        remote-cert-tls server
-
-        auth-user-pass ${config.sops.templates.pia.path}
-        compress
-        verb 1
-        reneg-sec 0
-
-        crl-verify /etc/openvpn/crl.rsa.2048.pem
-        ca /etc/openvpn/ca.rsa.2048.crt
-
-        disable-occ
-      '';
-      "certs.secret".content = ''
-        CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-      '';
-    };
-  };
-
-  security.acme = {
-    acceptTerms = true;
-    preliminarySelfsigned = false;
-    defaults.email = "mrswarsel@gmail.com";
-    defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
-  };
-
-  services = {
-    xserver.xkb = {
-      layout = "us";
-      variant = "altgr-intl";
-    };
-
-    openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
-      listenAddresses = [{
-        port = 22;
-        addr = "0.0.0.0";
-      }];
-    };
-
-    nginx = {
-      enable = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-      recommendedOptimisation = true;
-      recommendedGzipSettings = true;
-      virtualHosts = {
-
-        "stash.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://192.168.1.5";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-            "/.well-known/carddav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-            "/.well-known/caldav" = {
-              return = "301 $scheme://$host/remote.php/dav";
-            };
-          };
-        };
-
-        "swatrix.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "~ ^(/_matrix|/_synapse/client)" = {
-              proxyPass = "http://127.0.0.1:8008";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
-
-
-        "sound.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:4040";
-              proxyWebsockets = true;
-              extraConfig = ''
-                proxy_redirect          http:// https://;
-                proxy_read_timeout      600s;
-                proxy_send_timeout      600s;
-                proxy_buffering         off;
-                proxy_request_buffering off;
-                client_max_body_size    0;
-              '';
-            };
-          };
-        };
-
-        "scan.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:28981";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
-
-        "screen.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:8096";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
-
-        "scroll.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:8080";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
-      };
-    };
-
-    kavita = {
-      enable = true;
-      user = "kavita";
-      settings.port = 8080;
-      tokenKeyFile = config.sops.secrets.kavita.path;
-    };
-
-    jellyfin = {
-      enable = true;
-      user = "jellyfin";
-    };
-
-    radarr = {
-      enable = true;
-    };
-    readarr = {
-      enable = true;
-    };
-    sonarr = {
-      enable = true;
-    };
-    lidarr = {
-      enable = true;
-    };
-    prowlarr = {
-      enable = true;
-    };
-    openvpn.servers = {
-      pia = {
-        autoStart = true;
-        updateResolvConf = false;
-        config = "config ${config.sops.templates.vpn.path}";
-      };
-    };
-    transmission = {
-      enable = true;
-      credentialsFile = config.sops.templates."transmission-rpc".path;
-      user = "vpn";
-      settings = {
-        alt-speed-down = 8000;
-        alt-speed-enabled = false;
-        alt-speed-time-begin = 0;
-        alt-speed-time-day = 127;
-        alt-speed-time-enabled = true;
-        alt-speed-time-end = 360;
-        alt-speed-up = 2000;
-        bind-address-ipv4 = "0.0.0.0";
-        bind-address-ipv6 = "::";
-        blocklist-enabled = false;
-        blocklist-url = "http://www.example.com/blocklist";
-        cache-size-mb = 256;
-        dht-enabled = false;
-        download-dir = "/test";
-        download-limit = 100;
-        download-limit-enabled = 0;
-        download-queue-enabled = true;
-        download-queue-size = 5;
-        encryption = 2;
-        idle-seeding-limit = 30;
-        idle-seeding-limit-enabled = false;
-        incomplete-dir = "/var/lib/transmission-daemon/Downloads";
-        incomplete-dir-enabled = false;
-        lpd-enabled = false;
-        max-peers-global = 200;
-        message-level = 1;
-        peer-congestion-algorithm = "";
-        peer-id-ttl-hours = 6;
-        peer-limit-global = 100;
-        peer-limit-per-torrent = 40;
-        peer-port = 22371;
-        peer-port-random-high = 65535;
-        peer-port-random-low = 49152;
-        peer-port-random-on-start = false;
-        peer-socket-tos = "default";
-        pex-enabled = false;
-        port-forwarding-enabled = false;
-        preallocation = 1;
-        prefetch-enabled = true;
-        queue-stalled-enabled = true;
-        queue-stalled-minutes = 30;
-        ratio-limit = 2;
-        ratio-limit-enabled = false;
-        rename-partial-files = true;
-        rpc-authentication-required = true;
-        rpc-bind-address = "0.0.0.0";
-        rpc-enabled = true;
-        rpc-host-whitelist = "";
-        rpc-host-whitelist-enabled = true;
-        rpc-port = 9091;
-        rpc-url = "/transmission/";
-        rpc-whitelist = "127.0.0.1,192.168.3.2";
-        rpc-whitelist-enabled = true;
-        scrape-paused-torrents-enabled = true;
-        script-torrent-done-enabled = false;
-        seed-queue-enabled = false;
-        seed-queue-size = 10;
-        speed-limit-down = 6000;
-        speed-limit-down-enabled = true;
-        speed-limit-up = 500;
-        speed-limit-up-enabled = true;
-        start-added-torrents = true;
-        trash-original-torrent-files = false;
-        umask = 2;
-        upload-limit = 100;
-        upload-limit-enabled = 0;
-        upload-slots-per-torrent = 14;
-        utp-enabled = false;
-      };
-    };
-
-    # sops.secrets.matrixsharedsecret = {owner="matrix-synapse";};
-    # sops.templates."matrix_user_register.sh".content = ''
-    # register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
-    # '';
-    # sops.templates.matrixshared.owner = "matrix-synapse";
-    # sops.templates.matrixshared.content = ''
-    # registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
-    # '';
-    # sops.secrets.mautrixtelegram_as = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_hs = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_api_id = {owner="matrix-synapse";};
-    # sops.secrets.mautrixtelegram_api_hash = {owner="matrix-synapse";};
-    # sops.templates.mautrixtelegram.owner = "matrix-synapse";
-    # sops.templates.mautrixtelegram.content = ''
-    # MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-    # MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-    # MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-    # MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
-    # '';
-
-
-
-
-    # ----------------
-    # sops.secrets.mautrixwhatsapp_shared = {owner="matrix-synapse";};
-    # sops.templates.mautrixwhatsapp.owner = "matrix-synapse";
-    # sops.templates.mautrixwhatsapp.content = ''
-    # MAUTRIX_WHATSAPP_BRIDGE_LOGIN_SHARED_SECRET=${config.sops.placeholder.mautrixwhatsapp_shared}
-    # '';
-
-    postgresql = {
-      enable = true;
-      initialScript = pkgs.writeText "synapse-init.sql" ''
-        CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-        CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-        CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-        CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-        CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-        CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-          TEMPLATE template0
-          LC_COLLATE = "C"
-          LC_CTYPE = "C";
-      '';
-    };
-    matrix-synapse = {
-      settings.app_service_config_files = [
-        "/var/lib/matrix-synapse/telegram-registration.yaml"
-        "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-        "/var/lib/matrix-synapse/signal-registration.yaml"
-        "/var/lib/matrix-synapse/doublepuppet.yaml"
-      ];
-      enable = false;
-      settings.server_name = matrixDomain;
-      settings.public_baseurl = "https://${matrixDomain}";
-      extraConfigFiles = [
-        config.sops.templates.matrixshared.path
-      ];
-      settings.listeners = [
-        {
-          port = 8008;
-          bind_addresses = [ "0.0.0.0" ];
-          type = "http";
-          tls = false;
-          x_forwarded = true;
-          resources = [
-            {
-              names = [ "client" "federation" ];
-              compress = true;
-            }
-          ];
-        }
-      ];
-    };
-
-    mautrix-telegram = {
-      enable = false;
-      environmentFile = config.sops.templates.mautrixtelegram.path;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
-        };
-        appservice = {
-          address = "http://localhost:29317";
-          hostname = "0.0.0.0";
-          port = "29317";
-          provisioning.enabled = true;
-          id = "telegram";
-          # ephemeral_events = true; # not needed due to double puppeting
-          public = {
-            enabled = false;
-          };
-          database = "postgresql:///mautrix-telegram?host=/run/postgresql";
-        };
-        bridge = {
-          # login_shared_secret_map = {
-          # matrixDomain = "as_token:doublepuppet";
-          # };
-          relaybot.authless_portals = true;
-          allow_avatar_remove = true;
-          allow_contact_info = true;
-          sync_channel_members = true;
-          startup_sync = true;
-          sync_create_limit = 0;
-          sync_direct_chats = true;
-          telegram_link_preview = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
-          };
-          animated_sticker = {
-            target = "gif";
-            args = {
-              width = 256;
-              height = 256;
-              fps = 30; # only for webm
-              background = "020202"; # only for gif, transparency not supported
-            };
-          };
-        };
-      };
-    };
-
-    mautrix-whatsapp = {
-      enable = false;
-      # environmentFile = config.sops.templates.mautrixwhatsapp.path;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
-        };
-        appservice = {
-          address = "http://localhost:29318";
-          hostname = "0.0.0.0";
-          port = 29318;
-          database = {
-            type = "postgres";
-            uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-          };
-        };
-        bridge = {
-          displayname_template = "{{or .FullName .PushName .JID}} (WA)";
-          history_sync = {
-            backfill = true;
-            max_initial_conversations = -1;
-            message_count = -1;
-            request_full_sync = true;
-            full_sync_config = {
-              days_limit = 900;
-              size_mb_limit = 5000;
-              storage_quota_mb = 5000;
-            };
-          };
-          login_shared_secret_map = {
-            matrixDomain = "as_token:doublepuppet";
-          };
-          sync_manual_marked_unread = true;
-          send_presence_on_typing = true;
-          parallel_member_sync = true;
-          url_previews = true;
-          caption_in_message = true;
-          extev_polls = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
-          };
-        };
-      };
-    };
-
-    mautrix-signal = {
-      enable = false;
-      settings = {
-        homeserver = {
-          address = "http://localhost:8008";
-          domain = matrixDomain;
-        };
-        appservice = {
-
-          address = "http://localhost:29328";
-          hostname = "0.0.0.0";
-          port = 29328;
-          database = {
-            type = "postgres";
-            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-          };
-        };
-        bridge = {
-          displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
-          login_shared_secret_map = {
-            matrixDomain = "as_token:doublepuppet";
-          };
-          caption_in_message = true;
-          permissions = {
-            "*" = "relaybot";
-            "@swarsel:${matrixDomain}" = "admin";
-          };
-        };
-      };
-    };
-
-    navidrome = {
-      enable = true;
-      settings = {
-        Address = "0.0.0.0";
-        Port = 4040;
-        MusicFolder = "/mnt/";
-        EnableSharing = true;
-        EnableTranscodingConfig = true;
-        Scanner.GroupAlbumReleases = true;
-        ScanSchedule = "@every 24h";
-        # Insert these values locally as sops-nix does not work for them
-        # LastFM.ApiKey = TEMPLATE;
-        # LastFM.Secret = TEMPLATE;
-        # Spotify.ID = TEMPLATE;
-        # Spotify.Secret = TEMPLATE;
-        UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
-        UIWelcomeMessage = "~SwarselSound~";
-      };
-    };
-    mpd = {
-      enable = true;
-      musicDirectory = "/mnt/Eternor/Musik";
-      user = "mpd";
-      group = "mpd";
-      network = {
-        port = 3254;
-        listenAddress = "any";
-      };
-      credentials = [
-        {
-          passwordFile = config.sops.secrets.mpdpass.path;
-          permissions = [
-            "read"
-            "add"
-            "control"
-            "admin"
-          ];
-        }
-      ];
-    };
-
-
-    spotifyd = {
-      enable = true;
-      settings = {
-        global = {
-          dbus_type = "session";
-          use_mpris = false;
-          device = "default:CARD=PCH";
-          device_name = "SwarselSpot";
-          mixer = "alsa";
-          zeroconf_port = 1025;
-        };
-      };
-    };
-
-    # Network shares
-    # add a user with sudo smbpasswd -a &lt;user&gt;
-    samba = {
-      package = pkgs.samba4Full;
-      extraConfig = ''
-        workgroup = WORKGROUP
-        server role = standalone server
-        dns proxy = no
-
-        pam password change = yes
-        map to guest = bad user
-        create mask = 0664
-        force create mode = 0664
-        directory mask = 0775
-        force directory mode = 0775
-        follow symlinks = yes
-      '';
-
-      # ^^ `samba4Full` is compiled with avahi, ldap, AD etc support compared to the default package, `samba`
-      # Required for samba to register mDNS records for auto discovery
-      # See https://github.com/NixOS/nixpkgs/blob/592047fc9e4f7b74a4dc85d1b9f5243dfe4899e3/pkgs/top-level/all-packages.nix#L27268
-      enable = true;
-      # openFirewall = true;
-      shares.test = {
-        browseable = "yes";
-        "read only" = "no";
-        "guest ok" = "no";
-        path = "/test2";
-        writable = "true";
-        comment = "Eternor";
-        "valid users" = "@smbtest2";
-      };
-    };
-
-
-    avahi = {
-      publish.enable = true;
-      publish.userServices = true;
-      # ^^ Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
-      nssmdns4 = true;
-      # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
-      enable = true;
-    };
-
-    samba-wsdd = {
-      # This enables autodiscovery on windows since SMB1 (and thus netbios) support was discontinued
-      enable = true;
-    };
-  };
-}
-
-</pre>
-</div>
-</div>
-</li>
-</ol>
-</li>
-<li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>Fourside (Lenovo Thinkpad P14s Gen2)<br />
-<div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
-<p>
-This is my private main machine. I am not using hardware encryption here as I personally do not really care. However, I want to setup impermanence on this one as soon as I get the chance.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ inputs, outputs, config, pkgs, ... }:
-{
-
-  imports = [
-    inputs.nixos-hardware.nixosModules.lenovo-thinkpad-p14s-amd-gen2
-
-    ./hardware-configuration.nix
-
-    ../optional/nixos/steam.nix
-    ../optional/nixos/virtualbox.nix
-    ../optional/nixos/autologin.nix
-    ../optional/nixos/nswitch-rcm.nix
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ../optional/home/gaming.nix
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
-    }
-  ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-  nixpkgs = {
-    inherit (outputs) overlays;
-    config = {
-      allowUnfree = true;
-    };
-  };
-
-  boot = {
-    loader.systemd-boot.enable = true;
-    loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_latest;
-  };
-
-
-  networking = {
-    hostName = "fourside";
-    firewall.enable = true;
-  };
-
-  hardware.graphics.extraPackages = with pkgs; [
-    vulkan-loader
-    vulkan-validation-layers
-    vulkan-extension-layer
-  ];
-
-  services = {
-    thinkfan.enable = false;
-    fwupd.enable = true;
-  };
-
-  swarselsystems = {
-    wallpaper = ../../wallpaper/lenovowp.png;
-    hasBluetooth = true;
-    hasFingerprint = true;
-    trackpoint = {
-      isAvailable = true;
-      device = "TPPS/2 Elan TrackPoint";
-    };
-  };
-
-  home-manager.users.swarsel.swarselsystems = {
-    isLaptop = true;
-    isNixos = true;
-    temperatureHwmon = {
-      isAbsolutePath = true;
-      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      input-filename = "temp1_input";
-    };
-    #  ------   -----
-    # | DP-4 | |eDP-1|
-    #  ------   -----
-    monitors = {
-      main = {
-        name = "California Institute of Technology 0x1407 Unknown";
-        mode = "1920x1080"; # TEMPLATE
-        scale = "1";
-        position = "2560,0";
-        workspace = "2:二";
-        output = "eDP-1";
-      };
-      homedesktop = {
-        name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-        mode = "2560x1440";
-        scale = "1";
-        position = "0,0";
-        workspace = "1:一";
-        output = "DP-4";
-      };
-    };
-    inputs = {
-      "1:1:AT_Translated_Set_2_keyboard" = {
-        xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
-        xkb_variant = "altgr-intl";
-      };
-    };
-    keybindings = {
-      # these are left open to use
-      # "XF86WLAN" = "exec wl-mirror eDP-1";
-      # "XF86Messenger" = "exec wl-mirror eDP-1";
-      # "XF86Go" = "exec wl-mirror eDP-1";
-      # "XF86Favorites" = "exec wl-mirror eDP-1";
-      # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-      # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-      # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-    };
-  };
-}
-
-
-</pre>
-</div>
-</div>
-</li>
 <li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>nbl-imba-2 (Framework Laptop 16)<br />
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
@@ -2299,7 +1317,10 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, outputs, config, pkgs, lib, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
 
   imports = [
@@ -2309,18 +1330,18 @@ My work machine. Built for more security, this is the gold standard of my config
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    ../optional/nixos/steam.nix
-    ../optional/nixos/virtualbox.nix
+    "${profilesPath}/optional/nixos/steam.nix"
+    "${profilesPath}/optional/nixos/virtualbox.nix"
     # ../optional/nixos/vmware.nix
-    ../optional/nixos/autologin.nix
-    ../optional/nixos/nswitch-rcm.nix
-    ../optional/nixos/work.nix
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+    "${profilesPath}/optional/nixos/work.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ../optional/home/gaming.nix
-        ../optional/home/work.nix
+      home-manager.users.swarsel.imports =  outputs.mixedModules ++ [
+        "${profilesPath}/optional/home/gaming.nix"
+        "${profilesPath}/optional/home/work.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);
@@ -2377,7 +1398,7 @@ My work machine. Built for more security, this is the gold standard of my config
   };
 
   swarselsystems = {
-    wallpaper = ../../wallpaper/lenovowp.png;
+    wallpaper = self + /wallpaper/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
     impermanence = false;
@@ -2408,6 +1429,8 @@ My work machine. Built for more security, this is the gold standard of my config
       { command = "feishin"; }
     ];
     sharescreen = "eDP-2";
+    lowResolution = "1280x800";
+    highResolution = "2560x1600";
     monitors = {
       main = {
         name = "BOE 0x0BC9 Unknown";
@@ -2516,10 +1539,13 @@ My work machine. Built for more security, this is the gold standard of my config
 </div>
 </div>
 </li>
-<li><a id="org5d07156"></a>Winters (Server)<br />
-<div class="outline-text-5" id="text-3-1-1-6">
+<li><a id="org217acd2"></a>Winters (Server)<br />
+<div class="outline-text-5" id="text-3-1-1-4">
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, outputs, config, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, config, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
 
   imports = [
@@ -2527,8 +1553,15 @@ My work machine. Built for more security, this is the gold standard of my config
 
     ./hardware-configuration.nix
 
-    ../../optional/nixos/autologin.nix
-    ../../server/common
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/server/common/nixos"
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = [
+    "${profilesPath}/server/common/home"
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
 
   ] ++ (builtins.attrValues outputs.nixosModules);
 
@@ -2550,7 +1583,7 @@ My work machine. Built for more security, this is the gold standard of my config
     hostName = "winters";
     hostId = "b7778a4a";
     firewall.enable = true;
-    enableIPv6 = true;
+    enableIPv6 = false;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 
@@ -2576,6 +1609,7 @@ My work machine. Built for more security, this is the gold standard of my config
       syncthing = true;
       monitoring = true;
       jenkins = false;
+      emacs = false;
     };
   };
 
@@ -2586,10 +1620,10 @@ My work machine. Built for more security, this is the gold standard of my config
 </div>
 </div>
 </li>
-<li><a id="orge7a3551"></a>nbm-imba-166 (MacBook Pro)<br />
-<div class="outline-text-5" id="text-3-1-1-7">
+<li><a id="orgd95b7ab"></a>nbm-imba-166 (MacBook Pro)<br />
+<div class="outline-text-5" id="text-3-1-1-5">
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, outputs, config, pkgs, lib, ... }:
+<pre class="src src-nix">{ inputs, outputs, config, ... }:
 {
 
   imports = [
@@ -2630,8 +1664,8 @@ My work machine. Built for more security, this is the gold standard of my config
 </div>
 </div>
 </li>
-<li><a id="org308a304"></a>Magicant (Phone)<br />
-<div class="outline-text-5" id="text-3-1-1-8">
+<li><a id="orga9fbb1d"></a>Magicant (Phone)<br />
+<div class="outline-text-5" id="text-3-1-1-6">
 <div class="org-src-container">
 <pre class="src src-nix">
 { pkgs, ... }: {
@@ -2694,97 +1728,6 @@ I have removed most of the machines from this section. What remains are some hos
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="h:4a194546-9a9e-47c4-8d03-8d2428d45d30"></a>Jellyfin (Local)<br />
-<div class="outline-text-5" id="text-h:4a194546-9a9e-47c4-8d03-8d2428d45d30">
-</div>
-<ol class="org-ol">
-<li><a id="h:9e94efd9-f63b-46ce-b34c-ec3128de5ed9"></a>NixOS<br />
-<div class="outline-text-6" id="text-h:9e94efd9-f63b-46ce-b34c-ec3128de5ed9">
-<div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, modulesPath, ... }:
-
-{
-  imports = [
-    (modulesPath + "/virtualisation/proxmox-lxc.nix")
-    ./hardware-configuration.nix
-  ];
-
-  environment.systemPackages = with pkgs; [
-    git
-    gnupg
-    ssh-to-age
-  ];
-
-  users.groups.lxc_shares = {
-    gid = 10000;
-    members = [
-      "jellyfin"
-      "root"
-    ];
-  };
-
-  users.users.jellyfin = {
-    extraGroups = [ "video" "render" ];
-  };
-
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "altgr-intl";
-  };
-
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-
-  proxmoxLXC = {
-    manageNetwork = true; # manage network myself
-    manageHostName = false; # manage hostname myself
-  };
-  networking = {
-    hostName = "jellyfin"; # Define your hostname.
-    useDHCP = true;
-    enableIPv6 = false;
-    firewall.enable = false;
-  };
-  services.openssh = {
-    enable = true;
-    settings.PermitRootLogin = "yes";
-  };
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    ../../../secrets/keys/authorized_keys
-  ];
-
-  system.stateVersion = "23.05"; # TEMPLATE - but probably no need to change
-
-  environment.shellAliases = {
-    nswitch = "cd /.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-  };
-
-  nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-  };
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-      vaapiVdpau
-      libvdpau-va-gl
-    ];
-  };
-
-  services.jellyfin = {
-    enable = true;
-    user = "jellyfin";
-    # openFirewall = true; # this works only for the default ports
-  };
-
-}
-
-</pre>
-</div>
-</div>
-</li>
-</ol>
-</li>
 <li><a id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"></a>Sync (OCI)<br />
 <div class="outline-text-5" id="text-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">
 </div>
@@ -3970,19 +2913,25 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org2703921"></a>screenshare<br />
+<li><a id="org18a4c93"></a>screenshare<br />
 <div class="outline-text-5" id="text-3-2-1-15">
 <div class="org-src-container">
 <pre class="src src-shell">
 SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
-if [[ "$1" == "start" ]]; then
+touch /tmp/screenshare.state
+STATE=$(&lt;/tmp/screenshare.state)
+
+if [[ "$STATE" != "1" ]]; then
     wl-mirror "$SHARESCREEN" &amp; sleep 0.1
-    swaymsg output eDP-2 mode 1280x800
+    swaymsg output "$SHARESCREEN" mode "$SWARSEL_LO_RES"
+    echo 1 &gt; /tmp/screenshare.state
     swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
     swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
 else
-    swaymsg output eDP-2 mode 2560x1600
+    swaymsg output "$SHARESCREEN" mode "$SWARSEL_HI_RES"
+    echo 0 &gt; /tmp/screenshare.state
+    swaymsg '[app_id=at.yrlf.wl_mirror] kill'
 fi
 
 </pre>
@@ -4166,12 +3115,13 @@ in
   options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
   options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
   options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
+  options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
 }
 </pre>
 </div>
 </div>
 </li>
-<li><a id="org679e213"></a>Input<br />
+<li><a id="orgc3092c9"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -4382,6 +3332,14 @@ in
     type = types.str;
     default = "";
   };
+  options.swarselsystems.lowResolution = mkOption {
+    type = types.str;
+    default = "";
+  };
+  options.swarselsystems.highResolution = mkOption {
+    type = types.str;
+    default = "";
+  };
 }
 </pre>
 </div>
@@ -4479,10 +3437,10 @@ These are some extra options that will be used if the machine also runs NixOS. F
 </div>
 </div>
 </li>
-<li><a id="org8e073f2"></a>darwin<br />
+<li><a id="org2474237"></a>darwin<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix">{ lib,  ... }:
 {
   options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
 }
@@ -4592,28 +3550,17 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="h:ae1f4d4d-02a9-403f-8179-78889ce57fb8"></a>Imports, enable home-manager module, stateVersion<br />
-<div class="outline-text-5" id="text-h:ae1f4d4d-02a9-403f-8179-78889ce57fb8">
+<li><a id="org70f440a"></a>Imports, non-server settings<br />
+<div class="outline-text-5" id="text-3-3-1-1">
 <p>
-:CUSTOM<sub>ID</sub>: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
-</p>
-
-<p>
-First, we enable the use of <code>home-manager</code> as a NixoS module.
-</p>
-
-<p>
-Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
-</p>
-
-<p>
-Also, the system state version is set here. No need to touch it.
+This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, inputs, ... }:
+<pre class="src src-nix">_:
 {
   imports = [
+    ./settings.nix
     ./xserver.nix
     ./users.nix
     ./env.nix
@@ -4651,6 +3598,34 @@ Also, the system state version is set here. No need to touch it.
     ./lid.nix
   ];
 
+  nixpkgs.config.permittedInsecurePackages = [
+    "jitsi-meet-1.0.8043"
+    "electron-29.4.6"
+  ];
+
+}
+
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org6a09c4a"></a>General NixOS settings (enable home-manager module, stateVersion)<br />
+<div class="outline-text-5" id="text-3-3-1-2">
+<p>
+First, we enable the use of <code>home-manager</code> as a NixoS module.
+</p>
+
+<p>
+Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
+</p>
+
+<p>
+Also, the system state version is set here. No need to touch it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, lib, inputs, ... }:
+{
   nix =
     let
       flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -4671,19 +3646,15 @@ Also, the system state version is set here. No need to touch it.
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
 
-  nixpkgs.config.permittedInsecurePackages = [
-    "jitsi-meet-1.0.8043"
-    "electron-29.4.6"
-  ];
-
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    extraSpecialArgs = inputs; # used mainly for inputs.self
   };
 
   system.stateVersion = lib.mkDefault "23.05";
-}
 
+}
 </pre>
 </div>
 </div>
@@ -4778,6 +3749,7 @@ Needed for control over system-wide privileges etc.
     swaylock.fprintAuth = false;
   };
   security.polkit.enable = true;
+
 
 }
 </pre>
@@ -5154,7 +4126,7 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
             proxy = { };
             wifi = {
               mode = "ap";
-              ssid = "Hotspot-fourside";
+              ssid = "Hotspot-swarsel";
             };
             wifi-security = {
               group = "ccmp;";
@@ -6166,8 +5138,8 @@ A friend of mine used this service and I used to make fun of him. But I have to 
 </div>
 </div>
 </li>
-<li><a id="org39e6427"></a>Podmam (distrobox)<br />
-<div class="outline-text-5" id="text-3-3-1-27">
+<li><a id="org4ad532c"></a>Podmam (distrobox)<br />
+<div class="outline-text-5" id="text-3-3-1-28">
 <p>
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 </p>
@@ -6189,8 +5161,8 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 </div>
 </div>
 </li>
-<li><a id="org4398d5a"></a>Handle lid switch correctly<br />
-<div class="outline-text-5" id="text-3-3-1-28">
+<li><a id="orgdd30156"></a>Handle lid switch correctly<br />
+<div class="outline-text-5" id="text-3-3-1-29">
 <p>
 This turns off the display when the lid is closed.
 </p>
@@ -6228,12 +5200,12 @@ This turns off the display when the lid is closed.
 </li>
 </ol>
 </div>
-<div id="outline-container-org307c249" class="outline-4">
-<h4 id="org307c249"><span class="section-number-4">3.3.2.</span> Server</h4>
+<div id="outline-container-org09c24ca" class="outline-4">
+<h4 id="org09c24ca"><span class="section-number-4">3.3.2.</span> Server</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="org8bdff8b"></a>Imports, stateVersion<br />
+<li><a id="org1b45c3a"></a>Imports<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module.
@@ -6248,57 +5220,52 @@ Also, the system state version is set here. No need to touch it.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, inputs, ... }:
+<pre class="src src-nix">{ self, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
   imports = [
-    ../../common/nixos/xserver.nix
-    ../../common/nixos/gc.nix
-    ../../common/nixos/store.nix
-    ../../common/nixos/time.nix
-    ../../common/nixos/pipewire.nix
-    ../../common/nixos/users.nix
-    ../../common/nixos/nix-ld.nix
-    ./packages.nix
-    ./sops.nix
-    ./ssh.nix
-    ./nfs.nix
-    ./nginx.nix
-    ./kavita.nix
-    ./jellyfin.nix
-    ./navidrome.nix
-    ./spotifyd.nix
-    ./mpd.nix
-    ./matrix.nix
-    ./nextcloud.nix
-    ./immich.nix
-    ./paperless.nix
-    ./transmission.nix
-    ./syncthing.nix
-    ./restic.nix
-    ./monitoring.nix
-    ./jenkins.nix
+  "${profilesPath}/common/nixos/settings.nix"
+  "${profilesPath}/common/nixos/xserver.nix"
+  "${profilesPath}/common/nixos/gc.nix"
+  "${profilesPath}/common/nixos/store.nix"
+  "${profilesPath}/common/nixos/time.nix"
+  "${profilesPath}/common/nixos/pipewire.nix"
+  "${profilesPath}/common/nixos/users.nix"
+  "${profilesPath}/common/nixos/nix-ld.nix"
+  ./settings.nix
+  ./packages.nix
+  ./sops.nix
+  ./ssh.nix
+  ./nfs.nix
+  ./nginx.nix
+  ./kavita.nix
+  ./jellyfin.nix
+  ./navidrome.nix
+  ./spotifyd.nix
+  ./mpd.nix
+  ./matrix.nix
+  ./nextcloud.nix
+  ./immich.nix
+  ./paperless.nix
+  ./transmission.nix
+  ./syncthing.nix
+  ./restic.nix
+  ./monitoring.nix
+  ./jenkins.nix
+  ./emacs.nix
   ];
-
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "ca-derivations"
-        ];
-        trusted-users = [ "swarsel" ];
-        flake-registry = "";
-        warn-dirty = false;
-      };
-      channel.enable = false;
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-    };
-
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orgb34552a"></a>General NixOS Server settings<br />
+<div class="outline-text-5" id="text-3-3-2-2">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+{
   environment.shellAliases = lib.recursiveUpdate
     {
       npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
@@ -6310,15 +5277,13 @@ Also, the system state version is set here. No need to touch it.
     "olm-3.2.16"
   ];
 
-  system.stateVersion = lib.mkDefault "23.05";
 }
-
 </pre>
 </div>
 </div>
 </li>
-<li><a id="orge5cca0e"></a>System Packages<br />
-<div class="outline-text-5" id="text-3-3-2-2">
+<li><a id="org02d44cc"></a>System Packages<br />
+<div class="outline-text-5" id="text-3-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 {
@@ -6334,8 +5299,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="org65f1d03"></a>sops<br />
-<div class="outline-text-5" id="text-3-3-2-3">
+<li><a id="org68c0420"></a>sops<br />
+<div class="outline-text-5" id="text-3-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, ... }:
 {
@@ -6350,8 +5315,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="orgd3c044a"></a>nfs/samba (smb)<br />
-<div class="outline-text-5" id="text-3-3-2-4">
+<li><a id="org0e32541"></a>nfs/samba (smb)<br />
+<div class="outline-text-5" id="text-3-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
 {
@@ -6406,8 +5371,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="orgff461d2"></a>NGINX<br />
-<div class="outline-text-5" id="text-3-3-2-5">
+<li><a id="org6af4fa3"></a>NGINX<br />
+<div class="outline-text-5" id="text-3-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, config, ... }:
 {
@@ -6448,8 +5413,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="orga9ae515"></a>ssh<br />
-<div class="outline-text-5" id="text-3-3-2-6">
+<li><a id="orga2ca943"></a>ssh<br />
+<div class="outline-text-5" id="text-3-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">_:
 {
@@ -6471,8 +5436,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="org8c0134d"></a>kavita<br />
-<div class="outline-text-5" id="text-3-3-2-7">
+<li><a id="org3ed8a19"></a>kavita<br />
+<div class="outline-text-5" id="text-3-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -6520,8 +5485,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="org0d01bd6"></a>jellyfin<br />
-<div class="outline-text-5" id="text-3-3-2-8">
+<li><a id="org39b9b99"></a>jellyfin<br />
+<div class="outline-text-5" id="text-3-3-2-9">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -6571,8 +5536,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="org843b2ad"></a>navidrome<br />
-<div class="outline-text-5" id="text-3-3-2-9">
+<li><a id="org3156d12"></a>navidrome<br />
+<div class="outline-text-5" id="text-3-3-2-10">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -6629,7 +5594,8 @@ Also, the system state version is set here. No need to touch it.
             [ "pch" "alsa/sysdefault:CARD=PCH" ]
           ];
         };
-        # Insert these values locally as sops-nix does not work for them
+        # Switch using --impure as these credential files are not stored within the flake
+        # sops-nix is not supported for these which is why we need to resort to these
         LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
         LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;
         Spotify.ID = builtins.readFile /home/swarsel/api/spotify-id;
@@ -6670,8 +5636,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="orgb0b29d6"></a>spotifyd<br />
-<div class="outline-text-5" id="text-3-3-2-10">
+<li><a id="org1405afd"></a>spotifyd<br />
+<div class="outline-text-5" id="text-3-3-2-11">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -6711,8 +5677,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="org1d939e5"></a>mpd<br />
-<div class="outline-text-5" id="text-3-3-2-11">
+<li><a id="orga3398db"></a>mpd<br />
+<div class="outline-text-5" id="text-3-3-2-12">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -6769,8 +5735,8 @@ Also, the system state version is set here. No need to touch it.
 </div>
 </div>
 </li>
-<li><a id="orgaba70be"></a>matrix<br />
-<div class="outline-text-5" id="text-3-3-2-12">
+<li><a id="org5e1d113"></a>matrix<br />
+<div class="outline-text-5" id="text-3-3-2-13">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, pkgs, sops, ... }:
 let
@@ -7094,8 +6060,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="org9b32f99"></a>nextcloud<br />
-<div class="outline-text-5" id="text-3-3-2-13">
+<li><a id="org0b76e84"></a>nextcloud<br />
+<div class="outline-text-5" id="text-3-3-2-14">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -7144,8 +6110,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="orga735e37"></a>immich<br />
-<div class="outline-text-5" id="text-3-3-2-14">
+<li><a id="org2c39a8f"></a>immich<br />
+<div class="outline-text-5" id="text-3-3-2-15">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7200,8 +6166,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="org3e3bb4d"></a>paperless<br />
-<div class="outline-text-5" id="text-3-3-2-15">
+<li><a id="org5924ab3"></a>paperless<br />
+<div class="outline-text-5" id="text-3-3-2-16">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7257,8 +6223,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="org8e51c23"></a>transmission<br />
-<div class="outline-text-5" id="text-3-3-2-16">
+<li><a id="org02c90ba"></a>transmission<br />
+<div class="outline-text-5" id="text-3-3-2-17">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -7397,8 +6363,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="org5145269"></a>syncthing<br />
-<div class="outline-text-5" id="text-3-3-2-17">
+<li><a id="org906cd7e"></a>syncthing<br />
+<div class="outline-text-5" id="text-3-3-2-18">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7508,8 +6474,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="orge491a3d"></a>restic<br />
-<div class="outline-text-5" id="text-3-3-2-18">
+<li><a id="org1b2ac40"></a>restic<br />
+<div class="outline-text-5" id="text-3-3-2-19">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7523,8 +6489,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgecd8de0"></a>monitoring<br />
-<div class="outline-text-5" id="text-3-3-2-19">
+<li><a id="orge4e2ba7"></a>monitoring<br />
+<div class="outline-text-5" id="text-3-3-2-20">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7690,8 +6656,8 @@ in
 </div>
 </div>
 </li>
-<li><a id="org9649352"></a>Jenkins<br />
-<div class="outline-text-5" id="text-3-3-2-20">
+<li><a id="org334a1cf"></a>Jenkins<br />
+<div class="outline-text-5" id="text-3-3-2-21">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -7717,6 +6683,42 @@ in
           locations = {
             "/" = {
               proxyPass = "http://localhost:8088";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+          };
+        };
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org43cae33"></a>Emacs (RSS Server)<br />
+<div class="outline-text-5" id="text-3-3-2-22">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.emacs {
+
+    services.emacs = {
+      enable = true;
+      startWithGraphical = false;
+    };
+
+    services.nginx = {
+      virtualHosts = {
+        "signpost.swarsel.win" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://localhost:54169";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -7818,7 +6820,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </div>
 </div>
 </li>
-<li><a id="orgf325f66"></a>VmWare<br />
+<li><a id="org0412756"></a>VmWare<br />
 <div class="outline-text-5" id="text-3-3-3-3">
 <p>
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
@@ -8015,13 +7017,14 @@ The general structure is the same as in the <a href="#h:6da812f5-358c-49cb-aff2-
 <li><a id="h:16fd2e85-fdd4-440a-81f0-65b9b098a43a"></a>Imports<br />
 <div class="outline-text-5" id="text-h:16fd2e85-fdd4-440a-81f0-65b9b098a43a">
 <p>
-This section sets up all the imports that are used in the home-manager section. Again, we adapt <code>nix</code> to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
+This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, ... }:
+<pre class="src src-nix">_:
 {
-  imports = [
+  imports =  [
+    ./settings.nix
     ./packages.nix
     ./custom-packages.nix
     ./sops.nix
@@ -8055,7 +7058,20 @@ This section sets up all the imports that are used in the home-manager section. 
     ./zellij.nix
     ./tmux.nix
   ];
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org5dab693"></a>General home-manager-settings<br />
+<div class="outline-text-5" id="text-3-4-1-2">
+<p>
+Again, we adapt <code>nix</code> to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
+</p>
 
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, pkgs, ... }:
+{
   nix = {
     package = lib.mkDefault pkgs.nix;
     settings = {
@@ -8078,7 +7094,6 @@ This section sets up all the imports that are used in the home-manager section. 
       FLAKE = "$HOME/.dotfiles";
     };
   };
-
 }
 </pre>
 </div>
@@ -8134,6 +7149,7 @@ This holds packages that I can use as provided, or with small modifications (as 
     nmap
     lsof
     nvd
+    hyprpicker # color picker
 
     # nix
     alejandra
@@ -8501,7 +7517,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 </div>
 </div>
 </li>
-<li><a id="h:867556e6-5a24-4c43-9d47-3edca2f16488"></a>Desktop Entries<br />
+<li><a id="h:867556e6-5a24-4c43-9d47-3edca2f16488"></a>Desktop Entries, MIME types (xdg)<br />
 <div class="outline-text-5" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
 <p>
 Some programs lack a dmenu launcher - I define them myself here.
@@ -8612,28 +7628,28 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix">{ self, ... }:
 {
   home.file = {
     "init.el" = {
-      source = ../../../programs/emacs/init.el;
+      source = self + /programs/emacs/init.el;
       target = ".emacs.d/init.el";
     };
     "early-init.el" = {
-      source = ../../../programs/emacs/early-init.el;
+      source = self + /programs/emacs/early-init.el;
       target = ".emacs.d/early-init.el";
     };
     # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
     ".aspell.conf" = {
-      source = ../../../programs/config/.aspell.conf;
+      source = self + /programs/config/.aspell.conf;
       target = ".aspell.conf";
     };
     ".gitmessage" = {
-      source = ../../../programs/git/.gitmessage;
+      source = self + /programs/git/.gitmessage;
       target = ".gitmessage";
     };
     "swayidle/config" = {
-      source = ../../../programs/swayidle/config;
+      source = self + /programs/swayidle/config;
       target = ".config/swayidle/config";
     };
   };
@@ -8648,8 +7664,8 @@ Also in firefox `about:config &gt; toolkit.legacyUserProfileCustomizations.style
 
 <div class="org-src-container">
 <pre class="src src-nix">  xdg.configFile = {
-    "tridactyl/tridactylrc".source = ../../../programs/firefox/tridactyl/tridactylrc;
-    "tridactyl/themes/base16-codeschool.css".source = ../../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+    "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
+    "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
   };
 }
 </pre>
@@ -8663,10 +7679,12 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix">{ config, ... }:
 {
   home.sessionVariables = {
     EDITOR = "e -w";
+    SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+    SWARSEL_HI_RES = config.swarselsystems.highResolution;
   };
 }
 </pre>
@@ -8710,14 +7728,14 @@ nix-index provides a way to find out which packages are provided by which deriva
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ... }:
+<pre class="src src-nix">{ self, pkgs, ... }:
 {
   programs.nix-index =
     let
       commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
         mkdir -p $out/etc/profile.d
-        substitute ${../../../scripts/command-not-found.sh}                  \
-          $out/etc/profile.d/command-not-found.sh             \
+        substitute ${self + /scripts/command-not-found.sh}        \
+          $out/etc/profile.d/command-not-found.sh                 \
           --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
           --replace @tput@ ${pkgs.ncurses}/bin/tput
       '';
@@ -9149,8 +8167,8 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </div>
 </div>
 </li>
-<li><a id="orgfa953b9"></a>zellij<br />
-<div class="outline-text-5" id="text-3-4-1-19">
+<li><a id="org798efae"></a>zellij<br />
+<div class="outline-text-5" id="text-3-4-1-20">
 <div class="org-src-container">
 <pre class="src src-nix">_:
 # { pkgs, config, ... }:
@@ -9357,8 +8375,8 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </div>
 </div>
 </li>
-<li><a id="org7328d93"></a>tmux<br />
-<div class="outline-text-5" id="text-3-4-1-20">
+<li><a id="orgc298326"></a>tmux<br />
+<div class="outline-text-5" id="text-3-4-1-21">
 <div class="org-src-container">
 <pre class="src src-nix">
   { pkgs, ... }:
@@ -9619,14 +8637,14 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ... }:
+<pre class="src src-nix">{ self, pkgs, ... }:
 {
   # enable emacs overlay for bleeding edge features
   # also read init.el file and install use-package packages
   programs.emacs = {
     enable = true;
     package = pkgs.emacsWithPackagesFromUsePackage {
-      config = ../../../programs/emacs/init.el;
+      config = self + /programs/emacs/init.el;
       package = pkgs.emacs-pgtk;
       alwaysEnsure = true;
       alwaysTangle = true;
@@ -9692,7 +8710,7 @@ The rest of the related configuration is found here:
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, ... }:
+<pre class="src src-nix">{ self, config, lib, ... }:
 {
   programs.waybar = {
 
@@ -9953,7 +8971,7 @@ The rest of the related configuration is found here:
         };
       };
     };
-    style = builtins.readFile ../../../programs/waybar/style.css;
+    style = builtins.readFile (self + /programs/waybar/style.css);
   };
 }
 </pre>
@@ -9979,29 +8997,157 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ... }:
+<pre class="src src-nix">{ self, pkgs, lib, ... }:
+let
+  lock-false = {
+    Value = false;
+    Status = "locked";
+  };
+  lock-true = {
+    Value = true;
+    Status = "locked";
+  };
+in
 {
   programs.firefox = {
     enable = true;
     package = pkgs.firefox; # uses overrides
     policies = {
       # CaptivePortal = false;
+      AppAutoUpdate = false;
+      BackgroundAppUpdate = false;
+      DisableBuiltinPDFViewer = true;
       DisableFirefoxStudies = true;
       DisablePocket = true;
+      DisableFirefoxScreenshots = true;
       DisableTelemetry = true;
       DisableFirefoxAccounts = false;
+      DisableProfileImport = true;
+      DisableProfileRefresh = true;
       DisplayBookmarksToolbar = "always";
+      DontCheckDefaultBrowser = true;
       NoDefaultBookmarks = true;
       OfferToSaveLogins = false;
       OfferToSaveLoginsDefault = false;
-      EnableTrackingProtection = true;
+      PasswordManagerEnabled = false;
+      DisableMasterPasswordCreation = true;
+      ExtensionUpdate = false;
+      EnableTrackingProtection = {
+        Value = true;
+        Locked = true;
+        Cryptomining = true;
+        Fingerprinting = true;
+        EmailTracking = true;
+        # Exceptions = ["https://example.com"]
+      };
+      PDFjs = {
+        Enabled = false;
+        EnablePermissions = false;
+      };
+      Handlers = {
+        mimeTypes."application/pdf".action = "saveToDisk";
+      };
+      extensions = {
+        pdf = {
+          action = "useHelperApp";
+          ask = true;
+          handlers = [
+            {
+              name = "GNOME Document Viewer";
+              path = "${pkgs.evince}/bin/evince";
+            }
+          ];
+        };
+      };
+      FirefoxHome = {
+        Search = true;
+        TopSites = true;
+        SponsoredTopSites = false;
+        Highlights = true;
+        Pocket = false;
+        SponsoredPocket = false;
+        Snippets = false;
+        Locked = true;
+      };
+      FirefoxSuggest = {
+        WebSuggestions = false;
+        SponsoredSuggestions = false;
+        ImproveSuggest = false;
+        Locked = true;
+      };
+      SanitizeOnShutdown = {
+        Cache = true;
+        Cookies = false;
+        Downloads = true;
+        FormData = true;
+        History = false;
+        Sessions = false;
+        SiteSettings = false;
+        OfflineApps = true;
+        Locked = true;
+      };
+      SearchEngines = {
+        PreventInstalls = true;
+        Remove = [
+          "Bing" # Fuck you
+        ];
+      };
+      UserMessaging = {
+        ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
+        FeatureRecommendations = false; # Don’t recommend browser features
+        Locked = true; # Prevent the user from changing user messaging preferences
+        MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
+        SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
+        UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
+        WhatsNew = false; # Remove the “What’s New” icon and menuitem
+      };
+      ExtensionSettings = {
+        "3rdparty".Extensions = {
+          # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
+          "uBlock0@raymondhill.net".adminSettings = {
+            userSettings = rec {
+              uiTheme = "dark";
+              uiAccentCustom = true;
+              uiAccentCustom0 = "#0C8084";
+              cloudStorageEnabled = lib.mkForce false;
+              importedLists = [
+                "https://filters.adtidy.org/extension/ublock/filters/3.txt"
+                "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+              ];
+              externalLists = lib.concatStringsSep "\n" importedLists;
+            };
+            selectedFilterLists = [
+              "CZE-0"
+              "adguard-generic"
+              "adguard-annoyance"
+              "adguard-social"
+              "adguard-spyware-url"
+              "easylist"
+              "easyprivacy"
+              "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+              "plowe-0"
+              "ublock-abuse"
+              "ublock-badware"
+              "ublock-filters"
+              "ublock-privacy"
+              "ublock-quick-fixes"
+              "ublock-unbreak"
+              "urlhaus-1"
+            ];
+          };
+        };
+
+      };
+
     };
+
     profiles.default = {
       id = 0;
       isDefault = true;
-      userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+      userChrome = builtins.readFile (self + /programs/firefox/chrome/userChrome.css);
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
+        tampermonkey
         browserpass
         clearurls
         darkreader
@@ -10018,57 +9164,115 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
         unpaywall
         don-t-fuck-with-paste
         plasma-integration
+        (buildFirefoxXpiAddon {
+          pname = "shortkeys";
+          version = "4.0.2";
+          addonId = "Shortkeys@Shortkeys.com";
+          url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+          sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+          meta = with lib;
+            {
+              description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) -&gt;Shortkeys -&gt;Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+              mozPermissions = [
+                "tabs"
+                "downloads"
+                "clipboardWrite"
+                "browsingData"
+                "storage"
+                "bookmarks"
+                "sessions"
+                "&lt;all_urls&gt;"
+              ];
+              platforms = platforms.all;
+            };
+        })
       ];
 
-      search.engines = {
-        "Nix Packages" = {
-          urls = [{
-            template = "https://search.nixos.org/packages";
-            params = [
-              { name = "type"; value = "packages"; }
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@np" ];
-        };
-
-        "NixOS Wiki" = {
-          urls = [{
-            template = "https://nixos.wiki/index.php?search={searchTerms}";
-          }];
-          iconUpdateURL = "https://nixos.wiki/favicon.png";
-          updateInterval = 24 * 60 * 60 * 1000; # every day
-          definedAliases = [ "@nw" ];
-        };
-
-        "NixOS Options" = {
-          urls = [{
-            template = "https://search.nixos.org/options";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@no" ];
-        };
-
-        "Home Manager Options" = {
-          urls = [{
-            template = "https://home-manager-options.extranix.com/";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@hm" "@ho" "@hmo" ];
-        };
-
-        "Google".metaData.alias = "@g";
+      settings = {
+        "extensions.autoDisableScopes" = 0;
+        "browser.bookmarks.showMobileBookmarks" = lock-true;
+        "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
+        "browser.search.suggest.enabled" = lock-false;
+        "browser.search.suggest.enabled.private" = lock-false;
+        "browser.urlbar.suggest.searches" = lock-false;
+        "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
+        "browser.topsites.contile.enabled" = lock-false;
+        "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
+        "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
+        "browser.newtabpage.activity-stream.showSponsored" = lock-false;
+        "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
+        "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
       };
-      search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+
+      search = {
+        default = "Kagi";
+        privateDefault = "Kagi";
+        engines = {
+          "Kagi" = {
+            urls = [{
+              template = "https://kagi.com/search";
+              params = [
+                { name = "q"; value = "{searchTerms}"; }
+              ];
+            }];
+            iconUpdateURL = "https://kagi.com/favicon.ico";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@k" ];
+          };
+
+          "Nix Packages" = {
+            urls = [{
+              template = "https://search.nixos.org/packages";
+              params = [
+                { name = "type"; value = "packages"; }
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@np" ];
+          };
+
+          "NixOS Wiki" = {
+            urls = [{
+              template = "https://nixos.wiki/index.php?search={searchTerms}";
+            }];
+            iconUpdateURL = "https://nixos.wiki/favicon.png";
+            updateInterval = 24 * 60 * 60 * 1000; # every day
+            definedAliases = [ "@nw" ];
+          };
+
+          "NixOS Options" = {
+            urls = [{
+              template = "https://search.nixos.org/options";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@no" ];
+          };
+
+          "Home Manager Options" = {
+            urls = [{
+              template = "https://home-manager-options.extranix.com/";
+              params = [
+                { name = "query"; value = "{searchTerms}"; }
+              ];
+            }];
+
+            icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+            definedAliases = [ "@hm" "@ho" "@hmo" ];
+          };
+
+          "Google".metaData.alias = "@g";
+        };
+        force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+      };
     };
   };
 }
@@ -10272,7 +9476,9 @@ in
             "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
             "${modifier}+Escape" = "mode $exit";
             "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+            "${modifier}+h" = "exec hyprpicker";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+            "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
             "${modifier}+1" = "workspace 1:一";
             "${modifier}+Shift+1" = "move container to workspace 1:一";
             "${modifier}+2" = "workspace 2:二";
@@ -10313,18 +9519,11 @@ in
             "${modifier}+Shift+Right" = "move right 40px";
             "${modifier}+Shift+Down" = "move down 40px";
             "${modifier}+Shift+Up" = "move up 40px";
-            "${modifier}+h" = "focus left";
-            "${modifier}+l" = "focus right";
-            "${modifier}+j" = "focus down";
-            "${modifier}+k" = "focus up";
-            "${modifier}+Shift+h" = "move left 40px";
-            "${modifier}+Shift+l" = "move right 40px";
-            "${modifier}+Shift+j" = "move down 40px";
-            "${modifier}+Shift+k" = "move up 40px";
             "${modifier}+Ctrl+Shift+c" = "reload";
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";
+            "${modifier}+Print" = "exec screenshare";
             # "XF86AudioRaiseVolume" = "exec pa 5%";
             "XF86AudioRaiseVolume" = "exec pamixer -i 5";
             # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
@@ -10360,28 +9559,22 @@ in
         titlebar = false;
       };
       assigns = {
-        "16:F" = [{ app_id = "firefox"; }];
         "15:L" = [{ app_id = "teams-for-linux"; }];
       };
       floating = {
         border = 1;
         criteria = [
-          { title = "^Picture-in-Picture$"; }
           { app_id = "qalculate-gtk"; }
-          { app_id = "org.gnome.clocks"; }
-          { app_id = "com.github.stsdc.monitor"; }
           { app_id = "blueman"; }
           { app_id = "pavucontrol"; }
           { app_id = "syncthingtray"; }
-          { title = "Syncthing Tray"; }
-          { app_id = "SchildiChat"; }
           { app_id = "Element"; }
           { class = "1Password"; }
           { app_id = "com.nextcloud.desktopclient.nextcloud"; }
-          { app_id = "gnome-system-monitor"; }
           { title = "(?:Open|Save) (?:File|Folder|As)"; }
           { title = "^Add$"; }
-          { title = "com-jgoodies-jdiskreport-JDiskReport"; }
+          { title = "^Picture-in-Picture$"; }
+          { title = "Syncthing Tray"; }
           { app_id = "vesktop"; }
           { window_role = "pop-up"; }
           { window_role = "bubble"; }
@@ -10436,13 +9629,6 @@ in
               title = "^spotifytui$";
             };
           }
-          # {
-          #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-          #   criteria = {
-          #     app_id="^$";
-          #     class="^$";
-          # };
-          # }
           {
 
             command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
@@ -10462,12 +9648,13 @@ in
               class = "Element";
             };
           }
-          {
-            command = "resize set width 60 ppt height 60 ppt, sticky enable";
-            criteria = {
-              app_id = "SchildiChat";
-            };
-          }
+          # {
+          #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+          #   criteria = {
+          #     app_id="^$";
+          #     class="^$";
+          # };
+          # }
         ];
       };
       gaps = {
@@ -10573,8 +9760,60 @@ This service changes the screen hue at night. I am not sure if that really does 
 </li>
 </ol>
 </div>
+<div id="outline-container-orgf4178bf" class="outline-4">
+<h4 id="orgf4178bf"><span class="section-number-4">3.4.2.</span> Server</h4>
+<div class="outline-text-4" id="text-3-4-2">
+</div>
+<ol class="org-ol">
+<li><a id="orgff6876e"></a>Imports<br />
+<div class="outline-text-5" id="text-3-4-2-1">
+<p>
+This section sets up all the imports that are used in the home-manager section.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
+{
+  imports =  [
+    "${profilesPath}/common/home/settings.nix"
+    ./symlink.nix
+  ];
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org5aff1d3"></a>Linking dotfiles<br />
+<div class="outline-text-5" id="text-3-4-2-2">
+<p>
+This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
+</p>
+
+<p>
+As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, ... }:
+{
+  home.file = {
+    "init.el" = {
+      source = self + /programs/emacs/server.el;
+      target = ".emacs.d/init.el";
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 <div id="outline-container-h:be623200-557e-4bb7-bb11-1ec5d76c6b8b" class="outline-4">
-<h4 id="h:be623200-557e-4bb7-bb11-1ec5d76c6b8b"><span class="section-number-4">3.4.2.</span> Optional</h4>
+<h4 id="h:be623200-557e-4bb7-bb11-1ec5d76c6b8b"><span class="section-number-4">3.4.3.</span> Optional</h4>
 <div class="outline-text-4" id="text-h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">
 <p>
 Akin to the optional NixOS modules.
@@ -11150,11 +10389,18 @@ This tangles the flake.nix file; This block only needs to be touched when updati
         ./profiles/common/home
       ];
 
+      # For adding things to _module.args (making arguments available globally)
+      # moduleArgs = [
+      #   {
+      #     _module.args = { inherit self; };
+      #   }
+      # ];
     in
     {
 
       inherit lib;
       inherit mixedModules;
+      # inherit moduleArgs;
       nixosModules = import ./modules/nixos;
       homeManagerModules = import ./modules/home;
 
@@ -11197,46 +10443,15 @@ This tangles the flake.nix file; This block only needs to be touched when updati
           ];
         };
 
-        sandbox = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            ./profiles/sandbox/disk-config.nix
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/sandbox/nixos.nix
-          ];
-        };
-
-        threed = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = nixModules ++ [
-            inputs.lanzaboote.nixosModules.lanzaboote
-            ./profiles/threed/nixos.nix
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/threed/home.nix
-              ];
-            }
-          ];
-        };
-
-        fourside = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
-          modules = nixModules ++ [
-            ./profiles/fourside
-          ];
-        };
-
         nbl-imba-2 = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit self inputs outputs; };
           modules = nixModules ++ [
             ./profiles/nbl-imba-2
           ];
         };
 
         winters = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit self inputs outputs; };
           modules = [
             ./profiles/server/winters
           ];
@@ -12044,7 +11259,7 @@ This formats the org code block at <code>point</code> in accordance to the <code
 </div>
 </div>
 </li>
-<li><a id="org6982368"></a>Disable garbace collection while minibuffer is active<br />
+<li><a id="org35a4172"></a>Disable garbace collection while minibuffer is active<br />
 <div class="outline-text-5" id="text-4-2-1-17">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -12106,6 +11321,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
       "mp" '(popper-toggle :which-key "popper")
       "md" '(dirvish :which-key "dirvish")
+      "mr" '(elfeed :which-key "elfeed")
       "o"  '(:ignore o :which-key "org")
       "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
       "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -12114,7 +11330,9 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
       "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
       "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-      "on" '((lambda () (interactive) (nixpkgs-fmt-region)) :which-key "format nix-block")
+      "on" '(nixpkgs-fmt-region :which-key "format nix-block")
+      "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
+      "oe" '(org-html-export-to-html :which-key "export to html")
       "c"  '(:ignore c :which-key "capture")
       "ct" '((lambda () (interactive) (org-capture nil "tt")) :which-key "task")
       ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
@@ -12123,7 +11341,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
       "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
       "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
-      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@192.168.1.3:")) :which-key "Server")
+      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@winters:")) :which-key "Server")
       "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
       ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
       ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
@@ -12413,8 +11631,8 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 </div>
 </div>
 </div>
-<div id="outline-container-org5658cc5" class="outline-4">
-<h4 id="org5658cc5"><span class="section-number-4">4.3.4.</span> Better garbage collection</h4>
+<div id="outline-container-org1f09bb9" class="outline-4">
+<h4 id="org1f09bb9"><span class="section-number-4">4.3.4.</span> Better garbage collection</h4>
 <div class="outline-text-4" id="text-4-3-4">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">(setq garbage-collection-messages t)
@@ -13659,8 +12877,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgd306719" class="outline-4">
-<h4 id="orgd306719"><span class="section-number-4">4.4.3.</span> HCL Mode</h4>
+<div id="outline-container-orgf4969dc" class="outline-4">
+<h4 id="orgf4969dc"><span class="section-number-4">4.4.3.</span> HCL Mode</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 This adds support for Hashicorp Configuration Language. I need this at work.
@@ -13677,8 +12895,8 @@ This adds support for Hashicorp Configuration Language. I need this at work.
 </div>
 </div>
 </div>
-<div id="outline-container-org3c09021" class="outline-4">
-<h4 id="org3c09021"><span class="section-number-4">4.4.4.</span> Jenkinsfile/Groovy</h4>
+<div id="outline-container-org536e4c8" class="outline-4">
+<h4 id="org536e4c8"><span class="section-number-4">4.4.4.</span> Jenkinsfile/Groovy</h4>
 <div class="outline-text-4" id="text-4-4-4">
 <p>
 This adds support for Groovy, which I specifically need to work with Jenkinsfiles. I need this at work.
@@ -13695,8 +12913,8 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 </div>
 </div>
 </div>
-<div id="outline-container-org2f1e7a4" class="outline-4">
-<h4 id="org2f1e7a4"><span class="section-number-4">4.4.5.</span> Dockerfile</h4>
+<div id="outline-container-orgc0a399f" class="outline-4">
+<h4 id="orgc0a399f"><span class="section-number-4">4.4.5.</span> Dockerfile</h4>
 <div class="outline-text-4" id="text-4-4-5">
 <p>
 This adds support for Dockerfiles. I need this at work.
@@ -13711,8 +12929,8 @@ This adds support for Dockerfiles. I need this at work.
 </div>
 </div>
 </div>
-<div id="outline-container-orga9c5a59" class="outline-4">
-<h4 id="orga9c5a59"><span class="section-number-4">4.4.6.</span> Terraform Mode</h4>
+<div id="outline-container-org13b1eb4" class="outline-4">
+<h4 id="org13b1eb4"><span class="section-number-4">4.4.6.</span> Terraform Mode</h4>
 <div class="outline-text-4" id="text-4-4-6">
 <p>
 This adds support for Terraform configuration files. I need this at work.
@@ -13807,8 +13025,81 @@ This mode is not automatically activated anywhere because I only rarely need it.
 </div>
 </div>
 </div>
+<div id="outline-container-orge431e2a" class="outline-4">
+<h4 id="orge431e2a"><span class="section-number-4">4.4.10.</span> elfeed</h4>
+<div class="outline-text-4" id="text-4-4-10">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+;; (setq elfeed-feeds
+;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
+;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
+;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
+;;         "https://hnrss.org/frontpage"
+;;         "https://www.derstandard.at/rss/inland"
+;;         "https://www.derstandard.at/rss/international"
+;;         "https://www.derstandard.at/rss/kultur"
+;;         "https://www.derstandard.at/rss/wissenschaft"
+;;         "https://www.rfc-editor.org/rfcrss.xml"
+;;         "https://waitbutwhy.com/feed"
+;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
+
+(use-package elfeed
+  :ensure t
+  :bind (:map elfeed-search-mode-map
+                                        ;              ("A" . bjm/elfeed-show-all)
+                                        ;              ("E" . bjm/elfeed-show-emacs)
+                                        ;              ("D" . bjm/elfeed-show-daily)
+              ("q" . bjm/elfeed-save-db-and-bury)))
+
+
+(require 'elfeed)
+
+;; Load elfeed-org
+(use-package elfeed-org
+  :config
+  (elfeed-org)
+  (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
+  )
+
+(use-package elfeed-goodies)
+(elfeed-goodies/setup)
+
+(use-package elfeed-web)
+
+;;functions to support syncing .elfeed between machines
+;;makes sure elfeed reads index from disk before launching
+(defun bjm/elfeed-load-db-and-open ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+;;write to disk when quiting
+(defun bjm/elfeed-save-db-and-bury ()
+  "Wrapper to save the elfeed db to disk before burying buffer"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window))
+
+
+(global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+
+
+(define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
+(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
+(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
+(define-key elfeed-search-mode-map (kbd "j") 'next-line)
+(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
+(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f" class="outline-4">
-<h4 id="h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f"><span class="section-number-4">4.4.10.</span> darkroom</h4>
+<h4 id="h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f"><span class="section-number-4">4.4.11.</span> darkroom</h4>
 <div class="outline-text-4" id="text-h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">
 <p>
 Darkroom is package that reduces all forms of distraction to a minimum - this can be useful when simply reading a file for example. For this mode I have increased the text scale by a large margin to make for comfortable reading
@@ -13826,7 +13117,7 @@ This mode is not automatically activated anywhere because I only rarely need it.
 </div>
 </div>
 <div id="outline-container-h:87453f1c-8ea5-4d0a-862d-8973d5bc5405" class="outline-4">
-<h4 id="h:87453f1c-8ea5-4d0a-862d-8973d5bc5405"><span class="section-number-4">4.4.11.</span> Ripgrep</h4>
+<h4 id="h:87453f1c-8ea5-4d0a-862d-8973d5bc5405"><span class="section-number-4">4.4.12.</span> Ripgrep</h4>
 <div class="outline-text-4" id="text-h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">
 <p>
 This is the ripgrep command for Emacs.
@@ -13841,7 +13132,7 @@ This is the ripgrep command for Emacs.
 </div>
 </div>
 <div id="outline-container-h:543641d0-02a9-459e-a2d6-96c8fcc06864" class="outline-4">
-<h4 id="h:543641d0-02a9-459e-a2d6-96c8fcc06864"><span class="section-number-4">4.4.12.</span> Tree-sitter</h4>
+<h4 id="h:543641d0-02a9-459e-a2d6-96c8fcc06864"><span class="section-number-4">4.4.13.</span> Tree-sitter</h4>
 <div class="outline-text-4" id="text-h:543641d0-02a9-459e-a2d6-96c8fcc06864">
 <p>
 Tree-sitter is a parsing library integrated into Emacs to provide better syntax highlighting and code analysis. It generates concrete syntax trees for source code, enabling more accurate and efficient text processing. Emacs' tree-sitter integration enhances language support, offering features like incremental parsing and precise syntax-aware editing. This improves the development experience by providing robust and dynamic syntax features, making it easier for me to navigate and manipulate code.
@@ -13899,7 +13190,7 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 <div id="outline-container-h:82ddeef2-99f8-465b-ba36-07c3eaad717b" class="outline-4">
-<h4 id="h:82ddeef2-99f8-465b-ba36-07c3eaad717b"><span class="section-number-4">4.4.13.</span> direnv (envrc)</h4>
+<h4 id="h:82ddeef2-99f8-465b-ba36-07c3eaad717b"><span class="section-number-4">4.4.14.</span> direnv (envrc)</h4>
 <div class="outline-text-4" id="text-h:82ddeef2-99f8-465b-ba36-07c3eaad717b">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -13912,7 +13203,7 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 <div id="outline-container-h:efb3f0fd-e846-4df9-ba48-2e45d776f68f" class="outline-4">
-<h4 id="h:efb3f0fd-e846-4df9-ba48-2e45d776f68f"><span class="section-number-4">4.4.14.</span> avy</h4>
+<h4 id="h:efb3f0fd-e846-4df9-ba48-2e45d776f68f"><span class="section-number-4">4.4.15.</span> avy</h4>
 <div class="outline-text-4" id="text-h:efb3f0fd-e846-4df9-ba48-2e45d776f68f">
 <p>
 <code>avy</code> provides the ability to search for any character on the screen (not only in the current buffer!) - I enjoy this utility a lot and use it possibly even more often than the native vim commands.
@@ -13931,7 +13222,7 @@ In order to update the language grammars, run the next command below.
 </div>
 </div>
 <div id="outline-container-h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668" class="outline-4">
-<h4 id="h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668"><span class="section-number-4">4.4.15.</span> crdt (Collaborative Editing)</h4>
+<h4 id="h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668"><span class="section-number-4">4.4.16.</span> crdt (Collaborative Editing)</h4>
 <div class="outline-text-4" id="text-h:1c1821c6-98de-4079-a4f3-6ba6e6dcb668">
 <p>
 With this it is possible to work on the same file collaboratively. I have never tried it out, but it sounds cool.
@@ -13946,7 +13237,7 @@ With this it is possible to work on the same file collaboratively. I have never 
 </div>
 </div>
 <div id="outline-container-h:d9a6cb44-736e-4608-951f-e928e1b757c0" class="outline-4">
-<h4 id="h:d9a6cb44-736e-4608-951f-e928e1b757c0"><span class="section-number-4">4.4.16.</span> devdocs</h4>
+<h4 id="h:d9a6cb44-736e-4608-951f-e928e1b757c0"><span class="section-number-4">4.4.17.</span> devdocs</h4>
 <div class="outline-text-4" id="text-h:d9a6cb44-736e-4608-951f-e928e1b757c0">
 <p>
 <code>devdocs</code> is a very nice package that provides documentation from <a href="https:devdocs.io">https:devdocs.io</a>. This is very useful since e.g. <code>pyright</code> provides only a very bad documentation and I do not want to leave Emacs all the time just to read documentation.
@@ -13982,7 +13273,7 @@ To install a documentation, use the <code>devdocs=install</code> command and sel
 </div>
 </div>
 <div id="outline-container-h:5cde5032-251e-4cc4-9202-b4ce996f92c2" class="outline-4">
-<h4 id="h:5cde5032-251e-4cc4-9202-b4ce996f92c2"><span class="section-number-4">4.4.17.</span> Projectile</h4>
+<h4 id="h:5cde5032-251e-4cc4-9202-b4ce996f92c2"><span class="section-number-4">4.4.18.</span> Projectile</h4>
 <div class="outline-text-4" id="text-h:5cde5032-251e-4cc4-9202-b4ce996f92c2">
 <p>
 projectile is useful for keeping track of your git projects within Emacs. I mostly use it to quickly switch between projects.
@@ -14007,7 +13298,7 @@ projectile is useful for keeping track of your git projects within Emacs. I most
 </div>
 </div>
 <div id="outline-container-h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5" class="outline-4">
-<h4 id="h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5"><span class="section-number-4">4.4.18.</span> Magit</h4>
+<h4 id="h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5"><span class="section-number-4">4.4.19.</span> Magit</h4>
 <div class="outline-text-4" id="text-h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">
 <p>
 magit is the best git utility I have ever used - it has a beautiful interface and is very verbose. Here I mostly just setup the list of repositories that I want to expost to magit.
@@ -14032,7 +13323,7 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 </div>
 </div>
 <div id="outline-container-h:d78709dd-4f79-441c-9166-76f61f90359a" class="outline-4">
-<h4 id="h:d78709dd-4f79-441c-9166-76f61f90359a"><span class="section-number-4">4.4.19.</span> Yubikey support</h4>
+<h4 id="h:d78709dd-4f79-441c-9166-76f61f90359a"><span class="section-number-4">4.4.20.</span> Yubikey support</h4>
 <div class="outline-text-4" id="text-h:d78709dd-4f79-441c-9166-76f61f90359a">
 <p>
 The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
@@ -14052,7 +13343,7 @@ The following settings are needed to make sure emacs works for magit commits and
 </div>
 </div>
 <div id="outline-container-h:1a8585ed-d9f2-478f-a132-440ada1cde2c" class="outline-4">
-<h4 id="h:1a8585ed-d9f2-478f-a132-440ada1cde2c"><span class="section-number-4">4.4.20.</span> Forge</h4>
+<h4 id="h:1a8585ed-d9f2-478f-a132-440ada1cde2c"><span class="section-number-4">4.4.21.</span> Forge</h4>
 <div class="outline-text-4" id="text-h:1a8585ed-d9f2-478f-a132-440ada1cde2c">
 <p>
 NOTE: Make sure to configure a GitHub token before using this package!
@@ -14090,7 +13381,7 @@ machine api.github.com login USERNAME<sup>forge</sup> password 012345abcdef&#x20
 </div>
 </div>
 <div id="outline-container-h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4" class="outline-4">
-<h4 id="h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4"><span class="section-number-4">4.4.21.</span> git-timemachine</h4>
+<h4 id="h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4"><span class="section-number-4">4.4.22.</span> git-timemachine</h4>
 <div class="outline-text-4" id="text-h:cf5b0e6b-56a5-4a93-99fb-258eb7cb2eb4">
 <p>
 This is just a nice utility to browse different versions of a file of a git project within Emacs.
@@ -14107,7 +13398,7 @@ This is just a nice utility to browse different versions of a file of a git proj
 </div>
 </div>
 <div id="outline-container-h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a" class="outline-4">
-<h4 id="h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a"><span class="section-number-4">4.4.22.</span> Delimiters (brackets): rainbow-delimiters, highlight-parentheses</h4>
+<h4 id="h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a"><span class="section-number-4">4.4.23.</span> Delimiters (brackets): rainbow-delimiters, highlight-parentheses</h4>
 <div class="outline-text-4" id="text-h:d9671ab7-a75a-47c6-a1f4-376d126c9b0a">
 <ul class="org-ul">
 <li>rainbow-delimiters colors all delimiters, also ones not in current selection</li>
@@ -14150,7 +13441,7 @@ I am not completely sure on electric-pair-mode yet, sometimes it is very helpful
 </div>
 </div>
 <div id="outline-container-h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94" class="outline-4">
-<h4 id="h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94"><span class="section-number-4">4.4.23.</span> rainbow-mode</h4>
+<h4 id="h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94"><span class="section-number-4">4.4.24.</span> rainbow-mode</h4>
 <div class="outline-text-4" id="text-h:d1a32a69-2f9a-45ef-95fe-a00e3551dc94">
 <p>
 Complimentary to the delimiters-packages above, this package sets the background color of the delimiters, which makes it easier to see at a glance where we are in a delimiter-tree.
@@ -14166,7 +13457,7 @@ Complimentary to the delimiters-packages above, this package sets the background
 </div>
 </div>
 <div id="outline-container-h:5653d693-ecca-4c95-9633-66b9e3241070" class="outline-4">
-<h4 id="h:5653d693-ecca-4c95-9633-66b9e3241070"><span class="section-number-4">4.4.24.</span> Corfu</h4>
+<h4 id="h:5653d693-ecca-4c95-9633-66b9e3241070"><span class="section-number-4">4.4.25.</span> Corfu</h4>
 <div class="outline-text-4" id="text-h:5653d693-ecca-4c95-9633-66b9e3241070">
 <p>
 This is the company equivalent to the vertico gang.
@@ -14235,7 +13526,7 @@ Navigation functions defined here: <a href="#h:a1802f9b-bb71-4fd5-86fa-945da18e8
 </div>
 </div>
 <div id="outline-container-h:c3cc1c12-3ab8-42b7-be07-63f54eac397f" class="outline-4">
-<h4 id="h:c3cc1c12-3ab8-42b7-be07-63f54eac397f"><span class="section-number-4">4.4.25.</span> cape</h4>
+<h4 id="h:c3cc1c12-3ab8-42b7-be07-63f54eac397f"><span class="section-number-4">4.4.26.</span> cape</h4>
 <div class="outline-text-4" id="text-h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">
 <p>
 cape adds even more completion capabilities by adding a lot of completion logic that is exposed as separate functions. I tried out adding these to the <code>completion-at-points-functions</code> alist, but I felt like it cluttered my suggestions too much. Hence I now just call the respective functions when I need them. For this I setup the <code>C-z</code> keybinding in <a href="#h:218376e8-086b-46bf-91b3-78295d5d440f">General evil</a>.
@@ -14289,7 +13580,7 @@ I leave the commented out alist extensions here in case I want to try them out a
 </div>
 </div>
 <div id="outline-container-h:3aa20438-edf6-4b13-a90d-3d5c51239c44" class="outline-4">
-<h4 id="h:3aa20438-edf6-4b13-a90d-3d5c51239c44"><span class="section-number-4">4.4.26.</span> rust</h4>
+<h4 id="h:3aa20438-edf6-4b13-a90d-3d5c51239c44"><span class="section-number-4">4.4.27.</span> rust</h4>
 <div class="outline-text-4" id="text-h:3aa20438-edf6-4b13-a90d-3d5c51239c44">
 <p>
 This sets up rustic-mode with tree-sitter support - there is still one issue to iron out with automatic adding of dependency crates, but everything else works fine now.
@@ -14316,7 +13607,7 @@ This sets up rustic-mode with tree-sitter support - there is still one issue to 
 </div>
 </div>
 <div id="outline-container-h:b9b27a88-06f3-470b-a604-a20b2079bc26" class="outline-4">
-<h4 id="h:b9b27a88-06f3-470b-a604-a20b2079bc26"><span class="section-number-4">4.4.27.</span> Tramp</h4>
+<h4 id="h:b9b27a88-06f3-470b-a604-a20b2079bc26"><span class="section-number-4">4.4.28.</span> Tramp</h4>
 <div class="outline-text-4" id="text-h:b9b27a88-06f3-470b-a604-a20b2079bc26">
 <p>
 Tramp allows for SSH access of files over Emacs. I have no ideas what the options here mean, but this is a recommended configuration that I found (sadly I lost the link). I need to research more what these options really do.
@@ -14356,7 +13647,7 @@ Tramp allows for SSH access of files over Emacs. I have no ideas what the option
 </div>
 </div>
 <div id="outline-container-h:58415e95-8a7a-4517-acbb-5f1bb1028603" class="outline-4">
-<h4 id="h:58415e95-8a7a-4517-acbb-5f1bb1028603"><span class="section-number-4">4.4.28.</span> diff-hl</h4>
+<h4 id="h:58415e95-8a7a-4517-acbb-5f1bb1028603"><span class="section-number-4">4.4.29.</span> diff-hl</h4>
 <div class="outline-text-4" id="text-h:58415e95-8a7a-4517-acbb-5f1bb1028603">
 <p>
 This is a simple highlighting utility that uses the margin to visually show the differences since the last git commit.
@@ -14378,7 +13669,7 @@ This is a simple highlighting utility that uses the margin to visually show the 
 </div>
 </div>
 <div id="outline-container-h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5" class="outline-4">
-<h4 id="h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5"><span class="section-number-4">4.4.29.</span> Commenting</h4>
+<h4 id="h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5"><span class="section-number-4">4.4.30.</span> Commenting</h4>
 <div class="outline-text-4" id="text-h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">
 <p>
 This package allows for swift commenting out and in of code snippets. For some reason, it is a bit broken in my config, as it sometimes comments out too much, sometimes too little, and sometimes it splits lines during commenting. Also, in org-mode when inside a src-block, it often times jumps to the top of the block.
@@ -14398,7 +13689,7 @@ Still, this is avery convenient package.
 </div>
 </div>
 <div id="outline-container-h:9ec11ee4-2250-414a-87b5-73ee680a3a4a" class="outline-4">
-<h4 id="h:9ec11ee4-2250-414a-87b5-73ee680a3a4a"><span class="section-number-4">4.4.30.</span> yasnippet</h4>
+<h4 id="h:9ec11ee4-2250-414a-87b5-73ee680a3a4a"><span class="section-number-4">4.4.31.</span> yasnippet</h4>
 <div class="outline-text-4" id="text-h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">
 <p>
 yasnippet allows to define snippets that can be quickly expanded by hitting the <code>TAB</code> key after inputting a keyword.
@@ -14484,9 +13775,9 @@ The following block is mostly inspired from <a href="https://code.kulupu.party/t
 </li>
 </ol>
 </div>
-<div id="outline-container-org943e3cb" class="outline-4">
-<h4 id="org943e3cb"><span class="section-number-4">4.4.31.</span> eglot</h4>
-<div class="outline-text-4" id="text-4-4-31">
+<div id="outline-container-orgca6a02b" class="outline-4">
+<h4 id="orgca6a02b"><span class="section-number-4">4.4.32.</span> eglot</h4>
+<div class="outline-text-4" id="text-4-4-32">
 <p>
 After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a while each, I must say that <code>eglot</code> feels the most clean and fast to me.
 </p>
@@ -14527,9 +13818,9 @@ After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a w
 </div>
 </div>
 </div>
-<div id="outline-container-org3cb6eb4" class="outline-4">
-<h4 id="org3cb6eb4"><span class="section-number-4">4.4.32.</span> sideline-flymake</h4>
-<div class="outline-text-4" id="text-4-4-32">
+<div id="outline-container-org63b44ad" class="outline-4">
+<h4 id="org63b44ad"><span class="section-number-4">4.4.33.</span> sideline-flymake</h4>
+<div class="outline-text-4" id="text-4-4-33">
 <p>
 This brings back warnings and errors on the sideline for eglot; a feature that I have been missing from lsp-mode for a while.
 </p>
@@ -14548,7 +13839,7 @@ This brings back warnings and errors on the sideline for eglot; a feature that I
 </div>
 </div>
 <div id="outline-container-h:1de35f27-335d-4cbd-beb6-f85cf5496173" class="outline-4">
-<h4 id="h:1de35f27-335d-4cbd-beb6-f85cf5496173"><span class="section-number-4">4.4.33.</span> Breadcrumb</h4>
+<h4 id="h:1de35f27-335d-4cbd-beb6-f85cf5496173"><span class="section-number-4">4.4.34.</span> Breadcrumb</h4>
 <div class="outline-text-4" id="text-h:1de35f27-335d-4cbd-beb6-f85cf5496173">
 <p>
 This simple shows the path to the current file on the top of the buffer - I just think it looks kind of neat, even though it is not extremely useful :)
@@ -14565,7 +13856,7 @@ This simple shows the path to the current file on the top of the buffer - I just
 </div>
 </div>
 <div id="outline-container-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53" class="outline-4">
-<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">4.4.34.</span> Prevent breaking of hardlinks</h4>
+<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">4.4.35.</span> Prevent breaking of hardlinks</h4>
 <div class="outline-text-4" id="text-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">
 <p>
 This setting ensures that hard links are preserved during the backup process, which is useful for maintaining the integrity of files that are linked in multiple locations.
@@ -14580,7 +13871,7 @@ This setting ensures that hard links are preserved during the backup process, wh
 </div>
 </div>
 <div id="outline-container-h:0918557a-8463-430c-b8df-6546dea9abd0" class="outline-4">
-<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">4.4.35.</span> Dirvish</h4>
+<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">4.4.36.</span> Dirvish</h4>
 <div class="outline-text-4" id="text-h:0918557a-8463-430c-b8df-6546dea9abd0">
 <p>
 Dirvish is an improvement upon the dired-framework and has more features like file preview etc. Sadly it has an incompatibility with <code>openwith</code> which is why I have disabled that package.
@@ -14644,7 +13935,7 @@ Dirvish is an improvement upon the dired-framework and has more features like fi
 </div>
 </div>
 <div id="outline-container-h:b108dd3e-f34d-4ed3-98df-0bf9de055889" class="outline-4">
-<h4 id="h:b108dd3e-f34d-4ed3-98df-0bf9de055889"><span class="section-number-4">4.4.36.</span> pdf-tools: pdf-viewer and support for dirvish</h4>
+<h4 id="h:b108dd3e-f34d-4ed3-98df-0bf9de055889"><span class="section-number-4">4.4.37.</span> pdf-tools: pdf-viewer and support for dirvish</h4>
 <div class="outline-text-4" id="text-h:b108dd3e-f34d-4ed3-98df-0bf9de055889">
 <p>
 This enables pdf-previewing in dirvish and gives a much better pdf-viewer than is shipped normally by emacs.
@@ -14663,7 +13954,7 @@ This enables pdf-previewing in dirvish and gives a much better pdf-viewer than i
 </div>
 </div>
 <div id="outline-container-h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8" class="outline-4">
-<h4 id="h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8"><span class="section-number-4">4.4.37.</span> Jupyter</h4>
+<h4 id="h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8"><span class="section-number-4">4.4.38.</span> Jupyter</h4>
 <div class="outline-text-4" id="text-h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">
 <p>
 This is a jupyter client. Using it is a bit cumbersome though, so I have not fully explored all features.
@@ -14678,7 +13969,7 @@ This is a jupyter client. Using it is a bit cumbersome though, so I have not ful
 </div>
 </div>
 <div id="outline-container-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8" class="outline-4">
-<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">4.4.38.</span> undo-tree</h4>
+<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">4.4.39.</span> undo-tree</h4>
 <div class="outline-text-4" id="text-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">
 <p>
 Base emacs undo logic is very useful, but not easy to understand for me. I prefer undo-tree, which makes switching between branches easier and also allows quickly switching back to a much older state using the visualizer.
@@ -14717,7 +14008,7 @@ While we are at it, we are also setting up a persistent undo-file for every file
 </div>
 </div>
 <div id="outline-container-h:b6c18dd0-3377-47ea-80c3-ac1486454e18" class="outline-4">
-<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">4.4.39.</span> Hydra</h4>
+<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">4.4.40.</span> Hydra</h4>
 <div class="outline-text-4" id="text-h:b6c18dd0-3377-47ea-80c3-ac1486454e18">
 <p>
 Hydra allows for the writing of macro-style functions. I have not yet looked into this all too much, but it seems to be a potent feature.
@@ -14754,7 +14045,7 @@ I only wrote this in order to try out hydra; rarely do I really need this. Howev
 </ol>
 </div>
 <div id="outline-container-h:fff816a0-6d70-4bda-abab-833345e51100" class="outline-4">
-<h4 id="h:fff816a0-6d70-4bda-abab-833345e51100"><span class="section-number-4">4.4.40.</span> External Applications</h4>
+<h4 id="h:fff816a0-6d70-4bda-abab-833345e51100"><span class="section-number-4">4.4.41.</span> External Applications</h4>
 <div class="outline-text-4" id="text-h:fff816a0-6d70-4bda-abab-833345e51100">
 </div>
 <ol class="org-ol">
@@ -14903,7 +14194,7 @@ This section is here to make Anki usable from within Emacs - an endeavour that I
 </ol>
 </div>
 <div id="outline-container-h:2f333330-b19d-4f64-85ea-146ff28667e8" class="outline-4">
-<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">4.4.41.</span> Email</h4>
+<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">4.4.42.</span> Email</h4>
 <div class="outline-text-4" id="text-h:2f333330-b19d-4f64-85ea-146ff28667e8">
 </div>
 <ol class="org-ol">
@@ -15013,7 +14304,7 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </ol>
 </div>
 <div id="outline-container-h:c760f04e-622f-4b3e-8916-53ca8cce6edc" class="outline-4">
-<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.42.</span> Calendar</h4>
+<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.43.</span> Calendar</h4>
 <div class="outline-text-4" id="text-h:c760f04e-622f-4b3e-8916-53ca8cce6edc">
 <p>
 This provides a beautiful calender to emacs.
@@ -15081,7 +14372,7 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
 </div>
 </div>
 <div id="outline-container-h:48f5be2b-b3d2-4276-bd49-2630733f23d5" class="outline-4">
-<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">4.4.43.</span> Dashboard: emacs startup screen</h4>
+<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">4.4.44.</span> Dashboard: emacs startup screen</h4>
 <div class="outline-text-4" id="text-h:48f5be2b-b3d2-4276-bd49-2630733f23d5">
 <p>
 This sets up the <code>dashboard</code>, which is really quite useless. But, it looks cool and makes me happy whenever I start an emacsclient without a file name as argument :)
@@ -15153,9 +14444,9 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
-<div id="outline-container-org00a9435" class="outline-4">
-<h4 id="org00a9435"><span class="section-number-4">4.4.44.</span> vterm</h4>
-<div class="outline-text-4" id="text-4-4-44">
+<div id="outline-container-org9b03013" class="outline-4">
+<h4 id="org9b03013"><span class="section-number-4">4.4.45.</span> vterm</h4>
+<div class="outline-text-4" id="text-4-4-45">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package vterm
@@ -15277,7 +14568,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-03 Di 18:59</p>
+<p class="date">Created: 2024-12-05 Do 02:11</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

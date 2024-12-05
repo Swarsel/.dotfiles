@@ -508,6 +508,12 @@ Lastly I define some common module lists that I can simply load depending on the
     ./profiles/common/home
   ];
 
+  # For adding things to _module.args (making arguments available globally)
+  # moduleArgs = [
+  #   {
+  #     _module.args = { inherit self; };
+  #   }
+  # ];
 #+end_src
 *** General (outputs)
 :PROPERTIES:
@@ -530,6 +536,7 @@ In this section I am creating some attributes that define general concepts of my
 
   inherit lib;
   inherit mixedModules;
+  # inherit moduleArgs;
   nixosModules = import ./modules/nixos;
   homeManagerModules = import ./modules/home;
 
@@ -838,7 +845,10 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 #+begin_src nix :tangle profiles/nbl-imba-2/default.nix
-  { inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
   {
 
     imports = [
@@ -848,18 +858,18 @@ My work machine. Built for more security, this is the gold standard of my config
       ./hardware-configuration.nix
       ./disk-config.nix
 
-      ../optional/nixos/steam.nix
-      ../optional/nixos/virtualbox.nix
+      "${profilesPath}/optional/nixos/steam.nix"
+      "${profilesPath}/optional/nixos/virtualbox.nix"
       # ../optional/nixos/vmware.nix
-      ../optional/nixos/autologin.nix
-      ../optional/nixos/nswitch-rcm.nix
-      ../optional/nixos/work.nix
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+      "${profilesPath}/optional/nixos/work.nix"
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-          ../optional/home/gaming.nix
-          ../optional/home/work.nix
+        home-manager.users.swarsel.imports =  outputs.mixedModules ++ [
+          "${profilesPath}/optional/home/gaming.nix"
+          "${profilesPath}/optional/home/work.nix"
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
     ] ++ (builtins.attrValues outputs.nixosModules);
@@ -916,7 +926,7 @@ My work machine. Built for more security, this is the gold standard of my config
     };
 
     swarselsystems = {
-      wallpaper = ../../wallpaper/lenovowp.png;
+      wallpaper = self + /wallpaper/lenovowp.png;
       hasBluetooth = true;
       hasFingerprint = true;
       impermanence = false;
@@ -1059,7 +1069,10 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 #+begin_src nix :tangle profiles/server/winters/default.nix
-  { inputs, outputs, config, ... }:
+  { self, inputs, outputs, config, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
   {
 
     imports = [
@@ -1067,8 +1080,15 @@ My work machine. Built for more security, this is the gold standard of my config
 
       ./hardware-configuration.nix
 
-      ../../optional/nixos/autologin.nix
-      ../../server/common
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/server/common/nixos"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = [
+      "${profilesPath}/server/common/home"
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
 
     ] ++ (builtins.attrValues outputs.nixosModules);
 
@@ -1116,6 +1136,7 @@ My work machine. Built for more security, this is the gold standard of my config
         syncthing = true;
         monitoring = true;
         jenkins = false;
+        emacs = false;
       };
     };
 
@@ -1128,7 +1149,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 #+begin_src nix :tangle profiles/nbm-imba-166/default.nix
-  { inputs, outputs, config, pkgs, lib, ... }:
+  { inputs, outputs, config, ... }:
   {
 
     imports = [
@@ -2563,6 +2584,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
     options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
     options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
+    options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
   }
 #+end_src
 
@@ -2872,7 +2894,7 @@ These are some extra options that will be used if the machine also runs NixOS. F
 ***** darwin
 
 #+begin_src nix :noweb yes :tangle modules/home/darwin.nix
-  { lib, config, ... }:
+  { lib,  ... }:
   {
     options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
   }
@@ -2962,25 +2984,15 @@ Here we have NixOS options. All options are split into smaller files that are lo
 
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
-**** Imports, enable home-manager module, stateVersion
-:PROPERTIES:
-:CUSTOM_ID: h:ae1f4d4d-02a9-403f-8179-78889ce57fb8
-:END:
+**** Imports, non-server settings
 
-:PROPERTIES:
-:CUSTOM_ID: h:45e4315b-0929-4c47-b65a-c8f0a685f4df
-:END:
-
-First, we enable the use of =home-manager= as a NixoS module.
-
-Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
-
-Also, the system state version is set here. No need to touch it.
+This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
 #+begin_src nix :tangle profiles/common/nixos/default.nix
-  { lib, inputs, ... }:
+  _:
   {
     imports = [
+      ./settings.nix
       ./xserver.nix
       ./users.nix
       ./env.nix
@@ -3018,6 +3030,26 @@ Also, the system state version is set here. No need to touch it.
       ./lid.nix
     ];
 
+    nixpkgs.config.permittedInsecurePackages = [
+      "jitsi-meet-1.0.8043"
+      "electron-29.4.6"
+    ];
+
+  }
+
+  #+end_src
+
+**** General NixOS settings (enable home-manager module, stateVersion)
+
+First, we enable the use of =home-manager= as a NixoS module.
+
+Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
+
+Also, the system state version is set here. No need to touch it.
+
+#+begin_src nix :tangle profiles/common/nixos/settings.nix
+  { lib, inputs, ... }:
+  {
     nix =
       let
         flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -3038,19 +3070,15 @@ Also, the system state version is set here. No need to touch it.
         nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };
 
-    nixpkgs.config.permittedInsecurePackages = [
-      "jitsi-meet-1.0.8043"
-      "electron-29.4.6"
-    ];
-
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
+      extraSpecialArgs = inputs; # used mainly for inputs.self
     };
 
     system.stateVersion = lib.mkDefault "23.05";
-  }
 
+  }
   #+end_src
 
 **** Setup login keymap
@@ -3141,6 +3169,7 @@ Needed for control over system-wide privileges etc.
       swaylock.fprintAuth = false;
     };
     security.polkit.enable = true;
+
 
   }
 #+end_src
@@ -3510,7 +3539,7 @@ Here I only enable =networkmanager=. Most of the 'real' network config is done i
               proxy = { };
               wifi = {
                 mode = "ap";
-                ssid = "Hotspot-fourside";
+                ssid = "Hotspot-swarsel";
               };
               wifi-security = {
                 group = "ccmp;";
@@ -4481,7 +4510,7 @@ This turns off the display when the lid is closed.
 #+end_src
 
 *** Server
-**** Imports, stateVersion
+**** Imports
 
 First, we enable the use of =home-manager= as a NixoS module.
 
@@ -4489,17 +4518,22 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 
 Also, the system state version is set here. No need to touch it.
 
-#+begin_src nix :tangle profiles/server/common/default.nix
-{ lib, config, inputs, ... }:
-{
-  imports = [
-    ../../common/nixos/xserver.nix
-    ../../common/nixos/gc.nix
-    ../../common/nixos/store.nix
-    ../../common/nixos/time.nix
-    ../../common/nixos/pipewire.nix
-    ../../common/nixos/users.nix
-    ../../common/nixos/nix-ld.nix
+#+begin_src nix :tangle profiles/server/common/nixos/default.nix
+  { self, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+    imports = [
+    "${profilesPath}/common/nixos/settings.nix"
+    "${profilesPath}/common/nixos/xserver.nix"
+    "${profilesPath}/common/nixos/gc.nix"
+    "${profilesPath}/common/nixos/store.nix"
+    "${profilesPath}/common/nixos/time.nix"
+    "${profilesPath}/common/nixos/pipewire.nix"
+    "${profilesPath}/common/nixos/users.nix"
+    "${profilesPath}/common/nixos/nix-ld.nix"
+    ./settings.nix
     ./packages.nix
     ./sops.nix
     ./ssh.nix
@@ -4519,47 +4553,33 @@ Also, the system state version is set here. No need to touch it.
     ./restic.nix
     ./monitoring.nix
     ./jenkins.nix
-  ];
-
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "ca-derivations"
-        ];
-        trusted-users = [ "swarsel" ];
-        flake-registry = "";
-        warn-dirty = false;
-      };
-      channel.enable = false;
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-    };
-
-  environment.shellAliases = lib.recursiveUpdate
-    {
-      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-      nswitch = "cd ${config.swarselsystems.flakePath}; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-    }
-    config.swarselsystems.shellAliases;
-
-  nixpkgs.config.permittedInsecurePackages = [
-    "olm-3.2.16"
-  ];
-
-  system.stateVersion = lib.mkDefault "23.05";
-}
-
+    ./emacs.nix
+    ];
+  }
   #+end_src
+
+**** General NixOS Server settings
+
+#+begin_src nix :tangle profiles/server/common/nixos/settings.nix
+  { lib, config, ... }:
+  {
+    environment.shellAliases = lib.recursiveUpdate
+      {
+        npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+        nswitch = "cd ${config.swarselsystems.flakePath}; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      }
+      config.swarselsystems.shellAliases;
+
+    nixpkgs.config.permittedInsecurePackages = [
+      "olm-3.2.16"
+    ];
+
+  }
+#+end_src
 
 **** System Packages
 
-#+begin_src nix :tangle profiles/server/common/packages.nix
+#+begin_src nix :tangle profiles/server/common/nixos/packages.nix
   { pkgs, ... }:
   {
     environment.systemPackages = with pkgs; [
@@ -6238,12 +6258,13 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 :CUSTOM_ID: h:16fd2e85-fdd4-440a-81f0-65b9b098a43a
 :END:
 
-This section sets up all the imports that are used in the home-manager section. Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
+This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/common/home/default.nix
-  { lib, pkgs, config, ... }:
+  _:
   {
-    imports = [
+    imports =  [
+      ./settings.nix
       ./packages.nix
       ./custom-packages.nix
       ./sops.nix
@@ -6277,7 +6298,16 @@ This section sets up all the imports that are used in the home-manager section. 
       ./zellij.nix
       ./tmux.nix
     ];
+  }
+#+end_src
 
+**** General home-manager-settings
+
+ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
+
+#+begin_src nix :tangle profiles/common/home/settings.nix
+  { lib, config, pkgs, ... }:
+  {
     nix = {
       package = lib.mkDefault pkgs.nix;
       settings = {
@@ -6300,7 +6330,6 @@ This section sets up all the imports that are used in the home-manager section. 
         FLAKE = "$HOME/.dotfiles";
       };
     };
-
   }
 #+end_src
 
@@ -6764,31 +6793,31 @@ This section should be used in order to symlink already existing configuration f
 As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
 
 #+begin_src nix :tangle profiles/common/home/symlink.nix
-  _:
-  {
-    home.file = {
-      "init.el" = {
-        source = ../../../programs/emacs/init.el;
-        target = ".emacs.d/init.el";
+    { self, ... }:
+    {
+      home.file = {
+        "init.el" = {
+          source = self + /programs/emacs/init.el;
+          target = ".emacs.d/init.el";
+        };
+        "early-init.el" = {
+          source = self + /programs/emacs/early-init.el;
+          target = ".emacs.d/early-init.el";
+        };
+        # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
+        ".aspell.conf" = {
+          source = self + /programs/config/.aspell.conf;
+          target = ".aspell.conf";
+        };
+        ".gitmessage" = {
+          source = self + /programs/git/.gitmessage;
+          target = ".gitmessage";
+        };
+        "swayidle/config" = {
+          source = self + /programs/swayidle/config;
+          target = ".config/swayidle/config";
+        };
       };
-      "early-init.el" = {
-        source = ../../../programs/emacs/early-init.el;
-        target = ".emacs.d/early-init.el";
-      };
-      # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
-      ".aspell.conf" = {
-        source = ../../../programs/config/.aspell.conf;
-        target = ".aspell.conf";
-      };
-      ".gitmessage" = {
-        source = ../../../programs/git/.gitmessage;
-        target = ".gitmessage";
-      };
-      "swayidle/config" = {
-        source = ../../../programs/swayidle/config;
-        target = ".config/swayidle/config";
-      };
-    };
 
 #+end_src
 
@@ -6797,8 +6826,8 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 
 #+begin_src nix :tangle profiles/common/home/symlink.nix
     xdg.configFile = {
-      "tridactyl/tridactylrc".source = ../../../programs/firefox/tridactyl/tridactylrc;
-      "tridactyl/themes/base16-codeschool.css".source = ../../../programs/firefox/tridactyl/themes/base16-codeschool.css;
+      "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
+      "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
     };
   }
 #+end_src
@@ -6858,14 +6887,14 @@ This section is for programs that require no further configuration. zsh Integrat
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
 #+begin_src nix :tangle profiles/common/home/nix-index.nix
-  { pkgs, ... }:
+  { self, pkgs, ... }:
   {
     programs.nix-index =
       let
         commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
           mkdir -p $out/etc/profile.d
-          substitute ${../../../scripts/command-not-found.sh}                  \
-            $out/etc/profile.d/command-not-found.sh             \
+          substitute ${self + /scripts/command-not-found.sh}        \
+            $out/etc/profile.d/command-not-found.sh                 \
             --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
             --replace @tput@ ${pkgs.ncurses}/bin/tput
         '';
@@ -7743,14 +7772,14 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix :tangle profiles/common/home/emacs.nix
-  { pkgs, ... }:
+  { self, pkgs, ... }:
   {
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
     programs.emacs = {
       enable = true;
       package = pkgs.emacsWithPackagesFromUsePackage {
-        config = ../../../programs/emacs/init.el;
+        config = self + /programs/emacs/init.el;
         package = pkgs.emacs-pgtk;
         alwaysEnsure = true;
         alwaysTangle = true;
@@ -7811,7 +7840,7 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix :tangle profiles/common/home/waybar.nix
-{ config, lib, ... }:
+{ self, config, lib, ... }:
 {
   programs.waybar = {
 
@@ -8072,7 +8101,7 @@ The rest of the related configuration is found here:
         };
       };
     };
-    style = builtins.readFile ../../../programs/waybar/style.css;
+    style = builtins.readFile (self + /programs/waybar/style.css);
   };
 }
 #+end_src
@@ -8839,6 +8868,42 @@ This service changes the screen hue at night. I am not sure if that really does 
   }
 #+end_src
 
+*** Server
+
+**** Imports
+
+This section sets up all the imports that are used in the home-manager section.
+
+#+begin_src nix :tangle profiles/server/common/home/default.nix
+  { self, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+    imports =  [
+      "${profilesPath}/common/home/settings.nix"
+      ./symlink.nix
+    ];
+  }
+#+end_src
+
+**** Linking dotfiles
+
+This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
+
+As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
+
+#+begin_src nix :tangle profiles/server/common/home/symlink.nix
+  { self, ... }:
+  {
+    home.file = {
+      "init.el" = {
+        source = self + /programs/emacs/server.el;
+        target = ".emacs.d/init.el";
+      };
+    };
+  }
+#+end_src
 
 *** Optional
 :PROPERTIES:

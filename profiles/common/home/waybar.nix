@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ self, config, lib, ... }:
 {
   programs.waybar = {
 
@@ -259,6 +259,6 @@
         };
       };
     };
-    style = builtins.readFile ../../../programs/waybar/style.css;
+    style = builtins.readFile (self + /programs/waybar/style.css);
   };
 }

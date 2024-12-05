@@ -151,11 +151,18 @@
         ./profiles/common/home
       ];
       
+      # For adding things to _module.args (making arguments available globally)
+      # moduleArgs = [
+      #   {
+      #     _module.args = { inherit self; };
+      #   }
+      # ];
     in
     {
       
       inherit lib;
       inherit mixedModules;
+      # inherit moduleArgs;
       nixosModules = import ./modules/nixos;
       homeManagerModules = import ./modules/home;
       
@@ -198,46 +205,15 @@
           ];
         };
         
-        sandbox = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            ./profiles/sandbox/disk-config.nix
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/sandbox/nixos.nix
-          ];
-        };
-        
-        threed = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = nixModules ++ [
-            inputs.lanzaboote.nixosModules.lanzaboote
-            ./profiles/threed/nixos.nix
-            inputs.home-manager.nixosModules.home-manager
-            {
-              home-manager.users.swarsel.imports = mixedModules ++ [
-                ./profiles/threed/home.nix
-              ];
-            }
-          ];
-        };
-        
-        fourside = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
-          modules = nixModules ++ [
-            ./profiles/fourside
-          ];
-        };
-        
         nbl-imba-2 = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit self inputs outputs; };
           modules = nixModules ++ [
             ./profiles/nbl-imba-2
           ];
         };
         
         winters = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit self inputs outputs; };
           modules = [
             ./profiles/server/winters
           ];

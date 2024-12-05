@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib,  ... }:
 {
   options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
 }

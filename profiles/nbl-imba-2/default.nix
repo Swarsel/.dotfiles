@@ -1,4 +1,7 @@
-{ inputs, outputs, config, pkgs, lib, ... }:
+{ self, inputs, outputs, config, pkgs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
 
   imports = [
@@ -8,18 +11,18 @@
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    ../optional/nixos/steam.nix
-    ../optional/nixos/virtualbox.nix
+    "${profilesPath}/optional/nixos/steam.nix"
+    "${profilesPath}/optional/nixos/virtualbox.nix"
     # ../optional/nixos/vmware.nix
-    ../optional/nixos/autologin.nix
-    ../optional/nixos/nswitch-rcm.nix
-    ../optional/nixos/work.nix
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+    "${profilesPath}/optional/nixos/work.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ../optional/home/gaming.nix
-        ../optional/home/work.nix
+      home-manager.users.swarsel.imports =  outputs.mixedModules ++ [
+        "${profilesPath}/optional/home/gaming.nix"
+        "${profilesPath}/optional/home/work.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);
@@ -76,7 +79,7 @@
   };
 
   swarselsystems = {
-    wallpaper = ../../wallpaper/lenovowp.png;
+    wallpaper = self + /wallpaper/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
     impermanence = false;
