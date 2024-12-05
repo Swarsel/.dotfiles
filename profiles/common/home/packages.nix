@@ -26,6 +26,7 @@
     nmap
     lsof
     nvd
+    hyprpicker # color picker
 
     # nix
     alejandra

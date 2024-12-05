@@ -11,4 +11,12 @@ in
     type = types.str;
     default = "";
   };
+  options.swarselsystems.lowResolution = mkOption {
+    type = types.str;
+    default = "";
+  };
+  options.swarselsystems.highResolution = mkOption {
+    type = types.str;
+    default = "";
+  };
 }

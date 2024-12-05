@@ -107,6 +107,8 @@
       { command = "feishin"; }
     ];
     sharescreen = "eDP-2";
+    lowResolution = "1280x800";
+    highResolution = "2560x1600";
     monitors = {
       main = {
         name = "BOE 0x0BC9 Unknown";

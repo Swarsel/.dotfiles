@@ -947,6 +947,8 @@ My work machine. Built for more security, this is the gold standard of my config
         { command = "feishin"; }
       ];
       sharescreen = "eDP-2";
+      lowResolution = "1280x800";
+      highResolution = "2560x1600";
       monitors = {
         main = {
           name = "BOE 0x0BC9 Unknown";
@@ -2373,13 +2375,19 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
   SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
-  if [[ "$1" == "start" ]]; then
+  touch /tmp/screenshare.state
+  STATE=$(</tmp/screenshare.state)
+
+  if [[ "$STATE" != "1" ]]; then
       wl-mirror "$SHARESCREEN" & sleep 0.1
-      swaymsg output eDP-2 mode 1280x800
+      swaymsg output "$SHARESCREEN" mode "$SWARSEL_LO_RES"
+      echo 1 > /tmp/screenshare.state
       swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
       swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
   else
-      swaymsg output eDP-2 mode 2560x1600
+      swaymsg output "$SHARESCREEN" mode "$SWARSEL_HI_RES"
+      echo 0 > /tmp/screenshare.state
+      swaymsg '[app_id=at.yrlf.wl_mirror] kill'
   fi
 
 #+end_src
@@ -2757,6 +2765,14 @@ This allows me to define my monitors in the machine's =default.nix=.
       default = { };
     };
     options.swarselsystems.sharescreen = mkOption {
+      type = types.str;
+      default = "";
+    };
+    options.swarselsystems.lowResolution = mkOption {
+      type = types.str;
+      default = "";
+    };
+    options.swarselsystems.highResolution = mkOption {
       type = types.str;
       default = "";
     };
@@ -6301,6 +6317,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       nmap
       lsof
       nvd
+      hyprpicker # color picker
 
       # nix
       alejandra
@@ -6760,10 +6777,12 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix :tangle profiles/common/home/env.nix
-  _:
+  { config, ... }:
   {
     home.sessionVariables = {
       EDITOR = "e -w";
+      SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+      SWARSEL_HI_RES = config.swarselsystems.highResolution;
     };
   }
 #+end_src
@@ -8322,7 +8341,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
               "${modifier}+Escape" = "mode $exit";
               "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+              "${modifier}+h" = "exec hyprpicker | wl-copy";
               "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+              "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
               "${modifier}+1" = "workspace 1:一";
               "${modifier}+Shift+1" = "move container to workspace 1:一";
               "${modifier}+2" = "workspace 2:二";
@@ -8363,18 +8384,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Shift+Right" = "move right 40px";
               "${modifier}+Shift+Down" = "move down 40px";
               "${modifier}+Shift+Up" = "move up 40px";
-              "${modifier}+h" = "focus left";
-              "${modifier}+l" = "focus right";
-              "${modifier}+j" = "focus down";
-              "${modifier}+k" = "focus up";
-              "${modifier}+Shift+h" = "move left 40px";
-              "${modifier}+Shift+l" = "move right 40px";
-              "${modifier}+Shift+j" = "move down 40px";
-              "${modifier}+Shift+k" = "move up 40px";
               "${modifier}+Ctrl+Shift+c" = "reload";
               "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
               "${modifier}+r" = "mode resize";
               "${modifier}+Return" = "exec kitty";
+              "${modifier}+Print" = "exec screenshare";
               # "XF86AudioRaiseVolume" = "exec pa 5%";
               "XF86AudioRaiseVolume" = "exec pamixer -i 5";
               # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
