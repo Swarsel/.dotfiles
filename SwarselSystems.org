@@ -708,53 +708,102 @@ This section mainly exists house different `configuration.nix` files for system 
       inherit (outputs) overlays;
       config = {
         allowUnfree = true;
+        allowBroken = true;
       };
     };
 
+    isoImage.makeEfiBootable = true;
+    isoImage.makeUsbBootable = true;
+
+    networking.networkmanager.wifi.scanRandMacAddress = false;
+
     boot = {
-      loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
       kernelPackages = pkgs.linuxPackages_latest;
     };
 
+    system.stateVersion = lib.mkForce "23.05";
+    services.getty.autologinUser = lib.mkForce "swarsel";
 
     networking = {
-      hostName = "fourside";
+      hostName = "live";
+      wireless.enable = lib.mkForce false;
       firewall.enable = true;
     };
 
-    hardware.graphics.extraPackages = with pkgs; [
-      vulkan-loader
-      vulkan-validation-layers
-      vulkan-extension-layer
-    ];
-
-    services = {
-      thinkfan.enable = false;
-      fwupd.enable = true;
-    };
 
     swarselsystems = {
       wallpaper = ../../wallpaper/lenovowp.png;
       hasBluetooth = true;
       hasFingerprint = true;
-      trackpoint = {
-        isAvailable = true;
-        device = "TPPS/2 Elan TrackPoint";
-      };
+      impermanence = false;
+      initialSetup = true;
+      isBtrfs = false;
     };
 
     home-manager.users.swarsel.swarselsystems = {
-      isLaptop = true;
+      isLaptop = false;
       isNixos = true;
+      isBtrfs = false;
+      startup = [
+        { command = "nextcloud --background"; }
+        { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+        { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        { command = "ANKI_WAYLAND=1 anki"; }
+        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "nm-applet"; }
+        { command = "teams-for-linux"; }
+        { command = "1password"; }
+        { command = "feishin"; }
+      ];
+    };
+  }
+
+
+#+end_src
+
+**** Home-manager only
+:PROPERTIES:
+:CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
+:END:
+
+This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
+
+#+begin_src nix :tangle profiles/home-manager/default.nix
+  { inputs, outputs, config, ... }:
+  {
+
+    imports = builtins.attrValues outputs.homeManagerModules;
+
+    nixpkgs = {
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+
+    programs.zsh.initExtra = "
+    export GPG_TTY=\"$(tty)\"
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    gpgconf --launch gpg-agent
+          ";
+
+    swarselsystems = {
+      isLaptop = true;
+      isNixos = false;
+      wallpaper = ../../wallpaper/surfacewp.png;
       temperatureHwmon = {
         isAbsolutePath = true;
         path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
         input-filename = "temp1_input";
       };
-      #  ------   -----
-      # | DP-4 | |eDP-1|
-      #  ------   -----
       monitors = {
         main = {
           name = "California Institute of Technology 0x1407 Unknown";
@@ -764,14 +813,6 @@ This section mainly exists house different `configuration.nix` files for system 
           workspace = "2:二";
           output = "eDP-1";
         };
-        homedesktop = {
-          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-          mode = "2560x1440";
-          scale = "1";
-          position = "0,0";
-          workspace = "1:一";
-          output = "DP-4";
-        };
       };
       inputs = {
         "1:1:AT_Translated_Set_2_keyboard" = {
@@ -780,17 +821,9 @@ This section mainly exists house different `configuration.nix` files for system 
           xkb_variant = "altgr-intl";
         };
       };
-      keybindings = {
-        # these are left open to use
-        # "XF86WLAN" = "exec wl-mirror eDP-1";
-        # "XF86Messenger" = "exec wl-mirror eDP-1";
-        # "XF86Go" = "exec wl-mirror eDP-1";
-        # "XF86Favorites" = "exec wl-mirror eDP-1";
-        # "XF86HomePage" = "exec wtype -P Escape -p Escape";
-        # "XF86AudioLowerVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink -5%";
-        # "XF86AudioRaiseVolume" = "pactl set-sink-volume alsa_output.pci-0000_08_00.6.HiFi__hw_Generic_1__sink +5%  ";
-      };
+      keybindings = { };
     };
+
   }
 
 
