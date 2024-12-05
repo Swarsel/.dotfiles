@@ -266,10 +266,10 @@
 
       nixOnDroidConfigurations = {
 
-        mysticant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+        magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
           pkgs = pkgsFor.aarch64-linux;
           modules = [
-            ./profiles/mysticant
+            ./profiles/magicant
           ];
         };
 
