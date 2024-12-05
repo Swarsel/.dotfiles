@@ -5935,6 +5935,40 @@ Also, the system state version is set here. No need to touch it.
   }
 #+end_src
 
+**** Emacs (RSS Server)
+
+#+begin_src nix :tangle profiles/server/common/nixos/emacs.nix
+  { lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.emacs {
+
+      services.emacs = {
+        enable = true;
+        startWithGraphical = false;
+      };
+
+      services.nginx = {
+        virtualHosts = {
+          "signpost.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:54169";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
 
 *** Optional
 :PROPERTIES:
@@ -9603,6 +9637,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
         "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
         "mp" '(popper-toggle :which-key "popper")
         "md" '(dirvish :which-key "dirvish")
+        "mr" '(elfeed :which-key "elfeed")
         "o"  '(:ignore o :which-key "org")
         "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
         "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -11138,6 +11173,77 @@ This mode is not automatically activated anywhere because I only rarely need it.
     (setq olivetti-recall-visual-line-mode-entry-state t))
 
 #+end_src
+
+*** elfeed
+
+#+begin_src emacs-lisp
+
+  ;; (setq elfeed-feeds
+  ;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
+  ;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
+  ;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
+  ;;         "https://hnrss.org/frontpage"
+  ;;         "https://www.derstandard.at/rss/inland"
+  ;;         "https://www.derstandard.at/rss/international"
+  ;;         "https://www.derstandard.at/rss/kultur"
+  ;;         "https://www.derstandard.at/rss/wissenschaft"
+  ;;         "https://www.rfc-editor.org/rfcrss.xml"
+  ;;         "https://waitbutwhy.com/feed"
+  ;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
+
+  (use-package elfeed
+    :ensure t
+    :bind (:map elfeed-search-mode-map
+                                          ;              ("A" . bjm/elfeed-show-all)
+                                          ;              ("E" . bjm/elfeed-show-emacs)
+                                          ;              ("D" . bjm/elfeed-show-daily)
+                ("q" . bjm/elfeed-save-db-and-bury)))
+
+
+  (require 'elfeed)
+
+  ;; Load elfeed-org
+  (use-package elfeed-org
+    :config
+    (elfeed-org)
+    (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
+    )
+
+  (use-package elfeed-goodies)
+  (elfeed-goodies/setup)
+
+  (use-package elfeed-web)
+
+  ;;functions to support syncing .elfeed between machines
+  ;;makes sure elfeed reads index from disk before launching
+  (defun bjm/elfeed-load-db-and-open ()
+    "Wrapper to load the elfeed db from disk before opening"
+    (interactive)
+    (elfeed-db-load)
+    (elfeed)
+    (elfeed-search-update--force)
+    (elfeed-update))
+
+  ;;write to disk when quiting
+  (defun bjm/elfeed-save-db-and-bury ()
+    "Wrapper to save the elfeed db to disk before burying buffer"
+    (interactive)
+    (elfeed-db-save)
+    (quit-window))
+
+
+  (global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+
+
+  (define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
+  (define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
+  (define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
+  (define-key elfeed-search-mode-map (kbd "j") 'next-line)
+  (define-key elfeed-search-mode-map (kbd "k") 'previous-line)
+  (define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
+
+#+end_src
+
 
 *** darkroom
 :PROPERTIES:

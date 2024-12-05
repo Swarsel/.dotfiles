@@ -330,6 +330,7 @@ create a new one."
       "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
       "mp" '(popper-toggle :which-key "popper")
       "md" '(dirvish :which-key "dirvish")
+      "mr" '(elfeed :which-key "elfeed")
       "o"  '(:ignore o :which-key "org")
       "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
       "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -1207,6 +1208,70 @@ create a new one."
   :init
   (setq olivetti-body-width 100)
   (setq olivetti-recall-visual-line-mode-entry-state t))
+
+;; (setq elfeed-feeds
+;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
+;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
+;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
+;;         "https://hnrss.org/frontpage"
+;;         "https://www.derstandard.at/rss/inland"
+;;         "https://www.derstandard.at/rss/international"
+;;         "https://www.derstandard.at/rss/kultur"
+;;         "https://www.derstandard.at/rss/wissenschaft"
+;;         "https://www.rfc-editor.org/rfcrss.xml"
+;;         "https://waitbutwhy.com/feed"
+;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
+
+(use-package elfeed
+  :ensure t
+  :bind (:map elfeed-search-mode-map
+                                        ;              ("A" . bjm/elfeed-show-all)
+                                        ;              ("E" . bjm/elfeed-show-emacs)
+                                        ;              ("D" . bjm/elfeed-show-daily)
+              ("q" . bjm/elfeed-save-db-and-bury)))
+
+
+(require 'elfeed)
+
+;; Load elfeed-org
+(use-package elfeed-org
+  :config
+  (elfeed-org)
+  (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
+  )
+
+(use-package elfeed-goodies)
+(elfeed-goodies/setup)
+
+(use-package elfeed-web)
+
+;;functions to support syncing .elfeed between machines
+;;makes sure elfeed reads index from disk before launching
+(defun bjm/elfeed-load-db-and-open ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+;;write to disk when quiting
+(defun bjm/elfeed-save-db-and-bury ()
+  "Wrapper to save the elfeed db to disk before burying buffer"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window))
+
+
+(global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+
+
+(define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
+(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
+(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
+(define-key elfeed-search-mode-map (kbd "j") 'next-line)
+(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
+(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
 
 (use-package darkroom
   :init
