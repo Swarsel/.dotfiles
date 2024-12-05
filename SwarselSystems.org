@@ -5973,6 +5973,8 @@ Also, the system state version is set here. No need to touch it.
   {
     config = lib.mkIf config.swarselsystems.server.emacs {
 
+      networking.firewall.allowedTCPPorts = [ 9812 ];
+
       services.emacs = {
         enable = true;
         install = true;
@@ -5987,7 +5989,7 @@ Also, the system state version is set here. No need to touch it.
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:54169";
+                proxyPass = "http://localhost:9812";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';

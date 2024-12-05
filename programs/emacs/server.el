@@ -43,7 +43,7 @@
   :ensure t
   :config
   (elfeed-org)
-  (setq rmh-elfeed-org-files (list "/home/swarsel/.elfeed/elfeed.org"))
+  (setq rmh-elfeed-org-files (list "/Vault/data/syncthing/.elfeed//elfeed.org"))
   )
 
 ;; Laod elfeed-goodies
@@ -97,6 +97,6 @@
 
 (run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
 
-(setq httpd-port 54169)   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
+(setq httpd-port 9812)   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
 
 (elfeed-web-start)

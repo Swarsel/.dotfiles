@@ -2,6 +2,8 @@
 {
   config = lib.mkIf config.swarselsystems.server.emacs {
 
+    networking.firewall.allowedTCPPorts = [ 9812 ];
+
     services.emacs = {
       enable = true;
       install = true;
@@ -16,7 +18,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:54169";
+              proxyPass = "http://localhost:9812";
               extraConfig = ''
                 client_max_body_size 0;
               '';
