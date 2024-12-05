@@ -574,46 +574,15 @@ This section used to be much longer, since I performed all of my imports right h
     ];
   };
 
-  sandbox = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.disko.nixosModules.disko
-      ./profiles/sandbox/disk-config.nix
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/sandbox/nixos.nix
-    ];
-  };
-
-  threed = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = nixModules ++ [
-      inputs.lanzaboote.nixosModules.lanzaboote
-      ./profiles/threed/nixos.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = mixedModules ++ [
-          ./profiles/threed/home.nix
-        ];
-      }
-    ];
-  };
-
-  fourside = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
-    modules = nixModules ++ [
-      ./profiles/fourside
-    ];
-  };
-
   nbl-imba-2 = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
+    specialArgs = { inherit self inputs outputs; };
     modules = nixModules ++ [
       ./profiles/nbl-imba-2
     ];
   };
 
   winters = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
+    specialArgs = { inherit self inputs outputs; };
     modules = [
       ./profiles/server/winters
     ];
@@ -4556,7 +4525,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** sops
 
-#+begin_src nix :tangle profiles/server/common/sops.nix
+#+begin_src nix :tangle profiles/server/common/nixos/sops.nix
   { config, ... }:
   {
     sops = {
@@ -4570,7 +4539,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** nfs/samba (smb)
 
-#+begin_src nix :tangle profiles/server/common/nfs.nix
+#+begin_src nix :tangle profiles/server/common/nixos/nfs.nix
   { pkgs, ... }:
   {
     services = {
@@ -4624,7 +4593,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** NGINX
 
-#+begin_src nix :tangle profiles/server/common/nginx.nix
+#+begin_src nix :tangle profiles/server/common/nixos/nginx.nix
   { pkgs, config, ... }:
   {
     environment.systemPackages = with pkgs; [
@@ -4664,7 +4633,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** ssh
 
-#+begin_src nix :tangle profiles/server/common/ssh.nix
+#+begin_src nix :tangle profiles/server/common/nixos/ssh.nix
   _:
   {
     services.openssh = {
@@ -4685,7 +4654,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** kavita
 
-#+begin_src nix :tangle profiles/server/common/kavita.nix
+#+begin_src nix :tangle profiles/server/common/nixos/kavita.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.kavita {
@@ -4732,7 +4701,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** jellyfin
 
-#+begin_src nix :tangle profiles/server/common/jellyfin.nix
+#+begin_src nix :tangle profiles/server/common/nixos/jellyfin.nix
 { pkgs, lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.jellyfin {
@@ -4781,7 +4750,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** navidrome
 
-#+begin_src nix :tangle profiles/server/common/navidrome.nix
+#+begin_src nix :tangle profiles/server/common/nixos/navidrome.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.navidrome {
@@ -4837,7 +4806,8 @@ Also, the system state version is set here. No need to touch it.
               [ "pch" "alsa/sysdefault:CARD=PCH" ]
             ];
           };
-          # Insert these values locally as sops-nix does not work for them
+          # Switch using --impure as these credential files are not stored within the flake
+          # sops-nix is not supported for these which is why we need to resort to these
           LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
           LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;
           Spotify.ID = builtins.readFile /home/swarsel/api/spotify-id;
@@ -4878,7 +4848,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** spotifyd
 
-#+begin_src nix :tangle profiles/server/common/spotifyd.nix
+#+begin_src nix :tangle profiles/server/common/nixos/spotifyd.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.spotifyd {
@@ -4917,7 +4887,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** mpd
 
-#+begin_src nix :tangle profiles/server/common/mpd.nix
+#+begin_src nix :tangle profiles/server/common/nixos/mpd.nix
 { pkgs, lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.mpd {
@@ -4973,7 +4943,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** matrix
 
-#+begin_src nix :tangle profiles/server/common/matrix.nix
+#+begin_src nix :tangle profiles/server/common/nixos/matrix.nix
   { config, lib, pkgs, sops, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
@@ -5296,7 +5266,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** nextcloud
 
-#+begin_src nix :tangle profiles/server/common/nextcloud.nix
+#+begin_src nix :tangle profiles/server/common/nixos/nextcloud.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.nextcloud {
@@ -5344,7 +5314,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** immich
 
-#+begin_src nix :tangle profiles/server/common/immich.nix
+#+begin_src nix :tangle profiles/server/common/nixos/immich.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.immich {
@@ -5398,7 +5368,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** paperless
 
-#+begin_src nix :tangle profiles/server/common/paperless.nix
+#+begin_src nix :tangle profiles/server/common/nixos/paperless.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.paperless {
@@ -5453,7 +5423,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** transmission
 
-#+begin_src nix :tangle profiles/server/common/transmission.nix
+#+begin_src nix :tangle profiles/server/common/nixos/transmission.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.transmission {
@@ -5591,7 +5561,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** syncthing
 
-#+begin_src nix :tangle profiles/server/common/syncthing.nix
+#+begin_src nix :tangle profiles/server/common/nixos/syncthing.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.syncthing {
@@ -5700,7 +5670,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** restic
 
-#+begin_src nix :tangle profiles/server/common/restic.nix
+#+begin_src nix :tangle profiles/server/common/nixos/restic.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.restic {
@@ -5713,7 +5683,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** monitoring
 
-#+begin_src nix :tangle profiles/server/common/monitoring.nix
+#+begin_src nix :tangle profiles/server/common/nixos/monitoring.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.monitoring {
@@ -5878,7 +5848,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** Jenkins
 
-#+begin_src nix :tangle profiles/server/common/jenkins.nix
+#+begin_src nix :tangle profiles/server/common/nixos/jenkins.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.jenkins {
