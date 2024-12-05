@@ -4,7 +4,11 @@
 
     users.users.syncthing = {
       extraGroups = [ "users" ];
+      group = "syncthing";
+      isSystemUser = true;
     };
+
+    users.groups.syncthing = { };
 
     services.syncthing = {
       enable = true;
