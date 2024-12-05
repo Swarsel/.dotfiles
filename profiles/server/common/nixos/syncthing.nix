@@ -35,7 +35,7 @@
             path = "/Vault/data/syncthing/Sync";
             type = "receiveonly";
             versioning = null;
-            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "default";
           };
           "Obsidian" = {
@@ -45,7 +45,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
@@ -55,7 +55,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
@@ -65,7 +65,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "zenfone9" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "hgp9s-fyq3p";
           };
           "Documents" = {
@@ -77,6 +77,11 @@
             };
             devices = [ "magicant" "nbl-imba-2" ];
             id = "hgr3d-pfu3w";
+          };
+          ".elfeed" = {
+            path = "/home/swarsel/.elfeed";
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" "winters" ];
+            id = "h7xbs-fs9v1";
           };
         };
       };
