@@ -1,7 +1,7 @@
 { pkgs, home-manager, config, ... }:
 {
   stylix = {
-    
+
     enable = true;
     base16Scheme = ../../../wallpaper/swarsel.yaml;
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
@@ -25,7 +25,7 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-    
+
       sansSerif = {
         # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
         package = pkgs.cantarell-fonts;
@@ -34,18 +34,18 @@
         # name = "FiraCode Nerd Font Propo";
         # name = "Montserrat";
       };
-    
+
       monospace = {
         package = pkgs.nerdfonts; # has overrides
         name = "FiraCode Nerd Font Mono";
       };
-    
+
       emoji = {
         package = pkgs.noto-fonts-emoji;
         name = "Noto Color Emoji";
       };
     };
-    
+
     targets.grub.enable = false; # the styling makes grub more ugly
     image = config.swarselsystems.wallpaper;
   };

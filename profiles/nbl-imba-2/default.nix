@@ -20,7 +20,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports =  outputs.mixedModules ++ [
+      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
         "${profilesPath}/optional/home/gaming.nix"
         "${profilesPath}/optional/home/work.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
@@ -52,15 +52,15 @@ in
     resumeDevice = "/dev/disk/by-label/nixos";
   };
 
-   hardware = {
-     amdgpu = {
-       opencl.enable = true;
-       amdvlk = {
-         enable = true;
-         support32Bit.enable = true;
-       };
-     };
-   };
+  hardware = {
+    amdgpu = {
+      opencl.enable = true;
+      amdvlk = {
+        enable = true;
+        support32Bit.enable = true;
+      };
+    };
+  };
 
   programs.fw-fanctrl.enable = true;
 

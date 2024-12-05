@@ -2,6 +2,7 @@ _:
 {
   imports = [
     ./settings.nix
+    ./home-manager.nix
     ./xserver.nix
     ./users.nix
     ./env.nix

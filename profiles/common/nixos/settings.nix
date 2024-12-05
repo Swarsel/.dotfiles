@@ -1,4 +1,4 @@
-{ self, lib, inputs, ... }:
+{ lib, inputs, ... }:
 {
   nix =
     let
@@ -20,11 +20,6 @@
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    extraSpecialArgs = inputs; # used mainly for inputs.self
-  };
 
   system.stateVersion = lib.mkDefault "23.05";
 

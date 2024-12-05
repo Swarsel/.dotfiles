@@ -5,6 +5,5 @@ in
 {
   imports = [
     "${profilesPath}/common/home/settings.nix"
-    ./symlink.nix
   ];
 }

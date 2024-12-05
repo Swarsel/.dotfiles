@@ -1,6 +1,6 @@
 _:
 {
-  imports =  [
+  imports = [
     ./settings.nix
     ./packages.nix
     ./custom-packages.nix

@@ -24,7 +24,7 @@
     };
   };
 
-xdg.configFile = {
+  xdg.configFile = {
     "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
     "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
   };

@@ -186,7 +186,7 @@ create a new one."
       (let ((org-confirm-babel-evaluate nil))
         ;; (org-html-export-to-html)
         (org-babel-tangle)
-        ;; (swarsel/run-formatting)
+        (swarsel/run-formatting)
         )))
 
   (setq org-html-htmlize-output-type nil)

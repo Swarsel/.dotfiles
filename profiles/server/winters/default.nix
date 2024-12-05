@@ -15,7 +15,7 @@ in
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = [
-    "${profilesPath}/server/common/home"
+        "${profilesPath}/server/common/home"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
 

@@ -1149,41 +1149,37 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 #+begin_src nix :tangle profiles/nbm-imba-166/default.nix
-  { inputs, outputs, config, ... }:
+  { self, inputs, outputs, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
   {
-
     imports = [
+      "${profilesPath}/darwin/common/nixos"
+
       inputs.home-manager.darwinModules.home-manager
       {
-        home-manager.useGlobalPkgs = true;
-        home-manager.useUserPackages = true;
         home-manager.users."leon.schwarzaeugl".imports = [
+          "${profilesPath}/darwin/common/home"
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
     ] ++ (builtins.attrValues outputs.nixosModules);
 
-    nix.settings.experimental-features = "nix-command flakes";
-    nixpkgs = {
-      hostPlatform = "x86_64-darwin";
-      inherit (outputs) overlays;
-      config = {
-        allowUnfree = true;
-      };
-    };
 
     # Auto upgrade nix package and the daemon service.
     services.nix-daemon.enable = true;
     services.karabiner-elements.enable = true;
 
-    home-manager.users."leon.schwarzaeugl".home.stateVersion = "23.05";
-    home-manager.users."leon.schwarzaeugl".swarselsystems = {
-      isDarwin = true;
-      isLaptop = true;
-      isNixos = false;
-      isBtrfs = false;
+    home-manager.users."leon.schwarzaeugl".home = {
+      username = lib.mkForce "leon.schwarzaeugl";
+      swarselsystems = {
+        isDarwin = true;
+        isLaptop = true;
+        isNixos = false;
+        isBtrfs = false;
+      };
     };
 
-    system.stateVersion = 4;
 
   }
 #+end_src
@@ -2993,6 +2989,7 @@ This section is for setting things that should be used on hosts that are using t
   {
     imports = [
       ./settings.nix
+      ./home-manager.nix
       ./xserver.nix
       ./users.nix
       ./env.nix
@@ -3041,7 +3038,6 @@ This section is for setting things that should be used on hosts that are using t
 
 **** General NixOS settings (enable home-manager module, stateVersion)
 
-First, we enable the use of =home-manager= as a NixoS module.
 
 Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
 
@@ -3070,14 +3066,24 @@ Also, the system state version is set here. No need to touch it.
         nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };
 
+
+    system.stateVersion = lib.mkDefault "23.05";
+
+  }
+  #+end_src
+
+**** Setup home-manager
+
+First, we enable the use of =home-manager= as a NixoS modul.
+
+#+begin_src nix :tangle profiles/common/nixos/home-manager.nix
+  { inputs, ... }:
+  {
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
       extraSpecialArgs = inputs; # used mainly for inputs.self
     };
-
-    system.stateVersion = lib.mkDefault "23.05";
-
   }
   #+end_src
 
@@ -4526,6 +4532,7 @@ Also, the system state version is set here. No need to touch it.
   {
     imports = [
     "${profilesPath}/common/nixos/settings.nix"
+    "${profilesPath}/common/nixos/home-manager.nix"
     "${profilesPath}/common/nixos/xserver.nix"
     "${profilesPath}/common/nixos/gc.nix"
     "${profilesPath}/common/nixos/store.nix"
@@ -5989,6 +5996,33 @@ Also, the system state version is set here. No need to touch it.
   }
 #+end_src
 
+*** Darwin
+**** Imports
+
+This section sets up all the imports that are used in the home-manager section.
+
+#+begin_src nix :tangle profiles/darwin/common/nixos/default.nix
+  { self, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+    imports = [
+      "${profilesPath}/common/nixos/home-manager.nix"
+    ];
+
+    nix.settings.experimental-features = "nix-command flakes";
+    nixpkgs = {
+      hostPlatform = "x86_64-darwin";
+      inherit (outputs) overlays;
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    system.stateVersion = 4;
+  }
+#+end_src
 
 *** Optional
 :PROPERTIES:
@@ -8905,6 +8939,24 @@ As for the `home.sessionVariables`, it should be noted that environment variable
   }
 #+end_src
 
+*** Darwin
+
+**** Imports
+
+This section sets up all the imports that are used in the home-manager section.
+
+#+begin_src nix :tangle profiles/darwin/common/home/default.nix
+  { self, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+    imports = [
+      "${profilesPath}/common/home/settings.nix"
+    ];
+  }
+#+end_src
+
 *** Optional
 :PROPERTIES:
 :CUSTOM_ID: h:be623200-557e-4bb7-bb11-1ec5d76c6b8b
@@ -9649,7 +9701,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
             (let ((org-confirm-babel-evaluate nil))
               ;; (org-html-export-to-html)
               (org-babel-tangle)
-              ;; (swarsel/run-formatting)
+              (swarsel/run-formatting)
               )))
 
         (setq org-html-htmlize-output-type nil)

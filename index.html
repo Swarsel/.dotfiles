@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-05 Do 02:11 -->
+<!-- 2024-12-05 Do 02:52 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -246,15 +246,17 @@
 <li><a href="#h:6da812f5-358c-49cb-aff2-0a94f20d70b3">3.3. NixOS</a>
 <ul>
 <li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">3.3.1. Common</a></li>
-<li><a href="#org09c24ca">3.3.2. Server</a></li>
-<li><a href="#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">3.3.3. Optional</a></li>
+<li><a href="#orgb1b3178">3.3.2. Server</a></li>
+<li><a href="#org60c0a18">3.3.3. Darwin</a></li>
+<li><a href="#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">3.3.4. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:08ded95b-9c43-475d-a0b2-fc088a512287">3.4. Home-manager</a>
 <ul>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a></li>
-<li><a href="#orgf4178bf">3.4.2. Server</a></li>
-<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">3.4.3. Optional</a></li>
+<li><a href="#org88cb65e">3.4.2. Server</a></li>
+<li><a href="#org8a8b272">3.4.3. Darwin</a></li>
+<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">3.4.4. Optional</a></li>
 </ul>
 </li>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">3.5. flake.nix template</a>
@@ -287,7 +289,7 @@
 <li><a href="#h:76a5bd78-a20d-4068-bea8-a38fdb26428e">4.3.1. General setup</a></li>
 <li><a href="#h:0debe8fd-b319-4ab7-a92c-784fa7896b75">4.3.2. Mark all themes as safe</a></li>
 <li><a href="#h:b587e869-9911-443b-bc6d-8fb3ce31908d">4.3.3. Show less compilation warnings</a></li>
-<li><a href="#org1f09bb9">4.3.4. Better garbage collection</a></li>
+<li><a href="#orgce1d937">4.3.4. Better garbage collection</a></li>
 <li><a href="#h:6527b3ce-b76d-431a-9960-a57da7c53e1b">4.3.5. Indentation</a></li>
 <li><a href="#h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90">4.3.6. Scrolling</a></li>
 <li><a href="#h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">4.3.7. Evil</a></li>
@@ -308,14 +310,14 @@
 <ul>
 <li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">4.4.1. Org Mode</a></li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
-<li><a href="#orgf4969dc">4.4.3. HCL Mode</a></li>
-<li><a href="#org536e4c8">4.4.4. Jenkinsfile/Groovy</a></li>
-<li><a href="#orgc0a399f">4.4.5. Dockerfile</a></li>
-<li><a href="#org13b1eb4">4.4.6. Terraform Mode</a></li>
+<li><a href="#org1887f44">4.4.3. HCL Mode</a></li>
+<li><a href="#org5b48baa">4.4.4. Jenkinsfile/Groovy</a></li>
+<li><a href="#orgcbff0f7">4.4.5. Dockerfile</a></li>
+<li><a href="#org603f273">4.4.6. Terraform Mode</a></li>
 <li><a href="#h:5ca7484b-b9d6-4023-88d1-a1e37d5df249">4.4.7. nixpkgs-fmt</a></li>
 <li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">4.4.8. Markdown Mode</a></li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">4.4.9. Olivetti</a></li>
-<li><a href="#orge431e2a">4.4.10. elfeed</a></li>
+<li><a href="#org8fc32cb">4.4.10. elfeed</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">4.4.11. darkroom</a></li>
 <li><a href="#h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">4.4.12. Ripgrep</a></li>
 <li><a href="#h:543641d0-02a9-459e-a2d6-96c8fcc06864">4.4.13. Tree-sitter</a></li>
@@ -337,8 +339,8 @@
 <li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">4.4.29. diff-hl</a></li>
 <li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">4.4.30. Commenting</a></li>
 <li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">4.4.31. yasnippet</a></li>
-<li><a href="#orgca6a02b">4.4.32. eglot</a></li>
-<li><a href="#org63b44ad">4.4.33. sideline-flymake</a></li>
+<li><a href="#org459289a">4.4.32. eglot</a></li>
+<li><a href="#org2c4d842">4.4.33. sideline-flymake</a></li>
 <li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">4.4.34. Breadcrumb</a></li>
 <li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.35. Prevent breaking of hardlinks</a></li>
 <li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.36. Dirvish</a></li>
@@ -350,7 +352,7 @@
 <li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.42. Email</a></li>
 <li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.43. Calendar</a></li>
 <li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.44. Dashboard: emacs startup screen</a></li>
-<li><a href="#org9b03013">4.4.45. vterm</a></li>
+<li><a href="#orgbe76726">4.4.45. vterm</a></li>
 </ul>
 </li>
 </ul>
@@ -359,7 +361,7 @@
 </div>
 </div>
 <p>
-<b>This file has 48987 words spanning 12817 lines and was last revised on 2024-12-05 02:11:17 +0100.</b>
+<b>This file has 49106 words spanning 12869 lines and was last revised on 2024-12-05 02:52:40 +0100.</b>
 </p>
 
 <p>
@@ -409,7 +411,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-05 02:11:17 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-05 02:52:40 +0100)
 </p></li>
 </ul>
 
@@ -1156,7 +1158,7 @@ This section mainly exists house different `configuration.nix` files for system 
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
 </div>
 <ol class="org-ol">
-<li><a id="org179656f"></a>live (ISO)<br />
+<li><a id="orgf5d1d23"></a>live (ISO)<br />
 <div class="outline-text-5" id="text-3-1-1-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ inputs, outputs, config, pkgs, lib, ... }:
@@ -1539,7 +1541,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org217acd2"></a>Winters (Server)<br />
+<li><a id="orgcc62b72"></a>Winters (Server)<br />
 <div class="outline-text-5" id="text-3-1-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, config, ... }:
@@ -1620,51 +1622,47 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgd95b7ab"></a>nbm-imba-166 (MacBook Pro)<br />
+<li><a id="org92a6359"></a>nbm-imba-166 (MacBook Pro)<br />
 <div class="outline-text-5" id="text-3-1-1-5">
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, outputs, config, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
-
   imports = [
+    "${profilesPath}/darwin/common/nixos"
+
     inputs.home-manager.darwinModules.home-manager
     {
-      home-manager.useGlobalPkgs = true;
-      home-manager.useUserPackages = true;
       home-manager.users."leon.schwarzaeugl".imports = [
+        "${profilesPath}/darwin/common/home"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);
 
-  nix.settings.experimental-features = "nix-command flakes";
-  nixpkgs = {
-    hostPlatform = "x86_64-darwin";
-    inherit (outputs) overlays;
-    config = {
-      allowUnfree = true;
-    };
-  };
 
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
   services.karabiner-elements.enable = true;
 
-  home-manager.users."leon.schwarzaeugl".home.stateVersion = "23.05";
-  home-manager.users."leon.schwarzaeugl".swarselsystems = {
-    isDarwin = true;
-    isLaptop = true;
-    isNixos = false;
-    isBtrfs = false;
+  home-manager.users."leon.schwarzaeugl".home = {
+    username = lib.mkForce "leon.schwarzaeugl";
+    swarselsystems = {
+      isDarwin = true;
+      isLaptop = true;
+      isNixos = false;
+      isBtrfs = false;
+    };
   };
 
-  system.stateVersion = 4;
 
 }
 </pre>
 </div>
 </div>
 </li>
-<li><a id="orga9fbb1d"></a>Magicant (Phone)<br />
+<li><a id="org6ce2871"></a>Magicant (Phone)<br />
 <div class="outline-text-5" id="text-3-1-1-6">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2913,7 +2911,7 @@ writeShellApplication {
 </div>
 </div>
 </li>
-<li><a id="org18a4c93"></a>screenshare<br />
+<li><a id="orgc4eca89"></a>screenshare<br />
 <div class="outline-text-5" id="text-3-2-1-15">
 <div class="org-src-container">
 <pre class="src src-shell">
@@ -3121,7 +3119,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgc3092c9"></a>Input<br />
+<li><a id="orge058c26"></a>Input<br />
 <div class="outline-text-6" id="text-3-2-3-1-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -3437,7 +3435,7 @@ These are some extra options that will be used if the machine also runs NixOS. F
 </div>
 </div>
 </li>
-<li><a id="org2474237"></a>darwin<br />
+<li><a id="org0cf7d61"></a>darwin<br />
 <div class="outline-text-6" id="text-3-2-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib,  ... }:
@@ -3550,7 +3548,7 @@ These are system-level settings specific to NixOS machines. All settings that ar
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="org70f440a"></a>Imports, non-server settings<br />
+<li><a id="orga115e62"></a>Imports, non-server settings<br />
 <div class="outline-text-5" id="text-3-3-1-1">
 <p>
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
@@ -3561,6 +3559,7 @@ This section is for setting things that should be used on hosts that are using t
 {
   imports = [
     ./settings.nix
+    ./home-manager.nix
     ./xserver.nix
     ./users.nix
     ./env.nix
@@ -3609,12 +3608,8 @@ This section is for setting things that should be used on hosts that are using t
 </div>
 </div>
 </li>
-<li><a id="org6a09c4a"></a>General NixOS settings (enable home-manager module, stateVersion)<br />
+<li><a id="org4a2b1e7"></a>General NixOS settings (enable home-manager module, stateVersion)<br />
 <div class="outline-text-5" id="text-3-3-1-2">
-<p>
-First, we enable the use of <code>home-manager</code> as a NixoS module.
-</p>
-
 <p>
 Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
 </p>
@@ -3624,7 +3619,7 @@ Also, the system state version is set here. No need to touch it.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, inputs, ... }:
+<pre class="src src-nix">{ lib, inputs, ... }:
 {
   nix =
     let
@@ -3646,14 +3641,28 @@ Also, the system state version is set here. No need to touch it.
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
 
+
+  system.stateVersion = lib.mkDefault "23.05";
+
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org8055c04"></a>Setup home-manager<br />
+<div class="outline-text-5" id="text-3-3-1-3">
+<p>
+First, we enable the use of <code>home-manager</code> as a NixoS modul.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ inputs, ... }:
+{
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
     extraSpecialArgs = inputs; # used mainly for inputs.self
   };
-
-  system.stateVersion = lib.mkDefault "23.05";
-
 }
 </pre>
 </div>
@@ -5138,8 +5147,8 @@ A friend of mine used this service and I used to make fun of him. But I have to 
 </div>
 </div>
 </li>
-<li><a id="org4ad532c"></a>Podmam (distrobox)<br />
-<div class="outline-text-5" id="text-3-3-1-28">
+<li><a id="org6c963c3"></a>Podmam (distrobox)<br />
+<div class="outline-text-5" id="text-3-3-1-29">
 <p>
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 </p>
@@ -5161,8 +5170,8 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 </div>
 </div>
 </li>
-<li><a id="orgdd30156"></a>Handle lid switch correctly<br />
-<div class="outline-text-5" id="text-3-3-1-29">
+<li><a id="orgc4bd2fc"></a>Handle lid switch correctly<br />
+<div class="outline-text-5" id="text-3-3-1-30">
 <p>
 This turns off the display when the lid is closed.
 </p>
@@ -5200,12 +5209,12 @@ This turns off the display when the lid is closed.
 </li>
 </ol>
 </div>
-<div id="outline-container-org09c24ca" class="outline-4">
-<h4 id="org09c24ca"><span class="section-number-4">3.3.2.</span> Server</h4>
+<div id="outline-container-orgb1b3178" class="outline-4">
+<h4 id="orgb1b3178"><span class="section-number-4">3.3.2.</span> Server</h4>
 <div class="outline-text-4" id="text-3-3-2">
 </div>
 <ol class="org-ol">
-<li><a id="org1b45c3a"></a>Imports<br />
+<li><a id="org20c11e5"></a>Imports<br />
 <div class="outline-text-5" id="text-3-3-2-1">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module.
@@ -5227,6 +5236,7 @@ in
 {
   imports = [
   "${profilesPath}/common/nixos/settings.nix"
+  "${profilesPath}/common/nixos/home-manager.nix"
   "${profilesPath}/common/nixos/xserver.nix"
   "${profilesPath}/common/nixos/gc.nix"
   "${profilesPath}/common/nixos/store.nix"
@@ -5261,7 +5271,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orgb34552a"></a>General NixOS Server settings<br />
+<li><a id="org8e73ef8"></a>General NixOS Server settings<br />
 <div class="outline-text-5" id="text-3-3-2-2">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5282,7 +5292,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org02d44cc"></a>System Packages<br />
+<li><a id="orgaa0d798"></a>System Packages<br />
 <div class="outline-text-5" id="text-3-3-2-3">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -5299,7 +5309,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org68c0420"></a>sops<br />
+<li><a id="org2dafc15"></a>sops<br />
 <div class="outline-text-5" id="text-3-3-2-4">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, ... }:
@@ -5315,7 +5325,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org0e32541"></a>nfs/samba (smb)<br />
+<li><a id="org019f7c1"></a>nfs/samba (smb)<br />
 <div class="outline-text-5" id="text-3-3-2-5">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -5371,7 +5381,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org6af4fa3"></a>NGINX<br />
+<li><a id="org7fbbc47"></a>NGINX<br />
 <div class="outline-text-5" id="text-3-3-2-6">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, config, ... }:
@@ -5413,7 +5423,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orga2ca943"></a>ssh<br />
+<li><a id="orgfdc322c"></a>ssh<br />
 <div class="outline-text-5" id="text-3-3-2-7">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -5436,7 +5446,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org3ed8a19"></a>kavita<br />
+<li><a id="org35fe7b6"></a>kavita<br />
 <div class="outline-text-5" id="text-3-3-2-8">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5485,7 +5495,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org39b9b99"></a>jellyfin<br />
+<li><a id="org19aee84"></a>jellyfin<br />
 <div class="outline-text-5" id="text-3-3-2-9">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5536,7 +5546,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org3156d12"></a>navidrome<br />
+<li><a id="orge17d38c"></a>navidrome<br />
 <div class="outline-text-5" id="text-3-3-2-10">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5636,7 +5646,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org1405afd"></a>spotifyd<br />
+<li><a id="orgc3baf5e"></a>spotifyd<br />
 <div class="outline-text-5" id="text-3-3-2-11">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5677,7 +5687,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orga3398db"></a>mpd<br />
+<li><a id="orga44ba75"></a>mpd<br />
 <div class="outline-text-5" id="text-3-3-2-12">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5735,7 +5745,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org5e1d113"></a>matrix<br />
+<li><a id="org154996f"></a>matrix<br />
 <div class="outline-text-5" id="text-3-3-2-13">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, pkgs, sops, ... }:
@@ -6060,7 +6070,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org0b76e84"></a>nextcloud<br />
+<li><a id="orga7ee8f7"></a>nextcloud<br />
 <div class="outline-text-5" id="text-3-3-2-14">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6110,7 +6120,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org2c39a8f"></a>immich<br />
+<li><a id="org3ea5900"></a>immich<br />
 <div class="outline-text-5" id="text-3-3-2-15">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6166,7 +6176,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org5924ab3"></a>paperless<br />
+<li><a id="org4152b21"></a>paperless<br />
 <div class="outline-text-5" id="text-3-3-2-16">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6223,7 +6233,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org02c90ba"></a>transmission<br />
+<li><a id="org7682888"></a>transmission<br />
 <div class="outline-text-5" id="text-3-3-2-17">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6363,7 +6373,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org906cd7e"></a>syncthing<br />
+<li><a id="orgcaea6b6"></a>syncthing<br />
 <div class="outline-text-5" id="text-3-3-2-18">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6474,7 +6484,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org1b2ac40"></a>restic<br />
+<li><a id="orgabe4445"></a>restic<br />
 <div class="outline-text-5" id="text-3-3-2-19">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6489,7 +6499,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="orge4e2ba7"></a>monitoring<br />
+<li><a id="orgd3c70d4"></a>monitoring<br />
 <div class="outline-text-5" id="text-3-3-2-20">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6656,7 +6666,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org334a1cf"></a>Jenkins<br />
+<li><a id="orgbc9408d"></a>Jenkins<br />
 <div class="outline-text-5" id="text-3-3-2-21">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6698,7 +6708,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org43cae33"></a>Emacs (RSS Server)<br />
+<li><a id="orge8acf3d"></a>Emacs (RSS Server)<br />
 <div class="outline-text-5" id="text-3-3-2-22">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6736,8 +6746,46 @@ in
 </li>
 </ol>
 </div>
+<div id="outline-container-org60c0a18" class="outline-4">
+<h4 id="org60c0a18"><span class="section-number-4">3.3.3.</span> Darwin</h4>
+<div class="outline-text-4" id="text-3-3-3">
+</div>
+<ol class="org-ol">
+<li><a id="org196e577"></a>Imports<br />
+<div class="outline-text-5" id="text-3-3-3-1">
+<p>
+This section sets up all the imports that are used in the home-manager section.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
+{
+  imports = [
+    "${profilesPath}/common/nixos/home-manager.nix"
+  ];
+
+  nix.settings.experimental-features = "nix-command flakes";
+  nixpkgs = {
+    hostPlatform = "x86_64-darwin";
+    inherit (outputs) overlays;
+    config = {
+      allowUnfree = true;
+    };
+  };
+
+  system.stateVersion = 4;
+}
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 <div id="outline-container-h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589" class="outline-4">
-<h4 id="h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589"><span class="section-number-4">3.3.3.</span> Optional</h4>
+<h4 id="h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589"><span class="section-number-4">3.3.4.</span> Optional</h4>
 <div class="outline-text-4" id="text-h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">
 <p>
 These sets of configuration do not need to be deployed on every host, for a multitude of reasons.
@@ -6820,8 +6868,8 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </div>
 </div>
 </li>
-<li><a id="org0412756"></a>VmWare<br />
-<div class="outline-text-5" id="text-3-3-3-3">
+<li><a id="orgf4180b2"></a>VmWare<br />
+<div class="outline-text-5" id="text-3-3-4-3">
 <p>
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
 </p>
@@ -7063,7 +7111,7 @@ This section sets up all the imports that are used in the home-manager section.
 </div>
 </div>
 </li>
-<li><a id="org5dab693"></a>General home-manager-settings<br />
+<li><a id="org2d0b246"></a>General home-manager-settings<br />
 <div class="outline-text-5" id="text-3-4-1-2">
 <p>
 Again, we adapt <code>nix</code> to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
@@ -8167,7 +8215,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </div>
 </div>
 </li>
-<li><a id="org798efae"></a>zellij<br />
+<li><a id="orga2cb789"></a>zellij<br />
 <div class="outline-text-5" id="text-3-4-1-20">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -8375,7 +8423,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </div>
 </div>
 </li>
-<li><a id="orgc298326"></a>tmux<br />
+<li><a id="orgd45a8e8"></a>tmux<br />
 <div class="outline-text-5" id="text-3-4-1-21">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -9476,7 +9524,7 @@ in
             "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
             "${modifier}+Escape" = "mode $exit";
             "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-            "${modifier}+h" = "exec hyprpicker";
+            "${modifier}+h" = "exec hyprpicker | wl-copy";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
             "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
             "${modifier}+1" = "workspace 1:一";
@@ -9760,12 +9808,12 @@ This service changes the screen hue at night. I am not sure if that really does 
 </li>
 </ol>
 </div>
-<div id="outline-container-orgf4178bf" class="outline-4">
-<h4 id="orgf4178bf"><span class="section-number-4">3.4.2.</span> Server</h4>
+<div id="outline-container-org88cb65e" class="outline-4">
+<h4 id="org88cb65e"><span class="section-number-4">3.4.2.</span> Server</h4>
 <div class="outline-text-4" id="text-3-4-2">
 </div>
 <ol class="org-ol">
-<li><a id="orgff6876e"></a>Imports<br />
+<li><a id="org261fc46"></a>Imports<br />
 <div class="outline-text-5" id="text-3-4-2-1">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -9786,7 +9834,7 @@ in
 </div>
 </div>
 </li>
-<li><a id="org5aff1d3"></a>Linking dotfiles<br />
+<li><a id="orgb78529c"></a>Linking dotfiles<br />
 <div class="outline-text-5" id="text-3-4-2-2">
 <p>
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
@@ -9812,8 +9860,35 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 </li>
 </ol>
 </div>
+<div id="outline-container-org8a8b272" class="outline-4">
+<h4 id="org8a8b272"><span class="section-number-4">3.4.3.</span> Darwin</h4>
+<div class="outline-text-4" id="text-3-4-3">
+</div>
+<ol class="org-ol">
+<li><a id="org2ab14cc"></a>Imports<br />
+<div class="outline-text-5" id="text-3-4-3-1">
+<p>
+This section sets up all the imports that are used in the home-manager section.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
+{
+  imports = [
+    "${profilesPath}/common/home/settings.nix"
+  ];
+}
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 <div id="outline-container-h:be623200-557e-4bb7-bb11-1ec5d76c6b8b" class="outline-4">
-<h4 id="h:be623200-557e-4bb7-bb11-1ec5d76c6b8b"><span class="section-number-4">3.4.3.</span> Optional</h4>
+<h4 id="h:be623200-557e-4bb7-bb11-1ec5d76c6b8b"><span class="section-number-4">3.4.4.</span> Optional</h4>
 <div class="outline-text-4" id="text-h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">
 <p>
 Akin to the optional NixOS modules.
@@ -11076,7 +11151,7 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
       (let ((org-confirm-babel-evaluate nil))
         ;; (org-html-export-to-html)
         (org-babel-tangle)
-        ;; (swarsel/run-formatting)
+        (swarsel/run-formatting)
         )))
 
   (setq org-html-htmlize-output-type nil)
@@ -11259,7 +11334,7 @@ This formats the org code block at <code>point</code> in accordance to the <code
 </div>
 </div>
 </li>
-<li><a id="org35a4172"></a>Disable garbace collection while minibuffer is active<br />
+<li><a id="org1a64ffc"></a>Disable garbace collection while minibuffer is active<br />
 <div class="outline-text-5" id="text-4-2-1-17">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -11631,8 +11706,8 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 </div>
 </div>
 </div>
-<div id="outline-container-org1f09bb9" class="outline-4">
-<h4 id="org1f09bb9"><span class="section-number-4">4.3.4.</span> Better garbage collection</h4>
+<div id="outline-container-orgce1d937" class="outline-4">
+<h4 id="orgce1d937"><span class="section-number-4">4.3.4.</span> Better garbage collection</h4>
 <div class="outline-text-4" id="text-4-3-4">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">(setq garbage-collection-messages t)
@@ -12877,8 +12952,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 </div>
 </div>
 </div>
-<div id="outline-container-orgf4969dc" class="outline-4">
-<h4 id="orgf4969dc"><span class="section-number-4">4.4.3.</span> HCL Mode</h4>
+<div id="outline-container-org1887f44" class="outline-4">
+<h4 id="org1887f44"><span class="section-number-4">4.4.3.</span> HCL Mode</h4>
 <div class="outline-text-4" id="text-4-4-3">
 <p>
 This adds support for Hashicorp Configuration Language. I need this at work.
@@ -12895,8 +12970,8 @@ This adds support for Hashicorp Configuration Language. I need this at work.
 </div>
 </div>
 </div>
-<div id="outline-container-org536e4c8" class="outline-4">
-<h4 id="org536e4c8"><span class="section-number-4">4.4.4.</span> Jenkinsfile/Groovy</h4>
+<div id="outline-container-org5b48baa" class="outline-4">
+<h4 id="org5b48baa"><span class="section-number-4">4.4.4.</span> Jenkinsfile/Groovy</h4>
 <div class="outline-text-4" id="text-4-4-4">
 <p>
 This adds support for Groovy, which I specifically need to work with Jenkinsfiles. I need this at work.
@@ -12913,8 +12988,8 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 </div>
 </div>
 </div>
-<div id="outline-container-orgc0a399f" class="outline-4">
-<h4 id="orgc0a399f"><span class="section-number-4">4.4.5.</span> Dockerfile</h4>
+<div id="outline-container-orgcbff0f7" class="outline-4">
+<h4 id="orgcbff0f7"><span class="section-number-4">4.4.5.</span> Dockerfile</h4>
 <div class="outline-text-4" id="text-4-4-5">
 <p>
 This adds support for Dockerfiles. I need this at work.
@@ -12929,8 +13004,8 @@ This adds support for Dockerfiles. I need this at work.
 </div>
 </div>
 </div>
-<div id="outline-container-org13b1eb4" class="outline-4">
-<h4 id="org13b1eb4"><span class="section-number-4">4.4.6.</span> Terraform Mode</h4>
+<div id="outline-container-org603f273" class="outline-4">
+<h4 id="org603f273"><span class="section-number-4">4.4.6.</span> Terraform Mode</h4>
 <div class="outline-text-4" id="text-4-4-6">
 <p>
 This adds support for Terraform configuration files. I need this at work.
@@ -13025,8 +13100,8 @@ This mode is not automatically activated anywhere because I only rarely need it.
 </div>
 </div>
 </div>
-<div id="outline-container-orge431e2a" class="outline-4">
-<h4 id="orge431e2a"><span class="section-number-4">4.4.10.</span> elfeed</h4>
+<div id="outline-container-org8fc32cb" class="outline-4">
+<h4 id="org8fc32cb"><span class="section-number-4">4.4.10.</span> elfeed</h4>
 <div class="outline-text-4" id="text-4-4-10">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -13775,8 +13850,8 @@ The following block is mostly inspired from <a href="https://code.kulupu.party/t
 </li>
 </ol>
 </div>
-<div id="outline-container-orgca6a02b" class="outline-4">
-<h4 id="orgca6a02b"><span class="section-number-4">4.4.32.</span> eglot</h4>
+<div id="outline-container-org459289a" class="outline-4">
+<h4 id="org459289a"><span class="section-number-4">4.4.32.</span> eglot</h4>
 <div class="outline-text-4" id="text-4-4-32">
 <p>
 After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a while each, I must say that <code>eglot</code> feels the most clean and fast to me.
@@ -13818,8 +13893,8 @@ After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a w
 </div>
 </div>
 </div>
-<div id="outline-container-org63b44ad" class="outline-4">
-<h4 id="org63b44ad"><span class="section-number-4">4.4.33.</span> sideline-flymake</h4>
+<div id="outline-container-org2c4d842" class="outline-4">
+<h4 id="org2c4d842"><span class="section-number-4">4.4.33.</span> sideline-flymake</h4>
 <div class="outline-text-4" id="text-4-4-33">
 <p>
 This brings back warnings and errors on the sideline for eglot; a feature that I have been missing from lsp-mode for a while.
@@ -14444,8 +14519,8 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
-<div id="outline-container-org9b03013" class="outline-4">
-<h4 id="org9b03013"><span class="section-number-4">4.4.45.</span> vterm</h4>
+<div id="outline-container-orgbe76726" class="outline-4">
+<h4 id="orgbe76726"><span class="section-number-4">4.4.45.</span> vterm</h4>
 <div class="outline-text-4" id="text-4-4-45">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -14568,7 +14643,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-05 Do 02:11</p>
+<p class="date">Created: 2024-12-05 Do 02:52</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

@@ -14,96 +14,96 @@
   };
 
   inputs = {
-    
+
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    
+
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
-    
+
     systems.url = "github:nix-systems/default-linux";
-    
+
     # user-level configuration
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     # overlay to access bleeding edge emacs
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     # nix user repository
     # i use this mainly to not have to build all firefox extensions
     # myself as well as for the emacs-init package (tbd)
     nur.url = "github:nix-community/NUR";
-    
+
     # provides GL to non-NixOS hosts
     nixgl.url = "github:guibou/nixGL";
-    
+
     # manages all theming using Home-Manager
     stylix.url = "github:danth/stylix";
-    
+
     # nix secrets management
     sops-nix.url = "github:Mic92/sops-nix";
-    
+
     # enable secure boot on NixOS
     lanzaboote.url = "github:nix-community/lanzaboote";
-    
+
     # nix for android
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     # generate NixOS images
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     # hardware quirks on nix
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
-    
+
     # dynamic library loading
     nix-alien = {
       url = "github:thiagokokada/nix-alien";
     };
-    
+
     # automatic nintendo switch payload injection
     nswitch-rcm-nix = {
       url = "github:Swarsel/nswitch-rcm-nix";
     };
-    
+
     # weekly updated nix-index database
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     disko = {
-       url =  "github:nix-community/disko";
-       inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     impermanence.url = "github:nix-community/impermanence";
-    
+
     zjstatus = {
       url = "github:dj95/zjstatus";
     };
-    
+
     fw-fanctrl = {
       url = "github:TamtamHero/fw-fanctrl/packaging/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
     nix-darwin = {
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    
+
   };
 
   outputs =
@@ -118,7 +118,7 @@
     let
       inherit (self) outputs;
       lib = nixpkgs.lib // home-manager.lib;
-      
+
       forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
       pkgsFor = lib.genAttrs (import systems) (
         system:
@@ -127,7 +127,7 @@
           config.allowUnfree = true;
         }
       );
-      
+
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
         inputs.stylix.nixosModules.stylix
@@ -138,19 +138,19 @@
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ./profiles/common/nixos
       ];
-      
+
       # Home-Manager modules wanted on non-NixOS systems
       homeModules = [
         inputs.stylix.homeManagerModules.stylix
       ];
-      
+
       # Home-Manager modules wanted on both NixOS and non-NixOS systems
       mixedModules = [
         inputs.sops-nix.homeManagerModules.sops
         inputs.nix-index-database.hmModules.nix-index
         ./profiles/common/home
       ];
-      
+
       # For adding things to _module.args (making arguments available globally)
       # moduleArgs = [
       #   {
@@ -159,13 +159,13 @@
       # ];
     in
     {
-      
+
       inherit lib;
       inherit mixedModules;
       # inherit moduleArgs;
       nixosModules = import ./modules/nixos;
       homeManagerModules = import ./modules/home;
-      
+
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
       devShells = forEachSystem
         (pkgs:
@@ -185,7 +185,7 @@
         inputs.emacs-overlay.overlay
         inputs.nixgl.overlay
       ];
-      
+
       # NixOS setups - run home-manager as a NixOS module for better compatibility
       # another benefit - full rebuild on nixos-rebuild switch
       # run rebuild using `nswitch`
@@ -194,8 +194,8 @@
       # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
 
       nixosConfigurations = {
-        
-        
+
+
         live = lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
           system = "x86_64-linux";
@@ -204,21 +204,21 @@
             ./profiles/live
           ];
         };
-        
+
         nbl-imba-2 = lib.nixosSystem {
           specialArgs = { inherit self inputs outputs; };
           modules = nixModules ++ [
             ./profiles/nbl-imba-2
           ];
         };
-        
+
         winters = lib.nixosSystem {
           specialArgs = { inherit self inputs outputs; };
           modules = [
             ./profiles/server/winters
           ];
         };
-        
+
         #ovm swarsel
         sync = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
@@ -227,7 +227,7 @@
             ./profiles/remote/oracle/sync/nixos.nix
           ];
         };
-        
+
         #ovm swarsel
         swatrix = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
@@ -242,37 +242,37 @@
       # run rebuild using `hmswitch`
 
       homeConfigurations = {
-         
-         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+
+        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
-           modules = homeModules ++ mixedModules ++ [
-             ./profiles/home-manager
-           ];
-         };
-         
+          modules = homeModules ++ mixedModules ++ [
+            ./profiles/home-manager
+          ];
+        };
+
       };
 
       darwinConfigurations = {
-        
+
         "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
-         specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs outputs; };
           modules = [
             ./profiles/nbm-imba-166
           ];
         };
-        
+
       };
 
       nixOnDroidConfigurations = {
-        
+
         mysticant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-         pkgs = pkgsFor.aarch64-linux;
+          pkgs = pkgsFor.aarch64-linux;
           modules = [
             ./profiles/mysticant
           ];
         };
-        
+
       };
 
     };
