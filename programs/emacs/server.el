@@ -43,7 +43,7 @@
   :ensure t
   :config
   (elfeed-org)
-  (setq rmh-elfeed-org-files (list "/Vault/data/syncthing/.elfeed/elfeed.org"))
+  (setq rmh-elfeed-org-files (list "/home/swarsel/.elfeed/elfeed.org"))
   )
 
 ;; Laod elfeed-goodies
