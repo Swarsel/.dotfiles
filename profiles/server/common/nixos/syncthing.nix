@@ -79,7 +79,7 @@
             id = "hgr3d-pfu3w";
           };
           ".elfeed" = {
-            path = "/home/swarsel/.elfeed";
+            path = "/Vault/data/syncthing/.elfeed";
             devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "h7xbs-fs9v1";
           };
