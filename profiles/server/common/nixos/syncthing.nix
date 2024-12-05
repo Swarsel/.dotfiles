@@ -80,7 +80,7 @@
           };
           ".elfeed" = {
             path = "/home/swarsel/.elfeed";
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
             id = "h7xbs-fs9v1";
           };
         };
