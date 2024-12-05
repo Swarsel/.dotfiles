@@ -1,22 +1,21 @@
-{ pkgs, config, ... }:
-{
+{ self, pkgs, config, ... }:
+let
+  owner + "swarsel";
+  sopsFile = self + /secrets/work/secrets.yaml;
+  {
   sops = {
     secrets = {
       clad = {
-        owner = "swarsel";
-        sopsFile = ../../../secrets/work/secrets.yaml;
+        inherit owner sopsfile;
       };
       dcad = {
-        owner = "swarsel";
-        sopsFile = ../../../secrets/work/secrets.yaml;
+        inherit owner sopsfile;
       };
       wsad = {
-        owner = "swarsel";
-        sopsFile = ../../../secrets/work/secrets.yaml;
+        inherit owner sopsfile;
       };
       imbad = {
-        owner = "swarsel";
-        sopsFile = ../../../secrets/work/secrets.yaml;
+        inherit owner sopsfile;
       };
     };
   };
@@ -111,4 +110,4 @@
     };
   };
 
-}
+  }

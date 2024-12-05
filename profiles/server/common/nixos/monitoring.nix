@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.monitoring {
 
@@ -70,7 +70,7 @@
       globalConfig = {
         scrape_interval = "10s";
       };
-      webConfigFile = ../../../programs/server/prometheus/web.config;
+      webConfigFile = self + /programs/server/prometheus/web.config;
       scrapeConfigs = [
         {
           job_name = "node";

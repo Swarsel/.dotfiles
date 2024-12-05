@@ -1,16 +1,16 @@
-_:
+{ self, ... }:
 {
   services.openssh = {
     enable = true;
     settings.PermitRootLogin = "yes";
   };
   users.users.swarsel.openssh.authorizedKeys.keyFiles = [
-    ../../../secrets/keys/authorized_keys
-    ../../../secrets/keys/mysticant.pub
+    self + /secrets/keys/authorized_keys
+    self + /secrets/keys/magicant.pub
   ];
   users.users.root.openssh.authorizedKeys.keyFiles = [
-    ../../../secrets/keys/authorized_keys
-    ../../../secrets/keys/mysticant.pub
+    self + /secrets/keys/authorized_keys
+    self + /secrets/keys/magicant.pub
   ];
 
 }
