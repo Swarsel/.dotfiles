@@ -8,7 +8,7 @@
 
     services.syncthing = {
       enable = true;
-      user = "syncthing";
+      user = "swarsel";
       dataDir = "/Vault/data/syncthing";
       configDir = "/Vault/apps/syncthing";
       guiAddress = "0.0.0.0:8384";
