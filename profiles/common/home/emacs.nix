@@ -14,6 +14,8 @@
         epkgs.use-package
         # epkgs.lsp-bridge
         epkgs.doom-themes
+        epkgs.vterm
+        epkgs.treesit-grammars.with-all-grammars
 
         # build the rest of the packages myself
         # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup

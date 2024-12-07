@@ -1165,7 +1165,9 @@ create a new one."
 (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
 (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
-(use-package nix-mode
+(use-package nix-mode)
+
+(use-package nix-ts-mode
   :mode "\\.nix\\'")
 
 (use-package hcl-mode
@@ -1299,6 +1301,7 @@ create a new one."
           (latex . ("https://github.com/latex-lsp/tree-sitter-latex"))
           (make . ("https://github.com/alemuller/tree-sitter-make"))
           (markdown . ("https://github.com/ikatyang/tree-sitter-markdown"))
+          (nix . ("https://github.com/nix-community/tree-sitter-nix"))
           (R . ("https://github.com/r-lib/tree-sitter-r"))
           (python . ("https://github.com/tree-sitter/tree-sitter-python"))
           (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "typescript/src" "typescript"))

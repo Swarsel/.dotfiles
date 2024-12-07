@@ -57,6 +57,8 @@
     # go
     go
     gopls
+    # nix
+    nixd
     # zig
     zig
     zls
