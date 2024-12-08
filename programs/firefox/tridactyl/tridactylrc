@@ -12,6 +12,7 @@ set configversion 2.0
 set searchurls.no https://search.nixos.org/options?query=
 set searchurls.np https://search.nixos.org/packages?query=
 set searchurls.hm https://home-manager-options.extranix.com/?query=
+set completions.Tab.statusstylepretty true
 set hintfiltermode vimperator-reflow
 set hintnames numeric
 
@@ -38,11 +39,45 @@ bind j scrollline 4
 bind k scrollline -4
 
 
+" WARNING: This file defines and runs a command called fixamo_quiet. If you
+" also have a malicious addon that operates on `<all_urls>` installed this
+" will allow it to steal your firefox account credentials!
+"
+" With those credentials, an attacker can read anything in your sync account,
+" publish addons to the AMO, etc, etc.
+"
+" Without this command a malicious addon can steal credentials from any site
+" that you visit that is not in the restrictedDomains list.
+"
+" You should comment out the fixamo lines unless you are entirely sure that
+" they are what you want.
+command fixamo_quiet jsb tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""'))
+command fixamo js tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""').then(tri.excmds.fillcmdline_tmp(3000, "Permissions added to user.js. Please restart Firefox to make them take affect.")))
 
-" Make Tridactyl work on more sites at the expense of some security
-sfixamo_quiet
+fixamo_quiet
 set allowautofocus false
-et csp clobber
+
+" The following modification allows Tridactyl to function on more pages, e.g. raw GitHub pages.
+" You may not wish to run this. Mozilla strongly feels that you shouldn't.
+" Read https://wiki.mozilla.org/Security/CSP#Goals for more information.
+"
+" Equivalent to `set csp clobber` before it was removed.
+" This weakens your defences against cross-site-scripting attacks
+" and other types of code-injection by reducing the strictness
+" of Content Security Policy on all sites in a couple of ways.
+"
+" We remove the sandbox directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox
+" which allows our iframe (and anyone else's) to run on any website.
+"
+" We weaken the style-src directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
+" to allow us to theme our elements.
+" This exposes you to 'cross site styling' attacks
+jsb browser.webRequest.onHeadersReceived.addListener(tri.request.clobberCSP,{urls:["<all_urls>"],types:["main_frame"]},["blocking","responseHeaders"])
+
+" default is 300ms
+set hintdelay 100
 
 " Some pages like github break on the tridactyl quick search. have this as a fallback
 unbind <C-f>
