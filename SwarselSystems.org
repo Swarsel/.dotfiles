@@ -2492,6 +2492,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 This file now holds all of the "nixpkgs-changes" that I am using across the configurations. Most notable here are the =modifications=, where I am editing derivations according to my needs.
 
+
 #+begin_src nix :tangle overlays/default.nix
   { inputs, ... }: {
     additions = final: _prev: import ../pkgs { pkgs = final; };
@@ -3116,6 +3117,7 @@ Also, the system state version is set here. No need to touch it.
             "nix-command"
             "flakes"
             "ca-derivations"
+            "pipe-operators"
           ];
           trusted-users = [ "swarsel" ];
           flake-registry = "";
@@ -6422,6 +6424,7 @@ This section sets up all the imports that are used in the home-manager section.
           "nix-command"
           "flakes"
           "ca-derivations"
+          "pipe-operators"
         ];
       };
     };
@@ -6487,6 +6490,8 @@ This holds packages that I can use as provided, or with small modifications (as 
       nmap
       lsof
       nvd
+      nh
+      nix-output-monitor
       hyprpicker # color picker
 
       # nix

@@ -10,6 +10,7 @@
           "nix-command"
           "flakes"
           "ca-derivations"
+          "pipe-operators"
         ];
         trusted-users = [ "swarsel" ];
         flake-registry = "";

@@ -7,6 +7,7 @@
         "nix-command"
         "flakes"
         "ca-derivations"
+        "pipe-operators"
       ];
     };
   };

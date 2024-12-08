@@ -26,6 +26,8 @@
     nmap
     lsof
     nvd
+    nh
+    nix-output-monitor
     hyprpicker # color picker
 
     # nix
