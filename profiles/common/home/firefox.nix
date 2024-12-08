@@ -149,6 +149,7 @@ in
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
         tampermonkey
+        sidebery
         browserpass
         clearurls
         darkreader

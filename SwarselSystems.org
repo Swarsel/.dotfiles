@@ -175,78 +175,139 @@ Set in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshee
 
 #+begin_src nix :tangle no :noweb-ref firefoxprofile
 
-  isDefault = false;
-  userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
-  extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-    tridactyl
-    browserpass
-    clearurls
-    darkreader
-    enhancer-for-youtube
-    istilldontcareaboutcookies
-    translate-web-pages
-    ublock-origin
-    reddit-enhancement-suite
-    sponsorblock
-    web-archives
-    onepassword-password-manager
-    single-file
-    widegithub
-    enhanced-github
-    unpaywall
-    don-t-fuck-with-paste
-    plasma-integration
-  ];
+    isDefault = false;
+    userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
+    extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+      tridactyl
+      tampermonkey
+      sidebery
+      browserpass
+      clearurls
+      darkreader
+      enhancer-for-youtube
+      istilldontcareaboutcookies
+      translate-web-pages
+      ublock-origin
+      reddit-enhancement-suite
+      sponsorblock
+      web-archives
+      onepassword-password-manager
+      single-file
+      widegithub
+      enhanced-github
+      unpaywall
+      don-t-fuck-with-paste
+      plasma-integration
+      (buildFirefoxXpiAddon {
+        pname = "shortkeys";
+        version = "4.0.2";
+        addonId = "Shortkeys@Shortkeys.com";
+        url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+        sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+        meta = with lib;
+          {
+            description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+            mozPermissions = [
+              "tabs"
+              "downloads"
+              "clipboardWrite"
+              "browsingData"
+              "storage"
+              "bookmarks"
+              "sessions"
+              "<all_urls>"
+            ];
+            platforms = platforms.all;
+          };
+      })
+    ];
 
-  search.engines = {
-    "Nix Packages" = {
-      urls = [{
-        template = "https://search.nixos.org/packages";
-        params = [
-          { name = "type"; value = "packages"; }
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@np" ];
+    settings =
+      {
+        "extensions.autoDisableScopes" = 0;
+        "browser.bookmarks.showMobileBookmarks" = lock-true;
+        "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
+        "browser.search.suggest.enabled" = lock-false;
+        "browser.search.suggest.enabled.private" = lock-false;
+        "browser.urlbar.suggest.searches" = lock-false;
+        "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
+        "browser.topsites.contile.enabled" = lock-false;
+        "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
+        "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
+        "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
+        "browser.newtabpage.activity-stream.showSponsored" = lock-false;
+        "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
+        "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
+      };
+
+    search = {
+      default = "Kagi";
+      privateDefault = "Kagi";
+      engines = {
+        "Kagi" = {
+          urls = [{
+            template = "https://kagi.com/search";
+            params = [
+              { name = "q"; value = "{searchTerms}"; }
+            ];
+          }];
+          iconUpdateURL = "https://kagi.com/favicon.ico";
+          updateInterval = 24 * 60 * 60 * 1000; # every day
+          definedAliases = [ "@k" ];
+        };
+
+        "Nix Packages" = {
+          urls = [{
+            template = "https://search.nixos.org/packages";
+            params = [
+              { name = "type"; value = "packages"; }
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@np" ];
+        };
+
+        "NixOS Wiki" = {
+          urls = [{
+            template = "https://nixos.wiki/index.php?search={searchTerms}";
+          }];
+          iconUpdateURL = "https://nixos.wiki/favicon.png";
+          updateInterval = 24 * 60 * 60 * 1000; # every day
+          definedAliases = [ "@nw" ];
+        };
+
+        "NixOS Options" = {
+          urls = [{
+            template = "https://search.nixos.org/options";
+            params = [
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
+
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@no" ];
+        };
+
+        "Home Manager Options" = {
+          urls = [{
+            template = "https://home-manager-options.extranix.com/";
+            params = [
+              { name = "query"; value = "{searchTerms}"; }
+            ];
+          }];
+
+          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+          definedAliases = [ "@hm" "@ho" "@hmo" ];
+        };
+
+        "Google".metaData.alias = "@g";
+      };
+      force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
     };
-
-    "NixOS Wiki" = {
-      urls = [{
-        template = "https://nixos.wiki/index.php?search={searchTerms}";
-      }];
-      iconUpdateURL = "https://nixos.wiki/favicon.png";
-      updateInterval = 24 * 60 * 60 * 1000; # every day
-      definedAliases = [ "@nw" ];
-    };
-
-    "NixOS Options" = {
-      urls = [{
-        template = "https://search.nixos.org/options";
-        params = [
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@no" ];
-    };
-
-    "Home Manager Options" = {
-      urls = [{
-        template = "https://home-manager-options.extranix.com/";
-        params = [
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@hm" "@ho" "@hmo" ];
-    };
-
-    "Google".metaData.alias = "@g";
-  };
-  search.force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
 
 #+end_src
 
@@ -8321,6 +8382,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
         extensions = with pkgs.nur.repos.rycee.firefox-addons; [
           tridactyl
           tampermonkey
+          sidebery
           browserpass
           clearurls
           darkreader
@@ -9024,8 +9086,17 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix :tangle profiles/optional/home/work.nix :noweb yes
-  { pkgs, ... }:
-
+  { pkgs, lib, ... }:
+  let
+    lock-false = {
+      Value = false;
+      Status = "locked";
+    };
+    lock-true = {
+      Value = true;
+      Status = "locked";
+    };
+  in
   {
     home.packages = with pkgs; [
       stable.teams-for-linux
