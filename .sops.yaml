@@ -4,10 +4,8 @@
 # for a more complex example.
 keys:
   - &admin_swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
-  - &server_sandbox age1zdjm8qa5t25mca0xxhhkpuh85mgg4l267mqjj2pdttksq7zg4unqdmqyp4
-  - &server_nixos age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+  - &server_winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
   - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
-  - &server_fourside age1s3faa0due0fvp9qu2rd8ex0upg4mcms8wl936yazylv72r6nn3rq2xv5g0
   - &server_nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
   - &server_sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
 creation_rules:
@@ -17,9 +15,7 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_nixos
-      - *server_sandbox
       - *server_surface
-      - *server_fourside
       - *server_nbl
   - path_regex: secrets/certs/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -27,15 +23,14 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_nixos
-      - *server_sandbox
       - *server_surface
-      - *server_fourside
+      - *server_winters
   - path_regex: secrets/server/winters/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *admin_swarsel
       age:
-      - *server_nixos
+      - *server_winters
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -48,9 +43,3 @@ creation_rules:
       - *admin_swarsel
       age:
       - *server_sync
-  - path_regex: secrets/sandbox/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *admin_swarsel
-      age:
-      - *server_sandbox
