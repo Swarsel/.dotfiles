@@ -12,7 +12,6 @@
       SDL_mixer
       SDL_ttf
       alsa-lib
-      alsaLib
       at-spi2-atk
       at-spi2-core
       atk
@@ -80,7 +79,7 @@
       pixman
       speex
       stdenv.cc.cc
-      steamPackages.steam-fhsenv-without-steam
+      steam-fhsenv-without-steam
       systemd
       tbb
       vulkan-loader
