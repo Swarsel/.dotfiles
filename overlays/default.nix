@@ -5,10 +5,6 @@
       withSystemVencord = true;
     };
 
-    nerdfonts = _prev.nerdfonts.override {
-      fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ];
-    };
-
     firefox = _prev.firefox.override {
       nativeMessagingHosts = [
         _prev.tridactyl-native

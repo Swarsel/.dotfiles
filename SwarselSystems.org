@@ -115,6 +115,8 @@ This is where the theme for the whole OS is defined. This noweb-ref section cann
 
 For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
 
+The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+
 #+begin_src nix :tangle no :noweb-ref theme
 
   enable = true;
@@ -151,7 +153,8 @@ For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS mo
     };
 
     monospace = {
-      package = pkgs.nerdfonts; # has overrides
+      package = pkgs.nerd-fonts.fira-mono; # has overrides
+
       name = "FiraCode Nerd Font Mono";
     };
 
@@ -2434,10 +2437,6 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
     modifications = _: _prev: {
       vesktop = _prev.vesktop.override {
         withSystemVencord = true;
-      };
-
-      nerdfonts = _prev.nerdfonts.override {
-        fonts = [ "FiraMono" "FiraCode" "NerdFontsSymbolsOnly" ];
       };
 
       firefox = _prev.firefox.override {
@@ -6544,7 +6543,9 @@ This holds packages that I can use as provided, or with small modifications (as 
       })
 
       # font stuff
-      nerdfonts # has overrides
+      nerd-fonts.fira-mono
+      nerd-fonts.fira-code
+      nerd-fonts.symbols-only
       noto-fonts-emoji
       font-awesome_5
       noto-fonts

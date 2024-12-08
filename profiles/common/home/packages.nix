@@ -143,7 +143,9 @@
     })
 
     # font stuff
-    nerdfonts # has overrides
+    nerd-fonts.fira-mono
+    nerd-fonts.fira-code
+    nerd-fonts.symbols-only
     noto-fonts-emoji
     font-awesome_5
     noto-fonts
