@@ -1602,7 +1602,6 @@ create a new one."
   )
 
 (use-package eglot
-  :ensure nil
   :config
   (add-to-list 'eglot-server-programs
        '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
@@ -1624,9 +1623,22 @@ create a new one."
   :custom
   (eldoc-echo-area-use-multiline-p nil)
   (completion-category-defaults nil)
+  (fset #'jsonrpc--log-event #'ignore)
+  (eglot-events-buffer-size 0)
+  (eglot-sync-connect nil)
+  (eglot-connect-timeout nil)
+  (eglot-autoshutdown t)
+  (eglot-send-changes-idle-time 3)
+  (flymake-no-changes-timeout 5)
   :bind (:map eglot-mode-map
               ("M-(" . flymake-goto-next-error)
               ("C-c ," . eglot-code-actions)))
+
+(use-package eglot-booster
+  :ensure t
+  :after eglot
+  :config
+  (eglot-booster-mode))
 
 (defalias 'start-lsp-server #'eglot)
 
