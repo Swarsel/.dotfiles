@@ -35,7 +35,7 @@ _:
     ./sway.nix
     ./xdg-portal.nix
     # ./yubikey-touch-detector.nix
-    ./safeeyes.nix
+    # ./safeeyes.nix
     ./distrobox.nix
     ./lid.nix
   ];
