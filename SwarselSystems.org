@@ -7727,6 +7727,20 @@ Lastly, I am defining some more packages here that the parser has problems findi
           # build the rest of the packages myself
           # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
           # build the package from the haji-ali fork, which is well-maintained
+
+          (epkgs.trivialBuild rec {
+            pname = "eglot-booster";
+            version = "main-29-10-2024";
+
+            src = pkgs.fetchFromGitHub {
+              owner = "jdtsmith";
+              repo = "eglot-booster";
+              rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
+              hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
+            };
+
+            packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
+          })
           (epkgs.trivialBuild rec {
             pname = "calfw";
             version = "1.0.0-20231002";
@@ -11463,7 +11477,6 @@ This mode is not automatically activated anywhere because I only rarely need it.
 
 #+end_src
 
-
 *** darkroom
 :PROPERTIES:
 :CUSTOM_ID: h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f
@@ -12115,7 +12128,7 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
                 ("C-c ," . eglot-code-actions)))
 
   (use-package eglot-booster
-    :ensure t
+    :ensure nil
     :after eglot
     :config
     (eglot-booster-mode))

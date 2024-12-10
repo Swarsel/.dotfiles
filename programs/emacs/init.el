@@ -1641,7 +1641,7 @@ create a new one."
               ("C-c ," . eglot-code-actions)))
 
 (use-package eglot-booster
-  :ensure t
+  :ensure nil
   :after eglot
   :config
   (eglot-booster-mode))

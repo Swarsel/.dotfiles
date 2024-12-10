@@ -20,6 +20,20 @@
         # build the rest of the packages myself
         # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
         # build the package from the haji-ali fork, which is well-maintained
+
+        (epkgs.trivialBuild rec {
+          pname = "eglot-booster";
+          version = "main-29-10-2024";
+
+          src = pkgs.fetchFromGitHub {
+            owner = "jdtsmith";
+            repo = "eglot-booster";
+            rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
+            hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
+          };
+
+          packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
+        })
         (epkgs.trivialBuild rec {
           pname = "calfw";
           version = "1.0.0-20231002";
