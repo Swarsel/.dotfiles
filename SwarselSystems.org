@@ -97,30 +97,28 @@ The rest of this file will now contain actual code that is used in the configura
 :CUSTOM_ID: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4
 :END:
 
-These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS. This serves to reduce code duplication.
+These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
 
-** Non-NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:237b9f25-1fa3-484e-952e-99175dbb91c5
-:END:
+Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
 
-These blocks are to be used on systems that are not running NixOS. For example, one such system would be a Fedora system running home manager, where the respective NixOS features might not be available.
+This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
 
-*** Theme (stylix)
+** Theme (stylix)
 :PROPERTIES:
 :CUSTOM_ID: h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78
 :END:
-
-This is where the theme for the whole OS is defined. This noweb-ref section cannot be copied to the general NixOS config for now since they are on different folder structure levels in the config, which would make the flake impure.
 
 For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
 
 The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
 
+This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here is, however, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now).
+
+
 #+begin_src nix :tangle no :noweb-ref theme
 
   enable = true;
-  base16Scheme = ../../../wallpaper/swarsel.yaml;
+  base16Scheme = "${self}/wallpaper/swarsel.yaml";
   # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
   polarity = "dark";
   opacity.popups = 0.5;
@@ -311,14 +309,13 @@ Set in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshee
 
 #+end_src
 
-** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:996e9c5f-ed65-4f4f-b043-5a901ed74358
 :END:
 
 These settings are to be used only on full NixOS setups.
 
-** flake.nix
+* flake.nix
 :PROPERTIES:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
 :END:
@@ -369,16 +366,8 @@ This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414
       in
       {
         <<flakeoutputgeneral>>
-        # NixOS setups - run home-manager as a NixOS module for better compatibility
-        # another benefit - full rebuild on nixos-rebuild switch
-        # run rebuild using `nswitch`
-
-        # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-        # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
 
         nixosConfigurations = <<flakenixosconf>>
-        # pure Home Manager setups - for non-NixOS machines
-        # run rebuild using `hmswitch`
 
         homeConfigurations = {
            <<flakehomeconf>>
@@ -445,7 +434,7 @@ This file defines a number of checks that can either be run by calling =nix flak
   }
 #+end_src
 
-*** Inputs
+** Inputs
 :PROPERTIES:
 :CUSTOM_ID: h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2
 :END:
@@ -594,7 +583,7 @@ A short overview over each input and what it does:
   };
 
 #+end_src
-*** let
+** let
 :PROPERTIES:
 :CUSTOM_ID: h:df0072bc-853f-438f-bd85-bfc869501015
 :END:
@@ -667,7 +656,7 @@ Lastly I define some common module lists that I can simply load depending on the
   # ];
 
 #+end_src
-*** General (outputs)
+** General (outputs)
 :PROPERTIES:
 :CUSTOM_ID: h:54cd8f65-a3ba-43c3-ae37-5f04383fe720
 :END:
@@ -724,12 +713,16 @@ In this section I am creating some attributes that define general concepts of my
 
 #+end_src
 
-*** nixosConfigurations
+** nixosConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:9c9b9e3b-8771-44fa-ba9e-5056ae809655
 :END:
 
 This section used to be much longer, since I performed all of my imports right here in the past. Since then, I have however refactored and now my important hosts can be defined in little space. Once I have fully transitioned my server to NixOS too this section will become even smaller once more.
+
+Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Also, the method of generating the hosts was changed in commit
+=3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
+
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
@@ -743,13 +736,16 @@ This section used to be much longer, since I performed all of my imports right h
 
 And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
 
+Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Also, the method of generating the hosts was changed in commit
+=3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
+
 #+begin_src nix :tangle no :noweb-ref flakedarwinconf
 
   mkFullHostConfigs (readHosts "darwin") false;
 
 #+end_src
 
-*** homeConfigurations
+** homeConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
 :END:
@@ -768,7 +764,7 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 
 #+end_src
 
-*** nixOnDroidConfigurations
+** nixOnDroidConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:5f6ef553-59f9-4239-b6f3-63d33b57f335
 :END:
@@ -803,6 +799,9 @@ This section mainly exists house different `configuration.nix` files for system 
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
 :END:
 **** live (ISO)
+:PROPERTIES:
+:CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
+:END:
 
 
 
@@ -1178,6 +1177,9 @@ My work machine. Built for more security, this is the gold standard of my config
 #+end_src
 
 **** Winters (Server)
+:PROPERTIES:
+:CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
+:END:
 
 
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
@@ -1258,6 +1260,9 @@ My work machine. Built for more security, this is the gold standard of my config
 #+end_src
 
 **** nbm-imba-166 (MacBook Pro)
+:PROPERTIES:
+:CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
+:END:
 
 
 #+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
@@ -1297,6 +1302,9 @@ My work machine. Built for more security, this is the gold standard of my config
 #+end_src
 
 **** Magicant (Phone)
+:PROPERTIES:
+:CUSTOM_ID: h:729af373-37e7-4379-9a3d-b09792219415
+:END:
 
 
 #+begin_src nix :tangle hosts/nix-on-droid/magicant/default.nix
@@ -1533,7 +1541,6 @@ I have removed most of the machines from this section. What remains are some hos
 
 #+end_src
 
-
 ** Overlays, packages, and modules
 :PROPERTIES:
 :CUSTOM_ID: h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d
@@ -1556,6 +1563,8 @@ As such, I also define three additional overlays:
 :END:
 
 This is the central station for self-defined packages. These are all referenced in =default.nix=. Wherever possible, I am keeping the shell version of these scripts in this file as well and then read it using =builtin.readFile= in the NixOS configurations. This lets me keep full control in this one file but also keep the separate files uncluttered.
+
+Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
 #+begin_src nix :tangle pkgs/default.nix
   { pkgs, ... }:
@@ -1701,6 +1710,9 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 #+end_src
 
 **** hm-specialisation
+:PROPERTIES:
+:CUSTOM_ID: h:e6612cff-0804-47ef-9f2b-d2cc6d81a896
+:END:
 
 This script allows for quick git home-manager specialisation switching.
 
@@ -2144,6 +2156,9 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+end_src
 
 **** screenshare
+:PROPERTIES:
+:CUSTOM_ID: h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda
+:END:
 
 
 #+begin_src shell :tangle scripts/screenshare.sh
@@ -2178,6 +2193,9 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+end_src
 
 **** bootstrap
+:PROPERTIES:
+:CUSTOM_ID: h:74db57ae-0bb9-4257-84be-eddbc85130dd
+:END:
 
 This program sets up a new NixOS host.
 
@@ -2374,6 +2392,8 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 
 In this section I define custom modules under the =swarsel= attribute. These are mostly used to define settings specific to a host. I keep these settings confined to either home-manager or nixos to maintain compatibility with non-NixOS machines.
 
+Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
+
 **** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:14e68518-8ec7-48ec-b208-0e3d6d49954d
@@ -2482,6 +2502,9 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 #+end_src
 
 ***** Input
+:PROPERTIES:
+:CUSTOM_ID: h:45188d3c-9910-480b-beec-d5fd713b05fb
+:END:
 
 
 #+begin_src nix :tangle modules/nixos/input.nix
@@ -2526,7 +2549,6 @@ This lets me quickly set flags for "special" file systems. These options mostly 
     options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   }
 #+end_src
-
 
 **** home-manager
 :PROPERTIES:
@@ -2795,6 +2817,9 @@ These are some extra options that will be used if the machine also runs NixOS. F
 #+end_src
 
 ***** darwin
+:PROPERTIES:
+:CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
+:END:
 
 #+begin_src nix :noweb yes :tangle modules/home/darwin.nix
 { lib, ... }:
@@ -2876,6 +2901,9 @@ Another duplicated option for the filesystem.
 #+end_src
 
 ***** firefox
+:PROPERTIES:
+:CUSTOM_ID: h:e7f98ad8-74a6-4860-a368-cce154285ff0
+:END:
 
 #+begin_src nix :noweb yes :tangle modules/home/firefox.nix
 { lib, pkgs, ... }:
@@ -3033,7 +3061,6 @@ Another duplicated option for the filesystem.
 }
 #+end_src
 
-
 ** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:6da812f5-358c-49cb-aff2-0a94f20d70b3
@@ -3048,6 +3075,9 @@ Here we have NixOS options. All options are split into smaller files that are lo
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
 **** Imports, non-server settings
+:PROPERTIES:
+:CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
+:END:
 
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
@@ -3104,6 +3134,9 @@ This section is for setting things that should be used on hosts that are using t
   #+end_src
 
 **** General NixOS settings (enable home-manager module, stateVersion)
+:PROPERTIES:
+:CUSTOM_ID: h:24c9146f-2147-4fd5-bafc-d5853e15cf12
+:END:
 
 
 Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
@@ -3256,6 +3289,9 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 #+end_src
 
 **** Setup home-manager
+:PROPERTIES:
+:CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
+:END:
 
 First, we enable the use of =home-manager= as a NixoS modul.
 
@@ -3864,7 +3900,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/common/nixos/stylix.nix
-  { pkgs, home-manager, config, ... }:
+  { self, pkgs, home-manager, config, ... }:
   {
     stylix = {
       <<theme>>
@@ -4537,6 +4573,9 @@ A friend of mine used this service and I used to make fun of him. But I have to 
 #+end_src
 
 **** Podmam (distrobox)
+:PROPERTIES:
+:CUSTOM_ID: h:1bef3914-a258-4585-b232-e0fbe9e7a9b5
+:END:
 
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 
@@ -4556,6 +4595,9 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 #+end_src
 
 **** Handle lid switch correctly
+:PROPERTIES:
+:CUSTOM_ID: h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd
+:END:
 
 This turns off the display when the lid is closed.
 
@@ -4589,7 +4631,13 @@ This turns off the display when the lid is closed.
 #+end_src
 
 *** Server
+:PROPERTIES:
+:CUSTOM_ID: h:e492c24a-83a0-4bcb-a084-706f49318651
+:END:
 **** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:4e64e564-b7cb-469f-bd79-cd3efb3caa62
+:END:
 
 First, we enable the use of =home-manager= as a NixoS module.
 
@@ -4639,6 +4687,9 @@ Also, the system state version is set here. No need to touch it.
   #+end_src
 
 **** General NixOS Server settings
+:PROPERTIES:
+:CUSTOM_ID: h:dc365e83-f6c8-4d05-a390-b5f2d01649b4
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/settings.nix
   { lib, config, ... }:
@@ -4664,6 +4715,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** System Packages
+:PROPERTIES:
+:CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/packages.nix
   { pkgs, ... }:
@@ -4679,6 +4733,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** sops
+:PROPERTIES:
+:CUSTOM_ID: h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/sops.nix
   { config, ... }:
@@ -4693,6 +4750,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** nfs/samba (smb)
+:PROPERTIES:
+:CUSTOM_ID: h:d6840d31-110c-465f-93fa-0306f755de28
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/nfs.nix
   { pkgs, ... }:
@@ -4747,6 +4807,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** NGINX
+:PROPERTIES:
+:CUSTOM_ID: h:302468d2-106a-41c8-b2bc-9fdc40064a9c
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/nginx.nix
   { pkgs, config, ... }:
@@ -4787,6 +4850,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** ssh
+:PROPERTIES:
+:CUSTOM_ID: h:f3db197d-1d03-4bf8-b59f-f9891b358f0b
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/ssh.nix
   { self, ... }:
@@ -4807,6 +4873,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** kavita
+:PROPERTIES:
+:CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/kavita.nix
   { pkgs, lib, config, ... }:
@@ -4854,6 +4923,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** jellyfin
+:PROPERTIES:
+:CUSTOM_ID: h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/jellyfin.nix
 { pkgs, lib, config, ... }:
@@ -4903,6 +4975,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** navidrome
+:PROPERTIES:
+:CUSTOM_ID: h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/navidrome.nix
   { pkgs, lib, inputs, config, ... }:
@@ -5004,6 +5079,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** spotifyd
+:PROPERTIES:
+:CUSTOM_ID: h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/spotifyd.nix
   { lib, config, ... }:
@@ -5043,6 +5121,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** mpd
+:PROPERTIES:
+:CUSTOM_ID: h:baa4149b-3788-4b05-87ec-0ee9d0726117
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/mpd.nix
 { pkgs, lib, config, ... }:
@@ -5099,6 +5180,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** matrix
+:PROPERTIES:
+:CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/matrix.nix
   { config, lib, pkgs, sops, ... }:
@@ -5422,6 +5506,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** nextcloud
+:PROPERTIES:
+:CUSTOM_ID: h:d11ad8d5-25d7-4691-b319-61c16ccef715
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/nextcloud.nix
   { pkgs, lib, config, ... }:
@@ -5470,6 +5557,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** immich
+:PROPERTIES:
+:CUSTOM_ID: h:33bad8ad-b362-4bf1-8a49-b9df92329aed
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/immich.nix
   { lib, config, ... }:
@@ -5524,6 +5614,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** paperless
+:PROPERTIES:
+:CUSTOM_ID: h:89638fb5-0593-4420-9567-f85f0223e341
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/paperless.nix
   { lib, config, ... }:
@@ -5579,6 +5672,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** transmission
+:PROPERTIES:
+:CUSTOM_ID: h:5afeb311-ab86-4029-be53-2160f6d836c3
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/transmission.nix
   { pkgs, lib, config, ... }:
@@ -5717,6 +5813,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** syncthing
+:PROPERTIES:
+:CUSTOM_ID: h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/syncthing.nix
   { lib, config, ... }:
@@ -5832,6 +5931,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** restic
+:PROPERTIES:
+:CUSTOM_ID: h:b73ac8bf-b721-4563-9eff-973925c99a39
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/restic.nix
   { lib, config, ... }:
@@ -5845,6 +5947,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** monitoring
+:PROPERTIES:
+:CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/monitoring.nix
   { self, lib, config, ... }:
@@ -6010,6 +6115,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** Jenkins
+:PROPERTIES:
+:CUSTOM_ID: h:23452a18-a0a1-4515-8612-ceb19bb5fc22
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/jenkins.nix
   { pkgs, lib, config, ... }:
@@ -6050,6 +6158,9 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 **** Emacs (RSS Server)
+:PROPERTIES:
+:CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/emacs.nix
   { lib, config, ... }:
@@ -6087,7 +6198,13 @@ Also, the system state version is set here. No need to touch it.
 #+end_src
 
 *** Darwin
+:PROPERTIES:
+:CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
+:END:
 **** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4
+:END:
 
 This section sets up all the imports that are used in the home-manager section.
 
@@ -6206,6 +6323,9 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 #+end_src
 
 **** VmWare
+:PROPERTIES:
+:CUSTOM_ID: h:34db28fb-62f7-4597-a9ff-0de2991a8415
+:END:
 
 
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
@@ -6394,6 +6514,9 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 #+end_src
 
 **** Minimal Install
+:PROPERTIES:
+:CUSTOM_ID: h:3fc1d301-7bae-4678-9085-d12c23eed8ac
+:END:
 
  These options are really only to be used on the iso image in order to run nixos-anywhere.
 
@@ -6521,6 +6644,9 @@ This section sets up all the imports that are used in the home-manager section.
 #+end_src
 
 **** General home-manager-settings
+:PROPERTIES:
+:CUSTOM_ID: h:4af4f67f-7c48-4754-b4bd-6800e3a66664
+:END:
 
  Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
@@ -6902,7 +7028,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/common/home/stylix.nix
-  { lib, config, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   {
     stylix = lib.mkIf (!config.swarselsystems.isNixos) {
       <<theme>>
@@ -7542,6 +7668,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 #+end_src
 
 **** zellij
+:PROPERTIES:
+:CUSTOM_ID: h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7
+:END:
 #+begin_src nix :tangle profiles/common/home/zellij.nix
   _:
   # { pkgs, config, ... }:
@@ -7746,6 +7875,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
   }
 #+end_src
 **** tmux
+:PROPERTIES:
+:CUSTOM_ID: h:45de9430-f925-4df6-9db6-bffb5b8f1604
+:END:
 #+begin_src nix :tangle profiles/common/home/tmux.nix
 
     { pkgs, ... }:
@@ -9115,8 +9247,14 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 *** Server
+:PROPERTIES:
+:CUSTOM_ID: h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb
+:END:
 
 **** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:7b4ee01a-b505-47da-8fb9-0b41285d0eab
+:END:
 
 This section sets up all the imports that are used in the home-manager section.
 
@@ -9134,6 +9272,9 @@ This section sets up all the imports that are used in the home-manager section.
 #+end_src
 
 **** Linking dotfiles
+:PROPERTIES:
+:CUSTOM_ID: h:9fac0904-b615-4d9d-9bae-54a6691999c3
+:END:
 
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
 
@@ -9152,8 +9293,14 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 #+end_src
 
 *** Darwin
+:PROPERTIES:
+:CUSTOM_ID: h:e0536bff-2552-4ac4-a34a-a23937a2c30f
+:END:
 
 **** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:cff37bdf-4f22-419a-af4e-2665ede9add0
+:END:
 
 This section sets up all the imports that are used in the home-manager section.
 
@@ -9997,6 +10144,9 @@ This formats the org code block at =point= in accordance to the =nixpkgs-fmt= fo
 #+end_src
 
 **** Disable garbace collection while minibuffer is active
+:PROPERTIES:
+:CUSTOM_ID: h:3c436647-71e6-441c-b452-d817ad2f8331
+:END:
 
 
 #+begin_src emacs-lisp
@@ -10342,6 +10492,9 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 
 #+end_src
 *** Better garbage collection
+:PROPERTIES:
+:CUSTOM_ID: h:1667913c-2272-4010-bf3a-356455b97c83
+:END:
 #+begin_src emacs-lisp
 (setq garbage-collection-messages t)
 (defmacro k-time (&rest body)
@@ -11478,6 +11631,9 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
     :mode "\\.nix\\'")
 #+end_src
 *** HCL Mode
+:PROPERTIES:
+:CUSTOM_ID: h:e8074881-3441-4abd-b25b-358a87e7984f
+:END:
 
 This adds support for Hashicorp Configuration Language. I need this at work.
 
@@ -11490,6 +11646,9 @@ This adds support for Hashicorp Configuration Language. I need this at work.
 
 #+end_src
 *** Jenkinsfile/Groovy
+:PROPERTIES:
+:CUSTOM_ID: h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410
+:END:
 
 This adds support for Groovy, which I specifically need to work with Jenkinsfiles. I need this at work.
 
@@ -11502,6 +11661,9 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 
 #+end_src
 *** Dockerfile
+:PROPERTIES:
+:CUSTOM_ID: h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3
+:END:
 
 This adds support for Dockerfiles. I need this at work.
 
@@ -11512,6 +11674,9 @@ This adds support for Dockerfiles. I need this at work.
 
 #+end_src
 *** Terraform Mode
+:PROPERTIES:
+:CUSTOM_ID: h:7834adb0-fbd3-4136-bdb7-6dbc9a083296
+:END:
 
 This adds support for Terraform configuration files. I need this at work.
 
@@ -11540,6 +11705,9 @@ Adds functions for formatting nix code.
 #+end_src
 
 *** shfmt
+:PROPERTIES:
+:CUSTOM_ID: h:489a71c4-38af-44a3-a9ef-8b1ed1ee4ac4
+:END:
 
 Adds functions for formatting shellscripts.
 
@@ -11608,6 +11776,9 @@ This mode is not automatically activated anywhere because I only rarely need it.
 #+end_src
 
 *** elfeed
+:PROPERTIES:
+:CUSTOM_ID: h:a83c5820-2016-44ae-90a0-4756bb471c01
+:END:
 
 #+begin_src emacs-lisp
 
@@ -12288,6 +12459,9 @@ The following block is mostly inspired from [[https://code.kulupu.party/thesuess
 #+end_src
 
 *** eglot
+:PROPERTIES:
+:CUSTOM_ID: h:6cf0310b-2fdf-45f0-9845-4704649777eb
+:END:
 
 After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say that =eglot= feels the most clean and fast to me.
 
@@ -12338,6 +12512,9 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
 #+end_src
 
 *** sideline-flymake
+:PROPERTIES:
+:CUSTOM_ID: h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857
+:END:
 
 This brings back warnings and errors on the sideline for eglot; a feature that I have been missing from lsp-mode for a while.
 
@@ -12905,6 +13082,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 #+end_src
 
 *** vterm
+:PROPERTIES:
+:CUSTOM_ID: h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb
+:END:
 
 #+begin_src emacs-lisp
 

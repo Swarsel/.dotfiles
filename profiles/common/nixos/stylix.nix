@@ -1,9 +1,9 @@
-{ pkgs, home-manager, config, ... }:
+{ self, pkgs, home-manager, config, ... }:
 {
   stylix = {
 
     enable = true;
-    base16Scheme = ../../../wallpaper/swarsel.yaml;
+    base16Scheme = "${self}/wallpaper/swarsel.yaml";
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
     opacity.popups = 0.5;

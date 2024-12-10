@@ -1,9 +1,9 @@
-{ lib, config, pkgs, ... }:
+{ self, lib, config, pkgs, ... }:
 {
   stylix = lib.mkIf (!config.swarselsystems.isNixos) {
 
     enable = true;
-    base16Scheme = ../../../wallpaper/swarsel.yaml;
+    base16Scheme = "${self}/wallpaper/swarsel.yaml";
     # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
     polarity = "dark";
     opacity.popups = 0.5;
