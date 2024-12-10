@@ -2,7 +2,7 @@ _:
 {
   time = {
     timeZone = "Europe/Vienna";
-    hardwareClockInLocalTime = true;
+    # hardwareClockInLocalTime = true;
   };
 
   i18n = {

@@ -628,7 +628,7 @@ In this section I am creating some attributes that define general concepts of my
     (import ./overlays { inherit inputs; }).modifications
     (import ./overlays { inherit inputs; }).nixpkgs-stable
     (import ./overlays { inherit inputs; }).zjstatus
-    inputs.nur.overlay
+    inputs.nur.overlays.default
     inputs.emacs-overlay.overlay
     inputs.nixgl.overlay
   ];
@@ -953,7 +953,7 @@ My work machine. Built for more security, this is the gold standard of my config
         pkiBundle = "/etc/secureboot";
       };
       supportedFilesystems = [ "btrfs" ];
-      kernelPackages = pkgs.linuxPackages_latest;
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       kernelParams = [
         "resume_offset=533760"
       ];
@@ -3521,7 +3521,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
   {
     time = {
       timeZone = "Europe/Vienna";
-      hardwareClockInLocalTime = true;
+      # hardwareClockInLocalTime = true;
     };
 
     i18n = {
@@ -4412,7 +4412,13 @@ Also, the system state version is set here. No need to touch it.
       config.swarselsystems.shellAliases;
 
     nixpkgs.config.permittedInsecurePackages = [
+      # matrix
       "olm-3.2.16"
+      # sonarr
+      "aspnetcore-runtime-wrapped-6.0.36"
+      "aspnetcore-runtime-6.0.36"
+      "dotnet-sdk-wrapped-6.0.428"
+      "dotnet-sdk-6.0.428"
     ];
 
   }

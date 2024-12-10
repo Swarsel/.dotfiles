@@ -45,7 +45,7 @@ in
       pkiBundle = "/etc/secureboot";
     };
     supportedFilesystems = [ "btrfs" ];
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     kernelParams = [
       "resume_offset=533760"
     ];

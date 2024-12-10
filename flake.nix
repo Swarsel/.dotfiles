@@ -206,7 +206,7 @@
         (import ./overlays { inherit inputs; }).modifications
         (import ./overlays { inherit inputs; }).nixpkgs-stable
         (import ./overlays { inherit inputs; }).zjstatus
-        inputs.nur.overlay
+        inputs.nur.overlays.default
         inputs.emacs-overlay.overlay
         inputs.nixgl.overlay
       ];
