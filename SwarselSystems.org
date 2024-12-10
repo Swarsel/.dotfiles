@@ -327,6 +327,52 @@ Handling the flake.nix file used to be a bit of a chore, since it felt like writ
 
 These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android). There is also the [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that currently just defines a Proxmox LXC image.
 
+*** Pre-commit-hooks (Checks)
+
+This file defines a number of checks that can either be run by calling =nix flake check= or
+
+#+begin_src nix :tangle checks/default.nix
+  { self, inputs, pkgs, system, ... }:
+  {
+    pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
+      src = "${self}";
+      hooks = {
+        check-added-large-files.enable = true;
+        check-case-conflicts.enable = true;
+        check-executables-have-shebangs.enable = true;
+        check-shebang-scripts-are-executable.enable = false;
+        check-merge-conflicts.enable = true;
+        deadnix.enable = true;
+        detect-private-keys.enable = true;
+        end-of-file-fixer.enable = true;
+        fix-byte-order-marker.enable = true;
+        flake-checker.enable = true;
+        forbid-new-submodules.enable = true;
+        mixed-line-endings.enable = true;
+        nixpkgs-fmt.enable = true;
+        statix.enable = true;
+        trim-trailing-whitespace.enable = true;
+
+        destroyed-symlinks = {
+          enable = true;
+          entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
+        };
+
+        shellcheck = {
+          enable = true;
+          entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
+        };
+
+        shfmt = {
+          enable = true;
+          entry = "${pkgs.shfmt}/bin/shfmt -i 4 -sr -d -s -l";
+        };
+
+      };
+    };
+  }
+#+end_src
+
 *** Inputs
 :PROPERTIES:
 :CUSTOM_ID: h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2
@@ -464,6 +510,11 @@ A short overview over each input and what it does:
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
+  pre-commit-hooks = {
+    url = "github:cachix/git-hooks.nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
 #+end_src
 *** let
 :PROPERTIES:
@@ -479,6 +530,11 @@ Lastly I define some common module lists that I can simply load depending on the
   lib = nixpkgs.lib // home-manager.lib;
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+  forAllSystems = lib.genAttrs [
+    "x86_64-linux"
+    "aarch64-linux"
+    "x86_64-darwin"
+  ];
   pkgsFor = lib.genAttrs (import systems) (
     system:
     import nixpkgs {
@@ -553,6 +609,13 @@ In this section I am creating some attributes that define general concepts of my
       });
   formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
   overlays = [
+  checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+          import ./checks { inherit self inputs system pkgs; }
+  );
     (import ./overlays { inherit inputs; }).additions
     (import ./overlays { inherit inputs; }).modifications
     (import ./overlays { inherit inputs; }).nixpkgs-stable
@@ -6032,6 +6095,9 @@ This holds packages that I can use as provided, or with small modifications (as 
       statix
       nix-tree
 
+      # shellscripts
+      shfmt
+
       # local file sharing
       wormhole-rs
 
@@ -9558,7 +9624,8 @@ I also define some keybinds to some combinations directly. Those are used mostly
         "oa" '((lambda () (interactive) (org-refile)) :which-key "org-refile")
         "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
         "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
-        "os" '((lambda () (interactive) (org-store-link)) :which-key "store link")
+        "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
+        "os" '(shfmt-region :which-key "format sh-block")
         "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
         "on" '(nixpkgs-fmt-region :which-key "format nix-block")
         "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
@@ -11033,6 +11100,19 @@ Adds functions for formatting nix code.
 #+begin_src emacs-lisp
 
   (use-package nixpkgs-fmt)
+
+#+end_src
+
+*** shfmt
+
+Adds functions for formatting shellscripts.
+
+#+begin_src emacs-lisp
+
+  (use-package shfmt
+    :config
+    (setq shfmt-command "shfmt")
+    (setq shfmt-arguments '("-i" "4" "-s" "-sr")))
 
 #+end_src
 

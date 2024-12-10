@@ -104,6 +104,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs =
@@ -120,6 +125,11 @@
       lib = nixpkgs.lib // home-manager.lib;
 
       forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+      forAllSystems = lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+      ];
       pkgsFor = lib.genAttrs (import systems) (
         system:
         import nixpkgs {
@@ -177,6 +187,13 @@
           });
       formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
       overlays = [
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        import ./checks { inherit self inputs system pkgs; }
+      );
         (import ./overlays { inherit inputs; }).additions
         (import ./overlays { inherit inputs; }).modifications
         (import ./overlays { inherit inputs; }).nixpkgs-stable
