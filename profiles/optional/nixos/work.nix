@@ -42,18 +42,22 @@ in
     };
   };
 
+  networking.firewall.trustedInterfaces = [ "virbr0" ];
+
   virtualisation = {
     docker.enable = true;
+    spiceUSBRedirection.enable = true;
     libvirtd = {
       enable = true;
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;
         swtpm.enable = true;
+        vhostUserPackages = with pkgs; [ virtiofsd ];
         ovmf = {
           enable = true;
           packages = [
-            (pkgs.OVMF.override {
+            (pkgs.OVMFFull.override {
               secureBoot = true;
               tpmSupport = true;
             }).fd
@@ -75,10 +79,21 @@ in
     libisoburn
     govc
     terraform
+
+    # vm
+    virt-manager
+    virt-viewer
+    virtiofsd
+    spice
+    spice-gtk
+    spice-protocol
+    win-virtio
+    win-spice
   ];
 
 
   services = {
+    spice-vdagentd.enable = true;
     openssh = {
       enable = true;
       extraConfig = ''
