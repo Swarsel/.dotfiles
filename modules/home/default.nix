@@ -1,12 +1,23 @@
-{
-  laptop = import ./laptop.nix;
-  hardware = import ./hardware.nix;
-  monitors = import ./monitors.nix;
-  input = import ./input.nix;
-  nixos = import ./nixos.nix;
-  darwin = import ./darwin.nix;
-  waybar = import ./waybar.nix;
-  startup = import ./startup.nix;
-  wallpaper = import ./wallpaper.nix;
-  filesystem = import ./filesystem.nix;
-}
+let
+  moduleNames = [
+    "laptop"
+    "hardware"
+    "monitors"
+    "input"
+    "nixos"
+    "darwin"
+    "waybar"
+    "startup"
+    "wallpaper"
+    "filesystem"
+  ];
+
+  mkImports = names: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = import ./${name}.nix;
+    })
+    names);
+
+in
+mkImports moduleNames

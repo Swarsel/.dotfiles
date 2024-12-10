@@ -1,8 +1,19 @@
-{
-  wallpaper = import ./wallpaper.nix;
-  hardware = import ./hardware.nix;
-  setup = import ./setup.nix;
-  impermanence = import ./impermanence.nix;
-  filesystem = import ./filesystem.nix;
-  input = import ./input.nix;
-}
+let
+  moduleNames = [
+    "wallpaper"
+    "hardware"
+    "setup"
+    "impermanence"
+    "filesystem"
+    "input"
+  ];
+
+  mkImports = names: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = import ./${name}.nix;
+    })
+    names);
+
+in
+mkImports moduleNames

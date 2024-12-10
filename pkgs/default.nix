@@ -1,21 +1,28 @@
 { pkgs, ... }:
 let
-  inherit (pkgs) callPackage;
+  packageNames = [
+    "pass-fuzzel"
+    "cura5"
+    "hm-specialisation"
+    "cdw"
+    "cdb"
+    "bak"
+    "timer"
+    "e"
+    "swarselcheck"
+    "waybarupdate"
+    "opacitytoggle"
+    "fs-diff"
+    "update-checker"
+    "github-notifications"
+    "screenshare"
+    "bootstrap"
+  ];
+  mkPackages = names: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = pkgs.callPackage ./${name} { };
+    })
+    names);
 in
-{
-  pass-fuzzel = callPackage ./pass-fuzzel { };
-  cura5 = callPackage ./cura5 { };
-  hm-specialisation = callPackage ./hm-specialisation { };
-  cdw = callPackage ./cdw { };
-  cdb = callPackage ./cdb { };
-  bak = callPackage ./bak { };
-  timer = callPackage ./timer { };
-  e = callPackage ./e { };
-  swarselcheck = callPackage ./swarselcheck { };
-  waybarupdate = callPackage ./waybarupdate { };
-  opacitytoggle = callPackage ./opacitytoggle { };
-  fs-diff = callPackage ./fs-diff { };
-  update-checker = callPackage ./update-checker { };
-  github-notifications = callPackage ./github-notifications { };
-  screenshare = callPackage ./screenshare { };
-}
+mkPackages packageNames
