@@ -228,14 +228,6 @@
           ];
         };
 
-        #ovm swarsel
-        swatrix = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/remote/oracle/matrix/nixos.nix
-          ];
-        };
       };
 
       # pure Home Manager setups - for non-NixOS machines
