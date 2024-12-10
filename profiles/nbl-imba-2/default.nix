@@ -11,11 +11,11 @@ in
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${profilesPath}/optional/nixos/steam.nix"
     "${profilesPath}/optional/nixos/virtualbox.nix"
     # "${profilesPath}/optional/nixos/vmware.nix"
     "${profilesPath}/optional/nixos/autologin.nix"
     "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+    "${profilesPath}/optional/nixos/gaming.nix"
     "${profilesPath}/optional/nixos/work.nix"
 
     inputs.home-manager.nixosModules.home-manager

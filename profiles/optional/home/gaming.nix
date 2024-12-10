@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  # specialisation = {
+  #   gaming.configuration = {
   home.packages = with pkgs; [
     stable.lutris
     wine
@@ -22,4 +24,6 @@
     prismlauncher # has overrides
     temurin-bin-17
   ];
+  #   };
+  # };
 }

@@ -919,11 +919,11 @@ My work machine. Built for more security, this is the gold standard of my config
       ./hardware-configuration.nix
       ./disk-config.nix
 
-      "${profilesPath}/optional/nixos/steam.nix"
       "${profilesPath}/optional/nixos/virtualbox.nix"
       # "${profilesPath}/optional/nixos/vmware.nix"
       "${profilesPath}/optional/nixos/autologin.nix"
       "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+      "${profilesPath}/optional/nixos/gaming.nix"
       "${profilesPath}/optional/nixos/work.nix"
 
       inputs.home-manager.nixosModules.home-manager
@@ -5890,37 +5890,41 @@ These sets of configuration do not need to be deployed on every host, for a mult
 This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in [[#h:84fd7029-ecb6-4131-9333-289982f24ffa][Gaming]] (home-manager side).
 
 #+begin_src nix :tangle profiles/optional/nixos/gaming.nix
-  { pkgs, ... }:
-  {
-    networking = {
-      firewall = {
-        allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
-        allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-        allowedTCPPortRanges = [
-          { from = 27015; to = 27030; } # barotrauma
-          { from = 27036; to = 27037; } # barotrauma
-        ];
-        allowedUDPPortRanges = [
-          { from = 27000; to = 27031; } # barotrauma
-          { from = 58962; to = 58964; } # barotrauma
+{ pkgs, ... }:
+{
+  specialisation = {
+    gaming.configuration = {
+      networking = {
+        firewall = {
+          allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
+          allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+          allowedTCPPortRanges = [
+            { from = 27015; to = 27030; } # barotrauma
+            { from = 27036; to = 27037; } # barotrauma
+          ];
+          allowedUDPPortRanges = [
+            { from = 27000; to = 27031; } # barotrauma
+            { from = 58962; to = 58964; } # barotrauma
+          ];
+        };
+      };
+
+      programs.steam = {
+        enable = true;
+        extraCompatPackages = [
+          pkgs.proton-ge-bin
         ];
       };
-    };
 
-    programs.steam = {
-      enable = true;
-      extraCompatPackages = [
-        pkgs.proton-ge-bin
+      hardware.xone.enable = true;
+
+      environment.systemPackages = [
+        pkgs.linuxKernel.packages.linux_6_12.xone
       ];
     };
+  };
 
-    hardware.xone.enable = true;
-
-    environment.systemPackages = [
-      linuxKernel.packages.linux_6_10.xone
-    ];
-
-  }
+}
 
 
 #+end_src
@@ -8922,28 +8926,32 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 #+begin_src nix :tangle profiles/optional/home/gaming.nix
   { pkgs, ... }:
   {
-    home.packages = with pkgs; [
-      stable.lutris
-      wine
-      libudev-zero
-      dwarfs
-      fuse-overlayfs
-      # steam
-      # steam-run
-      patchelf
-      gamescope
-      vulkan-tools
-      moonlight-qt
-      ns-usbloader
+    # specialisation = {
+    #   gaming.configuration = {
+        home.packages = with pkgs; [
+          stable.lutris
+          wine
+          libudev-zero
+          dwarfs
+          fuse-overlayfs
+          # steam
+          # steam-run
+          patchelf
+          gamescope
+          vulkan-tools
+          moonlight-qt
+          ns-usbloader
 
-      quark-goldleaf
-      # gog games installing
-      heroic
+          quark-goldleaf
+          # gog games installing
+          heroic
 
-      # minecraft
-      prismlauncher # has overrides
-      temurin-bin-17
-    ];
+          # minecraft
+          prismlauncher # has overrides
+          temurin-bin-17
+        ];
+    #   };
+    # };
   }
 
 #+end_src
