@@ -613,6 +613,8 @@ In this section I am creating some attributes that define general concepts of my
           nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
         };
       });
+
+  # this sets the formatter that is going to be used by nix fmt
   formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
   checks = forAllSystems (
         system:
@@ -704,7 +706,7 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 :CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
 :END:
 
-In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
+And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
 
 #+begin_src nix :tangle no :noweb-ref flakemacconf
 
@@ -2877,6 +2879,121 @@ Also, the system state version is set here. No need to touch it.
   }
   #+end_src
 
+**** System Packages
+:PROPERTIES:
+:CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
+:END:
+
+Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
+
+#+begin_src nix :tangle profiles/common/nixos/packages.nix
+  { pkgs, ... }:
+  {
+    environment.systemPackages = with pkgs; [
+      # yubikey packages
+      gnupg
+      yubikey-personalization
+      yubikey-personalization-gui
+      yubico-pam
+      yubioath-flutter
+      yubikey-manager
+      yubikey-manager-qt
+      yubikey-touch-detector
+      yubico-piv-tool
+      cfssl
+      pcsctools
+      pcscliteWithPolkit.out
+
+      # ledger packages
+      ledger-live-desktop
+
+      # pinentry
+      dbus
+      swaylock-effects
+      syncthingtray-minimal
+
+      # secure boot
+      sbctl
+
+      nix-index
+
+      # better make for general tasks
+      just
+
+      # keyboards
+      qmk
+      vial
+      via
+
+      # theme related
+      adwaita-icon-theme
+
+      # kde-connect
+      xdg-desktop-portal
+      xdg-desktop-portal-wlr
+
+      # bluetooth
+      bluez
+
+      # lsp-related -------------------------------
+      # nix
+      # latex
+      texlab
+      ghostscript_headless
+      # wireguard
+      wireguard-tools
+      # rust
+      rust-analyzer
+      clippy
+      rustfmt
+      # go
+      go
+      gopls
+      # nix
+      nixd
+      # zig
+      zig
+      zls
+      # cpp
+      clang-tools
+      # + cuda
+      cudatoolkit
+      # ansible
+      ansible-lint
+      ansible-language-server
+      molecule
+      #lsp-bridge / python
+      gcc
+      gdb
+      (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
+      # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
+      # --------------------------------------------
+
+      (stdenv.mkDerivation {
+        name = "oama";
+
+        src = pkgs.fetchurl {
+          name = "oama";
+          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+        };
+
+        phases = [
+          "unpackPhase"
+        ];
+
+        unpackPhase = ''
+          mkdir -p $out/bin
+          tar xvf $src -C $out/
+          mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+        '';
+
+      })
+
+    ];
+  }
+#+end_src
+
 **** Setup home-manager
 
 First, we enable the use of =home-manager= as a NixoS modul.
@@ -2911,7 +3028,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
   }
   #+end_src
 
-**** Make users non-mutable
+**** User setup, Make users non-mutable
 :PROPERTIES:
 :CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
 :END:
@@ -3501,118 +3618,6 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
         };
       };
     };
-  }
-#+end_src
-
-**** System Packages
-:PROPERTIES:
-:CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
-:END:
-
-Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
-
-#+begin_src nix :tangle profiles/common/nixos/packages.nix
-  { pkgs, ... }:
-  {
-    environment.systemPackages = with pkgs; [
-      # yubikey packages
-      gnupg
-      yubikey-personalization
-      yubikey-personalization-gui
-      yubico-pam
-      yubioath-flutter
-      yubikey-manager
-      yubikey-manager-qt
-      yubikey-touch-detector
-      yubico-piv-tool
-      cfssl
-      pcsctools
-      pcscliteWithPolkit.out
-
-      # ledger packages
-      ledger-live-desktop
-
-      # pinentry
-      dbus
-      swaylock-effects
-      syncthingtray-minimal
-
-      # secure boot
-      sbctl
-
-      nix-index
-
-      # keyboards
-      qmk
-      vial
-      via
-
-      # theme related
-      adwaita-icon-theme
-
-      # kde-connect
-      xdg-desktop-portal
-      xdg-desktop-portal-wlr
-
-      # bluetooth
-      bluez
-
-      # lsp-related -------------------------------
-      # nix
-      # latex
-      texlab
-      ghostscript_headless
-      # wireguard
-      wireguard-tools
-      # rust
-      rust-analyzer
-      clippy
-      rustfmt
-      # go
-      go
-      gopls
-      # nix
-      nixd
-      # zig
-      zig
-      zls
-      # cpp
-      clang-tools
-      # + cuda
-      cudatoolkit
-      # ansible
-      ansible-lint
-      ansible-language-server
-      molecule
-      #lsp-bridge / python
-      gcc
-      gdb
-      (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
-      # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-      # --------------------------------------------
-
-      (stdenv.mkDerivation {
-        name = "oama";
-
-        src = pkgs.fetchurl {
-          name = "oama";
-          url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-          sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
-        };
-
-        phases = [
-          "unpackPhase"
-        ];
-
-        unpackPhase = ''
-          mkdir -p $out/bin
-          tar xvf $src -C $out/
-          mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
-        '';
-
-      })
-
-    ];
   }
 #+end_src
 
