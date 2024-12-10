@@ -921,7 +921,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
       "${profilesPath}/optional/nixos/steam.nix"
       "${profilesPath}/optional/nixos/virtualbox.nix"
-      # ../optional/nixos/vmware.nix
+      # "${profilesPath}/optional/nixos/vmware.nix"
       "${profilesPath}/optional/nixos/autologin.nix"
       "${profilesPath}/optional/nixos/nswitch-rcm.nix"
       "${profilesPath}/optional/nixos/work.nix"
@@ -5908,21 +5908,29 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 :CUSTOM_ID: h:b3523246-14e9-4284-ba22-cebc5ca36732
 :END:
 
-This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
+This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialisation.
 
 #+begin_src nix :tangle profiles/optional/nixos/virtualbox.nix
-  _:
+  { lib, pkgs, ... }:
   {
-    virtualisation.virtualbox = {
-      host = {
-        enable = true;
-        enableExtensionPack = true;
-      };
-      # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-      guest = {
-        enable = false;
+
+    specialisation = {
+      VBox.configuration = {
+        virtualisation.virtualbox = {
+          host = {
+            enable = true;
+            enableExtensionPack = true;
+          };
+          # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+          guest = {
+            enable = false;
+          };
+        };
+        # run an older kernel to provide compatibility with windows vm
+        boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
       };
     };
+
   }
 #+end_src
 

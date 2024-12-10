@@ -13,7 +13,7 @@ in
 
     "${profilesPath}/optional/nixos/steam.nix"
     "${profilesPath}/optional/nixos/virtualbox.nix"
-    # ../optional/nixos/vmware.nix
+    # "${profilesPath}/optional/nixos/vmware.nix"
     "${profilesPath}/optional/nixos/autologin.nix"
     "${profilesPath}/optional/nixos/nswitch-rcm.nix"
     "${profilesPath}/optional/nixos/work.nix"
