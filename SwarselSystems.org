@@ -608,7 +608,6 @@ In this section I am creating some attributes that define general concepts of my
         };
       });
   formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-  overlays = [
   checks = forAllSystems (
         system:
         let
@@ -616,6 +615,7 @@ In this section I am creating some attributes that define general concepts of my
         in
           import ./checks { inherit self inputs system pkgs; }
   );
+  overlaysList = [
     (import ./overlays { inherit inputs; }).additions
     (import ./overlays { inherit inputs; }).modifications
     (import ./overlays { inherit inputs; }).nixpkgs-stable
@@ -840,7 +840,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     imports = builtins.attrValues outputs.homeManagerModules;
 
     nixpkgs = {
-      inherit (outputs) overlays;
+      overlays = outputs.overlaysList;
       config = {
         allowUnfree = true;
       };
@@ -933,7 +933,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
     nixpkgs = {
-      inherit (outputs) overlays;
+      overlays = outputs.overlaysList;
       config = {
         allowUnfree = true;
       };
@@ -1151,7 +1151,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
     nixpkgs = {
-      inherit (outputs) overlays;
+      overlays = outputs.overlaysList;
       config = {
         allowUnfree = true;
       };
@@ -1745,11 +1745,11 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 #+end_src
 
 #+begin_src nix :tangle pkgs/e/default.nix
-  { writeShellApplication, emacs-pgtk, sway, jq }:
+  { writeShellApplication, emacs30-pgtk, sway, jq }:
 
   writeShellApplication {
     name = "e";
-    runtimeInputs = [ emacs-pgtk sway jq ];
+    runtimeInputs = [ emacs30-pgtk sway jq ];
     text = builtins.readFile ../../scripts/e.sh;
   }
 
@@ -5683,7 +5683,7 @@ This section sets up all the imports that are used in the home-manager section.
     nix.settings.experimental-features = "nix-command flakes";
     nixpkgs = {
       hostPlatform = "x86_64-darwin";
-      inherit (outputs) overlays;
+      overlays = outputs.overlaysList;
       config = {
         allowUnfree = true;
       };

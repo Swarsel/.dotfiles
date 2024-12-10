@@ -1194,6 +1194,11 @@ create a new one."
 
 (use-package nixpkgs-fmt)
 
+(use-package shfmt
+  :config
+  (setq shfmt-command "shfmt")
+  (setq shfmt-arguments '("-i" "4" "-s" "-sr")))
+
 (setq markdown-command "pandoc")
 
 (use-package markdown-mode

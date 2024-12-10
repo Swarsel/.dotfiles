@@ -37,6 +37,9 @@
     statix
     nix-tree
 
+    # shellscripts
+    shfmt
+
     # local file sharing
     wormhole-rs
 

@@ -4,7 +4,7 @@
   imports = builtins.attrValues outputs.homeManagerModules;
 
   nixpkgs = {
-    inherit (outputs) overlays;
+    overlays = outputs.overlaysList;
     config = {
       allowUnfree = true;
     };

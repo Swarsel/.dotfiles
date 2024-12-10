@@ -185,8 +185,9 @@
               nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
             };
           });
+
+      # this sets the formatter that is going to be used by nix fmt
       formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-      overlays = [
       checks = forAllSystems (
         system:
         let
@@ -194,6 +195,7 @@
         in
         import ./checks { inherit self inputs system pkgs; }
       );
+      overlaysList = [
         (import ./overlays { inherit inputs; }).additions
         (import ./overlays { inherit inputs; }).modifications
         (import ./overlays { inherit inputs; }).nixpkgs-stable

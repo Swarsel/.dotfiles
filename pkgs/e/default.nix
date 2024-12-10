@@ -1,7 +1,7 @@
-{ writeShellApplication, emacs-pgtk, sway, jq }:
+{ writeShellApplication, emacs30-pgtk, sway, jq }:
 
 writeShellApplication {
   name = "e";
-  runtimeInputs = [ emacs-pgtk sway jq ];
+  runtimeInputs = [ emacs30-pgtk sway jq ];
   text = builtins.readFile ../../scripts/e.sh;
 }
