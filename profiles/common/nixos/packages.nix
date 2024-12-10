@@ -28,6 +28,9 @@
 
     nix-index
 
+    # better make for general tasks
+    just
+
     # keyboards
     qmk
     vial

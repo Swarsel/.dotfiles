@@ -640,8 +640,12 @@ This section used to be much longer, since I performed all of my imports right h
   live = lib.nixosSystem {
     specialArgs = { inherit inputs outputs; };
     system = "x86_64-linux";
-    modules = nixModules ++ [
-      (nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix")
+    modules = [
+      {
+        _module.args = { inherit self; };
+      }
+      "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+      "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
       ./profiles/live
     ];
   };
@@ -746,81 +750,73 @@ This section mainly exists house different `configuration.nix` files for system 
 
 
 #+begin_src nix :tangle profiles/live/default.nix
-  { inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, config, pkgs, lib, ... }:
+  let
+    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+  in
   {
 
     imports = [
 
-      # ../optional/nixos/steam.nix
-      # ../optional/nixos/virtualbox.nix
-      # ../optional/nixos/vmware.nix
-      ../optional/nixos/autologin.nix
-      ../optional/nixos/nswitch-rcm.nix
-      # ../optional/nixos/work.nix
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
 
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-          ../optional/home/gaming.nix
-          # ../optional/home/work.nix
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules);
+      ../optional/nixos/minimal.nix
 
+    ];
+
+
+    isoImage = {
+      makeEfiBootable = true;
+      makeUsbBootable = true;
+      squashfsCompression = "zstd -Xcompression-level 3";
+    };
 
     nixpkgs = {
-      inherit (outputs) overlays;
-      config = {
-        allowUnfree = true;
-        allowBroken = true;
+      hostPlatform = lib.mkDefault "x86_64-linux";
+      config.allowUnfree = true;
+    };
+
+    services.getty.autologinUser = lib.mkForce "swarsel";
+
+    users = {
+      groups.swarsel = {};
+      users = {
+        swarsel = {
+          name = "swarsel";
+          group = "swarsel";
+          isNormalUser = true;
+          shell = pkgs.zsh;
+          password = "setup"; # this is overwritten after install
+          openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+        };
+        root = {
+          shell = pkgs.zsh;
+          password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+        };
       };
     };
 
-    isoImage.makeEfiBootable = true;
-    isoImage.makeUsbBootable = true;
-
-    networking.networkmanager.wifi.scanRandMacAddress = false;
-
-    boot = {
-      loader.efi.canTouchEfiVariables = true;
-      kernelPackages = pkgs.linuxPackages_latest;
+    systemd = {
+      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+      targets = {
+        sleep.enable = false;
+        suspend.enable = false;
+        hibernate.enable = false;
+        hybrid-sleep.enable = false;
+      };
     };
 
     system.stateVersion = lib.mkForce "23.05";
-    services.getty.autologinUser = lib.mkForce "swarsel";
 
     networking = {
       hostName = "live";
-      wireless.enable = lib.mkForce false;
-      firewall.enable = true;
+      wireless.enable = false;
     };
 
-
-    swarselsystems = {
-      wallpaper = ../../wallpaper/lenovowp.png;
-      hasBluetooth = true;
-      hasFingerprint = true;
-      impermanence = false;
-      initialSetup = true;
-      isBtrfs = false;
-    };
-
-    home-manager.users.swarsel.swarselsystems = {
-      isLaptop = false;
-      isNixos = true;
-      isBtrfs = false;
-      startup = [
-        { command = "nextcloud --background"; }
-        { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-        { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-        { command = "teams-for-linux"; }
-        { command = "1password"; }
-        { command = "feishin"; }
-      ];
-    };
   }
 
 
@@ -2078,6 +2074,139 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
     name = "screenshare";
     runtimeInputs = [ sway ];
     text = builtins.readFile ../../scripts/screenshare.sh;
+  }
+#+end_src
+
+**** bootstrap
+
+This program sets up a new NixOS host.
+
+#+begin_src shell :tangle scripts/bootstrap.sh
+  # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/scripts/bootstrap-nixos.sh
+  set -eo pipefail
+
+  target_hostname=""
+  target_destination=""
+  target_user="swarsel"
+  ssh_port="22"
+  temp=$(mktemp -d)
+
+  function help_and_exit() {
+      echo
+      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo
+      echo "USAGE: $0 -n <target_hostname> -d <target_destination> [OPTIONS]"
+      echo
+      echo "ARGS:"
+      echo "  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on."
+      echo "  -d <target_destination>                 specify ip or url to the target host."
+      echo "                                          target during install process."
+      echo
+      echo "OPTIONS:"
+      echo "  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home."
+      echo "                                          Default='${target_user}'."
+      echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
+      echo "  --impermanence                          Use this flag if the target machine has impermanence enabled. WARNING: Assumes /persist path."
+      echo "  --debug                                 Enable debug mode."
+      echo "  -h | --help                             Print this help."
+      exit 0
+  }
+
+  function cleanup() {
+      rm -rf "$temp"
+  }
+  trap cleanup exit
+
+  function red() {
+      echo -e "\x1B[31m[!] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[31m[!] $($2) \x1B[0m"
+      fi
+  }
+  function green() {
+      echo -e "\x1B[32m[+] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+      fi
+  }
+  function yellow() {
+      echo -e "\x1B[33m[*] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[33m[*] $($2) \x1B[0m"
+      fi
+  }
+
+  function yes_or_no() {
+      echo -en "\x1B[32m[+] $* [y/n] (default: y): \x1B[0m"
+      while true; do
+          read -rp "" yn
+          yn=${yn:-y}
+          case $yn in
+          [Yy]*) return 0 ;;
+          [Nn]*) return 1 ;;
+          esac
+      done
+  }
+
+  while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -n)
+          shift
+          target_hostname=$1
+          ;;
+      -d)
+          shift
+          target_destination=$1
+          ;;
+      -u)
+          shift
+          target_user=$1
+          ;;
+      --port)
+          shift
+          ssh_port=$1
+          ;;
+      --temp-override)
+          shift
+          temp=$1
+          ;;
+      --debug)
+          set -x
+          ;;
+      -h | --help) help_and_exit ;;
+      ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+      esac
+      shift
+  done
+
+  ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
+  # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
+  ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
+
+  scp_cmd="scp -oport=${ssh_port} -o StrictHostKeyChecking=no"
+
+  git_root=$(git rev-parse --show-toplevel)
+
+  green "Wiping known_hosts of $target_destination"
+  sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+
+  green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
+  $ssh_root_cmd "nixos-generate-config --no-filesystems --root /mnt"
+  mkdir profiles/"$target_hostname"
+  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/profiles/"$target_hostname"/hardware-configuration.nix
+#+end_src
+
+
+#+begin_src nix :tangle pkgs/bootstrap/default.nix
+  { writeShellApplication, openssh }:
+
+  writeShellApplication {
+    name = "bootstrap";
+    runtimeInputs = [ openssh ];
+    text = builtins.readFile ../../scripts/bootstrap.sh;
   }
 #+end_src
 
@@ -5941,6 +6070,74 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         ];
       };
     };
+
+  }
+#+end_src
+
+**** Minimal Install
+
+ These options are really only to be used on the iso image in order to run nixos-anywhere.
+
+#+begin_src nix :tangle profiles/optional/nixos/minimal.nix
+  { self, lib, pkgs, config, ... }:
+  {
+
+    nix.settings = {
+      experimental-features = [ "nix-command" "flakes" ];
+      warn-dirty = false;
+    };
+
+    boot = {
+      # initrd.systemd.enable = true;
+      kernelPackages = pkgs.linuxPackages_latest;
+      supportedFilesystems = lib.mkForce [ "brtfs" "vfat" ];
+      loader = {
+        efi.canTouchEfiVariables = true;
+        systemd-boot = {
+          enable = true;
+          configurationLimit = lib.mkDefault 5;
+          consoleMode = lib.mkDefault "max";
+        };
+      };
+    };
+
+    services = {
+      qemuGuest.enable = true;
+      openssh = {
+        enable = true;
+        ports = lib.mkDefault [ 22 ];
+        settings.PermitRootLogin = "yes";
+        authorizedKeysFiles = lib.mkForce [
+          "/etc/ssh/authorized_keys.d/%u"
+        ];
+      };
+    };
+
+    security.pam = {
+      sshAgentAuth.enable = true;
+      services = {
+        sudo.u2fAuth = true;
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      curl
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+    ];
+
+    programs = {
+      git.enable = true;
+      zsh.enable = lib.mkDefault true;
+    };
+
+    fileSystems."/boot".options = [ "umask=0077" ];
+
+    networking.networkmanager.enable = true;
+
 
   }
 #+end_src

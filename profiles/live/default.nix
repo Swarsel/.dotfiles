@@ -1,76 +1,68 @@
-{ inputs, outputs, config, pkgs, lib, ... }:
+{ self, inputs, config, pkgs, lib, ... }:
+let
+  pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+in
 {
 
   imports = [
 
-    # ../optional/nixos/steam.nix
-    # ../optional/nixos/virtualbox.nix
-    # ../optional/nixos/vmware.nix
-    ../optional/nixos/autologin.nix
-    ../optional/nixos/nswitch-rcm.nix
-    # ../optional/nixos/work.nix
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
 
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        ../optional/home/gaming.nix
-        # ../optional/home/work.nix
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
-    }
-  ] ++ (builtins.attrValues outputs.nixosModules);
+    ../optional/nixos/minimal.nix
 
+  ];
+
+
+  isoImage = {
+    makeEfiBootable = true;
+    makeUsbBootable = true;
+    squashfsCompression = "zstd -Xcompression-level 3";
+  };
 
   nixpkgs = {
-    inherit (outputs) overlays;
-    config = {
-      allowUnfree = true;
-      allowBroken = true;
+    hostPlatform = lib.mkDefault "x86_64-linux";
+    config.allowUnfree = true;
+  };
+
+  services.getty.autologinUser = lib.mkForce "swarsel";
+
+  users = {
+    groups.swarsel = { };
+    users = {
+      swarsel = {
+        name = "swarsel";
+        group = "swarsel";
+        isNormalUser = true;
+        shell = pkgs.zsh;
+        password = "setup"; # this is overwritten after install
+        openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+      };
+      root = {
+        shell = pkgs.zsh;
+        password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+        openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+      };
     };
   };
 
-  isoImage.makeEfiBootable = true;
-  isoImage.makeUsbBootable = true;
-
-  networking.networkmanager.wifi.scanRandMacAddress = false;
-
-  boot = {
-    loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_latest;
+  systemd = {
+    services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+    targets = {
+      sleep.enable = false;
+      suspend.enable = false;
+      hibernate.enable = false;
+      hybrid-sleep.enable = false;
+    };
   };
 
   system.stateVersion = lib.mkForce "23.05";
-  services.getty.autologinUser = lib.mkForce "swarsel";
 
   networking = {
     hostName = "live";
-    wireless.enable = lib.mkForce false;
-    firewall.enable = true;
+    wireless.enable = false;
   };
 
-
-  swarselsystems = {
-    wallpaper = ../../wallpaper/lenovowp.png;
-    hasBluetooth = true;
-    hasFingerprint = true;
-    impermanence = false;
-    initialSetup = true;
-    isBtrfs = false;
-  };
-
-  home-manager.users.swarsel.swarselsystems = {
-    isLaptop = false;
-    isNixos = true;
-    isBtrfs = false;
-    startup = [
-      { command = "nextcloud --background"; }
-      { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-      { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-      { command = "ANKI_WAYLAND=1 anki"; }
-      { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-      { command = "nm-applet"; }
-      { command = "teams-for-linux"; }
-      { command = "1password"; }
-      { command = "feishin"; }
-    ];
-  };
 }

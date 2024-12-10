@@ -218,8 +218,12 @@
         live = lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
           system = "x86_64-linux";
-          modules = nixModules ++ [
-            (nixpkgs + "/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix")
+          modules = [
+            {
+              _module.args = { inherit self; };
+            }
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
             ./profiles/live
           ];
         };
