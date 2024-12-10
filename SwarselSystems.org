@@ -333,54 +333,56 @@ This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414
 
 #+begin_src nix :noweb yes :tangle flake.nix
 
-  {
-    description = "SwarseFlake - Nix Flake for all SwarselSystems";
-
-    nixConfig = {
-      extra-substituters = [
-        "https://nix-community.cachix.org"
-        "https://cache.ngi0.nixos.org/"
-      ];
-
-      extra-trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
-      ];
-    };
-
-    inputs = {
-      <<flakeinputs>>
-    };
-
-    outputs =
-      inputs@{ self
-      , nixpkgs
-      , nixpkgs-stable
-      , home-manager
-      , nix-darwin
-      , systems
-      , ...
-      }:
-      let
-        <<flakelet>>
-      in
       {
-        <<flakeoutputgeneral>>
+        description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
-        nixosConfigurations = <<flakenixosconf>>
+        nixConfig = {
+          extra-substituters = [
+            "https://nix-community.cachix.org"
+            "https://cache.ngi0.nixos.org/"
+          ];
 
-        homeConfigurations = {
-           <<flakehomeconf>>
+          extra-trusted-public-keys = [
+            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+            "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
+          ];
         };
 
-        darwinConfigurations = <<flakedarwinconf>>
-
-        nixOnDroidConfigurations = {
-          <<flakedroidconf>>
+        inputs = {
+          <<flakeinputs>>
         };
 
-      };
-  }
+        outputs =
+          inputs@{ self
+          , nixpkgs
+          , nixpkgs-stable
+          , home-manager
+          , nix-darwin
+          , systems
+          , ...
+          }:
+          let
+            <<flakelet>>
+          in
+          {
+            <<flakeoutputgeneral>>
+
+            nixosConfigurations =
+              <<flakenixosconf>>
+
+            homeConfigurations = {
+               <<flakehomeconf>>
+            };
+
+            darwinConfigurations =
+              <<flakedarwinconf>>
+
+            nixOnDroidConfigurations = {
+              <<flakedroidconf>>
+            };
+
+          };
+      }
 
 
 
@@ -725,9 +727,7 @@ Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6
 
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
-
   mkFullHostConfigs (readHosts "nixos") true;
-
 #+end_src
 ** darwinConfigurations
 :PROPERTIES:
@@ -740,9 +740,7 @@ Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b
 =3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
 
 #+begin_src nix :tangle no :noweb-ref flakedarwinconf
-
   mkFullHostConfigs (readHosts "darwin") false;
-
 #+end_src
 
 ** homeConfigurations

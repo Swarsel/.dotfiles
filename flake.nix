@@ -230,35 +230,33 @@
 
 
       nixosConfigurations =
-        nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
-      nixosConfigurations =
+        mkFullHostConfigs (readHosts "nixos") true;
 
-        homeConfigurations = {
+      homeConfigurations = {
 
-      "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-      pkgs = pkgsFor.x86_64-linux;
-      extraSpecialArgs = { inherit inputs outputs; };
-      modules = homeModules ++ mixedModules ++ [
-        ./hosts/home-manager
-      ];
+        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgsFor.x86_64-linux;
+          extraSpecialArgs = { inherit inputs outputs; };
+          modules = homeModules ++ mixedModules ++ [
+            ./hosts/home-manager
+          ];
+        };
+
+      };
+
+      darwinConfigurations =
+        mkFullHostConfigs (readHosts "darwin") false;
+
+      nixOnDroidConfigurations = {
+
+        magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+          pkgs = pkgsFor.aarch64-linux;
+          modules = [
+            ./hosts/magicant
+          ];
+        };
+
+      };
+
     };
-
-};
-
-darwinConfigurations =
-darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
-darwinConfigurations =
-
-nixOnDroidConfigurations = {
-
-magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-pkgs = pkgsFor.aarch64-linux;
-modules = [
-./hosts/magicant
-];
-};
-
-};
-
-};
 }
