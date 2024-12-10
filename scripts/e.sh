@@ -1,14 +1,15 @@
 wait=0
 while :; do
     case ${1:-} in
-        -w|--wait) wait=1
-                   ;;
-        *) break
+    -w | --wait)
+        wait=1
+        ;;
+    *) break ;;
     esac
     shift
 done
 
-STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true )
+STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
 if [ "$STR" == "" ]; then
     swaymsg '[title="kittyterm"]' scratchpad show
     emacsclient -c -a "" "$@"

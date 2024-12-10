@@ -1535,11 +1535,13 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   typeit=0
   while :; do
       case ${1:-} in
-          -t|--type) typeit=1
-                     ;;
-          -o|--otp) otp=1
-                    ;;
-          ,*) break
+      -t | --type)
+          typeit=1
+          ;;
+      -o | --otp)
+          otp=1
+          ;;
+      ,*) break ;;
       esac
       shift
   done
@@ -1547,27 +1549,33 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   export PASSWORD_STORE_DIR=~/.local/share/password-store
   prefix=${PASSWORD_STORE_DIR-~/.local/share/password-store}
   if [[ $otp -eq 0 ]]; then
-      password_files=( "$prefix"/**/*.gpg )
+      password_files=("$prefix"/**/*.gpg)
   else
-      password_files=( "$prefix"/otp/**/*.gpg )
+      password_files=("$prefix"/otp/**/*.gpg)
   fi
-  password_files=( "${password_files[@]#"$prefix"/}" )
-  password_files=( "${password_files[@]%.gpg}" )
+  password_files=("${password_files[@]#"$prefix"/}")
+  password_files=("${password_files[@]%.gpg}")
 
   password=$(printf '%s\n' "${password_files[@]}" | fuzzel --dmenu "$@")
 
   [[ -n $password ]] || exit
   if [[ $otp -eq 0 ]]; then
       if [[ $typeit -eq 0 ]]; then
-          pass show -c "$password" &>/tmp/pass-fuzzel
+          pass show -c "$password" &> /tmp/pass-fuzzel
       else
-          pass show "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+          pass show "$password" | {
+              IFS= read -r pass
+              printf %s "$pass"
+          } | wtype -
       fi
   else
       if [[ $typeit -eq 0 ]]; then
-          pass otp -c "$password" &>/tmp/pass-fuzzel
+          pass otp -c "$password" &> /tmp/pass-fuzzel
       else
-          pass otp "$password" | { IFS= read -r pass; printf %s "$pass"; } | wtype -
+          pass otp "$password" | {
+              IFS= read -r pass
+              printf %s "$pass"
+          } | wtype -
       fi
   fi
   notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
@@ -1719,14 +1727,15 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   wait=0
   while :; do
       case ${1:-} in
-          -w|--wait) wait=1
-                     ;;
-          ,*) break
+      -w | --wait)
+          wait=1
+          ;;
+      ,*) break ;;
       esac
       shift
   done
 
-  STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true )
+  STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
   if [ "$STR" == "" ]; then
       swaymsg '[title="kittyterm"]' scratchpad show
       emacsclient -c -a "" "$@"
@@ -1761,7 +1770,7 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
 
 #+begin_src shell :tangle scripts/command-not-found.sh
   # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
-  command_not_found_handle () {
+  command_not_found_handle() {
       if [ -n "${MC_SID-}" ] || ! [ -t 1 ]; then
           >&2 echo "$1: command not found"
           return 127
@@ -1771,24 +1780,25 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
       ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --top-level --whole-name --at-root "/bin/$1")
 
       case $(echo -n "$ATTRS" | grep -c "^") in
-          0)
-              >&2 echo -ne "$(@tput@ el1)\r"
-              >&2 echo "$1: command not found"
-              ;;
-          ,*)
-              >&2 echo -ne "$(@tput@ el1)\r"
-              >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
-              >&2 echo "It is provided by the following derivation(s):"
-              while read -r ATTR; do
-                  ATTR=${ATTR%.out}
-                  >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
-              done <<< "$ATTRS"
+      0)
+          >&2 echo -ne "$(@tput@ el1)\r"
+          >&2 echo "$1: command not found"
+          ;;
+      ,*)
+          >&2 echo -ne "$(@tput@ el1)\r"
+          >&2 echo "The program ‘$(@tput@ setaf 4)$1$(@tput@ sgr0)’ is currently not installed."
+          >&2 echo "It is provided by the following derivation(s):"
+          while read -r ATTR; do
+              ATTR=${ATTR%.out}
+              >&2 echo "  $(@tput@ setaf 12)nixpkgs#$(@tput@ setaf 4)$ATTR$(@tput@ sgr0)"
+          done <<< "$ATTRS"
+          ;;
       esac
 
       return 127
   }
 
-  command_not_found_handler () {
+  command_not_found_handler() {
       command_not_found_handle "$@"
       return $?
   }
@@ -1808,15 +1818,19 @@ This app checks for different apps that I keep around in the scratchpad for quic
   spotifyplayer=0
   while :; do
       case ${1:-} in
-          -k|--kitty) kitty=1
-                     ;;
-          -e|--element) element=1
-                     ;;
-          -d|--vesktop) vesktop=1
-                     ;;
-          -s|--spotifyplayer) spotifyplayer=1
-                     ;;
-          *) break
+      -k | --kitty)
+          kitty=1
+          ;;
+      -e | --element)
+          element=1
+          ;;
+      -d | --vesktop)
+          vesktop=1
+          ;;
+      -s | --spotifyplayer)
+          spotifyplayer=1
+          ;;
+      ,*) break ;;
       esac
       shift
   done
@@ -1825,7 +1839,8 @@ This app checks for different apps that I keep around in the scratchpad for quic
       STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
       CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
       if [ "$CHECK" == "" ]; then
-          exec kitty -T kittyterm & sleep 1
+          exec kitty -T kittyterm &
+          sleep 1
       fi
       if [ "$STR" == "" ]; then
           exec swaymsg '[title="kittyterm"]' scratchpad show
@@ -1850,7 +1865,8 @@ This app checks for different apps that I keep around in the scratchpad for quic
       STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
       CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
       if [ "$CHECK" == "" ]; then
-          exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player & sleep 1
+          exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player &
+          sleep 1
       fi
       if [ "$STR" == "" ]; then
           exec swaymsg '[title="spotifytui"]' scratchpad show
@@ -1881,7 +1897,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 #+begin_src shell :tangle scripts/waybarupdate.sh
   CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
   CSE=$(git --git-dir="$HOME"/Documents/GitHub/CSE_TUWIEN/.git --work-tree="$HOME"/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
-  PASS=$(( $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l) ))
+  PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
 
   if [[ $CFG != 0 ]]; then
       CFG_STR='CONFIG'
@@ -1903,7 +1919,6 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
   OUT="$CFG_STR""$CSE_STR""$PASS_STR"
   echo "$OUT"
-
 #+end_src
 
 #+begin_src nix :tangle pkgs/waybarupdate/default.nix
@@ -1926,9 +1941,9 @@ This app quickly toggles between 5% and 0% transparency.
 
 #+begin_src shell :tangle scripts/opacitytoggle.sh
   if swaymsg opacity plus 0.01 -q; then
-          swaymsg opacity 1
+      swaymsg opacity 1
   else
-          swaymsg opacity 0.95
+      swaymsg opacity 0.95
   fi
 #+end_src
 
@@ -1950,26 +1965,26 @@ This app quickly toggles between 5% and 0% transparency.
 This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
 
 #+begin_src shell :tangle scripts/fs-diff.sh
-set -euo pipefail
+  set -euo pipefail
 
-OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
-OLD_TRANSID=${OLD_TRANSID#transid marker was }
+  OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
+  OLD_TRANSID=${OLD_TRANSID#transid marker was }
 
-sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
-sed '$d' |
-cut -f17- -d' ' |
-sort |
-uniq |
-while read -r path; do
-  path="/$path"
-  if [ -L "$path" ]; then
-    : # The path is a symbolic link, so is probably handled by NixOS already
-  elif [ -d "$path" ]; then
-    : # The path is a directory, ignore
-  else
-    echo "$path"
-  fi
-done
+  sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
+      sed '$d' |
+      cut -f17- -d' ' |
+      sort |
+      uniq |
+      while read -r path; do
+          path="/$path"
+          if [ -L "$path" ]; then
+              : # The path is a symbolic link, so is probably handled by NixOS already
+          elif [ -d "$path" ]; then
+              : # The path is a directory, ignore
+          else
+              echo "$path"
+          fi
+      done
 #+end_src
 
 #+begin_src nix :tangle pkgs/fs-diff/default.nix
@@ -1989,8 +2004,7 @@ done
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
 #+begin_src shell :tangle scripts/update-checker.sh
-
-  updates="$( { cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel &&  nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
+  updates="$({ cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel && nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
 
   alt="has-updates"
   if [[ $updates -eq 0 ]]; then
@@ -1999,13 +2013,11 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
   tooltip="System updated"
   if [[ $updates != 0 ]]; then
-    	tooltip=$(cd ~/.dotfiles && nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n' )
+      tooltip=$(cd ~/.dotfiles && nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
       echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
   else
       echo "{ \"text\":\"\", \"alt\":\"$alt\", \"tooltip\":\"\" }"
   fi
-
-
 #+end_src
 
 #+begin_src nix :tangle pkgs/update-checker/default.nix
@@ -2046,14 +2058,14 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src shell :tangle scripts/screenshare.sh
-
   SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
   touch /tmp/screenshare.state
-  STATE=$(</tmp/screenshare.state)
+  STATE=$(< /tmp/screenshare.state)
 
-  if [[ "$STATE" != "1" ]]; then
-      wl-mirror "$SHARESCREEN" & sleep 0.1
+  if [[ $STATE != "1" ]]; then
+      wl-mirror "$SHARESCREEN" &
+      sleep 0.1
       swaymsg output "$SHARESCREEN" mode "$SWARSEL_LO_RES"
       echo 1 > /tmp/screenshare.state
       swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
@@ -2063,7 +2075,6 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
       echo 0 > /tmp/screenshare.state
       swaymsg '[app_id=at.yrlf.wl_mirror] kill'
   fi
-
 #+end_src
 
 

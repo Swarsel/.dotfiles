@@ -1,6 +1,6 @@
 CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
 CSE=$(git --git-dir="$HOME"/Documents/GitHub/CSE_TUWIEN/.git --work-tree="$HOME"/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
-PASS=$(( $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l) ))
+PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
 
 if [[ $CFG != 0 ]]; then
     CFG_STR='CONFIG'
