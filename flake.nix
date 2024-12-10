@@ -228,90 +228,37 @@
         inputs.nixgl.overlay
       ];
 
-      # NixOS setups - run home-manager as a NixOS module for better compatibility
-      # another benefit - full rebuild on nixos-rebuild switch
-      # run rebuild using `nswitch`
 
-      # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-      # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+      nixosConfigurations =
+        nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
+      nixosConfigurations =
 
+        homeConfigurations = {
 
-
-      nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
-
-      # iso = lib.nixosSystem {
-      #   specialArgs = { inherit inputs outputs; };
-      #   system = "x86_64-linux";
-      #   modules = [
-      #     {
-      #       _module.args = { inherit self; };
-      #     }
-      #     "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-      #     "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-      #     ./profiles/iso
-      #   ];
-      # };
-
-
-      # nbl-imba-2 = lib.nixosSystem {
-      #   specialArgs = { inherit self inputs outputs; };
-      #   modules = nixModules ++ [
-      #     ./hosts/nbl-imba-2
-      #   ];
-      # };
-
-      # winters = lib.nixosSystem {
-      #   specialArgs = { inherit self inputs outputs; };
-      #   modules = [
-      #     ./hosts/winters
-      #   ];
-      # };
-
-      # #ovm swarsel
-      # sync = nixpkgs.lib.nixosSystem {
-      #   specialArgs = { inherit inputs; };
-      #   modules = [
-      #     inputs.sops-nix.nixosModules.sops
-      #     ./hosts/sync/nixos.nix
-      #   ];
-      # };
-
-      # pure Home Manager setups - for non-NixOS machines
-      # run rebuild using `hmswitch`
-
-      homeConfigurations = {
-
-        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = homeModules ++ mixedModules ++ [
-            ./hosts/home-manager
-          ];
-        };
-
-      };
-
-
-      darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
-
-      # "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
-      #  specialArgs = { inherit inputs outputs; };
-      #   modules = [
-      #     ./hosts/nbm-imba-166
-      #   ];
-      # };
-
-
-      nixOnDroidConfigurations = {
-
-        magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-          pkgs = pkgsFor.aarch64-linux;
-          modules = [
-            ./hosts/magicant
-          ];
-        };
-
-      };
-
+      "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+      pkgs = pkgsFor.x86_64-linux;
+      extraSpecialArgs = { inherit inputs outputs; };
+      modules = homeModules ++ mixedModules ++ [
+        ./hosts/home-manager
+      ];
     };
+
+};
+
+darwinConfigurations =
+darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
+darwinConfigurations =
+
+nixOnDroidConfigurations = {
+
+magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+pkgs = pkgsFor.aarch64-linux;
+modules = [
+./hosts/magicant
+];
+};
+
+};
+
+};
 }

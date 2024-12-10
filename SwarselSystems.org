@@ -327,7 +327,79 @@ Handling the flake.nix file used to be a bit of a chore, since it felt like writ
 
 These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android). There is also the [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that currently just defines a Proxmox LXC image.
 
-*** Pre-commit-hooks (Checks)
+** flake.nix template
+:PROPERTIES:
+:CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
+:END:
+
+This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]] section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+
+#+begin_src nix :noweb yes :tangle flake.nix
+
+  {
+    description = "SwarseFlake - Nix Flake for all SwarselSystems";
+
+    nixConfig = {
+      extra-substituters = [
+        "https://nix-community.cachix.org"
+        "https://cache.ngi0.nixos.org/"
+      ];
+
+      extra-trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
+      ];
+    };
+
+    inputs = {
+      <<flakeinputs>>
+    };
+
+    outputs =
+      inputs@{ self
+      , nixpkgs
+      , nixpkgs-stable
+      , home-manager
+      , nix-darwin
+      , systems
+      , ...
+      }:
+      let
+        <<flakelet>>
+      in
+      {
+        <<flakeoutputgeneral>>
+        # NixOS setups - run home-manager as a NixOS module for better compatibility
+        # another benefit - full rebuild on nixos-rebuild switch
+        # run rebuild using `nswitch`
+
+        # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
+        # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
+
+        nixosConfigurations = <<flakenixosconf>>
+        # pure Home Manager setups - for non-NixOS machines
+        # run rebuild using `hmswitch`
+
+        homeConfigurations = {
+           <<flakehomeconf>>
+        };
+
+        darwinConfigurations = <<flakedarwinconf>>
+
+        nixOnDroidConfigurations = {
+          <<flakedroidconf>>
+        };
+
+      };
+  }
+
+
+
+#+end_src
+** Pre-commit-hooks (Checks)
+:PROPERTIES:
+:CUSTOM_ID: h:cbd5002c-e0fa-434a-951b-e05b179e4e3f
+:END:
 
 This file defines a number of checks that can either be run by calling =nix flake check= or
 
@@ -661,48 +733,10 @@ This section used to be much longer, since I performed all of my imports right h
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
-
-  nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
-
-  # iso = lib.nixosSystem {
-  #   specialArgs = { inherit inputs outputs; };
-  #   system = "x86_64-linux";
-  #   modules = [
-  #     {
-  #       _module.args = { inherit self; };
-  #     }
-  #     "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-  #     "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-  #     ./profiles/iso
-  #   ];
-  # };
-
-
-  # nbl-imba-2 = lib.nixosSystem {
-  #   specialArgs = { inherit self inputs outputs; };
-  #   modules = nixModules ++ [
-  #     ./hosts/nbl-imba-2
-  #   ];
-  # };
-
-  # winters = lib.nixosSystem {
-  #   specialArgs = { inherit self inputs outputs; };
-  #   modules = [
-  #     ./hosts/winters
-  #   ];
-  # };
-
-  # #ovm swarsel
-  # sync = nixpkgs.lib.nixosSystem {
-  #   specialArgs = { inherit inputs; };
-  #   modules = [
-  #     inputs.sops-nix.nixosModules.sops
-  #     ./hosts/sync/nixos.nix
-  #   ];
-  # };
+  mkFullHostConfigs (readHosts "nixos") true;
 
 #+end_src
-*** darwinConfigurations
+** darwinConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
 :END:
@@ -711,14 +745,7 @@ And this defines darwin systems (MacOS), which I only have one of, that serves a
 
 #+begin_src nix :tangle no :noweb-ref flakedarwinconf
 
-  darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
-
-  # "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
-  #  specialArgs = { inherit inputs outputs; };
-  #   modules = [
-  #     ./hosts/nbm-imba-166
-  #   ];
-  # };
+  mkFullHostConfigs (readHosts "darwin") false;
 
 #+end_src
 
@@ -9319,82 +9346,6 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
 #+end_src
 
-** flake.nix template
-:PROPERTIES:
-:CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
-:END:
-
-This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]] section.
-
-*** flake.nix
-:PROPERTIES:
-:CUSTOM_ID: h:4f89db68-a21c-415d-87a5-21c66f2b6ded
-:END:
-
-This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
-
-#+begin_src nix :noweb yes :tangle flake.nix
-
-  {
-    description = "SwarseFlake - Nix Flake for all SwarselSystems";
-
-    nixConfig = {
-      extra-substituters = [
-        "https://nix-community.cachix.org"
-        "https://cache.ngi0.nixos.org/"
-      ];
-
-      extra-trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
-      ];
-    };
-
-    inputs = {
-      <<flakeinputs>>
-    };
-
-    outputs =
-      inputs@{ self
-      , nixpkgs
-      , nixpkgs-stable
-      , home-manager
-      , nix-darwin
-      , systems
-      , ...
-      }:
-      let
-        <<flakelet>>
-      in
-      {
-        <<flakeoutputgeneral>>
-        # NixOS setups - run home-manager as a NixOS module for better compatibility
-        # another benefit - full rebuild on nixos-rebuild switch
-        # run rebuild using `nswitch`
-
-        # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
-        # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
-
-        <<flakenixosconf>>
-        # pure Home Manager setups - for non-NixOS machines
-        # run rebuild using `hmswitch`
-
-        homeConfigurations = {
-           <<flakehomeconf>>
-        };
-
-          <<flakedarwinconf>>
-
-        nixOnDroidConfigurations = {
-          <<flakedroidconf>>
-        };
-
-      };
-  }
-
-
-
-#+end_src
 * Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
