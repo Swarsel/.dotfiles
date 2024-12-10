@@ -1,4 +1,4 @@
-{ self, inputs, config, pkgs, lib, ... }:
+{ self, inputs, config, pkgs, lib, modulesPath, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -10,8 +10,10 @@ in
     inputs.disko.nixosModules.disko
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
+    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+    "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    ../optional/nixos/minimal.nix
+    "${self}/profiles/iso//minimal.nix"
 
   ];
 

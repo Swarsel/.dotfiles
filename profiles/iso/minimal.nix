@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ lib, pkgs, ... }:
 {
 
   nix.settings = {
@@ -45,6 +45,7 @@
     ssh-to-age
     sops
     vim
+    just
   ];
 
   programs = {

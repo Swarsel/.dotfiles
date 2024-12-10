@@ -127,6 +127,7 @@
     , ...
     }:
     let
+
       inherit (self) outputs;
       lib = nixpkgs.lib // home-manager.lib;
 
@@ -135,6 +136,7 @@
         "x86_64-linux"
         "aarch64-linux"
         "x86_64-darwin"
+        "aarch64-darwin"
       ];
       pkgsFor = lib.genAttrs (import systems) (
         system:
@@ -143,6 +145,19 @@
           config.allowUnfree = true;
         }
       );
+      mkFullHost = host: isNixos: {
+        ${host} =
+          let
+            func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+            systemFunc = func;
+          in
+          systemFunc {
+            specialArgs = { inherit inputs outputs self; };
+            modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
+          };
+      };
+      mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
+      readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
 
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
@@ -173,12 +188,14 @@
       #     _module.args = { inherit self; };
       #   }
       # ];
+
     in
     {
 
       inherit lib;
       inherit mixedModules;
-      # inherit moduleArgs;
+      inherit nixModules;
+
       nixosModules = import ./modules/nixos;
       homeManagerModules = import ./modules/home;
 
@@ -218,46 +235,46 @@
       # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
       # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
 
-      nixosConfigurations = {
 
 
-        live = lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
-          system = "x86_64-linux";
-          modules = [
-            {
-              _module.args = { inherit self; };
-            }
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-            ./profiles/live
-          ];
-        };
+      nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
 
-        nbl-imba-2 = lib.nixosSystem {
-          specialArgs = { inherit self inputs outputs; };
-          modules = nixModules ++ [
-            ./profiles/nbl-imba-2
-          ];
-        };
+      # iso = lib.nixosSystem {
+      #   specialArgs = { inherit inputs outputs; };
+      #   system = "x86_64-linux";
+      #   modules = [
+      #     {
+      #       _module.args = { inherit self; };
+      #     }
+      #     "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+      #     "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+      #     ./profiles/iso
+      #   ];
+      # };
 
-        winters = lib.nixosSystem {
-          specialArgs = { inherit self inputs outputs; };
-          modules = [
-            ./profiles/server/winters
-          ];
-        };
 
-        #ovm swarsel
-        sync = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            inputs.sops-nix.nixosModules.sops
-            ./profiles/remote/oracle/sync/nixos.nix
-          ];
-        };
+      # nbl-imba-2 = lib.nixosSystem {
+      #   specialArgs = { inherit self inputs outputs; };
+      #   modules = nixModules ++ [
+      #     ./hosts/nbl-imba-2
+      #   ];
+      # };
 
-      };
+      # winters = lib.nixosSystem {
+      #   specialArgs = { inherit self inputs outputs; };
+      #   modules = [
+      #     ./hosts/winters
+      #   ];
+      # };
+
+      # #ovm swarsel
+      # sync = nixpkgs.lib.nixosSystem {
+      #   specialArgs = { inherit inputs; };
+      #   modules = [
+      #     inputs.sops-nix.nixosModules.sops
+      #     ./hosts/sync/nixos.nix
+      #   ];
+      # };
 
       # pure Home Manager setups - for non-NixOS machines
       # run rebuild using `hmswitch`
@@ -268,29 +285,29 @@
           pkgs = pkgsFor.x86_64-linux;
           extraSpecialArgs = { inherit inputs outputs; };
           modules = homeModules ++ mixedModules ++ [
-            ./profiles/home-manager
+            ./hosts/home-manager
           ];
         };
 
       };
 
-      darwinConfigurations = {
 
-        "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
-          specialArgs = { inherit inputs outputs; };
-          modules = [
-            ./profiles/nbm-imba-166
-          ];
-        };
+      darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
 
-      };
+      # "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
+      #  specialArgs = { inherit inputs outputs; };
+      #   modules = [
+      #     ./hosts/nbm-imba-166
+      #   ];
+      # };
+
 
       nixOnDroidConfigurations = {
 
         magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
           pkgs = pkgsFor.aarch64-linux;
           modules = [
-            ./profiles/magicant
+            ./hosts/magicant
           ];
         };
 

@@ -1,7 +1,9 @@
-{ config, pkgs, ... }:
+{ self, config, inputs, pkgs, ... }:
 
 {
   imports = [
+
+    inputs.sops-nix.nixosModules.sops
     ./hardware-configuration.nix
   ];
 
@@ -111,7 +113,7 @@
     # settings.PermitRootLogin = "yes";
   };
   users.users.root.openssh.authorizedKeys.keyFiles = [
-    ../../../../secrets/keys/ssh/nbl-imba-2.pub
+    "${self}/secrets/keys/ssh/nbl-imba-2.pub"
   ];
 
   system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change

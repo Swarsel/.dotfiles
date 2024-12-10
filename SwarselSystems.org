@@ -532,6 +532,7 @@ Here I define a few variables that I need for my system specifications. First an
 Lastly I define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS).
 
 #+begin_src nix :tangle no :noweb-ref flakelet
+
   inherit (self) outputs;
   lib = nixpkgs.lib // home-manager.lib;
 
@@ -540,6 +541,7 @@ Lastly I define some common module lists that I can simply load depending on the
     "x86_64-linux"
     "aarch64-linux"
     "x86_64-darwin"
+    "aarch64-darwin"
   ];
   pkgsFor = lib.genAttrs (import systems) (
     system:
@@ -548,6 +550,19 @@ Lastly I define some common module lists that I can simply load depending on the
       config.allowUnfree = true;
     }
   );
+  mkFullHost = host: isNixos: {
+    ${host} =
+      let
+        func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+        systemFunc = func;
+      in
+      systemFunc {
+        specialArgs = { inherit inputs outputs self; };
+        modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
+      };
+  };
+  mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
+  readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
 
   # NixOS modules that can only be used on NixOS systems
   nixModules = [
@@ -578,6 +593,7 @@ Lastly I define some common module lists that I can simply load depending on the
   #     _module.args = { inherit self; };
   #   }
   # ];
+
 #+end_src
 *** General (outputs)
 :PROPERTIES:
@@ -600,7 +616,8 @@ In this section I am creating some attributes that define general concepts of my
 
   inherit lib;
   inherit mixedModules;
-  # inherit moduleArgs;
+  inherit nixModules;
+
   nixosModules = import ./modules/nixos;
   homeManagerModules = import ./modules/home;
 
@@ -645,43 +662,66 @@ This section used to be much longer, since I performed all of my imports right h
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
 
 
-  live = lib.nixosSystem {
-    specialArgs = { inherit inputs outputs; };
-    system = "x86_64-linux";
-    modules = [
-      {
-        _module.args = { inherit self; };
-      }
-      "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-      "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-      ./profiles/live
-    ];
-  };
+  nixosConfigurations = mkFullHostConfigs (readHosts "nixos") true;
 
-  nbl-imba-2 = lib.nixosSystem {
-    specialArgs = { inherit self inputs outputs; };
-    modules = nixModules ++ [
-      ./profiles/nbl-imba-2
-    ];
-  };
+  # iso = lib.nixosSystem {
+  #   specialArgs = { inherit inputs outputs; };
+  #   system = "x86_64-linux";
+  #   modules = [
+  #     {
+  #       _module.args = { inherit self; };
+  #     }
+  #     "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+  #     "${nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+  #     ./profiles/iso
+  #   ];
+  # };
 
-  winters = lib.nixosSystem {
-    specialArgs = { inherit self inputs outputs; };
-    modules = [
-      ./profiles/server/winters
-    ];
-  };
 
-  #ovm swarsel
-  sync = nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
-    modules = [
-      inputs.sops-nix.nixosModules.sops
-      ./profiles/remote/oracle/sync/nixos.nix
-    ];
-  };
+  # nbl-imba-2 = lib.nixosSystem {
+  #   specialArgs = { inherit self inputs outputs; };
+  #   modules = nixModules ++ [
+  #     ./hosts/nbl-imba-2
+  #   ];
+  # };
+
+  # winters = lib.nixosSystem {
+  #   specialArgs = { inherit self inputs outputs; };
+  #   modules = [
+  #     ./hosts/winters
+  #   ];
+  # };
+
+  # #ovm swarsel
+  # sync = nixpkgs.lib.nixosSystem {
+  #   specialArgs = { inherit inputs; };
+  #   modules = [
+  #     inputs.sops-nix.nixosModules.sops
+  #     ./hosts/sync/nixos.nix
+  #   ];
+  # };
 
 #+end_src
+*** darwinConfigurations
+:PROPERTIES:
+:CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
+:END:
+
+And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
+
+#+begin_src nix :tangle no :noweb-ref flakedarwinconf
+
+  darwinConfigurations = mkFullHostConfigs (readHosts "darwin") false;
+
+  # "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
+  #  specialArgs = { inherit inputs outputs; };
+  #   modules = [
+  #     ./hosts/nbm-imba-166
+  #   ];
+  # };
+
+#+end_src
+
 *** homeConfigurations
 :PROPERTIES:
 :CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
@@ -695,25 +735,7 @@ In contrast, this defines home-manager systems, which I only have one of, that s
    pkgs = pkgsFor.x86_64-linux;
    extraSpecialArgs = { inherit inputs outputs; };
     modules = homeModules ++ mixedModules ++ [
-      ./profiles/home-manager
-    ];
-  };
-
-#+end_src
-
-*** darwinConfigurations
-:PROPERTIES:
-:CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
-:END:
-
-And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
-
-#+begin_src nix :tangle no :noweb-ref flakemacconf
-
-  "nbm-imba-166" = inputs.nix-darwin.lib.darwinSystem {
-   specialArgs = { inherit inputs outputs; };
-    modules = [
-      ./profiles/nbm-imba-166
+      ./hosts/home-manager
     ];
   };
 
@@ -731,7 +753,7 @@ Nix on Android also demands an own flake output, which is provided here.
   magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
    pkgs = pkgsFor.aarch64-linux;
     modules = [
-      ./profiles/magicant
+      ./hosts/magicant
     ];
   };
 
@@ -757,8 +779,8 @@ This section mainly exists house different `configuration.nix` files for system 
 
 
 
-#+begin_src nix :tangle profiles/live/default.nix
-  { self, inputs, config, pkgs, lib, ... }:
+#+begin_src nix :tangle hosts/nixos/iso/default.nix
+  { self, inputs, config, pkgs, lib, modulesPath, ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
   in
@@ -770,8 +792,10 @@ This section mainly exists house different `configuration.nix` files for system 
     inputs.disko.nixosModules.disko
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
+    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+    "${modulesPath}/installer/cd-dvd/channel.nix"
 
-      ../optional/nixos/minimal.nix
+    "${self}/profiles/iso//minimal.nix"
 
     ];
 
@@ -830,15 +854,15 @@ This section mainly exists house different `configuration.nix` files for system 
 
 #+end_src
 
-**** Home-manager only
+**** Home-manager only (non-NixOS)
 :PROPERTIES:
 :CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
 :END:
 
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
 
-#+begin_src nix :tangle profiles/home-manager/default.nix
-  { inputs, outputs, config, ... }:
+#+begin_src nix :tangle hosts/home-manager/default/default.nix
+  { self, inputs, outputs, config, ... }:
   {
 
     imports = builtins.attrValues outputs.homeManagerModules;
@@ -866,7 +890,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     swarselsystems = {
       isLaptop = true;
       isNixos = false;
-      wallpaper = ../../wallpaper/surfacewp.png;
+      wallpaper = self + /wallpaper/surfacewp.png;
       temperatureHwmon = {
         isAbsolutePath = true;
         path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
@@ -905,14 +929,14 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 My work machine. Built for more security, this is the gold standard of my configurations at the moment.
 
 
-#+begin_src nix :tangle profiles/nbl-imba-2/default.nix
+#+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
   in
   {
 
-    imports = [
+    imports = outputs.nixModules ++ [
       inputs.nixos-hardware.nixosModules.framework-16-7040-amd
       inputs.fw-fanctrl.nixosModules.default
 
@@ -1129,7 +1153,7 @@ My work machine. Built for more security, this is the gold standard of my config
 **** Winters (Server)
 
 
-#+begin_src nix :tangle profiles/server/winters/default.nix
+#+begin_src nix :tangle hosts/nixos/winters/default.nix
   { self, inputs, outputs, config, ... }:
   let
     profilesPath = "${self}/profiles";
@@ -1142,12 +1166,12 @@ My work machine. Built for more security, this is the gold standard of my config
       ./hardware-configuration.nix
 
       "${profilesPath}/optional/nixos/autologin.nix"
-      "${profilesPath}/server/common/nixos"
+      "${profilesPath}/server/nixos"
 
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users.swarsel.imports = [
-      "${profilesPath}/server/common/home"
+      "${profilesPath}/server/home"
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
 
@@ -1209,7 +1233,7 @@ My work machine. Built for more security, this is the gold standard of my config
 **** nbm-imba-166 (MacBook Pro)
 
 
-#+begin_src nix :tangle profiles/nbm-imba-166/default.nix
+#+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
   { self, inputs, outputs, ... }:
   let
     profilesPath = "${self}/profiles";
@@ -1248,7 +1272,7 @@ My work machine. Built for more security, this is the gold standard of my config
 **** Magicant (Phone)
 
 
-#+begin_src nix :tangle profiles/magicant/default.nix
+#+begin_src nix :tangle hosts/nix-on-droid/magicant/default.nix
 
   { pkgs, ... }: {
     environment = {
@@ -1312,11 +1336,13 @@ I have removed most of the machines from this section. What remains are some hos
 :CUSTOM_ID: h:e5fbb73a-799a-438f-a88c-fc14d110ac9c
 :END:
 
-#+begin_src nix :tangle profiles/remote/oracle/sync/nixos.nix
-  { config, pkgs, ... }:
+#+begin_src nix :tangle hosts/nixos/sync/default.nix
+  { self, config, inputs, pkgs, ... }:
 
   {
     imports = [
+
+       inputs.sops-nix.nixosModules.sops
       ./hardware-configuration.nix
     ];
 
@@ -1426,7 +1452,7 @@ I have removed most of the machines from this section. What remains are some hos
       # settings.PermitRootLogin = "yes";
     };
     users.users.root.openssh.authorizedKeys.keyFiles = [
-      ../../../../secrets/keys/ssh/nbl-imba-2.pub
+      "${self}/secrets/keys/ssh/nbl-imba-2.pub"
     ];
 
     system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
@@ -4358,7 +4384,7 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 
 Also, the system state version is set here. No need to touch it.
 
-#+begin_src nix :tangle profiles/server/common/nixos/default.nix
+#+begin_src nix :tangle profiles/server/nixos/default.nix
   { self, ... }:
   let
     profilesPath = "${self}/profiles";
@@ -4401,7 +4427,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** General NixOS Server settings
 
-#+begin_src nix :tangle profiles/server/common/nixos/settings.nix
+#+begin_src nix :tangle profiles/server/nixos/settings.nix
   { lib, config, ... }:
   {
     environment.shellAliases = lib.recursiveUpdate
@@ -4426,7 +4452,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** System Packages
 
-#+begin_src nix :tangle profiles/server/common/nixos/packages.nix
+#+begin_src nix :tangle profiles/server/nixos/packages.nix
   { pkgs, ... }:
   {
     environment.systemPackages = with pkgs; [
@@ -4441,7 +4467,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** sops
 
-#+begin_src nix :tangle profiles/server/common/nixos/sops.nix
+#+begin_src nix :tangle profiles/server/nixos/sops.nix
   { config, ... }:
   {
     sops = {
@@ -4455,7 +4481,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** nfs/samba (smb)
 
-#+begin_src nix :tangle profiles/server/common/nixos/nfs.nix
+#+begin_src nix :tangle profiles/server/nixos/nfs.nix
   { pkgs, ... }:
   {
     services = {
@@ -4509,7 +4535,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** NGINX
 
-#+begin_src nix :tangle profiles/server/common/nixos/nginx.nix
+#+begin_src nix :tangle profiles/server/nixos/nginx.nix
   { pkgs, config, ... }:
   {
     environment.systemPackages = with pkgs; [
@@ -4549,7 +4575,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** ssh
 
-#+begin_src nix :tangle profiles/server/common/nixos/ssh.nix
+#+begin_src nix :tangle profiles/server/nixos/ssh.nix
   { self, ... }:
   {
     services.openssh = {
@@ -4569,7 +4595,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** kavita
 
-#+begin_src nix :tangle profiles/server/common/nixos/kavita.nix
+#+begin_src nix :tangle profiles/server/nixos/kavita.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.kavita {
@@ -4616,7 +4642,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** jellyfin
 
-#+begin_src nix :tangle profiles/server/common/nixos/jellyfin.nix
+#+begin_src nix :tangle profiles/server/nixos/jellyfin.nix
 { pkgs, lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.jellyfin {
@@ -4665,7 +4691,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** navidrome
 
-#+begin_src nix :tangle profiles/server/common/nixos/navidrome.nix
+#+begin_src nix :tangle profiles/server/nixos/navidrome.nix
   { pkgs, lib, inputs, config, ... }:
   let
     secretsDirectory = builtins.toString inputs.nix-secrets;
@@ -4766,7 +4792,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** spotifyd
 
-#+begin_src nix :tangle profiles/server/common/nixos/spotifyd.nix
+#+begin_src nix :tangle profiles/server/nixos/spotifyd.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.spotifyd {
@@ -4805,7 +4831,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** mpd
 
-#+begin_src nix :tangle profiles/server/common/nixos/mpd.nix
+#+begin_src nix :tangle profiles/server/nixos/mpd.nix
 { pkgs, lib, config, ... }:
 {
   config = lib.mkIf config.swarselsystems.server.mpd {
@@ -4861,7 +4887,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** matrix
 
-#+begin_src nix :tangle profiles/server/common/nixos/matrix.nix
+#+begin_src nix :tangle profiles/server/nixos/matrix.nix
   { config, lib, pkgs, sops, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
@@ -5184,7 +5210,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** nextcloud
 
-#+begin_src nix :tangle profiles/server/common/nixos/nextcloud.nix
+#+begin_src nix :tangle profiles/server/nixos/nextcloud.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.nextcloud {
@@ -5232,7 +5258,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** immich
 
-#+begin_src nix :tangle profiles/server/common/nixos/immich.nix
+#+begin_src nix :tangle profiles/server/nixos/immich.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.immich {
@@ -5286,7 +5312,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** paperless
 
-#+begin_src nix :tangle profiles/server/common/nixos/paperless.nix
+#+begin_src nix :tangle profiles/server/nixos/paperless.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.paperless {
@@ -5341,7 +5367,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** transmission
 
-#+begin_src nix :tangle profiles/server/common/nixos/transmission.nix
+#+begin_src nix :tangle profiles/server/nixos/transmission.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.transmission {
@@ -5479,7 +5505,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** syncthing
 
-#+begin_src nix :tangle profiles/server/common/nixos/syncthing.nix
+#+begin_src nix :tangle profiles/server/nixos/syncthing.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.syncthing {
@@ -5594,7 +5620,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** restic
 
-#+begin_src nix :tangle profiles/server/common/nixos/restic.nix
+#+begin_src nix :tangle profiles/server/nixos/restic.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.restic {
@@ -5607,7 +5633,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** monitoring
 
-#+begin_src nix :tangle profiles/server/common/nixos/monitoring.nix
+#+begin_src nix :tangle profiles/server/nixos/monitoring.nix
   { self, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.monitoring {
@@ -5772,7 +5798,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** Jenkins
 
-#+begin_src nix :tangle profiles/server/common/nixos/jenkins.nix
+#+begin_src nix :tangle profiles/server/nixos/jenkins.nix
   { pkgs, lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.jenkins {
@@ -5812,7 +5838,7 @@ Also, the system state version is set here. No need to touch it.
 
 **** Emacs (RSS Server)
 
-#+begin_src nix :tangle profiles/server/common/nixos/emacs.nix
+#+begin_src nix :tangle profiles/server/nixos/emacs.nix
   { lib, config, ... }:
   {
     config = lib.mkIf config.swarselsystems.server.emacs {
@@ -5852,14 +5878,14 @@ Also, the system state version is set here. No need to touch it.
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle profiles/darwin/common/nixos/default.nix
+#+begin_src nix :tangle profiles/darwin/nixos/default.nix
   { self, ... }:
   let
     profilesPath = "${self}/profiles";
   in
   {
     imports = [
-      "${profilesPath}/common/nixos/home-manager.nix"
+      "${profilesPath}/nixos/home-manager.nix"
     ];
 
     nix.settings.experimental-features = "nix-command flakes";
@@ -6158,8 +6184,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
  These options are really only to be used on the iso image in order to run nixos-anywhere.
 
-#+begin_src nix :tangle profiles/optional/nixos/minimal.nix
-  { self, lib, pkgs, config, ... }:
+#+begin_src nix :tangle profiles/iso/minimal.nix
+  { lib, pkgs, ... }:
   {
 
     nix.settings = {
@@ -8881,7 +8907,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle profiles/server/common/home/default.nix
+#+begin_src nix :tangle profiles/server/home/default.nix
   { self, ... }:
   let
     profilesPath = "${self}/profiles";
@@ -8900,7 +8926,7 @@ This section should be used in order to symlink already existing configuration f
 
 As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
 
-#+begin_src nix :tangle profiles/server/common/home/symlink.nix
+#+begin_src nix :tangle profiles/server/home/symlink.nix
   { self, ... }:
   {
     home.file = {
@@ -8918,7 +8944,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle profiles/darwin/common/home/default.nix
+#+begin_src nix :tangle profiles/darwin/home/default.nix
   { self, ... }:
   let
     profilesPath = "${self}/profiles";
@@ -9182,10 +9208,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
         # NEW HOSTS: For a new host, decide whether a NixOS (nixosConfigurations) or non-NixOS (homeConfigurations) is used.
         # Make sure to move hardware-configuration to the appropriate location, by default it is found in /etc/nixos/.
 
-        nixosConfigurations = {
-          <<flakenixosconf>>
-        };
-
+        <<flakenixosconf>>
         # pure Home Manager setups - for non-NixOS machines
         # run rebuild using `hmswitch`
 
@@ -9193,9 +9216,7 @@ This tangles the flake.nix file; This block only needs to be touched when updati
            <<flakehomeconf>>
         };
 
-        darwinConfigurations = {
-          <<flakemacconf>>
-        };
+          <<flakedarwinconf>>
 
         nixOnDroidConfigurations = {
           <<flakedroidconf>>

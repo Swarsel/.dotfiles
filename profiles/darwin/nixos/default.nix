@@ -4,7 +4,7 @@ let
 in
 {
   imports = [
-    "${profilesPath}/common/nixos/home-manager.nix"
+    "${profilesPath}/nixos/home-manager.nix"
   ];
 
   nix.settings.experimental-features = "nix-command flakes";

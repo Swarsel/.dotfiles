@@ -1,4 +1,4 @@
-{ inputs, outputs, config, ... }:
+{ self, inputs, outputs, config, ... }:
 {
 
   imports = builtins.attrValues outputs.homeManagerModules;
@@ -26,7 +26,7 @@
   swarselsystems = {
     isLaptop = true;
     isNixos = false;
-    wallpaper = ../../wallpaper/surfacewp.png;
+    wallpaper = self + /wallpaper/surfacewp.png;
     temperatureHwmon = {
       isAbsolutePath = true;
       path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";

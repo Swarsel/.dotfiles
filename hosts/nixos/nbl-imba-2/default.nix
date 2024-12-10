@@ -4,7 +4,7 @@ let
 in
 {
 
-  imports = [
+  imports = outputs.nixModules ++ [
     inputs.nixos-hardware.nixosModules.framework-16-7040-amd
     inputs.fw-fanctrl.nixosModules.default
 
