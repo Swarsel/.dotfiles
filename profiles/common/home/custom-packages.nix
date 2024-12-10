@@ -16,6 +16,7 @@
     update-checker
     github-notifications
     screenshare
+    hm-specialisation
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash

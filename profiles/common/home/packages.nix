@@ -29,6 +29,7 @@
     nh
     nix-output-monitor
     hyprpicker # color picker
+    findutils
 
     # nix
     alejandra

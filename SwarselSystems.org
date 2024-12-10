@@ -1512,6 +1512,7 @@ This is the central station for self-defined packages. These are all referenced 
   {
     pass-fuzzel = callPackage ./pass-fuzzel { };
     cura5 = callPackage ./cura5 { };
+    hm-specialisation = callPackage ./hm-specialisation { };
     cdw = callPackage ./cdw { };
     cdb = callPackage ./cdb { };
     bak = callPackage ./bak { };
@@ -1637,6 +1638,27 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
     done
     exec "${cura5}/bin/cura5" "''${args[@]}"
   ''
+
+#+end_src
+
+**** hm-specialisation
+
+This script allows for quick git home-manager specialisation switching.
+
+
+#+begin_src nix :tangle pkgs/hm-specialisation/default.nix
+    { writeShellApplication, fzf, findutils, home-manager }:
+
+    writeShellApplication {
+      name = "hm-specialisation";
+      runtimeInputs = [ fzf findutils home-manager ];
+      text = ''
+        genpath=$(home-manager generations | head -1 | awk '{print $7}')
+        dirs=$(find "$genpath/specialisation" -type l 2>/dev/null; [ -d "$genpath" ] && echo "$genpath")
+        "$(echo "$dirs" | fzf --prompt="Choose home-manager specialisation to activate")"/activate
+      '';
+    }
+
 
 #+end_src
 
@@ -6317,6 +6339,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       nh
       nix-output-monitor
       hyprpicker # color picker
+      findutils
 
       # nix
       alejandra
@@ -6473,6 +6496,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       update-checker
       github-notifications
       screenshare
+      hm-specialisation
 
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash

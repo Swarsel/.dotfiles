@@ -5,6 +5,7 @@ in
 {
   pass-fuzzel = callPackage ./pass-fuzzel { };
   cura5 = callPackage ./cura5 { };
+  hm-specialisation = callPackage ./hm-specialisation { };
   cdw = callPackage ./cdw { };
   cdb = callPackage ./cdb { };
   bak = callPackage ./bak { };
