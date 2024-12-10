@@ -2,15 +2,14 @@
 {
   services.openssh = {
     enable = true;
-    settings.PermitRootLogin = "yes";
   };
   users.users.swarsel.openssh.authorizedKeys.keyFiles = [
-    (self + /secrets/keys/authorized_keys)
-    (self + /secrets/keys/magicant.pub)
+    (self + /secrets/keys/ssh/nbl-imba-2.pub)
+    (self + /secrets/keys/ssh/magicant.pub)
   ];
   users.users.root.openssh.authorizedKeys.keyFiles = [
-    (self + /secrets/keys/authorized_keys)
-    (self + /secrets/keys/magicant.pub)
+    (self + /secrets/keys/ssh/nbl-imba-2.pub)
+    (self + /secrets/keys/ssh/magicant.pub)
   ];
 
 }

@@ -1356,10 +1356,10 @@ I have removed most of the machines from this section. What remains are some hos
     };
     services.openssh = {
       enable = true;
-      settings.PermitRootLogin = "yes";
+      # settings.PermitRootLogin = "yes";
     };
     users.users.root.openssh.authorizedKeys.keyFiles = [
-      ../../../../secrets/keys/authorized_keys
+      ../../../../secrets/keys/ssh/nbl-imba-2.pub
     ];
 
     system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
@@ -4312,15 +4312,14 @@ Also, the system state version is set here. No need to touch it.
   {
     services.openssh = {
       enable = true;
-      settings.PermitRootLogin = "yes";
     };
     users.users.swarsel.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/authorized_keys)
-      (self + /secrets/keys/magicant.pub)
+      (self + /secrets/keys/ssh/nbl-imba-2.pub)
+      (self + /secrets/keys/ssh/magicant.pub)
     ];
     users.users.root.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/authorized_keys)
-      (self + /secrets/keys/magicant.pub)
+      (self + /secrets/keys/ssh/nbl-imba-2.pub)
+      (self + /secrets/keys/ssh/magicant.pub)
     ];
 
   }

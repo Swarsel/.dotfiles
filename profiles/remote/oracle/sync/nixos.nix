@@ -108,10 +108,10 @@
   };
   services.openssh = {
     enable = true;
-    settings.PermitRootLogin = "yes";
+    # settings.PermitRootLogin = "yes";
   };
   users.users.root.openssh.authorizedKeys.keyFiles = [
-    ../../../../secrets/keys/authorized_keys
+    ../../../../secrets/keys/ssh/nbl-imba-2.pub
   ];
 
   system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
