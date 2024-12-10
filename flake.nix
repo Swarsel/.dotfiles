@@ -109,6 +109,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-secrets = {
+      url = "git+ssh://git@github.com/Swarsel/nix-secrets.git?ref=main&shallow=1";
+      flake = false;
+      inputs = { };
+    };
+
   };
 
   outputs =

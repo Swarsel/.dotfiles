@@ -1,4 +1,7 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, inputs, config, ... }:
+let
+  secretsDirectory = builtins.toString inputs.nix-secrets;
+in
 {
   config = lib.mkIf config.swarselsystems.server.navidrome {
     environment.systemPackages = with pkgs; [
@@ -55,10 +58,10 @@
         };
         # Switch using --impure as these credential files are not stored within the flake
         # sops-nix is not supported for these which is why we need to resort to these
-        LastFM.ApiKey = builtins.readFile /home/swarsel/api/lastfm-secret;
-        LastFM.Secret = builtins.readFile /home/swarsel/api/lastfm-key;
-        Spotify.ID = builtins.readFile /home/swarsel/api/spotify-id;
-        Spotify.Secret = builtins.readFile /home/swarsel/api/spotify-secret;
+        LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";
+        LastFM.Secret = builtins.readFile "${secretsDirectory}/navidrome/lastfm-key";
+        Spotify.ID = builtins.readFile "${secretsDirectory}/navidrome/spotify-id";
+        Spotify.Secret = builtins.readFile "${secretsDirectory}/navidrome/spotify-secret";
         UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
         UIWelcomeMessage = "~SwarselSound~";
       };
