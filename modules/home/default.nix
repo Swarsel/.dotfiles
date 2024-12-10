@@ -10,6 +10,7 @@ let
     "startup"
     "wallpaper"
     "filesystem"
+    "firefox"
   ];
 
   mkImports = names: builtins.listToAttrs (map
