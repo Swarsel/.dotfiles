@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-11 Mi 01:25 -->
+<!-- 2024-12-11 Mi 01:50 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -228,31 +228,245 @@
 <ul>
 <li><a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">4.1. System specific configuration</a>
 <ul>
-<li><a href="#h:58dc6384-0d19-4f71-9043-4014bd033ba2">4.1.1. Physical hosts</a></li>
-<li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">4.1.2. Virtual hosts</a></li>
+<li><a href="#h:58dc6384-0d19-4f71-9043-4014bd033ba2">4.1.1. Physical hosts</a>
+<ul>
+<li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.1.1. live (ISO)</a></li>
+<li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.1.2. Home-manager only (non-NixOS)</a></li>
+<li><a href="#h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">4.1.1.3. nbl-imba-2 (Framework Laptop 16)</a></li>
+<li><a href="#h:932ef6b0-4c14-4200-8e3f-2e208e748746">4.1.1.4. Winters (Server)</a></li>
+<li><a href="#h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">4.1.1.5. nbm-imba-166 (MacBook Pro)</a></li>
+<li><a href="#h:729af373-37e7-4379-9a3d-b09792219415">4.1.1.6. Magicant (Phone)</a></li>
+</ul>
+</li>
+<li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">4.1.2. Virtual hosts</a>
+<ul>
+<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.1. Sync (OCI)</a>
+<ul>
+<li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.1.1. NixOS</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d">4.2. Overlays, packages, and modules</a>
 <ul>
-<li><a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">4.2.1. Packages</a></li>
+<li><a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">4.2.1. Packages</a>
+<ul>
+<li><a href="#h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3">4.2.1.1. pass-fuzzel</a></li>
+<li><a href="#h:799579f3-ddd3-4f76-928a-a8c665980476">4.2.1.2. cura5</a></li>
+<li><a href="#h:e6612cff-0804-47ef-9f2b-d2cc6d81a896">4.2.1.3. hm-specialisation</a></li>
+<li><a href="#h:73b14c7a-5444-4fed-b7ac-d65542cdeda3">4.2.1.4. cdw</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.5. cdb</a></li>
+<li><a href="#h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3">4.2.1.6. bak</a></li>
+<li><a href="#h:3c72d263-411c-44f0-90ff-55f14d4d9d49">4.2.1.7. timer</a></li>
+<li><a href="#h:1834df06-9238-4efa-9af6-851dafe66c68">4.2.1.8. e</a></li>
+<li><a href="#h:10268005-a9cd-4a00-967c-cbe975c552fa">4.2.1.9. command-not-found</a></li>
+<li><a href="#h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d">4.2.1.10. swarselcheck</a></li>
+<li><a href="#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e">4.2.1.11. waybarupdate</a></li>
+<li><a href="#h:a1d94db2-837a-40c4-bbd8-81ce847440ee">4.2.1.12. opacitytoggle</a></li>
+<li><a href="#h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0">4.2.1.13. fs-diff</a></li>
+<li><a href="#h:4d864147-f9ef-46da-9b4f-4e7996a65157">4.2.1.14. update-checker</a></li>
+<li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">4.2.1.15. github-notifications</a></li>
+<li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">4.2.1.16. screenshare</a></li>
+<li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">4.2.1.17. bootstrap</a></li>
+</ul>
+</li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">4.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
-<li><a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">4.2.3. Modules</a></li>
+<li><a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">4.2.3. Modules</a>
+<ul>
+<li><a href="#h:14e68518-8ec7-48ec-b208-0e3d6d49954d">4.2.3.1. NixOS</a>
+<ul>
+<li><a href="#h:bd7517c6-0e0a-4063-bc81-e62cd24e7170">4.2.3.1.1. Wallpaper</a></li>
+<li><a href="#h:c6a138ff-f07f-4cae-95b9-b6daa2b11463">4.2.3.1.2. Hardware</a></li>
+<li><a href="#h:f4f22166-e345-43e6-b15f-b7f5bb886554">4.2.3.1.3. Setup</a></li>
+<li><a href="#h:45188d3c-9910-480b-beec-d5fd713b05fb">4.2.3.1.4. Input</a></li>
+<li><a href="#h:e591075d-4a77-4add-bbc8-b711998fa97f">4.2.3.1.5. Impermanence</a></li>
+<li><a href="#h:f77358ee-a80c-403a-be9d-04e7052bc556">4.2.3.1.6. Filesystem</a></li>
+</ul>
+</li>
+<li><a href="#h:ced5841f-c088-4d88-b3a1-7d62aad8837b">4.2.3.2. home-manager</a>
+<ul>
+<li><a href="#h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1">4.2.3.2.1. Laptop</a></li>
+<li><a href="#h:5f0bf0e2-a096-4b07-affb-6beba7786fab">4.2.3.2.2. Hardware</a></li>
+<li><a href="#h:a9530c81-1976-442b-b597-0b4bed6baf25">4.2.3.2.3. Waybar</a></li>
+<li><a href="#h:dfd5c190-f213-45e1-b17c-e650b7b94b38">4.2.3.2.4. Monitors</a></li>
+<li><a href="#h:880df388-4050-4955-9663-9c1c197f5ae9">4.2.3.2.5. Input</a></li>
+<li><a href="#h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568">4.2.3.2.6. Nixos</a></li>
+<li><a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">4.2.3.2.7. darwin</a></li>
+<li><a href="#h:0809445e-9a24-4700-8675-03fb8f4beab8">4.2.3.2.8. System startup</a></li>
+<li><a href="#h:21e344a8-8212-463f-9c01-7dbca28515b6">4.2.3.2.9. Wallpaper</a></li>
+<li><a href="#h:c4982d06-1962-439c-9eed-cdec52491dee">4.2.3.2.10. Filesystem</a></li>
+<li><a href="#h:e7f98ad8-74a6-4860-a368-cce154285ff0">4.2.3.2.11. firefox</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#h:6da812f5-358c-49cb-aff2-0a94f20d70b3">4.3. NixOS</a>
 <ul>
-<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">4.3.1. Common</a></li>
-<li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">4.3.2. Server</a></li>
-<li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">4.3.3. Darwin</a></li>
-<li><a href="#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">4.3.4. Optional</a></li>
+<li><a href="#h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f">4.3.1. Common</a>
+<ul>
+<li><a href="#h:4acbe063-188b-42e7-b75c-b6d2e232e784">4.3.1.1. Imports, non-server settings</a></li>
+<li><a href="#h:24c9146f-2147-4fd5-bafc-d5853e15cf12">4.3.1.2. General NixOS settings (enable home-manager module, stateVersion)</a></li>
+<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">4.3.1.3. System Packages</a></li>
+<li><a href="#h:7f6d6908-4d02-4907-9c70-f802f4358520">4.3.1.4. Setup home-manager</a></li>
+<li><a href="#h:7248f338-8cad-4443-9060-deae7955b26f">4.3.1.5. Setup login keymap</a></li>
+<li><a href="#h:48959890-fbc7-4d28-b33c-f33e028ab473">4.3.1.6. User setup, Make users non-mutable</a></li>
+<li><a href="#h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">4.3.1.7. Environment setup</a></li>
+<li><a href="#h:e2d40df9-0026-4caa-8476-9dc2353055a1">4.3.1.8. Security</a></li>
+<li><a href="#h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">4.3.1.9. Enable automatic garbage collection</a></li>
+<li><a href="#h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">4.3.1.10. Enable automatic store optimisation</a></li>
+<li><a href="#h:12858442-c129-4aa1-9c9c-a0916e36b302">4.3.1.11. Reduce systemd timeouts</a></li>
+<li><a href="#h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">4.3.1.12. Hardware settings</a></li>
+<li><a href="#h:aa433f5e-a455-4414-b76b-0a2692fa06aa">4.3.1.13. Pipewire</a></li>
+<li><a href="#h:7d696b64-debe-4a95-80b5-1e510156a6c6">4.3.1.14. Common network settings</a></li>
+<li><a href="#h:852d59ab-63c3-4831-993d-b5e23b877796">4.3.1.15. Time, locale settings</a></li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">4.3.1.16. sops</a></li>
+<li><a href="#h:e6e44705-94af-49fe-9ca0-0629d0f7d932">4.3.1.17. Theme (stylix)</a></li>
+<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">4.3.1.18. Programs (including zsh setup)</a>
+<ul>
+<li><a href="#h:7daa06ff-d3b0-4491-97ce-770b749c52f9">4.3.1.18.1. zsh</a></li>
+<li><a href="#h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">4.3.1.18.2. syncthing</a></li>
+</ul>
+</li>
+<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">4.3.1.19. Services</a>
+<ul>
+<li><a href="#h:b91df05b-113d-4d09-93d1-b271e5b76810">4.3.1.19.1. blueman</a></li>
+<li><a href="#h:73ed28cb-2f82-47b2-8bc5-208278b55788">4.3.1.19.2. Network devices</a>
+<ul>
+<li><a href="#h:fae5939e-22ac-4532-a10e-0b86013d20ce">4.3.1.19.2.1. Scanners</a></li>
+<li><a href="#h:8c13df62-c6d9-4a0a-83be-d77e71628f0b">4.3.1.19.2.2. Printers</a></li>
+<li><a href="#h:80decee9-9151-4892-967e-73d103205770">4.3.1.19.2.3. Avahi (device discovery)</a></li>
+</ul>
+</li>
+<li><a href="#h:f101daa2-604d-4553-99e2-f64b9c207f51">4.3.1.19.3. enable GVfs</a></li>
+<li><a href="#h:08d213d5-a9f4-4309-8635-ba557b01dc7d">4.3.1.19.4. interception-tools: Make CAPS work as ESC/CTRL</a></li>
+<li><a href="#h:82fbba41-3a46-4db7-aade-49e4c23fc475">4.3.1.19.5. power-profiles-daemon</a></li>
+</ul>
+</li>
+<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">4.3.1.20. Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">4.3.1.21. System Login</a></li>
+<li><a href="#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">4.3.1.22. nix-ld</a></li>
+<li><a href="#h:e7668594-fa8b-4d36-a695-a58222478988">4.3.1.23. Impermanence</a></li>
+<li><a href="#h:b751d77d-246c-4bd6-b689-3467d82bf9c3">4.3.1.24. Summary of nixos-rebuild diff</a></li>
+<li><a href="#h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">4.3.1.25. gnome-keyring</a></li>
+<li><a href="#h:f78ffdd3-232b-4313-bd89-d6fb331fef22">4.3.1.26. Sway</a></li>
+<li><a href="#h:872d5f46-2ffd-4076-9a2c-98783dd29434">4.3.1.27. xdg-portal</a></li>
+<li><a href="#h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4">4.3.1.28. safeeyes</a></li>
+<li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">4.3.1.29. Podmam (distrobox)</a></li>
+<li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">4.3.1.30. Handle lid switch correctly</a></li>
+</ul>
+</li>
+<li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">4.3.2. Server</a>
+<ul>
+<li><a href="#h:4e64e564-b7cb-469f-bd79-cd3efb3caa62">4.3.2.1. Imports</a></li>
+<li><a href="#h:dc365e83-f6c8-4d05-a390-b5f2d01649b4">4.3.2.2. General NixOS Server settings</a></li>
+<li><a href="#h:6f2967d9-7e32-4605-bb5c-5e27770bec0f">4.3.2.3. System Packages</a></li>
+<li><a href="#h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4">4.3.2.4. sops</a></li>
+<li><a href="#h:d6840d31-110c-465f-93fa-0306f755de28">4.3.2.5. nfs/samba (smb)</a></li>
+<li><a href="#h:302468d2-106a-41c8-b2bc-9fdc40064a9c">4.3.2.6. NGINX</a></li>
+<li><a href="#h:f3db197d-1d03-4bf8-b59f-f9891b358f0b">4.3.2.7. ssh</a></li>
+<li><a href="#h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295">4.3.2.8. kavita</a></li>
+<li><a href="#h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b">4.3.2.9. jellyfin</a></li>
+<li><a href="#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">4.3.2.10. navidrome</a></li>
+<li><a href="#h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41">4.3.2.11. spotifyd</a></li>
+<li><a href="#h:baa4149b-3788-4b05-87ec-0ee9d0726117">4.3.2.12. mpd</a></li>
+<li><a href="#h:1e68d84a-8f99-422f-89ac-78f664ac0013">4.3.2.13. matrix</a></li>
+<li><a href="#h:d11ad8d5-25d7-4691-b319-61c16ccef715">4.3.2.14. nextcloud</a></li>
+<li><a href="#h:33bad8ad-b362-4bf1-8a49-b9df92329aed">4.3.2.15. immich</a></li>
+<li><a href="#h:89638fb5-0593-4420-9567-f85f0223e341">4.3.2.16. paperless</a></li>
+<li><a href="#h:5afeb311-ab86-4029-be53-2160f6d836c3">4.3.2.17. transmission</a></li>
+<li><a href="#h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d">4.3.2.18. syncthing</a></li>
+<li><a href="#h:b73ac8bf-b721-4563-9eff-973925c99a39">4.3.2.19. restic</a></li>
+<li><a href="#h:a31c7192-e11d-4a26-915d-1bbc38e373d3">4.3.2.20. monitoring</a></li>
+<li><a href="#h:23452a18-a0a1-4515-8612-ceb19bb5fc22">4.3.2.21. Jenkins</a></li>
+<li><a href="#h:4e6824bc-c3db-485d-b543-4072e6283b62">4.3.2.22. Emacs (RSS Server)</a></li>
+</ul>
+</li>
+<li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">4.3.3. Darwin</a>
+<ul>
+<li><a href="#h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4">4.3.3.1. Imports</a></li>
+</ul>
+</li>
+<li><a href="#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589">4.3.4. Optional</a>
+<ul>
+<li><a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431">4.3.4.1. gaming</a></li>
+<li><a href="#h:b3523246-14e9-4284-ba22-cebc5ca36732">4.3.4.2. VirtualBox</a></li>
+<li><a href="#h:34db28fb-62f7-4597-a9ff-0de2991a8415">4.3.4.3. VmWare</a></li>
+<li><a href="#h:fa8d9ec4-3e22-458a-9239-859cffe7f55c">4.3.4.4. Auto-login</a></li>
+<li><a href="#h:5c41c4ee-22ca-405b-9e4f-cc4051634edd">4.3.4.5. nswitch-rcm</a></li>
+<li><a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">4.3.4.6. work</a></li>
+<li><a href="#h:3fc1d301-7bae-4678-9085-d12c23eed8ac">4.3.4.7. Minimal Install</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#h:08ded95b-9c43-475d-a0b2-fc088a512287">4.4. Home-manager</a>
 <ul>
-<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">4.4.1. Common</a></li>
-<li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">4.4.2. Server</a></li>
-<li><a href="#h:e0536bff-2552-4ac4-a34a-a23937a2c30f">4.4.3. Darwin</a></li>
-<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">4.4.4. Optional</a></li>
+<li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">4.4.1. Common</a>
+<ul>
+<li><a href="#h:16fd2e85-fdd4-440a-81f0-65b9b098a43a">4.4.1.1. Imports</a></li>
+<li><a href="#h:4af4f67f-7c48-4754-b4bd-6800e3a66664">4.4.1.2. General home-manager-settings</a></li>
+<li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">4.4.1.3. Installed packages</a>
+<ul>
+<li><a href="#h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75">4.4.1.3.1. Packaged</a></li>
+<li><a href="#h:96cbea91-ff13-4120-b8a9-496b2fa96e70">4.4.1.3.2. Self-defined</a></li>
+</ul>
+</li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">4.4.1.4. sops</a></li>
+<li><a href="#h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">4.4.1.5. SSH Machines</a></li>
+<li><a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">4.4.1.6. Theme (stylix)</a></li>
+<li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">4.4.1.7. Desktop Entries, MIME types (xdg)</a></li>
+<li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">4.4.1.8. Linking dotfiles</a></li>
+<li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">4.4.1.9. Sourcing environment variables</a></li>
+<li><a href="#h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">4.4.1.10. General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf</a></li>
+<li><a href="#h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748">4.4.1.11. nix-index</a></li>
+<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">4.4.1.12. password-store</a></li>
+<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">4.4.1.13. direnv</a></li>
+<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">4.4.1.14. eza</a></li>
+<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">4.4.1.15. git</a></li>
+<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">4.4.1.16. Fuzzel</a></li>
+<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">4.4.1.17. Starship</a></li>
+<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">4.4.1.18. Kitty</a></li>
+<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">4.4.1.19. zsh</a></li>
+<li><a href="#h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">4.4.1.20. zellij</a></li>
+<li><a href="#h:45de9430-f925-4df6-9db6-bffb5b8f1604">4.4.1.21. tmux</a></li>
+<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">4.4.1.22. Mail</a></li>
+<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">4.4.1.23. Home-manager: Emacs</a></li>
+<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">4.4.1.24. Waybar</a></li>
+<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">4.4.1.25. Firefox</a></li>
+<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">4.4.1.26. Services</a>
+<ul>
+<li><a href="#h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">4.4.1.26.1. gnome-keyring</a></li>
+<li><a href="#h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">4.4.1.26.2. KDE Connect</a></li>
+<li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">4.4.1.26.3. Mako</a></li>
+<li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">4.4.1.26.4. yubikey-touch-detector</a></li>
+</ul>
+</li>
+<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">4.4.1.27. Sway</a></li>
+<li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">4.4.1.28. gpg-agent</a></li>
+<li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">4.4.1.29. gammastep</a></li>
+</ul>
+</li>
+<li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">4.4.2. Server</a>
+<ul>
+<li><a href="#h:7b4ee01a-b505-47da-8fb9-0b41285d0eab">4.4.2.1. Imports</a></li>
+<li><a href="#h:9fac0904-b615-4d9d-9bae-54a6691999c3">4.4.2.2. Linking dotfiles</a></li>
+</ul>
+</li>
+<li><a href="#h:e0536bff-2552-4ac4-a34a-a23937a2c30f">4.4.3. Darwin</a>
+<ul>
+<li><a href="#h:cff37bdf-4f22-419a-af4e-2665ede9add0">4.4.3.1. Imports</a></li>
+</ul>
+</li>
+<li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">4.4.4. Optional</a>
+<ul>
+<li><a href="#h:84fd7029-ecb6-4131-9333-289982f24ffa">4.4.4.1. Gaming</a></li>
+<li><a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">4.4.4.2. Work</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -268,7 +482,27 @@
 </li>
 <li><a href="#h:601ba407-b906-4869-8ef6-67a9fc285fba">5.2. Personal settings</a>
 <ul>
-<li><a href="#h:b7b5976a-db2b-493d-8794-1924a0e12aec">5.2.1. Custom functions</a></li>
+<li><a href="#h:b7b5976a-db2b-493d-8794-1924a0e12aec">5.2.1. Custom functions</a>
+<ul>
+<li><a href="#h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c">5.2.1.1. Emacs/Evil state toggle</a></li>
+<li><a href="#h:1e0ee570-e509-4ecb-a3af-b75543731bb0">5.2.1.2. Switching to last used buffer</a></li>
+<li><a href="#h:34506761-06b9-43b5-a818-506d9b3faf28">5.2.1.3. mu4e functions</a></li>
+<li><a href="#h:4b9d74ef-0376-45bb-bc15-d24a04ca7e81">5.2.1.4. Create non-existant directories when finding file</a></li>
+<li><a href="#h:91e2f45f-54fa-4b60-8758-b2ef9b439af7">5.2.1.5. [crux] Duplicate Lines</a></li>
+<li><a href="#h:4819720a-9220-4c34-b903-ed4179f3ad1c">5.2.1.6. [prot] org-id-headings</a></li>
+<li><a href="#h:285e5c0a-875d-46a8-bb9b-0222b3d73878">5.2.1.7. Inhibit Messages in Echo Area</a></li>
+<li><a href="#h:de249f2a-6a2b-4114-8046-09d1014a7391">5.2.1.8. Move up one directory for find-file</a></li>
+<li><a href="#h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5">5.2.1.9. org-mode: General setup</a></li>
+<li><a href="#h:fa710375-2efe-49b4-af6a-a875aca6e4a2">5.2.1.10. org-mode: Visual-fill column</a></li>
+<li><a href="#h:59d4306e-9b73-4b2c-b039-6a6518c357fc">5.2.1.11. org-mode: Upon-save actions (Auto-tangle, export to html, formatting)</a></li>
+<li><a href="#h:dfa66e78-5748-45e3-a975-db3da104bb3a">5.2.1.12. org-mode: Fold current heading</a></li>
+<li><a href="#h:a1802f9b-bb71-4fd5-86fa-945da18e8b81">5.2.1.13. corfu: Do not interrupt navigation</a></li>
+<li><a href="#h:291e43d9-eae2-4e23-8e38-160e223bf314">5.2.1.14. python shell reloading</a></li>
+<li><a href="#h:79288251-3b8d-4bc4-ae2c-448fce709fbd">5.2.1.15. Nix common prefix bracketer</a></li>
+<li><a href="#h:a6b9dd66-571b-4916-8793-65b6a17afd76">5.2.1.16. Nix formatters</a></li>
+<li><a href="#h:3c436647-71e6-441c-b452-d817ad2f8331">5.2.1.17. Disable garbace collection while minibuffer is active</a></li>
+</ul>
+</li>
 <li><a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">5.2.2. Custom Keybindings</a></li>
 <li><a href="#h:07951589-54ba-4e3e-bd7b-4106cd22ff6a">5.2.3. Directory setup / File structure</a></li>
 <li><a href="#h:0cf30b76-91d9-41da-a10b-74199bc36d40">5.2.4. Unclutter .emacs.d</a></li>
@@ -283,14 +517,38 @@
 <li><a href="#h:1667913c-2272-4010-bf3a-356455b97c83">5.3.4. Better garbage collection</a></li>
 <li><a href="#h:6527b3ce-b76d-431a-9960-a57da7c53e1b">5.3.5. Indentation</a></li>
 <li><a href="#h:3dc9fb1d-cd16-4bd0-a9ac-55a944415a90">5.3.6. Scrolling</a></li>
-<li><a href="#h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">5.3.7. Evil</a></li>
+<li><a href="#h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">5.3.7. Evil</a>
+<ul>
+<li><a href="#h:218376e8-086b-46bf-91b3-78295d5d440f">5.3.7.1. General evil</a></li>
+<li><a href="#h:bde208f3-01ef-4dc6-9981-65f3d2a8189b">5.3.7.2. evil-collection</a></li>
+<li><a href="#h:d80e3f7d-0185-4a15-832b-d756e576265c">5.3.7.3. evil-snipe</a></li>
+<li><a href="#h:b06a378d-5248-4451-8eee-e65a3a768b1d">5.3.7.4. evil-cleverparens</a></li>
+<li><a href="#h:aac82e5e-d882-4870-b644-ebdd0a2daae3">5.3.7.5. evil-surround</a></li>
+</ul>
+</li>
 <li><a href="#h:e888d7a7-1755-4109-af11-5358b8cf140e">5.3.8. ispell</a></li>
 <li><a href="#h:60f87342-0491-4c56-8057-6f075cf35753">5.3.9. Font Configuration</a></li>
 <li><a href="#h:72a9704b-83d2-4b74-a1f6-d333203f62db">5.3.10. Theme</a></li>
 <li><a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">5.3.11. Icons</a></li>
 <li><a href="#h:455ed7ac-ee7f-4f94-b857-f2c58b2282d0">5.3.12. Variable Pitch Mode</a></li>
 <li><a href="#h:ed585848-875a-4673-910c-d2e1901dd95b">5.3.13. Modeline</a></li>
-<li><a href="#h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">5.3.14. Helper Modes</a></li>
+<li><a href="#h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">5.3.14. Helper Modes</a>
+<ul>
+<li><a href="#h:b190d512-bfb5-42ec-adec-8d86bab726ce">5.3.14.1. Vertico, Orderless, Marginalia, Consult, Embark</a>
+<ul>
+<li><a href="#h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">5.3.14.1.1. vertico</a></li>
+<li><a href="#h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">5.3.14.1.2. vertico-directory</a></li>
+<li><a href="#h:211fc0bd-0d64-4577-97d8-6abc94435f04">5.3.14.1.3. orderless</a></li>
+<li><a href="#h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">5.3.14.1.4. consult</a></li>
+<li><a href="#h:1c564ee5-ccd7-48be-b69a-d963400c4704">5.3.14.1.5. embark</a></li>
+<li><a href="#h:6287551c-a6f7-4870-b3f3-210d6f038b6f">5.3.14.1.6. embark-consult</a></li>
+<li><a href="#h:f32040a4-882f-4e6b-97f1-a0105c44c034">5.3.14.1.7. marginalia</a></li>
+<li><a href="#h:d70ec2fb-da43-4523-9ee4-774ececdb80e">5.3.14.1.8. nerd-icons-completion</a></li>
+</ul>
+</li>
+<li><a href="#h:cbf6bd48-2503-489a-89da-e3359564e989">5.3.14.2. Helpful + which-key: Better help defaults</a></li>
+</ul>
+</li>
 <li><a href="#h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1">5.3.15. Ligatures</a></li>
 <li><a href="#h:e9d40e63-0e1f-47df-98f7-5427992588a4">5.3.16. Popup (popper) + Shackle Buffers</a></li>
 <li><a href="#h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28">5.3.17. Indicate first and last line of buffer</a></li>
@@ -299,7 +557,28 @@
 </li>
 <li><a href="#h:f2622fd3-7f14-47a8-8c21-33574fcbf14b">5.4. Modules</a>
 <ul>
-<li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">5.4.1. Org Mode</a></li>
+<li><a href="#h:99544398-72af-4382-b8e1-01b2221baff4">5.4.1. Org Mode</a>
+<ul>
+<li><a href="#h:877c9401-a354-4e44-a235-db1a90d19e00">5.4.1.1. General org-mode</a></li>
+<li><a href="#h:2b3b4eb6-68a1-476d-b5d1-940a21484f1d">5.4.1.2. org-agenda</a></li>
+<li><a href="#h:23183635-3d46-4d7d-8eda-e0a085b335ef">5.4.1.3. org capture templates</a></li>
+<li><a href="#h:40528f5a-c8cd-471b-b862-4088e8e61860">5.4.1.4. Font Faces</a></li>
+<li><a href="#h:62829574-a069-44b8-afb3-401a268d2747">5.4.1.5. org-appear</a></li>
+<li><a href="#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">5.4.1.6. Centered org-mode Buffers</a></li>
+<li><a href="#h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8">5.4.1.7. Fix headings not folding sometimes</a></li>
+<li><a href="#h:3e0b6da3-0497-4080-bb49-bab949c03bc4">5.4.1.8. Babel</a>
+<ul>
+<li><a href="#h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c">5.4.1.8.1. Language Configuration</a></li>
+<li><a href="#h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">5.4.1.8.2. old easy structure templates</a></li>
+</ul>
+</li>
+<li><a href="#h:4696e2fc-3296-47dc-8fc3-66912c329d4c">5.4.1.9. aucTex</a></li>
+<li><a href="#h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b">5.4.1.10. org-download</a></li>
+<li><a href="#h:a02b1162-3e19-46f1-8efc-9f375971645c">5.4.1.11. org-fragtog</a></li>
+<li><a href="#h:95b42e77-767c-4461-9ba8-b1c1cd18266c">5.4.1.12. org-modern</a></li>
+<li><a href="#h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">5.4.1.13. Presentations</a></li>
+</ul>
+</li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">5.4.2. Nix Mode</a></li>
 <li><a href="#h:e8074881-3441-4abd-b25b-358a87e7984f">5.4.3. HCL Mode</a></li>
 <li><a href="#h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410">5.4.4. Jenkinsfile/Groovy</a></li>
@@ -307,7 +586,12 @@
 <li><a href="#h:7834adb0-fbd3-4136-bdb7-6dbc9a083296">5.4.6. Terraform Mode</a></li>
 <li><a href="#h:5ca7484b-b9d6-4023-88d1-a1e37d5df249">5.4.7. nixpkgs-fmt</a></li>
 <li><a href="#h:489a71c4-38af-44a3-a9ef-8b1ed1ee4ac4">5.4.8. shfmt</a></li>
-<li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">5.4.9. Markdown Mode</a></li>
+<li><a href="#h:50327461-a11b-4e81-830a-90febc720cfa">5.4.9. Markdown Mode</a>
+<ul>
+<li><a href="#h:734dc40a-a2c4-4839-b884-cb99b81aa6fe">5.4.9.1. Mode</a></li>
+<li><a href="#h:8d90fe51-0b32-423a-a159-4f853bc29b68">5.4.9.2. LaTeX in Markdown</a></li>
+</ul>
+</li>
 <li><a href="#h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6">5.4.10. Olivetti</a></li>
 <li><a href="#h:a83c5820-2016-44ae-90a0-4756bb471c01">5.4.11. elfeed</a></li>
 <li><a href="#h:94d4a0dc-b0d7-4702-b760-beeaa6da2b8f">5.4.12. darkroom</a></li>
@@ -330,7 +614,15 @@
 <li><a href="#h:b9b27a88-06f3-470b-a604-a20b2079bc26">5.4.29. Tramp</a></li>
 <li><a href="#h:58415e95-8a7a-4517-acbb-5f1bb1028603">5.4.30. diff-hl</a></li>
 <li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">5.4.31. Commenting</a></li>
-<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">5.4.32. yasnippet</a></li>
+<li><a href="#h:9ec11ee4-2250-414a-87b5-73ee680a3a4a">5.4.32. yasnippet</a>
+<ul>
+<li>
+<ul>
+<li><a href="#h:af0a78a5-17c2-4e13-b64a-772c27c4dee2">5.4.32.0.1. yasnippet math-snippets</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#h:6cf0310b-2fdf-45f0-9845-4704649777eb">5.4.33. eglot</a></li>
 <li><a href="#h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857">5.4.34. sideline-flymake</a></li>
 <li><a href="#h:1de35f27-335d-4cbd-beb6-f85cf5496173">5.4.35. Breadcrumb</a></li>
@@ -339,9 +631,29 @@
 <li><a href="#h:b108dd3e-f34d-4ed3-98df-0bf9de055889">5.4.38. pdf-tools: pdf-viewer and support for dirvish</a></li>
 <li><a href="#h:c15efae7-b884-4c97-8367-ccc7e7ed9ba8">5.4.39. Jupyter</a></li>
 <li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">5.4.40. undo-tree</a></li>
-<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">5.4.41. Hydra</a></li>
-<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">5.4.42. External Applications</a></li>
-<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">5.4.43. Email</a></li>
+<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">5.4.41. Hydra</a>
+<ul>
+<li><a href="#h:c5681884-7040-4b55-ab1b-5777631a0514">5.4.41.1. Text scaling</a></li>
+</ul>
+</li>
+<li><a href="#h:fff816a0-6d70-4bda-abab-833345e51100">5.4.42. External Applications</a>
+<ul>
+<li><a href="#h:9335d32d-bf08-4601-820d-f3d1f33f876f">5.4.42.1. Obsidian</a></li>
+<li><a href="#h:5854c9a6-1319-4961-a112-75b1bf2e1f69">5.4.42.2. Anki</a>
+<ul>
+<li><a href="#h:d20559ed-7ada-4fea-a964-33bfd64b4549">5.4.42.2.1. Basic Anki setup</a></li>
+<li><a href="#h:64242e95-6454-4330-bcb9-15353083bade">5.4.42.2.2. Own Anki functions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">5.4.43. Email</a>
+<ul>
+<li><a href="#h:48fde614-7cd0-4764-a7ac-0dae60d8b65a">5.4.43.1. make sure mu4e is found</a></li>
+<li><a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">5.4.43.2. mu4e</a></li>
+<li><a href="#h:43209eeb-5d46-472e-b7c2-58a3fb465199">5.4.43.3. mu4e-alert</a></li>
+</ul>
+</li>
 <li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">5.4.44. Calendar</a></li>
 <li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">5.4.45. Dashboard: emacs startup screen</a></li>
 <li><a href="#h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">5.4.46. vterm</a></li>
@@ -353,7 +665,7 @@
 </div>
 </div>
 <p>
-<b>This file has 50861 words spanning 13228 lines and was last revised on 2024-12-11 01:25:11 +0100.</b>
+<b>This file has 50870 words spanning 13230 lines and was last revised on 2024-12-11 01:50:22 +0100.</b>
 </p>
 
 <p>
@@ -403,7 +715,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-11 01:25:11 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-11 01:50:22 +0100)
 </p></li>
 </ul>
 
@@ -1472,8 +1784,8 @@ This section mainly exists house different `configuration.nix` files for system 
 <h4 id="h:58dc6384-0d19-4f71-9043-4014bd033ba2"><span class="section-number-4">4.1.1.</span> Physical hosts</h4>
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
 </div>
-<ol class="org-ol">
-<li><a id="h:8583371d-5d47-468b-84ba-210aad7e2c90"></a>live (ISO)<br />
+<div id="outline-container-h:8583371d-5d47-468b-84ba-210aad7e2c90" class="outline-5">
+<h5 id="h:8583371d-5d47-468b-84ba-210aad7e2c90"><span class="section-number-5">4.1.1.1.</span> live (ISO)</h5>
 <div class="outline-text-5" id="text-h:8583371d-5d47-468b-84ba-210aad7e2c90">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, config, pkgs, lib, modulesPath, ... }:
@@ -1551,8 +1863,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"></a>Home-manager only (non-NixOS)<br />
+</div>
+<div id="outline-container-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493" class="outline-5">
+<h5 id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"><span class="section-number-5">4.1.1.2.</span> Home-manager only (non-NixOS)</h5>
 <div class="outline-text-5" id="text-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">
 <p>
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
@@ -1619,8 +1932,9 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"></a>nbl-imba-2 (Framework Laptop 16)<br />
+</div>
+<div id="outline-container-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9" class="outline-5">
+<h5 id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"><span class="section-number-5">4.1.1.3.</span> nbl-imba-2 (Framework Laptop 16)</h5>
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
 My work machine. Built for more security, this is the gold standard of my configurations at the moment.
@@ -1849,8 +2163,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:932ef6b0-4c14-4200-8e3f-2e208e748746"></a>Winters (Server)<br />
+</div>
+<div id="outline-container-h:932ef6b0-4c14-4200-8e3f-2e208e748746" class="outline-5">
+<h5 id="h:932ef6b0-4c14-4200-8e3f-2e208e748746"><span class="section-number-5">4.1.1.4.</span> Winters (Server)</h5>
 <div class="outline-text-5" id="text-h:932ef6b0-4c14-4200-8e3f-2e208e748746">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, config, ... }:
@@ -1929,8 +2244,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d"></a>nbm-imba-166 (MacBook Pro)<br />
+</div>
+<div id="outline-container-h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d" class="outline-5">
+<h5 id="h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d"><span class="section-number-5">4.1.1.5.</span> nbm-imba-166 (MacBook Pro)</h5>
 <div class="outline-text-5" id="text-h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, ... }:
@@ -1969,8 +2285,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:729af373-37e7-4379-9a3d-b09792219415"></a>Magicant (Phone)<br />
+</div>
+<div id="outline-container-h:729af373-37e7-4379-9a3d-b09792219415" class="outline-5">
+<h5 id="h:729af373-37e7-4379-9a3d-b09792219415"><span class="section-number-5">4.1.1.6.</span> Magicant (Phone)</h5>
 <div class="outline-text-5" id="text-h:729af373-37e7-4379-9a3d-b09792219415">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2019,8 +2336,7 @@ in
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:4dc59747-9598-4029-aa7d-92bf186d6c06" class="outline-4">
 <h4 id="h:4dc59747-9598-4029-aa7d-92bf186d6c06"><span class="section-number-4">4.1.2.</span> Virtual hosts</h4>
@@ -2033,12 +2349,12 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"></a>Sync (OCI)<br />
+<div id="outline-container-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf" class="outline-5">
+<h5 id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"><span class="section-number-5">4.1.2.1.</span> Sync (OCI)</h5>
 <div class="outline-text-5" id="text-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">
 </div>
-<ol class="org-ol">
-<li><a id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"></a>NixOS<br />
+<div id="outline-container-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c" class="outline-6">
+<h6 id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"><span class="section-number-6">4.1.2.1.1.</span> NixOS</h6>
 <div class="outline-text-6" id="text-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, config, inputs, pkgs, ... }:
@@ -2211,10 +2527,8 @@ I have removed most of the machines from this section. What remains are some hos
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-</ol>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d" class="outline-3">
@@ -2280,8 +2594,8 @@ let
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3"></a>pass-fuzzel<br />
+<div id="outline-container-h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3" class="outline-5">
+<h5 id="h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3"><span class="section-number-5">4.2.1.1.</span> pass-fuzzel</h5>
 <div class="outline-text-5" id="text-h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3">
 <p>
 This app allows me, in conjunction with my Yubikey, to quickly enter passwords when the need arises. Normal and TOTP passwords are supported, and they can either be printed directly or copied to the clipboard.
@@ -2354,8 +2668,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:799579f3-ddd3-4f76-928a-a8c665980476"></a>cura5<br />
+</div>
+<div id="outline-container-h:799579f3-ddd3-4f76-928a-a8c665980476" class="outline-5">
+<h5 id="h:799579f3-ddd3-4f76-928a-a8c665980476"><span class="section-number-5">4.2.1.2.</span> cura5</h5>
 <div class="outline-text-5" id="text-h:799579f3-ddd3-4f76-928a-a8c665980476">
 <p>
 The version of <code>cura</code> used to be quite outdated in nixpkgs. I am fetching a newer AppImage here and use that instead.
@@ -2395,8 +2710,9 @@ writeScriptBin "cura" ''
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e6612cff-0804-47ef-9f2b-d2cc6d81a896"></a>hm-specialisation<br />
+</div>
+<div id="outline-container-h:e6612cff-0804-47ef-9f2b-d2cc6d81a896" class="outline-5">
+<h5 id="h:e6612cff-0804-47ef-9f2b-d2cc6d81a896"><span class="section-number-5">4.2.1.3.</span> hm-specialisation</h5>
 <div class="outline-text-5" id="text-h:e6612cff-0804-47ef-9f2b-d2cc6d81a896">
 <p>
 This script allows for quick git home-manager specialisation switching.
@@ -2420,8 +2736,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:73b14c7a-5444-4fed-b7ac-d65542cdeda3"></a>cdw<br />
+</div>
+<div id="outline-container-h:73b14c7a-5444-4fed-b7ac-d65542cdeda3" class="outline-5">
+<h5 id="h:73b14c7a-5444-4fed-b7ac-d65542cdeda3"><span class="section-number-5">4.2.1.4.</span> cdw</h5>
 <div class="outline-text-5" id="text-h:73b14c7a-5444-4fed-b7ac-d65542cdeda3">
 <p>
 This script allows for quick git worktree switching.
@@ -2443,8 +2760,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"></a>cdb<br />
+</div>
+<div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.5.</span> cdb</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -2464,8 +2782,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3"></a>bak<br />
+</div>
+<div id="outline-container-h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3" class="outline-5">
+<h5 id="h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3"><span class="section-number-5">4.2.1.6.</span> bak</h5>
 <div class="outline-text-5" id="text-h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3">
 <p>
 This script lets me quickly backup files by appending <code>.bak</code> to the filename.
@@ -2486,8 +2805,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:3c72d263-411c-44f0-90ff-55f14d4d9d49"></a>timer<br />
+</div>
+<div id="outline-container-h:3c72d263-411c-44f0-90ff-55f14d4d9d49" class="outline-5">
+<h5 id="h:3c72d263-411c-44f0-90ff-55f14d4d9d49"><span class="section-number-5">4.2.1.7.</span> timer</h5>
 <div class="outline-text-5" id="text-h:3c72d263-411c-44f0-90ff-55f14d4d9d49">
 <p>
 This app starts a configuratble timer and uses TTS to say something once the timer runs out.
@@ -2508,8 +2828,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1834df06-9238-4efa-9af6-851dafe66c68"></a>e<br />
+</div>
+<div id="outline-container-h:1834df06-9238-4efa-9af6-851dafe66c68" class="outline-5">
+<h5 id="h:1834df06-9238-4efa-9af6-851dafe66c68"><span class="section-number-5">4.2.1.8.</span> e</h5>
 <div class="outline-text-5" id="text-h:1834df06-9238-4efa-9af6-851dafe66c68">
 <p>
 This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After emacs closes, the kittyterm window is then shown again if it was visible earlier.
@@ -2554,8 +2875,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:10268005-a9cd-4a00-967c-cbe975c552fa"></a>command-not-found<br />
+</div>
+<div id="outline-container-h:10268005-a9cd-4a00-967c-cbe975c552fa" class="outline-5">
+<h5 id="h:10268005-a9cd-4a00-967c-cbe975c552fa"><span class="section-number-5">4.2.1.9.</span> command-not-found</h5>
 <div class="outline-text-5" id="text-h:10268005-a9cd-4a00-967c-cbe975c552fa">
 <p>
 The normal <code>command-not-found.sh</code> uses the outdated <code>nix-shell</code> commands as suggestions. This version supplies me with the more modern <code>nixpkgs#&lt;name&gt;</code> version.
@@ -2599,8 +2921,9 @@ command_not_found_handler() {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d"></a>swarselcheck<br />
+</div>
+<div id="outline-container-h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d" class="outline-5">
+<h5 id="h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d"><span class="section-number-5">4.2.1.10.</span> swarselcheck</h5>
 <div class="outline-text-5" id="text-h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d">
 <p>
 This app checks for different apps that I keep around in the scratchpad for quick viewing and hiding (messengers and music players mostly) and then behaves like the kittyterm hider that I described in <a href="#h:1834df06-9238-4efa-9af6-851dafe66c68">e</a>.
@@ -2684,8 +3007,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f93f66f9-6b8b-478e-b139-b2f382c1f25e"></a>waybarupdate<br />
+</div>
+<div id="outline-container-h:f93f66f9-6b8b-478e-b139-b2f382c1f25e" class="outline-5">
+<h5 id="h:f93f66f9-6b8b-478e-b139-b2f382c1f25e"><span class="section-number-5">4.2.1.11.</span> waybarupdate</h5>
 <div class="outline-text-5" id="text-h:f93f66f9-6b8b-478e-b139-b2f382c1f25e">
 <p>
 This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
@@ -2731,8 +3055,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a1d94db2-837a-40c4-bbd8-81ce847440ee"></a>opacitytoggle<br />
+</div>
+<div id="outline-container-h:a1d94db2-837a-40c4-bbd8-81ce847440ee" class="outline-5">
+<h5 id="h:a1d94db2-837a-40c4-bbd8-81ce847440ee"><span class="section-number-5">4.2.1.12.</span> opacitytoggle</h5>
 <div class="outline-text-5" id="text-h:a1d94db2-837a-40c4-bbd8-81ce847440ee">
 <p>
 This app quickly toggles between 5% and 0% transparency.
@@ -2758,8 +3083,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0"></a>fs-diff<br />
+</div>
+<div id="outline-container-h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0" class="outline-5">
+<h5 id="h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0"><span class="section-number-5">4.2.1.13.</span> fs-diff</h5>
 <div class="outline-text-5" id="text-h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0">
 <p>
 This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
@@ -2799,8 +3125,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4d864147-f9ef-46da-9b4f-4e7996a65157"></a>update-checker<br />
+</div>
+<div id="outline-container-h:4d864147-f9ef-46da-9b4f-4e7996a65157" class="outline-5">
+<h5 id="h:4d864147-f9ef-46da-9b4f-4e7996a65157"><span class="section-number-5">4.2.1.14.</span> update-checker</h5>
 <div class="outline-text-5" id="text-h:4d864147-f9ef-46da-9b4f-4e7996a65157">
 <p>
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
@@ -2835,8 +3162,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a9398c4e-4d3b-4942-b03c-192f9c0517e5"></a>github-notifications<br />
+</div>
+<div id="outline-container-h:a9398c4e-4d3b-4942-b03c-192f9c0517e5" class="outline-5">
+<h5 id="h:a9398c4e-4d3b-4942-b03c-192f9c0517e5"><span class="section-number-5">4.2.1.15.</span> github-notifications</h5>
 <div class="outline-text-5" id="text-h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">
 <p>
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
@@ -2860,8 +3188,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda"></a>screenshare<br />
+</div>
+<div id="outline-container-h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda" class="outline-5">
+<h5 id="h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda"><span class="section-number-5">4.2.1.16.</span> screenshare</h5>
 <div class="outline-text-5" id="text-h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">
 <div class="org-src-container">
 <pre class="src src-shell">SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
@@ -2896,8 +3225,9 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:74db57ae-0bb9-4257-84be-eddbc85130dd"></a>bootstrap<br />
+</div>
+<div id="outline-container-h:74db57ae-0bb9-4257-84be-eddbc85130dd" class="outline-5">
+<h5 id="h:74db57ae-0bb9-4257-84be-eddbc85130dd"><span class="section-number-5">4.2.1.17.</span> bootstrap</h5>
 <div class="outline-text-5" id="text-h:74db57ae-0bb9-4257-84be-eddbc85130dd">
 <p>
 This program sets up a new NixOS host.
@@ -3034,8 +3364,7 @@ writeShellApplication {
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:5e3e21e0-57af-4dad-b32f-6400af9b7aab" class="outline-4">
 <h4 id="h:5e3e21e0-57af-4dad-b32f-6400af9b7aab"><span class="section-number-4">4.2.2.</span> Overlays (additions, overrides, nixpkgs-stable)</h4>
@@ -3121,8 +3450,8 @@ In this section I define custom modules under the <code>swarsel</code> attribute
 Note: The structure of generating the packages was changed in commit <code>2cf03a3 refactor: package and module generation</code>. That commit can be checked out in order to see a simpler version of achieving the same thing.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:14e68518-8ec7-48ec-b208-0e3d6d49954d"></a>NixOS<br />
+<div id="outline-container-h:14e68518-8ec7-48ec-b208-0e3d6d49954d" class="outline-5">
+<h5 id="h:14e68518-8ec7-48ec-b208-0e3d6d49954d"><span class="section-number-5">4.2.3.1.</span> NixOS</h5>
 <div class="outline-text-5" id="text-h:14e68518-8ec7-48ec-b208-0e3d6d49954d">
 <p>
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
@@ -3150,8 +3479,8 @@ in
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:bd7517c6-0e0a-4063-bc81-e62cd24e7170"></a>Wallpaper<br />
+<div id="outline-container-h:bd7517c6-0e0a-4063-bc81-e62cd24e7170" class="outline-6">
+<h6 id="h:bd7517c6-0e0a-4063-bc81-e62cd24e7170"><span class="section-number-6">4.2.3.1.1.</span> Wallpaper</h6>
 <div class="outline-text-6" id="text-h:bd7517c6-0e0a-4063-bc81-e62cd24e7170">
 <p>
 This lets me set the wallpaper that I want to use. Duplicated with home-manager options because mixing system and user level configuration is not a good idea.
@@ -3170,8 +3499,9 @@ This lets me set the wallpaper that I want to use. Duplicated with home-manager 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:c6a138ff-f07f-4cae-95b9-b6daa2b11463"></a>Hardware<br />
+</div>
+<div id="outline-container-h:c6a138ff-f07f-4cae-95b9-b6daa2b11463" class="outline-6">
+<h6 id="h:c6a138ff-f07f-4cae-95b9-b6daa2b11463"><span class="section-number-6">4.2.3.1.2.</span> Hardware</h6>
 <div class="outline-text-6" id="text-h:c6a138ff-f07f-4cae-95b9-b6daa2b11463">
 <p>
 This lets me set some basic flags about the hardware of the configured systems.
@@ -3192,8 +3522,9 @@ This lets me set some basic flags about the hardware of the configured systems.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f4f22166-e345-43e6-b15f-b7f5bb886554"></a>Setup<br />
+</div>
+<div id="outline-container-h:f4f22166-e345-43e6-b15f-b7f5bb886554" class="outline-6">
+<h6 id="h:f4f22166-e345-43e6-b15f-b7f5bb886554"><span class="section-number-6">4.2.3.1.3.</span> Setup</h6>
 <div class="outline-text-6" id="text-h:f4f22166-e345-43e6-b15f-b7f5bb886554">
 <p>
 I usually use <code>mutableUsers = false</code> in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
@@ -3231,8 +3562,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:45188d3c-9910-480b-beec-d5fd713b05fb"></a>Input<br />
+</div>
+<div id="outline-container-h:45188d3c-9910-480b-beec-d5fd713b05fb" class="outline-6">
+<h6 id="h:45188d3c-9910-480b-beec-d5fd713b05fb"><span class="section-number-6">4.2.3.1.4.</span> Input</h6>
 <div class="outline-text-6" id="text-h:45188d3c-9910-480b-beec-d5fd713b05fb">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -3248,8 +3580,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e591075d-4a77-4add-bbc8-b711998fa97f"></a>Impermanence<br />
+</div>
+<div id="outline-container-h:e591075d-4a77-4add-bbc8-b711998fa97f" class="outline-6">
+<h6 id="h:e591075d-4a77-4add-bbc8-b711998fa97f"><span class="section-number-6">4.2.3.1.5.</span> Impermanence</h6>
 <div class="outline-text-6" id="text-h:e591075d-4a77-4add-bbc8-b711998fa97f">
 <p>
 Option to enable impermanence configurations. This could also be done via optional imports, but impermanence is a "big enough" change to warrant a line in the machine <code>default.nix</code>.
@@ -3264,8 +3597,9 @@ Option to enable impermanence configurations. This could also be done via option
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f77358ee-a80c-403a-be9d-04e7052bc556"></a>Filesystem<br />
+</div>
+<div id="outline-container-h:f77358ee-a80c-403a-be9d-04e7052bc556" class="outline-6">
+<h6 id="h:f77358ee-a80c-403a-be9d-04e7052bc556"><span class="section-number-6">4.2.3.1.6.</span> Filesystem</h6>
 <div class="outline-text-6" id="text-h:f77358ee-a80c-403a-be9d-04e7052bc556">
 <p>
 This lets me quickly set flags for "special" file systems. These options mostly function in conjunction with other settings (for example, the <code>isBtrfs</code> function is mostly used for impermanence configuration).
@@ -3280,10 +3614,10 @@ This lets me quickly set flags for "special" file systems. These options mostly 
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:ced5841f-c088-4d88-b3a1-7d62aad8837b"></a>home-manager<br />
+</div>
+</div>
+<div id="outline-container-h:ced5841f-c088-4d88-b3a1-7d62aad8837b" class="outline-5">
+<h5 id="h:ced5841f-c088-4d88-b3a1-7d62aad8837b"><span class="section-number-5">4.2.3.2.</span> home-manager</h5>
 <div class="outline-text-5" id="text-h:ced5841f-c088-4d88-b3a1-7d62aad8837b">
 <p>
 This holds modules that are to be used on most hosts. These are also the most important options to configure, as these allow me easy access to monitor, keyboard, and other setups.
@@ -3315,8 +3649,8 @@ in
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1"></a>Laptop<br />
+<div id="outline-container-h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1" class="outline-6">
+<h6 id="h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1"><span class="section-number-6">4.2.3.2.1.</span> Laptop</h6>
 <div class="outline-text-6" id="text-h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1">
 <p>
 Laptops are not always plugged in, so they should show a battery icon in Waybar. Also, most laptops have a touchpad which usually needs to be configured.
@@ -3355,8 +3689,9 @@ Laptops are not always plugged in, so they should show a battery icon in Waybar.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5f0bf0e2-a096-4b07-affb-6beba7786fab"></a>Hardware<br />
+</div>
+<div id="outline-container-h:5f0bf0e2-a096-4b07-affb-6beba7786fab" class="outline-6">
+<h6 id="h:5f0bf0e2-a096-4b07-affb-6beba7786fab"><span class="section-number-6">4.2.3.2.2.</span> Hardware</h6>
 <div class="outline-text-6" id="text-h:5f0bf0e2-a096-4b07-affb-6beba7786fab">
 <p>
 This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
@@ -3383,8 +3718,9 @@ This section is mostly used to deliver the correct information to Waybar. AMD sy
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a9530c81-1976-442b-b597-0b4bed6baf25"></a>Waybar<br />
+</div>
+<div id="outline-container-h:a9530c81-1976-442b-b597-0b4bed6baf25" class="outline-6">
+<h6 id="h:a9530c81-1976-442b-b597-0b4bed6baf25"><span class="section-number-6">4.2.3.2.3.</span> Waybar</h6>
 <div class="outline-text-6" id="text-h:a9530c81-1976-442b-b597-0b4bed6baf25">
 <p>
 These are explicit waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module <code>custom/pseudobat</code> that simply shows a static image and calls <code>wlogout</code> on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
@@ -3432,8 +3768,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:dfd5c190-f213-45e1-b17c-e650b7b94b38"></a>Monitors<br />
+</div>
+<div id="outline-container-h:dfd5c190-f213-45e1-b17c-e650b7b94b38" class="outline-6">
+<h6 id="h:dfd5c190-f213-45e1-b17c-e650b7b94b38"><span class="section-number-6">4.2.3.2.4.</span> Monitors</h6>
 <div class="outline-text-6" id="text-h:dfd5c190-f213-45e1-b17c-e650b7b94b38">
 <p>
 This allows me to define my monitors in the machine's <code>default.nix</code>.
@@ -3465,8 +3802,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:880df388-4050-4955-9663-9c1c197f5ae9"></a>Input<br />
+</div>
+<div id="outline-container-h:880df388-4050-4955-9663-9c1c197f5ae9" class="outline-6">
+<h6 id="h:880df388-4050-4955-9663-9c1c197f5ae9"><span class="section-number-6">4.2.3.2.5.</span> Input</h6>
 <div class="outline-text-6" id="text-h:880df388-4050-4955-9663-9c1c197f5ae9">
 <p>
 This allows me to configure input options. Here, I am globally defining my split keyboards. Then, I am joining some attribute sets so that they can be easier used in the rest of the configurations.
@@ -3516,8 +3854,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568"></a>Nixos<br />
+</div>
+<div id="outline-container-h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568" class="outline-6">
+<h6 id="h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568"><span class="section-number-6">4.2.3.2.6.</span> Nixos</h6>
 <div class="outline-text-6" id="text-h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568">
 <p>
 These are some extra options that will be used if the machine also runs NixOS. For example, non-NixOS hosts need <code>nixGL</code> prepended to most graphic commands, and <code>swayfx</code> works less nicely on these machines.
@@ -3557,8 +3896,9 @@ These are some extra options that will be used if the machine also runs NixOS. F
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:79f7150f-b162-4f57-abdf-07f40dffd932"></a>darwin<br />
+</div>
+<div id="outline-container-h:79f7150f-b162-4f57-abdf-07f40dffd932" class="outline-6">
+<h6 id="h:79f7150f-b162-4f57-abdf-07f40dffd932"><span class="section-number-6">4.2.3.2.7.</span> darwin</h6>
 <div class="outline-text-6" id="text-h:79f7150f-b162-4f57-abdf-07f40dffd932">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -3569,8 +3909,9 @@ These are some extra options that will be used if the machine also runs NixOS. F
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:0809445e-9a24-4700-8675-03fb8f4beab8"></a>System startup<br />
+</div>
+<div id="outline-container-h:0809445e-9a24-4700-8675-03fb8f4beab8" class="outline-6">
+<h6 id="h:0809445e-9a24-4700-8675-03fb8f4beab8"><span class="section-number-6">4.2.3.2.8.</span> System startup</h6>
 <div class="outline-text-6" id="text-h:0809445e-9a24-4700-8675-03fb8f4beab8">
 <p>
 This defines programs I want to have starting when I start the system
@@ -3615,8 +3956,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:21e344a8-8212-463f-9c01-7dbca28515b6"></a>Wallpaper<br />
+</div>
+<div id="outline-container-h:21e344a8-8212-463f-9c01-7dbca28515b6" class="outline-6">
+<h6 id="h:21e344a8-8212-463f-9c01-7dbca28515b6"><span class="section-number-6">4.2.3.2.9.</span> Wallpaper</h6>
 <div class="outline-text-6" id="text-h:21e344a8-8212-463f-9c01-7dbca28515b6">
 <p>
 Again, I set the wallpaper here for <code>stylix</code>.
@@ -3635,8 +3977,9 @@ Again, I set the wallpaper here for <code>stylix</code>.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:c4982d06-1962-439c-9eed-cdec52491dee"></a>Filesystem<br />
+</div>
+<div id="outline-container-h:c4982d06-1962-439c-9eed-cdec52491dee" class="outline-6">
+<h6 id="h:c4982d06-1962-439c-9eed-cdec52491dee"><span class="section-number-6">4.2.3.2.10.</span> Filesystem</h6>
 <div class="outline-text-6" id="text-h:c4982d06-1962-439c-9eed-cdec52491dee">
 <p>
 Another duplicated option for the filesystem.
@@ -3651,8 +3994,9 @@ Another duplicated option for the filesystem.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e7f98ad8-74a6-4860-a368-cce154285ff0"></a>firefox<br />
+</div>
+<div id="outline-container-h:e7f98ad8-74a6-4860-a368-cce154285ff0" class="outline-6">
+<h6 id="h:e7f98ad8-74a6-4860-a368-cce154285ff0"><span class="section-number-6">4.2.3.2.11.</span> firefox</h6>
 <div class="outline-text-6" id="text-h:e7f98ad8-74a6-4860-a368-cce154285ff0">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, pkgs, ... }:
@@ -3811,10 +4155,8 @@ Another duplicated option for the filesystem.
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-</ol>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-h:6da812f5-358c-49cb-aff2-0a94f20d70b3" class="outline-3">
@@ -3831,8 +4173,8 @@ Here we have NixOS options. All options are split into smaller files that are lo
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:4acbe063-188b-42e7-b75c-b6d2e232e784"></a>Imports, non-server settings<br />
+<div id="outline-container-h:4acbe063-188b-42e7-b75c-b6d2e232e784" class="outline-5">
+<h5 id="h:4acbe063-188b-42e7-b75c-b6d2e232e784"><span class="section-number-5">4.3.1.1.</span> Imports, non-server settings</h5>
 <div class="outline-text-5" id="text-h:4acbe063-188b-42e7-b75c-b6d2e232e784">
 <p>
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
@@ -3891,8 +4233,9 @@ This section is for setting things that should be used on hosts that are using t
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:24c9146f-2147-4fd5-bafc-d5853e15cf12"></a>General NixOS settings (enable home-manager module, stateVersion)<br />
+</div>
+<div id="outline-container-h:24c9146f-2147-4fd5-bafc-d5853e15cf12" class="outline-5">
+<h5 id="h:24c9146f-2147-4fd5-bafc-d5853e15cf12"><span class="section-number-5">4.3.1.2.</span> General NixOS settings (enable home-manager module, stateVersion)</h5>
 <div class="outline-text-5" id="text-h:24c9146f-2147-4fd5-bafc-d5853e15cf12">
 <p>
 Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
@@ -3933,8 +4276,9 @@ Also, the system state version is set here. No need to touch it.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"></a>System Packages<br />
+</div>
+<div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-5">
+<h5 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-5">4.3.1.3.</span> System Packages</h5>
 <div class="outline-text-5" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
@@ -4049,8 +4393,9 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7f6d6908-4d02-4907-9c70-f802f4358520"></a>Setup home-manager<br />
+</div>
+<div id="outline-container-h:7f6d6908-4d02-4907-9c70-f802f4358520" class="outline-5">
+<h5 id="h:7f6d6908-4d02-4907-9c70-f802f4358520"><span class="section-number-5">4.3.1.4.</span> Setup home-manager</h5>
 <div class="outline-text-5" id="text-h:7f6d6908-4d02-4907-9c70-f802f4358520">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS modul.
@@ -4068,8 +4413,9 @@ First, we enable the use of <code>home-manager</code> as a NixoS modul.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7248f338-8cad-4443-9060-deae7955b26f"></a>Setup login keymap<br />
+</div>
+<div id="outline-container-h:7248f338-8cad-4443-9060-deae7955b26f" class="outline-5">
+<h5 id="h:7248f338-8cad-4443-9060-deae7955b26f"><span class="section-number-5">4.3.1.5.</span> Setup login keymap</h5>
 <div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
@@ -4088,8 +4434,9 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:48959890-fbc7-4d28-b33c-f33e028ab473"></a>User setup, Make users non-mutable<br />
+</div>
+<div id="outline-container-h:48959890-fbc7-4d28-b33c-f33e028ab473" class="outline-5">
+<h5 id="h:48959890-fbc7-4d28-b33c-f33e028ab473"><span class="section-number-5">4.3.1.6.</span> User setup, Make users non-mutable</h5>
 <div class="outline-text-5" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
 <p>
 This ensures that all user-configuration happens here in the config file.
@@ -4114,8 +4461,9 @@ This ensures that all user-configuration happens here in the config file.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"></a>Environment setup<br />
+</div>
+<div id="outline-container-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8" class="outline-5">
+<h5 id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"><span class="section-number-5">4.3.1.7.</span> Environment setup</h5>
 <div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
@@ -4141,8 +4489,9 @@ Next, we will setup some environment variables that need to be set on the system
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"></a>Security<br />
+</div>
+<div id="outline-container-h:e2d40df9-0026-4caa-8476-9dc2353055a1" class="outline-5">
+<h5 id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"><span class="section-number-5">4.3.1.8.</span> Security</h5>
 <div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
 Needed for control over system-wide privileges etc.
@@ -4165,8 +4514,9 @@ Needed for control over system-wide privileges etc.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee"></a>Enable automatic garbage collection<br />
+</div>
+<div id="outline-container-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee" class="outline-5">
+<h5 id="h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee"><span class="section-number-5">4.3.1.9.</span> Enable automatic garbage collection</h5>
 <div class="outline-text-5" id="text-h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee">
 <p>
 The nix store fills up over time, until <code>/boot/efi</code> is filled. This snippet cleans it automatically on a weekly basis.
@@ -4185,8 +4535,9 @@ The nix store fills up over time, until <code>/boot/efi</code> is filled. This s
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8"></a>Enable automatic store optimisation<br />
+</div>
+<div id="outline-container-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8" class="outline-5">
+<h5 id="h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8"><span class="section-number-5">4.3.1.10.</span> Enable automatic store optimisation</h5>
 <div class="outline-text-5" id="text-h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8">
 <p>
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
@@ -4204,8 +4555,9 @@ This enables hardlinking identical files in the nix store, to save on disk space
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:12858442-c129-4aa1-9c9c-a0916e36b302"></a>Reduce systemd timeouts<br />
+</div>
+<div id="outline-container-h:12858442-c129-4aa1-9c9c-a0916e36b302" class="outline-5">
+<h5 id="h:12858442-c129-4aa1-9c9c-a0916e36b302"><span class="section-number-5">4.3.1.11.</span> Reduce systemd timeouts</h5>
 <div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
 <p>
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason <code>a stop job is running for session 1 of user ...</code>. I do not want to wait that long and am confident no important data is lost by doing this.
@@ -4223,8 +4575,9 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"></a>Hardware settings<br />
+</div>
+<div id="outline-container-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b" class="outline-5">
+<h5 id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"><span class="section-number-5">4.3.1.12.</span> Hardware settings</h5>
 <div class="outline-text-5" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
 <p>
 Enable OpenGL, Sound, Bluetooth and various drivers.
@@ -4274,8 +4627,9 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:aa433f5e-a455-4414-b76b-0a2692fa06aa"></a>Pipewire<br />
+</div>
+<div id="outline-container-h:aa433f5e-a455-4414-b76b-0a2692fa06aa" class="outline-5">
+<h5 id="h:aa433f5e-a455-4414-b76b-0a2692fa06aa"><span class="section-number-5">4.3.1.13.</span> Pipewire</h5>
 <div class="outline-text-5" id="text-h:aa433f5e-a455-4414-b76b-0a2692fa06aa">
 <p>
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with <code>xdg-desktop-portal-wlr</code>.
@@ -4300,8 +4654,9 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"></a>Common network settings<br />
+</div>
+<div id="outline-container-h:7d696b64-debe-4a95-80b5-1e510156a6c6" class="outline-5">
+<h5 id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"><span class="section-number-5">4.3.1.14.</span> Common network settings</h5>
 <div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
 Here I only enable <code>networkmanager</code>. Most of the 'real' network config is done in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
@@ -4557,8 +4912,9 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:852d59ab-63c3-4831-993d-b5e23b877796"></a>Time, locale settings<br />
+</div>
+<div id="outline-container-h:852d59ab-63c3-4831-993d-b5e23b877796" class="outline-5">
+<h5 id="h:852d59ab-63c3-4831-993d-b5e23b877796"><span class="section-number-5">4.3.1.15.</span> Time, locale settings</h5>
 <div class="outline-text-5" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
 <p>
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
@@ -4590,8 +4946,9 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"></a>sops<br />
+</div>
+<div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-5">
+<h5 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-5">4.3.1.16.</span> sops</h5>
 <div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -4668,8 +5025,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e6e44705-94af-49fe-9ca0-0629d0f7d932"></a>Theme (stylix)<br />
+</div>
+<div id="outline-container-h:e6e44705-94af-49fe-9ca0-0629d0f7d932" class="outline-5">
+<h5 id="h:e6e44705-94af-49fe-9ca0-0629d0f7d932"><span class="section-number-5">4.3.1.17.</span> Theme (stylix)</h5>
 <div class="outline-text-5" id="text-h:e6e44705-94af-49fe-9ca0-0629d0f7d932">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
@@ -4741,8 +5099,9 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"></a>Programs (including zsh setup)<br />
+</div>
+<div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-5">
+<h5 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-5">4.3.1.18.</span> Programs (including zsh setup)</h5>
 <div class="outline-text-5" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
@@ -4760,8 +5119,8 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:7daa06ff-d3b0-4491-97ce-770b749c52f9"></a>zsh<br />
+<div id="outline-container-h:7daa06ff-d3b0-4491-97ce-770b749c52f9" class="outline-6">
+<h6 id="h:7daa06ff-d3b0-4491-97ce-770b749c52f9"><span class="section-number-6">4.3.1.18.1.</span> zsh</h6>
 <div class="outline-text-6" id="text-h:7daa06ff-d3b0-4491-97ce-770b749c52f9">
 <p>
 Do not touch this.
@@ -4778,8 +5137,9 @@ Do not touch this.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8"></a>syncthing<br />
+</div>
+<div id="outline-container-h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8" class="outline-6">
+<h6 id="h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8"><span class="section-number-6">4.3.1.18.2.</span> syncthing</h6>
 <div class="outline-text-6" id="text-h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -4835,17 +5195,17 @@ Do not touch this.
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"></a>Services<br />
+</div>
+</div>
+<div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-5">
+<h5 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-5">4.3.1.19.</span> Services</h5>
 <div class="outline-text-5" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:b91df05b-113d-4d09-93d1-b271e5b76810"></a>blueman<br />
+<div id="outline-container-h:b91df05b-113d-4d09-93d1-b271e5b76810" class="outline-6">
+<h6 id="h:b91df05b-113d-4d09-93d1-b271e5b76810"><span class="section-number-6">4.3.1.19.1.</span> blueman</h6>
 <div class="outline-text-6" id="text-h:b91df05b-113d-4d09-93d1-b271e5b76810">
 <p>
 Enables the blueman service including the nice system tray icon.
@@ -4860,15 +5220,16 @@ Enables the blueman service including the nice system tray icon.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:73ed28cb-2f82-47b2-8bc5-208278b55788"></a>Network devices<br />
+</div>
+<div id="outline-container-h:73ed28cb-2f82-47b2-8bc5-208278b55788" class="outline-6">
+<h6 id="h:73ed28cb-2f82-47b2-8bc5-208278b55788"><span class="section-number-6">4.3.1.19.2.</span> Network devices</h6>
 <div class="outline-text-6" id="text-h:73ed28cb-2f82-47b2-8bc5-208278b55788">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:fae5939e-22ac-4532-a10e-0b86013d20ce"></a>Scanners<br />
+<div id="outline-container-h:fae5939e-22ac-4532-a10e-0b86013d20ce" class="outline-7">
+<h7 id="h:fae5939e-22ac-4532-a10e-0b86013d20ce"><span class="section-number-7">4.3.1.19.2.1.</span> Scanners</h7>
 <div class="outline-text-7" id="text-h:fae5939e-22ac-4532-a10e-0b86013d20ce">
 <p>
 This allows me to use my big scanner/printer's scanning function over the network.
@@ -4886,8 +5247,9 @@ This allows me to use my big scanner/printer's scanning function over the networ
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:8c13df62-c6d9-4a0a-83be-d77e71628f0b"></a>Printers<br />
+</div>
+<div id="outline-container-h:8c13df62-c6d9-4a0a-83be-d77e71628f0b" class="outline-7">
+<h7 id="h:8c13df62-c6d9-4a0a-83be-d77e71628f0b"><span class="section-number-7">4.3.1.19.2.2.</span> Printers</h7>
 <div class="outline-text-7" id="text-h:8c13df62-c6d9-4a0a-83be-d77e71628f0b">
 <p>
 This allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
@@ -4914,8 +5276,9 @@ services.printing = {
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:80decee9-9151-4892-967e-73d103205770"></a>Avahi (device discovery)<br />
+</div>
+<div id="outline-container-h:80decee9-9151-4892-967e-73d103205770" class="outline-7">
+<h7 id="h:80decee9-9151-4892-967e-73d103205770"><span class="section-number-7">4.3.1.19.2.3.</span> Avahi (device discovery)</h7>
 <div class="outline-text-7" id="text-h:80decee9-9151-4892-967e-73d103205770">
 <p>
 Avahi is the service used for the network discovery.
@@ -4932,10 +5295,10 @@ services.avahi = {
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:f101daa2-604d-4553-99e2-f64b9c207f51"></a>enable GVfs<br />
+</div>
+</div>
+<div id="outline-container-h:f101daa2-604d-4553-99e2-f64b9c207f51" class="outline-6">
+<h6 id="h:f101daa2-604d-4553-99e2-f64b9c207f51"><span class="section-number-6">4.3.1.19.3.</span> enable GVfs</h6>
 <div class="outline-text-6" id="text-h:f101daa2-604d-4553-99e2-f64b9c207f51">
 <p>
 This is being set to allow myself to use all functions of nautilus in NixOS
@@ -4949,8 +5312,9 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"></a>interception-tools: Make CAPS work as ESC/CTRL<br />
+</div>
+<div id="outline-container-h:08d213d5-a9f4-4309-8635-ba557b01dc7d" class="outline-6">
+<h6 id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"><span class="section-number-6">4.3.1.19.4.</span> interception-tools: Make CAPS work as ESC/CTRL</h6>
 <div class="outline-text-6" id="text-h:08d213d5-a9f4-4309-8635-ba557b01dc7d">
 <p>
 This is a super-convenient package that lets my remap my <code>CAPS</code> key to <code>ESC</code> if pressed shortly, and <code>CTRL</code> if being held.
@@ -4989,8 +5353,9 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"></a>power-profiles-daemon<br />
+</div>
+<div id="outline-container-h:82fbba41-3a46-4db7-aade-49e4c23fc475" class="outline-6">
+<h6 id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"><span class="section-number-6">4.3.1.19.5.</span> power-profiles-daemon</h6>
 <div class="outline-text-6" id="text-h:82fbba41-3a46-4db7-aade-49e4c23fc475">
 <p>
 This enables power profile management. The available modes are:
@@ -5014,10 +5379,10 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"></a>Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules<br />
+</div>
+</div>
+<div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-5">
+<h5 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-5">4.3.1.20.</span> Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</h5>
 <div class="outline-text-5" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 <p>
 It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -5055,8 +5420,9 @@ Also, this is a good place to setup the udev rules.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:eae45839-223a-4027-bce3-e26e092c9096"></a>System Login<br />
+</div>
+<div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-5">
+<h5 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-5">4.3.1.21.</span> System Login</h5>
 <div class="outline-text-5" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -5087,8 +5453,9 @@ This section houses the greetd related settings. I do not really want to use a d
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:404cc18b-b5f8-48d9-a407-a0fd70d57f46"></a>nix-ld<br />
+</div>
+<div id="outline-container-h:404cc18b-b5f8-48d9-a407-a0fd70d57f46" class="outline-5">
+<h5 id="h:404cc18b-b5f8-48d9-a407-a0fd70d57f46"><span class="section-number-5">4.3.1.22.</span> nix-ld</h5>
 <div class="outline-text-5" id="text-h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">
 <p>
 This provides libraries for binaries that are not patched for use on NixOS. This really makes the biggest gripe with NixOS go away, that being having to run a binary that is only found in a single spot. It is most of the times possible to patch such a file, but this makes such a situation take much less time to resolve.
@@ -5215,8 +5582,9 @@ When a program does not work, start with <code>nix-ldd &lt;program&gt;</code>. T
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e7668594-fa8b-4d36-a695-a58222478988"></a>Impermanence<br />
+</div>
+<div id="outline-container-h:e7668594-fa8b-4d36-a695-a58222478988" class="outline-5">
+<h5 id="h:e7668594-fa8b-4d36-a695-a58222478988"><span class="section-number-5">4.3.1.23.</span> Impermanence</h5>
 <div class="outline-text-5" id="text-h:e7668594-fa8b-4d36-a695-a58222478988">
 <p>
 This is where the impermanence magic happens. When this is enabled, the root directory is rolled back to a blanket state on each reboot.
@@ -5319,8 +5687,9 @@ Normally, doing that also resets the lecture that happens on the first use of <c
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:b751d77d-246c-4bd6-b689-3467d82bf9c3"></a>Summary of nixos-rebuild diff<br />
+</div>
+<div id="outline-container-h:b751d77d-246c-4bd6-b689-3467d82bf9c3" class="outline-5">
+<h5 id="h:b751d77d-246c-4bd6-b689-3467d82bf9c3"><span class="section-number-5">4.3.1.24.</span> Summary of nixos-rebuild diff</h5>
 <div class="outline-text-5" id="text-h:b751d77d-246c-4bd6-b689-3467d82bf9c3">
 <p>
 This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
@@ -5340,8 +5709,9 @@ This snipped is added to the activation script that is run after every rebuild a
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f"></a>gnome-keyring<br />
+</div>
+<div id="outline-container-h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f" class="outline-5">
+<h5 id="h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f"><span class="section-number-5">4.3.1.25.</span> gnome-keyring</h5>
 <div class="outline-text-5" id="text-h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">
 <p>
 Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
@@ -5359,8 +5729,9 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f78ffdd3-232b-4313-bd89-d6fb331fef22"></a>Sway<br />
+</div>
+<div id="outline-container-h:f78ffdd3-232b-4313-bd89-d6fb331fef22" class="outline-5">
+<h5 id="h:f78ffdd3-232b-4313-bd89-d6fb331fef22"><span class="section-number-5">4.3.1.26.</span> Sway</h5>
 <div class="outline-text-5" id="text-h:f78ffdd3-232b-4313-bd89-d6fb331fef22">
 <p>
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the <code>package</code> attribute will be <code>null</code> for such an host, using the systems derivation instead.
@@ -5392,8 +5763,9 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"></a>xdg-portal<br />
+</div>
+<div id="outline-container-h:872d5f46-2ffd-4076-9a2c-98783dd29434" class="outline-5">
+<h5 id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"><span class="section-number-5">4.3.1.27.</span> xdg-portal</h5>
 <div class="outline-text-5" id="text-h:872d5f46-2ffd-4076-9a2c-98783dd29434">
 <p>
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
@@ -5422,8 +5794,9 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4"></a>safeeyes<br />
+</div>
+<div id="outline-container-h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4" class="outline-5">
+<h5 id="h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4"><span class="section-number-5">4.3.1.28.</span> safeeyes</h5>
 <div class="outline-text-5" id="text-h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4">
 <p>
 A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
@@ -5437,8 +5810,9 @@ A friend of mine used this service and I used to make fun of him. But I have to 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1bef3914-a258-4585-b232-e0fbe9e7a9b5"></a>Podmam (distrobox)<br />
+</div>
+<div id="outline-container-h:1bef3914-a258-4585-b232-e0fbe9e7a9b5" class="outline-5">
+<h5 id="h:1bef3914-a258-4585-b232-e0fbe9e7a9b5"><span class="section-number-5">4.3.1.29.</span> Podmam (distrobox)</h5>
 <div class="outline-text-5" id="text-h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">
 <p>
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
@@ -5460,8 +5834,9 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd"></a>Handle lid switch correctly<br />
+</div>
+<div id="outline-container-h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd" class="outline-5">
+<h5 id="h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd"><span class="section-number-5">4.3.1.30.</span> Handle lid switch correctly</h5>
 <div class="outline-text-5" id="text-h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">
 <p>
 This turns off the display when the lid is closed.
@@ -5497,15 +5872,14 @@ This turns off the display when the lid is closed.
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:e492c24a-83a0-4bcb-a084-706f49318651" class="outline-4">
 <h4 id="h:e492c24a-83a0-4bcb-a084-706f49318651"><span class="section-number-4">4.3.2.</span> Server</h4>
 <div class="outline-text-4" id="text-h:e492c24a-83a0-4bcb-a084-706f49318651">
 </div>
-<ol class="org-ol">
-<li><a id="h:4e64e564-b7cb-469f-bd79-cd3efb3caa62"></a>Imports<br />
+<div id="outline-container-h:4e64e564-b7cb-469f-bd79-cd3efb3caa62" class="outline-5">
+<h5 id="h:4e64e564-b7cb-469f-bd79-cd3efb3caa62"><span class="section-number-5">4.3.2.1.</span> Imports</h5>
 <div class="outline-text-5" id="text-h:4e64e564-b7cb-469f-bd79-cd3efb3caa62">
 <p>
 First, we enable the use of <code>home-manager</code> as a NixoS module.
@@ -5561,8 +5935,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:dc365e83-f6c8-4d05-a390-b5f2d01649b4"></a>General NixOS Server settings<br />
+</div>
+<div id="outline-container-h:dc365e83-f6c8-4d05-a390-b5f2d01649b4" class="outline-5">
+<h5 id="h:dc365e83-f6c8-4d05-a390-b5f2d01649b4"><span class="section-number-5">4.3.2.2.</span> General NixOS Server settings</h5>
 <div class="outline-text-5" id="text-h:dc365e83-f6c8-4d05-a390-b5f2d01649b4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5588,8 +5963,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:6f2967d9-7e32-4605-bb5c-5e27770bec0f"></a>System Packages<br />
+</div>
+<div id="outline-container-h:6f2967d9-7e32-4605-bb5c-5e27770bec0f" class="outline-5">
+<h5 id="h:6f2967d9-7e32-4605-bb5c-5e27770bec0f"><span class="section-number-5">4.3.2.3.</span> System Packages</h5>
 <div class="outline-text-5" id="text-h:6f2967d9-7e32-4605-bb5c-5e27770bec0f">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -5605,8 +5981,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4"></a>sops<br />
+</div>
+<div id="outline-container-h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4" class="outline-5">
+<h5 id="h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4"><span class="section-number-5">4.3.2.4.</span> sops</h5>
 <div class="outline-text-5" id="text-h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, ... }:
@@ -5621,8 +5998,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d6840d31-110c-465f-93fa-0306f755de28"></a>nfs/samba (smb)<br />
+</div>
+<div id="outline-container-h:d6840d31-110c-465f-93fa-0306f755de28" class="outline-5">
+<h5 id="h:d6840d31-110c-465f-93fa-0306f755de28"><span class="section-number-5">4.3.2.5.</span> nfs/samba (smb)</h5>
 <div class="outline-text-5" id="text-h:d6840d31-110c-465f-93fa-0306f755de28">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -5677,8 +6055,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:302468d2-106a-41c8-b2bc-9fdc40064a9c"></a>NGINX<br />
+</div>
+<div id="outline-container-h:302468d2-106a-41c8-b2bc-9fdc40064a9c" class="outline-5">
+<h5 id="h:302468d2-106a-41c8-b2bc-9fdc40064a9c"><span class="section-number-5">4.3.2.6.</span> NGINX</h5>
 <div class="outline-text-5" id="text-h:302468d2-106a-41c8-b2bc-9fdc40064a9c">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, config, ... }:
@@ -5719,8 +6098,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f3db197d-1d03-4bf8-b59f-f9891b358f0b"></a>ssh<br />
+</div>
+<div id="outline-container-h:f3db197d-1d03-4bf8-b59f-f9891b358f0b" class="outline-5">
+<h5 id="h:f3db197d-1d03-4bf8-b59f-f9891b358f0b"><span class="section-number-5">4.3.2.7.</span> ssh</h5>
 <div class="outline-text-5" id="text-h:f3db197d-1d03-4bf8-b59f-f9891b358f0b">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, ... }:
@@ -5741,8 +6121,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295"></a>kavita<br />
+</div>
+<div id="outline-container-h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295" class="outline-5">
+<h5 id="h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295"><span class="section-number-5">4.3.2.8.</span> kavita</h5>
 <div class="outline-text-5" id="text-h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5790,8 +6171,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b"></a>jellyfin<br />
+</div>
+<div id="outline-container-h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b" class="outline-5">
+<h5 id="h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b"><span class="section-number-5">4.3.2.9.</span> jellyfin</h5>
 <div class="outline-text-5" id="text-h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -5841,8 +6223,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72"></a>navidrome<br />
+</div>
+<div id="outline-container-h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72" class="outline-5">
+<h5 id="h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72"><span class="section-number-5">4.3.2.10.</span> navidrome</h5>
 <div class="outline-text-5" id="text-h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, inputs, config, ... }:
@@ -5944,8 +6327,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41"></a>spotifyd<br />
+</div>
+<div id="outline-container-h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41" class="outline-5">
+<h5 id="h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41"><span class="section-number-5">4.3.2.11.</span> spotifyd</h5>
 <div class="outline-text-5" id="text-h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -5985,8 +6369,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:baa4149b-3788-4b05-87ec-0ee9d0726117"></a>mpd<br />
+</div>
+<div id="outline-container-h:baa4149b-3788-4b05-87ec-0ee9d0726117" class="outline-5">
+<h5 id="h:baa4149b-3788-4b05-87ec-0ee9d0726117"><span class="section-number-5">4.3.2.12.</span> mpd</h5>
 <div class="outline-text-5" id="text-h:baa4149b-3788-4b05-87ec-0ee9d0726117">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6043,8 +6428,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1e68d84a-8f99-422f-89ac-78f664ac0013"></a>matrix<br />
+</div>
+<div id="outline-container-h:1e68d84a-8f99-422f-89ac-78f664ac0013" class="outline-5">
+<h5 id="h:1e68d84a-8f99-422f-89ac-78f664ac0013"><span class="section-number-5">4.3.2.13.</span> matrix</h5>
 <div class="outline-text-5" id="text-h:1e68d84a-8f99-422f-89ac-78f664ac0013">
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, pkgs, sops, ... }:
@@ -6368,8 +6754,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d11ad8d5-25d7-4691-b319-61c16ccef715"></a>nextcloud<br />
+</div>
+<div id="outline-container-h:d11ad8d5-25d7-4691-b319-61c16ccef715" class="outline-5">
+<h5 id="h:d11ad8d5-25d7-4691-b319-61c16ccef715"><span class="section-number-5">4.3.2.14.</span> nextcloud</h5>
 <div class="outline-text-5" id="text-h:d11ad8d5-25d7-4691-b319-61c16ccef715">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6418,8 +6805,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:33bad8ad-b362-4bf1-8a49-b9df92329aed"></a>immich<br />
+</div>
+<div id="outline-container-h:33bad8ad-b362-4bf1-8a49-b9df92329aed" class="outline-5">
+<h5 id="h:33bad8ad-b362-4bf1-8a49-b9df92329aed"><span class="section-number-5">4.3.2.15.</span> immich</h5>
 <div class="outline-text-5" id="text-h:33bad8ad-b362-4bf1-8a49-b9df92329aed">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6474,8 +6862,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:89638fb5-0593-4420-9567-f85f0223e341"></a>paperless<br />
+</div>
+<div id="outline-container-h:89638fb5-0593-4420-9567-f85f0223e341" class="outline-5">
+<h5 id="h:89638fb5-0593-4420-9567-f85f0223e341"><span class="section-number-5">4.3.2.16.</span> paperless</h5>
 <div class="outline-text-5" id="text-h:89638fb5-0593-4420-9567-f85f0223e341">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6531,8 +6920,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5afeb311-ab86-4029-be53-2160f6d836c3"></a>transmission<br />
+</div>
+<div id="outline-container-h:5afeb311-ab86-4029-be53-2160f6d836c3" class="outline-5">
+<h5 id="h:5afeb311-ab86-4029-be53-2160f6d836c3"><span class="section-number-5">4.3.2.17.</span> transmission</h5>
 <div class="outline-text-5" id="text-h:5afeb311-ab86-4029-be53-2160f6d836c3">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -6671,8 +7061,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d"></a>syncthing<br />
+</div>
+<div id="outline-container-h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d" class="outline-5">
+<h5 id="h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d"><span class="section-number-5">4.3.2.18.</span> syncthing</h5>
 <div class="outline-text-5" id="text-h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6788,8 +7179,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:b73ac8bf-b721-4563-9eff-973925c99a39"></a>restic<br />
+</div>
+<div id="outline-container-h:b73ac8bf-b721-4563-9eff-973925c99a39" class="outline-5">
+<h5 id="h:b73ac8bf-b721-4563-9eff-973925c99a39"><span class="section-number-5">4.3.2.19.</span> restic</h5>
 <div class="outline-text-5" id="text-h:b73ac8bf-b721-4563-9eff-973925c99a39">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -6803,8 +7195,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a31c7192-e11d-4a26-915d-1bbc38e373d3"></a>monitoring<br />
+</div>
+<div id="outline-container-h:a31c7192-e11d-4a26-915d-1bbc38e373d3" class="outline-5">
+<h5 id="h:a31c7192-e11d-4a26-915d-1bbc38e373d3"><span class="section-number-5">4.3.2.20.</span> monitoring</h5>
 <div class="outline-text-5" id="text-h:a31c7192-e11d-4a26-915d-1bbc38e373d3">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, lib, config, ... }:
@@ -6970,8 +7363,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:23452a18-a0a1-4515-8612-ceb19bb5fc22"></a>Jenkins<br />
+</div>
+<div id="outline-container-h:23452a18-a0a1-4515-8612-ceb19bb5fc22" class="outline-5">
+<h5 id="h:23452a18-a0a1-4515-8612-ceb19bb5fc22"><span class="section-number-5">4.3.2.21.</span> Jenkins</h5>
 <div class="outline-text-5" id="text-h:23452a18-a0a1-4515-8612-ceb19bb5fc22">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
@@ -7012,8 +7406,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4e6824bc-c3db-485d-b543-4072e6283b62"></a>Emacs (RSS Server)<br />
+</div>
+<div id="outline-container-h:4e6824bc-c3db-485d-b543-4072e6283b62" class="outline-5">
+<h5 id="h:4e6824bc-c3db-485d-b543-4072e6283b62"><span class="section-number-5">4.3.2.22.</span> Emacs (RSS Server)</h5>
 <div class="outline-text-5" id="text-h:4e6824bc-c3db-485d-b543-4072e6283b62">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
@@ -7051,15 +7446,14 @@ in
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47" class="outline-4">
 <h4 id="h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47"><span class="section-number-4">4.3.3.</span> Darwin</h4>
 <div class="outline-text-4" id="text-h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">
 </div>
-<ol class="org-ol">
-<li><a id="h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4"></a>Imports<br />
+<div id="outline-container-h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4" class="outline-5">
+<h5 id="h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4"><span class="section-number-5">4.3.3.1.</span> Imports</h5>
 <div class="outline-text-5" id="text-h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -7089,8 +7483,7 @@ in
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589" class="outline-4">
 <h4 id="h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589"><span class="section-number-4">4.3.4.</span> Optional</h4>
@@ -7107,8 +7500,8 @@ These sets of configuration do not need to be deployed on every host, for a mult
 <li>The work profile is only used on my work laptop.</li>
 </ul>
 </div>
-<ol class="org-ol">
-<li><a id="h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"></a>gaming<br />
+<div id="outline-container-h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431" class="outline-5">
+<h5 id="h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"><span class="section-number-5">4.3.4.1.</span> gaming</h5>
 <div class="outline-text-5" id="text-h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431">
 <p>
 This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in <a href="#h:84fd7029-ecb6-4131-9333-289982f24ffa">Gaming</a> (home-manager side).
@@ -7155,8 +7548,9 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:b3523246-14e9-4284-ba22-cebc5ca36732"></a>VirtualBox<br />
+</div>
+<div id="outline-container-h:b3523246-14e9-4284-ba22-cebc5ca36732" class="outline-5">
+<h5 id="h:b3523246-14e9-4284-ba22-cebc5ca36732"><span class="section-number-5">4.3.4.2.</span> VirtualBox</h5>
 <div class="outline-text-5" id="text-h:b3523246-14e9-4284-ba22-cebc5ca36732">
 <p>
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialisation.
@@ -7187,8 +7581,9 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:34db28fb-62f7-4597-a9ff-0de2991a8415"></a>VmWare<br />
+</div>
+<div id="outline-container-h:34db28fb-62f7-4597-a9ff-0de2991a8415" class="outline-5">
+<h5 id="h:34db28fb-62f7-4597-a9ff-0de2991a8415"><span class="section-number-5">4.3.4.3.</span> VmWare</h5>
 <div class="outline-text-5" id="text-h:34db28fb-62f7-4597-a9ff-0de2991a8415">
 <p>
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
@@ -7204,8 +7599,9 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:fa8d9ec4-3e22-458a-9239-859cffe7f55c"></a>Auto-login<br />
+</div>
+<div id="outline-container-h:fa8d9ec4-3e22-458a-9239-859cffe7f55c" class="outline-5">
+<h5 id="h:fa8d9ec4-3e22-458a-9239-859cffe7f55c"><span class="section-number-5">4.3.4.4.</span> Auto-login</h5>
 <div class="outline-text-5" id="text-h:fa8d9ec4-3e22-458a-9239-859cffe7f55c">
 <p>
 Auto login for the initial session.
@@ -7222,8 +7618,9 @@ Auto login for the initial session.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5c41c4ee-22ca-405b-9e4f-cc4051634edd"></a>nswitch-rcm<br />
+</div>
+<div id="outline-container-h:5c41c4ee-22ca-405b-9e4f-cc4051634edd" class="outline-5">
+<h5 id="h:5c41c4ee-22ca-405b-9e4f-cc4051634edd"><span class="section-number-5">4.3.4.5.</span> nswitch-rcm</h5>
 <div class="outline-text-5" id="text-h:5c41c4ee-22ca-405b-9e4f-cc4051634edd">
 <p>
 This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
@@ -7243,8 +7640,9 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"></a>work<br />
+</div>
+<div id="outline-container-h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf" class="outline-5">
+<h5 id="h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"><span class="section-number-5">4.3.4.6.</span> work</h5>
 <div class="outline-text-5" id="text-h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">
 <p>
 Options that I need specifically at work. There are more options at <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> (home-manager side).
@@ -7381,8 +7779,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:3fc1d301-7bae-4678-9085-d12c23eed8ac"></a>Minimal Install<br />
+</div>
+<div id="outline-container-h:3fc1d301-7bae-4678-9085-d12c23eed8ac" class="outline-5">
+<h5 id="h:3fc1d301-7bae-4678-9085-d12c23eed8ac"><span class="section-number-5">4.3.4.7.</span> Minimal Install</h5>
 <div class="outline-text-5" id="text-h:3fc1d301-7bae-4678-9085-d12c23eed8ac">
 <p>
 These options are really only to be used on the iso image in order to run nixos-anywhere.
@@ -7453,8 +7852,7 @@ These options are really only to be used on the iso image in order to run nixos-
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 </div>
 <div id="outline-container-h:08ded95b-9c43-475d-a0b2-fc088a512287" class="outline-3">
@@ -7468,8 +7866,8 @@ The general structure is the same as in the <a href="#h:6da812f5-358c-49cb-aff2-
 <h4 id="h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e"><span class="section-number-4">4.4.1.</span> Common</h4>
 <div class="outline-text-4" id="text-h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">
 </div>
-<ol class="org-ol">
-<li><a id="h:16fd2e85-fdd4-440a-81f0-65b9b098a43a"></a>Imports<br />
+<div id="outline-container-h:16fd2e85-fdd4-440a-81f0-65b9b098a43a" class="outline-5">
+<h5 id="h:16fd2e85-fdd4-440a-81f0-65b9b098a43a"><span class="section-number-5">4.4.1.1.</span> Imports</h5>
 <div class="outline-text-5" id="text-h:16fd2e85-fdd4-440a-81f0-65b9b098a43a">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -7517,8 +7915,9 @@ This section sets up all the imports that are used in the home-manager section.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4af4f67f-7c48-4754-b4bd-6800e3a66664"></a>General home-manager-settings<br />
+</div>
+<div id="outline-container-h:4af4f67f-7c48-4754-b4bd-6800e3a66664" class="outline-5">
+<h5 id="h:4af4f67f-7c48-4754-b4bd-6800e3a66664"><span class="section-number-5">4.4.1.2.</span> General home-manager-settings</h5>
 <div class="outline-text-5" id="text-h:4af4f67f-7c48-4754-b4bd-6800e3a66664">
 <p>
 Again, we adapt <code>nix</code> to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
@@ -7554,8 +7953,9 @@ Again, we adapt <code>nix</code> to our needs, enable the home-manager command f
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:893a7f33-7715-415b-a895-2687ded31c18"></a>Installed packages<br />
+</div>
+<div id="outline-container-h:893a7f33-7715-415b-a895-2687ded31c18" class="outline-5">
+<h5 id="h:893a7f33-7715-415b-a895-2687ded31c18"><span class="section-number-5">4.4.1.3.</span> Installed packages</h5>
 <div class="outline-text-5" id="text-h:893a7f33-7715-415b-a895-2687ded31c18">
 <p>
 Here are defined some packages that I would like to use across all my machines. Most of these should not require further setup. Notably the cura package is severely outdated on nixpkgs, so I just fetch a more recent AppImage and run that instead.
@@ -7569,8 +7969,8 @@ Also, I define some useful shell scripts here.
 Programming languages and default lsp's are defined here: <a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">System Packages</a>
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75"></a>Packaged<br />
+<div id="outline-container-h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75" class="outline-6">
+<h6 id="h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75"><span class="section-number-6">4.4.1.3.1.</span> Packaged</h6>
 <div class="outline-text-6" id="text-h:6ef9bb5f-c5ee-496e-86e2-d8d271a34d75">
 <p>
 This holds packages that I can use as provided, or with small modifications (as in the <code>texlive</code> package that needs special configuration).
@@ -7740,8 +8140,9 @@ This holds packages that I can use as provided, or with small modifications (as 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:96cbea91-ff13-4120-b8a9-496b2fa96e70"></a>Self-defined<br />
+</div>
+<div id="outline-container-h:96cbea91-ff13-4120-b8a9-496b2fa96e70" class="outline-6">
+<h6 id="h:96cbea91-ff13-4120-b8a9-496b2fa96e70"><span class="section-number-6">4.4.1.3.2.</span> Self-defined</h6>
 <div class="outline-text-6" id="text-h:96cbea91-ff13-4120-b8a9-496b2fa96e70">
 <p>
 This is just a separate container for derivations defined in <a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">Packages</a>. This is a good idea so that I do not lose track of package names I have defined myself, as this was once a problem in the past already.
@@ -7806,10 +8207,10 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"></a>sops<br />
+</div>
+</div>
+<div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-5">
+<h5 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-5">4.4.1.4.</span> sops</h5>
 <div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -7855,8 +8256,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"></a>SSH Machines<br />
+</div>
+<div id="outline-container-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08" class="outline-5">
+<h5 id="h:edd6720e-1f90-40bf-b6f9-30a19d4cae08"><span class="section-number-5">4.4.1.5.</span> SSH Machines</h5>
 <div class="outline-text-5" id="text-h:edd6720e-1f90-40bf-b6f9-30a19d4cae08">
 <p>
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
@@ -7907,8 +8309,9 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a92318cd-413e-4e78-a478-e63b09df019c"></a>Theme (stylix)<br />
+</div>
+<div id="outline-container-h:a92318cd-413e-4e78-a478-e63b09df019c" class="outline-5">
+<h5 id="h:a92318cd-413e-4e78-a478-e63b09df019c"><span class="section-number-5">4.4.1.6.</span> Theme (stylix)</h5>
 <div class="outline-text-5" id="text-h:a92318cd-413e-4e78-a478-e63b09df019c">
 <p>
 These section allows home-manager to allow theme settings, and handles some other appearance-related settings like cursor styles. Interestingly, system icons (adwaita) still need to be setup on system-level, and will break if defined here.
@@ -7982,8 +8385,9 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:867556e6-5a24-4c43-9d47-3edca2f16488"></a>Desktop Entries, MIME types (xdg)<br />
+</div>
+<div id="outline-container-h:867556e6-5a24-4c43-9d47-3edca2f16488" class="outline-5">
+<h5 id="h:867556e6-5a24-4c43-9d47-3edca2f16488"><span class="section-number-5">4.4.1.7.</span> Desktop Entries, MIME types (xdg)</h5>
 <div class="outline-text-5" id="text-h:867556e6-5a24-4c43-9d47-3edca2f16488">
 <p>
 Some programs lack a dmenu launcher - I define them myself here.
@@ -8082,8 +8486,9 @@ _:
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5ef03803-e150-41bc-b603-e80d60d96efc"></a>Linking dotfiles<br />
+</div>
+<div id="outline-container-h:5ef03803-e150-41bc-b603-e80d60d96efc" class="outline-5">
+<h5 id="h:5ef03803-e150-41bc-b603-e80d60d96efc"><span class="section-number-5">4.4.1.8.</span> Linking dotfiles</h5>
 <div class="outline-text-5" id="text-h:5ef03803-e150-41bc-b603-e80d60d96efc">
 <p>
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
@@ -8137,8 +8542,9 @@ Also in firefox `about:config &gt; toolkit.legacyUserProfileCustomizations.style
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"></a>Sourcing environment variables<br />
+</div>
+<div id="outline-container-h:4486b02f-4fb8-432b-bfa2-2e786206341d" class="outline-5">
+<h5 id="h:4486b02f-4fb8-432b-bfa2-2e786206341d"><span class="section-number-5">4.4.1.9.</span> Sourcing environment variables</h5>
 <div class="outline-text-5" id="text-h:4486b02f-4fb8-432b-bfa2-2e786206341d">
 <p>
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the <a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">Sway</a> section.
@@ -8156,8 +8562,9 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"></a>General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf<br />
+</div>
+<div id="outline-container-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde" class="outline-5">
+<h5 id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"><span class="section-number-5">4.4.1.10.</span> General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf</h5>
 <div class="outline-text-5" id="text-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">
 <p>
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
@@ -8186,8 +8593,9 @@ This section is for programs that require no further configuration. zsh Integrat
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748"></a>nix-index<br />
+</div>
+<div id="outline-container-h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748" class="outline-5">
+<h5 id="h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748"><span class="section-number-5">4.4.1.11.</span> nix-index</h5>
 <div class="outline-text-5" id="text-h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748">
 <p>
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for <code>command-not-found.sh</code>, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
@@ -8218,8 +8626,9 @@ nix-index provides a way to find out which packages are provided by which deriva
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"></a>password-store<br />
+</div>
+<div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-5">
+<h5 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-5">4.4.1.12.</span> password-store</h5>
 <div class="outline-text-5" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
 <p>
 Enables password store with the <code>pass-otp</code> extension which allows me to store and generate one-time-passwords.
@@ -8239,8 +8648,9 @@ Enables password store with the <code>pass-otp</code> extension which allows me 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"></a>direnv<br />
+</div>
+<div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-5">
+<h5 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-5">4.4.1.13.</span> direnv</h5>
 <div class="outline-text-5" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
 <p>
 Enables direnv, which I use for nearly all of my nix dev flakes.
@@ -8257,8 +8667,9 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"></a>eza<br />
+</div>
+<div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-5">
+<h5 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-5">4.4.1.14.</span> eza</h5>
 <div class="outline-text-5" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
 <p>
 Eza provides me with a better <code>ls</code> command and some other useful aliases.
@@ -8280,8 +8691,9 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:419675ec-3310-438e-80ae-9eaa798a319d"></a>git<br />
+</div>
+<div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-5">
+<h5 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-5">4.4.1.15.</span> git</h5>
 <div class="outline-text-5" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
 <p>
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using <a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">Magit</a>) as well as a git template defined in <a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">Linking dotfiles</a>.
@@ -8330,8 +8742,9 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"></a>Fuzzel<br />
+</div>
+<div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-5">
+<h5 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-5">4.4.1.16.</span> Fuzzel</h5>
 <div class="outline-text-5" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
 <p>
 Here I only need to set basic layout options - the rest is being managed by stylix.
@@ -8355,8 +8768,9 @@ Here I only need to set basic layout options - the rest is being managed by styl
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:55212502-c8f6-43af-ae99-55c8377ef34e"></a>Starship<br />
+</div>
+<div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-5">
+<h5 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-5">4.4.1.17.</span> Starship</h5>
 <div class="outline-text-5" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
 <p>
 Starship makes my <code>zsh</code> look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
@@ -8472,8 +8886,9 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"></a>Kitty<br />
+</div>
+<div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-5">
+<h5 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-5">4.4.1.18.</span> Kitty</h5>
 <div class="outline-text-5" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
 <p>
 Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
@@ -8499,8 +8914,9 @@ The theme is handled by stylix.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"></a>zsh<br />
+</div>
+<div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-5">
+<h5 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-5">4.4.1.19.</span> zsh</h5>
 <div class="outline-text-5" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
 <p>
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
@@ -8632,8 +9048,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"></a>zellij<br />
+</div>
+<div id="outline-container-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7" class="outline-5">
+<h5 id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"><span class="section-number-5">4.4.1.20.</span> zellij</h5>
 <div class="outline-text-5" id="text-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">
 <div class="org-src-container">
 <pre class="src src-nix">_:
@@ -8840,8 +9257,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:45de9430-f925-4df6-9db6-bffb5b8f1604"></a>tmux<br />
+</div>
+<div id="outline-container-h:45de9430-f925-4df6-9db6-bffb5b8f1604" class="outline-5">
+<h5 id="h:45de9430-f925-4df6-9db6-bffb5b8f1604"><span class="section-number-5">4.4.1.21.</span> tmux</h5>
 <div class="outline-text-5" id="text-h:45de9430-f925-4df6-9db6-bffb5b8f1604">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -8947,8 +9365,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"></a>Mail<br />
+</div>
+<div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-5">
+<h5 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-5">4.4.1.22.</span> Mail</h5>
 <div class="outline-text-5" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
 <p>
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
@@ -9091,8 +9510,9 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:c05d1b64-7110-4151-b436-46bc447113b4"></a>Home-manager: Emacs<br />
+</div>
+<div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-5">
+<h5 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-5">4.4.1.23.</span> Home-manager: Emacs</h5>
 <div class="outline-text-5" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
 <p>
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my <code>init.el</code> file to the configuration which will then be parsed upon system rebuild, looking for <code>use-package</code> sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (<code>emacs-pgtk</code>). All of the nice options such as <code>tree-sitter</code> support are enabled by default, so I do not need to adjust the build process.
@@ -9176,8 +9596,9 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"></a>Waybar<br />
+</div>
+<div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-5">
+<h5 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-5">4.4.1.24.</span> Waybar</h5>
 <div class="outline-text-5" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
 <p>
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
@@ -9459,8 +9880,9 @@ The rest of the related configuration is found here:
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"></a>Firefox<br />
+</div>
+<div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-5">
+<h5 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-5">4.4.1.25.</span> Firefox</h5>
 <div class="outline-text-5" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
 Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
@@ -9762,15 +10184,16 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"></a>Services<br />
+</div>
+<div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-5">
+<h5 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-5">4.4.1.26.</span> Services</h5>
 <div class="outline-text-5" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
 <p>
 Services that can be defined through home-manager should be defined here.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"></a>gnome-keyring<br />
+<div id="outline-container-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9" class="outline-6">
+<h6 id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"><span class="section-number-6">4.4.1.26.1.</span> gnome-keyring</h6>
 <div class="outline-text-6" id="text-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">
 <p>
 Used for storing sessions in e.g. Nextcloud
@@ -9786,8 +10209,9 @@ Used for storing sessions in e.g. Nextcloud
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"></a>KDE Connect<br />
+</div>
+<div id="outline-container-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d" class="outline-6">
+<h6 id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"><span class="section-number-6">4.4.1.26.2.</span> KDE Connect</h6>
 <div class="outline-text-6" id="text-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">
 <p>
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
@@ -9805,8 +10229,9 @@ This enables phone/computer communication, including sending clipboard, files et
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:99d05729-df35-4958-9940-3319d6a41359"></a>Mako<br />
+</div>
+<div id="outline-container-h:99d05729-df35-4958-9940-3319d6a41359" class="outline-6">
+<h6 id="h:99d05729-df35-4958-9940-3319d6a41359"><span class="section-number-6">4.4.1.26.3.</span> Mako</h6>
 <div class="outline-text-6" id="text-h:99d05729-df35-4958-9940-3319d6a41359">
 <p>
 Desktop notifications!
@@ -9851,8 +10276,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1598c90b-f195-41a0-9132-94612edf3586"></a>yubikey-touch-detector<br />
+</div>
+<div id="outline-container-h:1598c90b-f195-41a0-9132-94612edf3586" class="outline-6">
+<h6 id="h:1598c90b-f195-41a0-9132-94612edf3586"><span class="section-number-6">4.4.1.26.4.</span> yubikey-touch-detector</h6>
 <div class="outline-text-6" id="text-h:1598c90b-f195-41a0-9132-94612edf3586">
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, ... }:
@@ -9887,10 +10313,10 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"></a>Sway<br />
+</div>
+</div>
+<div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-5">
+<h5 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-5">4.4.1.27.</span> Sway</h5>
 <div class="outline-text-5" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
 <p>
 I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
@@ -10194,8 +10620,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"></a>gpg-agent<br />
+</div>
+<div id="outline-container-h:7d384e3b-1be7-4644-b304-ada4af0b692b" class="outline-5">
+<h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">4.4.1.28.</span> gpg-agent</h5>
 <div class="outline-text-5" id="text-h:7d384e3b-1be7-4644-b304-ada4af0b692b">
 <p>
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
@@ -10220,8 +10647,9 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"></a>gammastep<br />
+</div>
+<div id="outline-container-h:74e236be-a977-4d38-b8c5-0b9feef8af91" class="outline-5">
+<h5 id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"><span class="section-number-5">4.4.1.29.</span> gammastep</h5>
 <div class="outline-text-5" id="text-h:74e236be-a977-4d38-b8c5-0b9feef8af91">
 <p>
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
@@ -10240,15 +10668,14 @@ This service changes the screen hue at night. I am not sure if that really does 
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb" class="outline-4">
 <h4 id="h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb"><span class="section-number-4">4.4.2.</span> Server</h4>
 <div class="outline-text-4" id="text-h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">
 </div>
-<ol class="org-ol">
-<li><a id="h:7b4ee01a-b505-47da-8fb9-0b41285d0eab"></a>Imports<br />
+<div id="outline-container-h:7b4ee01a-b505-47da-8fb9-0b41285d0eab" class="outline-5">
+<h5 id="h:7b4ee01a-b505-47da-8fb9-0b41285d0eab"><span class="section-number-5">4.4.2.1.</span> Imports</h5>
 <div class="outline-text-5" id="text-h:7b4ee01a-b505-47da-8fb9-0b41285d0eab">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -10268,8 +10695,9 @@ in
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:9fac0904-b615-4d9d-9bae-54a6691999c3"></a>Linking dotfiles<br />
+</div>
+<div id="outline-container-h:9fac0904-b615-4d9d-9bae-54a6691999c3" class="outline-5">
+<h5 id="h:9fac0904-b615-4d9d-9bae-54a6691999c3"><span class="section-number-5">4.4.2.2.</span> Linking dotfiles</h5>
 <div class="outline-text-5" id="text-h:9fac0904-b615-4d9d-9bae-54a6691999c3">
 <p>
 This section should be used in order to symlink already existing configuration files using `home.file` and setting session variables using `home.sessionVariables`.
@@ -10292,15 +10720,14 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:e0536bff-2552-4ac4-a34a-a23937a2c30f" class="outline-4">
 <h4 id="h:e0536bff-2552-4ac4-a34a-a23937a2c30f"><span class="section-number-4">4.4.3.</span> Darwin</h4>
 <div class="outline-text-4" id="text-h:e0536bff-2552-4ac4-a34a-a23937a2c30f">
 </div>
-<ol class="org-ol">
-<li><a id="h:cff37bdf-4f22-419a-af4e-2665ede9add0"></a>Imports<br />
+<div id="outline-container-h:cff37bdf-4f22-419a-af4e-2665ede9add0" class="outline-5">
+<h5 id="h:cff37bdf-4f22-419a-af4e-2665ede9add0"><span class="section-number-5">4.4.3.1.</span> Imports</h5>
 <div class="outline-text-5" id="text-h:cff37bdf-4f22-419a-af4e-2665ede9add0">
 <p>
 This section sets up all the imports that are used in the home-manager section.
@@ -10319,8 +10746,7 @@ in
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:be623200-557e-4bb7-bb11-1ec5d76c6b8b" class="outline-4">
 <h4 id="h:be623200-557e-4bb7-bb11-1ec5d76c6b8b"><span class="section-number-4">4.4.4.</span> Optional</h4>
@@ -10329,8 +10755,8 @@ in
 Akin to the optional NixOS modules.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:84fd7029-ecb6-4131-9333-289982f24ffa"></a>Gaming<br />
+<div id="outline-container-h:84fd7029-ecb6-4131-9333-289982f24ffa" class="outline-5">
+<h5 id="h:84fd7029-ecb6-4131-9333-289982f24ffa"><span class="section-number-5">4.4.4.1.</span> Gaming</h5>
 <div class="outline-text-5" id="text-h:84fd7029-ecb6-4131-9333-289982f24ffa">
 <p>
 The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431">gaming</a>.
@@ -10370,8 +10796,9 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6"></a>Work<br />
+</div>
+<div id="outline-container-h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6" class="outline-5">
+<h5 id="h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6"><span class="section-number-5">4.4.4.2.</span> Work</h5>
 <div class="outline-text-5" id="text-h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">
 <p>
 The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">work</a>. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
@@ -10501,8 +10928,7 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 </div>
 </div>
@@ -10670,8 +11096,8 @@ This section is used to define my own functions, own variables, and own keybindi
 In this section I define extra functions that I need. Some of these functions I wrote myself, some I found after internet reseach. For functions I found on the internet, I will link the original source I found it in.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c"></a>Emacs/Evil state toggle<br />
+<div id="outline-container-h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c" class="outline-5">
+<h5 id="h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c"><span class="section-number-5">5.2.1.1.</span> Emacs/Evil state toggle</h5>
 <div class="outline-text-5" id="text-h:b715d7cf-da09-4e0c-95bc-8281b4f3ce9c">
 <p>
 Since I am rebinding the <code>C-z</code> hotkey for emacs-evil-state toggling, I want to have a function that still lets me perform this action quickly.
@@ -10688,8 +11114,9 @@ Since I am rebinding the <code>C-z</code> hotkey for emacs-evil-state toggling, 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1e0ee570-e509-4ecb-a3af-b75543731bb0"></a>Switching to last used buffer<br />
+</div>
+<div id="outline-container-h:1e0ee570-e509-4ecb-a3af-b75543731bb0" class="outline-5">
+<h5 id="h:1e0ee570-e509-4ecb-a3af-b75543731bb0"><span class="section-number-5">5.2.1.2.</span> Switching to last used buffer</h5>
 <div class="outline-text-5" id="text-h:1e0ee570-e509-4ecb-a3af-b75543731bb0">
 <p>
 I often find myself bouncing between two buffers when I do not want to use a window split. This funnction simply jumps to the last used buffer.
@@ -10702,8 +11129,9 @@ I often find myself bouncing between two buffers when I do not want to use a win
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:34506761-06b9-43b5-a818-506d9b3faf28"></a>mu4e functions<br />
+</div>
+<div id="outline-container-h:34506761-06b9-43b5-a818-506d9b3faf28" class="outline-5">
+<h5 id="h:34506761-06b9-43b5-a818-506d9b3faf28"><span class="section-number-5">5.2.1.3.</span> mu4e functions</h5>
 <div class="outline-text-5" id="text-h:34506761-06b9-43b5-a818-506d9b3faf28">
 <p>
 I use these functions to let me switch between my main email accounts, as mu4e by itself has trouble doing so. <code>mu4e-switch-account</code> allows for manual choosing of the sender account, while <code>mu4e-rfs--matching-address</code> and <code>mu4e-send-from-correct-address</code> are used when replying to a mail; they switch the sender account to the one that received the mail.
@@ -10754,8 +11182,9 @@ Used here: <a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">mu4e</a>
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4b9d74ef-0376-45bb-bc15-d24a04ca7e81"></a>Create non-existant directories when finding file<br />
+</div>
+<div id="outline-container-h:4b9d74ef-0376-45bb-bc15-d24a04ca7e81" class="outline-5">
+<h5 id="h:4b9d74ef-0376-45bb-bc15-d24a04ca7e81"><span class="section-number-5">5.2.1.4.</span> Create non-existant directories when finding file</h5>
 <div class="outline-text-5" id="text-h:4b9d74ef-0376-45bb-bc15-d24a04ca7e81">
 <p>
 This function will check if a directory for which a file we want to open exists; if not, it will offer to create the directories for me.
@@ -10774,8 +11203,9 @@ This function will check if a directory for which a file we want to open exists;
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:91e2f45f-54fa-4b60-8758-b2ef9b439af7"></a>[crux] Duplicate Lines<br />
+</div>
+<div id="outline-container-h:91e2f45f-54fa-4b60-8758-b2ef9b439af7" class="outline-5">
+<h5 id="h:91e2f45f-54fa-4b60-8758-b2ef9b439af7"><span class="section-number-5">5.2.1.5.</span> [crux] Duplicate Lines</h5>
 <div class="outline-text-5" id="text-h:91e2f45f-54fa-4b60-8758-b2ef9b439af7">
 <p>
 When programming, I like to be able to duplicate a line. There are easier functions than the one below, but they either
@@ -10842,8 +11272,9 @@ there's a region, all lines that region covers will be duplicated."
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4819720a-9220-4c34-b903-ed4179f3ad1c"></a>[prot] org-id-headings<br />
+</div>
+<div id="outline-container-h:4819720a-9220-4c34-b903-ed4179f3ad1c" class="outline-5">
+<h5 id="h:4819720a-9220-4c34-b903-ed4179f3ad1c"><span class="section-number-5">5.2.1.6.</span> [prot] org-id-headings</h5>
 <div class="outline-text-5" id="text-h:4819720a-9220-4c34-b903-ed4179f3ad1c">
 <p>
 These functions by protesilaos generate heading links in an org-file similar to the normal <code>org-store-link</code> approach when not using properties. This approach has a weakness however - if the heading name is changed, the link breaks. These functions generate a unique identifier for each heading which will not break and also works when exporting the file to html, for example.
@@ -10879,8 +11310,9 @@ create a new one."
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:285e5c0a-875d-46a8-bb9b-0222b3d73878"></a>Inhibit Messages in Echo Area<br />
+</div>
+<div id="outline-container-h:285e5c0a-875d-46a8-bb9b-0222b3d73878" class="outline-5">
+<h5 id="h:285e5c0a-875d-46a8-bb9b-0222b3d73878"><span class="section-number-5">5.2.1.7.</span> Inhibit Messages in Echo Area</h5>
 <div class="outline-text-5" id="text-h:285e5c0a-875d-46a8-bb9b-0222b3d73878">
 <p>
 Emacs likes to send messages to the echo area; this is generally a good thing. However, it bothers me a lot when I am currently working in minibuffer where I receive an echo area message that is actually important and it is then overwritten by e.g. the mu4e update message. This section makes it possible to find the root function calling the message function and disabling it here.
@@ -10950,8 +11382,9 @@ Lastly, individual messages can be reenabled using the <code>(advice-remove '&lt
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:de249f2a-6a2b-4114-8046-09d1014a7391"></a>Move up one directory for find-file<br />
+</div>
+<div id="outline-container-h:de249f2a-6a2b-4114-8046-09d1014a7391" class="outline-5">
+<h5 id="h:de249f2a-6a2b-4114-8046-09d1014a7391"><span class="section-number-5">5.2.1.8.</span> Move up one directory for find-file</h5>
 <div class="outline-text-5" id="text-h:de249f2a-6a2b-4114-8046-09d1014a7391">
 <p>
 I find it very annoying that the standard behavior for M-DEL only deletes one word when using find-file. This function makes it so that we always go up by one directory level instead.
@@ -10978,8 +11411,9 @@ This function was found here: <a href="https://www.reddit.com/r/emacs/comments/r
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5"></a>org-mode: General setup<br />
+</div>
+<div id="outline-container-h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5" class="outline-5">
+<h5 id="h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5"><span class="section-number-5">5.2.1.9.</span> org-mode: General setup</h5>
 <div class="outline-text-5" id="text-h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5">
 <p>
 Sets up the basic settings that I want to have active in org-mode buffers.
@@ -11006,8 +11440,9 @@ Used here: <a href="#h:877c9401-a354-4e44-a235-db1a90d19e00">General org-mode</a
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:fa710375-2efe-49b4-af6a-a875aca6e4a2"></a>org-mode: Visual-fill column<br />
+</div>
+<div id="outline-container-h:fa710375-2efe-49b4-af6a-a875aca6e4a2" class="outline-5">
+<h5 id="h:fa710375-2efe-49b4-af6a-a875aca6e4a2"><span class="section-number-5">5.2.1.10.</span> org-mode: Visual-fill column</h5>
 <div class="outline-text-5" id="text-h:fa710375-2efe-49b4-af6a-a875aca6e4a2">
 <p>
 This function sets the width of buffers in org-mode.
@@ -11027,8 +11462,9 @@ Used in: <a href="#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">Centered org-mode Buf
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:59d4306e-9b73-4b2c-b039-6a6518c357fc"></a>org-mode: Upon-save actions (Auto-tangle, export to html, formatting)<br />
+</div>
+<div id="outline-container-h:59d4306e-9b73-4b2c-b039-6a6518c357fc" class="outline-5">
+<h5 id="h:59d4306e-9b73-4b2c-b039-6a6518c357fc"><span class="section-number-5">5.2.1.11.</span> org-mode: Upon-save actions (Auto-tangle, export to html, formatting)</h5>
 <div class="outline-text-5" id="text-h:59d4306e-9b73-4b2c-b039-6a6518c357fc">
 <p>
 This section handles everything that shoudld happen when I save <code>SwarselSystems.org</code>. It:
@@ -11068,8 +11504,9 @@ We set a hook that runs everytime we save the file. It would be a bit more effic
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:dfa66e78-5748-45e3-a975-db3da104bb3a"></a>org-mode: Fold current heading<br />
+</div>
+<div id="outline-container-h:dfa66e78-5748-45e3-a975-db3da104bb3a" class="outline-5">
+<h5 id="h:dfa66e78-5748-45e3-a975-db3da104bb3a"><span class="section-number-5">5.2.1.12.</span> org-mode: Fold current heading</h5>
 <div class="outline-text-5" id="text-h:dfa66e78-5748-45e3-a975-db3da104bb3a">
 <p>
 Normally emacs cycles between three states:
@@ -11098,8 +11535,9 @@ However, I want to be able to fold a single heading consistently.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a1802f9b-bb71-4fd5-86fa-945da18e8b81"></a>corfu: Do not interrupt navigation<br />
+</div>
+<div id="outline-container-h:a1802f9b-bb71-4fd5-86fa-945da18e8b81" class="outline-5">
+<h5 id="h:a1802f9b-bb71-4fd5-86fa-945da18e8b81"><span class="section-number-5">5.2.1.13.</span> corfu: Do not interrupt navigation</h5>
 <div class="outline-text-5" id="text-h:a1802f9b-bb71-4fd5-86fa-945da18e8b81">
 <p>
 These three functions allow me to keep using the normal navigation keys even when a corfu completion pops up.
@@ -11130,8 +11568,9 @@ These functions are used here: <a href="#h:5653d693-ecca-4c95-9633-66b9e3241070"
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:291e43d9-eae2-4e23-8e38-160e223bf314"></a>python shell reloading<br />
+</div>
+<div id="outline-container-h:291e43d9-eae2-4e23-8e38-160e223bf314" class="outline-5">
+<h5 id="h:291e43d9-eae2-4e23-8e38-160e223bf314"><span class="section-number-5">5.2.1.14.</span> python shell reloading</h5>
 <div class="outline-text-5" id="text-h:291e43d9-eae2-4e23-8e38-160e223bf314">
 <p>
 The standard Emacs behaviour for the Python process shell is a bit annoying. This is my attempt at making it show automatically on opening a python buffer and making it refresh on its own as well. This does not nicely work yet.
@@ -11171,8 +11610,9 @@ The standard Emacs behaviour for the Python process shell is a bit annoying. Thi
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:79288251-3b8d-4bc4-ae2c-448fce709fbd"></a>Nix common prefix bracketer<br />
+</div>
+<div id="outline-container-h:79288251-3b8d-4bc4-ae2c-448fce709fbd" class="outline-5">
+<h5 id="h:79288251-3b8d-4bc4-ae2c-448fce709fbd"><span class="section-number-5">5.2.1.15.</span> Nix common prefix bracketer</h5>
 <div class="outline-text-5" id="text-h:79288251-3b8d-4bc4-ae2c-448fce709fbd">
 <p>
 This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
@@ -11204,8 +11644,9 @@ This function searches for common delimiters in region and removes them, summari
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a6b9dd66-571b-4916-8793-65b6a17afd76"></a>Nix formatters<br />
+</div>
+<div id="outline-container-h:a6b9dd66-571b-4916-8793-65b6a17afd76" class="outline-5">
+<h5 id="h:a6b9dd66-571b-4916-8793-65b6a17afd76"><span class="section-number-5">5.2.1.16.</span> Nix formatters</h5>
 <div class="outline-text-5" id="text-h:a6b9dd66-571b-4916-8793-65b6a17afd76">
 <p>
 This formats the org code block at <code>point</code> in accordance to the <code>nixpkgs-fmt</code> formatter
@@ -11240,8 +11681,9 @@ This formats the org code block at <code>point</code> in accordance to the <code
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:3c436647-71e6-441c-b452-d817ad2f8331"></a>Disable garbace collection while minibuffer is active<br />
+</div>
+<div id="outline-container-h:3c436647-71e6-441c-b452-d817ad2f8331" class="outline-5">
+<h5 id="h:3c436647-71e6-441c-b452-d817ad2f8331"><span class="section-number-5">5.2.1.17.</span> Disable garbace collection while minibuffer is active</h5>
 <div class="outline-text-5" id="text-h:3c436647-71e6-441c-b452-d817ad2f8331">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -11258,8 +11700,7 @@ This formats the org code block at <code>point</code> in accordance to the <code
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5" class="outline-4">
 <h4 id="h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5"><span class="section-number-4">5.2.2.</span> Custom Keybindings</h4>
@@ -11714,8 +12155,8 @@ By default, emacs scrolls half a page when reaching the bottom of the buffer. Th
 <h4 id="h:5bf9f014-ee96-42da-b285-7b34f04e6bb1"><span class="section-number-4">5.3.7.</span> Evil</h4>
 <div class="outline-text-4" id="text-h:5bf9f014-ee96-42da-b285-7b34f04e6bb1">
 </div>
-<ol class="org-ol">
-<li><a id="h:218376e8-086b-46bf-91b3-78295d5d440f"></a>General evil<br />
+<div id="outline-container-h:218376e8-086b-46bf-91b3-78295d5d440f" class="outline-5">
+<h5 id="h:218376e8-086b-46bf-91b3-78295d5d440f"><span class="section-number-5">5.3.7.1.</span> General evil</h5>
 <div class="outline-text-5" id="text-h:218376e8-086b-46bf-91b3-78295d5d440f">
 <p>
 This setups up evil, which brings vim-like keybindings to emacs. In the same location, I also unbind the <code>C-z</code> key (I am very unhappy with this implementation, but it is the only thing that works consistently so far) to make it available for <a href="#h:c3cc1c12-3ab8-42b7-be07-63f54eac397f">cape</a> later.
@@ -11771,8 +12212,9 @@ Also, I setup initial modes for several major-modes depending on what I deem fit
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:bde208f3-01ef-4dc6-9981-65f3d2a8189b"></a>evil-collection<br />
+</div>
+<div id="outline-container-h:bde208f3-01ef-4dc6-9981-65f3d2a8189b" class="outline-5">
+<h5 id="h:bde208f3-01ef-4dc6-9981-65f3d2a8189b"><span class="section-number-5">5.3.7.2.</span> evil-collection</h5>
 <div class="outline-text-5" id="text-h:bde208f3-01ef-4dc6-9981-65f3d2a8189b">
 <p>
 This gives support for many different modes, and works beautifully out of the box.
@@ -11788,8 +12230,9 @@ This gives support for many different modes, and works beautifully out of the bo
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d80e3f7d-0185-4a15-832b-d756e576265c"></a>evil-snipe<br />
+</div>
+<div id="outline-container-h:d80e3f7d-0185-4a15-832b-d756e576265c" class="outline-5">
+<h5 id="h:d80e3f7d-0185-4a15-832b-d756e576265c"><span class="section-number-5">5.3.7.3.</span> evil-snipe</h5>
 <div class="outline-text-5" id="text-h:d80e3f7d-0185-4a15-832b-d756e576265c">
 <p>
 This package changes the char-search commands like <code>f</code> by showing the results in a more visual manner. It also gives a 2-character search using <code>s</code> and <code>S</code>.
@@ -11807,8 +12250,9 @@ This package changes the char-search commands like <code>f</code> by showing the
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:b06a378d-5248-4451-8eee-e65a3a768b1d"></a>evil-cleverparens<br />
+</div>
+<div id="outline-container-h:b06a378d-5248-4451-8eee-e65a3a768b1d" class="outline-5">
+<h5 id="h:b06a378d-5248-4451-8eee-e65a3a768b1d"><span class="section-number-5">5.3.7.4.</span> evil-cleverparens</h5>
 <div class="outline-text-5" id="text-h:b06a378d-5248-4451-8eee-e65a3a768b1d">
 <p>
 This helps keeping parentheses balanced which is useful when writing in languages like Elisp. I do not activate this by default, as most languages do not profit from this enough in my eyes.
@@ -11821,8 +12265,9 @@ This helps keeping parentheses balanced which is useful when writing in language
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:aac82e5e-d882-4870-b644-ebdd0a2daae3"></a>evil-surround<br />
+</div>
+<div id="outline-container-h:aac82e5e-d882-4870-b644-ebdd0a2daae3" class="outline-5">
+<h5 id="h:aac82e5e-d882-4870-b644-ebdd0a2daae3"><span class="section-number-5">5.3.7.5.</span> evil-surround</h5>
 <div class="outline-text-5" id="text-h:aac82e5e-d882-4870-b644-ebdd0a2daae3">
 <p>
 This minor-mode adds functionality for doing better surround-commands; for example <code>ci[</code> will let you change the word within square brackets.
@@ -11838,8 +12283,7 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:e888d7a7-1755-4109-af11-5358b8cf140e" class="outline-4">
 <h4 id="h:e888d7a7-1755-4109-af11-5358b8cf140e"><span class="section-number-4">5.3.8.</span> ispell</h4>
@@ -11982,8 +12426,8 @@ Here I set up the modeline with some information that I find useful. Specficiall
 <h4 id="h:39ae01e9-8053-4f76-aa77-8cbbbcff9652"><span class="section-number-4">5.3.14.</span> Helper Modes</h4>
 <div class="outline-text-4" id="text-h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">
 </div>
-<ol class="org-ol">
-<li><a id="h:b190d512-bfb5-42ec-adec-8d86bab726ce"></a>Vertico, Orderless, Marginalia, Consult, Embark<br />
+<div id="outline-container-h:b190d512-bfb5-42ec-adec-8d86bab726ce" class="outline-5">
+<h5 id="h:b190d512-bfb5-42ec-adec-8d86bab726ce"><span class="section-number-5">5.3.14.1.</span> Vertico, Orderless, Marginalia, Consult, Embark</h5>
 <div class="outline-text-5" id="text-h:b190d512-bfb5-42ec-adec-8d86bab726ce">
 <p>
 This set of packages uses the default emacs completion framework and works together to provide a very nice user experience:
@@ -12001,8 +12445,8 @@ This set of packages uses the default emacs completion framework and works toget
 Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">Icons</a>
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"></a>vertico<br />
+<div id="outline-container-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d" class="outline-6">
+<h6 id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"><span class="section-number-6">5.3.14.1.1.</span> vertico</h6>
 <div class="outline-text-6" id="text-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -12022,8 +12466,9 @@ Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4"></a>vertico-directory<br />
+</div>
+<div id="outline-container-h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4" class="outline-6">
+<h6 id="h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4"><span class="section-number-6">5.3.14.1.2.</span> vertico-directory</h6>
 <div class="outline-text-6" id="text-h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">
 <p>
 This package allows for <code>Ido</code>-like directory navigation.
@@ -12043,8 +12488,9 @@ This package allows for <code>Ido</code>-like directory navigation.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"></a>orderless<br />
+</div>
+<div id="outline-container-h:211fc0bd-0d64-4577-97d8-6abc94435f04" class="outline-6">
+<h6 id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"><span class="section-number-6">5.3.14.1.3.</span> orderless</h6>
 <div class="outline-text-6" id="text-h:211fc0bd-0d64-4577-97d8-6abc94435f04">
 <p>
 When first installing orderless, I often times faced the problem, that when editing long files and calling <code>consult-line</code>, Emacs would hang when changing a search term in the middle (e.g. from <code>servicse.xserver</code> to <code>servic.xserver</code> in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
@@ -12072,8 +12518,9 @@ When first installing orderless, I often times faced the problem, that when edit
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"></a>consult<br />
+</div>
+<div id="outline-container-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c" class="outline-6">
+<h6 id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"><span class="section-number-6">5.3.14.1.4.</span> consult</h6>
 <div class="outline-text-6" id="text-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">
 <p>
 The big winner here are the convenient keybinds being setup here for general use. Also, I setup vim-navigation for minibuffer completions. <code>consult-buffer</code> is set twice because I am still used to that weird <code>C-M-j</code> command that I chose for <code>ivy-switch-buffer</code> when I first started using Emacs. I want to move to the other command but for now it is not feasible to delete the other one.
@@ -12101,8 +12548,9 @@ The big winner here are the convenient keybinds being setup here for general use
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:1c564ee5-ccd7-48be-b69a-d963400c4704"></a>embark<br />
+</div>
+<div id="outline-container-h:1c564ee5-ccd7-48be-b69a-d963400c4704" class="outline-6">
+<h6 id="h:1c564ee5-ccd7-48be-b69a-d963400c4704"><span class="section-number-6">5.3.14.1.5.</span> embark</h6>
 <div class="outline-text-6" id="text-h:1c564ee5-ccd7-48be-b69a-d963400c4704">
 <p>
 I have stripped down the embark keybinds heavily. It is very useful to me even in it's current state, but it quickly becomes overwhelming. <code>embark-dwim</code> acts on a candidate without closing the minibuffer, which is very useful. <code>embark-act</code> lets the user choose from all actions, but has an overwhelming interface.
@@ -12128,8 +12576,9 @@ I have stripped down the embark keybinds heavily. It is very useful to me even i
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:6287551c-a6f7-4870-b3f3-210d6f038b6f"></a>embark-consult<br />
+</div>
+<div id="outline-container-h:6287551c-a6f7-4870-b3f3-210d6f038b6f" class="outline-6">
+<h6 id="h:6287551c-a6f7-4870-b3f3-210d6f038b6f"><span class="section-number-6">5.3.14.1.6.</span> embark-consult</h6>
 <div class="outline-text-6" id="text-h:6287551c-a6f7-4870-b3f3-210d6f038b6f">
 <p>
 Provides previews for embark.
@@ -12147,8 +12596,9 @@ Provides previews for embark.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:f32040a4-882f-4e6b-97f1-a0105c44c034"></a>marginalia<br />
+</div>
+<div id="outline-container-h:f32040a4-882f-4e6b-97f1-a0105c44c034" class="outline-6">
+<h6 id="h:f32040a4-882f-4e6b-97f1-a0105c44c034"><span class="section-number-6">5.3.14.1.7.</span> marginalia</h6>
 <div class="outline-text-6" id="text-h:f32040a4-882f-4e6b-97f1-a0105c44c034">
 <p>
 I set the annotation-mode of marginalia to <code>heavy</code>. This gives even more information on the stuff that you are looking at. One thing I am missing from ivy is the highlighting on <code>mode</code>-commands based on the current state of the mode. Also, I do not understand all the shorthands used by marginalia yet.
@@ -12164,8 +12614,9 @@ I set the annotation-mode of marginalia to <code>heavy</code>. This gives even m
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d70ec2fb-da43-4523-9ee4-774ececdb80e"></a>nerd-icons-completion<br />
+</div>
+<div id="outline-container-h:d70ec2fb-da43-4523-9ee4-774ececdb80e" class="outline-6">
+<h6 id="h:d70ec2fb-da43-4523-9ee4-774ececdb80e"><span class="section-number-6">5.3.14.1.8.</span> nerd-icons-completion</h6>
 <div class="outline-text-6" id="text-h:d70ec2fb-da43-4523-9ee4-774ececdb80e">
 <p>
 As stated above, this simply provides nerd-icons to the completion framework.
@@ -12183,10 +12634,10 @@ As stated above, this simply provides nerd-icons to the completion framework.
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:cbf6bd48-2503-489a-89da-e3359564e989"></a>Helpful + which-key: Better help defaults<br />
+</div>
+</div>
+<div id="outline-container-h:cbf6bd48-2503-489a-89da-e3359564e989" class="outline-5">
+<h5 id="h:cbf6bd48-2503-489a-89da-e3359564e989"><span class="section-number-5">5.3.14.2.</span> Helpful + which-key: Better help defaults</h5>
 <div class="outline-text-5" id="text-h:cbf6bd48-2503-489a-89da-e3359564e989">
 <p>
 This pair of packages provides information on keybinds in addition to function names, which makes it easier to remember keybinds (<code>which-key</code>). The <code>helpful</code> package provides a better <code>Help</code> framework for Emacs. For some reason, the Help windows are always being focused by the cursor even though I have set <code>help-window-select</code> to nil. I do not understand why.
@@ -12211,8 +12662,7 @@ This pair of packages provides information on keybinds in addition to function n
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1" class="outline-4">
 <h4 id="h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1"><span class="section-number-4">5.3.15.</span> Ligatures</h4>
@@ -12355,8 +12805,8 @@ org-mode is probably my most-used mode in Emcas. It acts as my organizer, config
 Note that nearly all headings within the <code>Org-mode</code> heading are coded within the <code>use-package</code> setup, so be very careful about moving stuff about here.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:877c9401-a354-4e44-a235-db1a90d19e00"></a>General org-mode<br />
+<div id="outline-container-h:877c9401-a354-4e44-a235-db1a90d19e00" class="outline-5">
+<h5 id="h:877c9401-a354-4e44-a235-db1a90d19e00"><span class="section-number-5">5.4.1.1.</span> General org-mode</h5>
 <div class="outline-text-5" id="text-h:877c9401-a354-4e44-a235-db1a90d19e00">
 <p>
 This sets up the basic org-mode. I wrote a function to handle some of the initial org-mode behaviour in <a href="#h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5">org-mode setup.
@@ -12383,14 +12833,16 @@ This part of the configuration mostly makes some aesthetic changes, enables neat
   ;; (setq org-log-done 'time)
   ;; (setq org-log-into-drawer t)
   (setq org-startup-with-inline-images t)
+  (setq org-export-headline-levels 6)
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:2b3b4eb6-68a1-476d-b5d1-940a21484f1d"></a>org-agenda<br />
+</div>
+<div id="outline-container-h:2b3b4eb6-68a1-476d-b5d1-940a21484f1d" class="outline-5">
+<h5 id="h:2b3b4eb6-68a1-476d-b5d1-940a21484f1d"><span class="section-number-5">5.4.1.2.</span> org-agenda</h5>
 <div class="outline-text-5" id="text-h:2b3b4eb6-68a1-476d-b5d1-940a21484f1d">
 <p>
 Here I setup a plethora of keywords, keybinds and paths to give my org-agenda more power.
@@ -12460,8 +12912,9 @@ Here I setup a plethora of keywords, keybinds and paths to give my org-agenda mo
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:23183635-3d46-4d7d-8eda-e0a085b335ef"></a>org capture templates<br />
+</div>
+<div id="outline-container-h:23183635-3d46-4d7d-8eda-e0a085b335ef" class="outline-5">
+<h5 id="h:23183635-3d46-4d7d-8eda-e0a085b335ef"><span class="section-number-5">5.4.1.3.</span> org capture templates</h5>
 <div class="outline-text-5" id="text-h:23183635-3d46-4d7d-8eda-e0a085b335ef">
 <p>
 I wrote these capture templates to allow myself to quickly create Anki cards from within Emacs. I nearly never use this feature, but it cannot hurt to have.
@@ -12488,8 +12941,9 @@ I wrote these capture templates to allow myself to quickly create Anki cards fro
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:40528f5a-c8cd-471b-b862-4088e8e61860"></a>Font Faces<br />
+</div>
+<div id="outline-container-h:40528f5a-c8cd-471b-b862-4088e8e61860" class="outline-5">
+<h5 id="h:40528f5a-c8cd-471b-b862-4088e8e61860"><span class="section-number-5">5.4.1.4.</span> Font Faces</h5>
 <div class="outline-text-5" id="text-h:40528f5a-c8cd-471b-b862-4088e8e61860">
 <p>
 Again, my understanding of the font-faces in Emacs is limited. This is mostly just tuned so that my org-files look acceptable.
@@ -12523,8 +12977,9 @@ Again, my understanding of the font-faces in Emacs is limited. This is mostly ju
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:62829574-a069-44b8-afb3-401a268d2747"></a>org-appear<br />
+</div>
+<div id="outline-container-h:62829574-a069-44b8-afb3-401a268d2747" class="outline-5">
+<h5 id="h:62829574-a069-44b8-afb3-401a268d2747"><span class="section-number-5">5.4.1.5.</span> org-appear</h5>
 <div class="outline-text-5" id="text-h:62829574-a069-44b8-afb3-401a268d2747">
 <p>
 This package makes emphasis-markers appear when the cursor moves over them. Very useful as I enjoy the clean look of not always seeing them, but it is annoying not to be able to edit them properly.
@@ -12543,8 +12998,9 @@ This package makes emphasis-markers appear when the cursor moves over them. Very
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:bbcfa895-4d46-4b1d-b84e-f634e982c46e"></a>Centered org-mode Buffers<br />
+</div>
+<div id="outline-container-h:bbcfa895-4d46-4b1d-b84e-f634e982c46e" class="outline-5">
+<h5 id="h:bbcfa895-4d46-4b1d-b84e-f634e982c46e"><span class="section-number-5">5.4.1.6.</span> Centered org-mode Buffers</h5>
 <div class="outline-text-5" id="text-h:bbcfa895-4d46-4b1d-b84e-f634e982c46e">
 <p>
 I like org-mode buffers to be centered, as I do not find that enormous lines are of big use.
@@ -12562,8 +13018,9 @@ Function definition in: <a href="#h:fa710375-2efe-49b4-af6a-a875aca6e4a2">Visual
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8"></a>Fix headings not folding sometimes<br />
+</div>
+<div id="outline-container-h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8" class="outline-5">
+<h5 id="h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8"><span class="section-number-5">5.4.1.7.</span> Fix headings not folding sometimes</h5>
 <div class="outline-text-5" id="text-h:c1a0adea-ca97-43d7-b5a0-b856d2ebc9a8">
 <p>
 There is a weird bug in org-mode that makes it so that headings were not folding correctly sometimes. This setting seems to fix it.
@@ -12576,8 +13033,9 @@ There is a weird bug in org-mode that makes it so that headings were not folding
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:3e0b6da3-0497-4080-bb49-bab949c03bc4"></a>Babel<br />
+</div>
+<div id="outline-container-h:3e0b6da3-0497-4080-bb49-bab949c03bc4" class="outline-5">
+<h5 id="h:3e0b6da3-0497-4080-bb49-bab949c03bc4"><span class="section-number-5">5.4.1.8.</span> Babel</h5>
 <div class="outline-text-5" id="text-h:3e0b6da3-0497-4080-bb49-bab949c03bc4">
 <p>
 org-babel allows to run blocks in other programming languages within an org-mode buffer, similar to what e.g. jupyterhub offers for python.
@@ -12587,8 +13045,8 @@ org-babel allows to run blocks in other programming languages within an org-mode
 It also offers a very useful utility of exporting org-mode buffers to different formats; the feature I enjoy most is what makes this file useful: the tangling functionality.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c"></a>Language Configuration<br />
+<div id="outline-container-h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c" class="outline-6">
+<h6 id="h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c"><span class="section-number-6">5.4.1.8.1.</span> Language Configuration</h6>
 <div class="outline-text-6" id="text-h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c">
 <ul class="org-ul">
 <li>This configures the languages that babel recognizes.</li>
@@ -12613,8 +13071,9 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9"></a>old easy structure templates<br />
+</div>
+<div id="outline-container-h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9" class="outline-6">
+<h6 id="h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9"><span class="section-number-6">5.4.1.8.2.</span> old easy structure templates</h6>
 <div class="outline-text-6" id="text-h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">
 <ul class="org-ul">
 <li><p>
@@ -12637,10 +13096,10 @@ Usage: Type <code>&lt;</code>, followed by one of the below keywords and press <
 </div></li>
 </ul>
 </div>
-</li>
-</ol>
-</li>
-<li><a id="h:4696e2fc-3296-47dc-8fc3-66912c329d4c"></a>aucTex<br />
+</div>
+</div>
+<div id="outline-container-h:4696e2fc-3296-47dc-8fc3-66912c329d4c" class="outline-5">
+<h5 id="h:4696e2fc-3296-47dc-8fc3-66912c329d4c"><span class="section-number-5">5.4.1.9.</span> aucTex</h5>
 <div class="outline-text-5" id="text-h:4696e2fc-3296-47dc-8fc3-66912c329d4c">
 <p>
 This provides several utilities for LaTeX in Emacs, including many completions and convenience functions for math-mode.
@@ -12666,8 +13125,9 @@ This provides several utilities for LaTeX in Emacs, including many completions a
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b"></a>org-download<br />
+</div>
+<div id="outline-container-h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b" class="outline-5">
+<h5 id="h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b"><span class="section-number-5">5.4.1.10.</span> org-download</h5>
 <div class="outline-text-5" id="text-h:406e5ecb-66f0-49bf-85ca-8b499f73ec5b">
 <p>
 This package allows to download and copy images into org-mode buffers. Sadly it does not work in a very stable manner - if you copy images that are also links to another page (like is often the case in a Google image search), Emacs might crash from this.
@@ -12693,8 +13153,9 @@ This package allows to download and copy images into org-mode buffers. Sadly it 
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:a02b1162-3e19-46f1-8efc-9f375971645c"></a>org-fragtog<br />
+</div>
+<div id="outline-container-h:a02b1162-3e19-46f1-8efc-9f375971645c" class="outline-5">
+<h5 id="h:a02b1162-3e19-46f1-8efc-9f375971645c"><span class="section-number-5">5.4.1.11.</span> org-fragtog</h5>
 <div class="outline-text-5" id="text-h:a02b1162-3e19-46f1-8efc-9f375971645c">
 <p>
 This package automatically toggles LaTeX-fragments in org-files. It seems to also work in markdown-files which is a nice addition, as my Obsidian notes are held in markdown.
@@ -12709,8 +13170,9 @@ This package automatically toggles LaTeX-fragments in org-files. It seems to als
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:95b42e77-767c-4461-9ba8-b1c1cd18266c"></a>org-modern<br />
+</div>
+<div id="outline-container-h:95b42e77-767c-4461-9ba8-b1c1cd18266c" class="outline-5">
+<h5 id="h:95b42e77-767c-4461-9ba8-b1c1cd18266c"><span class="section-number-5">5.4.1.12.</span> org-modern</h5>
 <div class="outline-text-5" id="text-h:95b42e77-767c-4461-9ba8-b1c1cd18266c">
 <p>
 This just makes org-mode a little bit more beautiful, mostly by making the <code>begin_src</code> and <code>end_src</code> tags in source-blocks turn into more beautiful icons, as well as hiding <code>#+</code> tags before them, as well as in the properties section of the file.
@@ -12727,8 +13189,9 @@ This just makes org-mode a little bit more beautiful, mostly by making the <code
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425"></a>Presentations<br />
+</div>
+<div id="outline-container-h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425" class="outline-5">
+<h5 id="h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425"><span class="section-number-5">5.4.1.13.</span> Presentations</h5>
 <div class="outline-text-5" id="text-h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">
 <p>
 Recently I have grown fond of holding presentations using Emacs :)
@@ -12841,8 +13304,7 @@ Recently I have grown fond of holding presentations using Emacs :)
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b" class="outline-4">
 <h4 id="h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b"><span class="section-number-4">5.4.2.</span> Nix Mode</h4>
@@ -12971,8 +13433,8 @@ Adds functions for formatting shellscripts.
 <h4 id="h:50327461-a11b-4e81-830a-90febc720cfa"><span class="section-number-4">5.4.9.</span> Markdown Mode</h4>
 <div class="outline-text-4" id="text-h:50327461-a11b-4e81-830a-90febc720cfa">
 </div>
-<ol class="org-ol">
-<li><a id="h:734dc40a-a2c4-4839-b884-cb99b81aa6fe"></a>Mode<br />
+<div id="outline-container-h:734dc40a-a2c4-4839-b884-cb99b81aa6fe" class="outline-5">
+<h5 id="h:734dc40a-a2c4-4839-b884-cb99b81aa6fe"><span class="section-number-5">5.4.9.1.</span> Mode</h5>
 <div class="outline-text-5" id="text-h:734dc40a-a2c4-4839-b884-cb99b81aa6fe">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -12988,8 +13450,9 @@ Adds functions for formatting shellscripts.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:8d90fe51-0b32-423a-a159-4f853bc29b68"></a>LaTeX in Markdown<br />
+</div>
+<div id="outline-container-h:8d90fe51-0b32-423a-a159-4f853bc29b68" class="outline-5">
+<h5 id="h:8d90fe51-0b32-423a-a159-4f853bc29b68"><span class="section-number-5">5.4.9.2.</span> LaTeX in Markdown</h5>
 <div class="outline-text-5" id="text-h:8d90fe51-0b32-423a-a159-4f853bc29b68">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -13002,8 +13465,7 @@ Adds functions for formatting shellscripts.
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6" class="outline-4">
 <h4 id="h:65e69741-9860-4ed0-bbed-7b7be9a2a9d6"><span class="section-number-4">5.4.10.</span> Olivetti</h4>
@@ -13712,8 +14174,8 @@ I used to run this together with the <code>yasnippet-snippets</code> package, bu
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:af0a78a5-17c2-4e13-b64a-772c27c4dee2"></a>yasnippet math-snippets<br />
+<div id="outline-container-h:af0a78a5-17c2-4e13-b64a-772c27c4dee2" class="outline-6">
+<h6 id="h:af0a78a5-17c2-4e13-b64a-772c27c4dee2"><span class="section-number-6">5.4.32.0.1.</span> yasnippet math-snippets</h6>
 <div class="outline-text-6" id="text-h:af0a78a5-17c2-4e13-b64a-772c27c4dee2">
 <p>
 The following block is mostly inspired from <a href="https://code.kulupu.party/thesuess/WTFmacs/">https://code.kulupu.party/thesuess/WTFmacs/</a> and sets up a few prefixes that make LaTeX-math-mode nicer to use even with auctex and cape enabled.
@@ -13775,8 +14237,7 @@ The following block is mostly inspired from <a href="https://code.kulupu.party/t
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:6cf0310b-2fdf-45f0-9845-4704649777eb" class="outline-4">
 <h4 id="h:6cf0310b-2fdf-45f0-9845-4704649777eb"><span class="section-number-4">5.4.33.</span> eglot</h4>
@@ -14036,8 +14497,8 @@ Hydra allows for the writing of macro-style functions. I have not yet looked int
 </pre>
 </div>
 </div>
-<ol class="org-ol">
-<li><a id="h:c5681884-7040-4b55-ab1b-5777631a0514"></a>Text scaling<br />
+<div id="outline-container-h:c5681884-7040-4b55-ab1b-5777631a0514" class="outline-5">
+<h5 id="h:c5681884-7040-4b55-ab1b-5777631a0514"><span class="section-number-5">5.4.41.1.</span> Text scaling</h5>
 <div class="outline-text-5" id="text-h:c5681884-7040-4b55-ab1b-5777631a0514">
 <p>
 I only wrote this in order to try out hydra; rarely do I really need this. However, it can be useful for <a href="#h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">Presentations</a>. It simply scales the text size.
@@ -14056,15 +14517,14 @@ I only wrote this in order to try out hydra; rarely do I really need this. Howev
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:fff816a0-6d70-4bda-abab-833345e51100" class="outline-4">
 <h4 id="h:fff816a0-6d70-4bda-abab-833345e51100"><span class="section-number-4">5.4.42.</span> External Applications</h4>
 <div class="outline-text-4" id="text-h:fff816a0-6d70-4bda-abab-833345e51100">
 </div>
-<ol class="org-ol">
-<li><a id="h:9335d32d-bf08-4601-820d-f3d1f33f876f"></a>Obsidian<br />
+<div id="outline-container-h:9335d32d-bf08-4601-820d-f3d1f33f876f" class="outline-5">
+<h5 id="h:9335d32d-bf08-4601-820d-f3d1f33f876f"><span class="section-number-5">5.4.42.1.</span> Obsidian</h5>
 <div class="outline-text-5" id="text-h:9335d32d-bf08-4601-820d-f3d1f33f876f">
 <p>
 This provides an interface to Obsidian for Emacs - as much as I want to like it, I actually enjoy using the official Obsidian app more - even though that cannot be used by Emacs directly.
@@ -14108,15 +14568,16 @@ I hope that this package will improve, then I will come back to it one day.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:5854c9a6-1319-4961-a112-75b1bf2e1f69"></a>Anki<br />
+</div>
+<div id="outline-container-h:5854c9a6-1319-4961-a112-75b1bf2e1f69" class="outline-5">
+<h5 id="h:5854c9a6-1319-4961-a112-75b1bf2e1f69"><span class="section-number-5">5.4.42.2.</span> Anki</h5>
 <div class="outline-text-5" id="text-h:5854c9a6-1319-4961-a112-75b1bf2e1f69">
 <p>
 This section is here to make Anki usable from within Emacs - an endeavour that I have mostly given up on.
 </p>
 </div>
-<ol class="org-ol">
-<li><a id="h:d20559ed-7ada-4fea-a964-33bfd64b4549"></a>Basic Anki setup<br />
+<div id="outline-container-h:d20559ed-7ada-4fea-a964-33bfd64b4549" class="outline-6">
+<h6 id="h:d20559ed-7ada-4fea-a964-33bfd64b4549"><span class="section-number-6">5.4.42.2.1.</span> Basic Anki setup</h6>
 <div class="outline-text-6" id="text-h:d20559ed-7ada-4fea-a964-33bfd64b4549">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -14161,8 +14622,9 @@ This section is here to make Anki usable from within Emacs - an endeavour that I
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:64242e95-6454-4330-bcb9-15353083bade"></a>Own Anki functions<br />
+</div>
+<div id="outline-container-h:64242e95-6454-4330-bcb9-15353083bade" class="outline-6">
+<h6 id="h:64242e95-6454-4330-bcb9-15353083bade"><span class="section-number-6">5.4.42.2.2.</span> Own Anki functions</h6>
 <div class="outline-text-6" id="text-h:64242e95-6454-4330-bcb9-15353083bade">
 <ul class="org-ul">
 <li>These functions enable you to quickly set the destination note type and deck</li>
@@ -14203,17 +14665,15 @@ This section is here to make Anki usable from within Emacs - an endeavour that I
 </pre>
 </div>
 </div>
-</li>
-</ol>
-</li>
-</ol>
+</div>
+</div>
 </div>
 <div id="outline-container-h:2f333330-b19d-4f64-85ea-146ff28667e8" class="outline-4">
 <h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">5.4.43.</span> Email</h4>
 <div class="outline-text-4" id="text-h:2f333330-b19d-4f64-85ea-146ff28667e8">
 </div>
-<ol class="org-ol">
-<li><a id="h:48fde614-7cd0-4764-a7ac-0dae60d8b65a"></a>make sure mu4e is found<br />
+<div id="outline-container-h:48fde614-7cd0-4764-a7ac-0dae60d8b65a" class="outline-5">
+<h5 id="h:48fde614-7cd0-4764-a7ac-0dae60d8b65a"><span class="section-number-5">5.4.43.1.</span> make sure mu4e is found</h5>
 <div class="outline-text-5" id="text-h:48fde614-7cd0-4764-a7ac-0dae60d8b65a">
 <p>
 This seems not to be needed - I do not yet dare to delete it though.
@@ -14235,8 +14695,9 @@ This seems not to be needed - I do not yet dare to delete it though.
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:b92a18cf-eec3-4605-a8c2-37133ade3574"></a>mu4e<br />
+</div>
+<div id="outline-container-h:b92a18cf-eec3-4605-a8c2-37133ade3574" class="outline-5">
+<h5 id="h:b92a18cf-eec3-4605-a8c2-37133ade3574"><span class="section-number-5">5.4.43.2.</span> mu4e</h5>
 <div class="outline-text-5" id="text-h:b92a18cf-eec3-4605-a8c2-37133ade3574">
 <p>
 In this section we are setting up mu4e, a mail client for emacs using mu with mbsync as backend. The mail accounts themselves are setup in the NixOS configuration, so we only need to add Emacs specific settings here.
@@ -14296,8 +14757,9 @@ The hook functions are defined here: <a href="#h:34506761-06b9-43b5-a818-506d9b3
 </pre>
 </div>
 </div>
-</li>
-<li><a id="h:43209eeb-5d46-472e-b7c2-58a3fb465199"></a>mu4e-alert<br />
+</div>
+<div id="outline-container-h:43209eeb-5d46-472e-b7c2-58a3fb465199" class="outline-5">
+<h5 id="h:43209eeb-5d46-472e-b7c2-58a3fb465199"><span class="section-number-5">5.4.43.3.</span> mu4e-alert</h5>
 <div class="outline-text-5" id="text-h:43209eeb-5d46-472e-b7c2-58a3fb465199">
 <p>
 This adds the simple utility of sending desktop notifications whenever a new mail is received. I am using <code>libnotify</code> because I want to use this with <code>notify-send</code>.
@@ -14315,8 +14777,7 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </pre>
 </div>
 </div>
-</li>
-</ol>
+</div>
 </div>
 <div id="outline-container-h:c760f04e-622f-4b3e-8916-53ca8cce6edc" class="outline-4">
 <h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">5.4.44.</span> Calendar</h4>
@@ -14583,7 +15044,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-11 Mi 01:25</p>
+<p class="date">Created: 2024-12-11 Mi 01:50</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

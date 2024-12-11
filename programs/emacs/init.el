@@ -891,6 +891,7 @@ create a new one."
   ;; (setq org-log-done 'time)
   ;; (setq org-log-into-drawer t)
   (setq org-startup-with-inline-images t)
+  (setq org-export-headline-levels 6)
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
