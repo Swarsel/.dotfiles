@@ -199,16 +199,30 @@
       homeManagerModules = import ./modules/home;
 
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
-      devShells = forEachSystem
-        (pkgs:
-          {
-            default = pkgs.mkShell {
-              NIX_CONFIG = "experimental-features = nix-command flakes";
-              nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
-            };
-          });
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          checks = self.checks.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            NIX_CONFIG = "experimental-features = nix-command flakes";
+            inherit (checks.pre-commit-check) shellHook;
+            buildInputs = checks.pre-commit-check.enabledPackages;
+            nativeBuildInputs = [
+              pkgs.nix
+              pkgs.home-manager
+              pkgs.git
+              pkgs.just
+              pkgs.age
+              pkgs.ssh-to-age
+              pkgs.sops
+            ];
+          };
+        }
+      );
 
-      # this sets the formatter that is going to be used by nix fmt
       formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
       checks = forAllSystems (
         system:
