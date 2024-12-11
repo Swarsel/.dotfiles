@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-11 Mi 00:05 -->
+<!-- 2024-12-11 Mi 01:25 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -353,7 +353,7 @@
 </div>
 </div>
 <p>
-<b>This file has 50438 words spanning 13199 lines and was last revised on 2024-12-11 00:05:08 +0100.</b>
+<b>This file has 50861 words spanning 13228 lines and was last revised on 2024-12-11 01:25:11 +0100.</b>
 </p>
 
 <p>
@@ -403,7 +403,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-11 00:05:08 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-11 01:25:11 +0100)
 </p></li>
 </ul>
 
@@ -718,7 +718,7 @@ Handling the flake.nix file used to be a bit of a chore, since it felt like writ
 </p>
 
 <p>
-These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">flake.nix template</a>. Adding new flake inputs is very easy, you just add them to <a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">Inputs &amp; Inputs@Outputs</a> first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in <a href="#h:df0072bc-853f-438f-bd85-bfc869501015">let</a>, and the specific setup is done in either <a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">nixosConfigurations</a> (for NixOS systems), <a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">homeConfigurations</a> (for home-manager systems), or <a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">nixOnDroidConfigurations</a> (for Nix on Android). There is also the [BROKEN LINK: h:6a08495a-8566-4bb5-9fac-b03df01f6c81] section that currently just defines a Proxmox LXC image.
+These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">flake.nix template</a>. Adding new flake inputs is very easy, you just add them to <a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">Inputs &amp; Inputs@Outputs</a> first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in <a href="#h:df0072bc-853f-438f-bd85-bfc869501015">let</a>, and the specific setup is done in either <a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">nixosConfigurations</a> (for NixOS systems), <a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">homeConfigurations</a> (for home-manager systems), or <a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">nixOnDroidConfigurations</a> (for Nix on Android) and <a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">darwinConfigurations</a> (for Darwin systems, also known as Macs). There also used to be a [BROKEN LINK: h:6a08495a-8566-4bb5-9fac-b03df01f6c81] section that used to define a Proxmox LXC image when I was still using Proxmox as my main server. An example of the repository at that time would be <code>acc0ad6 main Add several NixOS hosts on Proxmox and Oracle Cloud</code>.
 </p>
 </div>
 <div id="outline-container-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b" class="outline-3">
@@ -852,7 +852,6 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
   outputs =
     inputs@{ self
     , nixpkgs
-    , nixpkgs-stable
     , home-manager
     , nix-darwin
     , systems
@@ -863,13 +862,6 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
       inherit (self) outputs;
       lib = nixpkgs.lib // home-manager.lib;
 
-      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-      forAllSystems = lib.genAttrs [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
       pkgsFor = lib.genAttrs (import systems) (
         system:
         import nixpkgs {
@@ -877,6 +869,13 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
           config.allowUnfree = true;
         }
       );
+      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+      forAllSystems = lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
       mkFullHost = host: isNixos: {
         ${host} =
           let
@@ -932,16 +931,29 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
       homeManagerModules = import ./modules/home;
 
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
-      devShells = forEachSystem
-        (pkgs:
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          checks = self.checks.${system};
+        in
           {
             default = pkgs.mkShell {
               NIX_CONFIG = "experimental-features = nix-command flakes";
-              nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+              inherit (checks.pre-commit-check) shellHook;
+              buildInputs = checks.pre-commit-check.enabledPackages;
+              nativeBuildInputs = [
+                pkgs.nix
+                pkgs.home-manager
+                pkgs.git
+                pkgs.just
+                pkgs.age
+                pkgs.ssh-to-age
+                pkgs.sops
+              ];
             };
           });
 
-      # this sets the formatter that is going to be used by nix fmt
       formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
       checks = forAllSystems (
             system:
@@ -950,15 +962,7 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
             in
               import ./checks { inherit self inputs system pkgs; }
       );
-      overlaysList = [
-        (import ./overlays { inherit inputs; }).additions
-        (import ./overlays { inherit inputs; }).modifications
-        (import ./overlays { inherit inputs; }).nixpkgs-stable
-        (import ./overlays { inherit inputs; }).zjstatus
-        inputs.nur.overlays.default
-        inputs.emacs-overlay.overlay
-        inputs.nixgl.overlay
-      ];
+      overlays = import ./overlays { inherit inputs; };
 
 
       nixosConfigurations =
@@ -1003,7 +1007,7 @@ This sections puts together the <code>flake.nix</code> file from the <a href="#h
 <h3 id="h:cbd5002c-e0fa-434a-951b-e05b179e4e3f"><span class="section-number-3">3.2.</span> Pre-commit-hooks (Checks)</h3>
 <div class="outline-text-3" id="text-h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">
 <p>
-This file defines a number of checks that can either be run by calling <code>nix flake check</code> or
+This file defines a number of checks that can either be run by calling <code>nix flake check</code> or while in a <code>nix-shell</code> or <code>nix develop</code>. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as <code>statix</code> and <code>deadnix</code>)
 </p>
 
 <div class="org-src-container">
@@ -1218,21 +1222,25 @@ Here I define a few variables that I need for my system specifications. First an
 </p>
 
 <p>
-Lastly I define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS).
+I also define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS) - <code>nixModules</code>, <code>homeModules</code>, and <code>mixedModules</code>.
 </p>
+
+<p>
+The interesting part is in the start:
+</p>
+<ul class="org-ul">
+<li>first, I define <code>pkgsFor</code>. This function reads all available systems from nixpkgs and generates pkgs for them.</li>
+<li>next, <code>forEachSystem</code> is a function that can be called to declare an output for each such defined system.</li>
+<li><code>forAllSystems</code> is a crude function that I use for expressions that depend on <code>system</code>, as the prior two attributes already consumed it at that stage. This is only really used to generate the checks in their own file.</li>
+<li><code>mkFullHost</code> is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching <code>nixosSystem</code> or <code>darwinSystem</code>. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options).</li>
+<li><code>mkFullHostConfigs</code> is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in <code>hosts/</code> under either the <code>nixos/</code> or <code>darwin/</code> directory. These directories are being read by <code>readHosts</code> and delivered to this funtion in the later call in <a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">nixosConfigurations</a> or <a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">darwinConfigurations</a>.</li>
+</ul>
 
 <div class="org-src-container">
 <pre class="src src-nix">
 inherit (self) outputs;
 lib = nixpkgs.lib // home-manager.lib;
 
-forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-forAllSystems = lib.genAttrs [
-  "x86_64-linux"
-  "aarch64-linux"
-  "x86_64-darwin"
-  "aarch64-darwin"
-];
 pkgsFor = lib.genAttrs (import systems) (
   system:
   import nixpkgs {
@@ -1240,6 +1248,13 @@ pkgsFor = lib.genAttrs (import systems) (
     config.allowUnfree = true;
   }
 );
+forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+forAllSystems = lib.genAttrs [
+  "x86_64-linux"
+  "aarch64-linux"
+  "x86_64-darwin"
+  "aarch64-darwin"
+];
 mkFullHost = host: isNixos: {
   ${host} =
     let
@@ -1299,14 +1314,21 @@ In this section I am creating some attributes that define general concepts of my
 <li><code>nixosModules</code> imports self-defined options that I only want to use on NixOS systems. All modules are held as separately as possible, to allow for easier sharing with other people mostly.</li>
 <li><code>homeManagerModules</code> imports modules that are to be used on NixOS and non-NixOS systems. These are mostly used to define outputs (monitors), keyboards and special commands for machines.</li>
 <li><code>packages</code> holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and firefox addons.</li>
-<li><code>devShells</code> provides a development shell that can be used as a bootstrap for new installs using <code>nix develop</code> while inside the flake directory.</li>
-<li><code>formatter</code> provides the formatter that is to be used on <code>.nix</code> files. At the moment this is not used anywhere.</li>
-<li><code>overlays</code> imports a few community overlays (such as the emacs-overlay) and also three overlays of my own:
+<li><code>devShells</code> provides a development shell that can be used as a bootstrap for new installs using <code>nix develop</code> while inside the flake directory. It received an overhaul in <code>0a6cf0e feat: add checks to devShell</code>, since when it is handled using <code>forAllSystems</code> and now including pre-commit-hook checks.</li>
+<li><code>formatter</code> provides the formatter that is to be used on <code>.nix</code> files. It can be called by using <code>nix fmt</code>.</li>
+<li><code>check</code> provides the pre-commit-hook checks that I have explained in <a href="#h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">Pre-commit-hooks (Checks)</a>.</li>
+<li><p>
+<code>overlays</code> imports a few community overlays (such as the emacs-overlay) and also three overlays of my own:
+</p>
 <ol class="org-ol">
 <li><code>additions</code> holds derivations that I am adding myself to nixpkgs - i.e. this is where the packages defined in <code>/pkgs</code> get added to nixpkgs.</li>
 <li><code>modifications</code> holds derivations that I have performed overrides on. The list of interesting attribute overrides can be found by looking at the source code of a derivation and looking at the start of the file for lines of the form <code>&lt;name&gt; ? &lt;val&gt;</code>. But this can also be used to, for example, fetch a different version of a package instead.</li>
 <li><code>nixpkgs-stable</code> holds the newest version of stable nixpkgs. I only use this on packages that seem broken on unstable, which are not many.</li>
-</ol></li>
+<li><code>zjstatus</code> holds some options for <code>zellij</code>, but I have stopped using it since I prefer <code>tmux</code>.</li>
+</ol>
+<p>
+They are defined in <a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">Overlays (additions, overrides, nixpkgs-stable)</a>. The way this is handled was simplified in <code>647a2ae feat: simplify overlay structure</code>; however, the old structure might be easier to understand as a reference.
+</p></li>
 </ul>
 
 <div class="org-src-container">
@@ -1319,16 +1341,29 @@ nixosModules = import ./modules/nixos;
 homeManagerModules = import ./modules/home;
 
 packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
-devShells = forEachSystem
-  (pkgs:
+devShells = forAllSystems (
+  system:
+  let
+    pkgs = nixpkgs.legacyPackages.${system};
+    checks = self.checks.${system};
+  in
     {
       default = pkgs.mkShell {
         NIX_CONFIG = "experimental-features = nix-command flakes";
-        nativeBuildInputs = [ pkgs.nix pkgs.home-manager pkgs.git ];
+        inherit (checks.pre-commit-check) shellHook;
+        buildInputs = checks.pre-commit-check.enabledPackages;
+        nativeBuildInputs = [
+          pkgs.nix
+          pkgs.home-manager
+          pkgs.git
+          pkgs.just
+          pkgs.age
+          pkgs.ssh-to-age
+          pkgs.sops
+        ];
       };
     });
 
-# this sets the formatter that is going to be used by nix fmt
 formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
 checks = forAllSystems (
       system:
@@ -1337,15 +1372,7 @@ checks = forAllSystems (
       in
         import ./checks { inherit self inputs system pkgs; }
 );
-overlaysList = [
-  (import ./overlays { inherit inputs; }).additions
-  (import ./overlays { inherit inputs; }).modifications
-  (import ./overlays { inherit inputs; }).nixpkgs-stable
-  (import ./overlays { inherit inputs; }).zjstatus
-  inputs.nur.overlays.default
-  inputs.emacs-overlay.overlay
-  inputs.nixgl.overlay
-];
+overlays = import ./overlays { inherit inputs; };
 
 </pre>
 </div>
@@ -1538,7 +1565,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
   imports = builtins.attrValues outputs.homeManagerModules;
 
   nixpkgs = {
-    overlays = outputs.overlaysList;
+    overlays = [ outputs.overlays.default ];
     config = {
       allowUnfree = true;
     };
@@ -1632,7 +1659,7 @@ in
 
 
   nixpkgs = {
-    overlays = outputs.overlaysList;
+    overlays = [ outputs.overlays.default ];
     config = {
       allowUnfree = true;
     };
@@ -1851,12 +1878,11 @@ in
 
 
   nixpkgs = {
-    overlays = outputs.overlaysList;
+    overlays = [ outputs.overlays.default ];
     config = {
       allowUnfree = true;
     };
   };
-
 
   boot = {
     loader.systemd-boot.enable = true;
@@ -3020,7 +3046,9 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, ... }: {
+<pre class="src src-nix">{ inputs, ... }:
+
+let
   additions = final: _prev: import ../pkgs { pkgs = final; };
   modifications = _: _prev: {
     vesktop = _prev.vesktop.override {
@@ -3062,6 +3090,19 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
   zjstatus = _: _prev: {
     zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
   };
+
+in
+{
+  default =
+    final: prev:
+
+    (additions final prev)
+    // (modifications final prev)
+    // (nixpkgs-stable final prev)
+    // (zjstatus final prev)
+    // (inputs.nur.overlays.default final prev)
+    // (inputs.emacs-overlay.overlay final prev)
+    // (inputs.nixgl.overlay final prev);
 
 }
 
@@ -7037,7 +7078,7 @@ in
   nix.settings.experimental-features = "nix-command flakes";
   nixpkgs = {
     hostPlatform = "x86_64-darwin";
-    overlays = outputs.overlaysList;
+    overlays = [ outputs.overlays.default ];
     config = {
       allowUnfree = true;
     };
@@ -14542,7 +14583,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-11 Mi 00:05</p>
+<p class="date">Created: 2024-12-11 Mi 01:25</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
