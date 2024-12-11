@@ -355,7 +355,6 @@ This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414
         outputs =
           inputs@{ self
           , nixpkgs
-          , nixpkgs-stable
           , home-manager
           , nix-darwin
           , systems
@@ -599,13 +598,6 @@ Lastly I define some common module lists that I can simply load depending on the
   inherit (self) outputs;
   lib = nixpkgs.lib // home-manager.lib;
 
-  forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-  forAllSystems = lib.genAttrs [
-    "x86_64-linux"
-    "aarch64-linux"
-    "x86_64-darwin"
-    "aarch64-darwin"
-  ];
   pkgsFor = lib.genAttrs (import systems) (
     system:
     import nixpkgs {
@@ -613,6 +605,13 @@ Lastly I define some common module lists that I can simply load depending on the
       config.allowUnfree = true;
     }
   );
+  forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+  forAllSystems = lib.genAttrs [
+    "x86_64-linux"
+    "aarch64-linux"
+    "x86_64-darwin"
+    "aarch64-darwin"
+  ];
   mkFullHost = host: isNixos: {
     ${host} =
       let
@@ -703,15 +702,7 @@ In this section I am creating some attributes that define general concepts of my
         in
           import ./checks { inherit self inputs system pkgs; }
   );
-  overlaysList = [
-    (import ./overlays { inherit inputs; }).additions
-    (import ./overlays { inherit inputs; }).modifications
-    (import ./overlays { inherit inputs; }).nixpkgs-stable
-    (import ./overlays { inherit inputs; }).zjstatus
-    inputs.nur.overlays.default
-    inputs.emacs-overlay.overlay
-    inputs.nixgl.overlay
-  ];
+  overlays = import ./overlays { inherit inputs; };
 
 #+end_src
 
@@ -892,7 +883,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     imports = builtins.attrValues outputs.homeManagerModules;
 
     nixpkgs = {
-      overlays = outputs.overlaysList;
+      overlays = [ outputs.overlays.default ];
       config = {
         allowUnfree = true;
       };
@@ -985,7 +976,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
     nixpkgs = {
-      overlays = outputs.overlaysList;
+      overlays = [ outputs.overlays.default ];
       config = {
         allowUnfree = true;
       };
@@ -1206,12 +1197,11 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
     nixpkgs = {
-      overlays = outputs.overlaysList;
+      overlays = [ outputs.overlays.default ];
       config = {
         allowUnfree = true;
       };
     };
-
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -2326,7 +2316,6 @@ This program sets up a new NixOS host.
   }
 #+end_src
 
-
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -2336,7 +2325,9 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 
 
 #+begin_src nix :tangle overlays/default.nix
-  { inputs, ... }: {
+  { inputs, ... }:
+
+  let
     additions = final: _prev: import ../pkgs { pkgs = final; };
     modifications = _: _prev: {
       vesktop = _prev.vesktop.override {
@@ -2378,6 +2369,19 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
     zjstatus = _: _prev: {
       zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
     };
+
+  in
+  {
+    default =
+      final: prev:
+
+      (additions final prev)
+      // (modifications final prev)
+      // (nixpkgs-stable final prev)
+      // (zjstatus final prev)
+      // (inputs.nur.overlays.default final prev)
+      // (inputs.emacs-overlay.overlay final prev)
+      // (inputs.nixgl.overlay final prev);
 
   }
 
@@ -6219,7 +6223,7 @@ This section sets up all the imports that are used in the home-manager section.
     nix.settings.experimental-features = "nix-command flakes";
     nixpkgs = {
       hostPlatform = "x86_64-darwin";
-      overlays = outputs.overlaysList;
+      overlays = [ outputs.overlays.default ];
       config = {
         allowUnfree = true;
       };

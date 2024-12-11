@@ -120,7 +120,6 @@
   outputs =
     inputs@{ self
     , nixpkgs
-    , nixpkgs-stable
     , home-manager
     , nix-darwin
     , systems
@@ -131,13 +130,6 @@
       inherit (self) outputs;
       lib = nixpkgs.lib // home-manager.lib;
 
-      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-      forAllSystems = lib.genAttrs [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
       pkgsFor = lib.genAttrs (import systems) (
         system:
         import nixpkgs {
@@ -145,6 +137,13 @@
           config.allowUnfree = true;
         }
       );
+      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+      forAllSystems = lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
       mkFullHost = host: isNixos: {
         ${host} =
           let
@@ -218,15 +217,7 @@
         in
         import ./checks { inherit self inputs system pkgs; }
       );
-      overlaysList = [
-        (import ./overlays { inherit inputs; }).additions
-        (import ./overlays { inherit inputs; }).modifications
-        (import ./overlays { inherit inputs; }).nixpkgs-stable
-        (import ./overlays { inherit inputs; }).zjstatus
-        inputs.nur.overlays.default
-        inputs.emacs-overlay.overlay
-        inputs.nixgl.overlay
-      ];
+      overlays = import ./overlays { inherit inputs; };
 
 
       nixosConfigurations =

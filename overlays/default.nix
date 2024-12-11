@@ -1,4 +1,6 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+
+let
   additions = final: _prev: import ../pkgs { pkgs = final; };
   modifications = _: _prev: {
     vesktop = _prev.vesktop.override {
@@ -40,5 +42,18 @@
   zjstatus = _: _prev: {
     zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
   };
+
+in
+{
+  default =
+    final: prev:
+
+    (additions final prev)
+    // (modifications final prev)
+    // (nixpkgs-stable final prev)
+    // (zjstatus final prev)
+    // (inputs.nur.overlays.default final prev)
+    // (inputs.emacs-overlay.overlay final prev)
+    // (inputs.nixgl.overlay final prev);
 
 }
