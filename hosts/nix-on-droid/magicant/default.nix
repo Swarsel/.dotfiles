@@ -8,6 +8,7 @@
       dig
       man
       gnupg
+      curl
     ];
 
     etcBackupExtension = ".bak";

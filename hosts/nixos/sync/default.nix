@@ -68,7 +68,6 @@ in
 
   # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
-
   # do not manage OCI syncthing through nix config
   services.syncthing = {
     enable = true;
@@ -82,7 +81,7 @@ in
     hasFingerprint = false;
     impermanence = false;
     isBtrfs = false;
-    flakePath = "~/.dotfiles";
+    flakePath = "/root/.dotfiles";
     server = {
       enable = true;
       forgejo = true;

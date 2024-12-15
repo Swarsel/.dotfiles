@@ -63,8 +63,6 @@ in
       transmission = true;
       syncthing = true;
       monitoring = true;
-      jenkins = false;
-      emacs = true;
     };
   };
 

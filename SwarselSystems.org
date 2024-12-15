@@ -1600,8 +1600,6 @@ My work machine. Built for more security, this is the gold standard of my config
         transmission = true;
         syncthing = true;
         monitoring = true;
-        jenkins = false;
-        emacs = true;
       };
     };
 
@@ -1670,6 +1668,7 @@ My work machine. Built for more security, this is the gold standard of my config
         dig
         man
         gnupg
+        curl
       ];
 
       etcBackupExtension = ".bak";
@@ -1717,6 +1716,15 @@ I have removed most of the machines from this section. What remains are some hos
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
 :END:
+
+This machine mainly acts as an external sync helper. It manages the following things:
+- Anki syncing
+- Forgejo git server
+- Elfeed sync server (RSS)
+- Syncthing backup of replaceable data
+
+  All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
+
 ***** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:e5fbb73a-799a-438f-a88c-fc14d110ac9c
@@ -1793,7 +1801,6 @@ I have removed most of the machines from this section. What remains are some hos
 
     # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
-
     # do not manage OCI syncthing through nix config
     services.syncthing = {
       enable = true;
@@ -1807,7 +1814,7 @@ I have removed most of the machines from this section. What remains are some hos
       hasFingerprint = false;
       impermanence = false;
       isBtrfs = false;
-      flakePath = "~/.dotfiles";
+      flakePath = "/root/.dotfiles";
       server = {
         enable = true;
         forgejo = true;
