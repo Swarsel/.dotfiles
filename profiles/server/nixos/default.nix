@@ -10,7 +10,6 @@ in
     "${profilesPath}/common/nixos/gc.nix"
     "${profilesPath}/common/nixos/store.nix"
     "${profilesPath}/common/nixos/time.nix"
-    "${profilesPath}/common/nixos/pipewire.nix"
     "${profilesPath}/common/nixos/users.nix"
     "${profilesPath}/common/nixos/nix-ld.nix"
     ./settings.nix
@@ -25,6 +24,7 @@ in
     ./spotifyd.nix
     ./mpd.nix
     ./matrix.nix
+    ./pipewire.nix
     ./nextcloud.nix
     ./immich.nix
     ./paperless.nix
