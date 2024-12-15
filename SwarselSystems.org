@@ -15,16 +15,16 @@ In order to have working links and macros when viewing this file online, you mig
 :CUSTOM_ID: h:a86fe971-f169-4052-aacf-15e0f267c6cd
 :END:
 
-This literate configuration file holds the entirety of all configuration files for both NixOS as well as home manager across all machines that I currently use. It also holds an extensive Emacs configuration
+This literate configuration file holds the entirety of all configuration files for both NixOS as well as home-manager across all machines that I currently use. It also holds an extensive Emacs configuration.
 
 I used to have two separate files (=Emacs.org= and =Nixos.org=) because the NixOS setting for installing Emacs packages used to break if it found UTF-8 characters in =.el= files but not in =.org= files. Hence I used to pass =Emacs.org= to that function rather than =init.el=. This seems to be fixed now however and I was finally able to consolidate both files into one.
 
-This configuration is part of a NixOS system that is fully declarative and can be found here:
+This configuration is part of a NixOS system that is (nearly) fully declarative and can be found here:
 
 - [[https:github.com/Swarsel/.dotfiles][~SwarselSystems~ on github.com]]
 - [[https:swagit.swarsel.win/Swarsel/.dotfiles][~SwarselSystems~ on swagit.swarsel.win]]
 
-The literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
+This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 
 This file is structured as follows:
 
@@ -34,8 +34,11 @@ This file is structured as follows:
 - [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]]
   This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.
 
+- [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]]
+  This block holds everything related to the heart of the nix side of the configuration - the =flake.nix= file.
+
 - [[#h:02cd20be-1ffa-4904-9d5a-da5a89ba1421][System]]
-  This section holds all configuration options that apply to NixOS or Home Manager. In other words, here we are doing system and user level configuration.
+  This section holds all configuration options that apply to NixOS or home-manager. In other words, here we are doing system and user level configuration.
 
 - [[#h:ed4cd05c-0879-41c6-bc39-3f1246a96f04][Emacs]]
   This section defines my Emacs configuration. For a while, I considered to use rycee's =emacs-init= module ([[https://github.com/nix-community/nur-combined/blob/master/repos/rycee/hm-modules/emacs-init.nix]]) to manage my Emacs configuration; I have since come to the conclusion that this would be a bad idea: at the moment, even though it might seem as I am very bound to the configuration file that you are currently reading, if I ever decide to change how I run my system, I can simply take the generated =.nix= and =.el= files and put them wherever I need them. This file only simplifies that generation without putting further restrictions on my. If I were however to switch to =emacs-init= then I would be indeed to some level confined to the nix ecosystem with my Emacs configuration, as I would no longer have a valid =.org= file to manage it with, instead generating an =init.el= directly from nix code. I like to keep that level of freedom for potential future use. Also, you will notice there is no package system setup in this configuration. This is because packages are automatically handled on the NixOS side by parsing the generated =init.el= file for package installs.
@@ -59,7 +62,7 @@ This file is structured as follows:
 - =init.el=
   This file handles the rest of the Emacs configuration.
 
-By using the configuration offered by this file, the file you are reading right now (=SwarselSystems.org=) will be freshly tangled on every file save. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the keybind =C-c C-v t=. Alternatively, execute the following block:
+By using the configuration offered by this file, the file you are reading right now (=SwarselSystems.org=) will not be freshly tangled on every file save, as this slows down emacs over time. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the general keybind =C-c C-v t= or my personal chord =C-SPC o t=. Alternatively, execute the following block:
 
   #+begin_src emacs-lisp :tangle no :export both :results silent
 
@@ -67,6 +70,15 @@ By using the configuration offered by this file, the file you are reading right 
 
   #+end_src
 
+The =.html= version of this page can be generated by calling the chord =C-SPC o e=, or by executing the below block
+
+  #+begin_src emacs-lisp :tangle no :export both :results silent
+
+    (org-html-export-to-html)
+
+  #+end_src
+
+The web version is useful because it allows navigation using org-mode links, which makes the configuration easier to follow (I hope!).
 Lastly, I add this javascript bit to the file in order to have a darkmode toggle when exporting to html:
 
 #+begin_src elisp :noweb yes :exports both :results html
@@ -164,158 +176,6 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
   };
 
 #+end_src
-*** firefox profile
-:PROPERTIES:
-:CUSTOM_ID: h:d9861165-2a10-44d9-831d-0fe23cc5473f
-:END:
-
-At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
-
-#+begin_src nix :tangle no :noweb-ref firefoxprofile
-
-    isDefault = false;
-    userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
-    extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-      tridactyl
-      tampermonkey
-      sidebery
-      browserpass
-      clearurls
-      darkreader
-      enhancer-for-youtube
-      istilldontcareaboutcookies
-      translate-web-pages
-      ublock-origin
-      reddit-enhancement-suite
-      sponsorblock
-      web-archives
-      onepassword-password-manager
-      single-file
-      widegithub
-      enhanced-github
-      unpaywall
-      don-t-fuck-with-paste
-      plasma-integration
-      (buildFirefoxXpiAddon {
-        pname = "shortkeys";
-        version = "4.0.2";
-        addonId = "Shortkeys@Shortkeys.com";
-        url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-        sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-        meta = with lib;
-          {
-            description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-            mozPermissions = [
-              "tabs"
-              "downloads"
-              "clipboardWrite"
-              "browsingData"
-              "storage"
-              "bookmarks"
-              "sessions"
-              "<all_urls>"
-            ];
-            platforms = platforms.all;
-          };
-      })
-    ];
-
-    settings =
-      {
-        "extensions.autoDisableScopes" = 0;
-        "browser.bookmarks.showMobileBookmarks" = lock-true;
-        "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-        "browser.search.suggest.enabled" = lock-false;
-        "browser.search.suggest.enabled.private" = lock-false;
-        "browser.urlbar.suggest.searches" = lock-false;
-        "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-        "browser.topsites.contile.enabled" = lock-false;
-        "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-        "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-        "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-        "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-        "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-        "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-        "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-        "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-        "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
-      };
-
-    search = {
-      default = "Kagi";
-      privateDefault = "Kagi";
-      engines = {
-        "Kagi" = {
-          urls = [{
-            template = "https://kagi.com/search";
-            params = [
-              { name = "q"; value = "{searchTerms}"; }
-            ];
-          }];
-          iconUpdateURL = "https://kagi.com/favicon.ico";
-          updateInterval = 24 * 60 * 60 * 1000; # every day
-          definedAliases = [ "@k" ];
-        };
-
-        "Nix Packages" = {
-          urls = [{
-            template = "https://search.nixos.org/packages";
-            params = [
-              { name = "type"; value = "packages"; }
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@np" ];
-        };
-
-        "NixOS Wiki" = {
-          urls = [{
-            template = "https://nixos.wiki/index.php?search={searchTerms}";
-          }];
-          iconUpdateURL = "https://nixos.wiki/favicon.png";
-          updateInterval = 24 * 60 * 60 * 1000; # every day
-          definedAliases = [ "@nw" ];
-        };
-
-        "NixOS Options" = {
-          urls = [{
-            template = "https://search.nixos.org/options";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@no" ];
-        };
-
-        "Home Manager Options" = {
-          urls = [{
-            template = "https://home-manager-options.extranix.com/";
-            params = [
-              { name = "query"; value = "{searchTerms}"; }
-            ];
-          }];
-
-          icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-          definedAliases = [ "@hm" "@ho" "@hmo" ];
-        };
-
-        "Google".metaData.alias = "@g";
-      };
-      force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-    };
-
-#+end_src
-
-:PROPERTIES:
-:CUSTOM_ID: h:996e9c5f-ed65-4f4f-b043-5a901ed74358
-:END:
-
-These settings are to be used only on full NixOS setups.
-
 * flake.nix
 :PROPERTIES:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
@@ -333,6 +193,12 @@ These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b]
 :END:
 
 This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]] section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+
+In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, options, and more. The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
+
+In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like =emacs-overlay=, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain.
+
+In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file.
 
 #+begin_src nix :noweb yes :tangle flake.nix
 
@@ -1555,7 +1421,7 @@ I have removed most of the machines from this section. What remains are some hos
 
 #+end_src
 
-** Overlays, packages, and modules
+** Additions and modifications
 :PROPERTIES:
 :CUSTOM_ID: h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d
 :END:
@@ -2932,6 +2798,10 @@ Another duplicated option for the filesystem.
 :PROPERTIES:
 :CUSTOM_ID: h:e7f98ad8-74a6-4860-a368-cce154285ff0
 :END:
+
+
+At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
+Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
 
 #+begin_src nix :noweb yes :tangle modules/home/firefox.nix
 { lib, pkgs, ... }:
