@@ -1,8 +1,8 @@
-{ config, ... }:
+{ config, lib, ... }:
 {
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
+    age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/sops" ];
+    defaultSopsFile = lib.mkDefault "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
     validateSopsFiles = false;
   };
 

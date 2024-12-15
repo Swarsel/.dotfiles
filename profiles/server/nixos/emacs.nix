@@ -6,7 +6,6 @@
 
     services.emacs = {
       enable = true;
-
       install = true;
       startWithGraphical = false;
     };

@@ -1,66 +1,30 @@
-{ self, config, inputs, pkgs, ... }:
-
+{ self, inputs, outputs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
 {
   imports = [
 
     inputs.sops-nix.nixosModules.sops
+    "${profilesPath}/server/nixos"
     ./hardware-configuration.nix
-  ];
 
-  environment.systemPackages = with pkgs; [
-    git
-    gnupg
-    ssh-to-age
-  ];
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = [
+        "${profilesPath}/server/home"
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
 
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "altgr-intl";
-  };
-
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  ] ++ (builtins.attrValues outputs.nixosModules);
 
   sops = {
-    age.sshKeyPaths = [ "/etc/ssh/sops" ];
-    defaultSopsFile = "/root/.dotfiles/secrets/sync/secrets.yaml";
-    validateSopsFiles = false;
-    secrets.swarsel = { owner = "root"; };
-    secrets.dnstokenfull = { owner = "acme"; };
-    templates."certs.secret".content = ''
-      CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
-    '';
+    defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
   };
 
-  security.acme = {
-    acceptTerms = true;
-    preliminarySelfsigned = false;
-    defaults.email = "mrswarsel@gmail.com";
-    defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
-  };
 
   services.nginx = {
-    enable = true;
-    recommendedProxySettings = true;
-    recommendedTlsSettings = true;
-    recommendedOptimisation = true;
-    recommendedGzipSettings = true;
     virtualHosts = {
-
-      "synki.swarsel.win" = {
-        enableACME = true;
-        forceSSL = true;
-        acmeRoot = null;
-        locations = {
-          "/" = {
-            proxyPass = "http://localhost:27701";
-            extraConfig = ''
-              client_max_body_size 0;
-            '';
-          };
-        };
-      };
-
       "sync.swarsel.win" = {
         enableACME = true;
         forceSSL = true;
@@ -74,13 +38,18 @@
           };
         };
       };
-
     };
   };
 
-  boot.tmp.cleanOnBoot = true;
+  boot = {
+    tmp.cleanOnBoot = true;
+    loader.grub.device = "nodev";
+  };
   zramSwap.enable = false;
+
   networking = {
+    firewall.allowedTCPPorts = [ 8384 22000 ];
+    firewall.allowedUDPPorts = [ 21027 22000 ];
     hostName = "sync";
     enableIPv6 = false;
     domain = "subnet03112148.vcn03112148.oraclevcn.com";
@@ -93,42 +62,33 @@
       iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
       iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
       iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
+      iptables -I INPUT -m state --state NEW -p tcp --dport 9812 -j ACCEPT
     '';
   };
-  services.openssh = {
-    enable = true;
-    # settings.PermitRootLogin = "yes";
-  };
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    "${self}/secrets/keys/ssh/nbl-imba-2.pub"
-  ];
 
-  system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
+  # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
-  environment.shellAliases = {
-    nswitch = "cd ~/.dotfiles; git pull; nixos-rebuild --flake .#$(hostname) switch; cd -;";
-  };
 
-  boot.loader.grub.device = "nodev";
-
-  services.anki-sync-server = {
-    enable = true;
-    port = 27701;
-    address = "0.0.0.0";
-    openFirewall = true;
-    users = [
-      {
-        username = "Swarsel";
-        passwordFile = config.sops.secrets.swarsel.path;
-      }
-    ];
-  };
-
+  # do not manage OCI syncthing through nix config
   services.syncthing = {
     enable = true;
     guiAddress = "0.0.0.0:8384";
     openDefaultPorts = true;
   };
 
+
+  swarselsystems = {
+    hasBluetooth = false;
+    hasFingerprint = false;
+    impermanence = false;
+    isBtrfs = false;
+    flakePath = "/.dotfiles";
+    server = {
+      enable = true;
+      forgejo = true;
+      ankisync = true;
+      emacs = true;
+    };
+  };
 
 }
