@@ -38,6 +38,7 @@ _:
     # ./safeeyes.nix
     ./distrobox.nix
     ./lid.nix
+    ./lowbattery.nix
   ];
 
   nixpkgs.config.permittedInsecurePackages = [

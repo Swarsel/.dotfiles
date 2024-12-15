@@ -26,7 +26,11 @@
     # secure boot
     sbctl
 
+    # nix package database
     nix-index
+
+    # proc info
+    acpi
 
     # better make for general tasks
     just

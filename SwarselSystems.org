@@ -3062,6 +3062,7 @@ This section is for setting things that should be used on hosts that are using t
       # ./safeeyes.nix
       ./distrobox.nix
       ./lid.nix
+      ./lowbattery.nix
     ];
 
     nixpkgs.config.permittedInsecurePackages = [
@@ -3149,7 +3150,11 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # secure boot
       sbctl
 
+      # nix package database
       nix-index
+
+      # proc info
+      acpi
 
       # better make for general tasks
       just
@@ -4566,6 +4571,42 @@ This turns off the display when the lid is closed.
               swaymsg output eDP-2 enable
           fi
         '';
+    };
+  }
+#+end_src
+
+**** Low battery notification
+:PROPERTIES:
+:CUSTOM_ID: h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17
+:END:
+
+Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
+
+#+begin_src nix :tangle profiles/common/nixos/lowbattery.nix
+  { pkgs, lib, ... }:
+  {
+    systemd.user.services."battery-low" = {
+      enable = true;
+      description = "Notify user if battery is below 10%";
+      partOf = [ "graphical-session.target" ];
+      wantedBy = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = pkgs.writeShellScript "battery-low-notification"
+          ''
+            if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+")));
+            then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
+            fi;
+          '';
+      };
+    };
+    systemd.user.timers."battery-low" = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        # Every Minute
+        OnCalendar = "*-*-* *:*:00";
+        Unit = "battery-low.service";
+      };
     };
   }
 #+end_src
