@@ -105,7 +105,7 @@ window.addEventListener('load', addDarkmodeWidget);
 
 The rest of this file will now contain actual code that is used in the configuration.
 
-* Noweb-Ref blocks
+* Noweb-Ref blocks and supplementary files
 :PROPERTIES:
 :CUSTOM_ID: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4
 :END:
@@ -115,6 +115,8 @@ These blocks are used in several places throughout the configurations, but not o
 Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
 
 This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
+
+Also, this section now holds some of the longer configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using =home.file=.
 
 ** Theme (stylix)
 :PROPERTIES:
@@ -174,6 +176,475 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       name = "Noto Color Emoji";
     };
   };
+
+#+end_src
+** Server Emacs config
+
+On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server.
+
+
+#+begin_src emacs-lisp :tangle programs/emacs/server.el
+(require 'package)
+
+(package-initialize nil)
+(setq package-enable-at-startup nil)
+
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/") t)
+
+
+(package-initialize)
+
+(let ((default-directory  "~/.emacs.d/elpa/"))
+  (normal-top-level-add-subdirs-to-load-path))
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+
+(use-package elfeed
+  :ensure t
+  :bind (:map elfeed-search-mode-map
+              ("q" . bjm/elfeed-save-db-and-bury)))
+
+(require 'elfeed)
+
+(use-package elfeed-org
+  :ensure t
+  :config
+  (elfeed-org)
+  (setq rmh-elfeed-org-files (list "/var/lib/syncthing/.elfeed/elfeed.org")))
+
+(use-package elfeed-goodies
+  :ensure t)
+
+(elfeed-goodies/setup)
+
+(use-package elfeed-web
+  :ensure t)
+
+(global-set-key (kbd "C-x w") 'bjm/elfeed-load-db-and-open)
+
+(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
+(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
+(define-key elfeed-search-mode-map (kbd "j") 'next-line)
+(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
+(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
+
+
+(defun bjm/elfeed-save-db-and-bury ()
+  "Wrapper to save the elfeed db to disk before burying buffer"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window))
+
+(defun bjm/elfeed-load-db-and-open ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+(defun bjm/elfeed-updater ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+(run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
+
+(setq httpd-port 9812)
+(setq httpd-host "0.0.0.0")
+(setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
+
+(httpd-start)
+(elfeed-web-start)
+
+#+end_src
+** tridactylrc
+
+This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox
+
+
+#+begin_src :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
+
+sanitise tridactyllocal tridactylsync
+
+colourscheme base16-codeschool
+
+" General Settings
+set update.lastchecktime 1720629386560
+set update.lastnaggedversion 1.24.1
+set update.nag true
+set update.nagwait 7
+set update.checkintervalsecs 86400
+set configversion 2.0
+set searchurls.no https://search.nixos.org/options?query=
+set searchurls.np https://search.nixos.org/packages?query=
+set searchurls.hm https://home-manager-options.extranix.com/?query=
+set completions.Tab.statusstylepretty true
+set hintfiltermode vimperator-reflow
+set hintnames numeric
+
+" Binds
+bind <C-m> buffer #
+bind gd tabdetach
+bind gD composite tabduplicate; tabdetach
+bind d composite tabprev; tabclose #
+bind D tabclose
+bind c hint
+bindurl ^http(s)?://www\.google\.com c hint -Jc [class="LC20lb MBeuO DKV0Md"],[class="YmvwI"],[class="YyVfkd"],[class="fl"]
+bindurl ^http(s)?://news\.ycombinator\.com c hint -Jc [class="titleline"],[class="age"]
+bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label"]
+bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
+
+" Search in page
+set findcase smart
+bind / fillcmdline find
+bind ? fillcmdline find -?
+bind n findnext 1
+bind N findnext -1
+
+bind j scrollline 4
+bind k scrollline -4
+
+
+" WARNING: This file defines and runs a command called fixamo_quiet. If you
+" also have a malicious addon that operates on `<all_urls>` installed this
+" will allow it to steal your firefox account credentials!
+"
+" With those credentials, an attacker can read anything in your sync account,
+" publish addons to the AMO, etc, etc.
+"
+" Without this command a malicious addon can steal credentials from any site
+" that you visit that is not in the restrictedDomains list.
+"
+" You should comment out the fixamo lines unless you are entirely sure that
+" they are what you want.
+command fixamo_quiet jsb tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""'))
+command fixamo js tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""').then(tri.excmds.fillcmdline_tmp(3000, "Permissions added to user.js. Please restart Firefox to make them take affect.")))
+
+fixamo_quiet
+set allowautofocus false
+
+" The following modification allows Tridactyl to function on more pages, e.g. raw GitHub pages.
+" You may not wish to run this. Mozilla strongly feels that you shouldn't.
+" Read https://wiki.mozilla.org/Security/CSP#Goals for more information.
+"
+" Equivalent to `set csp clobber` before it was removed.
+" This weakens your defences against cross-site-scripting attacks
+" and other types of code-injection by reducing the strictness
+" of Content Security Policy on all sites in a couple of ways.
+"
+" We remove the sandbox directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox
+" which allows our iframe (and anyone else's) to run on any website.
+"
+" We weaken the style-src directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
+" to allow us to theme our elements.
+" This exposes you to 'cross site styling' attacks
+jsb browser.webRequest.onHeadersReceived.addListener(tri.request.clobberCSP,{urls:["<all_urls>"],types:["main_frame"]},["blocking","responseHeaders"])
+
+" default is 300ms
+set hintdelay 100
+
+" Some pages like github break on the tridactyl quick search. have this as a fallback
+unbind <C-f>
+
+" Subconfig Settings
+seturl www.google.com followpagepatterns.next Next
+seturl www.google.com followpagepatterns.prev Previous
+
+" Autocmds
+autocmd DocStart undefined mode ignore
+autocmd DocStart pokerogue.net mode ignore
+autocmd DocStart typelit.io mode ignore
+autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
+
+" For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
+" vim: set filetype=tridactyl
+
+#+end_src
+** Waybar style.css
+
+This is the stylesheet used by waybar.
+
+#+begin_src css :tangle programs/waybar/style.css :mkdirp yes
+@define-color foreground #fdf6e3;
+@define-color background #1a1a1a;
+@define-color background-alt #292b2e;
+@define-color foreground-warning #268bd2;
+@define-color background-warning @background;
+@define-color foreground-error red;
+@define-color background-error @background;
+@define-color foreground-critical gold;
+@define-color background-critical blue;
+
+
+ * {
+    border: none;
+    border-radius: 0;
+    font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
+    font-size: 14px;
+    min-height: 0;
+    margin: -1px 0px;
+}
+
+window#waybar {
+        background: transparent;
+        color: @foreground;
+        transition-duration: .5s;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+
+#mpris {
+    padding: 0 10px;
+    background-color: transparent;
+    color: #1DB954;
+    font-family: Monospace;
+    font-size: 12px;
+}
+
+#custom-right-arrow-dark,
+#custom-left-arrow-dark {
+        color: @background;
+        background: @background-alt;
+        font-size: 24px;
+}
+
+#window {
+        font-size: 12px;
+        padding: 0 20px;
+}
+
+#mode {
+    background: @background-critical;
+    color: @foreground-critical;
+    padding: 0 3px;
+}
+
+#privacy,
+#custom-configwarn {
+    color: black;
+    padding: 0 3px;
+    animation-name: configblink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#custom-nix-updates {
+    color: white;
+    padding: 0 3px;
+}
+
+#custom-outer-right-arrow-dark,
+#custom-outer-left-arrow-dark {
+        color: @background;
+        font-size: 24px;
+}
+
+#custom-outer-left-arrow-dark,
+#custom-left-arrow-dark,
+#custom-left-arrow-light {
+        margin: 0 -1px;
+}
+
+#custom-right-arrow-light,
+#custom-left-arrow-light {
+        color: @background-alt;
+        background: @background;
+        font-size: 24px;
+}
+
+#workspaces,
+#clock.1,
+#clock.2,
+#clock.3,
+#pulseaudio,
+#memory,
+#cpu,
+#temperature,
+#custom-scratchpad-indicator,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight-slider,
+#mpris,
+#tray {
+    background: @background;
+}
+
+#network,
+#custom-vpn,
+#clock.2,
+#battery,
+#cpu,
+#custom-pseudobat,
+#disk {
+    background: @background-alt;
+}
+
+
+#workspaces button {
+        padding: 0 2px;
+        color: #fdf6e3;
+}
+#workspaces button.focused {
+        color: @foreground-warning;
+}
+
+#workspaces button:hover {
+    background: @foreground;
+    color: @background;
+        border: @foreground;
+        padding: 0 2px;
+        box-shadow: inherit;
+        text-shadow: inherit;
+}
+
+#workspaces button.urgent {
+    color: @background-critical;
+    background: @foreground-critical;
+}
+
+#custom-vpn,
+#network {
+    color: #cc99c9;
+}
+
+#temperature,
+#power-profiles-daemon {
+    color: #9ec1cf;
+}
+
+#disk {
+    /*color: #b58900;*/
+    color: #9ee09e;
+}
+
+#custom-scratchpad-indicator {
+    color: #ffffff;
+}
+
+#disk.warning {
+    color:            @foreground-error;
+    background-color: @background-error;
+}
+#disk.critical,
+#temperature.critical {
+    color:            @foreground-critical;
+    background-color: @background-critical;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+#pulseaudio.muted {
+    color: @foreground-error;
+}
+#memory {
+        /*color: #2aa198;*/
+        color: #fdfd97;
+}
+#cpu {
+    /*color: #6c71c4;*/
+    color: #feb144;
+}
+
+#pulseaudio {
+    /*color: #268bd2;*/
+    color: #ff6663;
+}
+
+#battery,
+#custom-pseudobat {
+        color: cyan;
+}
+#battery.discharging {
+    color:      #859900;
+}
+
+@keyframes blink {
+    to {
+        color:            @foreground-error;
+        background-color: @background-error;
+    }
+}
+@keyframes configblink {
+    to {
+        color:            @foreground-error;
+        background-color: transparent;
+    }
+}
+
+#battery.critical:not(.charging) {
+    color:            @foreground-critical;
+    background-color: @background-critical;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#backlight-slider slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+#backlight-slider trough {
+    min-height: 5px;
+    min-width: 80px;
+    border-radius: 5px;
+    background-color: black;
+}
+#backlight-slider highlight {
+    min-width: 0px;
+    border-radius: 5px;
+    background-color: grey;
+}
+
+#clock.1,
+#clock.2,
+#clock.3 {
+    font-family: Monospace;
+}
+
+#clock,
+#pulseaudio,
+#memory,
+#cpu,
+#tray,
+#temperature,
+#power-profiles-daemon,
+#network,
+#custom-vpn,
+#mpris,
+#battery,
+#custom-scratchpad-indicator,
+#custom-pseudobat,
+#disk {
+    padding: 0 3px;
+}
 
 #+end_src
 * flake.nix
