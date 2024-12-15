@@ -701,12 +701,38 @@ create a new one."
 
 (use-package doom-modeline
   :init
-  (doom-modeline-mode)
-  (column-number-mode)
+  ;; (doom-modeline-mode)
+  ;; (column-number-mode)
   :custom
   ((doom-modeline-height 22)
    (doom-modeline-indent-info nil)
    (doom-modeline-buffer-encoding nil)))
+
+(use-package mini-modeline
+  :after smart-mode-line
+  :config
+  (mini-modeline-mode t)
+  (setq mini-modeline-display-gui-line nil)
+  (setq mini-modeline-enhance-visual nil)
+  (setq mini-modeline-truncate-p nil)
+  (setq mini-modeline-l-format nil)
+  (setq mini-modeline-right-padding 5)
+  (setq window-divider-mode t)
+  (setq window-divider-default-places t)
+  (setq window-divider-default-bottom-width 1)
+  (setq window-divider-default-right-width 1)
+  (setq mini-modeline-r-format '("%e" mode-line-front-space mode-line-mule-info mode-line-client
+                                 mode-line-modified mode-line-remote mode-line-frame-identification
+                                 mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag ))
+  )
+
+(use-package smart-mode-line
+  :config
+  (sml/setup)
+  (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Work/" ":WK:"))
+  (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Private/" ":PR:"))
+  (add-to-list 'sml/replacer-regexp-list '("^~/.dotfiles/" ":D:") t)
+  )
 
 (setq read-buffer-completion-ignore-case t
       read-file-name-completion-ignore-case t

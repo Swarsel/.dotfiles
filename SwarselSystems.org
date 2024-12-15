@@ -10808,16 +10808,56 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 
 Here I set up the modeline with some information that I find useful. Specficially I am using the doom modeline. Most informations I disable for it, except for the cursor information (row + column) as well as a widget for =mu4e= and git information.
 
+I have currently disabled this in favor of [[#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208][mini-modeline]].
+
 #+begin_src emacs-lisp
 
   (use-package doom-modeline
     :init
-    (doom-modeline-mode)
-    (column-number-mode)
+    ;; (doom-modeline-mode)
+    ;; (column-number-mode)
     :custom
     ((doom-modeline-height 22)
      (doom-modeline-indent-info nil)
      (doom-modeline-buffer-encoding nil)))
+
+
+#+end_src
+
+*** mini-modeline
+:PROPERTIES:
+:CUSTOM_ID: h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208
+:END:
+
+I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach.
+
+#+begin_src emacs-lisp
+
+          (use-package mini-modeline
+            :after smart-mode-line
+            :config
+            (mini-modeline-mode t)
+            (setq mini-modeline-display-gui-line nil)
+            (setq mini-modeline-enhance-visual nil)
+            (setq mini-modeline-truncate-p nil)
+            (setq mini-modeline-l-format nil)
+            (setq mini-modeline-right-padding 5)
+            (setq window-divider-mode t)
+            (setq window-divider-default-places t)
+            (setq window-divider-default-bottom-width 1)
+            (setq window-divider-default-right-width 1)
+            (setq mini-modeline-r-format '("%e" mode-line-front-space mode-line-mule-info mode-line-client
+                                           mode-line-modified mode-line-remote mode-line-frame-identification
+                                           mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag ))
+            )
+
+          (use-package smart-mode-line
+            :config
+            (sml/setup)
+            (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Work/" ":WK:"))
+            (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Private/" ":PR:"))
+            (add-to-list 'sml/replacer-regexp-list '("^~/.dotfiles/" ":D:") t)
+            )
 
 
 #+end_src
