@@ -34,5 +34,6 @@ in
     ./monitoring.nix
     ./jenkins.nix
     ./emacs.nix
+    ./forgejo.nix
   ];
 }

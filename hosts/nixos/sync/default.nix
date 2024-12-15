@@ -75,19 +75,6 @@
         };
       };
 
-      "swagit.swarsel.win" = {
-        enableACME = true;
-        forceSSL = true;
-        acmeRoot = null;
-        locations = {
-          "/" = {
-            proxyPass = "http://localhost:3000";
-            extraConfig = ''
-              client_max_body_size 0;
-            '';
-          };
-        };
-      };
     };
   };
 
@@ -143,24 +130,5 @@
     openDefaultPorts = true;
   };
 
-  services.forgejo = {
-    enable = true;
-    settings = {
-      DEFAULT = {
-        APP_NAME = "~SwaGit~";
-      };
-      server = {
-        PROTOCOL = "http";
-        HTTP_PORT = 3000;
-        HTTP_ADDR = "0.0.0.0";
-        DOMAIN = "swagit.swarsel.win";
-        ROOT_URL = "https://swagit.swarsel.win";
-      };
-      service = {
-        DISABLE_REGISTRATION = true;
-        SHOW_REGISTRATION_BUTTON = false;
-      };
-    };
-  };
 
 }

@@ -1257,7 +1257,7 @@ I have removed most of the machines from this section. What remains are some hos
   {
     imports = [
 
-       inputs.sops-nix.nixosModules.sops
+      inputs.sops-nix.nixosModules.sops
       ./hardware-configuration.nix
     ];
 
@@ -1329,19 +1329,6 @@ I have removed most of the machines from this section. What remains are some hos
           };
         };
 
-        "swagit.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://localhost:3000";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
       };
     };
 
@@ -1397,23 +1384,16 @@ I have removed most of the machines from this section. What remains are some hos
       openDefaultPorts = true;
     };
 
-    services.forgejo = {
-      enable = true;
-      settings = {
-        DEFAULT = {
-          APP_NAME = "~SwaGit~";
-        };
-        server = {
-          PROTOCOL = "http";
-          HTTP_PORT = 3000;
-          HTTP_ADDR = "0.0.0.0";
-          DOMAIN = "swagit.swarsel.win";
-          ROOT_URL = "https://swagit.swarsel.win";
-        };
-        service = {
-          DISABLE_REGISTRATION = true;
-          SHOW_REGISTRATION_BUTTON = false;
-        };
+
+    swarselsystems = {
+      hasBluetooth = false;
+      hasFingerprint = false;
+      impermanence = false;
+      isBtrfs = false;
+      flakePath = "/.dotfiles";
+      server = {
+        enable = true;
+        forgejo = true;
       };
     };
 
@@ -2434,6 +2414,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
     options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
     options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
+    options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
   }
 #+end_src
 
@@ -4663,6 +4644,7 @@ Also, the system state version is set here. No need to touch it.
     ./monitoring.nix
     ./jenkins.nix
     ./emacs.nix
+    ./forgejo.nix
     ];
   }
   #+end_src
@@ -6166,6 +6148,108 @@ Also, the system state version is set here. No need to touch it.
             locations = {
               "/" = {
                 proxyPass = "http://localhost:9812";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
+**** forgejo (git server)
+
+#+begin_src nix :tangle profiles/server/nixos/forgejo.nix
+  { lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.forgejo {
+
+      networking.firewall.allowedTCPPorts = [ 3000 ];
+
+      services.forgejo = {
+        enable = true;
+        settings = {
+          DEFAULT = {
+            APP_NAME = "~SwaGit~";
+          };
+          server = {
+            PROTOCOL = "http";
+            HTTP_PORT = 3000;
+            HTTP_ADDR = "0.0.0.0";
+            DOMAIN = "swagit.swarsel.win";
+            ROOT_URL = "https://swagit.swarsel.win";
+          };
+          service = {
+            DISABLE_REGISTRATION = true;
+            SHOW_REGISTRATION_BUTTON = false;
+          };
+        };
+      };
+
+      services.nginx = {
+        virtualHosts = {
+          "swagit.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:3000";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+    };
+
+  }
+#+end_src
+
+**** forgejo (git server)
+
+#+begin_src nix :tangle profiles/server/nixos/ankisync.nix
+  { lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.ankisync {
+
+      networking.firewall.allowedTCPPorts = [ 9812 ];
+
+      services.forgejo = {
+        enable = true;
+        settings = {
+          DEFAULT = {
+            APP_NAME = "~SwaGit~";
+          };
+          server = {
+            PROTOCOL = "http";
+            HTTP_PORT = 3000;
+            HTTP_ADDR = "0.0.0.0";
+            DOMAIN = "swagit.swarsel.win";
+            ROOT_URL = "https://swagit.swarsel.win";
+          };
+          service = {
+            DISABLE_REGISTRATION = true;
+            SHOW_REGISTRATION_BUTTON = false;
+          };
+        };
+      };
+
+      services.nginx = {
+        virtualHosts = {
+          "swagit.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:3000";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
