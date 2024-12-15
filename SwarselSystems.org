@@ -10495,21 +10495,25 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 :PROPERTIES:
 :CUSTOM_ID: h:1667913c-2272-4010-bf3a-356455b97c83
 :END:
+
+This sets up automatic garbage collection when the frame is unused.
+
 #+begin_src emacs-lisp
-(setq garbage-collection-messages t)
-(defmacro k-time (&rest body)
-  "Measure and return the time it takes evaluating BODY."
-  `(let ((time (current-time)))
-     ,@body
-     (float-time (time-since time))))
+  (setq garbage-collection-messages nil)
+  (defmacro k-time (&rest body)
+    "Measure and return the time it takes evaluating BODY."
+    `(let ((time (current-time)))
+       ,@body
+       (float-time (time-since time))))
 
 
-;; When idle for 15sec run the GC no matter what.
-(defvar k-gc-timer
-  (run-with-idle-timer 15 t
-                       (lambda ()
-                         (message "Garbage Collector has run for %.06fsec"
-                                  (k-time (garbage-collect))))))
+  ;; When idle for 15sec run the GC no matter what.
+  (defvar k-gc-timer
+    (run-with-idle-timer 15 t
+                         (lambda ()
+                           ;; (message "Garbage Collector has run for %.06fsec"
+                                    (k-time (garbage-collect)))))
+                           ;; )
 
 #+end_src
 *** Indentation

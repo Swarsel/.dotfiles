@@ -541,7 +541,7 @@ create a new one."
   (setq native-comp-async-report-warnings-errors 'silent) ; Emacs 28 with native compilation
   (setq native-compile-prune-cache t)) ; Emacs 29
 
-(setq garbage-collection-messages t)
+(setq garbage-collection-messages nil)
 (defmacro k-time (&rest body)
   "Measure and return the time it takes evaluating BODY."
   `(let ((time (current-time)))
