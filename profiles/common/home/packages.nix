@@ -30,6 +30,7 @@
     nix-output-monitor
     hyprpicker # color picker
     findutils
+    units
 
     # nix
     alejandra
