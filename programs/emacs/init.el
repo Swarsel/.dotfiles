@@ -553,8 +553,9 @@ create a new one."
 (defvar k-gc-timer
   (run-with-idle-timer 15 t
                        (lambda ()
-                         (message "Garbage Collector has run for %.06fsec"
-                                  (k-time (garbage-collect))))))
+                         ;; (message "Garbage Collector has run for %.06fsec"
+                                  (k-time (garbage-collect)))))
+                         ;; )
 
 (setq-default indent-tabs-mode nil
               tab-width 2)

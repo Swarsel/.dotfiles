@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-11 Mi 01:50 -->
+<!-- 2024-12-13 Fr 01:20 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -204,11 +204,7 @@
 <li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a></li>
 <li><a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">2. Noweb-Ref blocks</a>
 <ul>
-<li><a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">2.1. Theme (stylix)</a>
-<ul>
-<li><a href="#h:d9861165-2a10-44d9-831d-0fe23cc5473f">2.1.1. firefox profile</a></li>
-</ul>
-</li>
+<li><a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">2.1. Theme (stylix)</a></li>
 </ul>
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">3. flake.nix</a>
@@ -249,7 +245,7 @@
 </li>
 </ul>
 </li>
-<li><a href="#h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d">4.2. Overlays, packages, and modules</a>
+<li><a href="#h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d">4.2. Additions and modifications</a>
 <ul>
 <li><a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">4.2.1. Packages</a>
 <ul>
@@ -270,6 +266,8 @@
 <li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">4.2.1.15. github-notifications</a></li>
 <li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">4.2.1.16. screenshare</a></li>
 <li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">4.2.1.17. bootstrap</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.18. t2ts</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.19. ts2t</a></li>
 </ul>
 </li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">4.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
@@ -357,6 +355,7 @@
 <li><a href="#h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4">4.3.1.28. safeeyes</a></li>
 <li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">4.3.1.29. Podmam (distrobox)</a></li>
 <li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">4.3.1.30. Handle lid switch correctly</a></li>
+<li><a href="#h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">4.3.1.31. Low battery notification</a></li>
 </ul>
 </li>
 <li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">4.3.2. Server</a>
@@ -532,27 +531,28 @@
 <li><a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">5.3.11. Icons</a></li>
 <li><a href="#h:455ed7ac-ee7f-4f94-b857-f2c58b2282d0">5.3.12. Variable Pitch Mode</a></li>
 <li><a href="#h:ed585848-875a-4673-910c-d2e1901dd95b">5.3.13. Modeline</a></li>
-<li><a href="#h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">5.3.14. Helper Modes</a>
+<li><a href="#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">5.3.14. mini-modeline</a></li>
+<li><a href="#h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">5.3.15. Helper Modes</a>
 <ul>
-<li><a href="#h:b190d512-bfb5-42ec-adec-8d86bab726ce">5.3.14.1. Vertico, Orderless, Marginalia, Consult, Embark</a>
+<li><a href="#h:b190d512-bfb5-42ec-adec-8d86bab726ce">5.3.15.1. Vertico, Orderless, Marginalia, Consult, Embark</a>
 <ul>
-<li><a href="#h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">5.3.14.1.1. vertico</a></li>
-<li><a href="#h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">5.3.14.1.2. vertico-directory</a></li>
-<li><a href="#h:211fc0bd-0d64-4577-97d8-6abc94435f04">5.3.14.1.3. orderless</a></li>
-<li><a href="#h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">5.3.14.1.4. consult</a></li>
-<li><a href="#h:1c564ee5-ccd7-48be-b69a-d963400c4704">5.3.14.1.5. embark</a></li>
-<li><a href="#h:6287551c-a6f7-4870-b3f3-210d6f038b6f">5.3.14.1.6. embark-consult</a></li>
-<li><a href="#h:f32040a4-882f-4e6b-97f1-a0105c44c034">5.3.14.1.7. marginalia</a></li>
-<li><a href="#h:d70ec2fb-da43-4523-9ee4-774ececdb80e">5.3.14.1.8. nerd-icons-completion</a></li>
+<li><a href="#h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">5.3.15.1.1. vertico</a></li>
+<li><a href="#h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">5.3.15.1.2. vertico-directory</a></li>
+<li><a href="#h:211fc0bd-0d64-4577-97d8-6abc94435f04">5.3.15.1.3. orderless</a></li>
+<li><a href="#h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">5.3.15.1.4. consult</a></li>
+<li><a href="#h:1c564ee5-ccd7-48be-b69a-d963400c4704">5.3.15.1.5. embark</a></li>
+<li><a href="#h:6287551c-a6f7-4870-b3f3-210d6f038b6f">5.3.15.1.6. embark-consult</a></li>
+<li><a href="#h:f32040a4-882f-4e6b-97f1-a0105c44c034">5.3.15.1.7. marginalia</a></li>
+<li><a href="#h:d70ec2fb-da43-4523-9ee4-774ececdb80e">5.3.15.1.8. nerd-icons-completion</a></li>
 </ul>
 </li>
-<li><a href="#h:cbf6bd48-2503-489a-89da-e3359564e989">5.3.14.2. Helpful + which-key: Better help defaults</a></li>
+<li><a href="#h:cbf6bd48-2503-489a-89da-e3359564e989">5.3.15.2. Helpful + which-key: Better help defaults</a></li>
 </ul>
 </li>
-<li><a href="#h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1">5.3.15. Ligatures</a></li>
-<li><a href="#h:e9d40e63-0e1f-47df-98f7-5427992588a4">5.3.16. Popup (popper) + Shackle Buffers</a></li>
-<li><a href="#h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28">5.3.17. Indicate first and last line of buffer</a></li>
-<li><a href="#h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b">5.3.18. Authentication</a></li>
+<li><a href="#h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1">5.3.16. Ligatures</a></li>
+<li><a href="#h:e9d40e63-0e1f-47df-98f7-5427992588a4">5.3.17. Popup (popper) + Shackle Buffers</a></li>
+<li><a href="#h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28">5.3.18. Indicate first and last line of buffer</a></li>
+<li><a href="#h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b">5.3.19. Authentication</a></li>
 </ul>
 </li>
 <li><a href="#h:f2622fd3-7f14-47a8-8c21-33574fcbf14b">5.4. Modules</a>
@@ -665,7 +665,7 @@
 </div>
 </div>
 <p>
-<b>This file has 50870 words spanning 13230 lines and was last revised on 2024-12-11 01:50:22 +0100.</b>
+<b>This file has 51223 words spanning 13242 lines and was last revised on 2024-12-13 01:19:58 +0100.</b>
 </p>
 
 <p>
@@ -675,7 +675,7 @@ In order to have working links and macros when viewing this file online, you mig
 <h2 id="h:a86fe971-f169-4052-aacf-15e0f267c6cd"><span class="section-number-2">1.</span> Introduction (no code)</h2>
 <div class="outline-text-2" id="text-h:a86fe971-f169-4052-aacf-15e0f267c6cd">
 <p>
-This literate configuration file holds the entirety of all configuration files for both NixOS as well as home manager across all machines that I currently use. It also holds an extensive Emacs configuration
+This literate configuration file holds the entirety of all configuration files for both NixOS as well as home-manager across all machines that I currently use. It also holds an extensive Emacs configuration.
 </p>
 
 <p>
@@ -683,7 +683,7 @@ I used to have two separate files (<code>Emacs.org</code> and <code>Nixos.org</c
 </p>
 
 <p>
-This configuration is part of a NixOS system that is fully declarative and can be found here:
+This configuration is part of a NixOS system that is (nearly) fully declarative and can be found here:
 </p>
 
 <ul class="org-ul">
@@ -692,7 +692,7 @@ This configuration is part of a NixOS system that is fully declarative and can b
 </ul>
 
 <p>
-The literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
+This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 </p>
 
 <p>
@@ -706,8 +706,11 @@ This is the block you are currently in. It holds no code that actually builds th
 <li><a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a>
 This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.</li>
 
+<li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">flake.nix</a>
+This block holds everything related to the heart of the nix side of the configuration - the <code>flake.nix</code> file.</li>
+
 <li><a href="#h:02cd20be-1ffa-4904-9d5a-da5a89ba1421">System</a>
-This section holds all configuration options that apply to NixOS or Home Manager. In other words, here we are doing system and user level configuration.</li>
+This section holds all configuration options that apply to NixOS or home-manager. In other words, here we are doing system and user level configuration.</li>
 
 <li><p>
 <a href="#h:ed4cd05c-0879-41c6-bc39-3f1246a96f04">Emacs</a>
@@ -715,7 +718,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-11 01:50:22 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-13 01:19:58 +0100)
 </p></li>
 </ul>
 
@@ -744,7 +747,7 @@ This file handles the rest of the Emacs configuration.</li>
 </ul>
 
 <p>
-By using the configuration offered by this file, the file you are reading right now (<code>SwarselSystems.org</code>) will be freshly tangled on every file save. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the keybind <code>C-c C-v t</code>. Alternatively, execute the following block:
+By using the configuration offered by this file, the file you are reading right now (<code>SwarselSystems.org</code>) will not be freshly tangled on every file save, as this slows down emacs over time. However, when you clone this configuration yourself and have not yet activated it, you need to tangle the file yourself. This can be done using the general keybind <code>C-c C-v t</code> or my personal chord <code>C-SPC o t</code>. Alternatively, execute the following block:
 </p>
 
 <div class="org-src-container">
@@ -755,6 +758,18 @@ By using the configuration offered by this file, the file you are reading right 
 </div>
 
 <p>
+The <code>.html</code> version of this page can be generated by calling the chord <code>C-SPC o e</code>, or by executing the below block
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(org-html-export-to-html)
+
+</pre>
+</div>
+
+<p>
+The web version is useful because it allows navigation using org-mode links, which makes the configuration easier to follow (I hope!).
 Lastly, I add this javascript bit to the file in order to have a darkmode toggle when exporting to html:
 </p>
 
@@ -864,162 +879,6 @@ fonts = {
 </pre>
 </div>
 </div>
-<div id="outline-container-h:d9861165-2a10-44d9-831d-0fe23cc5473f" class="outline-4">
-<h4 id="h:d9861165-2a10-44d9-831d-0fe23cc5473f"><span class="section-number-4">2.1.1.</span> firefox profile</h4>
-<div class="outline-text-4" id="text-h:d9861165-2a10-44d9-831d-0fe23cc5473f">
-<p>
-At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox `about:config &gt; toolkit.legacyUserProfileCustomizations.stylesheets` to true.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">
-isDefault = false;
-userChrome = builtins.readFile ../../../programs/firefox/chrome/userChrome.css;
-extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-  tridactyl
-  tampermonkey
-  sidebery
-  browserpass
-  clearurls
-  darkreader
-  enhancer-for-youtube
-  istilldontcareaboutcookies
-  translate-web-pages
-  ublock-origin
-  reddit-enhancement-suite
-  sponsorblock
-  web-archives
-  onepassword-password-manager
-  single-file
-  widegithub
-  enhanced-github
-  unpaywall
-  don-t-fuck-with-paste
-  plasma-integration
-  (buildFirefoxXpiAddon {
-    pname = "shortkeys";
-    version = "4.0.2";
-    addonId = "Shortkeys@Shortkeys.com";
-    url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-    sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-    meta = with lib;
-      {
-        description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) -&gt;Shortkeys -&gt;Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-        mozPermissions = [
-          "tabs"
-          "downloads"
-          "clipboardWrite"
-          "browsingData"
-          "storage"
-          "bookmarks"
-          "sessions"
-          "&lt;all_urls&gt;"
-        ];
-        platforms = platforms.all;
-      };
-  })
-];
-
-settings =
-  {
-    "extensions.autoDisableScopes" = 0;
-    "browser.bookmarks.showMobileBookmarks" = lock-true;
-    "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-    "browser.search.suggest.enabled" = lock-false;
-    "browser.search.suggest.enabled.private" = lock-false;
-    "browser.urlbar.suggest.searches" = lock-false;
-    "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-    "browser.topsites.contile.enabled" = lock-false;
-    "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-    "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-    "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-    "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-    "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-    "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-    "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-    "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-    "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
-  };
-
-search = {
-  default = "Kagi";
-  privateDefault = "Kagi";
-  engines = {
-    "Kagi" = {
-      urls = [{
-        template = "https://kagi.com/search";
-        params = [
-          { name = "q"; value = "{searchTerms}"; }
-        ];
-      }];
-      iconUpdateURL = "https://kagi.com/favicon.ico";
-      updateInterval = 24 * 60 * 60 * 1000; # every day
-      definedAliases = [ "@k" ];
-    };
-
-    "Nix Packages" = {
-      urls = [{
-        template = "https://search.nixos.org/packages";
-        params = [
-          { name = "type"; value = "packages"; }
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@np" ];
-    };
-
-    "NixOS Wiki" = {
-      urls = [{
-        template = "https://nixos.wiki/index.php?search={searchTerms}";
-      }];
-      iconUpdateURL = "https://nixos.wiki/favicon.png";
-      updateInterval = 24 * 60 * 60 * 1000; # every day
-      definedAliases = [ "@nw" ];
-    };
-
-    "NixOS Options" = {
-      urls = [{
-        template = "https://search.nixos.org/options";
-        params = [
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@no" ];
-    };
-
-    "Home Manager Options" = {
-      urls = [{
-        template = "https://home-manager-options.extranix.com/";
-        params = [
-          { name = "query"; value = "{searchTerms}"; }
-        ];
-      }];
-
-      icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-      definedAliases = [ "@hm" "@ho" "@hmo" ];
-    };
-
-    "Google".metaData.alias = "@g";
-  };
-  force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-};
-
-</pre>
-</div>
-
-<p>
-:CUSTOM<sub>ID</sub>: h:996e9c5f-ed65-4f4f-b043-5a901ed74358
-</p>
-
-<p>
-These settings are to be used only on full NixOS setups.
-</p>
-</div>
-</div>
 </div>
 </div>
 <div id="outline-container-h:c7588c0d-2528-485d-b2df-04d6336428d7" class="outline-2">
@@ -1038,6 +897,18 @@ These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e3
 <div class="outline-text-3" id="text-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">
 <p>
 This sections puts together the <code>flake.nix</code> file from the <a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a> section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+</p>
+
+<p>
+In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, options, and more. The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
+</p>
+
+<p>
+In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like <code>emacs-overlay</code>, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain.
+</p>
+
+<p>
+In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so that all inputs are automatically passed to the outputs and can be called as <code>inputs.&lt;name&gt;</code>, whereas explicit arguments may just be called by using <code>&lt;name&gt;</code>. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file.
 </p>
 
 <div class="org-src-container">
@@ -2532,7 +2403,7 @@ I have removed most of the machines from this section. What remains are some hos
 </div>
 </div>
 <div id="outline-container-h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d" class="outline-3">
-<h3 id="h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d"><span class="section-number-3">4.2.</span> Overlays, packages, and modules</h3>
+<h3 id="h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d"><span class="section-number-3">4.2.</span> Additions and modifications</h3>
 <div class="outline-text-3" id="text-h:ab272ab4-3c93-48b1-8f1e-f710aa9aae5d">
 <p>
 In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
@@ -2582,6 +2453,8 @@ let
     "github-notifications"
     "screenshare"
     "bootstrap"
+    "t2ts"
+    "ts2t"
   ];
   mkPackages = names: builtins.listToAttrs (map (name: {
     inherit name;
@@ -3017,7 +2890,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
 <div class="org-src-container">
 <pre class="src src-shell">CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
-CSE=$(git --git-dir="$HOME"/Documents/GitHub/CSE_TUWIEN/.git --work-tree="$HOME"/Documents/GitHub/CSE_TUWIEN/ status -s | wc -l)
+CSE=$(git --git-dir="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/.git --work-tree="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/ status -s | wc -l)
 PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
 
 if [[ $CFG != 0 ]]; then
@@ -3361,6 +3234,50 @@ writeShellApplication {
   runtimeInputs = [ openssh ];
   text = builtins.readFile ../../scripts/bootstrap.sh;
 }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.18.</span> t2ts</h5>
+<div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
+<p>
+This script allows for quick git branch switching.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication }:
+
+writeShellApplication {
+  name = "t2ts";
+  runtimeInputs = [ ];
+  text = ''
+    date -d"$1" +%s
+  '';
+}
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.19.</span> ts2t</h5>
+<div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
+<p>
+This script allows for quick git branch switching.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication }:
+
+writeShellApplication {
+  name = "ts2t";
+  runtimeInputs = [ ];
+  text = ''
+    date -d @"$1" 2&gt;/dev/null || date -r "$1"
+  '';
+}
+
 </pre>
 </div>
 </div>
@@ -3998,6 +3915,11 @@ Another duplicated option for the filesystem.
 <div id="outline-container-h:e7f98ad8-74a6-4860-a368-cce154285ff0" class="outline-6">
 <h6 id="h:e7f98ad8-74a6-4860-a368-cce154285ff0"><span class="section-number-6">4.2.3.2.11.</span> firefox</h6>
 <div class="outline-text-6" id="text-h:e7f98ad8-74a6-4860-a368-cce154285ff0">
+<p>
+At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> that are all practically using the same configuration. To save screen space, I template that profile here.
+Set in firefox <code>about:config &gt; toolkit.legacyUserProfileCustomizations.stylesheets</code> to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, pkgs, ... }:
   let
@@ -4221,6 +4143,7 @@ This section is for setting things that should be used on hosts that are using t
     # ./safeeyes.nix
     ./distrobox.nix
     ./lid.nix
+    ./lowbattery.nix
   ];
 
   nixpkgs.config.permittedInsecurePackages = [
@@ -4313,7 +4236,11 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     # secure boot
     sbctl
 
+    # nix package database
     nix-index
+
+    # proc info
+    acpi
 
     # better make for general tasks
     just
@@ -5867,6 +5794,44 @@ This turns off the display when the lid is closed.
             swaymsg output eDP-2 enable
         fi
       '';
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17" class="outline-5">
+<h5 id="h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17"><span class="section-number-5">4.3.1.31.</span> Low battery notification</h5>
+<div class="outline-text-5" id="text-h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">
+<p>
+Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by <a href="https://gist.github.com/cafkafk">cafkafk</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, lib, ... }:
+{
+  systemd.user.services."battery-low" = {
+    enable = true;
+    description = "Notify user if battery is below 10%";
+    partOf = [ "graphical-session.target" ];
+    wantedBy = [ "graphical-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = pkgs.writeShellScript "battery-low-notification"
+        ''
+          if (( 10 &gt;= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+")));
+          then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
+          fi;
+        '';
+    };
+  };
+  systemd.user.timers."battery-low" = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      # Every Minute
+      OnCalendar = "*-*-* *:*:00";
+      Unit = "battery-low.service";
+    };
   };
 }
 </pre>
@@ -8009,6 +7974,7 @@ This holds packages that I can use as provided, or with small modifications (as 
     nix-output-monitor
     hyprpicker # color picker
     findutils
+    units
 
     # nix
     alejandra
@@ -8168,6 +8134,8 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
     github-notifications
     screenshare
     hm-specialisation
+    t2ts
+    ts2t
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -9624,6 +9592,8 @@ The rest of the related configuration is found here:
     };
     settings = {
       mainBar = {
+        ipc = true;
+        id = "bar-0";
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
@@ -10355,7 +10325,13 @@ in
       modifier = "Mod4";
       terminal = "kitty";
       menu = "fuzzel";
-      bars = [{ command = "waybar"; }];
+      bars = [{
+        command = "waybar";
+        mode = "hide";
+        hiddenState = "hide";
+        position = "top";
+        extraConfig = "modifier Mod4";
+      }];
       keybindings =
         let
           inherit (config.wayland.windowManager.sway.config) modifier;
@@ -10818,6 +10794,10 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
     libguestfs-with-appliance
   ];
 
+  home.sessionVariables = {
+    DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
+    DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
+  };
   programs = {
     git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
@@ -12058,8 +12038,12 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 <div id="outline-container-h:1667913c-2272-4010-bf3a-356455b97c83" class="outline-4">
 <h4 id="h:1667913c-2272-4010-bf3a-356455b97c83"><span class="section-number-4">5.3.4.</span> Better garbage collection</h4>
 <div class="outline-text-4" id="text-h:1667913c-2272-4010-bf3a-356455b97c83">
+<p>
+This sets up automatic garbage collection when the frame is unused.
+</p>
+
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(setq garbage-collection-messages t)
+<pre class="src src-emacs-lisp">(setq garbage-collection-messages nil)
 (defmacro k-time (&amp;rest body)
   "Measure and return the time it takes evaluating BODY."
   `(let ((time (current-time)))
@@ -12071,8 +12055,9 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 (defvar k-gc-timer
   (run-with-idle-timer 15 t
                        (lambda ()
-                         (message "Garbage Collector has run for %.06fsec"
-                                  (k-time (garbage-collect))))))
+                         ;; (message "Garbage Collector has run for %.06fsec"
+                                  (k-time (garbage-collect)))))
+                         ;; )
 
 </pre>
 </div>
@@ -12406,12 +12391,16 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 Here I set up the modeline with some information that I find useful. Specficially I am using the doom modeline. Most informations I disable for it, except for the cursor information (row + column) as well as a widget for <code>mu4e</code> and git information.
 </p>
 
+<p>
+I have currently disabled this in favor of <a href="#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">mini-modeline</a>.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package doom-modeline
   :init
-  (doom-modeline-mode)
-  (column-number-mode)
+  ;; (doom-modeline-mode)
+  ;; (column-number-mode)
   :custom
   ((doom-modeline-height 22)
    (doom-modeline-indent-info nil)
@@ -12422,12 +12411,52 @@ Here I set up the modeline with some information that I find useful. Specficiall
 </div>
 </div>
 </div>
+<div id="outline-container-h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208" class="outline-4">
+<h4 id="h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208"><span class="section-number-4">5.3.14.</span> mini-modeline</h4>
+<div class="outline-text-4" id="text-h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">
+<p>
+I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(use-package mini-modeline
+  :after smart-mode-line
+  :config
+  (mini-modeline-mode t)
+  (setq mini-modeline-display-gui-line nil)
+  (setq mini-modeline-enhance-visual nil)
+  (setq mini-modeline-truncate-p nil)
+  (setq mini-modeline-l-format nil)
+  (setq mini-modeline-right-padding 5)
+  (setq window-divider-mode t)
+  (setq window-divider-default-places t)
+  (setq window-divider-default-bottom-width 1)
+  (setq window-divider-default-right-width 1)
+  (setq mini-modeline-r-format '("%e" mode-line-front-space mode-line-mule-info mode-line-client
+                                 mode-line-modified mode-line-remote mode-line-frame-identification
+                                 mode-line-buffer-identification " " mode-line-position " " mode-name evil-mode-line-tag ))
+  )
+
+(use-package smart-mode-line
+  :config
+  (sml/setup)
+  (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Work/" ":WK:"))
+  (add-to-list 'sml/replacer-regexp-list '("^~/Documents/Private/" ":PR:"))
+  (add-to-list 'sml/replacer-regexp-list '("^~/.dotfiles/" ":D:") t)
+  )
+
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:39ae01e9-8053-4f76-aa77-8cbbbcff9652" class="outline-4">
-<h4 id="h:39ae01e9-8053-4f76-aa77-8cbbbcff9652"><span class="section-number-4">5.3.14.</span> Helper Modes</h4>
+<h4 id="h:39ae01e9-8053-4f76-aa77-8cbbbcff9652"><span class="section-number-4">5.3.15.</span> Helper Modes</h4>
 <div class="outline-text-4" id="text-h:39ae01e9-8053-4f76-aa77-8cbbbcff9652">
 </div>
 <div id="outline-container-h:b190d512-bfb5-42ec-adec-8d86bab726ce" class="outline-5">
-<h5 id="h:b190d512-bfb5-42ec-adec-8d86bab726ce"><span class="section-number-5">5.3.14.1.</span> Vertico, Orderless, Marginalia, Consult, Embark</h5>
+<h5 id="h:b190d512-bfb5-42ec-adec-8d86bab726ce"><span class="section-number-5">5.3.15.1.</span> Vertico, Orderless, Marginalia, Consult, Embark</h5>
 <div class="outline-text-5" id="text-h:b190d512-bfb5-42ec-adec-8d86bab726ce">
 <p>
 This set of packages uses the default emacs completion framework and works together to provide a very nice user experience:
@@ -12446,7 +12475,7 @@ Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d
 </p>
 </div>
 <div id="outline-container-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d" class="outline-6">
-<h6 id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"><span class="section-number-6">5.3.14.1.1.</span> vertico</h6>
+<h6 id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"><span class="section-number-6">5.3.15.1.1.</span> vertico</h6>
 <div class="outline-text-6" id="text-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -12468,7 +12497,7 @@ Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d
 </div>
 </div>
 <div id="outline-container-h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4" class="outline-6">
-<h6 id="h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4"><span class="section-number-6">5.3.14.1.2.</span> vertico-directory</h6>
+<h6 id="h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4"><span class="section-number-6">5.3.15.1.2.</span> vertico-directory</h6>
 <div class="outline-text-6" id="text-h:10d4f2bd-8c72-430b-a9ed-9b5e279ec0b4">
 <p>
 This package allows for <code>Ido</code>-like directory navigation.
@@ -12490,7 +12519,7 @@ This package allows for <code>Ido</code>-like directory navigation.
 </div>
 </div>
 <div id="outline-container-h:211fc0bd-0d64-4577-97d8-6abc94435f04" class="outline-6">
-<h6 id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"><span class="section-number-6">5.3.14.1.3.</span> orderless</h6>
+<h6 id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"><span class="section-number-6">5.3.15.1.3.</span> orderless</h6>
 <div class="outline-text-6" id="text-h:211fc0bd-0d64-4577-97d8-6abc94435f04">
 <p>
 When first installing orderless, I often times faced the problem, that when editing long files and calling <code>consult-line</code>, Emacs would hang when changing a search term in the middle (e.g. from <code>servicse.xserver</code> to <code>servic.xserver</code> in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
@@ -12520,7 +12549,7 @@ When first installing orderless, I often times faced the problem, that when edit
 </div>
 </div>
 <div id="outline-container-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c" class="outline-6">
-<h6 id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"><span class="section-number-6">5.3.14.1.4.</span> consult</h6>
+<h6 id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"><span class="section-number-6">5.3.15.1.4.</span> consult</h6>
 <div class="outline-text-6" id="text-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">
 <p>
 The big winner here are the convenient keybinds being setup here for general use. Also, I setup vim-navigation for minibuffer completions. <code>consult-buffer</code> is set twice because I am still used to that weird <code>C-M-j</code> command that I chose for <code>ivy-switch-buffer</code> when I first started using Emacs. I want to move to the other command but for now it is not feasible to delete the other one.
@@ -12550,7 +12579,7 @@ The big winner here are the convenient keybinds being setup here for general use
 </div>
 </div>
 <div id="outline-container-h:1c564ee5-ccd7-48be-b69a-d963400c4704" class="outline-6">
-<h6 id="h:1c564ee5-ccd7-48be-b69a-d963400c4704"><span class="section-number-6">5.3.14.1.5.</span> embark</h6>
+<h6 id="h:1c564ee5-ccd7-48be-b69a-d963400c4704"><span class="section-number-6">5.3.15.1.5.</span> embark</h6>
 <div class="outline-text-6" id="text-h:1c564ee5-ccd7-48be-b69a-d963400c4704">
 <p>
 I have stripped down the embark keybinds heavily. It is very useful to me even in it's current state, but it quickly becomes overwhelming. <code>embark-dwim</code> acts on a candidate without closing the minibuffer, which is very useful. <code>embark-act</code> lets the user choose from all actions, but has an overwhelming interface.
@@ -12578,7 +12607,7 @@ I have stripped down the embark keybinds heavily. It is very useful to me even i
 </div>
 </div>
 <div id="outline-container-h:6287551c-a6f7-4870-b3f3-210d6f038b6f" class="outline-6">
-<h6 id="h:6287551c-a6f7-4870-b3f3-210d6f038b6f"><span class="section-number-6">5.3.14.1.6.</span> embark-consult</h6>
+<h6 id="h:6287551c-a6f7-4870-b3f3-210d6f038b6f"><span class="section-number-6">5.3.15.1.6.</span> embark-consult</h6>
 <div class="outline-text-6" id="text-h:6287551c-a6f7-4870-b3f3-210d6f038b6f">
 <p>
 Provides previews for embark.
@@ -12598,7 +12627,7 @@ Provides previews for embark.
 </div>
 </div>
 <div id="outline-container-h:f32040a4-882f-4e6b-97f1-a0105c44c034" class="outline-6">
-<h6 id="h:f32040a4-882f-4e6b-97f1-a0105c44c034"><span class="section-number-6">5.3.14.1.7.</span> marginalia</h6>
+<h6 id="h:f32040a4-882f-4e6b-97f1-a0105c44c034"><span class="section-number-6">5.3.15.1.7.</span> marginalia</h6>
 <div class="outline-text-6" id="text-h:f32040a4-882f-4e6b-97f1-a0105c44c034">
 <p>
 I set the annotation-mode of marginalia to <code>heavy</code>. This gives even more information on the stuff that you are looking at. One thing I am missing from ivy is the highlighting on <code>mode</code>-commands based on the current state of the mode. Also, I do not understand all the shorthands used by marginalia yet.
@@ -12616,7 +12645,7 @@ I set the annotation-mode of marginalia to <code>heavy</code>. This gives even m
 </div>
 </div>
 <div id="outline-container-h:d70ec2fb-da43-4523-9ee4-774ececdb80e" class="outline-6">
-<h6 id="h:d70ec2fb-da43-4523-9ee4-774ececdb80e"><span class="section-number-6">5.3.14.1.8.</span> nerd-icons-completion</h6>
+<h6 id="h:d70ec2fb-da43-4523-9ee4-774ececdb80e"><span class="section-number-6">5.3.15.1.8.</span> nerd-icons-completion</h6>
 <div class="outline-text-6" id="text-h:d70ec2fb-da43-4523-9ee4-774ececdb80e">
 <p>
 As stated above, this simply provides nerd-icons to the completion framework.
@@ -12637,7 +12666,7 @@ As stated above, this simply provides nerd-icons to the completion framework.
 </div>
 </div>
 <div id="outline-container-h:cbf6bd48-2503-489a-89da-e3359564e989" class="outline-5">
-<h5 id="h:cbf6bd48-2503-489a-89da-e3359564e989"><span class="section-number-5">5.3.14.2.</span> Helpful + which-key: Better help defaults</h5>
+<h5 id="h:cbf6bd48-2503-489a-89da-e3359564e989"><span class="section-number-5">5.3.15.2.</span> Helpful + which-key: Better help defaults</h5>
 <div class="outline-text-5" id="text-h:cbf6bd48-2503-489a-89da-e3359564e989">
 <p>
 This pair of packages provides information on keybinds in addition to function names, which makes it easier to remember keybinds (<code>which-key</code>). The <code>helpful</code> package provides a better <code>Help</code> framework for Emacs. For some reason, the Help windows are always being focused by the cursor even though I have set <code>help-window-select</code> to nil. I do not understand why.
@@ -12665,7 +12694,7 @@ This pair of packages provides information on keybinds in addition to function n
 </div>
 </div>
 <div id="outline-container-h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1" class="outline-4">
-<h4 id="h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1"><span class="section-number-4">5.3.15.</span> Ligatures</h4>
+<h4 id="h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1"><span class="section-number-4">5.3.16.</span> Ligatures</h4>
 <div class="outline-text-4" id="text-h:bbbd9cc8-3a84-4810-a3d5-b8536a5fbda1">
 <p>
 Personally, I think ligatures are fancy. With this mode, they stay 'cursorable'. However, I do not need them in all modes, so I only use them in programming modes.
@@ -12697,7 +12726,7 @@ Personally, I think ligatures are fancy. With this mode, they stay 'cursorable'.
 </div>
 </div>
 <div id="outline-container-h:e9d40e63-0e1f-47df-98f7-5427992588a4" class="outline-4">
-<h4 id="h:e9d40e63-0e1f-47df-98f7-5427992588a4"><span class="section-number-4">5.3.16.</span> Popup (popper) + Shackle Buffers</h4>
+<h4 id="h:e9d40e63-0e1f-47df-98f7-5427992588a4"><span class="section-number-4">5.3.17.</span> Popup (popper) + Shackle Buffers</h4>
 <div class="outline-text-4" id="text-h:e9d40e63-0e1f-47df-98f7-5427992588a4">
 <p>
 The popper package allows to declare different buffers as 'popup-type', which sort of acts like a scratchpad. It can be toggled at any time using <code>popper-toggle</code> and the resulting frame can be freely customized (with <code>shackle</code>) to a certain size. It is also possible to prevent a buffer from appearing - I do this for example to the <code>*Warnings*</code> buffer, since usually I am not interested in it's output.
@@ -12750,7 +12779,7 @@ The popper package allows to declare different buffers as 'popup-type', which so
 </div>
 </div>
 <div id="outline-container-h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28" class="outline-4">
-<h4 id="h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28"><span class="section-number-4">5.3.17.</span> Indicate first and last line of buffer</h4>
+<h4 id="h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28"><span class="section-number-4">5.3.18.</span> Indicate first and last line of buffer</h4>
 <div class="outline-text-4" id="text-h:a6d23c8c-125f-4e36-af30-ff0a1e0d5a28">
 <p>
 This places little angled indicators on the fringe of a window which indicate buffer boundaries. This is not super useful, but makes use of a space that I want to keep for aesthetic reasons anyways and makes it a bit more useful in the process.
@@ -12765,7 +12794,7 @@ This places little angled indicators on the fringe of a window which indicate bu
 </div>
 </div>
 <div id="outline-container-h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b" class="outline-4">
-<h4 id="h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b"><span class="section-number-4">5.3.18.</span> Authentication</h4>
+<h4 id="h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b"><span class="section-number-4">5.3.19.</span> Authentication</h4>
 <div class="outline-text-4" id="text-h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b">
 <p>
 This defines the authentication sources used by <code>org-calfw</code> (<a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">Calendar</a>) and <a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">Forge</a>.
@@ -15044,7 +15073,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-11 Mi 01:50</p>
+<p class="date">Created: 2024-12-13 Fr 01:20</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
