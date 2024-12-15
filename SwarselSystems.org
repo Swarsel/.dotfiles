@@ -1466,6 +1466,8 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "github-notifications"
       "screenshare"
       "bootstrap"
+      "t2ts"
+      "ts2t"
     ];
     mkPackages = names: builtins.listToAttrs (map (name: {
       inherit name;
@@ -2206,6 +2208,46 @@ This program sets up a new NixOS host.
     runtimeInputs = [ openssh ];
     text = builtins.readFile ../../scripts/bootstrap.sh;
   }
+#+end_src
+
+**** t2ts
+:PROPERTIES:
+:CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
+:END:
+
+This script allows for quick git branch switching.
+
+#+begin_src nix :tangle pkgs/t2ts/default.nix
+    { writeShellApplication }:
+
+    writeShellApplication {
+      name = "t2ts";
+      runtimeInputs = [ ];
+      text = ''
+        date -d"$1" +%s
+      '';
+    }
+
+#+end_src
+
+**** ts2t
+:PROPERTIES:
+:CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
+:END:
+
+This script allows for quick git branch switching.
+
+#+begin_src nix :tangle pkgs/ts2t/default.nix
+  { writeShellApplication }:
+
+  writeShellApplication {
+    name = "ts2t";
+    runtimeInputs = [ ];
+    text = ''
+      date -d @"$1" 2>/dev/null || date -r "$1"
+    '';
+  }
+
 #+end_src
 
 *** Overlays (additions, overrides, nixpkgs-stable)
@@ -6785,6 +6827,8 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       github-notifications
       screenshare
       hm-specialisation
+      t2ts
+      ts2t
 
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash

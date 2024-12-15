@@ -17,6 +17,8 @@ let
     "github-notifications"
     "screenshare"
     "bootstrap"
+    "t2ts"
+    "ts2t"
   ];
   mkPackages = names: builtins.listToAttrs (map
     (name: {
