@@ -35,5 +35,6 @@ in
     ./jenkins.nix
     ./emacs.nix
     ./forgejo.nix
+    ./ankisync.nix
   ];
 }
