@@ -64,7 +64,7 @@ in
       syncthing = true;
       monitoring = true;
       jenkins = false;
-      emacs = false;
+      emacs = true;
     };
   };
 

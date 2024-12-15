@@ -6,6 +6,7 @@
 
     services.emacs = {
       enable = true;
+
       install = true;
       startWithGraphical = false;
     };
@@ -13,8 +14,8 @@
     services.nginx = {
       virtualHosts = {
         "signpost.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
+          enableACME = false;
+          forceSSL = false;
           acmeRoot = null;
           locations = {
             "/" = {
