@@ -200,7 +200,7 @@ in
           caption_in_message = true;
           extev_polls = true;
           permissions = {
-            "*" = "relaybot";
+            "*" = "relay";
             "@swarsel:${matrixDomain}" = "admin";
           };
         };
