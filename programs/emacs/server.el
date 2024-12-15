@@ -98,5 +98,10 @@
 (run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
 
 (setq httpd-port 9812)   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
+(setq httpd-host "0.0.0.0")   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
+(setq httpd-root "/home/swarsel/.emacs.d/elpa/elfeed-web-20240729.1741/")   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
 
+(httpd-start)
 (elfeed-web-start)
+
+;; /home/swarsel/.emacs.d/elpa/elfeed-web-20240729.1741/

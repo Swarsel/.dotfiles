@@ -1130,7 +1130,7 @@ My work machine. Built for more security, this is the gold standard of my config
         syncthing = true;
         monitoring = true;
         jenkins = false;
-        emacs = false;
+        emacs = true;
       };
     };
 
@@ -6097,7 +6097,7 @@ Also, the system state version is set here. No need to touch it.
   }
 #+end_src
 
-**** Emacs (RSS Server)
+**** Emacs elfeed (RSS Server)
 :PROPERTIES:
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
 :END:
@@ -6111,6 +6111,7 @@ Also, the system state version is set here. No need to touch it.
 
       services.emacs = {
         enable = true;
+
         install = true;
         startWithGraphical = false;
       };
@@ -6118,8 +6119,8 @@ Also, the system state version is set here. No need to touch it.
       services.nginx = {
         virtualHosts = {
           "signpost.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
+            enableACME = false;
+            forceSSL = false;
             acmeRoot = null;
             locations = {
               "/" = {
