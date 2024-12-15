@@ -8,6 +8,10 @@ in
     type = types.str;
     default = "";
   };
+  options.swarselsystems.withHomeManager = mkOption {
+    type = types.bool;
+    default = true;
+  };
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
   options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
   options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";

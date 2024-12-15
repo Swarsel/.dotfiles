@@ -2345,6 +2345,10 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
       type = types.str;
       default = "";
     };
+    options.swarselsystems.withHomeManager = mkOption {
+      type = types.bool;
+      default = true;
+    };
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
     options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
     options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
@@ -3171,9 +3175,9 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 First, we enable the use of =home-manager= as a NixoS modul.
 
 #+begin_src nix :tangle profiles/common/nixos/home-manager.nix
-  { inputs, ... }:
+  { inputs, config, lib, ... }:
   {
-    home-manager = {
+    home-manager = lib.mkIf config.swarselsystems.withHomeManager {
       useGlobalPkgs = true;
       useUserPackages = true;
       extraSpecialArgs = inputs; # used mainly for inputs.self
