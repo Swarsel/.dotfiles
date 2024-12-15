@@ -416,6 +416,10 @@ create a new one."
    "<Copy>" 'kill-ring-save
    "<undo>" 'evil-undo
    "<redo>" 'evil-redo
+   "C-S-c C-S-c" 'mc/edit-lines
+   "C->" 'mc/mark-next-like-this
+   "C-<" 'mc/mark-previous-like-this
+   "C-c C-<" 'mc/mark-all-like-this
    )
 
 ;; set Nextcloud directory for journals etc.
@@ -2116,3 +2120,5 @@ Prints a reasuring message to proove good faith."
   ;; Proove me wrong but i think it's safe.
   (add-to-list 'vterm-eval-cmds '("find-file-other-window"
                                   me/vterm--find-file-other-window-wrapper))
+
+(use-package multiple-cursors)
