@@ -26,7 +26,13 @@ in
       modifier = "Mod4";
       terminal = "kitty";
       menu = "fuzzel";
-      bars = [{ command = "waybar"; }];
+      bars = [{
+        command = "waybar";
+        mode = "hide";
+        hiddenState = "hide";
+        position = "top";
+        extraConfig = "modifier Mod4";
+      }];
       keybindings =
         let
           inherit (config.wayland.windowManager.sway.config) modifier;

@@ -9,6 +9,8 @@
     };
     settings = {
       mainBar = {
+        ipc = true;
+        id = "bar-0";
         layer = "top";
         position = "top";
         modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
