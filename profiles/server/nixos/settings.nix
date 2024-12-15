@@ -2,8 +2,11 @@
 {
   environment.shellAliases = lib.recursiveUpdate
     {
-      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-      nswitch = "cd ${config.swarselsystems.flakePath}; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch;";
+      npiswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      nipswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      niswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch --impure;";
     }
     config.swarselsystems.shellAliases;
 
