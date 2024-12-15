@@ -11,6 +11,10 @@
     libguestfs-with-appliance
   ];
 
+  home.sessionVariables = {
+    DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
+    DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
+  };
   programs = {
     git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
