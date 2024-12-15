@@ -82,7 +82,7 @@ in
     hasFingerprint = false;
     impermanence = false;
     isBtrfs = false;
-    flakePath = "/.dotfiles";
+    flakePath = "~/.dotfiles";
     server = {
       enable = true;
       forgejo = true;

@@ -9,9 +9,9 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/") t)
 
-(add-to-list 'package-archives
-             '("marmalade" .
-               "http://marmalade-repo.org/packages/"))
+;; (add-to-list 'package-archives
+;;              '("marmalade" .
+;;                "http://marmalade-repo.org/packages/"))
 
 (package-initialize)
 
@@ -43,7 +43,7 @@
   :ensure t
   :config
   (elfeed-org)
-  (setq rmh-elfeed-org-files (list "/Vault/data/syncthing/.elfeed/elfeed.org"))
+  (setq rmh-elfeed-org-files (list "/var/lib/syncthing/.elfeed/elfeed.org"))
   )
 
 ;; Laod elfeed-goodies
@@ -99,7 +99,7 @@
 
 (setq httpd-port 9812)   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
 (setq httpd-host "0.0.0.0")   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
-(setq httpd-root "/home/swarsel/.emacs.d/elpa/elfeed-web-20240729.1741/")   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
+(setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")   ; replace NNNNN with a port equalling your start port + 10 (or whatever)
 
 (httpd-start)
 (elfeed-web-start)
