@@ -19,6 +19,7 @@ let
     "bootstrap"
     "t2ts"
     "ts2t"
+    "vershell"
   ];
   mkPackages = names: builtins.listToAttrs (map
     (name: {

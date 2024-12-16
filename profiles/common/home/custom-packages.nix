@@ -19,6 +19,7 @@
     hm-specialisation
     t2ts
     ts2t
+    vershell
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash

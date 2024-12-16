@@ -1900,6 +1900,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "bootstrap"
       "t2ts"
       "ts2t"
+      "vershell"
     ];
     mkPackages = names: builtins.listToAttrs (map (name: {
       inherit name;
@@ -2677,6 +2678,23 @@ This script allows for quick git branch switching.
     runtimeInputs = [ ];
     text = ''
       date -d @"$1" 2>/dev/null || date -r "$1"
+    '';
+  }
+
+#+end_src
+
+**** vershell
+
+This script allows for quick git branch switching.
+
+#+begin_src nix :tangle pkgs/vershell/default.nix
+  { writeShellApplication }:
+
+  writeShellApplication {
+    name = "vershell";
+    runtimeInputs = [ ];
+    text = ''
+      nix shell github:nixos/nixpkgs/"$1"#"$2";
     '';
   }
 
@@ -7508,6 +7526,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       hm-specialisation
       t2ts
       ts2t
+      vershell
 
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash
