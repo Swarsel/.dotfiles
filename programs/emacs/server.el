@@ -67,18 +67,14 @@
 (defun bjm/elfeed-updater ()
   "Wrapper to load the elfeed db from disk before opening"
   (interactive)
-  (elfeed-db-save)
-  (quit-window)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
+  (elfeed-db-load))
 
-(run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
+(run-with-timer 0 (* 1 60) 'bjm/elfeed-updater)
 
 (setq httpd-port 9812)
 (setq httpd-host "0.0.0.0")
 (setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
+(setq elfeed-db-directory "/var/lib/syncthing/.elfeed/db/")
 
 (httpd-start)
 (elfeed-web-start)

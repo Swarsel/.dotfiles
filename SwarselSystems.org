@@ -253,18 +253,14 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 (defun bjm/elfeed-updater ()
   "Wrapper to load the elfeed db from disk before opening"
   (interactive)
-  (elfeed-db-save)
-  (quit-window)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
+  (elfeed-db-load))
 
-(run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
+(run-with-timer 0 (* 1 60) 'bjm/elfeed-updater)
 
 (setq httpd-port 9812)
 (setq httpd-host "0.0.0.0")
 (setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
+(setq elfeed-db-directory "/var/lib/syncthing/.elfeed/db/")
 
 (httpd-start)
 (elfeed-web-start)
@@ -10743,7 +10739,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
         "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
         "mp" '(popper-toggle :which-key "popper")
         "md" '(dirvish :which-key "dirvish")
-        "mr" '(elfeed :which-key "elfeed")
+        "mr" '(bjm/elfeed-load-db-and-open :which-key "elfeed")
         "o"  '(:ignore o :which-key "org")
         "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
         "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -12423,6 +12419,8 @@ This mode is not automatically activated anywhere because I only rarely need it.
     (interactive)
     (elfeed-db-save)
     (quit-window))
+
+  (setq elfeed-db-directory "~/.elfeed/db/")
 
 
   (global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)

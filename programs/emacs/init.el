@@ -330,7 +330,7 @@ create a new one."
       "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
       "mp" '(popper-toggle :which-key "popper")
       "md" '(dirvish :which-key "dirvish")
-      "mr" '(elfeed :which-key "elfeed")
+      "mr" '(bjm/elfeed-load-db-and-open :which-key "elfeed")
       "o"  '(:ignore o :which-key "org")
       "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
       "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -1303,6 +1303,8 @@ create a new one."
   (interactive)
   (elfeed-db-save)
   (quit-window))
+
+(setq elfeed-db-directory "~/.elfeed/db/")
 
 
 (global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
