@@ -5,24 +5,24 @@
     shellAliases = lib.recursiveUpdate
       {
         hg = "history | grep";
-        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch";
-        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch";
-        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) boot";
+        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch |& nom";
+        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
+        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";
-        c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
+        c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
         passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
         passpull = "cd ~/.local/share/password-store; git pull; cd -;";
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
         cd-orig = "cd";
         cat-orig = "cat";
-        cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
+        cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-        lt = "ls -lath";
-        oldshell = "nix shell github:nixos/nixpkgs/\"$1\" \"$2\"";
+        lt = "eza -las modified --total-size";
+        boot-diff = "nix store diff-closures /run/*-system";
       }
       config.swarselsystems.shellAliases;
     autosuggestion.enable = true;
