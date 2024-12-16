@@ -6,5 +6,6 @@
     ssh-to-age
     git
     emacs
+    vim
   ];
 }

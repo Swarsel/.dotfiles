@@ -29,6 +29,9 @@
     # nix package database
     nix-index
 
+    # commit hooks
+    pre-commit
+
     # proc info
     acpi
 
