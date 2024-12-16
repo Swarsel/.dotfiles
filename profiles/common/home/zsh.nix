@@ -5,10 +5,9 @@
     shellAliases = lib.recursiveUpdate
       {
         hg = "history | grep";
-        hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
-        nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch-stay = "cd ~/.dotfiles; git restore flake.lock; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        edithome = "e -w ~/.dotfiles/SwarselSystems.org";
+        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch";
+        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch";
+        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) boot";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";
@@ -17,6 +16,8 @@
         passpull = "cd ~/.local/share/password-store; git pull; cd -;";
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
+        cd-orig = "cd";
+        cat-orig = "cat";
         cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";

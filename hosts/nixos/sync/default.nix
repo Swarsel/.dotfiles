@@ -86,7 +86,6 @@ in
       enable = true;
       forgejo = true;
       ankisync = true;
-      emacs = true;
     };
   };
 

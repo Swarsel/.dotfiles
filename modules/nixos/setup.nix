@@ -31,4 +31,5 @@ in
   options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
   options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
   options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
+  options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
 }

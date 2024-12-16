@@ -1396,6 +1396,7 @@ My work machine. Built for more security, this is the gold standard of my config
       isLaptop = true;
       isNixos = true;
       isBtrfs = true;
+      flakePath = "/home/swarsel/.dotfiles";
       # temperatureHwmon = {
       #   isAbsolutePath = true;
       #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
@@ -1596,6 +1597,7 @@ My work machine. Built for more security, this is the gold standard of my config
         transmission = true;
         syncthing = true;
         monitoring = true;
+        freshrss = true;
       };
     };
 
@@ -1815,7 +1817,6 @@ This machine mainly acts as an external sync helper. It manages the following th
         enable = true;
         forgejo = true;
         ankisync = true;
-        emacs = true;
       };
     };
 
@@ -2842,6 +2843,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
     options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
     options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
+    options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
   }
 #+end_src
 
@@ -3130,6 +3132,10 @@ These are some extra options that will be used if the machine also runs NixOS. F
 #+begin_src nix :noweb yes :tangle modules/home/nixos.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.flakePath = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
     options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
     config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
       {
@@ -5079,6 +5085,7 @@ Also, the system state version is set here. No need to touch it.
     ./emacs.nix
     ./forgejo.nix
     ./ankisync.nix
+    ./freshrss.nix
     ];
   }
   #+end_src
@@ -6606,20 +6613,44 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         startWithGraphical = false;
       };
 
+    };
+
+  }
+#+end_src
+
+**** FreshRSS
+
+#+begin_src nix :tangle profiles/server/nixos/freshrss.nix
+  { lib, config, ... }:
+  {
+    config = lib.mkIf config.swarselsystems.server.freshrss {
+
+      users.users.freshrss = {
+        extraGroups = [ "users" ];
+        group = "freshrss";
+        isSystemUser = true;
+      };
+
+      users.groups.freshrss = {};
+
+      sops.secrets.fresh = { owner = "freshrss"; };
+
+      services.freshrss = {
+        enable = true;
+        virtualHost = "signpost.swarsel.win";
+        baseUrl = "https://signpost.swarsel.win";
+        # authType = "none";
+        dataDir = "/Vault/data/tt-rss";
+        defaultUser = "Swarsel";
+        passwordFile = config.sops.secrets.fresh.path;
+      };
+
       services.nginx = {
         virtualHosts = {
           "signpost.swarsel.win" = {
-            enableACME = false;
-            forceSSL = false;
+            enableACME = true;
+            forceSSL = true;
             acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:9812";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
           };
         };
       };
@@ -7490,7 +7521,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         leon = { path = "/run/user/1000/secrets/leon"; };
         swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
         github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-        # caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+        fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
       };
     };
   }
@@ -7744,13 +7775,16 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
 #+begin_src nix :tangle profiles/common/home/programs.nix
-  _:
+  { pkgs, ... }:
   {
     programs = {
       bottom.enable = true;
       imv.enable = true;
       sioyek.enable = true;
-      bat.enable = true;
+      bat = {
+        enable = true;
+        extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+      };
       carapace.enable = true;
       wlogout.enable = true;
       swayr.enable = true;
@@ -8085,10 +8119,9 @@ Here we set some aliases (some of them should be shellApplications instead) as w
     shellAliases = lib.recursiveUpdate
       {
         hg = "history | grep";
-        hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
-        nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch-stay = "cd ~/.dotfiles; git restore flake.lock; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        edithome = "e -w ~/.dotfiles/SwarselSystems.org";
+        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch";
+        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch";
+        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) boot";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";
@@ -8097,6 +8130,8 @@ Here we set some aliases (some of them should be shellApplications instead) as w
         passpull = "cd ~/.local/share/password-store; git pull; cd -;";
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
+        cd-orig = "cd";
+        cat-orig = "cat";
         cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 && echo /home/swarsel/.dotfiles) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
@@ -12374,64 +12409,26 @@ This mode is not automatically activated anywhere because I only rarely need it.
 
 #+begin_src emacs-lisp
 
-  ;; (setq elfeed-feeds
-  ;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
-  ;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
-  ;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
-  ;;         "https://hnrss.org/frontpage"
-  ;;         "https://www.derstandard.at/rss/inland"
-  ;;         "https://www.derstandard.at/rss/international"
-  ;;         "https://www.derstandard.at/rss/kultur"
-  ;;         "https://www.derstandard.at/rss/wissenschaft"
-  ;;         "https://www.rfc-editor.org/rfcrss.xml"
-  ;;         "https://waitbutwhy.com/feed"
-  ;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
-
-  (use-package elfeed
-    :ensure t
-    :bind (:map elfeed-search-mode-map
-                                          ;              ("A" . bjm/elfeed-show-all)
-                                          ;              ("E" . bjm/elfeed-show-emacs)
-                                          ;              ("D" . bjm/elfeed-show-daily)
-                ("q" . bjm/elfeed-save-db-and-bury)))
-
-
-  (require 'elfeed)
-
-  ;; Load elfeed-org
-  (use-package elfeed-org
-    :config
-    (elfeed-org)
-    (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
-    )
+  (use-package elfeed)
 
   (use-package elfeed-goodies)
   (elfeed-goodies/setup)
 
-  (use-package elfeed-web)
-
-  ;;functions to support syncing .elfeed between machines
-  ;;makes sure elfeed reads index from disk before launching
-  (defun bjm/elfeed-load-db-and-open ()
-    "Wrapper to load the elfeed db from disk before opening"
-    (interactive)
-    (elfeed-db-load)
-    (elfeed)
-    (elfeed-search-update--force)
-    (elfeed-update))
-
-  ;;write to disk when quiting
-  (defun bjm/elfeed-save-db-and-bury ()
-    "Wrapper to save the elfeed db to disk before burying buffer"
-    (interactive)
-    (elfeed-db-save)
-    (quit-window))
-
   (setq elfeed-db-directory "~/.elfeed/db/")
 
 
-  (global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+  (use-package elfeed-protocol
+    :after elfeed)
 
+  (elfeed-protocol-enable)
+  (setq elfeed-use-curl t)
+  (setq elfeed-set-timeout 36000)
+  (setq elfeed-protocol-enabled-protocols '(fever))
+  (setq elfeed-protocol-fever-update-unread-only t)
+  (setq elfeed-protocol-fever-fetch-category-as-tag t)
+  (setq elfeed-protocol-feeds '(("fever+https://Swarsel@signpost.swarsel.win"
+                                 :api-url "https://signpost.swarsel.win/api/fever.php"
+                                 :password-file "~/.emacs.d/.fever")))
 
   (define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
   (define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
@@ -12441,6 +12438,7 @@ This mode is not automatically activated anywhere because I only rarely need it.
   (define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
 
 #+end_src
+
 
 *** darkroom
 :PROPERTIES:

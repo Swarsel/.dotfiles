@@ -36,5 +36,6 @@ in
     ./emacs.nix
     ./forgejo.nix
     ./ankisync.nix
+    ./freshrss.nix
   ];
 }

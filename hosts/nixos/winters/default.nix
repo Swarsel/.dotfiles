@@ -63,6 +63,7 @@ in
       transmission = true;
       syncthing = true;
       monitoring = true;
+      freshrss = true;
     };
   };
 

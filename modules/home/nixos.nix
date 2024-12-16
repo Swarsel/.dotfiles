@@ -1,5 +1,9 @@
 { lib, config, ... }:
 {
+  options.swarselsystems.flakePath = lib.mkOption {
+    type = lib.types.str;
+    default = "";
+  };
   options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
   config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
     {

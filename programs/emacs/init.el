@@ -1251,64 +1251,26 @@ create a new one."
   (setq olivetti-body-width 100)
   (setq olivetti-recall-visual-line-mode-entry-state t))
 
-;; (setq elfeed-feeds
-;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
-;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
-;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
-;;         "https://hnrss.org/frontpage"
-;;         "https://www.derstandard.at/rss/inland"
-;;         "https://www.derstandard.at/rss/international"
-;;         "https://www.derstandard.at/rss/kultur"
-;;         "https://www.derstandard.at/rss/wissenschaft"
-;;         "https://www.rfc-editor.org/rfcrss.xml"
-;;         "https://waitbutwhy.com/feed"
-;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
-
-(use-package elfeed
-  :ensure t
-  :bind (:map elfeed-search-mode-map
-                                        ;              ("A" . bjm/elfeed-show-all)
-                                        ;              ("E" . bjm/elfeed-show-emacs)
-                                        ;              ("D" . bjm/elfeed-show-daily)
-              ("q" . bjm/elfeed-save-db-and-bury)))
-
-
-(require 'elfeed)
-
-;; Load elfeed-org
-(use-package elfeed-org
-  :config
-  (elfeed-org)
-  (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
-  )
+(use-package elfeed)
 
 (use-package elfeed-goodies)
 (elfeed-goodies/setup)
 
-(use-package elfeed-web)
-
-;;functions to support syncing .elfeed between machines
-;;makes sure elfeed reads index from disk before launching
-(defun bjm/elfeed-load-db-and-open ()
-  "Wrapper to load the elfeed db from disk before opening"
-  (interactive)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
-
-;;write to disk when quiting
-(defun bjm/elfeed-save-db-and-bury ()
-  "Wrapper to save the elfeed db to disk before burying buffer"
-  (interactive)
-  (elfeed-db-save)
-  (quit-window))
-
 (setq elfeed-db-directory "~/.elfeed/db/")
 
 
-(global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+(use-package elfeed-protocol
+  :after elfeed)
 
+(elfeed-protocol-enable)
+(setq elfeed-use-curl t)
+(setq elfeed-set-timeout 36000)
+(setq elfeed-protocol-enabled-protocols '(fever))
+(setq elfeed-protocol-fever-update-unread-only t)
+(setq elfeed-protocol-fever-fetch-category-as-tag t)
+(setq elfeed-protocol-feeds '(("fever+https://Swarsel@signpost.swarsel.win"
+                               :api-url "https://signpost.swarsel.win/api/fever.php"
+                               :password-file "~/.emacs.d/.fever")))
 
 (define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
 (define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)

@@ -1,10 +1,13 @@
-_:
+{ pkgs, ... }:
 {
   programs = {
     bottom.enable = true;
     imv.enable = true;
     sioyek.enable = true;
-    bat.enable = true;
+    bat = {
+      enable = true;
+      extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+    };
     carapace.enable = true;
     wlogout.enable = true;
     swayr.enable = true;
