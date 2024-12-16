@@ -30,6 +30,7 @@
     hyprpicker # color picker
     findutils
     units
+    vim
 
     # nix
     alejandra

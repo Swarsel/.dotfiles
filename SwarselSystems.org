@@ -7287,7 +7287,7 @@ This section sets up all the imports that are used in the home-manager section.
  Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix :tangle profiles/common/home/settings.nix
-  { lib, config, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   {
     nix = {
       package = lib.mkDefault pkgs.nix;
@@ -7309,7 +7309,7 @@ This section sets up all the imports that are used in the home-manager section.
       stateVersion = lib.mkDefault "23.05";
       keyboard.layout = "us";
       sessionVariables = {
-        FLAKE = "$HOME/.dotfiles";
+        FLAKE = "${self}";
       };
     };
   }
@@ -7366,6 +7366,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       hyprpicker # color picker
       findutils
       units
+      vim
 
       # nix
       alejandra
