@@ -179,8 +179,11 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 
 #+end_src
 ** Server Emacs config
+:PROPERTIES:
+:CUSTOM_ID: h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8
+:END:
 
-On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server.
+On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using =bjm/elfeed-updater=. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change =(elfeed-db-load)= in =bjm/elfeed-updater= to =(elfeed-db-save)=.
 
 
 #+begin_src emacs-lisp :tangle programs/emacs/server.el
@@ -267,8 +270,11 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 
 #+end_src
 ** tridactylrc
+:PROPERTIES:
+:CUSTOM_ID: h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51
+:END:
 
-This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox
+This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
 
 
 #+begin_src :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
@@ -372,6 +378,9 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 
 #+end_src
 ** Waybar style.css
+:PROPERTIES:
+:CUSTOM_ID: h:77b1c523-5074-4610-b320-90af95e6134d
+:END:
 
 This is the stylesheet used by waybar.
 
@@ -815,7 +824,18 @@ A short overview over each input and what it does:
   disko provides declarative disk partitioning, which I use for impermanence as well as [[https://github.com/nix-community/nixos-anywhere][nixos-anywhere]].
 - [[https://github.com/nix-community/impermanence][Impermanence]]
   Some of my machines are using a btrfs filesystem that wipes the root directory on each reboot. This forces me to pay more attention in keeping my system declarative as well as helping me keeping the system uncluttered. However, it is a chore to make sure that important files are not deleted. This flake helps with this problem, allowing me to select files and directories for persisting.
-
+- [[https://github.com/dj95/zjstatus][zjstatus]]
+  This provides utilities for customizing a statusbar in zellij. Currently unused as I prefer tmux for now and might be removed in the future.
+- [[https://github.com/TamtamHero/fw-fanctrl][fw-fanctrl]]
+  This provides access to the internal fans of Frameworks laptops. This is a bit more nice to use than directly using ectool.
+- [[https://github.com/LnL7/nix-darwin][nix-darwin]]
+  After learning that MacOS systems can also be configured using nix, I managed to get access to an old MacBook for testing. This allows to set most general settings that can otherwise be set using the Mac GUI.
+- [[https://github.com/cachix/git-hooks.nix][pre-commit-hooks]]
+  Provides access to several checks that can be hooked to be run before several stages in the process.
+- nix-secrets
+  This is a private repository that I use for settings in modules that do not expose a =secretsFile= (or similar) option. An example is the =LastFM.ApiKey= option in [[#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72][navidrome]]:
+  =LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";=
+When setting this option normally, the password would normally be written world-readable not only in the nix store, but also in the configuration. Hence, I put such passwords into a private repository. This allows me to keep purity of the flake while keeping a level of security on these secrets.
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
@@ -1135,23 +1155,29 @@ Nix on Android also demands an own flake output, which is provided here.
 :CUSTOM_ID: h:02cd20be-1ffa-4904-9d5a-da5a89ba1421
 :END:
 
+This holds most of the NixOS side of configuration.
+
 ** System specific configuration
 :PROPERTIES:
 :CUSTOM_ID: h:88bf4b90-e94b-46fb-aaf1-a381a512860d
 :END:
 
-This section mainly exists house different `configuration.nix` files for system level configurations of NixOS systems as well as `home.nix` for user level configurations on all systems.
+This section mainly exists house different `default.nix` files to define some modules that should be loaded on respective systems.
+Every host is housed in the =hosts/= directory, which is then subdivided by each respective system (=nixos/=, =home-manager/=, =nix-on-droid/=, =darwin/=). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 
 *** Physical hosts
 :PROPERTIES:
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
 :END:
+
+This is a list of all physical machines that I maintain.
+
 **** live (ISO)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
 
-
+This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
   { self, inputs, config, pkgs, lib, modulesPath, ... }:
@@ -1530,6 +1556,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
 :END:
 
+This is my main server that I run at home. It handles most tasks that require bigger amounts of storage than I can receive for free at OCI. Also it houses some data that I find too sensitive to hand over to Oracle.
 
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
   { self, inputs, outputs, config, ... }:
@@ -1611,6 +1638,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
 :END:
 
+A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
 #+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
   { self, inputs, outputs, ... }:
@@ -1653,6 +1681,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:729af373-37e7-4379-9a3d-b09792219415
 :END:
 
+My phone. I use only a minimal config for remote debugging here.
 
 #+begin_src nix :tangle hosts/nix-on-droid/magicant/default.nix
 
@@ -2660,6 +2689,7 @@ This script allows for quick git branch switching.
 
 This file now holds all of the "nixpkgs-changes" that I am using across the configurations. Most notable here are the =modifications=, where I am editing derivations according to my needs.
 
+When adding a new entry here, do not forget to add it in the default output of this file, otherwise it will not be exposed to the rest of the system.
 
 #+begin_src nix :tangle overlays/default.nix
   { inputs, ... }:
@@ -2738,7 +2768,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 :CUSTOM_ID: h:14e68518-8ec7-48ec-b208-0e3d6d49954d
 :END:
 
-Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
+Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
 #+begin_src nix :tangle modules/nixos/default.nix
 let
@@ -2852,6 +2882,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 :CUSTOM_ID: h:45188d3c-9910-480b-beec-d5fd713b05fb
 :END:
 
+This section is for everything input-related on the NixOS side. At the moment, this is only used to define shell aliases for servers.
 
 #+begin_src nix :tangle modules/nixos/input.nix
   { lib, ... }:
@@ -3171,11 +3202,12 @@ These are some extra options that will be used if the machine also runs NixOS. F
 :CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
 :END:
 
+Provides settings related to nix-darwin systems. At the moment, I am only making use of a =isDarwin= flag.
+
 #+begin_src nix :noweb yes :tangle modules/home/darwin.nix
 { lib, ... }:
 {
   options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
-
 }
 #+end_src
 
@@ -3655,7 +3687,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 :CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
 :END:
 
-First, we enable the use of =home-manager= as a NixoS modul.
+We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix :tangle profiles/common/nixos/home-manager.nix
   { inputs, config, lib, ... }:
@@ -3673,7 +3705,7 @@ First, we enable the use of =home-manager= as a NixoS modul.
 :CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
 :END:
 
-Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
+Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
 
 #+begin_src nix :tangle profiles/common/nixos/xserver.nix
   _:
@@ -3693,6 +3725,9 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 :END:
 
 This ensures that all user-configuration happens here in the config file.
+In case of using a fully setup system, this makes also sure that no further user level modifications can be made using CLI utilities (e.g. usermod etc.). Everything must be defined in the flake.
+
+For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
 
 #+begin_src nix :tangle profiles/common/nixos/users.nix
   { pkgs, config, lib, ... }:
@@ -3743,7 +3778,7 @@ Next, we will setup some environment variables that need to be set on the system
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
 
-Needed for control over system-wide privileges etc.
+Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
 
 #+begin_src nix :tangle profiles/common/nixos/polkit.nix
   _:
@@ -3898,7 +3933,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 :CUSTOM_ID: h:7d696b64-debe-4a95-80b5-1e510156a6c6
 :END:
 
-Here I only enable =networkmanager=. Most of the 'real' network config is done in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
+Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
 #+begin_src nix :tangle profiles/common/nixos/network.nix
   { lib, config, ... }:
@@ -5593,6 +5628,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+end_src
 
 **** pipewire
+:PROPERTIES:
+:CUSTOM_ID: h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/pipewire.nix
   { lib, config, ... }:
@@ -6373,6 +6411,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:b73ac8bf-b721-4563-9eff-973925c99a39
 :END:
 
+Once this is finished, it will house a restic client that manages automatic backups of my image library. Before I get to this however, I first need to organice my pictures in the first place.
+
 #+begin_src nix :tangle profiles/server/nixos/restic.nix
   { lib, config, ... }:
   {
@@ -6388,6 +6428,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :PROPERTIES:
 :CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
 :END:
+
+This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
 
 #+begin_src nix :tangle profiles/server/nixos/monitoring.nix
   { self, lib, config, ... }:
@@ -6557,6 +6599,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:23452a18-a0a1-4515-8612-ceb19bb5fc22
 :END:
 
+This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I have turned this service off for now however, as I actually prefer to start my builds manually.
+
 #+begin_src nix :tangle profiles/server/nixos/jenkins.nix
   { pkgs, lib, config, ... }:
   {
@@ -6600,6 +6644,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
 :END:
 
+This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
+
 #+begin_src nix :tangle profiles/server/nixos/emacs.nix
   { lib, config, ... }:
   {
@@ -6619,6 +6665,13 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+end_src
 
 **** FreshRSS
+:PROPERTIES:
+:CUSTOM_ID: h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d
+:END:
+
+FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
+
+It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as well as a Fever API at     https://signpost.swarsel.win/api/fever.php.
 
 #+begin_src nix :tangle profiles/server/nixos/freshrss.nix
   { lib, config, ... }:
@@ -6660,6 +6713,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+end_src
 
 **** forgejo (git server)
+:PROPERTIES:
+:CUSTOM_ID: h:a9965660-4358-4b9a-8c46-d55f28598344
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/forgejo.nix
   { lib, config, ... }:
@@ -6711,6 +6767,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+end_src
 
 **** Anki Sync Server
+:PROPERTIES:
+:CUSTOM_ID: h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4
+:END:
 
 #+begin_src nix :tangle profiles/server/nixos/ankisync.nix
 { lib, config, ... }:
@@ -13793,6 +13852,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 #+end_src
 
 *** multiple cursors
+:PROPERTIES:
+:CUSTOM_ID: h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd
+:END:
 
 #+begin_src emacs-lisp
 
