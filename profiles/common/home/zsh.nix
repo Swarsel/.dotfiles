@@ -23,6 +23,7 @@
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
         lt = "eza -las modified --total-size";
         boot-diff = "nix store diff-closures /run/*-system";
+        gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
       }
       config.swarselsystems.shellAliases;
     autosuggestion.enable = true;
