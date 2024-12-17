@@ -9,6 +9,10 @@
       man
       gnupg
       curl
+      deadnix
+      statix
+      nixpgks-fmt
+      nvd
     ];
 
     etcBackupExtension = ".bak";
