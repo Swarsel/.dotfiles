@@ -252,6 +252,7 @@ fi
 if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
     cd "${git_root}"
     deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
+    nixpkgs-fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
     (pre-commit run --all-files 2> /dev/null || true) &&
         git add "$git_root/hosts/$target_hostname/hardware-configuration.nix" && (git commit -m "feat: hardware-configuration.nix for $target_hostname" || true) && git push
 fi
