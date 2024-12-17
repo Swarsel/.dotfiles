@@ -32,6 +32,7 @@ in
   services.getty.autologinUser = lib.mkForce "swarsel";
 
   users = {
+    allowNoPasswordLogin = true;
     groups.swarsel = { };
     users = {
       swarsel = {
@@ -67,7 +68,7 @@ in
   system.stateVersion = lib.mkForce "23.05";
 
   networking = {
-    hostName = "live";
+    hostName = "drugstore";
     wireless.enable = false;
   };
 

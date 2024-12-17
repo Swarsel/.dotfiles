@@ -77,14 +77,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                        # Remove any * and & entries for this host
-                        /[*&]$key_name/ d;
-                        # Inject a new age: entry
-                        # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                        /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                        # Inject a new hosts or user: entry
-                        /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                        }" $SOPS_FILE
+                          # Remove any * and & entries for this host
+                          /[*&]$key_name/ d;
+                          # Inject a new age: entry
+                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                          # Inject a new hosts or user: entry
+                          /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                          }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -127,8 +127,19 @@ ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFil
 # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
 ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
 scp_cmd="scp -oport=${ssh_port} -o StrictHostKeyChecking=no"
-git_root=$(git rev-parse --show-toplevel)
 
+if [[ -z ${FLAKE} ]]; then
+    FLAKE=/home/"$target_user"/.dotfiles
+fi
+if [ ! -d "$FLAKE" ]; then
+    cd /home/"$target_user"
+    yellow "Flake directory not found - cloning repository from GitHub"
+    git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
+    FLAKE=/home/"$target_user"/.dotfiles
+fi
+
+cd "$FLAKE"
+git_root=$(git rev-parse --show-toplevel)
 # ------------------------
 green "Wiping known_hosts of $target_destination"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -213,13 +224,9 @@ $ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
 # __________________________
 
 if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
-    if [ "$target_user" == "root" ]; then
-        home_path="/root"
-    else
-        home_path="/home/$target_user"
-    fi
     green "Adding ssh host fingerprints for git{lab,hub}"
-    $ssh_cmd "mkdir -p $home_path/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >>$home_path/.ssh/known_hosts"
+    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /home/$target_user/.ssh/known_hosts"
+    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /root/.ssh/known_hosts"
 fi
 # --------------------------
 
@@ -232,7 +239,7 @@ if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $targe
 
     if yes_or_no "Do you want to rebuild immediately?"; then
         green "Rebuilding nix-config on $target_hostname"
-        #FIXME:(bootstrap) there are still a gitlab fingerprint request happening during the rebuild
+        $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json"
         $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
     fi
 else
@@ -254,5 +261,8 @@ if yes_or_no "You can now commit and push the nix-config, which includes the har
     deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
     nixpkgs-fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
     (pre-commit run --all-files 2> /dev/null || true) &&
-        git add "$git_root/hosts/$target_hostname/hardware-configuration.nix" && (git commit -m "feat: hardware-configuration.nix for $target_hostname" || true) && git push
+        git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &&
+        git add "$git_root/.sops.yaml" &&
+        git add "$git_root/secrets" &&
+        (git commit -m "feat: deployed $target_hostname" || true) && git push
 fi
