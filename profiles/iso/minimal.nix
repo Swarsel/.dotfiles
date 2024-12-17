@@ -32,6 +32,10 @@
     };
   };
 
+  security.sudo.extraConfig = ''
+    Defaults    env_keep+=SSH_AUTH_SOCK
+  '';
+
   security.pam = {
     sshAgentAuth.enable = true;
     services = {
@@ -41,6 +45,8 @@
 
   environment.systemPackages = with pkgs; [
     curl
+    git
+    gnupg
     rsync
     ssh-to-age
     sops
@@ -50,7 +56,6 @@
 
   programs = {
     git.enable = true;
-    zsh.enable = lib.mkDefault true;
   };
 
   fileSystems."/boot".options = [ "umask=0077" ];

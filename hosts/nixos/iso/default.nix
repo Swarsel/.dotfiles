@@ -1,4 +1,4 @@
-{ self, inputs, config, pkgs, lib, modulesPath, ... }:
+{ self, inputs, config, lib, modulesPath, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -13,7 +13,7 @@ in
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    "${self}/profiles/iso//minimal.nix"
+    "${self}/profiles/iso/minimal.nix"
 
   ];
 
@@ -38,16 +38,20 @@ in
         name = "swarsel";
         group = "swarsel";
         isNormalUser = true;
-        shell = pkgs.zsh;
         password = "setup"; # this is overwritten after install
         openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+        extraGroups = [ "wheel" ];
       };
       root = {
-        shell = pkgs.zsh;
-        password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+        # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
         openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
       };
     };
+  };
+
+  boot = {
+    loader.systemd-boot.enable = lib.mkForce true;
+    loader.efi.canTouchEfiVariables = true;
   };
 
   systemd = {

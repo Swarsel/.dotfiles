@@ -1,5 +1,9 @@
-{ self, pkgs, ... }:
+{ self, config, pkgs, ... }:
 {
+
+  # needed for elfeed
+  sops.secrets.fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+
   # enable emacs overlay for bleeding edge features
   # also read init.el file and install use-package packages
   programs.emacs = {

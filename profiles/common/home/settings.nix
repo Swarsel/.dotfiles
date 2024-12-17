@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, ... }:
+{ lib, config, pkgs, ... }:
 {
   nix = {
     package = lib.mkDefault pkgs.nix;
@@ -20,7 +20,7 @@
     stateVersion = lib.mkDefault "23.05";
     keyboard.layout = "us";
     sessionVariables = {
-      FLAKE = "${self}";
+      FLAKE = "${config.home.homeDirectory}/.dotfiles";
     };
   };
 }

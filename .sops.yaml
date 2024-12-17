@@ -3,11 +3,13 @@
 # Also see https://github.com/Mic92/dotfiles/blob/master/nixos/.sops.yaml
 # for a more complex example.
 keys:
-  - &admin_swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
-  - &server_winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
-  - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
-  - &server_nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
-  - &server_sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
+  - &users
+    - &admin_swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
+  - &hosts
+    - &server_winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+    - &server_surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
+    - &server_nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
+    - &server_sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
     key_groups:

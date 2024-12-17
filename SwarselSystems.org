@@ -1050,6 +1050,14 @@ In this section I am creating some attributes that define general concepts of my
   homeManagerModules = import ./modules/home;
 
   packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+  apps = forAllSystems (system: {
+    default = self.apps.${system}.bootstrap;
+
+    bootstrap = {
+      type = "app";
+      program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
+    };
+  });
   devShells = forAllSystems (
     system:
     let
@@ -1180,7 +1188,7 @@ This is a list of all physical machines that I maintain.
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, inputs, config, pkgs, lib, modulesPath, ... }:
+  { self, inputs, config, lib, modulesPath, ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
   in
@@ -1195,7 +1203,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    "${self}/profiles/iso//minimal.nix"
+    "${self}/profiles/iso/minimal.nix"
 
     ];
 
@@ -1220,16 +1228,20 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
           name = "swarsel";
           group = "swarsel";
           isNormalUser = true;
-          shell = pkgs.zsh;
           password = "setup"; # this is overwritten after install
           openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+          extraGroups = [ "wheel" ];
         };
         root = {
-          shell = pkgs.zsh;
-          password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+          # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
           openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
         };
       };
+    };
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
     };
 
     systemd = {
@@ -1314,6 +1326,100 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
         };
       };
       keybindings = { };
+    };
+
+  }
+
+
+#+end_src
+
+**** Toto (QEMU VM)
+
+#+begin_src nix :tangle hosts/nixos/toto/default.nix
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+
+    imports =  [
+      inputs.disko.nixosModules.disko
+      "${self}/hosts/nixos/toto/disk-config.nix"
+      {
+        _module.args = {
+          withSwap = false;
+        };
+      }
+      ./hardware-configuration.nix
+
+      inputs.sops-nix.nixosModules.sops
+
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/common/nixos/settings.nix"
+      "${profilesPath}/common/nixos/home-manager.nix"
+      "${profilesPath}/common/nixos/xserver.nix"
+      "${profilesPath}/common/nixos/users.nix"
+      "${profilesPath}/common/nixos/sops.nix"
+      "${profilesPath}/server/nixos/ssh.nix"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports =  [
+          inputs.sops-nix.homeManagerModules.sops
+          "${profilesPath}/common/home/settings.nix"
+          "${profilesPath}/common/home/sops.nix"
+          "${profilesPath}/common/home/ssh.nix"
+
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      curl
+      git
+      gnupg
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+    ];
+
+    system.stateVersion = lib.mkForce "23.05";
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      supportedFilesystems = [ "btrfs" ];
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+
+    networking = {
+      hostName = "toto";
+      firewall.enable = false;
+    };
+
+    swarselsystems = {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      impermanence = false;
+      isBtrfs = false;
+      initialSetup = true;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = false;
+      isNixos = true;
+      isBtrfs = false;
+      flakePath = "/home/swarsel/.dotfiles";
     };
 
   }
@@ -2581,6 +2687,31 @@ This program sets up a new NixOS host.
       done
   }
 
+  function update_sops_file() {
+      key_name=$1
+      key_type=$2
+      key=$3
+
+      if [ ! "$key_type" == "hosts" ] && [ ! "$key_type" == "users" ]; then
+          red "Invalid key type passed to update_sops_file. Must be either 'hosts' or 'users'."
+          exit 1
+      fi
+      cd "${git_root}"
+
+      SOPS_FILE=".sops.yaml"
+      sed -i "{
+                          # Remove any * and & entries for this host
+                          /[*&]$key_name/ d;
+                          # Inject a new age: entry
+                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                          # Inject a new hosts or user: entry
+                          /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                          }" $SOPS_FILE
+      green "Updating .sops.yaml"
+      cd -
+  }
+
   while [[ $# -gt 0 ]]; do
       case "$1" in
       -n)
@@ -2618,19 +2749,137 @@ This program sets up a new NixOS host.
   ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
   # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
   ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
-
   scp_cmd="scp -oport=${ssh_port} -o StrictHostKeyChecking=no"
-
   git_root=$(git rev-parse --show-toplevel)
 
+  # ------------------------
   green "Wiping known_hosts of $target_destination"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-
+  # ------------------------
+  green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
+  # Create the directory where sshd expects to find the host keys
+  install -d -m755 "$temp/etc/ssh"
+  # Generate host ssh key pair without a passphrase
+  ssh-keygen -t ed25519 -f "$temp/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
+  # Set the correct permissions so sshd will accept the key
+  chmod 600 "$temp/etc/ssh/ssh_host_ed25519_key"
+  echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+  # This will fail if we already know the host, but that's fine
+  ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+  # ------------------------
+  # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
+  # via the config
+  green "Preparing a temporary password for disko."
+  green "[Optional] Set disk encryption passphrase:"
+  read -rs luks_passphrase
+  if [ -n "$luks_passphrase" ]; then
+      $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+  else
+      $ssh_root_cmd "/bin/sh -c 'echo passphrase > /tmp/disko-password'"
+  fi
+  # ------------------------
   green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
-  $ssh_root_cmd "nixos-generate-config --no-filesystems --root /mnt"
-  mkdir profiles/"$target_hostname"
-  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/profiles/"$target_hostname"/hardware-configuration.nix
+  $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+  mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
+  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+  # ------------------------
+  green "Deploying minimal NixOS installation on $target_destination"
+  SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
+
+  echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+  ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+  # ------------------------
+
+  while true; do
+      read -rp "Press Enter to continue once the remote host has finished booting."
+      if nc -z "$target_destination" "${ssh_port}" 2> /dev/null; then
+          green "$target_destination is booted. Continuing..."
+          break
+      else
+          yellow "$target_destination is not yet ready."
+      fi
+  done
+  # ------------------------
+  green "Generating an age key based on the new ssh_host_ed25519_key."
+  target_key=$(
+      ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2>&1 |
+          grep ssh-ed25519 |
+          cut -f2- -d" " ||
+          (
+              red "Failed to get ssh key. Host down?"
+              exit 1
+          )
+  )
+  host_age_key=$(nix shell nixpkgs#ssh-to-age.out -c sh -c "echo $target_key | ssh-to-age")
+
+  if grep -qv '^age1' <<< "$host_age_key"; then
+      red "The result from generated age key does not match the expected format."
+      yellow "Result: $host_age_key"
+      yellow "Expected format: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      exit 1
+  else
+      echo "$host_age_key"
+  fi
+
+  green "Updating nix-secrets/.sops.yaml"
+  update_sops_file "$target_hostname" "hosts" "$host_age_key"
+  yellow ".sops.yaml has been updated. There may be superfluous entries, you might need to edit manually."
+  if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
+      vim "${git_root}"/.sops.yaml
+  fi
+  green "Updating all secrets files to reflect updates .sops.yaml"
+  sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
+  # --------------------------
+  green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+  $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
+  $ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
+  # __________________________
+
+  if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
+      if [ "$target_user" == "root" ]; then
+          home_path="/root"
+      else
+          home_path="/home/$target_user"
+      fi
+      green "Adding ssh host fingerprints for git{lab,hub}"
+      $ssh_cmd "mkdir -p $home_path/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >>$home_path/.ssh/known_hosts"
+  fi
+  # --------------------------
+
+  if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
+      green "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+      ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
+      green "Copying full nix-config to $target_hostname"
+      cd "${git_root}"
+      just sync "$target_user" "$target_destination"
+
+      if yes_or_no "Do you want to rebuild immediately?"; then
+          green "Rebuilding nix-config on $target_hostname"
+          #FIXME:(bootstrap) there are still a gitlab fingerprint request happening during the rebuild
+          $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+      fi
+  else
+      echo
+      green "NixOS was successfully installed!"
+      echo "Post-install config build instructions:"
+      echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
+      echo "just sync $target_user $target_destination"
+      echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
+      echo "cd nix-config"
+      # see above FIXME:(bootstrap)
+      echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+      # echo "just rebuild"
+      echo
+  fi
+
+  if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
+      cd "${git_root}"
+      deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
+      (pre-commit run --all-files 2> /dev/null || true) &&
+          git add "$git_root/hosts/$target_hostname/hardware-configuration.nix" && (git commit -m "feat: hardware-configuration.nix for $target_hostname" || true) && git push
+  fi
 #+end_src
+
 
 
 #+begin_src nix :tangle pkgs/bootstrap/default.nix
@@ -3757,6 +4006,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
       users.swarsel = {
         isNormalUser = true;
         description = "Leon S";
+        password = lib.mkIf config.swarselsystems.initialSetup "setup";
         hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
         extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
         packages = with pkgs; [ ];
@@ -4257,7 +4507,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     sops = {
 
-      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
@@ -6393,11 +6643,11 @@ Here we just define some aliases for rebuilding the system, and we allow some in
               devices = [ "magicant" "nbl-imba-2" ];
               id = "hgr3d-pfu3w";
             };
-            ".elfeed" = {
-              path = "/Vault/data/syncthing/.elfeed";
-              devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
-              id = "h7xbs-fs9v1";
-            };
+            # ".elfeed" = {
+            #   path = "/Vault/data/syncthing/.elfeed";
+            #   devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            #   id = "h7xbs-fs9v1";
+            # };
           };
         };
       };
@@ -7191,6 +7441,10 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       };
     };
 
+    security.sudo.extraConfig = ''
+      Defaults    env_keep+=SSH_AUTH_SOCK
+    '';
+
     security.pam = {
       sshAgentAuth.enable = true;
       services = {
@@ -7200,6 +7454,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
     environment.systemPackages = with pkgs; [
       curl
+      git
+      gnupg
       rsync
       ssh-to-age
       sops
@@ -7209,7 +7465,6 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
     programs = {
       git.enable = true;
-      zsh.enable = lib.mkDefault true;
     };
 
     fileSystems."/boot".options = [ "umask=0077" ];
@@ -7287,7 +7542,7 @@ This section sets up all the imports that are used in the home-manager section.
  Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix :tangle profiles/common/home/settings.nix
-  { self, lib, config, pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
     nix = {
       package = lib.mkDefault pkgs.nix;
@@ -7309,7 +7564,7 @@ This section sets up all the imports that are used in the home-manager section.
       stateVersion = lib.mkDefault "23.05";
       keyboard.layout = "us";
       sessionVariables = {
-        FLAKE = "${self}";
+        FLAKE = "${config.home.homeDirectory}/.dotfiles";
       };
     };
   }
@@ -7528,6 +7783,8 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       ts2t
       vershell
 
+      bootstrap
+
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash
         if [ "$1" == "rust" ]; then
@@ -7589,7 +7846,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   in
   {
     sops = {
-      age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+      age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
@@ -7599,7 +7856,6 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         leon = { path = "/run/user/1000/secrets/leon"; };
         swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
         github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-        fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
       };
     };
   }
@@ -8778,8 +9034,12 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix :tangle profiles/common/home/emacs.nix
-  { self, pkgs, ... }:
+  { self, config, pkgs, ... }:
   {
+
+    # needed for elfeed
+    sops.secrets.fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
     programs.emacs = {

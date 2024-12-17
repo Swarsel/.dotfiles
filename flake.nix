@@ -199,6 +199,14 @@
       homeManagerModules = import ./modules/home;
 
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+      apps = forAllSystems (system: {
+        default = self.apps.${system}.bootstrap;
+
+        bootstrap = {
+          type = "app";
+          program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
+        };
+      });
       devShells = forAllSystems (
         system:
         let

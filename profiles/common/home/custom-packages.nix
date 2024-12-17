@@ -21,6 +21,8 @@
     ts2t
     vershell
 
+    bootstrap
+
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
       if [ "$1" == "rust" ]; then

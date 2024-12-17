@@ -79,11 +79,11 @@
             devices = [ "magicant" "nbl-imba-2" ];
             id = "hgr3d-pfu3w";
           };
-          ".elfeed" = {
-            path = "/Vault/data/syncthing/.elfeed";
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
-            id = "h7xbs-fs9v1";
-          };
+          # ".elfeed" = {
+          #   path = "/Vault/data/syncthing/.elfeed";
+          #   devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+          #   id = "h7xbs-fs9v1";
+          # };
         };
       };
     };

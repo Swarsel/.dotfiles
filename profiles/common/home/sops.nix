@@ -7,7 +7,7 @@ let
 in
 {
   sops = {
-    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;
@@ -17,7 +17,6 @@ in
       leon = { path = "/run/user/1000/secrets/leon"; };
       swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
       github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-      fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
     };
   };
 }
