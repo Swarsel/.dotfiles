@@ -45,7 +45,11 @@
       save = 10000;
       size = 10000;
     };
-    historySubstringSearch.enable = true;
+    historySubstringSearch = {
+      enable = true;
+      searchDownKey = "^[OB";
+      searchUpKey = "^[OA";
+    };
     plugins = [
       {
         name = "fzf-tab";
