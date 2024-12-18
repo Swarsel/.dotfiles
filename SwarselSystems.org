@@ -3033,19 +3033,18 @@ This program sets up a new NixOS host.
       shift
   done
 
-  if [[ -z ${FLAKE} ]]; then
-      FLAKE=/home/"$target_user"/.dotfiles
-  fi
-  if [ ! -d "$FLAKE" ]; then
-      cd /home/"$target_user"
-      yellow "Flake directory not found - cloning repository from GitHub"
-      git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
-      FLAKE=/home/"$target_user"/.dotfiles
+  cd /home/"$target_user"
+
+  if [ ! -d /home"$target_user"/.dotfiles ]; then
+      green "Cloning repository from GitHub"
+      git clone https://github.com/Swarsel/.dotfiles.git
   fi
 
-  cd "$FLAKE"
+  cd .dotfiles
+  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
   green "Installing flake $target_flake"
-  sudo nixos-rebuild --show-trace --flake .#"$target_flake" switch
+  sudo nixos-rebuild --show-trace --flake .#"$target_flake" --keep-going switch
 #+end_src
 
 

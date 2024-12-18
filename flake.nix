@@ -206,6 +206,11 @@
           type = "app";
           program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
         };
+
+        install = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+        };
       });
       devShells = forAllSystems (
         system:
