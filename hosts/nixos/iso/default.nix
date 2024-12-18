@@ -1,4 +1,4 @@
-{ self, inputs, config, lib, modulesPath, ... }:
+{ self, pkgs, inputs, config, lib, modulesPath, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -17,6 +17,8 @@ in
 
   ];
 
+  environment.etc."issue".text = "\\4\n";
+  networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
 
   isoImage = {
     makeEfiBootable = true;

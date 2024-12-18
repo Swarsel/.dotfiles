@@ -1188,7 +1188,7 @@ This is a list of all physical machines that I maintain.
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, inputs, config, lib, modulesPath, ... }:
+  { self, pkgs, inputs, config, lib, modulesPath, ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
   in
@@ -1207,6 +1207,8 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
     ];
 
+    environment.etc."issue".text = "\\4\n";
+    networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
 
     isoImage = {
       makeEfiBootable = true;
@@ -1817,7 +1819,6 @@ My phone. I use only a minimal config for remote debugging here.
       ];
       motd = null;
     };
-
 
     android-integration = {
       termux-open.enable = true;

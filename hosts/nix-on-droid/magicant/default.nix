@@ -24,7 +24,6 @@
     motd = null;
   };
 
-
   android-integration = {
     termux-open.enable = true;
     xdg-open.enable = true;
