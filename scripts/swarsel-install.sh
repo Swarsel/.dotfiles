@@ -52,13 +52,28 @@ done
 
 cd /home/"$target_user"
 
-if [ ! -d /home"$target_user"/.dotfiles ]; then
+if [ ! -d /home/"$target_user"/.dotfiles ]; then
     green "Cloning repository from GitHub"
     git clone https://github.com/Swarsel/.dotfiles.git
 fi
 
+local_keys=$(ssh-add -L || true)
+pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+read -ra pub_arr <<< "$pub_key"
+
 cd .dotfiles
+if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+    yellow "The ssh key for this configuration is not available."
+    green "Adjusting flake.nix so that the configuration is buildable"
+    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+    git add flake.nix
+fi
 sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
 git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
 green "Installing flake $target_flake"
-sudo nixos-rebuild --show-trace --flake .#"$target_flake" --keep-going switch
+sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
+yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+git restore --staged /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+git restore /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+git restore --staged /home/"$target_user"/.dotfiles/flake.nix
+git restore /home/"$target_user"/.dotfiles/flake.nix
