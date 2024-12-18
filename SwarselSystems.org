@@ -8027,6 +8027,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         leon = { path = "/run/user/1000/secrets/leon"; };
         swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
         github_notif = { path = "/run/user/1000/secrets/github_notif"; };
+        u2f_keys = { path = "${config.home.homeDirectory}/.config/Yubico/u2f_keys"; };
       };
     };
   }
@@ -10295,7 +10296,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 
 #+begin_src nix :tangle profiles/common/home/gpg-agent.nix
-  { pkgs, ... }:
+  { self, pkgs, ... }:
   {
     services.gpg-agent = {
       enable = true;
@@ -10308,7 +10309,26 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
         allow-loopback-pinentry
         allow-emacs-pinentry
       '';
+      sshKeys = [
+        "4BE7925262289B476DBBC17B76FD3810215AE097"
+      ];
     };
+
+    programs.gpg = {
+      enable = true;
+      publicKeys = [
+        {
+          source = "${self}/secrets/keys/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+          trust = 5;
+        }
+      ];
+    };
+
+    # assure correct permissions
+    systemd.user.tmpfiles.rules = [
+      "d /home/swarsel/.gnupg 700 swarsel users"
+    ];
+
   }
 #+end_src
 
