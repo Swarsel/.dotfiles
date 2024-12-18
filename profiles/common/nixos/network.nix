@@ -17,7 +17,7 @@
 
     networkmanager = {
       enable = true;
-      ensureProfiles = {
+      ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
         environmentFiles = [
           "${config.sops.templates."network-manager.env".path}"
         ];

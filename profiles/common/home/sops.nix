@@ -6,7 +6,7 @@ let
   ];
 in
 {
-  sops = {
+  sops = lib.mkIf (!config.swarselsystems.isPublic) {
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 

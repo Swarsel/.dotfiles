@@ -3138,6 +3138,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
       type = types.bool;
       default = true;
     };
+    options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
     options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
     options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
@@ -3452,6 +3453,7 @@ These are some extra options that will be used if the machine also runs NixOS. F
       default = "";
     };
     options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+    options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
       {
         command = "sleep 60 && nixGL nextcloud --background";
@@ -4017,7 +4019,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 #+begin_src nix :tangle profiles/common/nixos/users.nix
   { pkgs, config, lib, ... }:
   {
-    sops.secrets.swarseluser = { neededForUsers = true; };
+    sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
     users = {
       mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
@@ -4241,7 +4243,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
       networkmanager = {
         enable = true;
-        ensureProfiles = {
+        ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
           environmentFiles = [
             "${config.sops.templates."network-manager.env".path}"
           ];
@@ -4523,7 +4525,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     ];
   in
   {
-    sops = {
+    sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
       age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
@@ -7864,7 +7866,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     ];
   in
   {
-    sops = {
+    sops = lib.mkIf (!config.swarselsystems.isPublic) {
       age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 
@@ -8908,26 +8910,26 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix :tangle profiles/common/home/mail.nix
-  { config, ... }:
+  { lib, config, ... }:
   {
-    programs.mbsync = {
+    programs.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
     };
-    services.mbsync = {
+    services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
     };
     # this is needed so that mbsync can use the passwords from sops
-    systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
+    systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
 
-    programs.msmtp = {
+    programs.msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
     };
 
-    programs.mu = {
+    programs.mu = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
     };
 
-    accounts.email = {
+    accounts.email = lib.mkIf (!config.swarselsystems.isPublic) {
       maildirBasePath = "Mail";
       accounts.leon = {
         primary = true;
@@ -8935,7 +8937,6 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
         userName = "leon.schwarzaeugl@gmail.com";
         realName = "Leon Schwarzäugl";
         passwordCommand = "cat ${config.sops.secrets.leon.path}";
-        # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/leon.schwarzaeugl@gmail.com.gpg";
         gpg = {
           key = "0x76FD3810215AE097";
           signByDefault = true;
@@ -8963,7 +8964,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
         };
       };
 
-      accounts.swarsel = {
+      accounts.swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
         address = "leon@swarsel.win";
         userName = "8227dc594dd515ce232eda1471cb9a19";
         realName = "Leon Schwarzäugl";
@@ -8985,13 +8986,12 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
         };
       };
 
-      accounts.nautilus = {
+      accounts.nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
         primary = false;
         address = "nautilus.dw@gmail.com";
         userName = "nautilus.dw@gmail.com";
         realName = "Nautilus";
         passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
-        # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/nautilus.dw@gmail.com.gpg";
         imap.host = "imap.gmail.com";
         smtp.host = "smtp.gmail.com";
         msmtp.enable = true;
@@ -9012,12 +9012,11 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
           };
         };
       };
-      accounts.mrswarsel = {
+      accounts.mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
         primary = false;
         address = "mrswarsel@gmail.com";
         userName = "mrswarsel@gmail.com";
         realName = "Swarsel";
-        # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/mrswarsel@gmail.com.gpg";
         passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
         imap.host = "imap.gmail.com";
         smtp.host = "smtp.gmail.com";
@@ -9053,11 +9052,11 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix :tangle profiles/common/home/emacs.nix
-  { self, config, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   {
 
     # needed for elfeed
-    sops.secrets.fever = { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+    sops.secrets.fever = lib.mkIf (!config.swarselsystems.isPublic) { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
 
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages

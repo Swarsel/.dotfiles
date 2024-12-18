@@ -12,6 +12,7 @@ in
     type = types.bool;
     default = true;
   };
+  options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
   options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
   options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";

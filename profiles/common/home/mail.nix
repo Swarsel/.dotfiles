@@ -1,23 +1,23 @@
-{ config, ... }:
+{ lib, config, ... }:
 {
-  programs.mbsync = {
+  programs.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
-  services.mbsync = {
+  services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
   # this is needed so that mbsync can use the passwords from sops
-  systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
+  systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
 
-  programs.msmtp = {
+  programs.msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
 
-  programs.mu = {
+  programs.mu = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
 
-  accounts.email = {
+  accounts.email = lib.mkIf (!config.swarselsystems.isPublic) {
     maildirBasePath = "Mail";
     accounts.leon = {
       primary = true;
@@ -25,7 +25,6 @@
       userName = "leon.schwarzaeugl@gmail.com";
       realName = "Leon Schwarzäugl";
       passwordCommand = "cat ${config.sops.secrets.leon.path}";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/leon.schwarzaeugl@gmail.com.gpg";
       gpg = {
         key = "0x76FD3810215AE097";
         signByDefault = true;
@@ -53,7 +52,7 @@
       };
     };
 
-    accounts.swarsel = {
+    accounts.swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
       address = "leon@swarsel.win";
       userName = "8227dc594dd515ce232eda1471cb9a19";
       realName = "Leon Schwarzäugl";
@@ -75,13 +74,12 @@
       };
     };
 
-    accounts.nautilus = {
+    accounts.nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
       primary = false;
       address = "nautilus.dw@gmail.com";
       userName = "nautilus.dw@gmail.com";
       realName = "Nautilus";
       passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/nautilus.dw@gmail.com.gpg";
       imap.host = "imap.gmail.com";
       smtp.host = "smtp.gmail.com";
       msmtp.enable = true;
@@ -102,12 +100,11 @@
         };
       };
     };
-    accounts.mrswarsel = {
+    accounts.mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
       primary = false;
       address = "mrswarsel@gmail.com";
       userName = "mrswarsel@gmail.com";
       realName = "Swarsel";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/mrswarsel@gmail.com.gpg";
       passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
       imap.host = "imap.gmail.com";
       smtp.host = "smtp.gmail.com";

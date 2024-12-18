@@ -1,6 +1,6 @@
 { pkgs, config, lib, ... }:
 {
-  sops.secrets.swarseluser = { neededForUsers = true; };
+  sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
   users = {
     mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;

@@ -5,6 +5,7 @@
     default = "";
   };
   options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+  options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
     {
       command = "sleep 60 && nixGL nextcloud --background";
