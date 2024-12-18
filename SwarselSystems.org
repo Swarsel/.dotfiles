@@ -1057,6 +1057,11 @@ In this section I am creating some attributes that define general concepts of my
       type = "app";
       program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
     };
+
+    install = {
+      type = "app";
+      program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+    };
   });
   devShells = forAllSystems (
     system:
@@ -1179,256 +1184,6 @@ Every host is housed in the =hosts/= directory, which is then subdivided by each
 :END:
 
 This is a list of all physical machines that I maintain.
-
-**** drugstore (ISO)
-:PROPERTIES:
-:CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
-:END:
-
-This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
-
-#+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, pkgs, inputs, config, lib, modulesPath, ... }:
-  let
-    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
-  in
-  {
-
-    imports = [
-
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.disko.nixosModules.disko
-    inputs.impermanence.nixosModules.impermanence
-    inputs.sops-nix.nixosModules.sops
-    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-    "${modulesPath}/installer/cd-dvd/channel.nix"
-
-    "${self}/profiles/iso/minimal.nix"
-
-    ];
-
-    environment.etc."issue".text = "\\4\n";
-    networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
-
-    isoImage = {
-      makeEfiBootable = true;
-      makeUsbBootable = true;
-      squashfsCompression = "zstd -Xcompression-level 3";
-    };
-
-    nixpkgs = {
-      hostPlatform = lib.mkDefault "x86_64-linux";
-      config.allowUnfree = true;
-    };
-
-    services.getty.autologinUser = lib.mkForce "swarsel";
-
-    users = {
-      allowNoPasswordLogin = true;
-      groups.swarsel = {};
-      users = {
-        swarsel = {
-          name = "swarsel";
-          group = "swarsel";
-          isNormalUser = true;
-          password = "setup"; # this is overwritten after install
-          openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
-          extraGroups = [ "wheel" ];
-        };
-        root = {
-          # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
-        };
-      };
-    };
-
-    boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
-      loader.efi.canTouchEfiVariables = true;
-    };
-
-    systemd = {
-      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-      targets = {
-        sleep.enable = false;
-        suspend.enable = false;
-        hibernate.enable = false;
-        hybrid-sleep.enable = false;
-      };
-    };
-
-    system.stateVersion = lib.mkForce "23.05";
-
-    networking = {
-      hostName = "drugstore";
-      wireless.enable = false;
-    };
-
-  }
-
-
-#+end_src
-
-**** Home-manager only (non-NixOS)
-:PROPERTIES:
-:CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
-:END:
-
-This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
-
-#+begin_src nix :tangle hosts/home-manager/default/default.nix
-  { self, inputs, outputs, config, ... }:
-  {
-
-    imports = builtins.attrValues outputs.homeManagerModules;
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    services.xcape = {
-      enable = true;
-      mapExpression = {
-        Control_L = "Escape";
-      };
-    };
-
-    programs.zsh.initExtra = "
-    export GPG_TTY=\"$(tty)\"
-    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-    gpgconf --launch gpg-agent
-          ";
-
-    swarselsystems = {
-      isLaptop = true;
-      isNixos = false;
-      wallpaper = self + /wallpaper/surfacewp.png;
-      temperatureHwmon = {
-        isAbsolutePath = true;
-        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-        input-filename = "temp1_input";
-      };
-      monitors = {
-        main = {
-          name = "California Institute of Technology 0x1407 Unknown";
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          workspace = "2:二";
-          output = "eDP-1";
-        };
-      };
-      inputs = {
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-      };
-      keybindings = { };
-    };
-
-  }
-
-
-#+end_src
-
-**** Toto (QEMU VM)
-
-#+begin_src nix :tangle hosts/nixos/toto/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
-  let
-    profilesPath = "${self}/profiles";
-  in
-  {
-
-    imports =  [
-      inputs.disko.nixosModules.disko
-      "${self}/hosts/nixos/toto/disk-config.nix"
-      {
-        _module.args = {
-          withSwap = false;
-        };
-      }
-      ./hardware-configuration.nix
-
-      inputs.sops-nix.nixosModules.sops
-
-      "${profilesPath}/optional/nixos/autologin.nix"
-      "${profilesPath}/common/nixos/settings.nix"
-      "${profilesPath}/common/nixos/home-manager.nix"
-      "${profilesPath}/common/nixos/xserver.nix"
-      "${profilesPath}/common/nixos/users.nix"
-      "${profilesPath}/common/nixos/sops.nix"
-      "${profilesPath}/server/nixos/ssh.nix"
-
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports =  [
-          inputs.sops-nix.homeManagerModules.sops
-          "${profilesPath}/common/home/settings.nix"
-          "${profilesPath}/common/home/sops.nix"
-          "${profilesPath}/common/home/ssh.nix"
-
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    environment.systemPackages = with pkgs; [
-      curl
-      git
-      gnupg
-      rsync
-      ssh-to-age
-      sops
-      vim
-      just
-    ];
-
-    system.stateVersion = lib.mkForce "23.05";
-
-    boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
-      loader.efi.canTouchEfiVariables = true;
-      supportedFilesystems = [ "btrfs" ];
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    };
-
-
-    networking = {
-      hostName = "toto";
-      firewall.enable = false;
-    };
-
-    swarselsystems = {
-      wallpaper = self + /wallpaper/lenovowp.png;
-      impermanence = false;
-      isBtrfs = false;
-      initialSetup = true;
-    };
-
-    home-manager.users.swarsel.swarselsystems = {
-      isLaptop = false;
-      isNixos = true;
-      isBtrfs = false;
-      flakePath = "/home/swarsel/.dotfiles";
-    };
-
-  }
-
-
-#+end_src
 
 **** nbl-imba-2 (Framework Laptop 16)
 :PROPERTIES:
@@ -1851,6 +1606,100 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 
+**** Toto (QEMU VM)
+
+#+begin_src nix :tangle hosts/nixos/toto/default.nix
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+
+    imports =  [
+      inputs.disko.nixosModules.disko
+      "${self}/hosts/nixos/toto/disk-config.nix"
+      {
+        _module.args = {
+          withSwap = false;
+        };
+      }
+      ./hardware-configuration.nix
+
+      inputs.sops-nix.nixosModules.sops
+
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/common/nixos/settings.nix"
+      "${profilesPath}/common/nixos/home-manager.nix"
+      "${profilesPath}/common/nixos/xserver.nix"
+      "${profilesPath}/common/nixos/users.nix"
+      "${profilesPath}/common/nixos/sops.nix"
+      "${profilesPath}/server/nixos/ssh.nix"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports =  [
+          inputs.sops-nix.homeManagerModules.sops
+          "${profilesPath}/common/home/settings.nix"
+          "${profilesPath}/common/home/sops.nix"
+          "${profilesPath}/common/home/ssh.nix"
+
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      curl
+      git
+      gnupg
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+    ];
+
+    system.stateVersion = lib.mkForce "23.05";
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      supportedFilesystems = [ "btrfs" ];
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+
+    networking = {
+      hostName = "toto";
+      firewall.enable = false;
+    };
+
+    swarselsystems = {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      impermanence = false;
+      isBtrfs = false;
+      initialSetup = true;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = false;
+      isNixos = true;
+      isBtrfs = false;
+      flakePath = "/home/swarsel/.dotfiles";
+    };
+
+  }
+
+
+#+end_src
+
 **** Sync (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
@@ -1964,6 +1813,223 @@ This machine mainly acts as an external sync helper. It manages the following th
   }
 
 #+end_src
+*** Utility hosts
+**** drugstore (ISO)
+:PROPERTIES:
+:CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
+:END:
+
+This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
+
+#+begin_src nix :tangle hosts/nixos/iso/default.nix
+  { self, pkgs, inputs, config, lib, modulesPath, ... }:
+  let
+    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+  in
+  {
+
+    imports = [
+
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
+    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+    "${modulesPath}/installer/cd-dvd/channel.nix"
+
+    "${self}/profiles/iso/minimal.nix"
+
+    ];
+
+    environment.etc."issue".text = "\\4\n";
+    networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+
+    isoImage = {
+      makeEfiBootable = true;
+      makeUsbBootable = true;
+      squashfsCompression = "zstd -Xcompression-level 3";
+    };
+
+    nixpkgs = {
+      hostPlatform = lib.mkDefault "x86_64-linux";
+      config.allowUnfree = true;
+    };
+
+    services.getty.autologinUser = lib.mkForce "swarsel";
+
+    users = {
+      allowNoPasswordLogin = true;
+      groups.swarsel = {};
+      users = {
+        swarsel = {
+          name = "swarsel";
+          group = "swarsel";
+          isNormalUser = true;
+          password = "setup"; # this is overwritten after install
+          openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+          extraGroups = [ "wheel" ];
+        };
+        root = {
+          # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+        };
+      };
+    };
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+    };
+
+    systemd = {
+      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+      targets = {
+        sleep.enable = false;
+        suspend.enable = false;
+        hibernate.enable = false;
+        hybrid-sleep.enable = false;
+      };
+    };
+
+    system.stateVersion = lib.mkForce "23.05";
+
+    networking = {
+      hostName = "drugstore";
+      wireless.enable = false;
+    };
+
+  }
+
+
+#+end_src
+
+**** Home-manager only (non-NixOS)
+:PROPERTIES:
+:CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
+:END:
+
+This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
+
+#+begin_src nix :tangle hosts/home-manager/default/default.nix
+  { self, inputs, outputs, config, ... }:
+  {
+
+    imports = builtins.attrValues outputs.homeManagerModules;
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+
+    programs.zsh.initExtra = "
+    export GPG_TTY=\"$(tty)\"
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    gpgconf --launch gpg-agent
+          ";
+
+    swarselsystems = {
+      isLaptop = true;
+      isNixos = false;
+      wallpaper = self + /wallpaper/surfacewp.png;
+      temperatureHwmon = {
+        isAbsolutePath = true;
+        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+        input-filename = "temp1_input";
+      };
+      monitors = {
+        main = {
+          name = "California Institute of Technology 0x1407 Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "2:二";
+          output = "eDP-1";
+        };
+      };
+      inputs = {
+        "1:1:AT_Translated_Set_2_keyboard" = {
+          xkb_layout = "us";
+          xkb_options = "grp:win_space_toggle";
+          xkb_variant = "altgr-intl";
+        };
+      };
+      keybindings = { };
+    };
+
+  }
+
+
+#+end_src
+
+**** ChaosTheatre (Demo)
+
+My work machine. Built for more security, this is the gold standard of my configurations at the moment.
+
+
+#+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+
+    imports = outputs.nixModules ++ [
+
+      ./hardware-configuration.nix
+
+      "${profilesPath}/optional/nixos/autologin.nix"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports =  outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+    networking = {
+      hostName = "chaostheatre";
+      firewall.enable = true;
+    };
+
+
+    swarselsystems = {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      initialSetup = true;
+      isPublic = true;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isNixos = true;
+      isPublic = true;
+      flakePath = "/home/swarsel/.dotfiles";
+    };
+  }
+
+
+#+end_src
 
 ** Additions and modifications
 :PROPERTIES:
@@ -2010,6 +2076,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "github-notifications"
       "screenshare"
       "bootstrap"
+      "swarsel-install"
       "t2ts"
       "ts2t"
       "vershell"
@@ -2906,6 +2973,90 @@ This program sets up a new NixOS host.
     name = "bootstrap";
     runtimeInputs = [ openssh ];
     text = builtins.readFile ../../scripts/bootstrap.sh;
+  }
+#+end_src
+
+**** install
+
+This program sets up a new NixOS host.
+
+#+begin_src shell :tangle scripts/swarsel-install.sh
+  set -eo pipefail
+
+  target_flake="chaostheatre"
+  target_user="swarsel"
+
+  function help_and_exit() {
+      echo
+      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo
+      echo "USAGE: $0 [OPTIONS]"
+      echo
+      echo "ARGS:"
+      echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+      echo "                                          Default: chaostheatre"
+      echo "  -u <target_user>                        specify user to deploy for."
+      echo "                                          Default: swarsel"
+      echo "  -h | --help                             Print this help."
+      exit 0
+  }
+
+  function green() {
+      echo -e "\x1B[32m[+] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+      fi
+  }
+  function yellow() {
+      echo -e "\x1B[33m[*] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[33m[*] $($2) \x1B[0m"
+      fi
+  }
+
+  while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -f)
+          shift
+          target_flake=$1
+          ;;
+      -u)
+          shift
+          target_user=$1
+          ;;
+      -h | --help) help_and_exit ;;
+      ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+      esac
+      shift
+  done
+
+  if [[ -z ${FLAKE} ]]; then
+      FLAKE=/home/"$target_user"/.dotfiles
+  fi
+  if [ ! -d "$FLAKE" ]; then
+      cd /home/"$target_user"
+      yellow "Flake directory not found - cloning repository from GitHub"
+      git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" && git clone https://github.com/Swarsel/.dotfiles.git)
+      FLAKE=/home/"$target_user"/.dotfiles
+  fi
+
+  cd "$FLAKE"
+  green "Installing flake $target_flake"
+  sudo nixos-rebuild --show-trace --flake .#"$target_flake" switch
+#+end_src
+
+
+
+#+begin_src nix :tangle pkgs/swarsel-install/default.nix
+  { writeShellApplication, git }:
+
+  writeShellApplication {
+    name = "swarsel-install";
+    runtimeInputs = [ git ];
+    text = builtins.readFile ../../scripts/swarsel-install.sh;
   }
 #+end_src
 
