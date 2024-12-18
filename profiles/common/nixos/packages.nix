@@ -28,6 +28,7 @@
 
     # nix package database
     nix-index
+    nixos-generators
 
     # commit hooks
     pre-commit
