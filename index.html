@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-15 So 23:45 -->
+<!-- 2024-12-19 Do 14:30 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -205,9 +205,9 @@
 <li><a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">2. Noweb-Ref blocks and supplementary files</a>
 <ul>
 <li><a href="#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78">2.1. Theme (stylix)</a></li>
-<li><a href="#orgc362433">2.2. Server Emacs config</a></li>
-<li><a href="#org0236683">2.3. tridactylrc</a></li>
-<li><a href="#org644d103">2.4. Waybar style.css</a></li>
+<li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">2.2. Server Emacs config</a></li>
+<li><a href="#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">2.3. tridactylrc</a></li>
+<li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">2.4. Waybar style.css</a></li>
 </ul>
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">3. flake.nix</a>
@@ -229,21 +229,27 @@
 <ul>
 <li><a href="#h:58dc6384-0d19-4f71-9043-4014bd033ba2">4.1.1. Physical hosts</a>
 <ul>
-<li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.1.1. live (ISO)</a></li>
-<li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.1.2. Home-manager only (non-NixOS)</a></li>
-<li><a href="#h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">4.1.1.3. nbl-imba-2 (Framework Laptop 16)</a></li>
-<li><a href="#h:932ef6b0-4c14-4200-8e3f-2e208e748746">4.1.1.4. Winters (Server)</a></li>
-<li><a href="#h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">4.1.1.5. nbm-imba-166 (MacBook Pro)</a></li>
-<li><a href="#h:729af373-37e7-4379-9a3d-b09792219415">4.1.1.6. Magicant (Phone)</a></li>
+<li><a href="#h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">4.1.1.1. nbl-imba-2 (Framework Laptop 16)</a></li>
+<li><a href="#h:932ef6b0-4c14-4200-8e3f-2e208e748746">4.1.1.2. Winters (Server)</a></li>
+<li><a href="#h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">4.1.1.3. nbm-imba-166 (MacBook Pro)</a></li>
+<li><a href="#h:729af373-37e7-4379-9a3d-b09792219415">4.1.1.4. Magicant (Phone)</a></li>
 </ul>
 </li>
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">4.1.2. Virtual hosts</a>
 <ul>
-<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.1. Sync (OCI)</a>
+<li><a href="#org1bce807">4.1.2.1. Toto (QEMU VM)</a></li>
+<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.2. Sync (OCI)</a>
 <ul>
-<li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.1.1. NixOS</a></li>
+<li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.2.1. NixOS</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li><a href="#org85280e0">4.1.3. Utility hosts</a>
+<ul>
+<li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.3.1. drugstore (ISO)</a></li>
+<li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.3.2. Home-manager only (non-NixOS)</a></li>
+<li><a href="#orga93e6ab">4.1.3.3. ChaosTheatre (Demo)</a></li>
 </ul>
 </li>
 </ul>
@@ -269,8 +275,10 @@
 <li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">4.2.1.15. github-notifications</a></li>
 <li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">4.2.1.16. screenshare</a></li>
 <li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">4.2.1.17. bootstrap</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.18. t2ts</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.19. ts2t</a></li>
+<li><a href="#org03741df">4.2.1.18. swarsel-install</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.19. t2ts</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.20. ts2t</a></li>
+<li><a href="#org718a9f4">4.2.1.21. vershell</a></li>
 </ul>
 </li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">4.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
@@ -375,7 +383,7 @@
 <li><a href="#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">4.3.2.10. navidrome</a></li>
 <li><a href="#h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41">4.3.2.11. spotifyd</a></li>
 <li><a href="#h:baa4149b-3788-4b05-87ec-0ee9d0726117">4.3.2.12. mpd</a></li>
-<li><a href="#orgde0cfa3">4.3.2.13. pipewire</a></li>
+<li><a href="#h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a">4.3.2.13. pipewire</a></li>
 <li><a href="#h:1e68d84a-8f99-422f-89ac-78f664ac0013">4.3.2.14. matrix</a></li>
 <li><a href="#h:d11ad8d5-25d7-4691-b319-61c16ccef715">4.3.2.15. nextcloud</a></li>
 <li><a href="#h:33bad8ad-b362-4bf1-8a49-b9df92329aed">4.3.2.16. immich</a></li>
@@ -386,8 +394,9 @@
 <li><a href="#h:a31c7192-e11d-4a26-915d-1bbc38e373d3">4.3.2.21. monitoring</a></li>
 <li><a href="#h:23452a18-a0a1-4515-8612-ceb19bb5fc22">4.3.2.22. Jenkins</a></li>
 <li><a href="#h:4e6824bc-c3db-485d-b543-4072e6283b62">4.3.2.23. Emacs elfeed (RSS Server)</a></li>
-<li><a href="#org9658831">4.3.2.24. forgejo (git server)</a></li>
-<li><a href="#org4d9221c">4.3.2.25. Anki Sync Server</a></li>
+<li><a href="#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d">4.3.2.24. FreshRSS</a></li>
+<li><a href="#h:a9965660-4358-4b9a-8c46-d55f28598344">4.3.2.25. forgejo (git server)</a></li>
+<li><a href="#h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4">4.3.2.26. Anki Sync Server</a></li>
 </ul>
 </li>
 <li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">4.3.3. Darwin</a>
@@ -663,7 +672,7 @@
 <li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">5.4.44. Calendar</a></li>
 <li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">5.4.45. Dashboard: emacs startup screen</a></li>
 <li><a href="#h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">5.4.46. vterm</a></li>
-<li><a href="#orgc1d9667">5.4.47. multiple cursors</a></li>
+<li><a href="#h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">5.4.47. multiple cursors</a></li>
 </ul>
 </li>
 </ul>
@@ -672,7 +681,7 @@
 </div>
 </div>
 <p>
-<b>This file has 53086 words spanning 13798 lines and was last revised on 2024-12-15 23:45:43 +0100.</b>
+<b>This file has 56301 words spanning 14353 lines and was last revised on 2024-12-19 14:30:50 +0100.</b>
 </p>
 
 <p>
@@ -725,7 +734,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-15 23:45:43 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-19 14:30:50 +0100)
 </p></li>
 </ul>
 
@@ -891,11 +900,11 @@ fonts = {
 </div>
 </div>
 </div>
-<div id="outline-container-orgc362433" class="outline-3">
-<h3 id="orgc362433"><span class="section-number-3">2.2.</span> Server Emacs config</h3>
-<div class="outline-text-3" id="text-2-2">
+<div id="outline-container-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8" class="outline-3">
+<h3 id="h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8"><span class="section-number-3">2.2.</span> Server Emacs config</h3>
+<div class="outline-text-3" id="text-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">
 <p>
-On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server.
+On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using <code>bjm/elfeed-updater</code>. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change <code>(elfeed-db-load)</code> in <code>bjm/elfeed-updater</code> to <code>(elfeed-db-save)</code>.
 </p>
 
 
@@ -969,18 +978,14 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 (defun bjm/elfeed-updater ()
   "Wrapper to load the elfeed db from disk before opening"
   (interactive)
-  (elfeed-db-save)
-  (quit-window)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
+  (elfeed-db-load))
 
-(run-with-timer 0 (* 30 60) 'bjm/elfeed-updater)
+(run-with-timer 0 (* 1 60) 'bjm/elfeed-updater)
 
 (setq httpd-port 9812)
 (setq httpd-host "0.0.0.0")
 (setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
+(setq elfeed-db-directory "/var/lib/syncthing/.elfeed/db/")
 
 (httpd-start)
 (elfeed-web-start)
@@ -989,11 +994,11 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 </div>
 </div>
 </div>
-<div id="outline-container-org0236683" class="outline-3">
-<h3 id="org0236683"><span class="section-number-3">2.3.</span> tridactylrc</h3>
-<div class="outline-text-3" id="text-2-3">
+<div id="outline-container-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51" class="outline-3">
+<h3 id="h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51"><span class="section-number-3">2.3.</span> tridactylrc</h3>
+<div class="outline-text-3" id="text-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">
 <p>
-This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox
+This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
 </p>
 
 
@@ -1100,9 +1105,9 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 </div>
 </div>
 </div>
-<div id="outline-container-org644d103" class="outline-3">
-<h3 id="org644d103"><span class="section-number-3">2.4.</span> Waybar style.css</h3>
-<div class="outline-text-3" id="text-2-4">
+<div id="outline-container-h:77b1c523-5074-4610-b320-90af95e6134d" class="outline-3">
+<h3 id="h:77b1c523-5074-4610-b320-90af95e6134d"><span class="section-number-3">2.4.</span> Waybar style.css</h3>
+<div class="outline-text-3" id="text-h:77b1c523-5074-4610-b320-90af95e6134d">
 <p>
 This is the stylesheet used by waybar.
 </p>
@@ -1612,6 +1617,19 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
       homeManagerModules = import ./modules/home;
 
       packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+      apps = forAllSystems (system: {
+        default = self.apps.${system}.bootstrap;
+
+        bootstrap = {
+          type = "app";
+          program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
+        };
+
+        install = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+        };
+      });
       devShells = forAllSystems (
         system:
         let
@@ -1786,8 +1804,21 @@ This provides a database for <code>nix-index</code> that is updated weekly. This
 disko provides declarative disk partitioning, which I use for impermanence as well as <a href="https://github.com/nix-community/nixos-anywhere">nixos-anywhere</a>.</li>
 <li><a href="https://github.com/nix-community/impermanence">Impermanence</a>
 Some of my machines are using a btrfs filesystem that wipes the root directory on each reboot. This forces me to pay more attention in keeping my system declarative as well as helping me keeping the system uncluttered. However, it is a chore to make sure that important files are not deleted. This flake helps with this problem, allowing me to select files and directories for persisting.</li>
+<li><a href="https://github.com/dj95/zjstatus">zjstatus</a>
+This provides utilities for customizing a statusbar in zellij. Currently unused as I prefer tmux for now and might be removed in the future.</li>
+<li><a href="https://github.com/TamtamHero/fw-fanctrl">fw-fanctrl</a>
+This provides access to the internal fans of Frameworks laptops. This is a bit more nice to use than directly using ectool.</li>
+<li><a href="https://github.com/LnL7/nix-darwin">nix-darwin</a>
+After learning that MacOS systems can also be configured using nix, I managed to get access to an old MacBook for testing. This allows to set most general settings that can otherwise be set using the Mac GUI.</li>
+<li><a href="https://github.com/cachix/git-hooks.nix">pre-commit-hooks</a>
+Provides access to several checks that can be hooked to be run before several stages in the process.</li>
+<li>nix-secrets
+This is a private repository that I use for settings in modules that do not expose a <code>secretsFile</code> (or similar) option. An example is the <code>LastFM.ApiKey</code> option in <a href="#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">navidrome</a>:
+<code>LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";</code></li>
 </ul>
-
+<p>
+When setting this option normally, the password would normally be written world-readable not only in the nix store, but also in the configuration. Hence, I put such passwords into a private repository. This allows me to keep purity of the flake while keeping a level of security on these secrets.
+</p>
 
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -2022,6 +2053,19 @@ nixosModules = import ./modules/nixos;
 homeManagerModules = import ./modules/home;
 
 packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
+apps = forAllSystems (system: {
+  default = self.apps.${system}.bootstrap;
+
+  bootstrap = {
+    type = "app";
+    program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
+  };
+
+  install = {
+    type = "app";
+    program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+  };
+});
 devShells = forAllSystems (
   system:
   let
@@ -2141,169 +2185,27 @@ magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
 <div id="outline-container-h:02cd20be-1ffa-4904-9d5a-da5a89ba1421" class="outline-2">
 <h2 id="h:02cd20be-1ffa-4904-9d5a-da5a89ba1421"><span class="section-number-2">4.</span> System</h2>
 <div class="outline-text-2" id="text-h:02cd20be-1ffa-4904-9d5a-da5a89ba1421">
+<p>
+This holds most of the NixOS side of configuration.
+</p>
 </div>
 <div id="outline-container-h:88bf4b90-e94b-46fb-aaf1-a381a512860d" class="outline-3">
 <h3 id="h:88bf4b90-e94b-46fb-aaf1-a381a512860d"><span class="section-number-3">4.1.</span> System specific configuration</h3>
 <div class="outline-text-3" id="text-h:88bf4b90-e94b-46fb-aaf1-a381a512860d">
 <p>
-This section mainly exists house different `configuration.nix` files for system level configurations of NixOS systems as well as `home.nix` for user level configurations on all systems.
+This section mainly exists house different `default.nix` files to define some modules that should be loaded on respective systems.
+Every host is housed in the <code>hosts/</code> directory, which is then subdivided by each respective system (<code>nixos/</code>, <code>home-manager/</code>, <code>nix-on-droid/</code>, <code>darwin/</code>). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 </p>
 </div>
 <div id="outline-container-h:58dc6384-0d19-4f71-9043-4014bd033ba2" class="outline-4">
 <h4 id="h:58dc6384-0d19-4f71-9043-4014bd033ba2"><span class="section-number-4">4.1.1.</span> Physical hosts</h4>
 <div class="outline-text-4" id="text-h:58dc6384-0d19-4f71-9043-4014bd033ba2">
-</div>
-<div id="outline-container-h:8583371d-5d47-468b-84ba-210aad7e2c90" class="outline-5">
-<h5 id="h:8583371d-5d47-468b-84ba-210aad7e2c90"><span class="section-number-5">4.1.1.1.</span> live (ISO)</h5>
-<div class="outline-text-5" id="text-h:8583371d-5d47-468b-84ba-210aad7e2c90">
-<div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, config, pkgs, lib, modulesPath, ... }:
-let
-  pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
-in
-{
-
-  imports = [
-
-  inputs.lanzaboote.nixosModules.lanzaboote
-  inputs.disko.nixosModules.disko
-  inputs.impermanence.nixosModules.impermanence
-  inputs.sops-nix.nixosModules.sops
-  "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-  "${modulesPath}/installer/cd-dvd/channel.nix"
-
-  "${self}/profiles/iso//minimal.nix"
-
-  ];
-
-
-  isoImage = {
-    makeEfiBootable = true;
-    makeUsbBootable = true;
-    squashfsCompression = "zstd -Xcompression-level 3";
-  };
-
-  nixpkgs = {
-    hostPlatform = lib.mkDefault "x86_64-linux";
-    config.allowUnfree = true;
-  };
-
-  services.getty.autologinUser = lib.mkForce "swarsel";
-
-  users = {
-    groups.swarsel = {};
-    users = {
-      swarsel = {
-        name = "swarsel";
-        group = "swarsel";
-        isNormalUser = true;
-        shell = pkgs.zsh;
-        password = "setup"; # this is overwritten after install
-        openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
-      };
-      root = {
-        shell = pkgs.zsh;
-        password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-        openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
-      };
-    };
-  };
-
-  systemd = {
-    services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-    targets = {
-      sleep.enable = false;
-      suspend.enable = false;
-      hibernate.enable = false;
-      hybrid-sleep.enable = false;
-    };
-  };
-
-  system.stateVersion = lib.mkForce "23.05";
-
-  networking = {
-    hostName = "live";
-    wireless.enable = false;
-  };
-
-}
-
-
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493" class="outline-5">
-<h5 id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"><span class="section-number-5">4.1.1.2.</span> Home-manager only (non-NixOS)</h5>
-<div class="outline-text-5" id="text-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">
 <p>
-This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
+This is a list of all physical machines that I maintain.
 </p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, ... }:
-{
-
-  imports = builtins.attrValues outputs.homeManagerModules;
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
-  services.xcape = {
-    enable = true;
-    mapExpression = {
-      Control_L = "Escape";
-    };
-  };
-
-  programs.zsh.initExtra = "
-  export GPG_TTY=\"$(tty)\"
-  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-  gpgconf --launch gpg-agent
-        ";
-
-  swarselsystems = {
-    isLaptop = true;
-    isNixos = false;
-    wallpaper = self + /wallpaper/surfacewp.png;
-    temperatureHwmon = {
-      isAbsolutePath = true;
-      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      input-filename = "temp1_input";
-    };
-    monitors = {
-      main = {
-        name = "California Institute of Technology 0x1407 Unknown";
-        mode = "1920x1080"; # TEMPLATE
-        scale = "1";
-        position = "2560,0";
-        workspace = "2:二";
-        output = "eDP-1";
-      };
-    };
-    inputs = {
-      "1:1:AT_Translated_Set_2_keyboard" = {
-        xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
-        xkb_variant = "altgr-intl";
-      };
-    };
-    keybindings = { };
-  };
-
-}
-
-
-</pre>
-</div>
-</div>
 </div>
 <div id="outline-container-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9" class="outline-5">
-<h5 id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"><span class="section-number-5">4.1.1.3.</span> nbl-imba-2 (Framework Laptop 16)</h5>
+<h5 id="h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9"><span class="section-number-5">4.1.1.1.</span> nbl-imba-2 (Framework Laptop 16)</h5>
 <div class="outline-text-5" id="text-h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9">
 <p>
 My work machine. Built for more security, this is the gold standard of my configurations at the moment.
@@ -2403,6 +2305,8 @@ in
     isLaptop = true;
     isNixos = true;
     isBtrfs = true;
+    flakePath = "/home/swarsel/.dotfiles";
+    cpuCount = 16;
     # temperatureHwmon = {
     #   isAbsolutePath = true;
     #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
@@ -2534,8 +2438,12 @@ in
 </div>
 </div>
 <div id="outline-container-h:932ef6b0-4c14-4200-8e3f-2e208e748746" class="outline-5">
-<h5 id="h:932ef6b0-4c14-4200-8e3f-2e208e748746"><span class="section-number-5">4.1.1.4.</span> Winters (Server)</h5>
+<h5 id="h:932ef6b0-4c14-4200-8e3f-2e208e748746"><span class="section-number-5">4.1.1.2.</span> Winters (Server)</h5>
 <div class="outline-text-5" id="text-h:932ef6b0-4c14-4200-8e3f-2e208e748746">
+<p>
+This is my main server that I run at home. It handles most tasks that require bigger amounts of storage than I can receive for free at OCI. Also it houses some data that I find too sensitive to hand over to Oracle.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, config, ... }:
 let
@@ -2602,6 +2510,7 @@ in
       transmission = true;
       syncthing = true;
       monitoring = true;
+      freshrss = true;
     };
   };
 
@@ -2613,8 +2522,12 @@ in
 </div>
 </div>
 <div id="outline-container-h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d" class="outline-5">
-<h5 id="h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d"><span class="section-number-5">4.1.1.5.</span> nbm-imba-166 (MacBook Pro)</h5>
+<h5 id="h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d"><span class="section-number-5">4.1.1.3.</span> nbm-imba-166 (MacBook Pro)</h5>
 <div class="outline-text-5" id="text-h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">
+<p>
+A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, ... }:
 let
@@ -2654,8 +2567,12 @@ in
 </div>
 </div>
 <div id="outline-container-h:729af373-37e7-4379-9a3d-b09792219415" class="outline-5">
-<h5 id="h:729af373-37e7-4379-9a3d-b09792219415"><span class="section-number-5">4.1.1.6.</span> Magicant (Phone)</h5>
+<h5 id="h:729af373-37e7-4379-9a3d-b09792219415"><span class="section-number-5">4.1.1.4.</span> Magicant (Phone)</h5>
 <div class="outline-text-5" id="text-h:729af373-37e7-4379-9a3d-b09792219415">
+<p>
+My phone. I use only a minimal config for remote debugging here.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">
 { pkgs, ... }: {
@@ -2669,6 +2586,10 @@ in
       man
       gnupg
       curl
+      deadnix
+      statix
+      nixpgks-fmt
+      nvd
     ];
 
     etcBackupExtension = ".bak";
@@ -2679,7 +2600,6 @@ in
     ];
     motd = null;
   };
-
 
   android-integration = {
     termux-open.enable = true;
@@ -2717,8 +2637,105 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 </p>
 </div>
+<div id="outline-container-org1bce807" class="outline-5">
+<h5 id="org1bce807"><span class="section-number-5">4.1.2.1.</span> Toto (QEMU VM)</h5>
+<div class="outline-text-5" id="text-4-1-2-1">
+<div class="org-src-container">
+<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
+{
+
+  imports =  [
+    inputs.disko.nixosModules.disko
+    "${self}/hosts/nixos/toto/disk-config.nix"
+    {
+      _module.args = {
+        withSwap = false;
+      };
+    }
+    ./hardware-configuration.nix
+
+    inputs.sops-nix.nixosModules.sops
+
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/common/nixos/settings.nix"
+    "${profilesPath}/common/nixos/home-manager.nix"
+    "${profilesPath}/common/nixos/xserver.nix"
+    "${profilesPath}/common/nixos/users.nix"
+    "${profilesPath}/common/nixos/sops.nix"
+    "${profilesPath}/server/nixos/ssh.nix"
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports =  [
+        inputs.sops-nix.homeManagerModules.sops
+        "${profilesPath}/common/home/settings.nix"
+        "${profilesPath}/common/home/sops.nix"
+        "${profilesPath}/common/home/ssh.nix"
+
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
+  ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+  nixpkgs = {
+    overlays = [ outputs.overlays.default ];
+    config = {
+      allowUnfree = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    curl
+    git
+    gnupg
+    rsync
+    ssh-to-age
+    sops
+    vim
+    just
+  ];
+
+  system.stateVersion = lib.mkForce "23.05";
+
+  boot = {
+    loader.systemd-boot.enable = lib.mkForce true;
+    loader.efi.canTouchEfiVariables = true;
+    supportedFilesystems = [ "btrfs" ];
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+  };
+
+
+  networking = {
+    hostName = "toto";
+    firewall.enable = false;
+  };
+
+  swarselsystems = {
+    wallpaper = self + /wallpaper/lenovowp.png;
+    impermanence = false;
+    isBtrfs = false;
+    initialSetup = true;
+  };
+
+  home-manager.users.swarsel.swarselsystems = {
+    isLaptop = false;
+    isNixos = true;
+    isBtrfs = false;
+    flakePath = "/home/swarsel/.dotfiles";
+  };
+
+}
+
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf" class="outline-5">
-<h5 id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"><span class="section-number-5">4.1.2.1.</span> Sync (OCI)</h5>
+<h5 id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"><span class="section-number-5">4.1.2.2.</span> Sync (OCI)</h5>
 <div class="outline-text-5" id="text-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">
 <p>
 This machine mainly acts as an external sync helper. It manages the following things:
@@ -2737,7 +2754,7 @@ All of these are processes that use little cpu but can take a lot of storage. Fo
 </ul>
 </div>
 <div id="outline-container-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c" class="outline-6">
-<h6 id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"><span class="section-number-6">4.1.2.1.1.</span> NixOS</h6>
+<h6 id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"><span class="section-number-6">4.1.2.2.1.</span> NixOS</h6>
 <div class="outline-text-6" id="text-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, lib, ... }:
@@ -2828,7 +2845,6 @@ in
       enable = true;
       forgejo = true;
       ankisync = true;
-      emacs = true;
     };
   };
 
@@ -2836,6 +2852,237 @@ in
 
 </pre>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org85280e0" class="outline-4">
+<h4 id="org85280e0"><span class="section-number-4">4.1.3.</span> Utility hosts</h4>
+<div class="outline-text-4" id="text-4-1-3">
+</div>
+<div id="outline-container-h:8583371d-5d47-468b-84ba-210aad7e2c90" class="outline-5">
+<h5 id="h:8583371d-5d47-468b-84ba-210aad7e2c90"><span class="section-number-5">4.1.3.1.</span> drugstore (ISO)</h5>
+<div class="outline-text-5" id="text-h:8583371d-5d47-468b-84ba-210aad7e2c90">
+<p>
+This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the <code>bootstrap</code> utility.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, pkgs, inputs, config, lib, modulesPath, ... }:
+let
+  pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+in
+{
+
+  imports = [
+
+  inputs.lanzaboote.nixosModules.lanzaboote
+  inputs.disko.nixosModules.disko
+  inputs.impermanence.nixosModules.impermanence
+  inputs.sops-nix.nixosModules.sops
+  "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+  "${modulesPath}/installer/cd-dvd/channel.nix"
+
+  "${self}/profiles/iso/minimal.nix"
+
+  ];
+
+  environment.etc."issue".text = "\\4\n";
+  networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+
+  isoImage = {
+    makeEfiBootable = true;
+    makeUsbBootable = true;
+    squashfsCompression = "zstd -Xcompression-level 3";
+  };
+
+  nixpkgs = {
+    hostPlatform = lib.mkDefault "x86_64-linux";
+    config.allowUnfree = true;
+  };
+
+  services.getty.autologinUser = lib.mkForce "swarsel";
+
+  users = {
+    allowNoPasswordLogin = true;
+    groups.swarsel = {};
+    users = {
+      swarsel = {
+        name = "swarsel";
+        group = "swarsel";
+        isNormalUser = true;
+        password = "setup"; # this is overwritten after install
+        openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+        extraGroups = [ "wheel" ];
+      };
+      root = {
+        # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+        openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+      };
+    };
+  };
+
+  boot = {
+    loader.systemd-boot.enable = lib.mkForce true;
+    loader.efi.canTouchEfiVariables = true;
+  };
+
+  systemd = {
+    services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+    targets = {
+      sleep.enable = false;
+      suspend.enable = false;
+      hibernate.enable = false;
+      hybrid-sleep.enable = false;
+    };
+  };
+
+  system.stateVersion = lib.mkForce "23.05";
+
+  networking = {
+    hostName = "drugstore";
+    wireless.enable = false;
+  };
+
+}
+
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493" class="outline-5">
+<h5 id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"><span class="section-number-5">4.1.3.2.</span> Home-manager only (non-NixOS)</h5>
+<div class="outline-text-5" id="text-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">
+<p>
+This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, inputs, outputs, config, ... }:
+{
+
+  imports = builtins.attrValues outputs.homeManagerModules;
+
+  nixpkgs = {
+    overlays = [ outputs.overlays.default ];
+    config = {
+      allowUnfree = true;
+    };
+  };
+
+  services.xcape = {
+    enable = true;
+    mapExpression = {
+      Control_L = "Escape";
+    };
+  };
+
+  programs.zsh.initExtra = "
+  export GPG_TTY=\"$(tty)\"
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  gpgconf --launch gpg-agent
+        ";
+
+  swarselsystems = {
+    isLaptop = true;
+    isNixos = false;
+    wallpaper = self + /wallpaper/surfacewp.png;
+    temperatureHwmon = {
+      isAbsolutePath = true;
+      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
+      input-filename = "temp1_input";
+    };
+    monitors = {
+      main = {
+        name = "California Institute of Technology 0x1407 Unknown";
+        mode = "1920x1080"; # TEMPLATE
+        scale = "1";
+        position = "2560,0";
+        workspace = "2:二";
+        output = "eDP-1";
+      };
+    };
+    inputs = {
+      "1:1:AT_Translated_Set_2_keyboard" = {
+        xkb_layout = "us";
+        xkb_options = "grp:win_space_toggle";
+        xkb_variant = "altgr-intl";
+      };
+    };
+    keybindings = { };
+  };
+
+}
+
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga93e6ab" class="outline-5">
+<h5 id="orga93e6ab"><span class="section-number-5">4.1.3.3.</span> ChaosTheatre (Demo)</h5>
+<div class="outline-text-5" id="text-4-1-3-3">
+<p>
+My work machine. Built for more security, this is the gold standard of my configurations at the moment.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+in
+{
+
+  imports = outputs.nixModules ++ [
+
+    ./hardware-configuration.nix
+
+    "${profilesPath}/optional/nixos/autologin.nix"
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports =  outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+    }
+  ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+  nixpkgs = {
+    overlays = [ outputs.overlays.default ];
+    config = {
+      allowUnfree = true;
+    };
+  };
+
+
+  boot = {
+    loader.systemd-boot.enable = lib.mkForce true;
+    loader.efi.canTouchEfiVariables = true;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+  };
+
+  networking = {
+    hostName = "chaostheatre";
+    firewall.enable = true;
+  };
+
+
+  swarselsystems = {
+    wallpaper = self + /wallpaper/lenovowp.png;
+    initialSetup = true;
+    isPublic = true;
+  };
+
+  home-manager.users.swarsel.swarselsystems = {
+    isNixos = true;
+    isPublic = true;
+    flakePath = "/home/swarsel/.dotfiles";
+  };
+}
+
+
+</pre>
 </div>
 </div>
 </div>
@@ -2892,8 +3139,10 @@ let
     "github-notifications"
     "screenshare"
     "bootstrap"
+    "swarsel-install"
     "t2ts"
     "ts2t"
+    "vershell"
   ];
   mkPackages = names: builtins.listToAttrs (map (name: {
     inherit name;
@@ -3612,6 +3861,31 @@ function yes_or_no() {
     done
 }
 
+function update_sops_file() {
+    key_name=$1
+    key_type=$2
+    key=$3
+
+    if [ ! "$key_type" == "hosts" ] &amp;&amp; [ ! "$key_type" == "users" ]; then
+        red "Invalid key type passed to update_sops_file. Must be either 'hosts' or 'users'."
+        exit 1
+    fi
+    cd "${git_root}"
+
+    SOPS_FILE=".sops.yaml"
+    sed -i "{
+                          # Remove any * and &amp; entries for this host
+                          /[*&amp;]$key_name/ d;
+                          # Inject a new age: entry
+                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                          # Inject a new hosts or user: entry
+                          /&amp;$key_type/{n; p; s/\(.*- &amp;\).*/\1$key_name $key/}
+                          }" $SOPS_FILE
+    green "Updating .sops.yaml"
+    cd -
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -n)
@@ -3649,20 +3923,149 @@ done
 ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
 # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
 ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
-
 scp_cmd="scp -oport=${ssh_port} -o StrictHostKeyChecking=no"
 
-git_root=$(git rev-parse --show-toplevel)
+if [[ -z ${FLAKE} ]]; then
+    FLAKE=/home/"$target_user"/.dotfiles
+fi
+if [ ! -d "$FLAKE" ]; then
+    cd /home/"$target_user"
+    yellow "Flake directory not found - cloning repository from GitHub"
+    git clone git@github.com:Swarsel/.dotfiles.git || (yellow "Could not clone repository via SSH - defaulting to HTTPS" &amp;&amp; git clone https://github.com/Swarsel/.dotfiles.git)
+    FLAKE=/home/"$target_user"/.dotfiles
+fi
 
+cd "$FLAKE"
+git_root=$(git rev-parse --show-toplevel)
+# ------------------------
 green "Wiping known_hosts of $target_destination"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
-
+# ------------------------
+green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
+# Create the directory where sshd expects to find the host keys
+install -d -m755 "$temp/etc/ssh"
+# Generate host ssh key pair without a passphrase
+ssh-keygen -t ed25519 -f "$temp/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
+# Set the correct permissions so sshd will accept the key
+chmod 600 "$temp/etc/ssh/ssh_host_ed25519_key"
+echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+# This will fail if we already know the host, but that's fine
+ssh-keyscan -p "$ssh_port" "$target_destination" &gt;&gt; ~/.ssh/known_hosts || true
+# ------------------------
+# when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
+# via the config
+green "Preparing a temporary password for disko."
+green "[Optional] Set disk encryption passphrase:"
+read -rs luks_passphrase
+if [ -n "$luks_passphrase" ]; then
+    $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase &gt; /tmp/disko-password'"
+else
+    $ssh_root_cmd "/bin/sh -c 'echo passphrase &gt; /tmp/disko-password'"
+fi
+# ------------------------
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
-$ssh_root_cmd "nixos-generate-config --no-filesystems --root /mnt"
-mkdir profiles/"$target_hostname"
-$scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/profiles/"$target_hostname"/hardware-configuration.nix
+$ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
+$scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+# ------------------------
+green "Deploying minimal NixOS installation on $target_destination"
+SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
+
+echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+ssh-keyscan -p "$ssh_port" "$target_destination" &gt;&gt; ~/.ssh/known_hosts || true
+# ------------------------
+
+while true; do
+    read -rp "Press Enter to continue once the remote host has finished booting."
+    if nc -z "$target_destination" "${ssh_port}" 2&gt; /dev/null; then
+        green "$target_destination is booted. Continuing..."
+        break
+    else
+        yellow "$target_destination is not yet ready."
+    fi
+done
+# ------------------------
+green "Generating an age key based on the new ssh_host_ed25519_key."
+target_key=$(
+    ssh-keyscan -p "$ssh_port" -t ssh-ed25519 "$target_destination" 2&gt;&amp;1 |
+        grep ssh-ed25519 |
+        cut -f2- -d" " ||
+        (
+            red "Failed to get ssh key. Host down?"
+            exit 1
+        )
+)
+host_age_key=$(nix shell nixpkgs#ssh-to-age.out -c sh -c "echo $target_key | ssh-to-age")
+
+if grep -qv '^age1' &lt;&lt;&lt; "$host_age_key"; then
+    red "The result from generated age key does not match the expected format."
+    yellow "Result: $host_age_key"
+    yellow "Expected format: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    exit 1
+else
+    echo "$host_age_key"
+fi
+
+green "Updating nix-secrets/.sops.yaml"
+update_sops_file "$target_hostname" "hosts" "$host_age_key"
+yellow ".sops.yaml has been updated. There may be superfluous entries, you might need to edit manually."
+if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
+    vim "${git_root}"/.sops.yaml
+fi
+green "Updating all secrets files to reflect updates .sops.yaml"
+sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
+# --------------------------
+green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+$scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
+$ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
+# __________________________
+
+if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
+    green "Adding ssh host fingerprints for git{lab,hub}"
+    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win &gt;&gt; /home/$target_user/.ssh/known_hosts"
+    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win &gt;&gt; /root/.ssh/known_hosts"
+fi
+# --------------------------
+
+if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $target_hostname?"; then
+    green "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
+    ssh-keyscan -p "$ssh_port" "$target_destination" &gt;&gt; ~/.ssh/known_hosts || true
+    green "Copying full nix-config to $target_hostname"
+    cd "${git_root}"
+    just sync "$target_user" "$target_destination"
+
+    if yes_or_no "Do you want to rebuild immediately?"; then
+        green "Rebuilding nix-config on $target_hostname"
+        $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' &gt; /root/.local/share/nix/trusted-settings.json"
+        $ssh_cmd -oForwardAgent=yes "cd .dotfiles &amp;&amp; sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+    fi
+else
+    echo
+    green "NixOS was successfully installed!"
+    echo "Post-install config build instructions:"
+    echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
+    echo "just sync $target_user $target_destination"
+    echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
+    echo "cd nix-config"
+    # see above FIXME:(bootstrap)
+    echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+    # echo "just rebuild"
+    echo
+fi
+
+if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
+    cd "${git_root}"
+    deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
+    nixpkgs-fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
+    (pre-commit run --all-files 2&gt; /dev/null || true) &amp;&amp;
+        git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &amp;&amp;
+        git add "$git_root/.sops.yaml" &amp;&amp;
+        git add "$git_root/secrets" &amp;&amp;
+        (git commit -m "feat: deployed $target_hostname" || true) &amp;&amp; git push
+fi
 </pre>
 </div>
+
 
 
 <div class="org-src-container">
@@ -3677,8 +4080,114 @@ writeShellApplication {
 </div>
 </div>
 </div>
+<div id="outline-container-org03741df" class="outline-5">
+<h5 id="org03741df"><span class="section-number-5">4.2.1.18.</span> swarsel-install</h5>
+<div class="outline-text-5" id="text-4-2-1-18">
+<p>
+This program sets up a new NixOS host.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">set -eo pipefail
+
+target_flake="chaostheatre"
+target_user="swarsel"
+
+function help_and_exit() {
+    echo
+    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo
+    echo "USAGE: $0 [OPTIONS]"
+    echo
+    echo "ARGS:"
+    echo "  -f &lt;target_flake&gt;                       specify flake to deploy the nixos config of."
+    echo "                                          Default: chaostheatre"
+    echo "  -u &lt;target_user&gt;                        specify user to deploy for."
+    echo "                                          Default: swarsel"
+    echo "  -h | --help                             Print this help."
+    exit 0
+}
+
+function green() {
+    echo -e "\x1B[32m[+] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[32m[+] $($2) \x1B[0m"
+    fi
+}
+function yellow() {
+    echo -e "\x1B[33m[*] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[33m[*] $($2) \x1B[0m"
+    fi
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -f)
+        shift
+        target_flake=$1
+        ;;
+    -u)
+        shift
+        target_user=$1
+        ;;
+    -h | --help) help_and_exit ;;
+    *)
+        echo "Invalid option detected."
+        help_and_exit
+        ;;
+    esac
+    shift
+done
+
+cd /home/"$target_user"
+
+if [ ! -d /home/"$target_user"/.dotfiles ]; then
+    green "Cloning repository from GitHub"
+    git clone https://github.com/Swarsel/.dotfiles.git
+fi
+
+local_keys=$(ssh-add -L || true)
+pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+read -ra pub_arr &lt;&lt;&lt; "$pub_key"
+
+cd .dotfiles
+if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+    yellow "The ssh key for this configuration is not available."
+    green "Adjusting flake.nix so that the configuration is buildable"
+    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+    git add flake.nix
+fi
+sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+sudo mkdir -p /root/.local/share/nix/
+printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' &gt; /root/.local/share/nix/trusted-settings.json
+green "Installing flake $target_flake"
+sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
+yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+git restore --staged /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+git restore /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+git restore --staged /home/"$target_user"/.dotfiles/flake.nix
+git restore /home/"$target_user"/.dotfiles/flake.nix
+</pre>
+</div>
+
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, git }:
+
+writeShellApplication {
+  name = "swarsel-install";
+  runtimeInputs = [ git ];
+  text = builtins.readFile ../../scripts/swarsel-install.sh;
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.18.</span> t2ts</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.19.</span> t2ts</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -3700,7 +4209,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.19.</span> ts2t</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.20.</span> ts2t</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -3721,6 +4230,28 @@ writeShellApplication {
 </div>
 </div>
 </div>
+<div id="outline-container-org718a9f4" class="outline-5">
+<h5 id="org718a9f4"><span class="section-number-5">4.2.1.21.</span> vershell</h5>
+<div class="outline-text-5" id="text-4-2-1-21">
+<p>
+This script allows for quick git branch switching.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication }:
+
+writeShellApplication {
+  name = "vershell";
+  runtimeInputs = [ ];
+  text = ''
+    nix shell github:nixos/nixpkgs/"$1"#"$2";
+  '';
+}
+
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:5e3e21e0-57af-4dad-b32f-6400af9b7aab" class="outline-4">
 <h4 id="h:5e3e21e0-57af-4dad-b32f-6400af9b7aab"><span class="section-number-4">4.2.2.</span> Overlays (additions, overrides, nixpkgs-stable)</h4>
@@ -3729,6 +4260,9 @@ writeShellApplication {
 This file now holds all of the "nixpkgs-changes" that I am using across the configurations. Most notable here are the <code>modifications</code>, where I am editing derivations according to my needs.
 </p>
 
+<p>
+When adding a new entry here, do not forget to add it in the default output of this file, otherwise it will not be exposed to the rest of the system.
+</p>
 
 <div class="org-src-container">
 <pre class="src src-nix">{ inputs, ... }:
@@ -3810,7 +4344,7 @@ Note: The structure of generating the packages was changed in commit <code>2cf03
 <h5 id="h:14e68518-8ec7-48ec-b208-0e3d6d49954d"><span class="section-number-5">4.2.3.1.</span> NixOS</h5>
 <div class="outline-text-5" id="text-h:14e68518-8ec7-48ec-b208-0e3d6d49954d">
 <p>
-Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS
+Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 </p>
 
 <div class="org-src-container">
@@ -3901,6 +4435,7 @@ in
     type = types.bool;
     default = true;
   };
+  options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
   options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
   options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
@@ -3920,6 +4455,7 @@ in
   options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
   options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
   options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
+  options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
 }
 </pre>
 </div>
@@ -3928,6 +4464,10 @@ in
 <div id="outline-container-h:45188d3c-9910-480b-beec-d5fd713b05fb" class="outline-6">
 <h6 id="h:45188d3c-9910-480b-beec-d5fd713b05fb"><span class="section-number-6">4.2.3.1.4.</span> Input</h6>
 <div class="outline-text-6" id="text-h:45188d3c-9910-480b-beec-d5fd713b05fb">
+<p>
+This section is for everything input-related on the NixOS side. At the moment, this is only used to define shell aliases for servers.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
 let
@@ -4227,7 +4767,12 @@ These are some extra options that will be used if the machine also runs NixOS. F
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
+  options.swarselsystems.flakePath = lib.mkOption {
+    type = lib.types.str;
+    default = "";
+  };
   options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
+  options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
     {
       command = "sleep 60 &amp;&amp; nixGL nextcloud --background";
@@ -4262,11 +4807,14 @@ These are some extra options that will be used if the machine also runs NixOS. F
 <div id="outline-container-h:79f7150f-b162-4f57-abdf-07f40dffd932" class="outline-6">
 <h6 id="h:79f7150f-b162-4f57-abdf-07f40dffd932"><span class="section-number-6">4.2.3.2.7.</span> darwin</h6>
 <div class="outline-text-6" id="text-h:79f7150f-b162-4f57-abdf-07f40dffd932">
+<p>
+Provides settings related to nix-darwin systems. At the moment, I am only making use of a <code>isDarwin</code> flag.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
 {
   options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
-
 }
 </pre>
 </div>
@@ -4683,6 +5231,10 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
     # nix package database
     nix-index
+    nixos-generators
+
+    # commit hooks
+    pre-commit
 
     # proc info
     acpi
@@ -4770,7 +5322,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 <h5 id="h:7f6d6908-4d02-4907-9c70-f802f4358520"><span class="section-number-5">4.3.1.4.</span> Setup home-manager</h5>
 <div class="outline-text-5" id="text-h:7f6d6908-4d02-4907-9c70-f802f4358520">
 <p>
-First, we enable the use of <code>home-manager</code> as a NixoS modul.
+We enable the use of <code>home-manager</code> as a NixoS module. A nice trick here is the <code>extraSpecialArgs = inputs</code> line, which enables the use of <code>seflf</code> in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 </p>
 
 <div class="org-src-container">
@@ -4790,7 +5342,7 @@ First, we enable the use of <code>home-manager</code> as a NixoS modul.
 <h5 id="h:7248f338-8cad-4443-9060-deae7955b26f"><span class="section-number-5">4.3.1.5.</span> Setup login keymap</h5>
 <div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
-Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is extremly comfortable to use
+Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
 </p>
 
 <div class="org-src-container">
@@ -4812,18 +5364,24 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 <div class="outline-text-5" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
 <p>
 This ensures that all user-configuration happens here in the config file.
+In case of using a fully setup system, this makes also sure that no further user level modifications can be made using CLI utilities (e.g. usermod etc.). Everything must be defined in the flake.
+</p>
+
+<p>
+For that reason, make sure that <code>sops-nix</code> is properly working before setting the <code>initialSetup</code> flag, otherwise you might lose user access.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, config, lib, ... }:
 {
-  sops.secrets.swarseluser = { neededForUsers = true; };
+  sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
   users = {
     mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
     users.swarsel = {
       isNormalUser = true;
       description = "Leon S";
+      password = lib.mkIf config.swarselsystems.initialSetup "setup";
       hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
       extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
       packages = with pkgs; [ ];
@@ -4866,7 +5424,7 @@ Next, we will setup some environment variables that need to be set on the system
 <h5 id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"><span class="section-number-5">4.3.1.8.</span> Security</h5>
 <div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
-Needed for control over system-wide privileges etc.
+Needed for control over system-wide privileges etc. Also I make sure that the root user has access to <code>SSH_AUTH_SOCK</code> (without this, root will not be able to read my <code>nix-secrets</code> repository).
 </p>
 
 <div class="org-src-container">
@@ -4881,6 +5439,9 @@ Needed for control over system-wide privileges etc.
   };
   security.polkit.enable = true;
 
+  security.sudo.extraConfig = ''
+    Defaults    env_keep+=SSH_AUTH_SOCK
+  '';
 
 }
 </pre>
@@ -5031,7 +5592,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 <h5 id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"><span class="section-number-5">4.3.1.14.</span> Common network settings</h5>
 <div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
-Here I only enable <code>networkmanager</code>. Most of the 'real' network config is done in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
+Here I only enable <code>networkmanager</code> and a few default networks. The rest of the network config is done separately in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
 </p>
 
 <div class="org-src-container">
@@ -5054,7 +5615,7 @@ Here I only enable <code>networkmanager</code>. Most of the 'real' network confi
 
     networkmanager = {
       enable = true;
-      ensureProfiles = {
+      ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
         environmentFiles = [
           "${config.sops.templates."network-manager.env".path}"
         ];
@@ -5342,9 +5903,9 @@ let
   ];
 in
 {
-  sops = {
+  sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-    age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" ];
+    age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;
@@ -6073,7 +6634,7 @@ This snipped is added to the activation script that is run after every rebuild a
   system.activationScripts.diff = {
     supportsDryActivation = true;
     text = ''
-      ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff \
+      ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
            /run/current-system "$systemConfig"
     '';
   };
@@ -6342,6 +6903,7 @@ in
   ./emacs.nix
   ./forgejo.nix
   ./ankisync.nix
+  ./freshrss.nix
   ];
 }
 </pre>
@@ -6395,6 +6957,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     ssh-to-age
     git
     emacs
+    vim
   ];
 }
 </pre>
@@ -6409,7 +6972,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 {
   sops = {
     age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/sops" ];
-    defaultSopsFile = lib.mkDefault "${config.swarselsystems.flakePath}/secrets/server/winters/secrets.yaml";
+    defaultSopsFile = lib.mkDefault "${config.swarselsystems.flakePath}/secrets/winters/secrets.yaml";
     validateSopsFiles = false;
   };
 
@@ -6851,9 +7414,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgde0cfa3" class="outline-5">
-<h5 id="orgde0cfa3"><span class="section-number-5">4.3.2.13.</span> pipewire</h5>
-<div class="outline-text-5" id="text-4-3-2-13">
+<div id="outline-container-h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a" class="outline-5">
+<h5 id="h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a"><span class="section-number-5">4.3.2.13.</span> pipewire</h5>
+<div class="outline-text-5" id="text-h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7597,11 +8160,11 @@ in
             devices = [ "magicant" "nbl-imba-2" ];
             id = "hgr3d-pfu3w";
           };
-          ".elfeed" = {
-            path = "/Vault/data/syncthing/.elfeed";
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
-            id = "h7xbs-fs9v1";
-          };
+          # ".elfeed" = {
+          #   path = "/Vault/data/syncthing/.elfeed";
+          #   devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+          #   id = "h7xbs-fs9v1";
+          # };
         };
       };
     };
@@ -7633,6 +8196,10 @@ in
 <div id="outline-container-h:b73ac8bf-b721-4563-9eff-973925c99a39" class="outline-5">
 <h5 id="h:b73ac8bf-b721-4563-9eff-973925c99a39"><span class="section-number-5">4.3.2.20.</span> restic</h5>
 <div class="outline-text-5" id="text-h:b73ac8bf-b721-4563-9eff-973925c99a39">
+<p>
+Once this is finished, it will house a restic client that manages automatic backups of my image library. Before I get to this however, I first need to organice my pictures in the first place.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7649,6 +8216,10 @@ in
 <div id="outline-container-h:a31c7192-e11d-4a26-915d-1bbc38e373d3" class="outline-5">
 <h5 id="h:a31c7192-e11d-4a26-915d-1bbc38e373d3"><span class="section-number-5">4.3.2.21.</span> monitoring</h5>
 <div class="outline-text-5" id="text-h:a31c7192-e11d-4a26-915d-1bbc38e373d3">
+<p>
+This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ self, lib, config, ... }:
 {
@@ -7817,6 +8388,10 @@ in
 <div id="outline-container-h:23452a18-a0a1-4515-8612-ceb19bb5fc22" class="outline-5">
 <h5 id="h:23452a18-a0a1-4515-8612-ceb19bb5fc22"><span class="section-number-5">4.3.2.22.</span> Jenkins</h5>
 <div class="outline-text-5" id="text-h:23452a18-a0a1-4515-8612-ceb19bb5fc22">
+<p>
+This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I have turned this service off for now however, as I actually prefer to start my builds manually.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ pkgs, lib, config, ... }:
 {
@@ -7860,6 +8435,10 @@ in
 <div id="outline-container-h:4e6824bc-c3db-485d-b543-4072e6283b62" class="outline-5">
 <h5 id="h:4e6824bc-c3db-485d-b543-4072e6283b62"><span class="section-number-5">4.3.2.23.</span> Emacs elfeed (RSS Server)</h5>
 <div class="outline-text-5" id="text-h:4e6824bc-c3db-485d-b543-4072e6283b62">
+<p>
+This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of <a href="#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d">FreshRSS</a>.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7873,20 +8452,55 @@ in
       startWithGraphical = false;
     };
 
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d" class="outline-5">
+<h5 id="h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d"><span class="section-number-5">4.3.2.24.</span> FreshRSS</h5>
+<div class="outline-text-5" id="text-h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d">
+<p>
+FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
+</p>
+
+<p>
+It serves both a Greader API at <a href="https://signpost.swarsel.win/api/greader.php">https://signpost.swarsel.win/api/greader.php</a>, as well as a Fever API at     <a href="https://signpost.swarsel.win/api/fever.php">https://signpost.swarsel.win/api/fever.php</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+{
+  config = lib.mkIf config.swarselsystems.server.freshrss {
+
+    users.users.freshrss = {
+      extraGroups = [ "users" ];
+      group = "freshrss";
+      isSystemUser = true;
+    };
+
+    users.groups.freshrss = {};
+
+    sops.secrets.fresh = { owner = "freshrss"; };
+
+    services.freshrss = {
+      enable = true;
+      virtualHost = "signpost.swarsel.win";
+      baseUrl = "https://signpost.swarsel.win";
+      # authType = "none";
+      dataDir = "/Vault/data/tt-rss";
+      defaultUser = "Swarsel";
+      passwordFile = config.sops.secrets.fresh.path;
+    };
+
     services.nginx = {
       virtualHosts = {
         "signpost.swarsel.win" = {
-          enableACME = false;
-          forceSSL = false;
+          enableACME = true;
+          forceSSL = true;
           acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://localhost:9812";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
         };
       };
     };
@@ -7897,9 +8511,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9658831" class="outline-5">
-<h5 id="org9658831"><span class="section-number-5">4.3.2.24.</span> forgejo (git server)</h5>
-<div class="outline-text-5" id="text-4-3-2-24">
+<div id="outline-container-h:a9965660-4358-4b9a-8c46-d55f28598344" class="outline-5">
+<h5 id="h:a9965660-4358-4b9a-8c46-d55f28598344"><span class="section-number-5">4.3.2.25.</span> forgejo (git server)</h5>
+<div class="outline-text-5" id="text-h:a9965660-4358-4b9a-8c46-d55f28598344">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -7951,9 +8565,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org4d9221c" class="outline-5">
-<h5 id="org4d9221c"><span class="section-number-5">4.3.2.25.</span> Anki Sync Server</h5>
-<div class="outline-text-5" id="text-4-3-2-25">
+<div id="outline-container-h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4" class="outline-5">
+<h5 id="h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4"><span class="section-number-5">4.3.2.26.</span> Anki Sync Server</h5>
+<div class="outline-text-5" id="text-h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, ... }:
 {
@@ -8375,6 +8989,11 @@ These options are really only to be used on the iso image in order to run nixos-
     };
   };
 
+  security.sudo.extraConfig = ''
+    Defaults    env_keep+=SSH_AUTH_SOCK
+    Defaults lecture = never
+  '';
+
   security.pam = {
     sshAgentAuth.enable = true;
     services = {
@@ -8384,6 +9003,8 @@ These options are really only to be used on the iso image in order to run nixos-
 
   environment.systemPackages = with pkgs; [
     curl
+    git
+    gnupg
     rsync
     ssh-to-age
     sops
@@ -8393,7 +9014,6 @@ These options are really only to be used on the iso image in order to run nixos-
 
   programs = {
     git.enable = true;
-    zsh.enable = lib.mkDefault true;
   };
 
   fileSystems."/boot".options = [ "umask=0077" ];
@@ -8499,7 +9119,7 @@ Again, we adapt <code>nix</code> to our needs, enable the home-manager command f
     stateVersion = lib.mkDefault "23.05";
     keyboard.layout = "us";
     sessionVariables = {
-      FLAKE = "$HOME/.dotfiles";
+      FLAKE = "${config.home.homeDirectory}/.dotfiles";
     };
   };
 }
@@ -8558,11 +9178,11 @@ This holds packages that I can use as provided, or with small modifications (as 
     nmap
     lsof
     nvd
-    nh
     nix-output-monitor
     hyprpicker # color picker
     findutils
     units
+    vim
 
     # nix
     alejandra
@@ -8724,6 +9344,9 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
     hm-specialisation
     t2ts
     ts2t
+    vershell
+
+    bootstrap
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash
@@ -8794,8 +9417,8 @@ let
   ];
 in
 {
-  sops = {
-    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" ];
+  sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;
@@ -8805,7 +9428,7 @@ in
       leon = { path = "/run/user/1000/secrets/leon"; };
       swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
       github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-      # caldav = { path = "${config.home.homeDirectory}/.emacs.d/.caldav"; };
+      u2f_keys = { path = "${config.home.homeDirectory}/.config/Yubico/u2f_keys"; };
     };
   };
 }
@@ -9127,13 +9750,16 @@ This section is for programs that require no further configuration. zsh Integrat
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix">{ pkgs, ... }:
 {
   programs = {
     bottom.enable = true;
     imv.enable = true;
     sioyek.enable = true;
-    bat.enable = true;
+    bat = {
+      enable = true;
+      extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+    };
     carapace.enable = true;
     wlogout.enable = true;
     swayr.enable = true;
@@ -9490,23 +10116,25 @@ Here we set some aliases (some of them should be shellApplications instead) as w
     shellAliases = lib.recursiveUpdate
       {
         hg = "history | grep";
-        hmswitch = "cd ~/.dotfiles; home-manager --flake .#$(whoami)@$(hostname) switch; cd -;";
-        nswitch = "cd ~/.dotfiles; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch-stay = "cd ~/.dotfiles; git restore flake.lock; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        edithome = "e -w ~/.dotfiles/SwarselSystems.org";
+        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch |&amp; nom";
+        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |&amp; nom --json";
+        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |&amp; nom --json";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";
-        c = "git --git-dir=$HOME/.dotfiles/.git --work-tree=$HOME/.dotfiles/";
+        c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
         passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
         passpull = "cd ~/.local/share/password-store; git pull; cd -;";
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
-        cdr = "cd \"$( (find /home/swarsel/Documents/GitHub -maxdepth 1 &amp;&amp; echo /home/swarsel/.dotfiles) | fzf )\"";
+        cd-orig = "cd";
+        cat-orig = "cat";
+        cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 &amp;&amp; echo $FLAKE) | fzf )\"";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-        lt = "ls -lath";
-        oldshell = "nix shell github:nixos/nixpkgs/\"$1\" \"$2\"";
+        lt = "eza -las modified --total-size";
+        boot-diff = "nix store diff-closures /run/*-system";
+        gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
       }
       config.swarselsystems.shellAliases;
     autosuggestion.enable = true;
@@ -9528,7 +10156,11 @@ Here we set some aliases (some of them should be shellApplications instead) as w
       save = 10000;
       size = 10000;
     };
-    historySubstringSearch.enable = true;
+    historySubstringSearch = {
+      enable = true;
+      searchDownKey = "^[OB";
+      searchUpKey = "^[OA";
+    };
     plugins = [
       {
         name = "fzf-tab";
@@ -9930,26 +10562,26 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, ... }:
+<pre class="src src-nix">{ lib, config, ... }:
 {
-  programs.mbsync = {
+  programs.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
-  services.mbsync = {
+  services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
   # this is needed so that mbsync can use the passwords from sops
-  systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
+  systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
 
-  programs.msmtp = {
+  programs.msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
 
-  programs.mu = {
+  programs.mu = lib.mkIf (!config.swarselsystems.isPublic) {
     enable = true;
   };
 
-  accounts.email = {
+  accounts.email = lib.mkIf (!config.swarselsystems.isPublic) {
     maildirBasePath = "Mail";
     accounts.leon = {
       primary = true;
@@ -9957,7 +10589,6 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       userName = "leon.schwarzaeugl@gmail.com";
       realName = "Leon Schwarzäugl";
       passwordCommand = "cat ${config.sops.secrets.leon.path}";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/leon.schwarzaeugl@gmail.com.gpg";
       gpg = {
         key = "0x76FD3810215AE097";
         signByDefault = true;
@@ -9985,7 +10616,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       };
     };
 
-    accounts.swarsel = {
+    accounts.swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
       address = "leon@swarsel.win";
       userName = "8227dc594dd515ce232eda1471cb9a19";
       realName = "Leon Schwarzäugl";
@@ -10007,13 +10638,12 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       };
     };
 
-    accounts.nautilus = {
+    accounts.nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
       primary = false;
       address = "nautilus.dw@gmail.com";
       userName = "nautilus.dw@gmail.com";
       realName = "Nautilus";
       passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/nautilus.dw@gmail.com.gpg";
       imap.host = "imap.gmail.com";
       smtp.host = "smtp.gmail.com";
       msmtp.enable = true;
@@ -10034,12 +10664,11 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
         };
       };
     };
-    accounts.mrswarsel = {
+    accounts.mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
       primary = false;
       address = "mrswarsel@gmail.com";
       userName = "mrswarsel@gmail.com";
       realName = "Swarsel";
-      # passwordCommand = "gpg --quiet --for-your-eyes-only --no-tty --decrypt ~/.local/share/password-store/mail/mbsync/mrswarsel@gmail.com.gpg";
       passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
       imap.host = "imap.gmail.com";
       smtp.host = "smtp.gmail.com";
@@ -10079,8 +10708,12 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, pkgs, ... }:
+<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
 {
+
+  # needed for elfeed
+  sops.secrets.fever = lib.mkIf (!config.swarselsystems.isPublic) { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+
   # enable emacs overlay for bleeding edge features
   # also read init.el file and install use-package packages
   programs.emacs = {
@@ -11193,7 +11826,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, ... }:
+<pre class="src src-nix">{ self, pkgs, ... }:
 {
   services.gpg-agent = {
     enable = true;
@@ -11206,7 +11839,26 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
       allow-loopback-pinentry
       allow-emacs-pinentry
     '';
+    sshKeys = [
+      "4BE7925262289B476DBBC17B76FD3810215AE097"
+    ];
   };
+
+  programs.gpg = {
+    enable = true;
+    publicKeys = [
+      {
+        source = "${self}/secrets/keys/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+        trust = 5;
+      }
+    ];
+  };
+
+  # assure correct permissions
+  systemd.user.tmpfiles.rules = [
+    "d /home/swarsel/.gnupg 700 swarsel users"
+  ];
+
 }
 </pre>
 </div>
@@ -12312,7 +12964,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
       "mp" '(popper-toggle :which-key "popper")
       "md" '(dirvish :which-key "dirvish")
-      "mr" '(elfeed :which-key "elfeed")
+      "mr" '(bjm/elfeed-load-db-and-open :which-key "elfeed")
       "o"  '(:ignore o :which-key "org")
       "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
       "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
@@ -14115,62 +14767,26 @@ This mode is not automatically activated anywhere because I only rarely need it.
 <div class="outline-text-4" id="text-h:a83c5820-2016-44ae-90a0-4756bb471c01">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-;; (setq elfeed-feeds
-;;       '("https://www.coindesk.com/arc/outboundfeeds/rss/"
-;;         "https://feed.phenx.de/lootscraper_gog_game.xml"
-;;         "https://feed.phenx.de/lootscraper_ubisoft_game.xml"
-;;         "https://hnrss.org/frontpage"
-;;         "https://www.derstandard.at/rss/inland"
-;;         "https://www.derstandard.at/rss/international"
-;;         "https://www.derstandard.at/rss/kultur"
-;;         "https://www.derstandard.at/rss/wissenschaft"
-;;         "https://www.rfc-editor.org/rfcrss.xml"
-;;         "https://waitbutwhy.com/feed"
-;;         "https://steamcommunity.com/groups/freegamesfinders/rss/"))
-
-(use-package elfeed
-  :ensure t
-  :bind (:map elfeed-search-mode-map
-                                        ;              ("A" . bjm/elfeed-show-all)
-                                        ;              ("E" . bjm/elfeed-show-emacs)
-                                        ;              ("D" . bjm/elfeed-show-daily)
-              ("q" . bjm/elfeed-save-db-and-bury)))
-
-
-(require 'elfeed)
-
-;; Load elfeed-org
-(use-package elfeed-org
-  :config
-  (elfeed-org)
-  (setq rmh-elfeed-org-files (list "~/.elfeed/elfeed.org"))
-  )
+(use-package elfeed)
 
 (use-package elfeed-goodies)
 (elfeed-goodies/setup)
 
-(use-package elfeed-web)
-
-;;functions to support syncing .elfeed between machines
-;;makes sure elfeed reads index from disk before launching
-(defun bjm/elfeed-load-db-and-open ()
-  "Wrapper to load the elfeed db from disk before opening"
-  (interactive)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
-
-;;write to disk when quiting
-(defun bjm/elfeed-save-db-and-bury ()
-  "Wrapper to save the elfeed db to disk before burying buffer"
-  (interactive)
-  (elfeed-db-save)
-  (quit-window))
+(setq elfeed-db-directory "~/.elfeed/db/")
 
 
-(global-set-key (kbd "C-c w") 'bjm/elfeed-load-db-and-open)
+(use-package elfeed-protocol
+  :after elfeed)
 
+(elfeed-protocol-enable)
+(setq elfeed-use-curl t)
+(setq elfeed-set-timeout 36000)
+(setq elfeed-protocol-enabled-protocols '(fever))
+(setq elfeed-protocol-fever-update-unread-only t)
+(setq elfeed-protocol-fever-fetch-category-as-tag t)
+(setq elfeed-protocol-feeds '(("fever+https://Swarsel@signpost.swarsel.win"
+                               :api-url "https://signpost.swarsel.win/api/fever.php"
+                               :password-file "~/.emacs.d/.fever")))
 
 (define-key elfeed-show-mode-map (kbd ";") 'visual-fill-column-mode)
 (define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
@@ -15660,9 +16276,9 @@ Prints a reasuring message to proove good faith."
 </div>
 </div>
 </div>
-<div id="outline-container-orgc1d9667" class="outline-4">
-<h4 id="orgc1d9667"><span class="section-number-4">5.4.47.</span> multiple cursors</h4>
-<div class="outline-text-4" id="text-5-4-47">
+<div id="outline-container-h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd" class="outline-4">
+<h4 id="h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd"><span class="section-number-4">5.4.47.</span> multiple cursors</h4>
+<div class="outline-text-4" id="text-h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package multiple-cursors)
@@ -15676,7 +16292,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-15 So 23:45</p>
+<p class="date">Created: 2024-12-19 Do 14:30</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
