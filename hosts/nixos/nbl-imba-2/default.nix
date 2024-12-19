@@ -91,6 +91,7 @@ in
     isNixos = true;
     isBtrfs = true;
     flakePath = "/home/swarsel/.dotfiles";
+    cpuCount = 16;
     # temperatureHwmon = {
     #   isAbsolutePath = true;
     #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
