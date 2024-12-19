@@ -24,6 +24,11 @@ in
     };
   };
 
+  environment.variables = {
+    WLR_ALLOW_SOFTWARE_RENDERER = 1;
+  };
+
+  services.qemuGuest.enable = true;
 
   boot = {
     loader.systemd-boot.enable = lib.mkForce true;

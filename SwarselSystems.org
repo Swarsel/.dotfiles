@@ -1973,7 +1973,9 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 
 **** ChaosTheatre (Demo)
 
-My work machine. Built for more security, this is the gold standard of my configurations at the moment.
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
+
+I also set the =WLR_ALLOW_SOFTWARE_RENDERER=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
@@ -1991,7 +1993,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports =  outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+        home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
       }
     ] ++ (builtins.attrValues outputs.nixosModules);
 
@@ -2003,6 +2005,11 @@ My work machine. Built for more security, this is the gold standard of my config
       };
     };
 
+    environment.variables = {
+      WLR_ALLOW_SOFTWARE_RENDERER = 1;
+    };
+
+    services.qemuGuest.enable = true;
 
     boot = {
       loader.systemd-boot.enable = lib.mkForce true;
