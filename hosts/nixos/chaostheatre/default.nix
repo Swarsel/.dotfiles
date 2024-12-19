@@ -25,7 +25,7 @@ in
   };
 
   environment.variables = {
-    WLR_ALLOW_SOFTWARE_RENDERER = 1;
+    WLR_RENDERER_ALLOW_SOFTWARE = 1;
   };
 
   services.qemuGuest.enable = true;

@@ -1062,6 +1062,11 @@ In this section I am creating some attributes that define general concepts of my
       type = "app";
       program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
     };
+
+    rebuild = {
+      type = "app";
+      program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
+    };
   });
   devShells = forAllSystems (
     system:
@@ -1975,7 +1980,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 
 This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
 
-I also set the =WLR_ALLOW_SOFTWARE_RENDERER=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
+I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to run in a virtualized environment. I also enable =qemuGuest= for a smoother experience when testing on QEMU.
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
@@ -2006,7 +2011,7 @@ I also set the =WLR_ALLOW_SOFTWARE_RENDERER=1= to allow this configuration to ru
     };
 
     environment.variables = {
-      WLR_ALLOW_SOFTWARE_RENDERER = 1;
+      WLR_RENDERER_ALLOW_SOFTWARE = 1;
     };
 
     services.qemuGuest.enable = true;
@@ -2984,11 +2989,11 @@ This program sets up a new NixOS host.
   }
 #+end_src
 
-**** swarsel-install
+**** swarsel-rebuild
 
 This program sets up a new NixOS host.
 
-#+begin_src shell :tangle scripts/swarsel-install.sh
+#+begin_src shell :tangle scripts/swarsel-rebuild.sh
   set -eo pipefail
 
   target_flake="chaostheatre"
@@ -3009,6 +3014,12 @@ This program sets up a new NixOS host.
       exit 0
   }
 
+  function red() {
+      echo -e "\x1B[31m[!] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[31m[!] $($2) \x1B[0m"
+      fi
+  }
   function green() {
       echo -e "\x1B[32m[+] $1 \x1B[0m"
       if [ -n "${2-}" ]; then
@@ -3046,6 +3057,9 @@ This program sets up a new NixOS host.
   if [ ! -d /home/"$target_user"/.dotfiles ]; then
       green "Cloning repository from GitHub"
       git clone https://github.com/Swarsel/.dotfiles.git
+  else
+      red "A .dotfiles repository is in the way. Please (re-)move the repository and try again."
+      exit 1
   fi
 
   local_keys=$(ssh-add -L || true)
@@ -3061,15 +3075,142 @@ This program sets up a new NixOS host.
   fi
   sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
   git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-  sudo mkdir -p /root/.local/share/nix/
-  printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json
+
   green "Installing flake $target_flake"
   sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
   yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
-  git restore --staged /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-  git restore /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-  git restore --staged /home/"$target_user"/.dotfiles/flake.nix
-  git restore /home/"$target_user"/.dotfiles/flake.nix
+#+end_src
+
+
+
+#+begin_src nix :tangle pkgs/swarsel-rebuild/default.nix
+  { writeShellApplication, git }:
+
+  writeShellApplication {
+    name = "swarsel-rebuild";
+    runtimeInputs = [ git ];
+    text = builtins.readFile ../../scripts/swarsel-rebuild.sh;
+  }
+#+end_src
+
+**** swarsel-install
+
+This program sets up a new NixOS host.
+
+#+begin_src shell :tangle scripts/swarsel-install.sh
+  set -eo pipefail
+
+  target_flake="chaostheatre"
+  target_user="swarsel"
+  fs_type="ext4"
+  disk=""
+
+  function help_and_exit() {
+      echo
+      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo
+      echo "USAGE: $0 -d <disk> [OPTIONS]"
+      echo
+      echo "ARGS:"
+      echo "  -d <disk>                               specify disk to install on."
+      echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+      echo "                                          Default: chaostheatre"
+      echo "  -u <target_user>                        specify user to deploy for."
+      echo "                                          Default: swarsel"
+      echo "  -t <fs_type>                            specify file system type to deploy for."
+      echo "                                          Default: ext4"
+      echo "  -h | --help                             Print this help."
+      exit 0
+  }
+
+  function green() {
+      echo -e "\x1B[32m[+] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+      fi
+  }
+  function yellow() {
+      echo -e "\x1B[33m[*] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[33m[*] $($2) \x1B[0m"
+      fi
+  }
+
+  while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -f)
+          shift
+          target_flake=$1
+          ;;
+      -u)
+          shift
+          target_user=$1
+          ;;
+      -t)
+          shift
+          fs_type=$1
+          ;;
+      -d)
+          shift
+          disk=$1
+          ;;
+      -h | --help) help_and_exit ;;
+      ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+      esac
+      shift
+  done
+
+  cd /home/"$target_user"
+
+  sudo rm -rf .cache/nix
+  sudo rm -rf .dotfiles
+
+  green "Cloning repository from GitHub"
+  git clone https://github.com/Swarsel/.dotfiles.git
+
+  local_keys=$(ssh-add -L || true)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+  read -ra pub_arr <<< "$pub_key"
+
+  cd .dotfiles
+  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+      yellow "The ssh key for this configuration is not available."
+      green "Adjusting flake.nix so that the configuration is buildable"
+      sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+      git add flake.nix
+  fi
+
+  green "Creating /boot partition"
+  sudo parted -a optimal --script "$disk" mklabel gpt
+  sudo parted -a optimal --script "$disk" mkpart "boot" fat32 1MiB 1025MiB
+  sudo parted -a optimal --script "$disk" set 1 esp on
+
+  green "Creating / partition"
+  sudo parted -a optimal --script "$disk" mkpart "root" "$fs_type" 1025MiB 100%
+  sudo parted -a optimal --script "$disk" type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709
+
+  green "Ensuring proper file systems"
+  sudo mkfs.fat -F32 "$disk"1
+  sudo mkfs."${fs_type}" -F "$disk"2
+
+  green "Generating hardware configuration"
+  sudo mount "$disk"2 /mnt
+  sudo mkdir -p /mnt/boot
+  sudo mount "$disk"1 /mnt/boot
+  sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+  # sudo rm -rf /root/.nix-defexpr/channels
+  # sudo rm -rf /nix/var/nix/profiles/per-user/channels
+  sudo mkdir -p /root/.local/share/nix/
+  printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
+  green "Installing flake $target_flake"
+  sudo nixos-install --flake .#"$target_flake"
+  yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+  green "Installation finished! Reboot to see changes"
 #+end_src
 
 
@@ -5368,28 +5509,29 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
 #+begin_src nix :tangle profiles/common/nixos/sway.nix
-  { pkgs, ... }:
-  {
+    { pkgs, ... }:
+    {
 
-    programs.sway = {
-      enable = true;
-      package = pkgs.swayfx;
-      wrapperFeatures = {
-        base = true;
-        gtk = true;
+      programs.sway = {
+        enable = true;
+        package = pkgs.swayfx;
+        wrapperFeatures = {
+          base = true;
+          gtk = true;
+        };
+
+        extraSessionCommands = ''
+          export XDG_SESSION_DESKTOP=sway
+          export SDL_VIDEODRIVER=wayland
+          export QT_QPA_PLATFORM=wayland-egl
+          export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+          export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+          export MOZ_ENABLE_WAYLAND=1
+          export MOZ_DISABLE_RDD_SANDBOX=1
+        '';
       };
 
-      extraSessionCommands = ''
-        export XDG_SESSION_DESKTOP=sway
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland-egl
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-        export MOZ_ENABLE_WAYLAND=1
-        export MOZ_DISABLE_RDD_SANDBOX=1
-      '';
-    };
-
-  }
+    }
 #+end_src
 
 **** xdg-portal
