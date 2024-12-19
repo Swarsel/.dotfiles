@@ -211,6 +211,11 @@
           type = "app";
           program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
         };
+
+        rebuild = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
+        };
       });
       devShells = forAllSystems (
         system:

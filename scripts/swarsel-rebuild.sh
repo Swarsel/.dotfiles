@@ -2,8 +2,6 @@ set -eo pipefail
 
 target_flake="chaostheatre"
 target_user="swarsel"
-fs_type="ext4"
-disk="/dev/vda"
 
 function help_and_exit() {
     echo
@@ -16,10 +14,6 @@ function help_and_exit() {
     echo "                                          Default: chaostheatre"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
-    echo "  -t <fs_type>                            specify file system type to deploy for."
-    echo "                                          Default: ext4"
-    echo "  -d <disk>                               specify disk to install on."
-    echo "                                          Default: /dev/vda"
     echo "  -h | --help                             Print this help."
     exit 0
 }
@@ -46,14 +40,6 @@ while [[ $# -gt 0 ]]; do
     -u)
         shift
         target_user=$1
-        ;;
-    -t)
-        shift
-        fs_type=$1
-        ;;
-    -d)
-        shift
-        disk=$1
         ;;
     -h | --help) help_and_exit ;;
     *)
@@ -82,14 +68,12 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     git add flake.nix
 fi
-sudo mkfs."$fs_type" "$disk"
-sudo mount "$disk" /mnt
-sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
 git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
 sudo mkdir -p /root/.local/share/nix/
 printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json
 green "Installing flake $target_flake"
-sudo nixos-install --flake .#"$target_flake"
+sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
 yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
 git restore --staged /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
 git restore /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
