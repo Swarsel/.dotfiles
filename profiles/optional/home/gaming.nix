@@ -23,6 +23,9 @@
     # minecraft
     prismlauncher # has overrides
     temurin-bin-17
+
+    pokefinder
+    retroarch
   ];
   #   };
   # };

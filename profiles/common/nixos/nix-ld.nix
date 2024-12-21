@@ -70,6 +70,7 @@
       libvpx
       libxkbcommon
       libxml2
+      libz
       mesa
       nspr
       nss

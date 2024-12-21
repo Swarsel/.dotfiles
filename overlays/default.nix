@@ -15,6 +15,17 @@ let
       ];
     };
 
+    retroarch = _prev.retroarch.withCores (cores: with cores; [
+      snes9x # snes
+      nestopia # nes
+      dosbox # dos
+      scummvm # scumm
+      vba-m # gb/a
+      mgba # gb/a
+      melonds # ds
+      dolphin # gc/wii
+    ]);
+
     # prismlauncher = _prev.prismlauncher.override {
     #   glfw = _prev.glfw-wayland-minecraft;
     # };

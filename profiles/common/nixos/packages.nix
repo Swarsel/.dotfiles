@@ -26,6 +26,8 @@
     # secure boot
     sbctl
 
+    libsForQt5.qt5.qtwayland
+
     # nix package database
     nix-index
     nixos-generators

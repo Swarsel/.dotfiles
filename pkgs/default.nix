@@ -21,6 +21,7 @@ let
     "t2ts"
     "ts2t"
     "vershell"
+    "eontimer"
   ];
   mkPackages = names: builtins.listToAttrs (map
     (name: {

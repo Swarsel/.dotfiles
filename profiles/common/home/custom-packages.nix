@@ -20,6 +20,7 @@
     t2ts
     ts2t
     vershell
+    eontimer
 
     bootstrap
 
