@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-19 Do 14:30 -->
+<!-- 2024-12-21 Sa 04:32 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -237,7 +237,7 @@
 </li>
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">4.1.2. Virtual hosts</a>
 <ul>
-<li><a href="#org1bce807">4.1.2.1. Toto (QEMU VM)</a></li>
+<li><a href="#org563448b">4.1.2.1. Toto (QEMU VM)</a></li>
 <li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.2. Sync (OCI)</a>
 <ul>
 <li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.2.1. NixOS</a></li>
@@ -245,11 +245,11 @@
 </li>
 </ul>
 </li>
-<li><a href="#org85280e0">4.1.3. Utility hosts</a>
+<li><a href="#orgeb342c8">4.1.3. Utility hosts</a>
 <ul>
 <li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.3.1. drugstore (ISO)</a></li>
 <li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.3.2. Home-manager only (non-NixOS)</a></li>
-<li><a href="#orga93e6ab">4.1.3.3. ChaosTheatre (Demo)</a></li>
+<li><a href="#org085133d">4.1.3.3. ChaosTheatre (Demo)</a></li>
 </ul>
 </li>
 </ul>
@@ -275,10 +275,12 @@
 <li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">4.2.1.15. github-notifications</a></li>
 <li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">4.2.1.16. screenshare</a></li>
 <li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">4.2.1.17. bootstrap</a></li>
-<li><a href="#org03741df">4.2.1.18. swarsel-install</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.19. t2ts</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.20. ts2t</a></li>
-<li><a href="#org718a9f4">4.2.1.21. vershell</a></li>
+<li><a href="#orgf388f9f">4.2.1.18. swarsel-rebuild</a></li>
+<li><a href="#orged2e1e3">4.2.1.19. swarsel-install</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.20. t2ts</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.21. ts2t</a></li>
+<li><a href="#org87339ce">4.2.1.22. vershell</a></li>
+<li><a href="#orgb866266">4.2.1.23. eontimer</a></li>
 </ul>
 </li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">4.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
@@ -681,7 +683,7 @@
 </div>
 </div>
 <p>
-<b>This file has 56301 words spanning 14353 lines and was last revised on 2024-12-19 14:30:50 +0100.</b>
+<b>This file has 57205 words spanning 14594 lines and was last revised on 2024-12-21 04:32:38 +0100.</b>
 </p>
 
 <p>
@@ -734,7 +736,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-19 14:30:50 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-21 04:32:38 +0100)
 </p></li>
 </ul>
 
@@ -1629,6 +1631,11 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
           type = "app";
           program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
         };
+
+        rebuild = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
+        };
       });
       devShells = forAllSystems (
         system:
@@ -2064,6 +2071,11 @@ apps = forAllSystems (system: {
   install = {
     type = "app";
     program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+  };
+
+  rebuild = {
+    type = "app";
+    program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
   };
 });
 devShells = forAllSystems (
@@ -2637,8 +2649,8 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 </p>
 </div>
-<div id="outline-container-org1bce807" class="outline-5">
-<h5 id="org1bce807"><span class="section-number-5">4.1.2.1.</span> Toto (QEMU VM)</h5>
+<div id="outline-container-org563448b" class="outline-5">
+<h5 id="org563448b"><span class="section-number-5">4.1.2.1.</span> Toto (QEMU VM)</h5>
 <div class="outline-text-5" id="text-4-1-2-1">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
@@ -2856,8 +2868,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org85280e0" class="outline-4">
-<h4 id="org85280e0"><span class="section-number-4">4.1.3.</span> Utility hosts</h4>
+<div id="outline-container-orgeb342c8" class="outline-4">
+<h4 id="orgeb342c8"><span class="section-number-4">4.1.3.</span> Utility hosts</h4>
 <div class="outline-text-4" id="text-4-1-3">
 </div>
 <div id="outline-container-h:8583371d-5d47-468b-84ba-210aad7e2c90" class="outline-5">
@@ -2876,14 +2888,14 @@ in
 
   imports = [
 
-  inputs.lanzaboote.nixosModules.lanzaboote
-  inputs.disko.nixosModules.disko
-  inputs.impermanence.nixosModules.impermanence
-  inputs.sops-nix.nixosModules.sops
-  "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-  "${modulesPath}/installer/cd-dvd/channel.nix"
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
+    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+    "${modulesPath}/installer/cd-dvd/channel.nix"
 
-  "${self}/profiles/iso/minimal.nix"
+    "${self}/profiles/iso/minimal.nix"
 
   ];
 
@@ -2905,7 +2917,7 @@ in
 
   users = {
     allowNoPasswordLogin = true;
-    groups.swarsel = {};
+    groups.swarsel = { };
     users = {
       swarsel = {
         name = "swarsel";
@@ -2927,6 +2939,18 @@ in
     loader.efi.canTouchEfiVariables = true;
   };
 
+  programs.bash.shellAliases = {
+    "swarsel-install" = "nix run github:Swarsel/.dotfiles#install --";
+  };
+
+  system.activationScripts.cache = {
+    text = ''
+      mkdir -p /home/swarsel/.local/share/nix/
+      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json &gt; /dev/null
+      mkdir -p /root/.local/share/nix/
+      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json &gt; /dev/null
+    '';
+  };
   systemd = {
     services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
     targets = {
@@ -3020,11 +3044,15 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 </div>
 </div>
 </div>
-<div id="outline-container-orga93e6ab" class="outline-5">
-<h5 id="orga93e6ab"><span class="section-number-5">4.1.3.3.</span> ChaosTheatre (Demo)</h5>
+<div id="outline-container-org085133d" class="outline-5">
+<h5 id="org085133d"><span class="section-number-5">4.1.3.3.</span> ChaosTheatre (Demo)</h5>
 <div class="outline-text-5" id="text-4-1-3-3">
 <p>
-My work machine. Built for more security, this is the gold standard of my configurations at the moment.
+This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
+</p>
+
+<p>
+I also set the <code>WLR_RENDERER_ALLOW_SOFTWARE=1</code> to allow this configuration to run in a virtualized environment. I also enable <code>qemuGuest</code> for a smoother experience when testing on QEMU.
 </p>
 
 
@@ -3043,7 +3071,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports =  outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+      home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);
 
@@ -3055,6 +3083,11 @@ in
     };
   };
 
+  environment.variables = {
+    WLR_RENDERER_ALLOW_SOFTWARE = 1;
+  };
+
+  services.qemuGuest.enable = true;
 
   boot = {
     loader.systemd-boot.enable = lib.mkForce true;
@@ -3143,6 +3176,7 @@ let
     "t2ts"
     "ts2t"
     "vershell"
+    "eontimer"
   ];
   mkPackages = names: builtins.listToAttrs (map (name: {
     inherit name;
@@ -4080,8 +4114,8 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org03741df" class="outline-5">
-<h5 id="org03741df"><span class="section-number-5">4.2.1.18.</span> swarsel-install</h5>
+<div id="outline-container-orgf388f9f" class="outline-5">
+<h5 id="orgf388f9f"><span class="section-number-5">4.2.1.18.</span> swarsel-rebuild</h5>
 <div class="outline-text-5" id="text-4-2-1-18">
 <p>
 This program sets up a new NixOS host.
@@ -4108,6 +4142,12 @@ function help_and_exit() {
     exit 0
 }
 
+function red() {
+    echo -e "\x1B[31m[!] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[31m[!] $($2) \x1B[0m"
+    fi
+}
 function green() {
     echo -e "\x1B[32m[+] $1 \x1B[0m"
     if [ -n "${2-}" ]; then
@@ -4145,6 +4185,9 @@ cd /home/"$target_user"
 if [ ! -d /home/"$target_user"/.dotfiles ]; then
     green "Cloning repository from GitHub"
     git clone https://github.com/Swarsel/.dotfiles.git
+else
+    red "A .dotfiles repository is in the way. Please (re-)move the repository and try again."
+    exit 1
 fi
 
 local_keys=$(ssh-add -L || true)
@@ -4157,18 +4200,155 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     green "Adjusting flake.nix so that the configuration is buildable"
     sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     git add flake.nix
+else
+    green "Valid SSH key found! Continuing with installation"
 fi
 sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
 git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-sudo mkdir -p /root/.local/share/nix/
-printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' &gt; /root/.local/share/nix/trusted-settings.json
+
 green "Installing flake $target_flake"
 sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
 yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
-git restore --staged /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-git restore /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-git restore --staged /home/"$target_user"/.dotfiles/flake.nix
-git restore /home/"$target_user"/.dotfiles/flake.nix
+</pre>
+</div>
+
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, git }:
+
+writeShellApplication {
+  name = "swarsel-rebuild";
+  runtimeInputs = [ git ];
+  text = builtins.readFile ../../scripts/swarsel-rebuild.sh;
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orged2e1e3" class="outline-5">
+<h5 id="orged2e1e3"><span class="section-number-5">4.2.1.19.</span> swarsel-install</h5>
+<div class="outline-text-5" id="text-4-2-1-19">
+<p>
+This program sets up a new NixOS host.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">set -eo pipefail
+
+target_flake="chaostheatre"
+target_user="swarsel"
+fs_type="ext4"
+disk=""
+
+function help_and_exit() {
+    echo
+    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo
+    echo "USAGE: $0 -d &lt;disk&gt; [OPTIONS]"
+    echo
+    echo "ARGS:"
+    echo "  -d &lt;disk&gt;                               specify disk to install on."
+    echo "  -f &lt;target_flake&gt;                       specify flake to deploy the nixos config of."
+    echo "                                          Default: chaostheatre"
+    echo "  -u &lt;target_user&gt;                        specify user to deploy for."
+    echo "                                          Default: swarsel"
+    echo "  -t &lt;fs_type&gt;                            specify file system type to deploy for."
+    echo "                                          Default: ext4"
+    echo "  -h | --help                             Print this help."
+    exit 0
+}
+
+function green() {
+    echo -e "\x1B[32m[+] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[32m[+] $($2) \x1B[0m"
+    fi
+}
+function yellow() {
+    echo -e "\x1B[33m[*] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[33m[*] $($2) \x1B[0m"
+    fi
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -f)
+        shift
+        target_flake=$1
+        ;;
+    -u)
+        shift
+        target_user=$1
+        ;;
+    -t)
+        shift
+        fs_type=$1
+        ;;
+    -d)
+        shift
+        disk=$1
+        ;;
+    -h | --help) help_and_exit ;;
+    *)
+        echo "Invalid option detected."
+        help_and_exit
+        ;;
+    esac
+    shift
+done
+
+cd /home/"$target_user"
+
+sudo rm -rf .cache/nix
+sudo rm -rf .dotfiles
+
+green "Cloning repository from GitHub"
+git clone https://github.com/Swarsel/.dotfiles.git
+
+local_keys=$(ssh-add -L || true)
+pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+read -ra pub_arr &lt;&lt;&lt; "$pub_key"
+
+cd .dotfiles
+if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+    yellow "The ssh key for this configuration is not available."
+    green "Adjusting flake.nix so that the configuration is buildable"
+    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+    git add flake.nix
+else
+    green "Valid SSH key found! Continuing with installation"
+fi
+
+green "Creating /boot partition"
+sudo parted -a optimal --script "$disk" mklabel gpt
+sudo parted -a optimal --script "$disk" mkpart "boot" fat32 1MiB 1025MiB
+sudo parted -a optimal --script "$disk" set 1 esp on
+
+green "Creating / partition"
+sudo parted -a optimal --script "$disk" mkpart "root" "$fs_type" 1025MiB 100%
+sudo parted -a optimal --script "$disk" type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709
+
+green "Ensuring proper file systems"
+sudo mkfs.fat -F32 "$disk"1
+sudo mkfs."${fs_type}" -F "$disk"2
+
+green "Generating hardware configuration"
+sudo mount "$disk"2 /mnt
+sudo mkdir -p /mnt/boot
+sudo mount "$disk"1 /mnt/boot
+sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+# sudo rm -rf /root/.nix-defexpr/channels
+# sudo rm -rf /nix/var/nix/profiles/per-user/channels
+sudo mkdir -p /root/.local/share/nix/
+printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json &gt; /dev/null
+green "Installing flake $target_flake"
+sudo nixos-install --flake .#"$target_flake"
+yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+green "Installation finished! Reboot to see changes"
 </pre>
 </div>
 
@@ -4187,7 +4367,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.19.</span> t2ts</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.20.</span> t2ts</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -4209,7 +4389,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.20.</span> ts2t</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.21.</span> ts2t</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -4230,9 +4410,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org718a9f4" class="outline-5">
-<h5 id="org718a9f4"><span class="section-number-5">4.2.1.21.</span> vershell</h5>
-<div class="outline-text-5" id="text-4-2-1-21">
+<div id="outline-container-org87339ce" class="outline-5">
+<h5 id="org87339ce"><span class="section-number-5">4.2.1.22.</span> vershell</h5>
+<div class="outline-text-5" id="text-4-2-1-22">
 <p>
 This script allows for quick git branch switching.
 </p>
@@ -4246,6 +4426,68 @@ writeShellApplication {
   text = ''
     nix shell github:nixos/nixpkgs/"$1"#"$2";
   '';
+}
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb866266" class="outline-5">
+<h5 id="orgb866266"><span class="section-number-5">4.2.1.23.</span> eontimer</h5>
+<div class="outline-text-5" id="text-4-2-1-23">
+<p>
+This script allows for quick git branch switching.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ pkgs, python3Packages }:
+
+python3Packages.buildPythonApplication rec {
+  pname = "eontimer";
+  version = "3.0.0";
+  pyproject = true;
+
+  src = pkgs.fetchFromGitHub {
+    owner = "DasAmpharos";
+    repo = "EonTimer";
+    rev = "9449e6158f0aa6eaa24b3b1d0a427aa198b5c0e4";
+    hash = "sha256-+XN/VGGlEg2gVncRZrWDOZ2bfxt8xyIu22F2wHlG6YI=";
+  };
+
+  build-system = with python3Packages; [
+    setuptools
+  ];
+
+  dependencies = with python3Packages; [
+    altgraph
+    certifi
+    charset-normalizer
+    idna
+    libsass
+    macholib
+    packaging
+    pillow
+    pipdeptree
+    platformdirs
+    pyinstaller
+    pyinstaller-hooks-contrib
+    pyside6
+    requests
+    setuptools
+    shiboken6
+    urllib3
+  ];
+
+  buildPhase = ''
+    ${pkgs.python3Packages.pyinstaller}/bin/pyinstaller EonTimer.spec
+  '';
+
+  installPhase = ''
+    mkdir -p $out/bin
+    cp dist/EonTimer $out/bin/
+  '';
+
+
 }
 
 </pre>
@@ -4281,6 +4523,17 @@ let
         _prev.plasma5Packages.plasma-browser-integration
       ];
     };
+
+    retroarch = _prev.retroarch.withCores (cores: with cores; [
+        snes9x # snes
+        nestopia # nes
+        dosbox # dos
+        scummvm # scumm
+        vba-m # gb/a
+        mgba # gb/a
+        melonds # ds
+        dolphin # gc/wii
+      ]);
 
     # prismlauncher = _prev.prismlauncher.override {
     #   glfw = _prev.glfw-wayland-minecraft;
@@ -5228,6 +5481,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
     # secure boot
     sbctl
+
+    libsForQt5.qt5.qtwayland
 
     # nix package database
     nix-index
@@ -6475,6 +6730,7 @@ When a program does not work, start with <code>nix-ldd &lt;program&gt;</code>. T
       libvpx
       libxkbcommon
       libxml2
+      libz
       mesa
       nspr
       nss
@@ -6687,6 +6943,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
       export SDL_VIDEODRIVER=wayland
       export QT_QPA_PLATFORM=wayland-egl
       export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+      export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
       export MOZ_ENABLE_WAYLAND=1
       export MOZ_DISABLE_RDD_SANDBOX=1
     '';
@@ -9345,6 +9602,7 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
     t2ts
     ts2t
     vershell
+    eontimer
 
     bootstrap
 
@@ -11983,28 +12241,31 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 {
   # specialisation = {
   #   gaming.configuration = {
-      home.packages = with pkgs; [
-        stable.lutris
-        wine
-        libudev-zero
-        dwarfs
-        fuse-overlayfs
-        # steam
-        # steam-run
-        patchelf
-        gamescope
-        vulkan-tools
-        moonlight-qt
-        ns-usbloader
+  home.packages = with pkgs; [
+    stable.lutris
+    wine
+    libudev-zero
+    dwarfs
+    fuse-overlayfs
+    # steam
+    # steam-run
+    patchelf
+    gamescope
+    vulkan-tools
+    moonlight-qt
+    ns-usbloader
 
-        quark-goldleaf
-        # gog games installing
-        heroic
+    quark-goldleaf
+    # gog games installing
+    heroic
 
-        # minecraft
-        prismlauncher # has overrides
-        temurin-bin-17
-      ];
+    # minecraft
+    prismlauncher # has overrides
+    temurin-bin-17
+
+    pokefinder
+    retroarch
+  ];
   #   };
   # };
 }
@@ -16292,7 +16553,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-19 Do 14:30</p>
+<p class="date">Created: 2024-12-21 Sa 04:32</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

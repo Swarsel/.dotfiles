@@ -28,7 +28,7 @@ That being said, there is a lot of general configuration that you *probably* can
 
 - Literate configuration for Nix and Emacs ([SwarselSystems.org](../SwarselSystems.org))
 - Configuration based on flakes for personal hosts as well as servers on:
-  - [NixOS](https://github.com/NixOS/nixpkgs))
+  - [NixOS](https://github.com/NixOS/nixpkgs)
   - [home-manager](https://github.com/nix-community/home-manager) only (no full NixOS) with support from [nixGL](https://github.com/nix-community/nixGL)
   - [nix-darwin](https://github.com/LnL7/nix-darwin)
   - [nix-on-droid](https://github.com/nix-community/nix-on-droid)
@@ -39,11 +39,11 @@ That being said, there is a lot of general configuration that you *probably* can
   - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
   - Improved nix tooling
 - Support for advanced features:
-  - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls don't pwn ❤️)
+  - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
   - Management of non-file-based secrets using private repo
   - Full Yubikey support
   - LUKS-encryption
-  - Secure boot using [lanzaboote](https://github.com/nix-community/lanzaboote)
+  - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
   - BTRFS-based [Impermanence](https://github.com/nix-community/impermanence)
 
 
@@ -66,56 +66,69 @@ Otherwise, the files that are possibly of biggest interest are found here:
 ## Getting started
 
 ### Demo configuration
+
 If you just want to see if this configuration is for you, run this command on any system that has `nix` installed:
 
 ``` shell
-nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -u <YOUR_USERNAME>
+nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#rebuild -- -u <YOUR_USERNAME>
 ```
 
-This will install the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
+This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
 Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
 
 ## Deployment
 
-The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually:
+The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually. You can choose between a remote deployment strategy that is also able to deploy new age keys for sops for you and a local installer that will only install the system without any secret handling.
 
-0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones. I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
+### Remote deployment (recommended if you have at least one running system)
+
+0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
 1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
 2) Make sure that your Yubikey is plugged in or that you have your SSH key available (and configured)
-3) Run
-
-``` shell
-nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n <CONFIGURATION_NAME> -d <TARGET_IP>
-```
-
-Alternatively (if you already have this configuration installed), you can also run `bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>` (this runs the same program as the command above).
+3) Run `bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>` on your existing system.
+  - Alternatively (if you run this on a system that is not yet running this configuration), you can also run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>` (this runs the same program as the command above).
 4) Follow the installers instructions:
   - you will have to choose a disk encryption password (if you want that feature)
   - you will have to confirm once that the target system has rebooted
   - you will have to enter the root password once during the final system install
 5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some webservices etc.
 
-## General Nix tips 8 useful links
-Below is a small list of tips that should be helpful no matter if you are new to the nix ecosystem:
+### Local deployment (recommended for setting up the first system)
 
-- Once you have the experimental feature `nix-command` enabled, you can temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
-  - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+1) Boot the latest install ISO from this repository on an UEFI system.
+2) Run `swarsel-install -d <TARGET_DISK> -f <FLAKE>`
+3) Reboot
+
+Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -d <TARGET_DISK> -f <FLAKE>` at step 2.
+
+## General Nix tips & useful links
+- Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
+
+  - Once you have the experimental feature `nix-command` enabled, you can temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
+    - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+  - When you are trying to setup a new configuration part, GitHub code search can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
+  - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
+  - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
+
 - These links are your best friends:
-  - https://search.nixos.org/packages
-  - https://search.nixos.org/options
-  - https://nix-community.github.io/home-manager/options.html / https://mipmip.github.io/home-manager-option-search/
-- Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
-  - or more general, the [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/)
-- Also useful is the [NixOS wiki](https://nixos.wiki/wiki/Main_Page), but some pages are outdated, so use with some care
-- You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
-  - I like to use this for rycee's firefox extensions: https://nur.nix-community.org/repos/rycee/
-- When you are trying to setup a new configuration part, GitHub code search can really help you to find a working configuration.
-- getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
-- you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
-- List of nerdfonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
-- List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
-- Stylix configuration options: https://danth.github.io/stylix/
-- Waybar configuration: https://github.com/Alexays/Waybar/wiki
+  - The nixpkgs reference manual: https://nixos.org/manual/nixpkgs/unstable/#buildpythonapplication-function
+  - The NixOS manual: https://nixos.org/manual/nixos/stable/
+  - The NixOS package search: https://search.nixos.org/packages
+  - The NixOS option search https://search.nixos.org/options
+  - [mipmip](https://github.com/mipmip)'s home-manager option search: https://mipmip.github.io/home-manager-option-search/
+  - [Alan Pearce](https://alanpearce.eu/)'s nix-darwin search: https://searchix.alanpearce.eu/options/darwin/search (which supports all of the other versions as well :o)
+- But that is not all:
+  - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
+    - or more general, the [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/)
+  - Also useful is the [NixOS wiki](https://nixos.wiki/wiki/Main_Page), but some pages are outdated, so use with some care
+  - You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
+    - I like to use this for rycee's firefox extensions: https://nur.nix-community.org/repos/rycee/
+  - List of nerdfonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+  - Stylix configuration options: https://danth.github.io/stylix/
+  - nix-on-droid options: https://nix-community.github.io/nix-on-droid/nix-on-droid-options.html#sec-options
+- And a few links that are not directly nix-related, but may still serve you well:
+  - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
+  - Waybar configuration: https://github.com/Alexays/Waybar/wiki
 
 
 ## Attributions, Acknowledgements, Inspirations, etc.
