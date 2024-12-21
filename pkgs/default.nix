@@ -17,6 +17,7 @@ let
     "github-notifications"
     "screenshare"
     "bootstrap"
+    "swarsel-rebuild"
     "swarsel-install"
     "t2ts"
     "ts2t"
