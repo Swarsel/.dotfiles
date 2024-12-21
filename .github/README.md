@@ -39,7 +39,7 @@ That being said, there is a lot of general configuration that you *probably* can
   - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
   - Improved nix tooling
 - Support for advanced features:
-  - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls don't pwn ❤️)
+  - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
   - Management of non-file-based secrets using private repo
   - Full Yubikey support
   - LUKS-encryption
@@ -66,34 +66,45 @@ Otherwise, the files that are possibly of biggest interest are found here:
 ## Getting started
 
 ### Demo configuration
+
 If you just want to see if this configuration is for you, run this command on any system that has `nix` installed:
 
 ``` shell
-nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -u <YOUR_USERNAME>
+nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#rebuild -- -u <YOUR_USERNAME>
 ```
 
-This will install the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
+This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
 Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
 
 ## Deployment
 
-The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually:
+The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually. You can choose between a remote deployment strategy that is also able to deploy new age keys for sops for you and a local installer that will only install the system without any secret handling.
+
+### Remote deployment (recommended if you have at least one running system)
 
 0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones. I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
 1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
 2) Make sure that your Yubikey is plugged in or that you have your SSH key available (and configured)
-3) Run
+3) Run `bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>`
 
 ``` shell
 nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n <CONFIGURATION_NAME> -d <TARGET_IP>
 ```
 
-Alternatively (if you already have this configuration installed), you can also run `bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>` (this runs the same program as the command above).
+Alternatively (if you run this on a system that is not yet running this configuration), you can also run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>` (this runs the same program as the command above).
 4) Follow the installers instructions:
   - you will have to choose a disk encryption password (if you want that feature)
   - you will have to confirm once that the target system has rebooted
   - you will have to enter the root password once during the final system install
 5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some webservices etc.
+
+### Local deployment (recommended for setting up the first system)
+
+1) Boot the latest install ISO from this repository on an UEFI system.
+2) Run `swarsel-install -d <TARGET_DISK> -f <FLAKE>`
+3) Reboot
+
+Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -d <TARGET_DISK> -f <FLAKE>` at step 2.
 
 ## General Nix tips 8 useful links
 Below is a small list of tips that should be helpful no matter if you are new to the nix ecosystem:
