@@ -81,6 +81,8 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     green "Adjusting flake.nix so that the configuration is buildable"
     sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     git add flake.nix
+else
+    green "Valid SSH key found! Continuing with installation"
 fi
 
 green "Creating /boot partition"

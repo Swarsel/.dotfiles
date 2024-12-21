@@ -57,6 +57,18 @@ in
     loader.efi.canTouchEfiVariables = true;
   };
 
+  programs.bash.shellAliases = {
+    "swarsel-install" = "nix run github:Swarsel/.dotfiles#install --";
+  };
+
+  system.activationScripts.cache = {
+    text = ''
+      mkdir -p /home/swarsel/.local/share/nix/
+      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json > /dev/null
+      mkdir -p /root/.local/share/nix/
+      printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+    '';
+  };
   systemd = {
     services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
     targets = {

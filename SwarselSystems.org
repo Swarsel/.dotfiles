@@ -1836,14 +1836,14 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
     imports = [
 
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.disko.nixosModules.disko
-    inputs.impermanence.nixosModules.impermanence
-    inputs.sops-nix.nixosModules.sops
-    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-    "${modulesPath}/installer/cd-dvd/channel.nix"
+      inputs.lanzaboote.nixosModules.lanzaboote
+      inputs.disko.nixosModules.disko
+      inputs.impermanence.nixosModules.impermanence
+      inputs.sops-nix.nixosModules.sops
+      "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+      "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    "${self}/profiles/iso/minimal.nix"
+      "${self}/profiles/iso/minimal.nix"
 
     ];
 
@@ -1865,7 +1865,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
     users = {
       allowNoPasswordLogin = true;
-      groups.swarsel = {};
+      groups.swarsel = { };
       users = {
         swarsel = {
           name = "swarsel";
@@ -1887,6 +1887,18 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
       loader.efi.canTouchEfiVariables = true;
     };
 
+    programs.bash.shellAliases = {
+      "swarsel-install" = "nix run github:Swarsel/.dotfiles#install --";
+    };
+
+    system.activationScripts.cache = {
+      text = ''
+        mkdir -p /home/swarsel/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json > /dev/null
+        mkdir -p /root/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+      '';
+    };
     systemd = {
       services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
       targets = {
@@ -3073,6 +3085,8 @@ This program sets up a new NixOS host.
       green "Adjusting flake.nix so that the configuration is buildable"
       sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
       git add flake.nix
+  else
+      green "Valid SSH key found! Continuing with installation"
   fi
   sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
   git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
@@ -3182,6 +3196,8 @@ This program sets up a new NixOS host.
       green "Adjusting flake.nix so that the configuration is buildable"
       sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
       git add flake.nix
+  else
+      green "Valid SSH key found! Continuing with installation"
   fi
 
   green "Creating /boot partition"
