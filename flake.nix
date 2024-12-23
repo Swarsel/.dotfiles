@@ -163,7 +163,7 @@
         inputs.stylix.nixosModules.stylix
         inputs.lanzaboote.nixosModules.lanzaboote
         inputs.disko.nixosModules.disko
-        # inputs.impermanence.nixosModules.impermanence
+        inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ./profiles/common/nixos

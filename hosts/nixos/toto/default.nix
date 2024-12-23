@@ -10,6 +10,8 @@ in
     {
       _module.args = {
         withSwap = false;
+        withImpermanence = true;
+        withEncryption = false;
       };
     }
     ./hardware-configuration.nix
@@ -72,7 +74,7 @@ in
 
   swarselsystems = {
     wallpaper = self + /wallpaper/lenovowp.png;
-    impermanence = false;
+    impermanence = true;
     isBtrfs = false;
     initialSetup = true;
   };

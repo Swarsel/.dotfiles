@@ -5,6 +5,8 @@ target_hostname=""
 target_destination=""
 target_user="swarsel"
 ssh_port="22"
+persist_dir=""
+disk_encryption=0
 temp=$(mktemp -d)
 
 function help_and_exit() {
@@ -23,6 +25,7 @@ function help_and_exit() {
     echo "                                          Default='${target_user}'."
     echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
     echo "  --impermanence                          Use this flag if the target machine has impermanence enabled. WARNING: Assumes /persist path."
+    echo "  --encryption                            Use this flag if the target machine has full disk encryption enabled."
     echo "  --debug                                 Enable debug mode."
     echo "  -h | --help                             Print this help."
     exit 0
@@ -77,14 +80,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                          # Remove any * and & entries for this host
-                          /[*&]$key_name/ d;
-                          # Inject a new age: entry
-                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                          # Inject a new hosts or user: entry
-                          /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                          }" $SOPS_FILE
+                              # Remove any * and & entries for this host
+                              /[*&]$key_name/ d;
+                              # Inject a new age: entry
+                              # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                              /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                              # Inject a new hosts or user: entry
+                              /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                              }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -110,6 +113,14 @@ while [[ $# -gt 0 ]]; do
     --temp-override)
         shift
         temp=$1
+        ;;
+    --impermanence)
+        shift
+        persist_dir="/persist"
+        ;;
+    --encryption)
+        shift
+        disk_encryption=1
         ;;
     --debug)
         set -x
@@ -146,24 +157,28 @@ sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
 # ------------------------
 green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
 # Create the directory where sshd expects to find the host keys
-install -d -m755 "$temp/etc/ssh"
+install -d -m755 "$temp/$persist_dir/etc/ssh"
 # Generate host ssh key pair without a passphrase
-ssh-keygen -t ed25519 -f "$temp/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
+ssh-keygen -t ed25519 -f "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
 # Set the correct permissions so sshd will accept the key
-chmod 600 "$temp/etc/ssh/ssh_host_ed25519_key"
+chmod 600 "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key"
 echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
 # This will fail if we already know the host, but that's fine
 ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
 # ------------------------
 # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
 # via the config
-green "Preparing a temporary password for disko."
-green "[Optional] Set disk encryption passphrase:"
-read -rs luks_passphrase
-if [ -n "$luks_passphrase" ]; then
-    $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+if [ "$disk_encryption" -eq 1 ]; then
+    green "--encryption set: Preparing a temporary password for disko."
+    green "[Optional] Set disk encryption passphrase:"
+    read -rs luks_passphrase
+    if [ -n "$luks_passphrase" ]; then
+        $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+    else
+        $ssh_root_cmd "/bin/sh -c 'echo passphrase > /tmp/disko-password'"
+    fi
 else
-    $ssh_root_cmd "/bin/sh -c 'echo passphrase > /tmp/disko-password'"
+    green "--encryption not set: Not using disk encryption.."
 fi
 # ------------------------
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
@@ -187,6 +202,11 @@ while true; do
         yellow "$target_destination is not yet ready."
     fi
 done
+# ------------------------
+if [ -n "$persist_dir" ]; then
+    $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
+    $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
+fi
 # ------------------------
 green "Generating an age key based on the new ssh_host_ed25519_key."
 target_key=$(
@@ -236,6 +256,10 @@ if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $targe
     green "Copying full nix-config to $target_hostname"
     cd "${git_root}"
     just sync "$target_user" "$target_destination"
+
+    if [ -n "$persist_dir" ]; then
+        $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
+    fi
 
     if yes_or_no "Do you want to rebuild immediately?"; then
         green "Rebuilding nix-config on $target_hostname"

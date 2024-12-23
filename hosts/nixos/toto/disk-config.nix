@@ -1,8 +1,10 @@
 # NOTE: ... is needed because dikso passes diskoFile
 { lib
 , pkgs
-, withSwap ? false
 , swapSize
+, withSwap ? true
+, withEncryption ? true
+, withImpermanence ? true
 , ...
 }:
 {
@@ -26,7 +28,47 @@
                 mountOptions = [ "defaults" ];
               };
             };
-            luks = {
+            root = lib.mkIf (!withEncryption) {
+              size = "100%";
+              content = {
+                type = "btrfs";
+                extraArgs = [ "-f" ]; # force overwrite
+                postCreateHook = lib.mkIf withImpermanence ''
+                  									  MNTPOINT=$(mktemp -d)
+                  										mount "/dev/mapper/root" "$MNTPOINT" -o subvol=/
+                  										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                  										btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                '';
+                subvolumes = {
+                  "@root" = {
+                    mountpoint = "/";
+                    mountOptions = [
+                      "compress=zstd"
+                      "noatime"
+                    ];
+                  };
+                  "@persist" = lib.mkIf withImpermanence {
+                    mountpoint = "/persist";
+                    mountOptions = [
+                      "compress=zstd"
+                      "noatime"
+                    ];
+                  };
+                  "@nix" = {
+                    mountpoint = "/nix";
+                    mountOptions = [
+                      "compress=zstd"
+                      "noatime"
+                    ];
+                  };
+                  "@swap" = lib.mkIf withSwap {
+                    mountpoint = "/.swapvol";
+                    swap.swapfile.size = "${swapSize}G";
+                  };
+                };
+              };
+            };
+            luks = lib.mkIf withEncryption {
               size = "100%";
               content = {
                 type = "luks";
@@ -45,6 +87,12 @@
                 content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ]; # force overwrite
+                  postCreateHook = lib.mkIf withImpermanence ''
+                    									  MNTPOINT=$(mktemp -d)
+                    										mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvol=/
+                    										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    										btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
                   subvolumes = {
                     "@root" = {
                       mountpoint = "/";
@@ -53,13 +101,13 @@
                         "noatime"
                       ];
                     };
-                    # "@persist" = {
-                    #   mountpoint = "${config.hostSpec.persistFolder}";
-                    #   mountOptions = [
-                    #     "compress=zstd"
-                    #     "noatime"
-                    #   ];
-                    # };
+                    "@persist" = lib.mkIf withImpermanence {
+                      mountpoint = "/persist";
+                      mountOptions = [
+                        "compress=zstd"
+                        "noatime"
+                      ];
+                    };
                     "@nix" = {
                       mountpoint = "/nix";
                       mountOptions = [
@@ -80,6 +128,8 @@
       };
     };
   };
+
+  fileSystems."/persist".neededForBoot = lib.mkIf withImpermanence true;
 
   environment.systemPackages = [
     pkgs.yubikey-manager # For luks fido2 enrollment before full install
