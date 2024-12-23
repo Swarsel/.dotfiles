@@ -5,6 +5,7 @@
   home.packages = with pkgs; [
     stable.lutris
     wine
+    winetricks
     libudev-zero
     dwarfs
     fuse-overlayfs
@@ -26,6 +27,7 @@
 
     pokefinder
     retroarch
+    flips
   ];
   #   };
   # };
