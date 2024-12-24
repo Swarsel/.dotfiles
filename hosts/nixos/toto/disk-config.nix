@@ -1,18 +1,69 @@
 # NOTE: ... is needed because dikso passes diskoFile
 { lib
 , pkgs
-, swapSize
+, rootDisk
+, swapSize ? "8"
 , withSwap ? true
 , withEncryption ? true
 , withImpermanence ? true
 , ...
 }:
+let
+  type = "btrfs";
+  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+  subvolumes = {
+    "/root" = {
+      mountpoint = "/";
+      mountOptions = [
+        "subvol=root"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/home" = lib.mkIf withImpermanence {
+      mountpoint = "/home";
+      mountOptions = [
+        "subvol=home"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/persist" = lib.mkIf withImpermanence {
+      mountpoint = "/persist";
+      mountOptions = [
+        "subvol=persist"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/log" = lib.mkIf withImpermanence {
+      mountpoint = "/var/log";
+      mountOptions = [
+        "subvol=log"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/nix" = {
+      mountpoint = "/nix";
+      mountOptions = [
+        "subvol=nix"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/swap" = lib.mkIf withSwap {
+      mountpoint = "/.swapvol";
+      swap.swapfile.size = "${swapSize}G";
+    };
+  };
+in
 {
   disko.devices = {
     disk = {
       disk0 = {
         type = "disk";
-        device = "/dev/vda";
+        device = rootDisk;
         content = {
           type = "gpt";
           partitions = {
@@ -31,41 +82,13 @@
             root = lib.mkIf (!withEncryption) {
               size = "100%";
               content = {
-                type = "btrfs";
-                extraArgs = [ "-f" ]; # force overwrite
+                inherit type subvolumes extraArgs;
                 postCreateHook = lib.mkIf withImpermanence ''
-                  									  MNTPOINT=$(mktemp -d)
-                  										mount "/dev/mapper/root" "$MNTPOINT" -o subvol=/
+                    MNTPOINT=$(mktemp -d)
+                  										mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
                   										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                   										btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
                 '';
-                subvolumes = {
-                  "@root" = {
-                    mountpoint = "/";
-                    mountOptions = [
-                      "compress=zstd"
-                      "noatime"
-                    ];
-                  };
-                  "@persist" = lib.mkIf withImpermanence {
-                    mountpoint = "/persist";
-                    mountOptions = [
-                      "compress=zstd"
-                      "noatime"
-                    ];
-                  };
-                  "@nix" = {
-                    mountpoint = "/nix";
-                    mountOptions = [
-                      "compress=zstd"
-                      "noatime"
-                    ];
-                  };
-                  "@swap" = lib.mkIf withSwap {
-                    mountpoint = "/.swapvol";
-                    swap.swapfile.size = "${swapSize}G";
-                  };
-                };
               };
             };
             luks = lib.mkIf withEncryption {
@@ -73,7 +96,7 @@
               content = {
                 type = "luks";
                 name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap-nixos.sh
+                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
                 settings = {
                   allowDiscards = true;
                   # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
@@ -82,44 +105,14 @@
                     "token-timeout=10"
                   ];
                 };
-                # Subvolumes must set a mountpoint in order to be mounted,
-                # unless their parent is mounted
                 content = {
-                  type = "btrfs";
-                  extraArgs = [ "-f" ]; # force overwrite
+                  inherit type subvolumes extraArgs;
                   postCreateHook = lib.mkIf withImpermanence ''
-                    									  MNTPOINT=$(mktemp -d)
-                    										mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvol=/
+                    	MNTPOINT=$(mktemp -d)
+                    										mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
                     										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                     										btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
                   '';
-                  subvolumes = {
-                    "@root" = {
-                      mountpoint = "/";
-                      mountOptions = [
-                        "compress=zstd"
-                        "noatime"
-                      ];
-                    };
-                    "@persist" = lib.mkIf withImpermanence {
-                      mountpoint = "/persist";
-                      mountOptions = [
-                        "compress=zstd"
-                        "noatime"
-                      ];
-                    };
-                    "@nix" = {
-                      mountpoint = "/nix";
-                      mountOptions = [
-                        "compress=zstd"
-                        "noatime"
-                      ];
-                    };
-                    "@swap" = lib.mkIf withSwap {
-                      mountpoint = "/.swapvol";
-                      swap.swapfile.size = "${swapSize}G";
-                    };
-                  };
                 };
               };
             };
@@ -130,8 +123,9 @@
   };
 
   fileSystems."/persist".neededForBoot = lib.mkIf withImpermanence true;
+  fileSystems."/home".neededForBoot = lib.mkIf withImpermanence true;
 
   environment.systemPackages = [
-    pkgs.yubikey-manager # For luks fido2 enrollment before full install
+    pkgs.yubikey-manager
   ];
 }

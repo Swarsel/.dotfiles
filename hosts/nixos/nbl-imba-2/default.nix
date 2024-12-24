@@ -84,6 +84,7 @@ in
     hasFingerprint = true;
     impermanence = false;
     isBtrfs = true;
+    isCrypted = true;
   };
 
   home-manager.users.swarsel.swarselsystems = {

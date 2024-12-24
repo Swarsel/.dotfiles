@@ -9,7 +9,9 @@ in
     "${self}/hosts/nixos/toto/disk-config.nix"
     {
       _module.args = {
-        withSwap = false;
+        withSwap = true;
+        swapSize = "8";
+        rootDisk = "/dev/vda";
         withImpermanence = true;
         withEncryption = false;
       };
@@ -17,12 +19,14 @@ in
     ./hardware-configuration.nix
 
     inputs.sops-nix.nixosModules.sops
+    inputs.impermanence.nixosModules.impermanence
 
     "${profilesPath}/optional/nixos/autologin.nix"
     "${profilesPath}/common/nixos/settings.nix"
     "${profilesPath}/common/nixos/home-manager.nix"
     "${profilesPath}/common/nixos/xserver.nix"
     "${profilesPath}/common/nixos/users.nix"
+    "${profilesPath}/common/nixos/impermanence.nix"
     "${profilesPath}/common/nixos/sops.nix"
     "${profilesPath}/server/nixos/ssh.nix"
 
@@ -75,14 +79,15 @@ in
   swarselsystems = {
     wallpaper = self + /wallpaper/lenovowp.png;
     impermanence = true;
-    isBtrfs = false;
+    isBtrfs = true;
+    isCrypted = false;
     initialSetup = true;
   };
 
   home-manager.users.swarsel.swarselsystems = {
     isLaptop = false;
     isNixos = true;
-    isBtrfs = false;
+    isBtrfs = true;
     flakePath = "/home/swarsel/.dotfiles";
   };
 

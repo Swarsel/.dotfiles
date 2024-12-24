@@ -1,4 +1,13 @@
 { config, lib, ... }:
+let
+  mkIfElse = p: yes: no: if p then yes else no;
+  mkIfElseList = p: yes: no: lib.mkMerge [
+    (lib.mkIf p yes)
+    (lib.mkIf (!p) no)
+  ];
+  mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+in
+
 {
 
   security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
@@ -17,7 +26,8 @@
     wantedBy = [ "initrd.target" ];
     # make sure it's done after encryption
     # i.e. LUKS/TPM process
-    after = [ "systemd-cryptsetup@enc.service" ];
+    after = mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+    requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
     # mount the root fs before clearing
     before = [ "sysroot.mount" ];
     unitConfig.DefaultDependencies = "no";
@@ -27,7 +37,7 @@
 
       # We first mount the btrfs root to /mnt
       # so we can manipulate btrfs subvolumes.
-      mount -o subvol=/ /dev/mapper/cryptroot /mnt
+      mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
       btrfs subvolume list -o /mnt/root
 
       # While we're tempted to just delete /root and create
@@ -44,13 +54,13 @@
       cut -f9 -d' ' |
       while read subvolume; do
         echo "deleting /$subvolume subvolume..."
-        # btrfs subvolume delete "/mnt/$subvolume"
+        btrfs subvolume delete "/mnt/$subvolume"
       done &&
       echo "deleting /root subvolume..." &&
-      # btrfs subvolume delete /mnt/root
+      btrfs subvolume delete /mnt/root
 
       echo "restoring blank /root subvolume..."
-      # btrfs subvolume snapshot /mnt/root-blank /mnt/root
+      btrfs subvolume snapshot /mnt/root-blank /mnt/root
 
       # Once we're done rolling back to a blank snapshot,
       # we can unmount /mnt and continue on the boot process.
@@ -67,7 +77,6 @@
         "/srv"
         "/etc/nixos"
         "/etc/nix"
-        "/home/swarsel/.dotfiles"
         "/etc/NetworkManager/system-connections"
         "/etc/secureboot"
         "/var/db/sudo"
@@ -76,13 +85,10 @@
       ];
 
     files = [
-      # ssh stuff
-      /*
-        "/etc/ssh/ssh_host_ed25519_key"
-        "/etc/ssh/ssh_host_ed25519_key.pub"
-        "/etc/ssh/ssh_host_rsa_key"
-        "/etc/ssh/ssh_host_rsa_key.pub"
-        */
+      "/etc/ssh/ssh_host_ed25519_key"
+      "/etc/ssh/ssh_host_ed25519_key.pub"
+      "/etc/ssh/ssh_host_rsa_key"
+      "/etc/ssh/ssh_host_rsa_key.pub"
     ];
   };
 

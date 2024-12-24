@@ -115,11 +115,9 @@ while [[ $# -gt 0 ]]; do
         temp=$1
         ;;
     --impermanence)
-        shift
         persist_dir="/persist"
         ;;
     --encryption)
-        shift
         disk_encryption=1
         ;;
     --debug)
@@ -259,6 +257,7 @@ if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $targe
 
     if [ -n "$persist_dir" ]; then
         $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
+        $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
     fi
 
     if yes_or_no "Do you want to rebuild immediately?"; then

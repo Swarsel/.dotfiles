@@ -1285,6 +1285,7 @@ My work machine. Built for more security, this is the gold standard of my config
       hasFingerprint = true;
       impermanence = false;
       isBtrfs = true;
+      isCrypted = true;
     };
 
     home-manager.users.swarsel.swarselsystems = {
@@ -1612,102 +1613,6 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 
-**** Toto (QEMU VM)
-
-#+begin_src nix :tangle hosts/nixos/toto/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
-  let
-    profilesPath = "${self}/profiles";
-  in
-  {
-
-    imports =  [
-      inputs.disko.nixosModules.disko
-      "${self}/hosts/nixos/toto/disk-config.nix"
-      {
-        _module.args = {
-          withSwap = false;
-          withImpermanence = true;
-          withEncryption = false;
-        };
-      }
-      ./hardware-configuration.nix
-
-      inputs.sops-nix.nixosModules.sops
-
-      "${profilesPath}/optional/nixos/autologin.nix"
-      "${profilesPath}/common/nixos/settings.nix"
-      "${profilesPath}/common/nixos/home-manager.nix"
-      "${profilesPath}/common/nixos/xserver.nix"
-      "${profilesPath}/common/nixos/users.nix"
-      "${profilesPath}/common/nixos/sops.nix"
-      "${profilesPath}/server/nixos/ssh.nix"
-
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports =  [
-          inputs.sops-nix.homeManagerModules.sops
-          "${profilesPath}/common/home/settings.nix"
-          "${profilesPath}/common/home/sops.nix"
-          "${profilesPath}/common/home/ssh.nix"
-
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    environment.systemPackages = with pkgs; [
-      curl
-      git
-      gnupg
-      rsync
-      ssh-to-age
-      sops
-      vim
-      just
-    ];
-
-    system.stateVersion = lib.mkForce "23.05";
-
-    boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
-      loader.efi.canTouchEfiVariables = true;
-      supportedFilesystems = [ "btrfs" ];
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    };
-
-
-    networking = {
-      hostName = "toto";
-      firewall.enable = false;
-    };
-
-    swarselsystems = {
-      wallpaper = self + /wallpaper/lenovowp.png;
-      impermanence = true;
-      isBtrfs = false;
-      initialSetup = true;
-    };
-
-    home-manager.users.swarsel.swarselsystems = {
-      isLaptop = false;
-      isNixos = true;
-      isBtrfs = false;
-      flakePath = "/home/swarsel/.dotfiles";
-    };
-
-  }
-
-
-#+end_src
-
 **** Sync (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
@@ -1822,6 +1727,109 @@ This machine mainly acts as an external sync helper. It manages the following th
 
 #+end_src
 *** Utility hosts
+**** Toto (Physical/VM)
+
+This is a slim setup for developing base configuration.
+
+#+begin_src nix :tangle hosts/nixos/toto/default.nix
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+  in
+  {
+
+    imports =  [
+      inputs.disko.nixosModules.disko
+      "${self}/hosts/nixos/toto/disk-config.nix"
+      {
+        _module.args = {
+          withSwap = true;
+          swapSize = "8";
+          rootDisk = "/dev/vda";
+          withImpermanence = true;
+          withEncryption = false;
+        };
+      }
+      ./hardware-configuration.nix
+
+      inputs.sops-nix.nixosModules.sops
+      inputs.impermanence.nixosModules.impermanence
+
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/common/nixos/settings.nix"
+      "${profilesPath}/common/nixos/home-manager.nix"
+      "${profilesPath}/common/nixos/xserver.nix"
+      "${profilesPath}/common/nixos/users.nix"
+      "${profilesPath}/common/nixos/impermanence.nix"
+      "${profilesPath}/common/nixos/sops.nix"
+      "${profilesPath}/server/nixos/ssh.nix"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports =  [
+          inputs.sops-nix.homeManagerModules.sops
+          "${profilesPath}/common/home/settings.nix"
+          "${profilesPath}/common/home/sops.nix"
+          "${profilesPath}/common/home/ssh.nix"
+
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      curl
+      git
+      gnupg
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+    ];
+
+    system.stateVersion = lib.mkForce "23.05";
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      supportedFilesystems = [ "btrfs" ];
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+
+    networking = {
+      hostName = "toto";
+      firewall.enable = false;
+    };
+
+    swarselsystems = {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      impermanence = true;
+      isBtrfs = true;
+      isCrypted = false;
+      initialSetup = true;
+    };
+
+    home-manager.users.swarsel.swarselsystems = {
+      isLaptop = false;
+      isNixos = true;
+      isBtrfs = true;
+      flakePath = "/home/swarsel/.dotfiles";
+    };
+
+  }
+
+
+#+end_src
+
 **** drugstore (ISO)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
@@ -1990,7 +1998,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 
 #+end_src
 
-**** ChaosTheatre (Demo)
+**** ChaosTheatre (Demo Physical/VM)
 
 This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
 
@@ -2840,11 +2848,9 @@ This program sets up a new NixOS host.
           temp=$1
           ;;
       --impermanence)
-          shift
           persist_dir="/persist"
           ;;
       --encryption)
-          shift
           disk_encryption=1
           ;;
       --debug)
@@ -2984,6 +2990,7 @@ This program sets up a new NixOS host.
 
       if [ -n "$persist_dir" ]; then
           $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
+          $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
       fi
 
       if yes_or_no "Do you want to rebuild immediately?"; then
@@ -3566,6 +3573,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
       type = types.bool;
       default = true;
     };
+    options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
     options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
     options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
@@ -4957,7 +4965,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
@@ -5488,6 +5496,15 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
 #+begin_src nix :tangle profiles/common/nixos/impermanence.nix
   { config, lib, ... }:
+  let
+    mkIfElse = p: yes: no: if p then yes else no;
+    mkIfElseList = p: yes: no: lib.mkMerge [
+      (lib.mkIf p yes)
+      (lib.mkIf (!p) no)
+    ];
+    mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+  in
+
   {
 
     security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
@@ -5506,7 +5523,8 @@ Normally, doing that also resets the lecture that happens on the first use of =s
       wantedBy = [ "initrd.target" ];
       # make sure it's done after encryption
       # i.e. LUKS/TPM process
-      after = [ "systemd-cryptsetup@enc.service" ];
+      after = mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+      requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
       # mount the root fs before clearing
       before = [ "sysroot.mount" ];
       unitConfig.DefaultDependencies = "no";
@@ -5516,7 +5534,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
         # We first mount the btrfs root to /mnt
         # so we can manipulate btrfs subvolumes.
-        mount -o subvol=/ /dev/mapper/cryptroot /mnt
+        mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
         btrfs subvolume list -o /mnt/root
 
         # While we're tempted to just delete /root and create
@@ -5533,13 +5551,13 @@ Normally, doing that also resets the lecture that happens on the first use of =s
         cut -f9 -d' ' |
         while read subvolume; do
           echo "deleting /$subvolume subvolume..."
-          # btrfs subvolume delete "/mnt/$subvolume"
+          btrfs subvolume delete "/mnt/$subvolume"
         done &&
         echo "deleting /root subvolume..." &&
-        # btrfs subvolume delete /mnt/root
+        btrfs subvolume delete /mnt/root
 
         echo "restoring blank /root subvolume..."
-        # btrfs subvolume snapshot /mnt/root-blank /mnt/root
+        btrfs subvolume snapshot /mnt/root-blank /mnt/root
 
         # Once we're done rolling back to a blank snapshot,
         # we can unmount /mnt and continue on the boot process.
@@ -5556,7 +5574,6 @@ Normally, doing that also resets the lecture that happens on the first use of =s
           "/srv"
           "/etc/nixos"
           "/etc/nix"
-          "/home/swarsel/.dotfiles"
           "/etc/NetworkManager/system-connections"
           "/etc/secureboot"
           "/var/db/sudo"
@@ -5565,13 +5582,10 @@ Normally, doing that also resets the lecture that happens on the first use of =s
         ];
 
       files = [
-        # ssh stuff
-        /*
           "/etc/ssh/ssh_host_ed25519_key"
           "/etc/ssh/ssh_host_ed25519_key.pub"
           "/etc/ssh/ssh_host_rsa_key"
           "/etc/ssh/ssh_host_rsa_key.pub"
-          ,*/
       ];
     };
 
