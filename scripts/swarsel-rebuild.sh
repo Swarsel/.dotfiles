@@ -1,16 +1,16 @@
 set -eo pipefail
 
-target_flake="chaostheatre"
+target_config="chaostheatre"
 target_user="swarsel"
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Builds SwarselSystem configuration."
     echo
     echo "USAGE: $0 [OPTIONS]"
     echo
     echo "ARGS:"
-    echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+    echo "  -n <target_config>                       specify nixos config to build."
     echo "                                          Default: chaostheatre"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
@@ -39,9 +39,9 @@ function yellow() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -f)
+    -n)
         shift
-        target_flake=$1
+        target_config=$1
         ;;
     -u)
         shift
@@ -79,9 +79,9 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
 else
     green "Valid SSH key found! Continuing with installation"
 fi
-sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
-green "Installing flake $target_flake"
-sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
+green "Installing flake $target_config"
+sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
 yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."

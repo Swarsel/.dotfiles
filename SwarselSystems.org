@@ -1842,8 +1842,8 @@ For added convenience, the live environment displays a helpful text on login, we
   [32m~SwarselSystems~[0m
   IP of primary interface: [31m\4[0m
   The Password for all users & root is '[31msetup[0m'.
-  Install the system remotely by running '[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption][0m' on a machine with deployed secrets.
-  Alternatively, run '[33mswarsel-install -d <DISK> -f <flake>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+  Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
+  Alternatively, run '[33mswarsel-install -d <DISK> -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
 
 #+end_src
 
@@ -2770,7 +2770,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 :CUSTOM_ID: h:74db57ae-0bb9-4257-84be-eddbc85130dd
 :END:
 
-This program sets up a new NixOS host.
+This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 
 #+begin_src shell :tangle scripts/bootstrap.sh
   # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/scripts/bootstrap-nixos.sh
@@ -2786,7 +2786,7 @@ This program sets up a new NixOS host.
 
   function help_and_exit() {
       echo
-      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo "Remotely installs SwarselSystem on a target machine including secret deployment."
       echo
       echo "USAGE: $0 -n <target_hostname> -d <target_destination> [OPTIONS]"
       echo
@@ -3085,11 +3085,6 @@ This program sets up a new NixOS host.
   fi
 #+end_src
 
-#+RESULTS:
-| trap: | undefined | signal:    | exit   |      |      |   |   |
-| [     | Babel     | evaluation | exited | with | code | 1 | ] |
-
-
 
 #+begin_src nix :tangle pkgs/bootstrap/default.nix
   { writeShellApplication, openssh }:
@@ -3103,22 +3098,22 @@ This program sets up a new NixOS host.
 
 **** swarsel-rebuild
 
-This program sets up a new NixOS host.
+This program builds a configuration locally.
 
 #+begin_src shell :tangle scripts/swarsel-rebuild.sh
   set -eo pipefail
 
-  target_flake="chaostheatre"
+  target_config="chaostheatre"
   target_user="swarsel"
 
   function help_and_exit() {
       echo
-      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo "Builds SwarselSystem configuration."
       echo
       echo "USAGE: $0 [OPTIONS]"
       echo
       echo "ARGS:"
-      echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+      echo "  -n <target_config>                       specify nixos config to build."
       echo "                                          Default: chaostheatre"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
@@ -3147,9 +3142,9 @@ This program sets up a new NixOS host.
 
   while [[ $# -gt 0 ]]; do
       case "$1" in
-      -f)
+      -n)
           shift
-          target_flake=$1
+          target_config=$1
           ;;
       -u)
           shift
@@ -3187,11 +3182,11 @@ This program sets up a new NixOS host.
   else
       green "Valid SSH key found! Continuing with installation"
   fi
-  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
-  green "Installing flake $target_flake"
-  sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
+  green "Installing flake $target_config"
+  sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
   yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
 #+end_src
 
@@ -3209,25 +3204,26 @@ This program sets up a new NixOS host.
 
 **** swarsel-install
 
-This program sets up a new NixOS host.
+This program sets up a new NixOS host locally.
 
 #+begin_src shell :tangle scripts/swarsel-install.sh
   set -eo pipefail
 
-  target_flake="chaostheatre"
+  target_config="chaostheatre"
   target_user="swarsel"
   fs_type="ext4"
   disk=""
 
   function help_and_exit() {
       echo
-      echo "Remotely installs NixOS on a target machine using this nix-config."
+      echo "Locally installs SwarselSystem on this machine."
       echo
       echo "USAGE: $0 -d <disk> [OPTIONS]"
       echo
       echo "ARGS:"
       echo "  -d <disk>                               specify disk to install on."
-      echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+      echo "  -n <target_config>                      specify the nixos config to deploy."
+      echo "                                          Default: chaostheatre"
       echo "                                          Default: chaostheatre"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
@@ -3252,9 +3248,9 @@ This program sets up a new NixOS host.
 
   while [[ $# -gt 0 ]]; do
       case "$1" in
-      -f)
+      -n)
           shift
-          target_flake=$1
+          target_config=$1
           ;;
       -u)
           shift
@@ -3316,15 +3312,15 @@ This program sets up a new NixOS host.
   sudo mount "$disk"2 /mnt
   sudo mkdir -p /mnt/boot
   sudo mount "$disk"1 /mnt/boot
-  sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+  sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
   # sudo rm -rf /root/.nix-defexpr/channels
   # sudo rm -rf /nix/var/nix/profiles/per-user/channels
   sudo mkdir -p /root/.local/share/nix/
   printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-  green "Installing flake $target_flake"
-  sudo nixos-install --flake .#"$target_flake"
+  green "Installing flake $target_config"
+  sudo nixos-install --flake .#"$target_config"
   yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
   green "Installation finished! Reboot to see changes"
 #+end_src

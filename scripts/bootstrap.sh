@@ -11,7 +11,7 @@ temp=$(mktemp -d)
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Remotely installs SwarselSystem on a target machine including secret deployment."
     echo
     echo "USAGE: $0 -n <target_hostname> -d <target_destination> [OPTIONS]"
     echo

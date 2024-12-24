@@ -1,19 +1,20 @@
 set -eo pipefail
 
-target_flake="chaostheatre"
+target_config="chaostheatre"
 target_user="swarsel"
 fs_type="ext4"
 disk=""
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Locally installs SwarselSystem on this machine."
     echo
     echo "USAGE: $0 -d <disk> [OPTIONS]"
     echo
     echo "ARGS:"
     echo "  -d <disk>                               specify disk to install on."
-    echo "  -f <target_flake>                       specify flake to deploy the nixos config of."
+    echo "  -n <target_config>                      specify the nixos config to deploy."
+    echo "                                          Default: chaostheatre"
     echo "                                          Default: chaostheatre"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
@@ -38,9 +39,9 @@ function yellow() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -f)
+    -n)
         shift
-        target_flake=$1
+        target_config=$1
         ;;
     -u)
         shift
@@ -102,14 +103,14 @@ green "Generating hardware configuration"
 sudo mount "$disk"2 /mnt
 sudo mkdir -p /mnt/boot
 sudo mount "$disk"1 /mnt/boot
-sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 # sudo rm -rf /root/.nix-defexpr/channels
 # sudo rm -rf /nix/var/nix/profiles/per-user/channels
 sudo mkdir -p /root/.local/share/nix/
 printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-green "Installing flake $target_flake"
-sudo nixos-install --flake .#"$target_flake"
+green "Installing flake $target_config"
+sudo nixos-install --flake .#"$target_config"
 yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
 green "Installation finished! Reboot to see changes"
