@@ -13,7 +13,7 @@ in
         swapSize = "8";
         rootDisk = "/dev/vda";
         withImpermanence = true;
-        withEncryption = false;
+        withEncryption = true;
       };
     }
     ./hardware-configuration.nix
@@ -80,7 +80,7 @@ in
     wallpaper = self + /wallpaper/lenovowp.png;
     impermanence = true;
     isBtrfs = true;
-    isCrypted = false;
+    isCrypted = true;
     initialSetup = true;
   };
 
