@@ -1,16 +1,12 @@
 { config, lib, ... }:
 let
   mkIfElse = p: yes: no: if p then yes else no;
-  mkIfElseList = p: yes: no: lib.mkMerge [
-    (lib.mkIf p yes)
-    (lib.mkIf (!p) no)
-  ];
   mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
 in
 
 {
 
-  security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
+  security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
     # rollback results in sudo lectures after each reboot
     Defaults lecture = never
   '';
@@ -21,12 +17,12 @@ in
 
   boot.initrd.systemd.enable = true;
 
-  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
+  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
     description = "Rollback BTRFS root subvolume to a pristine state";
     wantedBy = [ "initrd.target" ];
     # make sure it's done after encryption
     # i.e. LUKS/TPM process
-    after = mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+    after = lib.swarselsystems.mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
     requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
     # mount the root fs before clearing
     before = [ "sysroot.mount" ];
@@ -69,7 +65,7 @@ in
   };
 
 
-  environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+  environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
     hideMounts = true;
     directories =
       [

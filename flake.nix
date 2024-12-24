@@ -151,7 +151,10 @@
             systemFunc = func;
           in
           systemFunc {
-            specialArgs = { inherit inputs outputs self; };
+            specialArgs = {
+              inherit inputs outputs self;
+              lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+            };
             modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
           };
       };

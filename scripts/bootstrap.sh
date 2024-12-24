@@ -24,8 +24,6 @@ function help_and_exit() {
     echo "  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home."
     echo "                                          Default='${target_user}'."
     echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
-    echo "  --impermanence                          Use this flag if the target machine has impermanence enabled. WARNING: Assumes /persist path."
-    echo "  --encryption                            Use this flag if the target machine has full disk encryption enabled."
     echo "  --debug                                 Enable debug mode."
     echo "  -h | --help                             Print this help."
     exit 0
@@ -80,14 +78,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                              # Remove any * and & entries for this host
-                              /[*&]$key_name/ d;
-                              # Inject a new age: entry
-                              # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                              /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                              # Inject a new hosts or user: entry
-                              /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                              }" $SOPS_FILE
+                                  # Remove any * and & entries for this host
+                                  /[*&]$key_name/ d;
+                                  # Inject a new age: entry
+                                  # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                  /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                  # Inject a new hosts or user: entry
+                                  /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                  }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -110,16 +108,6 @@ while [[ $# -gt 0 ]]; do
         shift
         ssh_port=$1
         ;;
-    --temp-override)
-        shift
-        temp=$1
-        ;;
-    --impermanence)
-        persist_dir="/persist"
-        ;;
-    --encryption)
-        disk_encryption=1
-        ;;
     --debug)
         set -x
         ;;
@@ -131,6 +119,37 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+green "~SwarselSystems~ remote installer"
+green "Reading system information for $target_hostname ..."
+
+DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+green "Root Disk: $DISK"
+
+CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+if [[ $CRYPTED == "true" ]]; then
+    green "Encryption: ✓"
+    disk_encryption=1
+else
+    red "Encryption: X"
+    disk_encryption=0
+fi
+
+IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+if [[ $IMPERMANENCE == "true" ]]; then
+    green "Impermanence: ✓"
+    persist_dir="/persist"
+else
+    red "Impermanence: X"
+    persist_dir=""
+fi
+
+SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+if [[ $SWAP == "true" ]]; then
+    green "Swap: ✓"
+else
+    red "Swap: X"
+fi
 
 ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
 # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value

@@ -3,8 +3,7 @@ let
     "wallpaper"
     "hardware"
     "setup"
-    "impermanence"
-    "filesystem"
+    "server"
     "input"
   ];
 

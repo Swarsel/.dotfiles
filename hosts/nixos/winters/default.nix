@@ -46,7 +46,7 @@ in
   swarselsystems = {
     hasBluetooth = false;
     hasFingerprint = false;
-    impermanence = false;
+    isImpermanence = false;
     isBtrfs = false;
     flakePath = "/home/swarsel/.dotfiles";
     server = {

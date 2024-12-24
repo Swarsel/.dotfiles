@@ -1,11 +1,8 @@
 # NOTE: ... is needed because dikso passes diskoFile
 { lib
 , pkgs
+, config
 , rootDisk
-, swapSize ? "8"
-, withSwap ? true
-, withEncryption ? true
-, withImpermanence ? true
 , ...
 }:
 let
@@ -20,7 +17,7 @@ let
         "noatime"
       ];
     };
-    "/home" = lib.mkIf withImpermanence {
+    "/home" = lib.mkIf config.swarselsystems.isImpermanence {
       mountpoint = "/home";
       mountOptions = [
         "subvol=home"
@@ -28,7 +25,7 @@ let
         "noatime"
       ];
     };
-    "/persist" = lib.mkIf withImpermanence {
+    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
       mountpoint = "/persist";
       mountOptions = [
         "subvol=persist"
@@ -36,7 +33,7 @@ let
         "noatime"
       ];
     };
-    "/log" = lib.mkIf withImpermanence {
+    "/log" = lib.mkIf config.swarselsystems.isImpermanence {
       mountpoint = "/var/log";
       mountOptions = [
         "subvol=log"
@@ -52,9 +49,9 @@ let
         "noatime"
       ];
     };
-    "/swap" = lib.mkIf withSwap {
+    "/swap" = lib.mkIf config.swarselsystems.isSwap {
       mountpoint = "/.swapvol";
-      swap.swapfile.size = "${swapSize}G";
+      swap.swapfile.size = config.swarselsystems.swapSize;
     };
   };
 in
@@ -63,7 +60,7 @@ in
     disk = {
       disk0 = {
         type = "disk";
-        device = rootDisk;
+        device = config.swarselsystems.rootDisk;
         content = {
           type = "gpt";
           partitions = {
@@ -79,11 +76,11 @@ in
                 mountOptions = [ "defaults" ];
               };
             };
-            root = lib.mkIf (!withEncryption) {
+            root = lib.mkIf (!config.swarselsystems.isCrypted) {
               size = "100%";
               content = {
                 inherit type subvolumes extraArgs;
-                postCreateHook = lib.mkIf withImpermanence ''
+                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
                     MNTPOINT=$(mktemp -d)
                   										mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
                   										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
@@ -91,7 +88,7 @@ in
                 '';
               };
             };
-            luks = lib.mkIf withEncryption {
+            luks = lib.mkIf config.swarselsystems.isCrypted {
               size = "100%";
               content = {
                 type = "luks";
@@ -107,7 +104,7 @@ in
                 };
                 content = {
                   inherit type subvolumes extraArgs;
-                  postCreateHook = lib.mkIf withImpermanence ''
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
                     	MNTPOINT=$(mktemp -d)
                     										mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
                     										trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
@@ -122,8 +119,8 @@ in
     };
   };
 
-  fileSystems."/persist".neededForBoot = lib.mkIf withImpermanence true;
-  fileSystems."/home".neededForBoot = lib.mkIf withImpermanence true;
+  fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
 
   environment.systemPackages = [
     pkgs.yubikey-manager

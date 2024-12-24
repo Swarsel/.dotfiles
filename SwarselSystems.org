@@ -982,7 +982,10 @@ The interesting part is in the start:
         systemFunc = func;
       in
       systemFunc {
-        specialArgs = { inherit inputs outputs self; };
+        specialArgs = {
+          inherit inputs outputs self;
+          lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+        };
         modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
       };
   };
@@ -1202,6 +1205,9 @@ My work machine. Built for more security, this is the gold standard of my config
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
+    sharedOptions = {
+      isBtrfs = true;
+    };
   in
   {
 
@@ -1279,19 +1285,17 @@ My work machine. Built for more security, this is the gold standard of my config
       '';
     };
 
-    swarselsystems = {
+    swarselsystems = lib.recursiveUpdate {
       wallpaper = self + /wallpaper/lenovowp.png;
       hasBluetooth = true;
       hasFingerprint = true;
-      impermanence = false;
-      isBtrfs = true;
+      isImpermanence = false;
       isCrypted = true;
-    };
+    } sharedOptions;
 
-    home-manager.users.swarsel.swarselsystems = {
+    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate {
       isLaptop = true;
       isNixos = true;
-      isBtrfs = true;
       flakePath = "/home/swarsel/.dotfiles";
       cpuCount = 16;
       # temperatureHwmon = {
@@ -1416,7 +1420,7 @@ My work machine. Built for more security, this is the gold standard of my config
         ans = ". ~/.venvs/ansible/bin/activate";
         ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
       };
-    };
+    } sharedOptions;
   }
 
 
@@ -1478,7 +1482,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     swarselsystems = {
       hasBluetooth = false;
       hasFingerprint = false;
-      impermanence = false;
+      isImpermanence = false;
       isBtrfs = false;
       flakePath = "/home/swarsel/.dotfiles";
       server = {
@@ -1713,7 +1717,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     swarselsystems = {
       hasBluetooth = false;
       hasFingerprint = false;
-      impermanence = false;
+      isImpermanence = false;
       isBtrfs = false;
       flakePath = "/root/.dotfiles";
       server = {
@@ -1735,21 +1739,15 @@ This is a slim setup for developing base configuration.
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
+    sharedOptions = {
+      isBtrfs = true;
+    };
   in
   {
 
     imports =  [
       inputs.disko.nixosModules.disko
       "${self}/hosts/nixos/toto/disk-config.nix"
-      {
-        _module.args = {
-          withSwap = true;
-          swapSize = "8";
-          rootDisk = "/dev/vda";
-          withImpermanence = true;
-          withEncryption = true;
-        };
-      }
       ./hardware-configuration.nix
 
       inputs.sops-nix.nixosModules.sops
@@ -1810,20 +1808,21 @@ This is a slim setup for developing base configuration.
       firewall.enable = false;
     };
 
-    swarselsystems = {
+    swarselsystems = lib.recursiveUpdate {
       wallpaper = self + /wallpaper/lenovowp.png;
-      impermanence = true;
-      isBtrfs = true;
+      isImpermanence = true;
       isCrypted = true;
       initialSetup = true;
-    };
+      isSwap = true;
+      swapSize = "8G";
+      rootDisk = "/dev/vda";
+    } sharedOptions;
 
-    home-manager.users.swarsel.swarselsystems = {
+    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate {
       isLaptop = false;
       isNixos = true;
-      isBtrfs = true;
       flakePath = "/home/swarsel/.dotfiles";
-    };
+    } sharedOptions;
 
   }
 
@@ -2800,8 +2799,6 @@ This program sets up a new NixOS host.
       echo "  -u <target_user>                        specify target_user with sudo access. nix-config will be cloned to their home."
       echo "                                          Default='${target_user}'."
       echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
-      echo "  --impermanence                          Use this flag if the target machine has impermanence enabled. WARNING: Assumes /persist path."
-      echo "  --encryption                            Use this flag if the target machine has full disk encryption enabled."
       echo "  --debug                                 Enable debug mode."
       echo "  -h | --help                             Print this help."
       exit 0
@@ -2856,14 +2853,14 @@ This program sets up a new NixOS host.
 
       SOPS_FILE=".sops.yaml"
       sed -i "{
-                                # Remove any * and & entries for this host
-                                /[*&]$key_name/ d;
-                                # Inject a new age: entry
-                                # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                # Inject a new hosts or user: entry
-                                /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                }" $SOPS_FILE
+                                    # Remove any * and & entries for this host
+                                    /[*&]$key_name/ d;
+                                    # Inject a new age: entry
+                                    # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                    /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                    # Inject a new hosts or user: entry
+                                    /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                    }" $SOPS_FILE
       green "Updating .sops.yaml"
       cd -
   }
@@ -2886,16 +2883,6 @@ This program sets up a new NixOS host.
           shift
           ssh_port=$1
           ;;
-      --temp-override)
-          shift
-          temp=$1
-          ;;
-      --impermanence)
-          persist_dir="/persist"
-          ;;
-      --encryption)
-          disk_encryption=1
-          ;;
       --debug)
           set -x
           ;;
@@ -2907,6 +2894,37 @@ This program sets up a new NixOS host.
       esac
       shift
   done
+
+  green "~SwarselSystems~ remote installer"
+  green "Reading system information for $target_hostname ..."
+
+  DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+  green "Root Disk: $DISK"
+
+  CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+  if [[ $CRYPTED == "true" ]]; then
+      green "Encryption: ✓"
+      disk_encryption=1
+  else
+      red "Encryption: X"
+      disk_encryption=0
+  fi
+
+  IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+  if [[ $IMPERMANENCE == "true" ]]; then
+      green "Impermanence: ✓"
+      persist_dir="/persist"
+  else
+      red "Impermanence: X"
+      persist_dir=""
+  fi
+
+  SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+  if [[ $SWAP == "true" ]]; then
+      green "Swap: ✓"
+  else
+      red "Swap: X"
+  fi
 
   ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
   # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
@@ -3066,6 +3084,10 @@ This program sets up a new NixOS host.
           (git commit -m "feat: deployed $target_hostname" || true) && git push
   fi
 #+end_src
+
+#+RESULTS:
+| trap: | undefined | signal:    | exit   |      |      |   |   |
+| [     | Babel     | evaluation | exited | with | code | 1 | ] |
 
 
 
@@ -3533,23 +3555,22 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
 #+begin_src nix :tangle modules/nixos/default.nix
-let
-  moduleNames = [
-    "wallpaper"
-    "hardware"
-    "setup"
-    "impermanence"
-    "filesystem"
-    "input"
-  ];
+  let
+    moduleNames = [
+      "wallpaper"
+      "hardware"
+      "setup"
+      "server"
+      "input"
+    ];
 
-  mkImports = names: builtins.listToAttrs (map (name: {
-    inherit name;
-    value = import ./${name}.nix;
-  }) names);
+    mkImports = names: builtins.listToAttrs (map (name: {
+      inherit name;
+      value = import ./${name}.nix;
+    }) names);
 
-in
-  mkImports moduleNames
+  in
+    mkImports moduleNames
 
 #+end_src
 
@@ -3603,22 +3624,45 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 
 #+begin_src nix :tangle modules/nixos/setup.nix
   { lib, ... }:
-  let
-    inherit (lib) mkOption types;
-  in
-
   {
-    options.swarselsystems.flakePath = mkOption {
-      type = types.str;
+    options.swarselsystems.user = lib.mkOption {
+      type = lib.types.str;
+      default = "swarsel";
+    };
+    options.swarselsystems.flakePath = lib.mkOption {
+      type = lib.types.str;
       default = "";
     };
-    options.swarselsystems.withHomeManager = mkOption {
-      type = types.bool;
+    options.swarselsystems.withHomeManager = lib.mkOption {
+      type = lib.types.bool;
       default = true;
+    };
+    options.swarselsystems.isSwap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    options.swarselsystems.swapSize = lib.mkOption {
+      type = lib.types.str;
+      default = "8G";
+    };
+    options.swarselsystems.rootDisk = lib.mkOption {
+      type = lib.types.str;
+      default = "";
     };
     options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
     options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+
+    options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+    options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
+  }
+#+end_src
+
+***** Server
+
+#+begin_src nix :tangle modules/nixos/server.nix
+  { lib, ... }:
+  {
     options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
     options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
     options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
@@ -3658,36 +3702,6 @@ This section is for everything input-related on the NixOS side. At the moment, t
       type = types.attrsOf types.str;
       default = { };
     };
-  }
-#+end_src
-
-***** Impermanence
-:PROPERTIES:
-:CUSTOM_ID: h:e591075d-4a77-4add-bbc8-b711998fa97f
-:END:
-
-Option to enable impermanence configurations. This could also be done via optional imports, but impermanence is a "big enough" change to warrant a line in the machine =default.nix=.
-
-#+begin_src nix :tangle modules/nixos/impermanence.nix
-  { lib, ... }:
-
-  {
-    options.swarselsystems.impermanence = lib.mkEnableOption "use impermanence on this system";
-  }
-#+end_src
-
-***** Filesystem
-:PROPERTIES:
-:CUSTOM_ID: h:f77358ee-a80c-403a-be9d-04e7052bc556
-:END:
-
-This lets me quickly set flags for "special" file systems. These options mostly function in conjunction with other settings (for example, the =isBtrfs= function is mostly used for impermanence configuration).
-
-#+begin_src nix :tangle modules/nixos/filesystem.nix
-  { lib, ... }:
-
-  {
-    options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   }
 #+end_src
 
@@ -5541,16 +5555,12 @@ Normally, doing that also resets the lecture that happens on the first use of =s
   { config, lib, ... }:
   let
     mkIfElse = p: yes: no: if p then yes else no;
-    mkIfElseList = p: yes: no: lib.mkMerge [
-      (lib.mkIf p yes)
-      (lib.mkIf (!p) no)
-    ];
     mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
   in
 
   {
 
-    security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
+    security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
       # rollback results in sudo lectures after each reboot
       Defaults lecture = never
     '';
@@ -5561,12 +5571,12 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
     boot.initrd.systemd.enable = true;
 
-    boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
+    boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
       description = "Rollback BTRFS root subvolume to a pristine state";
       wantedBy = [ "initrd.target" ];
       # make sure it's done after encryption
       # i.e. LUKS/TPM process
-      after = mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+      after = lib.swarselsystems.mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
       requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
       # mount the root fs before clearing
       before = [ "sysroot.mount" ];
@@ -5609,7 +5619,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     };
 
 
-    environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+    environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
       hideMounts = true;
       directories =
         [

@@ -1,21 +1,15 @@
 { self, inputs, outputs, config, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
+  sharedOptions = {
+    isBtrfs = true;
+  };
 in
 {
 
   imports = [
     inputs.disko.nixosModules.disko
     "${self}/hosts/nixos/toto/disk-config.nix"
-    {
-      _module.args = {
-        withSwap = true;
-        swapSize = "8";
-        rootDisk = "/dev/vda";
-        withImpermanence = true;
-        withEncryption = true;
-      };
-    }
     ./hardware-configuration.nix
 
     inputs.sops-nix.nixosModules.sops
@@ -76,19 +70,24 @@ in
     firewall.enable = false;
   };
 
-  swarselsystems = {
-    wallpaper = self + /wallpaper/lenovowp.png;
-    impermanence = true;
-    isBtrfs = true;
-    isCrypted = true;
-    initialSetup = true;
-  };
+  swarselsystems = lib.recursiveUpdate
+    {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      isImpermanence = true;
+      isCrypted = true;
+      initialSetup = true;
+      isSwap = true;
+      swapSize = "8G";
+      rootDisk = "/dev/vda";
+    }
+    sharedOptions;
 
-  home-manager.users.swarsel.swarselsystems = {
-    isLaptop = false;
-    isNixos = true;
-    isBtrfs = true;
-    flakePath = "/home/swarsel/.dotfiles";
-  };
+  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+    {
+      isLaptop = false;
+      isNixos = true;
+      flakePath = "/home/swarsel/.dotfiles";
+    }
+    sharedOptions;
 
 }
