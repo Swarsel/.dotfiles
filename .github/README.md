@@ -9,7 +9,10 @@ That being said, there is a lot of general configuration that you *probably* can
 
 # \~SwarselSystems\~
 
-<img src="swarselsystems_preview.png"/>
+<p align="center">
+  <img src="https://i.imgur.com/bmgLNcu.png" width="49%" title="Tiling">
+  <img src="https://i.imgur.com/0G7Be6e.png" width="49%" title="Waybar">
+</p>
 
 |               |                                 |
 |---------------|---------------------------------|
@@ -104,28 +107,53 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
 ## General Nix tips & useful links
 - Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
 
-  - Once you have the experimental feature `nix-command` enabled, you can temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
-    - The `nix [...]` commands are generally very useful, more info can be found here: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+  - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine. Alternatively, use [comma](https://github.com/nix-community/comma)
+- More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
   - When you are trying to setup a new configuration part, GitHub code search can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
   - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
   - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
 
 - These links are your best friends:
+  - The nix documentation: https://nix.dev/
   - The nixpkgs reference manual: https://nixos.org/manual/nixpkgs/unstable/#buildpythonapplication-function
   - The NixOS manual: https://nixos.org/manual/nixos/stable/
   - The NixOS package search: https://search.nixos.org/packages
+    - and the nix package version search: https://lazamar.co.uk/nix-versions/
   - The NixOS option search https://search.nixos.org/options
   - [mipmip](https://github.com/mipmip)'s home-manager option search: https://mipmip.github.io/home-manager-option-search/
   - [Alan Pearce](https://alanpearce.eu/)'s nix-darwin search: https://searchix.alanpearce.eu/options/darwin/search (which supports all of the other versions as well :o)
+  - For the above, you can use the CLI tool [manix](https://github.com/mlvzk/manix)
+  - Nix function search: https://noogle.dev/
+  - Search for nix-community options: https://search.nüschtos.de/
 - But that is not all:
-  - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
-    - or more general, the [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/)
+  - Some nix resources
+    - A tour of Nix: https://nixcloud.io/tour/
+    - The Nix One Pager: https://github.com/tazjin/nix-1p
+    - another one page introduction: https://learnxinyminutes.com/nix/
+    - a very short introduction to Nix features: https://zaynetro.com/explainix
+    - introductory nix article: https://medium.com/@MrJamesFisher/nix-by-example-a0063a1a4c55
+    - and another one: https://web.archive.org/web/20210121042658/https://ebzzry.io/en/nix/#nix
+    - How to learn nix: https://ianthehenry.com/posts/how-to-learn-nix/
+    - the Nix Cookbook: https://github.com/functionalops/nix-cookbook?tab=readme-ov-file
+    - and the Nix Pills: https://nixos.org/guides/nix-pills/
+  - Some resources on flakes
+    - Why to use flakes and introduction to flakes: https://www.tweag.io/blog/2020-05-25-flakes/
+    - The [NixOS & Flakes Book](https://nixos-and-flakes.thiscute.world/)
+    - and [Wombat's book](https://mhwombat.codeberg.page/nix-book/)
+    - or the [Zero to Nix series](https://zero-to-nix.com/)
+    - Practical nix flakes article: https://serokell.io/blog/practical-nix-flakes
   - Also useful is the [NixOS wiki](https://nixos.wiki/wiki/Main_Page), but some pages are outdated, so use with some care
+- Some resources for specific nix tools:
+  - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
   - You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
     - I like to use this for rycee's firefox extensions: https://nur.nix-community.org/repos/rycee/
   - List of nerdfonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
   - Stylix configuration options: https://danth.github.io/stylix/
   - nix-on-droid options: https://nix-community.github.io/nix-on-droid/nix-on-droid-options.html#sec-options
+- Very useful tools that are mostly not directly used in configuration but instead called on need:
+  - Convert non-NixOS machines to NixOS using [nixos-infect](https://github.com/elitak/nixos-infect)
+  - Create various installation media with [nixos-generators](https://github.com/nix-community/nixos-generators)
+  - Remotely deploy NixOS using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
 - And a few links that are not directly nix-related, but may still serve you well:
   - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
   - Waybar configuration: https://github.com/Alexays/Waybar/wiki
@@ -137,12 +165,25 @@ These are in random order (also known as 'the order in which I discovered them')
 
 - All the great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete):
   - [guibou](https://github.com/guibou/)
+  - [rycee](https://github.com/rycee)
+  - [adisbladis](https://github.com/adisbladis)
   - [Mic92](https://github.com/Mic92/sops-nix)
   - [lassulus](https://github.com/lassulus)
   - [danth](https://github.com/danth/)
   - [LnL7](https://github.com/LnL7)
   - [t184256](https://github.com/t184256)
   - [bennofs](https://github.com/bennofs)
+  - [Pandapip1](https://github.com/Pandapip1)
+  - [zowoq](https://github.com/zowoq)
+  - [numtide](https://github.com/numtide)
+  - [hsjobeki](https://github.com/hsjobeki)
+  - [blitz](https://github.com/blitz)
+  - [RaitoBezarius](https://github.com/RaitoBezarius)
+  - [nikstur](https://github.com/nikstur)
+  - [talyz](https://github.com/talyz)
+  - [infinisil](https://github.com/infinisil)
+  - [zhaofengli](https://github.com/zhaofengli)
+  - [Artturin](https://github.com/Artturin)
 - All the people who have inspired me with their configurations (sadly also highly incomplete):
   - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
   - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
@@ -154,5 +195,7 @@ These are in random order (also known as 'the order in which I discovered them')
   - [0xdade](https://github.com/0xdade) with their [blog](https://0xda.de/blog/)
   - [EmergentMind](https://github.com/EmergentMind) with their [nix-config](https://github.com/EmergentMind/nix-config)
   - [librephoenix](https://github.com/librephoenix) with their [nixos-config](https://github.com/librephoenix/nixos-config)
+  - [Xe](https://github.com/Xe) with their [blog](https://xeiaso.net/blog/)
+
 
 If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
