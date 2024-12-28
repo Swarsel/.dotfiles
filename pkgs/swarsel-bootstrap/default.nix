@@ -1,7 +1,9 @@
-{ writeShellApplication, openssh }:
-
-writeShellApplication {
+{ self, writeShellApplication, openssh }:
+let
   name = "swarsel-bootstrap";
+in
+writeShellApplication {
+  inherit name;
   runtimeInputs = [ openssh ];
-  text = builtins.readFile ../../scripts/swarsel-bootstrap.sh;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }

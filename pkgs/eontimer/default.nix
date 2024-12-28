@@ -1,4 +1,4 @@
-{ pkgs, python3Packages }:
+{ pkgs, python3Packages, ... }:
 
 python3Packages.buildPythonApplication rec {
   pname = "eontimer";

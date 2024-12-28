@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ self, lib, pkgs, ... }:
 let
   lock-false = {
     Value = false;
@@ -14,7 +14,7 @@ in
     type = lib.types.attrs;
     default = {
       isDefault = false;
-      userChrome = builtins.readFile ../../programs/firefox/chrome/userChrome.css;
+      userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
         tampermonkey

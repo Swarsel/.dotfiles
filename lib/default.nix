@@ -65,7 +65,7 @@
   mkPackages = names: pkgs: builtins.listToAttrs (map
     (name: {
       inherit name;
-      value = pkgs.callPackage "${self}/pkgs/${name}" { };
+      value = pkgs.callPackage "${self}/pkgs/${name}" { inherit self; };
     })
     names);
 

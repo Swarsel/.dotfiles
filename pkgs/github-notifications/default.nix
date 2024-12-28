@@ -1,4 +1,4 @@
-{ writeShellApplication, jq }:
+{ writeShellApplication, jq, ... }:
 
 writeShellApplication {
   name = "github-notifications";

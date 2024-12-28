@@ -1,7 +1,9 @@
-{ writeShellApplication, git }:
-
-writeShellApplication {
+{ self, writeShellApplication, git }:
+let
   name = "swarsel-rebuild";
+in
+writeShellApplication {
+  inherit name;
   runtimeInputs = [ git ];
-  text = builtins.readFile ../../scripts/swarsel-rebuild.sh;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }

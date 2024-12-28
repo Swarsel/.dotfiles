@@ -1,4 +1,4 @@
-{ writeShellApplication, speechd }:
+{ writeShellApplication, speechd, ... }:
 
 writeShellApplication {
   name = "timer";

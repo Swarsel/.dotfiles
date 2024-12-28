@@ -1,4 +1,4 @@
-{ writeShellApplication, fzf }:
+{ writeShellApplication, fzf, ... }:
 
 writeShellApplication {
   name = "cdb";

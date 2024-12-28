@@ -2190,12 +2190,14 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 #+end_src
 
 #+begin_src nix :tangle pkgs/pass-fuzzel/default.nix
-  { writeShellApplication, libnotify, pass, fuzzel, wtype }:
-
-  writeShellApplication {
+  { self, writeShellApplication, libnotify, pass, fuzzel, wtype }:
+  let
     name = "pass-fuzzel";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
-    text = builtins.readFile ../../scripts/pass-fuzzel.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 
 #+end_src
@@ -2210,7 +2212,7 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 
 #+begin_src nix :tangle pkgs/cura5/default.nix
   # taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
-  { appimageTools, fetchurl, writeScriptBin, pkgs }:
+  { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
 
 
   let
@@ -2250,7 +2252,7 @@ This script allows for quick git home-manager specialisation switching.
 
 
 #+begin_src nix :tangle pkgs/hm-specialisation/default.nix
-    { writeShellApplication, fzf, findutils, home-manager }:
+    { writeShellApplication, fzf, findutils, home-manager, ... }:
 
     writeShellApplication {
       name = "hm-specialisation";
@@ -2274,7 +2276,7 @@ This script allows for quick git worktree switching.
 
 
 #+begin_src nix :tangle pkgs/cdw/default.nix
-  { writeShellApplication, fzf }:
+  { writeShellApplication, fzf, ... }:
 
   writeShellApplication {
     name = "cdw";
@@ -2295,7 +2297,7 @@ This script allows for quick git worktree switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/cdb/default.nix
-  { writeShellApplication, fzf }:
+  { writeShellApplication, fzf, ... }:
 
   writeShellApplication {
     name = "cdb";
@@ -2316,12 +2318,12 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 
 
 #+begin_src nix :tangle pkgs/bak/default.nix
-  { writeShellApplication }:
+  { writeShellApplication, ... }:
 
   writeShellApplication {
     name = "bak";
     text = ''
-      cp "$1"{,.bak}
+      cp -r "$1"{,.bak}
     '';
   }
 
@@ -2337,7 +2339,7 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 
 #+begin_src nix :tangle pkgs/timer/default.nix
-  { writeShellApplication, speechd }:
+  { writeShellApplication, speechd, ... }:
 
   writeShellApplication {
     name = "timer";
@@ -2383,12 +2385,14 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 #+end_src
 
 #+begin_src nix :tangle pkgs/e/default.nix
-  { writeShellApplication, emacs30-pgtk, sway, jq }:
-
-  writeShellApplication {
+  { self, writeShellApplication, emacs30-pgtk, sway, jq }:
+  let
     name = "e";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ emacs30-pgtk sway jq ];
-    text = builtins.readFile ../../scripts/e.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 
 #+end_src
@@ -2510,12 +2514,14 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarselcheck/default.nix
-  { writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
-
-  writeShellApplication {
+  { self, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
+  let
     name = "swarselcheck";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];
-    text = builtins.readFile ../../scripts/swarselcheck.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 
 #+end_src
@@ -2555,12 +2561,14 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 #+end_src
 
 #+begin_src nix :tangle pkgs/waybarupdate/default.nix
-  { writeShellApplication, git }:
-
-  writeShellApplication {
+  { self, writeShellApplication, git }:
+  let
     name = "waybarupdate";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile ../../scripts/waybarupdate.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 
 #+end_src
@@ -2581,12 +2589,14 @@ This app quickly toggles between 5% and 0% transparency.
 #+end_src
 
 #+begin_src nix :tangle pkgs/opacitytoggle/default.nix
-  { writeShellApplication, sway }:
-
-  writeShellApplication {
+  { self, writeShellApplication, sway }:
+  let
     name = "opacitytoggle";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile ../../scripts/opacitytoggle.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -2621,11 +2631,13 @@ This utility is used to compare the current state of the root directory with the
 #+end_src
 
 #+begin_src nix :tangle pkgs/fs-diff/default.nix
-  { writeShellApplication }:
-
-  writeShellApplication {
+  { self, writeShellApplication }:
+  let
     name = "fs-diff";
-    text = builtins.readFile ../../scripts/fs-diff.sh;
+  in
+  writeShellApplication {
+    inherit name;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -2654,12 +2666,14 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+end_src
 
 #+begin_src nix :tangle pkgs/update-checker/default.nix
-  { writeShellApplication, nvd }:
-
-  writeShellApplication {
+  { self, writeShellApplication, nvd }:
+  let
     name = "update-checker";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ nvd ];
-    text = builtins.readFile ../../scripts/update-checker.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -2672,7 +2686,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src nix :tangle pkgs/github-notifications/default.nix
-  { writeShellApplication, jq }:
+  { writeShellApplication, jq, ... }:
 
   writeShellApplication {
     name = "github-notifications";
@@ -2715,12 +2729,14 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src nix :tangle pkgs/screenshare/default.nix
-  { writeShellApplication, sway }:
-
-  writeShellApplication {
+  { self, writeShellApplication, sway }:
+  let
     name = "screenshare";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile ../../scripts/screenshare.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -3075,12 +3091,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 
 #+begin_src nix :tangle pkgs/swarsel-bootstrap/default.nix
-  { writeShellApplication, openssh }:
-
-  writeShellApplication {
+  { self, writeShellApplication, openssh }:
+  let
     name = "swarsel-bootstrap";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ openssh ];
-    text = builtins.readFile ../../scripts/swarsel-bootstrap.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -3181,12 +3199,14 @@ This program builds a configuration locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-rebuild/default.nix
-  { writeShellApplication, git }:
-
-  writeShellApplication {
+  { self, writeShellApplication, git }:
+  let
     name = "swarsel-rebuild";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile ../../scripts/swarsel-rebuild.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -3363,12 +3383,14 @@ This program sets up a new NixOS host locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-install/default.nix
-  { writeShellApplication, git }:
-
-  writeShellApplication {
+  { self, writeShellApplication, git }:
+  let
     name = "swarsel-install";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile ../../scripts/swarsel-install.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -3457,12 +3479,14 @@ This program sets up a new NixOS host locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-postinstall/default.nix
-  { writeShellApplication, git }:
-
-  writeShellApplication {
+  { self, writeShellApplication, git }:
+  let
     name = "swarsel-postinstall";
+  in
+  writeShellApplication {
+    inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile ../../scripts/swarsel-postinstall.sh;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 #+end_src
 
@@ -3474,7 +3498,7 @@ This program sets up a new NixOS host locally.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/t2ts/default.nix
-    { writeShellApplication }:
+    { writeShellApplication, ... }:
 
     writeShellApplication {
       name = "t2ts";
@@ -3494,7 +3518,7 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/ts2t/default.nix
-  { writeShellApplication }:
+  { writeShellApplication, ... }:
 
   writeShellApplication {
     name = "ts2t";
@@ -3511,7 +3535,7 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/vershell/default.nix
-  { writeShellApplication }:
+  { writeShellApplication, ... }:
 
   writeShellApplication {
     name = "vershell";
@@ -3528,7 +3552,7 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/eontimer/default.nix
-  { pkgs, python3Packages }:
+  { pkgs, python3Packages, ... }:
 
   python3Packages.buildPythonApplication rec {
     pname = "eontimer";
@@ -3590,7 +3614,7 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 When adding a new entry here, do not forget to add it in the default output of this file, otherwise it will not be exposed to the rest of the system.
 
 #+begin_src nix :tangle overlays/default.nix
-  { self,inputs, lib, ... }:
+  { self, inputs, lib, ... }:
 
   let
     additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
@@ -4167,7 +4191,7 @@ At work I am using several services that are using SSO login - however, as I am 
 Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
 
 #+begin_src nix :noweb yes :tangle modules/home/firefox.nix
-{ lib, pkgs, ... }:
+{ self, lib, pkgs, ... }:
   let
     lock-false = {
       Value = false;
@@ -4183,7 +4207,7 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
     type = lib.types.attrs;
     default = {
       isDefault = false;
-      userChrome = builtins.readFile ../../programs/firefox/chrome/userChrome.css;
+      userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         tridactyl
         tampermonkey

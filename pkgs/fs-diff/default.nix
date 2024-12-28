@@ -1,6 +1,8 @@
-{ writeShellApplication }:
-
-writeShellApplication {
+{ self, writeShellApplication }:
+let
   name = "fs-diff";
-  text = builtins.readFile ../../scripts/fs-diff.sh;
+in
+writeShellApplication {
+  inherit name;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }

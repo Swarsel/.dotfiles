@@ -1,4 +1,4 @@
-{ writeShellApplication, fzf, findutils, home-manager }:
+{ writeShellApplication, fzf, findutils, home-manager, ... }:
 
 writeShellApplication {
   name = "hm-specialisation";

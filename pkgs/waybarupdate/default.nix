@@ -1,7 +1,9 @@
-{ writeShellApplication, git }:
-
-writeShellApplication {
+{ self, writeShellApplication, git }:
+let
   name = "waybarupdate";
+in
+writeShellApplication {
+  inherit name;
   runtimeInputs = [ git ];
-  text = builtins.readFile ../../scripts/waybarupdate.sh;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }

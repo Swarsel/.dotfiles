@@ -1,8 +1,8 @@
-{ writeShellApplication }:
+{ writeShellApplication, ... }:
 
 writeShellApplication {
   name = "bak";
   text = ''
-    cp "$1"{,.bak}
+    cp -r "$1"{,.bak}
   '';
 }

@@ -1,7 +1,9 @@
-{ writeShellApplication, sway }:
-
-writeShellApplication {
+{ self, writeShellApplication, sway }:
+let
   name = "screenshare";
+in
+writeShellApplication {
+  inherit name;
   runtimeInputs = [ sway ];
-  text = builtins.readFile ../../scripts/screenshare.sh;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }

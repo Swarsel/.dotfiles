@@ -1,7 +1,9 @@
-{ writeShellApplication, nvd }:
-
-writeShellApplication {
+{ self, writeShellApplication, nvd }:
+let
   name = "update-checker";
+in
+writeShellApplication {
+  inherit name;
   runtimeInputs = [ nvd ];
-  text = builtins.readFile ../../scripts/update-checker.sh;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
 }
