@@ -1269,13 +1269,6 @@ My work machine. Built for more security, this is the gold standard of my config
     networking.networkmanager.wifi.scanRandMacAddress = false;
 
     boot = {
-      loader.systemd-boot.enable = lib.mkForce false;
-      loader.efi.canTouchEfiVariables = true;
-      lanzaboote = {
-        enable = true;
-        # pkiBundle = "/etc/secureboot";
-        pkiBundle = "/var/lib/sbctl";
-      };
       supportedFilesystems = [ "btrfs" ];
       kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       kernelParams = [
@@ -1315,6 +1308,7 @@ My work machine. Built for more security, this is the gold standard of my config
       hasBluetooth = true;
       hasFingerprint = true;
       isImpermanence = false;
+      isSecureBoot = true;
       isCrypted = true;
     } sharedOptions;
 
@@ -1785,6 +1779,7 @@ This is a slim setup for developing base configuration.
       "${profilesPath}/common/nixos/xserver.nix"
       "${profilesPath}/common/nixos/users.nix"
       "${profilesPath}/common/nixos/impermanence.nix"
+      "${profilesPath}/common/nixos/lanzaboote.nix"
       "${profilesPath}/common/nixos/sops.nix"
       "${profilesPath}/server/nixos/ssh.nix"
 
@@ -1823,15 +1818,8 @@ This is a slim setup for developing base configuration.
     system.stateVersion = lib.mkForce "23.05";
 
     boot = {
-      loader.efi.canTouchEfiVariables = true;
       supportedFilesystems = [ "btrfs" ];
       kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-      loader.systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot)  (lib.mkForce true) (lib.mkForce false);
-      lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
-        enable = true;
-        pkiBundle = "/var/lib/sbctl";
-        # enrollKeys = true;
-      };
     };
 
 
@@ -2886,14 +2874,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       SOPS_FILE=".sops.yaml"
       sed -i "{
-                                              # Remove any * and & entries for this host
-                                              /[*&]$key_name/ d;
-                                              # Inject a new age: entry
-                                              # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                              /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                              # Inject a new hosts or user: entry
-                                              /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                              }" $SOPS_FILE
+                                                # Remove any * and & entries for this host
+                                                /[*&]$key_name/ d;
+                                                # Inject a new age: entry
+                                                # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                                /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                                # Inject a new hosts or user: entry
+                                                /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                                }" $SOPS_FILE
       green "Updating .sops.yaml"
       cd -
   }
@@ -3018,10 +3006,8 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
   $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-  if [[ $SECUREBOOT == "true" ]]; then
-      green "Injecting initialSetup"
-      $ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
-  fi
+  green "Injecting initialSetup"
+  $ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
 
   mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
@@ -3052,10 +3038,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       read -ra scp_call <<< "${scp_cmd}"
       sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
       $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
-      # ------------------------
-      green "restoring hardware-configuration"
-      sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
   fi
+  # ------------------------
+  green "Disabling initialSetup"
+  sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 
   if [ -n "$persist_dir" ]; then
       $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
@@ -4348,6 +4334,7 @@ This section is for setting things that should be used on hosts that are using t
       ./distrobox.nix
       ./lid.nix
       ./lowbattery.nix
+      ./lanzaboote.nix
     ];
 
     nixpkgs.config.permittedInsecurePackages = [
@@ -5908,6 +5895,26 @@ Since I hide the waybar completely during normal operation, I run the risk of no
         # Every Minute
         OnCalendar = "*-*-* *:*:00";
         Unit = "battery-low.service";
+      };
+    };
+  }
+#+end_src
+
+**** Lanzaboote
+
+This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
+
+#+begin_src nix :tangle profiles/common/nixos/lanzaboote.nix
+  { lib, config, ... }:
+  {
+    boot = {
+      loader = {
+        efi.canTouchEfiVariables = true;
+        systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+      };
+      lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+        enable = true;
+        pkiBundle = "/var/lib/sbctl";
       };
     };
   }

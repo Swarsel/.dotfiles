@@ -41,13 +41,6 @@ in
   networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
-    loader.systemd-boot.enable = lib.mkForce false;
-    loader.efi.canTouchEfiVariables = true;
-    lanzaboote = {
-      enable = true;
-      # pkiBundle = "/etc/secureboot";
-      pkiBundle = "/var/lib/sbctl";
-    };
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     kernelParams = [
@@ -88,6 +81,7 @@ in
       hasBluetooth = true;
       hasFingerprint = true;
       isImpermanence = false;
+      isSecureBoot = true;
       isCrypted = true;
     }
     sharedOptions;

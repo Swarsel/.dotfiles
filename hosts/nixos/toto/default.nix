@@ -22,6 +22,7 @@ in
     "${profilesPath}/common/nixos/xserver.nix"
     "${profilesPath}/common/nixos/users.nix"
     "${profilesPath}/common/nixos/impermanence.nix"
+    "${profilesPath}/common/nixos/lanzaboote.nix"
     "${profilesPath}/common/nixos/sops.nix"
     "${profilesPath}/server/nixos/ssh.nix"
 
@@ -60,15 +61,8 @@ in
   system.stateVersion = lib.mkForce "23.05";
 
   boot = {
-    loader.efi.canTouchEfiVariables = true;
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    loader.systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
-    lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
-      enable = true;
-      pkiBundle = "/var/lib/sbctl";
-      # enrollKeys = true;
-    };
   };
 
 

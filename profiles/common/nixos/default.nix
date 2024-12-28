@@ -39,6 +39,7 @@ _:
     ./distrobox.nix
     ./lid.nix
     ./lowbattery.nix
+    ./lanzaboote.nix
   ];
 
   nixpkgs.config.permittedInsecurePackages = [
