@@ -65,6 +65,7 @@ in
             "${modifier}+h" = "exec hyprpicker | wl-copy";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
             "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+            "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
             "${modifier}+1" = "workspace 1:一";
             "${modifier}+Shift+1" = "move container to workspace 1:一";
             "${modifier}+2" = "workspace 2:二";

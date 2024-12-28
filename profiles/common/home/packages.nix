@@ -38,6 +38,8 @@
     deadnix
     statix
     nix-tree
+    manix
+    comma
 
     # shellscripts
     shfmt
@@ -116,6 +118,7 @@
     wtype
     wl-clipboard
     wl-mirror
+    wf-recorder
 
     # screenshotting tools
     grim
