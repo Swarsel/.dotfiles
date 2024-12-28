@@ -218,6 +218,11 @@
           program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
         };
 
+        postinstall = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-postinstall}/bin/swarsel-postinstall";
+        };
+
         rebuild = {
           type = "app";
           program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";

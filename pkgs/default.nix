@@ -19,6 +19,7 @@ let
     "bootstrap"
     "swarsel-rebuild"
     "swarsel-install"
+    "swarsel-postinstall"
     "t2ts"
     "ts2t"
     "vershell"

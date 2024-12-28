@@ -75,6 +75,7 @@ in
         "/etc/nix"
         "/etc/NetworkManager/system-connections"
         # "/etc/secureboot"
+        "/home/swarsel/.dotfiles"
         "/var/db/sudo"
         "/var/cache"
         "/var/lib"
