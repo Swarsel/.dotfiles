@@ -3079,6 +3079,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+  sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
   $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
   $ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
   # __________________________
@@ -3104,6 +3105,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       if yes_or_no "Do you want to rebuild immediately?"; then
           green "Rebuilding nix-config on $target_hostname"
+          yellow "Reminder: The password is 'setup'"
           $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json"
           $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
       fi
