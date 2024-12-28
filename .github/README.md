@@ -109,13 +109,15 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
 
   - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine. Alternatively, use [comma](https://github.com/nix-community/comma)
     - More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
-  - When you are trying to setup a new configuration part, GitHub code search can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
+  - When you are trying to setup a new configuration part, [GitHub code search](https://github.com/search?q=language%3ANix&type=code) can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
   - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
   - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
 
 - These links are your best friends:
   - The nix documentation: https://nix.dev/
   - The nixpkgs reference manual: https://nixos.org/manual/nixpkgs/unstable/#buildpythonapplication-function
+    - the [nixpkgs repository](https://github.com/NixOS/nixpkgs) - especially useful to look at the various READMEs that are in various places in the repository (find using GitHub code search) as well as the [issues](https://github.com/Swarsel/.dotfiles/issues) and [PRs](https://github.com/Swarsel/.dotfiles/pulls) pages
+    - and the [nixpkgs Pull Request Tracker](https://nixpk.gs/pr-tracker.html)
   - The NixOS manual: https://nixos.org/manual/nixos/stable/
   - The NixOS package search: https://search.nixos.org/packages
     - and the nix package version search: https://lazamar.co.uk/nix-versions/
