@@ -78,14 +78,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                                        # Remove any * and & entries for this host
-                                        /[*&]$key_name/ d;
-                                        # Inject a new age: entry
-                                        # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                        /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                        # Inject a new hosts or user: entry
-                                        /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                        }" $SOPS_FILE
+                                            # Remove any * and & entries for this host
+                                            /[*&]$key_name/ d;
+                                            # Inject a new age: entry
+                                            # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                            /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                            # Inject a new hosts or user: entry
+                                            /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                            }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -151,6 +151,13 @@ else
     red "Swap: X"
 fi
 
+SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Secure Boot: ✓"
+else
+    red "Secure Boot: X"
+fi
+
 ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
 # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
 ssh_root_cmd=${ssh_cmd/${target_user}@/root@}
@@ -186,23 +193,27 @@ ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
 # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
 # via the config
 if [ "$disk_encryption" -eq 1 ]; then
-    green "--encryption set: Preparing a temporary password for disko."
-    green "[Optional] Set disk encryption passphrase:"
-    read -rs luks_passphrase
-    if [ -n "$luks_passphrase" ]; then
-        $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
-    else
-        $ssh_root_cmd "/bin/sh -c 'echo passphrase > /tmp/disko-password'"
-    fi
-else
-    green "--encryption not set: Not using disk encryption.."
+    while true; do
+        green "Set disk encryption passphrase:"
+        read -rs luks_passphrase
+        green "Please confirm passphrase:"
+        read -rs luks_passphrase_confirm
+        if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+            $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+            break
+        else
+            red "Passwords do not match"
+        fi
+    done
 fi
 # ------------------------
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
 $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-green "Injecting initialSetup"
-$ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Injecting initialSetup"
+    $ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
+fi
 
 mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
 $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
@@ -226,14 +237,17 @@ while true; do
 done
 
 # ------------------------
-green "Setting up secure boot keys"
-$ssh_root_cmd "mkdir -p /var/lib/sbctl"
-read -ra scp_call <<< "${scp_cmd}"
-sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
-$ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
-# ------------------------
-green "restoring hardware-configuration"
-sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Setting up secure boot keys"
+    $ssh_root_cmd "mkdir -p /var/lib/sbctl"
+    read -ra scp_call <<< "${scp_cmd}"
+    sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
+    $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
+    # ------------------------
+    green "restoring hardware-configuration"
+    sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+fi
 
 if [ -n "$persist_dir" ]; then
     $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
@@ -312,11 +326,6 @@ else
     # echo "just rebuild"
     echo
 fi
-
-# # ------------------------
-# green "Enrolling secure boot keys"
-# $ssh_root_cmd "sbctl enroll-keys --microsoft"
-# ------------------------
 
 if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
     cd "${git_root}"
