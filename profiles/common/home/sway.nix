@@ -47,7 +47,8 @@ in
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
             "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
             "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-            "${modifier}+m" = "exec swarselcheck -s";
+            "${modifier}+m" = "exec swaymsg workspace back_and_forth";
+            "${modifier}+a" = "exec swarselcheck -s";
             "${modifier}+x" = "exec swarselcheck -k";
             "${modifier}+d" = "exec swarselcheck -d";
             "${modifier}+w" = "exec swarselcheck -e";
