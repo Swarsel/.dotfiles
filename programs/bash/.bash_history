@@ -1,1 +1,1 @@
-swarsel-install -f chaostheatre -d /dev/vda
+swarsel-install -n chaostheatre
