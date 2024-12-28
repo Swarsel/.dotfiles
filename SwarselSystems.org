@@ -1249,7 +1249,8 @@ My work machine. Built for more security, this is the gold standard of my config
       loader.efi.canTouchEfiVariables = true;
       lanzaboote = {
         enable = true;
-        pkiBundle = "/etc/secureboot";
+        # pkiBundle = "/etc/secureboot";
+        pkiBundle = "/var/lib/sbctl";
       };
       supportedFilesystems = [ "btrfs" ];
       kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
@@ -1752,6 +1753,7 @@ This is a slim setup for developing base configuration.
 
       inputs.sops-nix.nixosModules.sops
       inputs.impermanence.nixosModules.impermanence
+      inputs.lanzaboote.nixosModules.lanzaboote
 
       "${profilesPath}/optional/nixos/autologin.nix"
       "${profilesPath}/common/nixos/settings.nix"
@@ -1791,15 +1793,21 @@ This is a slim setup for developing base configuration.
       sops
       vim
       just
+      sbctl
     ];
 
     system.stateVersion = lib.mkForce "23.05";
 
     boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
       loader.efi.canTouchEfiVariables = true;
       supportedFilesystems = [ "btrfs" ];
       kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+      loader.systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot)  (lib.mkForce true) (lib.mkForce false);
+      lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+        enable = true;
+        pkiBundle = "/var/lib/sbctl";
+        # enrollKeys = true;
+      };
     };
 
 
@@ -1812,10 +1820,10 @@ This is a slim setup for developing base configuration.
       wallpaper = self + /wallpaper/lenovowp.png;
       isImpermanence = true;
       isCrypted = true;
-      initialSetup = true;
+      isSecureBoot = true;
       isSwap = true;
       swapSize = "8G";
-      rootDisk = "/dev/vda";
+      rootDisk = "/dev/nvme0n1";
     } sharedOptions;
 
     home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate {
@@ -2853,14 +2861,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
       SOPS_FILE=".sops.yaml"
       sed -i "{
-                                    # Remove any * and & entries for this host
-                                    /[*&]$key_name/ d;
-                                    # Inject a new age: entry
-                                    # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                    /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                    # Inject a new hosts or user: entry
-                                    /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                    }" $SOPS_FILE
+                                          # Remove any * and & entries for this host
+                                          /[*&]$key_name/ d;
+                                          # Inject a new age: entry
+                                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                          # Inject a new hosts or user: entry
+                                          /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                          }" $SOPS_FILE
       green "Updating .sops.yaml"
       cd -
   }
@@ -2975,9 +2983,14 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   # ------------------------
   green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
   $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+
+  green "Injecting initialSetup"
+  $ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
+
   mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
   # ------------------------
+
   green "Deploying minimal NixOS installation on $target_destination"
   SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
 
@@ -2994,7 +3007,17 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           yellow "$target_destination is not yet ready."
       fi
   done
+
   # ------------------------
+  green "Setting up secure boot keys"
+  $ssh_root_cmd "mkdir -p /var/lib/sbctl"
+  read -ra scp_call <<< "${scp_cmd}"
+  sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
+  $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
+  # ------------------------
+  green "restoring hardware-configuration"
+  sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+
   if [ -n "$persist_dir" ]; then
       $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
       $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
@@ -3072,6 +3095,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       # echo "just rebuild"
       echo
   fi
+
+  # # ------------------------
+  # green "Enrolling secure boot keys"
+  # $ssh_root_cmd "sbctl enroll-keys --microsoft"
+  # ------------------------
 
   if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
       cd "${git_root}"
@@ -3651,6 +3679,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 
     options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
+    options.swarselsystems.isSecureBoot = lib.mkEnableOption "use secure boot on this system";
   }
 #+end_src
 
@@ -5624,7 +5653,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
           "/etc/nixos"
           "/etc/nix"
           "/etc/NetworkManager/system-connections"
-          "/etc/secureboot"
+          # "/etc/secureboot"
           "/var/db/sudo"
           "/var/cache"
           "/var/lib"
@@ -7977,6 +8006,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       sops
       vim
       just
+      sbctl
     ];
 
     programs = {

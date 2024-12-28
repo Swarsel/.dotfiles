@@ -74,7 +74,7 @@ in
         "/etc/nixos"
         "/etc/nix"
         "/etc/NetworkManager/system-connections"
-        "/etc/secureboot"
+        # "/etc/secureboot"
         "/var/db/sudo"
         "/var/cache"
         "/var/lib"

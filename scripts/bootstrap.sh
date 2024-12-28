@@ -78,14 +78,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                                  # Remove any * and & entries for this host
-                                  /[*&]$key_name/ d;
-                                  # Inject a new age: entry
-                                  # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                  /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                  # Inject a new hosts or user: entry
-                                  /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                  }" $SOPS_FILE
+                                        # Remove any * and & entries for this host
+                                        /[*&]$key_name/ d;
+                                        # Inject a new age: entry
+                                        # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                        /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                        # Inject a new hosts or user: entry
+                                        /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                        }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -200,9 +200,14 @@ fi
 # ------------------------
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
 $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+
+green "Injecting initialSetup"
+$ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
+
 mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
 $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 # ------------------------
+
 green "Deploying minimal NixOS installation on $target_destination"
 SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
 
@@ -219,7 +224,17 @@ while true; do
         yellow "$target_destination is not yet ready."
     fi
 done
+
 # ------------------------
+green "Setting up secure boot keys"
+$ssh_root_cmd "mkdir -p /var/lib/sbctl"
+read -ra scp_call <<< "${scp_cmd}"
+sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
+$ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
+# ------------------------
+green "restoring hardware-configuration"
+sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+
 if [ -n "$persist_dir" ]; then
     $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
     $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
@@ -297,6 +312,11 @@ else
     # echo "just rebuild"
     echo
 fi
+
+# # ------------------------
+# green "Enrolling secure boot keys"
+# $ssh_root_cmd "sbctl enroll-keys --microsoft"
+# ------------------------
 
 if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
     cd "${git_root}"

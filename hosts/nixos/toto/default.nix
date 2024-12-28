@@ -14,6 +14,7 @@ in
 
     inputs.sops-nix.nixosModules.sops
     inputs.impermanence.nixosModules.impermanence
+    inputs.lanzaboote.nixosModules.lanzaboote
 
     "${profilesPath}/optional/nixos/autologin.nix"
     "${profilesPath}/common/nixos/settings.nix"
@@ -53,15 +54,21 @@ in
     sops
     vim
     just
+    sbctl
   ];
 
   system.stateVersion = lib.mkForce "23.05";
 
   boot = {
-    loader.systemd-boot.enable = lib.mkForce true;
     loader.efi.canTouchEfiVariables = true;
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    loader.systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+    lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+      enable = true;
+      pkiBundle = "/var/lib/sbctl";
+      # enrollKeys = true;
+    };
   };
 
 
@@ -75,10 +82,10 @@ in
       wallpaper = self + /wallpaper/lenovowp.png;
       isImpermanence = true;
       isCrypted = true;
-      initialSetup = true;
+      isSecureBoot = true;
       isSwap = true;
       swapSize = "8G";
-      rootDisk = "/dev/vda";
+      rootDisk = "/dev/nvme0n1";
     }
     sharedOptions;
 

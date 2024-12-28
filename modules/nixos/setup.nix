@@ -30,4 +30,5 @@
 
   options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
+  options.swarselsystems.isSecureBoot = lib.mkEnableOption "use secure boot on this system";
 }

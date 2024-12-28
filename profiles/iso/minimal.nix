@@ -53,6 +53,7 @@
     sops
     vim
     just
+    sbctl
   ];
 
   programs = {
