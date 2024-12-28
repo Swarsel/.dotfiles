@@ -1,7 +1,7 @@
 { writeShellApplication, openssh }:
 
 writeShellApplication {
-  name = "bootstrap";
+  name = "swarsel-bootstrap";
   runtimeInputs = [ openssh ];
-  text = builtins.readFile ../../scripts/bootstrap.sh;
+  text = builtins.readFile ../../scripts/swarsel-bootstrap.sh;
 }

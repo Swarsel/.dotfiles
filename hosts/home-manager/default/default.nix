@@ -1,7 +1,7 @@
 { self, inputs, outputs, config, ... }:
 {
 
-  imports = builtins.attrValues outputs.homeManagerModules;
+  imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
 
   nixpkgs = {
     overlays = [ outputs.overlays.default ];
@@ -27,29 +27,6 @@
     isLaptop = true;
     isNixos = false;
     wallpaper = self + /wallpaper/surfacewp.png;
-    temperatureHwmon = {
-      isAbsolutePath = true;
-      path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      input-filename = "temp1_input";
-    };
-    monitors = {
-      main = {
-        name = "California Institute of Technology 0x1407 Unknown";
-        mode = "1920x1080"; # TEMPLATE
-        scale = "1";
-        position = "2560,0";
-        workspace = "2:二";
-        output = "eDP-1";
-      };
-    };
-    inputs = {
-      "1:1:AT_Translated_Set_2_keyboard" = {
-        xkb_layout = "us";
-        xkb_options = "grp:win_space_toggle";
-        xkb_variant = "altgr-intl";
-      };
-    };
-    keybindings = { };
   };
 
 }

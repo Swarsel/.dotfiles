@@ -1,11 +1,7 @@
 { lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
 {
-
-  options.swarselsystems.startup = mkOption {
-    type = types.listOf (types.attrsOf types.str);
+  options.swarselsystems.startup = lib.mkOption {
+    type = lib.types.listOf (lib.types.attrsOf lib.types.str);
     default = [
       { command = "nextcloud --background"; }
       { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }

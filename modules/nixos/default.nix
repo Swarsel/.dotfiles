@@ -1,3 +1,4 @@
+{ lib, ... }:
 let
   moduleNames = [
     "wallpaper"
@@ -6,13 +7,5 @@ let
     "server"
     "input"
   ];
-
-  mkImports = names: builtins.listToAttrs (map
-    (name: {
-      inherit name;
-      value = import ./${name}.nix;
-    })
-    names);
-
 in
-mkImports moduleNames
+lib.swarselsystems.mkModules moduleNames "nixos"

@@ -22,7 +22,7 @@
     vershell
     eontimer
 
-    bootstrap
+    swarsel-bootstrap
 
     (pkgs.writeScriptBin "project" ''
       #! ${pkgs.bash}/bin/bash

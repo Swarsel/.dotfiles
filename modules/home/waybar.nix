@@ -1,5 +1,4 @@
 { lib, config, ... }:
-
 let
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
 in

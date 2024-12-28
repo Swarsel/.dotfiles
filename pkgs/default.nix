@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 let
   packageNames = [
     "pass-fuzzel"
@@ -16,7 +16,7 @@ let
     "update-checker"
     "github-notifications"
     "screenshare"
-    "bootstrap"
+    "swarsel-bootstrap"
     "swarsel-rebuild"
     "swarsel-install"
     "swarsel-postinstall"
@@ -25,11 +25,5 @@ let
     "vershell"
     "eontimer"
   ];
-  mkPackages = names: builtins.listToAttrs (map
-    (name: {
-      inherit name;
-      value = pkgs.callPackage ./${name} { };
-    })
-    names);
 in
-mkPackages packageNames
+lib.swarselsystems.mkPackages packageNames pkgs

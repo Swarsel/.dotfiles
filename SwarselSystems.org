@@ -714,16 +714,16 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
             nixosConfigurations =
               <<flakenixosconf>>
 
-            homeConfigurations = {
+            homeConfigurations =
               <<flakehomeconf>>
-            };
+
 
             darwinConfigurations =
               <<flakedarwinconf>>
 
-            nixOnDroidConfigurations = {
+            nixOnDroidConfigurations =
               <<flakedroidconf>>
-            };
+
 
             topology =
               <<topologyconf>>
@@ -965,70 +965,33 @@ The interesting part is in the start:
 
 #+begin_src nix :tangle no :noweb-ref flakelet
 
-    inherit (self) outputs;
-    lib = nixpkgs.lib // home-manager.lib;
+  inherit (self) outputs;
+  lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
-    pkgsFor = lib.genAttrs (import systems) (
-      system:
-      import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-      }
-    );
-    forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-    forAllSystems = lib.genAttrs [
-      "x86_64-linux"
-      "aarch64-linux"
-      "x86_64-darwin"
-      "aarch64-darwin"
-    ];
-    mkFullHost = host: isNixos: {
-      ${host} =
-        let
-          func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-          systemFunc = func;
-        in
-        systemFunc {
-          specialArgs = {
-            inherit inputs outputs self;
-            lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
-          };
-          modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
-        };
-    };
-    mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
-    readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
 
-    # NixOS modules that can only be used on NixOS systems
-    nixModules = [
-      inputs.stylix.nixosModules.stylix
-      inputs.lanzaboote.nixosModules.lanzaboote
-      inputs.disko.nixosModules.disko
-      inputs.impermanence.nixosModules.impermanence
-      inputs.sops-nix.nixosModules.sops
-      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-      inputs.nix-topology.nixosModules.default
-      ./profiles/common/nixos
-    ];
+  # NixOS modules that can only be used on NixOS systems
+  nixModules = [
+    inputs.stylix.nixosModules.stylix
+    inputs.lanzaboote.nixosModules.lanzaboote
+    inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
+    inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+    inputs.nix-topology.nixosModules.default
+    ./profiles/common/nixos
+  ];
 
-    # Home-Manager modules wanted on non-NixOS systems
-    homeModules = [
-      inputs.stylix.homeManagerModules.stylix
-    ];
+  # Home-Manager modules wanted on non-NixOS systems
+  homeModules = [
+    inputs.stylix.homeManagerModules.stylix
+  ];
 
-    # Home-Manager modules wanted on both NixOS and non-NixOS systems
-    mixedModules = [
-      inputs.sops-nix.homeManagerModules.sops
-      inputs.nix-index-database.hmModules.nix-index
-      ./profiles/common/home
-    ];
-
-    # For adding things to _module.args (making arguments available globally)
-    # moduleArgs = [
-    #   {
-    #     _module.args = { inherit self; };
-    #   }
-    # ];
+  # Home-Manager modules wanted on both NixOS and non-NixOS systems
+  mixedModules = [
+    inputs.sops-nix.homeManagerModules.sops
+    inputs.nix-index-database.hmModules.nix-index
+    ./profiles/common/home
+  ];
 
 #+end_src
 ** General (outputs)
@@ -1053,69 +1016,61 @@ In this section I am creating some attributes that define general concepts of my
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
 
-  inherit lib;
-  inherit mixedModules;
-  inherit nixModules;
+  inherit lib nixModules mixedModules homeModules;
 
-  nixosModules = import ./modules/nixos;
-  homeManagerModules = import ./modules/home;
+  nixosModules = import ./modules/nixos { inherit lib; };
+  homeManagerModules = import ./modules/home { inherit lib; };
+  packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+  formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+  overlays = import ./overlays { inherit self lib inputs; };
 
-  packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
-  apps = forAllSystems (system: {
-    default = self.apps.${system}.bootstrap;
+  apps = lib.swarselsystems.forAllSystems (system:
+    let
+      appNames = [
+        "swarsel-bootstrap"
+        "swarsel-install"
+        "swarsel-rebuild"
+        "swarsel-postinstall"
+      ];
+      appSet = lib.swarselsystems.mkApps system appNames self;
+    in
+    {
+      inherit appSet;
+      default = appSet.bootstrap;
+    });
 
-    bootstrap = {
-      type = "app";
-      program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
-    };
-
-    install = {
-      type = "app";
-      program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
-    };
-
-    postinstall = {
-      type = "app";
-      program = "${self.packages.${system}.swarsel-postinstall}/bin/swarsel-postinstall";
-    };
-
-    rebuild = {
-      type = "app";
-      program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
-    };
-  });
-  devShells = forAllSystems (
-    system:
+  devShells = lib.swarselsystems.forAllSystems (system:
     let
       pkgs = nixpkgs.legacyPackages.${system};
       checks = self.checks.${system};
     in
-      {
-        default = pkgs.mkShell {
-          NIX_CONFIG = "experimental-features = nix-command flakes";
-          inherit (checks.pre-commit-check) shellHook;
-          buildInputs = checks.pre-commit-check.enabledPackages;
-          nativeBuildInputs = [
-            pkgs.nix
-            pkgs.home-manager
-            pkgs.git
-            pkgs.just
-            pkgs.age
-            pkgs.ssh-to-age
-            pkgs.sops
-          ];
-        };
-      });
-
-  formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-  checks = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-        in
-          import ./checks { inherit self inputs system pkgs; }
+    {
+      default = pkgs.mkShell {
+        NIX_CONFIG = "experimental-features = nix-command flakes";
+        inherit (checks.pre-commit-check) shellHook;
+        buildInputs = checks.pre-commit-check.enabledPackages;
+        nativeBuildInputs = with pkgs; [
+          nix
+          home-manager
+          git
+          just
+          age
+          ssh-to-age
+          sops
+          statix
+          deadnix
+          nixpkgs-fmt
+        ];
+      };
+    }
   );
-  overlays = import ./overlays { inherit inputs; };
+
+  checks = lib.swarselsystems.forAllSystems (system:
+    let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    import ./checks { inherit self inputs system pkgs; }
+  );
 
 #+end_src
 
@@ -1131,7 +1086,7 @@ Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6
 
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
-  mkFullHostConfigs (readHosts "nixos") true;
+  lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
 #+end_src
 ** darwinConfigurations
 :PROPERTIES:
@@ -1144,7 +1099,7 @@ Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b
 =3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
 
 #+begin_src nix :tangle no :noweb-ref flakedarwinconf
-  mkFullHostConfigs (readHosts "darwin") false;
+  lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
 #+end_src
 
 ** homeConfigurations
@@ -1156,14 +1111,15 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 
 #+begin_src nix :tangle no :noweb-ref flakehomeconf
 
-  "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-   pkgs = pkgsFor.x86_64-linux;
-   extraSpecialArgs = { inherit inputs outputs; };
-    modules = homeModules ++ mixedModules ++ [
-      ./hosts/home-manager
-    ];
-  };
+  # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+  #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
+  #  extraSpecialArgs = { inherit inputs outputs; };
+  #   modules = homeModules ++ mixedModules ++ [
+  #     ./hosts/home-manager
+  #   ];
+  # };
 
+  lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
 #+end_src
 
 ** nixOnDroidConfigurations
@@ -1175,12 +1131,14 @@ Nix on Android also demands an own flake output, which is provided here.
 
 #+begin_src nix :tangle no :noweb-ref flakedroidconf
 
-  magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-   pkgs = pkgsFor.aarch64-linux;
-    modules = [
-      ./hosts/magicant
-    ];
-  };
+  # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+  #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
+  #   modules = [
+  #     ./hosts/magicant
+  #   ];
+  # };
+
+  lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
 #+end_src
 
@@ -1189,7 +1147,7 @@ Nix on Android also demands an own flake output, which is provided here.
 
 #+begin_src nix :tangle no :noweb-ref topologyconf
 
-  forEachSystem (pkgs: import inputs.nix-topology {
+  lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
     inherit pkgs;
     modules = [
       # Your own file to define global topology. Works in principle like a nixos module but uses different options.
@@ -2010,7 +1968,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
   { self, inputs, outputs, config, ... }:
   {
 
-    imports = builtins.attrValues outputs.homeManagerModules;
+    imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
 
     nixpkgs = {
       overlays = [ outputs.overlays.default ];
@@ -2036,29 +1994,6 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
       isLaptop = true;
       isNixos = false;
       wallpaper = self + /wallpaper/surfacewp.png;
-      temperatureHwmon = {
-        isAbsolutePath = true;
-        path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-        input-filename = "temp1_input";
-      };
-      monitors = {
-        main = {
-          name = "California Institute of Technology 0x1407 Unknown";
-          mode = "1920x1080"; # TEMPLATE
-          scale = "1";
-          position = "2560,0";
-          workspace = "2:二";
-          output = "eDP-1";
-        };
-      };
-      inputs = {
-        "1:1:AT_Translated_Set_2_keyboard" = {
-          xkb_layout = "us";
-          xkb_options = "grp:win_space_toggle";
-          xkb_variant = "altgr-intl";
-        };
-      };
-      keybindings = { };
     };
 
   }
@@ -2160,7 +2095,7 @@ This is the central station for self-defined packages. These are all referenced 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
 #+begin_src nix :tangle pkgs/default.nix
-  { pkgs, ... }:
+  { lib, pkgs, ... }:
   let
     packageNames = [
       "pass-fuzzel"
@@ -2178,7 +2113,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "update-checker"
       "github-notifications"
       "screenshare"
-      "bootstrap"
+      "swarsel-bootstrap"
       "swarsel-rebuild"
       "swarsel-install"
       "swarsel-postinstall"
@@ -2187,12 +2122,8 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "vershell"
       "eontimer"
     ];
-    mkPackages = names: builtins.listToAttrs (map (name: {
-      inherit name;
-      value = pkgs.callPackage ./${name} { };
-    }) names);
     in
-    mkPackages packageNames
+   lib.swarselsystems.mkPackages packageNames pkgs
 
 
 #+end_src
@@ -2793,14 +2724,14 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
-**** bootstrap
+**** swarsel-bootstrap
 :PROPERTIES:
 :CUSTOM_ID: h:74db57ae-0bb9-4257-84be-eddbc85130dd
 :END:
 
 This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 
-#+begin_src shell :tangle scripts/bootstrap.sh
+#+begin_src shell :tangle scripts/swarsel-bootstrap.sh
   # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/scripts/bootstrap-nixos.sh
   set -eo pipefail
 
@@ -3143,13 +3074,13 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 #+end_src
 
 
-#+begin_src nix :tangle pkgs/bootstrap/default.nix
+#+begin_src nix :tangle pkgs/swarsel-bootstrap/default.nix
   { writeShellApplication, openssh }:
 
   writeShellApplication {
-    name = "bootstrap";
+    name = "swarsel-bootstrap";
     runtimeInputs = [ openssh ];
-    text = builtins.readFile ../../scripts/bootstrap.sh;
+    text = builtins.readFile ../../scripts/swarsel-bootstrap.sh;
   }
 #+end_src
 
@@ -3659,24 +3590,25 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 When adding a new entry here, do not forget to add it in the default output of this file, otherwise it will not be exposed to the rest of the system.
 
 #+begin_src nix :tangle overlays/default.nix
-  { inputs, ... }:
+  { self,inputs, lib, ... }:
 
   let
-    additions = final: _prev: import ../pkgs { pkgs = final; };
-    modifications = _: _prev: {
-      vesktop = _prev.vesktop.override {
+    additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
+
+    modifications = _: prev: {
+      vesktop = prev.vesktop.override {
         withSystemVencord = true;
       };
 
-      firefox = _prev.firefox.override {
+      firefox = prev.firefox.override {
         nativeMessagingHosts = [
-          _prev.tridactyl-native
-          _prev.browserpass
-          _prev.plasma5Packages.plasma-browser-integration
+          prev.tridactyl-native
+          prev.browserpass
+          prev.plasma5Packages.plasma-browser-integration
         ];
       };
 
-      retroarch = _prev.retroarch.withCores (cores: with cores; [
+      retroarch = prev.retroarch.withCores (cores: with cores; [
           snes9x # snes
           nestopia # nes
           dosbox # dos
@@ -3686,10 +3618,6 @@ When adding a new entry here, do not forget to add it in the default output of t
           melonds # ds
           dolphin # gc/wii
         ]);
-
-      # prismlauncher = _prev.prismlauncher.override {
-      #   glfw = _prev.glfw-wayland-minecraft;
-      # };
 
       # #river = prev.river.overrideAttrs (oldAttrs: rec {
       #   pname = "river";
@@ -3704,15 +3632,15 @@ When adding a new entry here, do not forget to add it in the default output of t
       # });
     };
 
-    nixpkgs-stable = final: _prev: {
+    nixpkgs-stable = final: _: {
       stable = import inputs.nixpkgs-stable {
         inherit (final) system;
         config.allowUnfree = true;
       };
     };
 
-    zjstatus = _: _prev: {
-      zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
+    zjstatus = _: prev: {
+      zjstatus = inputs.zjstatus.packages.${prev.system}.default;
     };
 
   in
@@ -3750,6 +3678,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
 #+begin_src nix :tangle modules/nixos/default.nix
+  { lib, ... }:
   let
     moduleNames = [
       "wallpaper"
@@ -3758,14 +3687,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       "server"
       "input"
     ];
-
-    mkImports = names: builtins.listToAttrs (map (name: {
-      inherit name;
-      value = import ./${name}.nix;
-    }) names);
-
   in
-    mkImports moduleNames
+  lib.swarselsystems.mkModules moduleNames "nixos"
 
 #+end_src
 
@@ -3890,12 +3813,9 @@ This section is for everything input-related on the NixOS side. At the moment, t
 
 #+begin_src nix :tangle modules/nixos/input.nix
   { lib, ... }:
-  let
-    inherit (lib) mkOption types;
-  in
   {
-    options.swarselsystems.shellAliases = mkOption {
-      type = types.attrsOf types.str;
+    options.swarselsystems.shellAliases = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   }
@@ -3909,6 +3829,7 @@ This section is for everything input-related on the NixOS side. At the moment, t
 This holds modules that are to be used on most hosts. These are also the most important options to configure, as these allow me easy access to monitor, keyboard, and other setups.
 
 #+BEGIN_src nix :tangle modules/home/default.nix
+  { lib, ... }:
   let
     moduleNames = [
       "laptop"
@@ -3923,14 +3844,8 @@ This holds modules that are to be used on most hosts. These are also the most im
       "filesystem"
       "firefox"
     ];
-
-    mkImports = names: builtins.listToAttrs (map (name: {
-      inherit name;
-      value = import ./${name}.nix;
-    }) names);
-
   in
-    mkImports moduleNames
+  lib.swarselsystems.mkModules moduleNames "home"
 #+end_src
 
 ***** Laptop
@@ -3981,7 +3896,6 @@ This section is mostly used to deliver the correct information to Waybar. AMD sy
 
 #+begin_src nix :tangle modules/home/hardware.nix
   { lib, ... }:
-
   {
     options.swarselsystems.cpuCount = lib.mkOption {
       type = lib.types.int;
@@ -4010,7 +3924,6 @@ The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7
 
 #+begin_src nix :tangle modules/home/waybar.nix
   { lib, config, ... }:
-
   let
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
   in
@@ -4054,24 +3967,21 @@ This allows me to define my monitors in the machine's =default.nix=.
 
 #+begin_src nix :tangle modules/home/monitors.nix
   { lib, ... }:
-  let
-    inherit (lib) mkOption types;
-  in
   {
-    options.swarselsystems.monitors = mkOption {
-      type = types.attrsOf (types.attrsOf types.str);
+    options.swarselsystems.monitors = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = { };
     };
-    options.swarselsystems.sharescreen = mkOption {
-      type = types.str;
+    options.swarselsystems.sharescreen = lib.mkOption {
+      type = lib.types.str;
       default = "";
     };
-    options.swarselsystems.lowResolution = mkOption {
-      type = types.str;
+    options.swarselsystems.lowResolution = lib.mkOption {
+      type = lib.types.str;
       default = "";
     };
-    options.swarselsystems.highResolution = mkOption {
-      type = types.str;
+    options.swarselsystems.highResolution = lib.mkOption {
+      type = lib.types.str;
       default = "";
     };
   }
@@ -4086,16 +3996,13 @@ This allows me to configure input options. Here, I am globally defining my split
 
 #+begin_src nix :tangle modules/home/input.nix
   { lib, config, ... }:
-  let
-    inherit (lib) mkOption types;
-  in
   {
-    options.swarselsystems.inputs = mkOption {
-      type = types.attrsOf (types.attrsOf types.str);
+    options.swarselsystems.inputs = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = { };
     };
-    options.swarselsystems.kyria = mkOption {
-      type = types.attrsOf (types.attrsOf types.str);
+    options.swarselsystems.kyria = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = {
         "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
           xkb_layout = "us";
@@ -4107,21 +4014,21 @@ This allows me to configure input options. Here, I am globally defining my split
         };
       };
     };
-    options.swarselsystems.touchpad = mkOption {
-      type = types.attrsOf (types.attrsOf types.str);
+    options.swarselsystems.touchpad = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = { };
     };
-    options.swarselsystems.standardinputs = mkOption {
-      type = types.attrsOf (types.attrsOf types.str);
+    options.swarselsystems.standardinputs = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
       internal = true;
     };
-    options.swarselsystems.keybindings = mkOption {
-      type = types.attrsOf types.str;
+    options.swarselsystems.keybindings = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
       default = { };
     };
-    options.swarselsystems.shellAliases = mkOption {
-      type = types.attrsOf types.str;
+    options.swarselsystems.shellAliases = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   }
@@ -4144,9 +4051,7 @@ These are some extra options that will be used if the machine also runs NixOS. F
     options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
     options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
-      {
-        command = "sleep 60 && nixGL nextcloud --background";
-      }
+      { command = "sleep 60 && nixGL nextcloud --background"; }
       { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
       { command = "sleep 60 && nixGL syncthingtray --wait"; }
       { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
@@ -4154,6 +4059,7 @@ These are some extra options that will be used if the machine also runs NixOS. F
       { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
       { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
     ];
+
     options.swarselsystems.swayfxConfig = lib.mkOption {
       type = lib.types.str;
       default = "
@@ -4203,13 +4109,9 @@ Do not that =syncthingtray= is also not mentioned here. It is installed as a hom
 
 #+begin_src nix :tangle modules/home/startup.nix
 { lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
 {
-
-  options.swarselsystems.startup = mkOption {
-    type = types.listOf (types.attrsOf types.str);
+  options.swarselsystems.startup = lib.mkOption {
+    type = lib.types.listOf (lib.types.attrsOf lib.types.str);
     default = [
       { command = "nextcloud --background"; }
       { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
@@ -4232,7 +4134,6 @@ Again, I set the wallpaper here for =stylix=.
 
 #+begin_src nix :tangle modules/home/wallpaper.nix
   { lib, ... }:
-
   {
     options.swarselsystems.wallpaper = lib.mkOption {
       type = lib.types.path;
@@ -4251,7 +4152,6 @@ Another duplicated option for the filesystem.
 
 #+begin_src nix :tangle modules/home/filesystem.nix
   { lib, ... }:
-
   {
     options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   }
@@ -5210,17 +5110,11 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 #+begin_src nix :tangle profiles/common/nixos/sops.nix
   { config, lib, ... }:
-  let
-    mkIfElse = p: yes: no: lib.mkMerge [
-      (lib.mkIf p yes)
-      (lib.mkIf (!p) no)
-    ];
-  in
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-      age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+      age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
 
@@ -5751,10 +5645,8 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 #+begin_src nix :tangle profiles/common/nixos/impermanence.nix
   { config, lib, ... }:
   let
-    mkIfElse = p: yes: no: if p then yes else no;
-    mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+    mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
   in
-
   {
 
     security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
@@ -8526,7 +8418,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       vershell
       eontimer
 
-      bootstrap
+      swarsel-bootstrap
 
       (pkgs.writeScriptBin "project" ''
         #! ${pkgs.bash}/bin/bash
@@ -8581,16 +8473,10 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 #+begin_src nix :tangle profiles/common/home/sops.nix
   { config, lib, ... }:
-  let
-    mkIfElse = p: yes: no: lib.mkMerge [
-      (lib.mkIf p yes)
-      (lib.mkIf (!p) no)
-    ];
-  in
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
       age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
       secrets = {
@@ -10565,15 +10451,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
   { config, lib, ... }:
   let
     inherit (config.swarselsystems) monitors;
-    eachMonitor = _name: monitor: {
-      inherit (monitor) name;
-      value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
-    };
-    eachOutput = _name: monitor: {
-      inherit (monitor) name;
-      value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
-    };
-    workplaceSets = lib.mapAttrs' eachOutput monitors;
+    workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput monitors;
     workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
   in
   {
@@ -10699,7 +10577,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
         defaultWorkspace = "workspace 1:一";
-        output = lib.mapAttrs' eachMonitor monitors;
+        output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign = workplaceOutputs;
         startup = config.swarselsystems.startup ++ [

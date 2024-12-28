@@ -1,21 +1,22 @@
-{ inputs, ... }:
+{ self, inputs, lib, ... }:
 
 let
-  additions = final: _prev: import ../pkgs { pkgs = final; };
-  modifications = _: _prev: {
-    vesktop = _prev.vesktop.override {
+  additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
+
+  modifications = _: prev: {
+    vesktop = prev.vesktop.override {
       withSystemVencord = true;
     };
 
-    firefox = _prev.firefox.override {
+    firefox = prev.firefox.override {
       nativeMessagingHosts = [
-        _prev.tridactyl-native
-        _prev.browserpass
-        _prev.plasma5Packages.plasma-browser-integration
+        prev.tridactyl-native
+        prev.browserpass
+        prev.plasma5Packages.plasma-browser-integration
       ];
     };
 
-    retroarch = _prev.retroarch.withCores (cores: with cores; [
+    retroarch = prev.retroarch.withCores (cores: with cores; [
       snes9x # snes
       nestopia # nes
       dosbox # dos
@@ -25,10 +26,6 @@ let
       melonds # ds
       dolphin # gc/wii
     ]);
-
-    # prismlauncher = _prev.prismlauncher.override {
-    #   glfw = _prev.glfw-wayland-minecraft;
-    # };
 
     # #river = prev.river.overrideAttrs (oldAttrs: rec {
     #   pname = "river";
@@ -43,15 +40,15 @@ let
     # });
   };
 
-  nixpkgs-stable = final: _prev: {
+  nixpkgs-stable = final: _: {
     stable = import inputs.nixpkgs-stable {
       inherit (final) system;
       config.allowUnfree = true;
     };
   };
 
-  zjstatus = _: _prev: {
-    zjstatus = inputs.zjstatus.packages.${_prev.system}.default;
+  zjstatus = _: prev: {
+    zjstatus = inputs.zjstatus.packages.${prev.system}.default;
   };
 
 in

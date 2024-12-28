@@ -130,38 +130,8 @@
     let
 
       inherit (self) outputs;
-      lib = nixpkgs.lib // home-manager.lib;
+      lib = (nixpkgs.lib // home-manager.lib).extend (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
-      pkgsFor = lib.genAttrs (import systems) (
-        system:
-        import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        }
-      );
-      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-      forAllSystems = lib.genAttrs [
-        "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ];
-      mkFullHost = host: isNixos: {
-        ${host} =
-          let
-            func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-            systemFunc = func;
-          in
-          systemFunc {
-            specialArgs = {
-              inherit inputs outputs self;
-              lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
-            };
-            modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
-          };
-      };
-      mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
-      readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
 
       # NixOS modules that can only be used on NixOS systems
       nixModules = [
@@ -187,49 +157,33 @@
         ./profiles/common/home
       ];
 
-      # For adding things to _module.args (making arguments available globally)
-      # moduleArgs = [
-      #   {
-      #     _module.args = { inherit self; };
-      #   }
-      # ];
-
     in
     {
 
-      inherit lib;
-      inherit mixedModules;
-      inherit nixModules;
+      inherit lib nixModules mixedModules homeModules;
 
-      nixosModules = import ./modules/nixos;
-      homeManagerModules = import ./modules/home;
+      nixosModules = import ./modules/nixos { inherit lib; };
+      homeManagerModules = import ./modules/home { inherit lib; };
+      packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+      formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+      overlays = import ./overlays { inherit self lib inputs; };
 
-      packages = forEachSystem (pkgs: import ./pkgs { inherit pkgs; });
-      apps = forAllSystems (system: {
-        default = self.apps.${system}.bootstrap;
+      apps = lib.swarselsystems.forAllSystems (system:
+        let
+          appNames = [
+            "swarsel-bootstrap"
+            "swarsel-install"
+            "swarsel-rebuild"
+            "swarsel-postinstall"
+          ];
+          appSet = lib.swarselsystems.mkApps system appNames self;
+        in
+        {
+          inherit appSet;
+          default = appSet.bootstrap;
+        });
 
-        bootstrap = {
-          type = "app";
-          program = "${self.packages.${system}.bootstrap}/bin/bootstrap";
-        };
-
-        install = {
-          type = "app";
-          program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
-        };
-
-        postinstall = {
-          type = "app";
-          program = "${self.packages.${system}.swarsel-postinstall}/bin/swarsel-postinstall";
-        };
-
-        rebuild = {
-          type = "app";
-          program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
-        };
-      });
-      devShells = forAllSystems (
-        system:
+      devShells = lib.swarselsystems.forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           checks = self.checks.${system};
@@ -239,62 +193,65 @@
             NIX_CONFIG = "experimental-features = nix-command flakes";
             inherit (checks.pre-commit-check) shellHook;
             buildInputs = checks.pre-commit-check.enabledPackages;
-            nativeBuildInputs = [
-              pkgs.nix
-              pkgs.home-manager
-              pkgs.git
-              pkgs.just
-              pkgs.age
-              pkgs.ssh-to-age
-              pkgs.sops
+            nativeBuildInputs = with pkgs; [
+              nix
+              home-manager
+              git
+              just
+              age
+              ssh-to-age
+              sops
+              statix
+              deadnix
+              nixpkgs-fmt
             ];
           };
         }
       );
 
-      formatter = forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-      checks = forAllSystems (
-        system:
+      checks = lib.swarselsystems.forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
         in
         import ./checks { inherit self inputs system pkgs; }
       );
-      overlays = import ./overlays { inherit inputs; };
 
 
       nixosConfigurations =
-        mkFullHostConfigs (readHosts "nixos") true;
+        lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
 
-      homeConfigurations = {
+      homeConfigurations =
 
-        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-          modules = homeModules ++ mixedModules ++ [
-            ./hosts/home-manager
-          ];
-        };
+        # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+        #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
+        #  extraSpecialArgs = { inherit inputs outputs; };
+        #   modules = homeModules ++ mixedModules ++ [
+        #     ./hosts/home-manager
+        #   ];
+        # };
 
-      };
+        lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+
 
       darwinConfigurations =
-        mkFullHostConfigs (readHosts "darwin") false;
+        lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
 
-      nixOnDroidConfigurations = {
+      nixOnDroidConfigurations =
 
-        magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-          pkgs = pkgsFor.aarch64-linux;
-          modules = [
-            ./hosts/magicant
-          ];
-        };
+        # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
+        #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
+        #   modules = [
+        #     ./hosts/magicant
+        #   ];
+        # };
 
-      };
+        lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+
+
 
       topology =
 
-        forEachSystem (pkgs: import inputs.nix-topology {
+        lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
           inherit pkgs;
           modules = [
             # Your own file to define global topology. Works in principle like a nixos module but uses different options.

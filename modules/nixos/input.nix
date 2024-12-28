@@ -1,10 +1,7 @@
 { lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
 {
-  options.swarselsystems.shellAliases = mkOption {
-    type = types.attrsOf types.str;
+  options.swarselsystems.shellAliases = lib.mkOption {
+    type = lib.types.attrsOf lib.types.str;
     default = { };
   };
 }

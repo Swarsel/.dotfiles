@@ -1,15 +1,7 @@
 { config, lib, ... }:
 let
   inherit (config.swarselsystems) monitors;
-  eachMonitor = _name: monitor: {
-    inherit (monitor) name;
-    value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
-  };
-  eachOutput = _name: monitor: {
-    inherit (monitor) name;
-    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
-  };
-  workplaceSets = lib.mapAttrs' eachOutput monitors;
+  workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput monitors;
   workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
 in
 {
@@ -135,7 +127,7 @@ in
         };
       };
       defaultWorkspace = "workspace 1:一";
-      output = lib.mapAttrs' eachMonitor monitors;
+      output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [

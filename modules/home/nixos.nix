@@ -7,9 +7,7 @@
   options.swarselsystems.isNixos = lib.mkEnableOption "nixos host";
   options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   config.swarselsystems.startup = lib.mkIf (!config.swarselsystems.isNixos) [
-    {
-      command = "sleep 60 && nixGL nextcloud --background";
-    }
+    { command = "sleep 60 && nixGL nextcloud --background"; }
     { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
     { command = "sleep 60 && nixGL syncthingtray --wait"; }
     { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
@@ -17,6 +15,7 @@
     { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
     { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
   ];
+
   options.swarselsystems.swayfxConfig = lib.mkOption {
     type = lib.types.str;
     default = "

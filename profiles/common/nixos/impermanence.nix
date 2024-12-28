@@ -1,9 +1,7 @@
 { config, lib, ... }:
 let
-  mkIfElse = p: yes: no: if p then yes else no;
-  mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+  mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
 in
-
 {
 
   security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''

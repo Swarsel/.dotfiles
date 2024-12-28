@@ -1,22 +1,19 @@
 { lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
 {
-  options.swarselsystems.monitors = mkOption {
-    type = types.attrsOf (types.attrsOf types.str);
+  options.swarselsystems.monitors = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
     default = { };
   };
-  options.swarselsystems.sharescreen = mkOption {
-    type = types.str;
+  options.swarselsystems.sharescreen = lib.mkOption {
+    type = lib.types.str;
     default = "";
   };
-  options.swarselsystems.lowResolution = mkOption {
-    type = types.str;
+  options.swarselsystems.lowResolution = lib.mkOption {
+    type = lib.types.str;
     default = "";
   };
-  options.swarselsystems.highResolution = mkOption {
-    type = types.str;
+  options.swarselsystems.highResolution = lib.mkOption {
+    type = lib.types.str;
     default = "";
   };
 }

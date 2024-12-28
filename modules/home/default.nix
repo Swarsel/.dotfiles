@@ -1,3 +1,4 @@
+{ lib, ... }:
 let
   moduleNames = [
     "laptop"
@@ -12,13 +13,5 @@ let
     "filesystem"
     "firefox"
   ];
-
-  mkImports = names: builtins.listToAttrs (map
-    (name: {
-      inherit name;
-      value = import ./${name}.nix;
-    })
-    names);
-
 in
-mkImports moduleNames
+lib.swarselsystems.mkModules moduleNames "home"
