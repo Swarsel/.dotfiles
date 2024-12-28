@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-21 Sa 04:43 -->
+<!-- 2024-12-28 Sa 16:43 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -221,6 +221,7 @@
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">3.7. darwinConfigurations</a></li>
 <li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">3.8. homeConfigurations</a></li>
 <li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">3.9. nixOnDroidConfigurations</a></li>
+<li><a href="#orgd28d2ce">3.10. topologyConfigurations</a></li>
 </ul>
 </li>
 <li><a href="#h:02cd20be-1ffa-4904-9d5a-da5a89ba1421">4. System</a>
@@ -237,19 +238,19 @@
 </li>
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">4.1.2. Virtual hosts</a>
 <ul>
-<li><a href="#orged728b1">4.1.2.1. Toto (QEMU VM)</a></li>
-<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.2. Sync (OCI)</a>
+<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">4.1.2.1. Sync (OCI)</a>
 <ul>
-<li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.2.1. NixOS</a></li>
+<li><a href="#h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">4.1.2.1.1. NixOS</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org185baa3">4.1.3. Utility hosts</a>
+<li><a href="#orgd491f98">4.1.3. Utility hosts</a>
 <ul>
-<li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.3.1. drugstore (ISO)</a></li>
-<li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.3.2. Home-manager only (non-NixOS)</a></li>
-<li><a href="#orge1885af">4.1.3.3. ChaosTheatre (Demo)</a></li>
+<li><a href="#org77e9aa9">4.1.3.1. Toto (Physical/VM)</a></li>
+<li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">4.1.3.2. drugstore (ISO)</a></li>
+<li><a href="#h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">4.1.3.3. Home-manager only (non-NixOS)</a></li>
+<li><a href="#org2b0d997">4.1.3.4. ChaosTheatre (Demo Physical/VM)</a></li>
 </ul>
 </li>
 </ul>
@@ -275,12 +276,13 @@
 <li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">4.2.1.15. github-notifications</a></li>
 <li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">4.2.1.16. screenshare</a></li>
 <li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">4.2.1.17. bootstrap</a></li>
-<li><a href="#orga56f521">4.2.1.18. swarsel-rebuild</a></li>
-<li><a href="#org2933167">4.2.1.19. swarsel-install</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.20. t2ts</a></li>
-<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.21. ts2t</a></li>
-<li><a href="#orga1f4af9">4.2.1.22. vershell</a></li>
-<li><a href="#orgfd90d6e">4.2.1.23. eontimer</a></li>
+<li><a href="#orgd873577">4.2.1.18. swarsel-rebuild</a></li>
+<li><a href="#orgd81a8e9">4.2.1.19. swarsel-install</a></li>
+<li><a href="#org829f5bd">4.2.1.20. swarsel-postinstall</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.21. t2ts</a></li>
+<li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">4.2.1.22. ts2t</a></li>
+<li><a href="#orgcf9834d">4.2.1.23. vershell</a></li>
+<li><a href="#org33d3655">4.2.1.24. eontimer</a></li>
 </ul>
 </li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">4.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
@@ -291,9 +293,8 @@
 <li><a href="#h:bd7517c6-0e0a-4063-bc81-e62cd24e7170">4.2.3.1.1. Wallpaper</a></li>
 <li><a href="#h:c6a138ff-f07f-4cae-95b9-b6daa2b11463">4.2.3.1.2. Hardware</a></li>
 <li><a href="#h:f4f22166-e345-43e6-b15f-b7f5bb886554">4.2.3.1.3. Setup</a></li>
-<li><a href="#h:45188d3c-9910-480b-beec-d5fd713b05fb">4.2.3.1.4. Input</a></li>
-<li><a href="#h:e591075d-4a77-4add-bbc8-b711998fa97f">4.2.3.1.5. Impermanence</a></li>
-<li><a href="#h:f77358ee-a80c-403a-be9d-04e7052bc556">4.2.3.1.6. Filesystem</a></li>
+<li><a href="#orgba39c14">4.2.3.1.4. Server</a></li>
+<li><a href="#h:45188d3c-9910-480b-beec-d5fd713b05fb">4.2.3.1.5. Input</a></li>
 </ul>
 </li>
 <li><a href="#h:ced5841f-c088-4d88-b3a1-7d62aad8837b">4.2.3.2. home-manager</a>
@@ -369,6 +370,7 @@
 <li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">4.3.1.29. Podmam (distrobox)</a></li>
 <li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">4.3.1.30. Handle lid switch correctly</a></li>
 <li><a href="#h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">4.3.1.31. Low battery notification</a></li>
+<li><a href="#orgf0c4047">4.3.1.32. Lanzaboote</a></li>
 </ul>
 </li>
 <li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">4.3.2. Server</a>
@@ -683,7 +685,7 @@
 </div>
 </div>
 <p>
-<b>This file has 57207 words spanning 14595 lines and was last revised on 2024-12-21 04:43:26 +0100.</b>
+<b>This file has 58511 words spanning 14914 lines and was last revised on 2024-12-28 16:43:06 +0100.</b>
 </p>
 
 <p>
@@ -736,7 +738,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-21 04:43:26 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-28 16:43:06 +0100)
 </p></li>
 </ul>
 
@@ -1535,6 +1537,8 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
       inputs = { };
     };
 
+    nix-topology.url = "github:oddlama/nix-topology";
+
   };
 
   outputs =
@@ -1571,7 +1575,10 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
             systemFunc = func;
           in
           systemFunc {
-            specialArgs = { inherit inputs outputs self; };
+            specialArgs = {
+              inherit inputs outputs self;
+              lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+            };
             modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
           };
       };
@@ -1583,9 +1590,10 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
         inputs.stylix.nixosModules.stylix
         inputs.lanzaboote.nixosModules.lanzaboote
         inputs.disko.nixosModules.disko
-        # inputs.impermanence.nixosModules.impermanence
+        inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+        inputs.nix-topology.nixosModules.default
         ./profiles/common/nixos
       ];
 
@@ -1632,6 +1640,11 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
           program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
         };
 
+        postinstall = {
+          type = "app";
+          program = "${self.packages.${system}.swarsel-postinstall}/bin/swarsel-postinstall";
+        };
+
         rebuild = {
           type = "app";
           program = "${self.packages.${system}.swarsel-rebuild}/bin/swarsel-rebuild";
@@ -1676,13 +1689,13 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
 
       homeConfigurations = {
 
-         "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgsFor.x86_64-linux;
-          extraSpecialArgs = { inherit inputs outputs; };
-           modules = homeModules ++ mixedModules ++ [
-             ./hosts/home-manager
-           ];
-         };
+        "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
+         pkgs = pkgsFor.x86_64-linux;
+         extraSpecialArgs = { inherit inputs outputs; };
+          modules = homeModules ++ mixedModules ++ [
+            ./hosts/home-manager
+          ];
+        };
 
       };
 
@@ -1699,6 +1712,18 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
         };
 
       };
+
+      topology =
+
+        forEachSystem (pkgs: import inputs.nix-topology {
+          inherit pkgs;
+          modules = [
+            # Your own file to define global topology. Works in principle like a nixos module but uses different options.
+            # ./topology.nix
+            { inherit (self) nixosConfigurations; }
+          ];
+        });
+
 
     };
 }
@@ -1826,6 +1851,10 @@ This is a private repository that I use for settings in modules that do not expo
 <p>
 When setting this option normally, the password would normally be written world-readable not only in the nix store, but also in the configuration. Hence, I put such passwords into a private repository. This allows me to keep purity of the flake while keeping a level of security on these secrets.
 </p>
+<ul class="org-ul">
+<li><a href="https://github.com/oddlama/nix-topology">nix-topology</a>
+This automatically creates a topology diagram of my configuration.</li>
+</ul>
 
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1929,6 +1958,8 @@ nix-secrets = {
   inputs = { };
 };
 
+nix-topology.url = "github:oddlama/nix-topology";
+
 </pre>
 </div>
 </div>
@@ -1981,7 +2012,10 @@ mkFullHost = host: isNixos: {
       systemFunc = func;
     in
     systemFunc {
-      specialArgs = { inherit inputs outputs self; };
+      specialArgs = {
+        inherit inputs outputs self;
+        lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+      };
       modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
     };
 };
@@ -1993,9 +2027,10 @@ nixModules = [
   inputs.stylix.nixosModules.stylix
   inputs.lanzaboote.nixosModules.lanzaboote
   inputs.disko.nixosModules.disko
-  # inputs.impermanence.nixosModules.impermanence
+  inputs.impermanence.nixosModules.impermanence
   inputs.sops-nix.nixosModules.sops
   inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+  inputs.nix-topology.nixosModules.default
   ./profiles/common/nixos
 ];
 
@@ -2071,6 +2106,11 @@ apps = forAllSystems (system: {
   install = {
     type = "app";
     program = "${self.packages.${system}.swarsel-install}/bin/swarsel-install";
+  };
+
+  postinstall = {
+    type = "app";
+    program = "${self.packages.${system}.swarsel-postinstall}/bin/swarsel-postinstall";
   };
 
   rebuild = {
@@ -2193,6 +2233,24 @@ magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
 </div>
 </div>
 </div>
+<div id="outline-container-orgd28d2ce" class="outline-3">
+<h3 id="orgd28d2ce"><span class="section-number-3">3.10.</span> topologyConfigurations</h3>
+<div class="outline-text-3" id="text-3-10">
+<div class="org-src-container">
+<pre class="src src-nix">
+forEachSystem (pkgs: import inputs.nix-topology {
+  inherit pkgs;
+  modules = [
+    # Your own file to define global topology. Works in principle like a nixos module but uses different options.
+    # ./topology.nix
+    { inherit (self) nixosConfigurations; }
+  ];
+});
+
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:02cd20be-1ffa-4904-9d5a-da5a89ba1421" class="outline-2">
 <h2 id="h:02cd20be-1ffa-4904-9d5a-da5a89ba1421"><span class="section-number-2">4.</span> System</h2>
@@ -2228,6 +2286,9 @@ My work machine. Built for more security, this is the gold standard of my config
 <pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
+  sharedOptions = {
+    isBtrfs = true;
+  };
 in
 {
 
@@ -2265,12 +2326,6 @@ in
   networking.networkmanager.wifi.scanRandMacAddress = false;
 
   boot = {
-    loader.systemd-boot.enable = lib.mkForce false;
-    loader.efi.canTouchEfiVariables = true;
-    lanzaboote = {
-      enable = true;
-      pkiBundle = "/etc/secureboot";
-    };
     supportedFilesystems = [ "btrfs" ];
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     kernelParams = [
@@ -2305,18 +2360,18 @@ in
     '';
   };
 
-  swarselsystems = {
+  swarselsystems = lib.recursiveUpdate {
     wallpaper = self + /wallpaper/lenovowp.png;
     hasBluetooth = true;
     hasFingerprint = true;
-    impermanence = false;
-    isBtrfs = true;
-  };
+    isImpermanence = false;
+    isSecureBoot = true;
+    isCrypted = true;
+  } sharedOptions;
 
-  home-manager.users.swarsel.swarselsystems = {
+  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate {
     isLaptop = true;
     isNixos = true;
-    isBtrfs = true;
     flakePath = "/home/swarsel/.dotfiles";
     cpuCount = 16;
     # temperatureHwmon = {
@@ -2441,7 +2496,7 @@ in
       ans = ". ~/.venvs/ansible/bin/activate";
       ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
     };
-  };
+  } sharedOptions;
 }
 
 
@@ -2505,7 +2560,7 @@ in
   swarselsystems = {
     hasBluetooth = false;
     hasFingerprint = false;
-    impermanence = false;
+    isImpermanence = false;
     isBtrfs = false;
     flakePath = "/home/swarsel/.dotfiles";
     server = {
@@ -2649,105 +2704,8 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 </p>
 </div>
-<div id="outline-container-orged728b1" class="outline-5">
-<h5 id="orged728b1"><span class="section-number-5">4.1.2.1.</span> Toto (QEMU VM)</h5>
-<div class="outline-text-5" id="text-4-1-2-1">
-<div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
-let
-  profilesPath = "${self}/profiles";
-in
-{
-
-  imports =  [
-    inputs.disko.nixosModules.disko
-    "${self}/hosts/nixos/toto/disk-config.nix"
-    {
-      _module.args = {
-        withSwap = false;
-      };
-    }
-    ./hardware-configuration.nix
-
-    inputs.sops-nix.nixosModules.sops
-
-    "${profilesPath}/optional/nixos/autologin.nix"
-    "${profilesPath}/common/nixos/settings.nix"
-    "${profilesPath}/common/nixos/home-manager.nix"
-    "${profilesPath}/common/nixos/xserver.nix"
-    "${profilesPath}/common/nixos/users.nix"
-    "${profilesPath}/common/nixos/sops.nix"
-    "${profilesPath}/server/nixos/ssh.nix"
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports =  [
-        inputs.sops-nix.homeManagerModules.sops
-        "${profilesPath}/common/home/settings.nix"
-        "${profilesPath}/common/home/sops.nix"
-        "${profilesPath}/common/home/ssh.nix"
-
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
-    }
-  ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
-  environment.systemPackages = with pkgs; [
-    curl
-    git
-    gnupg
-    rsync
-    ssh-to-age
-    sops
-    vim
-    just
-  ];
-
-  system.stateVersion = lib.mkForce "23.05";
-
-  boot = {
-    loader.systemd-boot.enable = lib.mkForce true;
-    loader.efi.canTouchEfiVariables = true;
-    supportedFilesystems = [ "btrfs" ];
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-  };
-
-
-  networking = {
-    hostName = "toto";
-    firewall.enable = false;
-  };
-
-  swarselsystems = {
-    wallpaper = self + /wallpaper/lenovowp.png;
-    impermanence = false;
-    isBtrfs = false;
-    initialSetup = true;
-  };
-
-  home-manager.users.swarsel.swarselsystems = {
-    isLaptop = false;
-    isNixos = true;
-    isBtrfs = false;
-    flakePath = "/home/swarsel/.dotfiles";
-  };
-
-}
-
-
-</pre>
-</div>
-</div>
-</div>
 <div id="outline-container-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf" class="outline-5">
-<h5 id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"><span class="section-number-5">4.1.2.2.</span> Sync (OCI)</h5>
+<h5 id="h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf"><span class="section-number-5">4.1.2.1.</span> Sync (OCI)</h5>
 <div class="outline-text-5" id="text-h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">
 <p>
 This machine mainly acts as an external sync helper. It manages the following things:
@@ -2766,7 +2724,7 @@ All of these are processes that use little cpu but can take a lot of storage. Fo
 </ul>
 </div>
 <div id="outline-container-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c" class="outline-6">
-<h6 id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"><span class="section-number-6">4.1.2.2.1.</span> NixOS</h6>
+<h6 id="h:e5fbb73a-799a-438f-a88c-fc14d110ac9c"><span class="section-number-6">4.1.2.1.1.</span> NixOS</h6>
 <div class="outline-text-6" id="text-h:e5fbb73a-799a-438f-a88c-fc14d110ac9c">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, inputs, outputs, lib, ... }:
@@ -2850,7 +2808,7 @@ in
   swarselsystems = {
     hasBluetooth = false;
     hasFingerprint = false;
-    impermanence = false;
+    isImpermanence = false;
     isBtrfs = false;
     flakePath = "/root/.dotfiles";
     server = {
@@ -2868,19 +2826,148 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org185baa3" class="outline-4">
-<h4 id="org185baa3"><span class="section-number-4">4.1.3.</span> Utility hosts</h4>
+<div id="outline-container-orgd491f98" class="outline-4">
+<h4 id="orgd491f98"><span class="section-number-4">4.1.3.</span> Utility hosts</h4>
 <div class="outline-text-4" id="text-4-1-3">
 </div>
+<div id="outline-container-org77e9aa9" class="outline-5">
+<h5 id="org77e9aa9"><span class="section-number-5">4.1.3.1.</span> Toto (Physical/VM)</h5>
+<div class="outline-text-5" id="text-4-1-3-1">
+<p>
+This is a slim setup for developing base configuration.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+let
+  profilesPath = "${self}/profiles";
+  sharedOptions = {
+    isBtrfs = true;
+  };
+in
+{
+
+  imports =  [
+    inputs.disko.nixosModules.disko
+    "${self}/hosts/nixos/toto/disk-config.nix"
+    ./hardware-configuration.nix
+
+    inputs.sops-nix.nixosModules.sops
+    inputs.impermanence.nixosModules.impermanence
+    inputs.lanzaboote.nixosModules.lanzaboote
+
+    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/common/nixos/settings.nix"
+    "${profilesPath}/common/nixos/home-manager.nix"
+    "${profilesPath}/common/nixos/xserver.nix"
+    "${profilesPath}/common/nixos/users.nix"
+    "${profilesPath}/common/nixos/impermanence.nix"
+    "${profilesPath}/common/nixos/lanzaboote.nix"
+    "${profilesPath}/common/nixos/sops.nix"
+    "${profilesPath}/server/nixos/ssh.nix"
+
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports =  [
+        inputs.sops-nix.homeManagerModules.sops
+        "${profilesPath}/common/home/settings.nix"
+        "${profilesPath}/common/home/sops.nix"
+        "${profilesPath}/common/home/ssh.nix"
+
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
+  ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+  nixpkgs = {
+    overlays = [ outputs.overlays.default ];
+    config = {
+      allowUnfree = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    curl
+    git
+    gnupg
+    rsync
+    ssh-to-age
+    sops
+    vim
+    just
+    sbctl
+  ];
+
+  system.stateVersion = lib.mkForce "23.05";
+
+  boot = {
+    supportedFilesystems = [ "btrfs" ];
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+  };
+
+
+  networking = {
+    hostName = "toto";
+    firewall.enable = false;
+  };
+
+  swarselsystems = lib.recursiveUpdate {
+    wallpaper = self + /wallpaper/lenovowp.png;
+    isImpermanence = true;
+    isCrypted = true;
+    isSecureBoot = false;
+    isSwap = true;
+    swapSize = "8G";
+    # rootDisk = "/dev/nvme0n1";
+    rootDisk = "/dev/vda";
+  } sharedOptions;
+
+  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate {
+    isLaptop = false;
+    isNixos = true;
+    flakePath = "/home/swarsel/.dotfiles";
+  } sharedOptions;
+
+}
+
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:8583371d-5d47-468b-84ba-210aad7e2c90" class="outline-5">
-<h5 id="h:8583371d-5d47-468b-84ba-210aad7e2c90"><span class="section-number-5">4.1.3.1.</span> drugstore (ISO)</h5>
+<h5 id="h:8583371d-5d47-468b-84ba-210aad7e2c90"><span class="section-number-5">4.1.3.2.</span> drugstore (ISO)</h5>
 <div class="outline-text-5" id="text-h:8583371d-5d47-468b-84ba-210aad7e2c90">
 <p>
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the <code>bootstrap</code> utility.
 </p>
 
+<p>
+For added convenience, the live environment displays a helpful text on login, we define it here (will be put into <code>/etc/issue</code>):
+</p>
+
 <div class="org-src-container">
-<pre class="src src-nix">{ self, pkgs, inputs, config, lib, modulesPath, ... }:
+<pre class="src src-bash">[32m~SwarselSystems~[0m
+IP of primary interface: [31m\4[0m
+The Password for all users &amp; root is '[31msetup[0m'.
+Install the system remotely by running '[33mbootstrap -n &lt;CONFIGURATION_NAME&gt; -d &lt;IP_FROM_ABOVE&gt; [0m' on a machine with deployed secrets.
+Alternatively, run '[33mswarsel-install -n &lt;CONFIGURATION_NAME&gt;[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+
+</pre>
+</div>
+
+<p>
+Also, an initial bash history is provided to allow for a very quick local deployment:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">swarsel-install -n chaostheatre
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, pkgs, inputs, outputs, config, lib, modulesPath, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -2897,9 +2984,32 @@ in
 
     "${self}/profiles/iso/minimal.nix"
 
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users.swarsel.imports = [
+        "${self}/profiles/common/home/settings.nix"
+      ] ++ (builtins.attrValues outputs.homeManagerModules);
+    }
   ];
 
-  environment.etc."issue".text = "\\4\n";
+  home-manager.users.swarsel.home = {
+    file = {
+      ".bash_history" = {
+        source = self + /programs/bash/.bash_history;
+      };
+    };
+  };
+  home-manager.users.root.home = {
+    stateVersion = "23.05";
+    file = {
+      ".bash_history" = {
+        source = self + /programs/bash/.bash_history;
+      };
+    };
+  };
+
+  # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users &amp; root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n &lt;HOSTNAME&gt; -d &lt;IP_FROM_ABOVE&gt; [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d &lt;DISK&gt; -f &lt;flake&gt;\x1B[0m' for a local install.\n";
+  environment.etc."issue".source = "${self}/programs/etc/issue";
   networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
 
   isoImage = {
@@ -2945,7 +3055,9 @@ in
 
   system.activationScripts.cache = {
     text = ''
-      mkdir -p /home/swarsel/.local/share/nix/
+      mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
+      mkdir -p -m=0777 /home/swarsel/.local/state/home-manager/gcroots
+      mkdir -p -m=0777 /home/swarsel/.local/share/nix/
       printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json &gt; /dev/null
       mkdir -p /root/.local/share/nix/
       printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json &gt; /dev/null
@@ -2976,7 +3088,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493" class="outline-5">
-<h5 id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"><span class="section-number-5">4.1.3.2.</span> Home-manager only (non-NixOS)</h5>
+<h5 id="h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493"><span class="section-number-5">4.1.3.3.</span> Home-manager only (non-NixOS)</h5>
 <div class="outline-text-5" id="text-h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493">
 <p>
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
@@ -3044,9 +3156,9 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 </div>
 </div>
 </div>
-<div id="outline-container-orge1885af" class="outline-5">
-<h5 id="orge1885af"><span class="section-number-5">4.1.3.3.</span> ChaosTheatre (Demo)</h5>
-<div class="outline-text-5" id="text-4-1-3-3">
+<div id="outline-container-org2b0d997" class="outline-5">
+<h5 id="org2b0d997"><span class="section-number-5">4.1.3.4.</span> ChaosTheatre (Demo Physical/VM)</h5>
+<div class="outline-text-5" id="text-4-1-3-4">
 <p>
 This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
 </p>
@@ -3174,6 +3286,7 @@ let
     "bootstrap"
     "swarsel-rebuild"
     "swarsel-install"
+    "swarsel-postinstall"
     "t2ts"
     "ts2t"
     "vershell"
@@ -3274,7 +3387,8 @@ The version of <code>cura</code> used to be quite outdated in nixpkgs. I am fetc
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ appimageTools, fetchurl, writeScriptBin, pkgs }:
+<pre class="src src-nix"># taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
+{ appimageTools, fetchurl, writeScriptBin, pkgs }:
 
 
 let
@@ -3826,7 +3940,7 @@ writeShellApplication {
 <h5 id="h:74db57ae-0bb9-4257-84be-eddbc85130dd"><span class="section-number-5">4.2.1.17.</span> bootstrap</h5>
 <div class="outline-text-5" id="text-h:74db57ae-0bb9-4257-84be-eddbc85130dd">
 <p>
-This program sets up a new NixOS host.
+This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 </p>
 
 <div class="org-src-container">
@@ -3837,11 +3951,13 @@ target_hostname=""
 target_destination=""
 target_user="swarsel"
 ssh_port="22"
+persist_dir=""
+disk_encryption=0
 temp=$(mktemp -d)
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Remotely installs SwarselSystem on a target machine including secret deployment."
     echo
     echo "USAGE: $0 -n &lt;target_hostname&gt; -d &lt;target_destination&gt; [OPTIONS]"
     echo
@@ -3854,7 +3970,6 @@ function help_and_exit() {
     echo "  -u &lt;target_user&gt;                        specify target_user with sudo access. nix-config will be cloned to their home."
     echo "                                          Default='${target_user}'."
     echo "  --port &lt;ssh_port&gt;                       specify the ssh port to use for remote access. Default=${ssh_port}."
-    echo "  --impermanence                          Use this flag if the target machine has impermanence enabled. WARNING: Assumes /persist path."
     echo "  --debug                                 Enable debug mode."
     echo "  -h | --help                             Print this help."
     exit 0
@@ -3909,14 +4024,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                          # Remove any * and &amp; entries for this host
-                          /[*&amp;]$key_name/ d;
-                          # Inject a new age: entry
-                          # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                          /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                          # Inject a new hosts or user: entry
-                          /&amp;$key_type/{n; p; s/\(.*- &amp;\).*/\1$key_name $key/}
-                          }" $SOPS_FILE
+                                              # Remove any * and &amp; entries for this host
+                                              /[*&amp;]$key_name/ d;
+                                              # Inject a new age: entry
+                                              # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                              /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                              # Inject a new hosts or user: entry
+                                              /&amp;$key_type/{n; p; s/\(.*- &amp;\).*/\1$key_name $key/}
+                                              }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -3939,10 +4054,6 @@ while [[ $# -gt 0 ]]; do
         shift
         ssh_port=$1
         ;;
-    --temp-override)
-        shift
-        temp=$1
-        ;;
     --debug)
         set -x
         ;;
@@ -3954,6 +4065,44 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+green "~SwarselSystems~ remote installer"
+green "Reading system information for $target_hostname ..."
+
+DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+green "Root Disk: $DISK"
+
+CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+if [[ $CRYPTED == "true" ]]; then
+    green "Encryption: ✓"
+    disk_encryption=1
+else
+    red "Encryption: X"
+    disk_encryption=0
+fi
+
+IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+if [[ $IMPERMANENCE == "true" ]]; then
+    green "Impermanence: ✓"
+    persist_dir="/persist"
+else
+    red "Impermanence: X"
+    persist_dir=""
+fi
+
+SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+if [[ $SWAP == "true" ]]; then
+    green "Swap: ✓"
+else
+    red "Swap: X"
+fi
+
+SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Secure Boot: ✓"
+else
+    red "Secure Boot: X"
+fi
 
 ssh_cmd="ssh -oport=${ssh_port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -t $target_user@$target_destination"
 # ssh_root_cmd=$(echo "$ssh_cmd" | sed "s|${target_user}@|root@|") # uses @ in the sed switch to avoid it triggering on the $ssh_key value
@@ -3978,31 +4127,42 @@ sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
 # ------------------------
 green "Preparing a new ssh_host_ed25519_key pair for $target_hostname."
 # Create the directory where sshd expects to find the host keys
-install -d -m755 "$temp/etc/ssh"
+install -d -m755 "$temp/$persist_dir/etc/ssh"
 # Generate host ssh key pair without a passphrase
-ssh-keygen -t ed25519 -f "$temp/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
+ssh-keygen -t ed25519 -f "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key" -C root@"$target_hostname" -N ""
 # Set the correct permissions so sshd will accept the key
-chmod 600 "$temp/etc/ssh/ssh_host_ed25519_key"
+chmod 600 "$temp/$persist_dir/etc/ssh/ssh_host_ed25519_key"
 echo "Adding ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
 # This will fail if we already know the host, but that's fine
 ssh-keyscan -p "$ssh_port" "$target_destination" &gt;&gt; ~/.ssh/known_hosts || true
 # ------------------------
 # when using luks, disko expects a passphrase on /tmp/disko-password, so we set it for now and will update the passphrase later
 # via the config
-green "Preparing a temporary password for disko."
-green "[Optional] Set disk encryption passphrase:"
-read -rs luks_passphrase
-if [ -n "$luks_passphrase" ]; then
-    $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase &gt; /tmp/disko-password'"
-else
-    $ssh_root_cmd "/bin/sh -c 'echo passphrase &gt; /tmp/disko-password'"
+if [ "$disk_encryption" -eq 1 ]; then
+    while true; do
+        green "Set disk encryption passphrase:"
+        read -rs luks_passphrase
+        green "Please confirm passphrase:"
+        read -rs luks_passphrase_confirm
+        if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+            $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase &gt; /tmp/disko-password'"
+            break
+        else
+            red "Passwords do not match"
+        fi
+    done
 fi
 # ------------------------
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
 $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
+
+green "Injecting initialSetup"
+$ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
+
 mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
 $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 # ------------------------
+
 green "Deploying minimal NixOS installation on $target_destination"
 SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
 
@@ -4019,6 +4179,24 @@ while true; do
         yellow "$target_destination is not yet ready."
     fi
 done
+
+# ------------------------
+
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Setting up secure boot keys"
+    $ssh_root_cmd "mkdir -p /var/lib/sbctl"
+    read -ra scp_call &lt;&lt;&lt; "${scp_cmd}"
+    sudo "${scp_call[@]}" -r /var/lib/sbctl root@"$target_destination":/var/lib/
+    $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
+fi
+# ------------------------
+green "Disabling initialSetup"
+sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+
+if [ -n "$persist_dir" ]; then
+    $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
+    $ssh_root_cmd "cp -R /etc/ssh/ $persist_dir/etc/ssh/ || true"
+fi
 # ------------------------
 green "Generating an age key based on the new ssh_host_ed25519_key."
 target_key=$(
@@ -4051,6 +4229,7 @@ green "Updating all secrets files to reflect updates .sops.yaml"
 sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
 # --------------------------
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
+sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
 $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
 $ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
 # __________________________
@@ -4069,8 +4248,14 @@ if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $targe
     cd "${git_root}"
     just sync "$target_user" "$target_destination"
 
+    if [ -n "$persist_dir" ]; then
+        $ssh_root_cmd "cp -r /home/$target_user/.dotfiles $persist_dir/.dotfiles || true"
+        $ssh_root_cmd "cp -r /home/$target_user/.ssh $persist_dir/.ssh || true"
+    fi
+
     if yes_or_no "Do you want to rebuild immediately?"; then
         green "Rebuilding nix-config on $target_hostname"
+        yellow "Reminder: The password is 'setup'"
         $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' &gt; /root/.local/share/nix/trusted-settings.json"
         $ssh_cmd -oForwardAgent=yes "cd .dotfiles &amp;&amp; sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
     fi
@@ -4102,7 +4287,6 @@ fi
 </div>
 
 
-
 <div class="org-src-container">
 <pre class="src src-nix">{ writeShellApplication, openssh }:
 
@@ -4115,27 +4299,27 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orga56f521" class="outline-5">
-<h5 id="orga56f521"><span class="section-number-5">4.2.1.18.</span> swarsel-rebuild</h5>
+<div id="outline-container-orgd873577" class="outline-5">
+<h5 id="orgd873577"><span class="section-number-5">4.2.1.18.</span> swarsel-rebuild</h5>
 <div class="outline-text-5" id="text-4-2-1-18">
 <p>
-This program sets up a new NixOS host.
+This program builds a configuration locally.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-shell">set -eo pipefail
 
-target_flake="chaostheatre"
+target_config="chaostheatre"
 target_user="swarsel"
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Builds SwarselSystem configuration."
     echo
     echo "USAGE: $0 [OPTIONS]"
     echo
     echo "ARGS:"
-    echo "  -f &lt;target_flake&gt;                       specify flake to deploy the nixos config of."
+    echo "  -n &lt;target_config&gt;                       specify nixos config to build."
     echo "                                          Default: chaostheatre"
     echo "  -u &lt;target_user&gt;                        specify user to deploy for."
     echo "                                          Default: swarsel"
@@ -4164,9 +4348,9 @@ function yellow() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -f)
+    -n)
         shift
-        target_flake=$1
+        target_config=$1
         ;;
     -u)
         shift
@@ -4204,11 +4388,11 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
 else
     green "Valid SSH key found! Continuing with installation"
 fi
-sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
+sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
-green "Installing flake $target_flake"
-sudo nixos-rebuild --show-trace --flake .#"$target_flake" boot
+green "Installing flake $target_config"
+sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
 yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
 </pre>
 </div>
@@ -4227,39 +4411,44 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org2933167" class="outline-5">
-<h5 id="org2933167"><span class="section-number-5">4.2.1.19.</span> swarsel-install</h5>
+<div id="outline-container-orgd81a8e9" class="outline-5">
+<h5 id="orgd81a8e9"><span class="section-number-5">4.2.1.19.</span> swarsel-install</h5>
 <div class="outline-text-5" id="text-4-2-1-19">
 <p>
-This program sets up a new NixOS host.
+This program sets up a new NixOS host locally.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-shell">set -eo pipefail
 
-target_flake="chaostheatre"
+target_config="chaostheatre"
+target_hostname="chaostheatre"
 target_user="swarsel"
-fs_type="ext4"
-disk=""
+persist_dir=""
+disk_encryption=0
 
 function help_and_exit() {
     echo
-    echo "Remotely installs NixOS on a target machine using this nix-config."
+    echo "Locally installs SwarselSystem on this machine."
     echo
-    echo "USAGE: $0 -d &lt;disk&gt; [OPTIONS]"
+    echo "USAGE: $0 -n &lt;target_config&gt; [OPTIONS]"
     echo
     echo "ARGS:"
-    echo "  -d &lt;disk&gt;                               specify disk to install on."
-    echo "  -f &lt;target_flake&gt;                       specify flake to deploy the nixos config of."
+    echo "  -n &lt;target_config&gt;                      specify the nixos config to deploy."
+    echo "                                          Default: chaostheatre"
     echo "                                          Default: chaostheatre"
     echo "  -u &lt;target_user&gt;                        specify user to deploy for."
     echo "                                          Default: swarsel"
-    echo "  -t &lt;fs_type&gt;                            specify file system type to deploy for."
-    echo "                                          Default: ext4"
     echo "  -h | --help                             Print this help."
     exit 0
 }
 
+function red() {
+    echo -e "\x1B[31m[!] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[31m[!] $($2) \x1B[0m"
+    fi
+}
 function green() {
     echo -e "\x1B[32m[+] $1 \x1B[0m"
     if [ -n "${2-}" ]; then
@@ -4275,21 +4464,14 @@ function yellow() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -f)
+    -n)
         shift
-        target_flake=$1
+        target_config=$1
+        target_hostname=$1
         ;;
     -u)
         shift
         target_user=$1
-        ;;
-    -t)
-        shift
-        fs_type=$1
-        ;;
-    -d)
-        shift
-        disk=$1
         ;;
     -h | --help) help_and_exit ;;
     *)
@@ -4300,13 +4482,58 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+function cleanup() {
+    sudo rm -rf .cache/nix
+    sudo rm -rf /root/.cache/nix
+}
+trap cleanup exit
+
+green "~SwarselSystems~ remote installer"
+
 cd /home/"$target_user"
 
+sudo rm -rf /root/.cache/nix
 sudo rm -rf .cache/nix
 sudo rm -rf .dotfiles
 
 green "Cloning repository from GitHub"
 git clone https://github.com/Swarsel/.dotfiles.git
+
+green "Reading system information for $target_config ..."
+DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+green "Root Disk: $DISK"
+
+CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+if [[ $CRYPTED == "true" ]]; then
+    green "Encryption: ✓"
+    disk_encryption=1
+else
+    red "Encryption: X"
+    disk_encryption=0
+fi
+
+IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+if [[ $IMPERMANENCE == "true" ]]; then
+    green "Impermanence: ✓"
+    persist_dir="/persist"
+else
+    red "Impermanence: X"
+    persist_dir=""
+fi
+
+SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+if [[ $SWAP == "true" ]]; then
+    green "Swap: ✓"
+else
+    red "Swap: X"
+fi
+
+SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Secure Boot: ✓"
+else
+    red "Secure Boot: X"
+fi
 
 local_keys=$(ssh-add -L || true)
 pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
@@ -4322,33 +4549,38 @@ else
     green "Valid SSH key found! Continuing with installation"
 fi
 
-green "Creating /boot partition"
-sudo parted -a optimal --script "$disk" mklabel gpt
-sudo parted -a optimal --script "$disk" mkpart "boot" fat32 1MiB 1025MiB
-sudo parted -a optimal --script "$disk" set 1 esp on
+if [ "$disk_encryption" -eq 1 ]; then
+    while true; do
+        green "Set disk encryption passphrase:"
+        read -rs luks_passphrase
+        green "Please confirm passphrase:"
+        read -rs luks_passphrase_confirm
+        if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+            echo "$luks_passphrase" &gt; /tmp/disko-password
+            break
+        else
+            red "Passwords do not match"
+        fi
+    done
+fi
 
-green "Creating / partition"
-sudo parted -a optimal --script "$disk" mkpart "root" "$fs_type" 1025MiB 100%
-sudo parted -a optimal --script "$disk" type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709
-
-green "Ensuring proper file systems"
-sudo mkfs.fat -F32 "$disk"1
-sudo mkfs."${fs_type}" -F "$disk"2
+green "Setting up disk"
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
+sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
+sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
 green "Generating hardware configuration"
-sudo mount "$disk"2 /mnt
-sudo mkdir -p /mnt/boot
-sudo mount "$disk"1 /mnt/boot
-sudo nixos-generate-config --root /mnt --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/
+sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_flake"/hardware-configuration.nix
-# sudo rm -rf /root/.nix-defexpr/channels
-# sudo rm -rf /nix/var/nix/profiles/per-user/channels
+green "Injecting initialSetup"
+sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 sudo mkdir -p /root/.local/share/nix/
 printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json &gt; /dev/null
-green "Installing flake $target_flake"
-sudo nixos-install --flake .#"$target_flake"
-yellow "Please keep in mind that this is only a demo of the configuration. Things might break unexpectedly."
+green "Installing flake $target_config"
+sudo nixos-install --flake .#"$target_config"
 green "Installation finished! Reboot to see changes"
 </pre>
 </div>
@@ -4367,8 +4599,108 @@ writeShellApplication {
 </div>
 </div>
 </div>
+<div id="outline-container-org829f5bd" class="outline-5">
+<h5 id="org829f5bd"><span class="section-number-5">4.2.1.20.</span> swarsel-postinstall</h5>
+<div class="outline-text-5" id="text-4-2-1-20">
+<p>
+This program sets up a new NixOS host locally.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">set -eo pipefail
+
+target_config="chaostheatre"
+target_user="swarsel"
+
+function help_and_exit() {
+    echo
+    echo "Locally installs SwarselSystem on this machine."
+    echo
+    echo "USAGE: $0 -d &lt;disk&gt; [OPTIONS]"
+    echo
+    echo "ARGS:"
+    echo "  -d &lt;disk&gt;                               specify disk to install on."
+    echo "  -n &lt;target_config&gt;                      specify the nixos config to deploy."
+    echo "                                          Default: chaostheatre"
+    echo "                                          Default: chaostheatre"
+    echo "  -u &lt;target_user&gt;                        specify user to deploy for."
+    echo "                                          Default: swarsel"
+    echo "  -h | --help                             Print this help."
+    exit 0
+}
+
+function green() {
+    echo -e "\x1B[32m[+] $1 \x1B[0m"
+    if [ -n "${2-}" ]; then
+        echo -e "\x1B[32m[+] $($2) \x1B[0m"
+    fi
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -n)
+        shift
+        target_config=$1
+        ;;
+    -u)
+        shift
+        target_user=$1
+        ;;
+    -h | --help) help_and_exit ;;
+    *)
+        echo "Invalid option detected."
+        help_and_exit
+        ;;
+    esac
+    shift
+done
+
+function cleanup() {
+    sudo rm -rf .cache/nix
+    sudo rm -rf /root/.cache/nix
+}
+trap cleanup exit
+
+sudo rm -rf .cache/nix
+sudo rm -rf /root/.cache/nix
+
+green "~SwarselSystems~ remote post-installer"
+
+cd /home/"$target_user"/.dotfiles
+
+SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_config".config.swarselsystems.isSecureBoot)"
+
+if [[ $SECUREBOOT == "true" ]]; then
+    green "Setting up secure boot keys"
+    sudo mkdir -p /var/lib/sbctl
+    sbctl create-keys || true
+    sbctl enroll-keys --ignore-immutable --microsoft || true
+fi
+
+green "Disabling initialSetup"
+sed -i '/swarselsystems\.initialSetup = true;/d' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+sudo nixos-rebuild --flake .#"$target_config" switch
+green "Post-install finished!"
+
+</pre>
+</div>
+
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ writeShellApplication, git }:
+
+writeShellApplication {
+  name = "swarsel-postinstall";
+  runtimeInputs = [ git ];
+  text = builtins.readFile ../../scripts/swarsel-postinstall.sh;
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.20.</span> t2ts</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.21.</span> t2ts</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -4390,7 +4722,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1" class="outline-5">
-<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.21.</span> ts2t</h5>
+<h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">4.2.1.22.</span> ts2t</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <p>
 This script allows for quick git branch switching.
@@ -4411,9 +4743,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orga1f4af9" class="outline-5">
-<h5 id="orga1f4af9"><span class="section-number-5">4.2.1.22.</span> vershell</h5>
-<div class="outline-text-5" id="text-4-2-1-22">
+<div id="outline-container-orgcf9834d" class="outline-5">
+<h5 id="orgcf9834d"><span class="section-number-5">4.2.1.23.</span> vershell</h5>
+<div class="outline-text-5" id="text-4-2-1-23">
 <p>
 This script allows for quick git branch switching.
 </p>
@@ -4433,9 +4765,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orgfd90d6e" class="outline-5">
-<h5 id="orgfd90d6e"><span class="section-number-5">4.2.1.23.</span> eontimer</h5>
-<div class="outline-text-5" id="text-4-2-1-23">
+<div id="outline-container-org33d3655" class="outline-5">
+<h5 id="org33d3655"><span class="section-number-5">4.2.1.24.</span> eontimer</h5>
+<div class="outline-text-5" id="text-4-2-1-24">
 <p>
 This script allows for quick git branch switching.
 </p>
@@ -4575,6 +4907,7 @@ in
     // (zjstatus final prev)
     // (inputs.nur.overlays.default final prev)
     // (inputs.emacs-overlay.overlay final prev)
+    // (inputs.nix-topology.overlays.default final prev)
     // (inputs.nixgl.overlay final prev);
 
 }
@@ -4607,8 +4940,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     "wallpaper"
     "hardware"
     "setup"
-    "impermanence"
-    "filesystem"
+    "server"
     "input"
   ];
 
@@ -4676,21 +5008,49 @@ I usually use <code>mutableUsers = false</code> in my NixOS configuration. Howev
 
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
-let
-  inherit (lib) mkOption types;
-in
-
 {
-  options.swarselsystems.flakePath = mkOption {
-    type = types.str;
+  options.swarselsystems.user = lib.mkOption {
+    type = lib.types.str;
+    default = "swarsel";
+  };
+  options.swarselsystems.flakePath = lib.mkOption {
+    type = lib.types.str;
     default = "";
   };
-  options.swarselsystems.withHomeManager = mkOption {
-    type = types.bool;
+  options.swarselsystems.withHomeManager = lib.mkOption {
+    type = lib.types.bool;
     default = true;
   };
+  options.swarselsystems.isSwap = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+  };
+  options.swarselsystems.swapSize = lib.mkOption {
+    type = lib.types.str;
+    default = "8G";
+  };
+  options.swarselsystems.rootDisk = lib.mkOption {
+    type = lib.types.str;
+    default = "";
+  };
+  options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
   options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+
+  options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+  options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
+  options.swarselsystems.isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgba39c14" class="outline-6">
+<h6 id="orgba39c14"><span class="section-number-6">4.2.3.1.4.</span> Server</h6>
+<div class="outline-text-6" id="text-4-2-3-1-4">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+{
   options.swarselsystems.server.enable = lib.mkEnableOption "is a server machine";
   options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
   options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
@@ -4716,7 +5076,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:45188d3c-9910-480b-beec-d5fd713b05fb" class="outline-6">
-<h6 id="h:45188d3c-9910-480b-beec-d5fd713b05fb"><span class="section-number-6">4.2.3.1.4.</span> Input</h6>
+<h6 id="h:45188d3c-9910-480b-beec-d5fd713b05fb"><span class="section-number-6">4.2.3.1.5.</span> Input</h6>
 <div class="outline-text-6" id="text-h:45188d3c-9910-480b-beec-d5fd713b05fb">
 <p>
 This section is for everything input-related on the NixOS side. At the moment, this is only used to define shell aliases for servers.
@@ -4732,40 +5092,6 @@ in
     type = types.attrsOf types.str;
     default = { };
   };
-}
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-h:e591075d-4a77-4add-bbc8-b711998fa97f" class="outline-6">
-<h6 id="h:e591075d-4a77-4add-bbc8-b711998fa97f"><span class="section-number-6">4.2.3.1.5.</span> Impermanence</h6>
-<div class="outline-text-6" id="text-h:e591075d-4a77-4add-bbc8-b711998fa97f">
-<p>
-Option to enable impermanence configurations. This could also be done via optional imports, but impermanence is a "big enough" change to warrant a line in the machine <code>default.nix</code>.
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
-
-{
-  options.swarselsystems.impermanence = lib.mkEnableOption "use impermanence on this system";
-}
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-h:f77358ee-a80c-403a-be9d-04e7052bc556" class="outline-6">
-<h6 id="h:f77358ee-a80c-403a-be9d-04e7052bc556"><span class="section-number-6">4.2.3.1.6.</span> Filesystem</h6>
-<div class="outline-text-6" id="text-h:f77358ee-a80c-403a-be9d-04e7052bc556">
-<p>
-This lets me quickly set flags for "special" file systems. These options mostly function in conjunction with other settings (for example, the <code>isBtrfs</code> function is mostly used for impermanence configuration).
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
-
-{
-  options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
 }
 </pre>
 </div>
@@ -5391,6 +5717,7 @@ This section is for setting things that should be used on hosts that are using t
     ./distrobox.nix
     ./lid.nix
     ./lowbattery.nix
+    ./lanzaboote.nix
   ];
 
   nixpkgs.config.permittedInsecurePackages = [
@@ -6161,7 +6488,7 @@ in
 {
   sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-    age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+    age.sshKeyPaths = mkIfElse config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
     defaultSopsFile = mkIfElse config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;
@@ -6786,9 +7113,14 @@ Normally, doing that also resets the lecture that happens on the first use of <c
 
 <div class="org-src-container">
 <pre class="src src-nix">{ config, lib, ... }:
+let
+  mkIfElse = p: yes: no: if p then yes else no;
+  mapperTarget = mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+in
+
 {
 
-  security.sudo.extraConfig = lib.mkIf config.swarselsystems.impermanence ''
+  security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
     # rollback results in sudo lectures after each reboot
     Defaults lecture = never
   '';
@@ -6799,12 +7131,13 @@ Normally, doing that also resets the lecture that happens on the first use of <c
 
   boot.initrd.systemd.enable = true;
 
-  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.impermanence {
+  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
     description = "Rollback BTRFS root subvolume to a pristine state";
     wantedBy = [ "initrd.target" ];
     # make sure it's done after encryption
     # i.e. LUKS/TPM process
-    after = [ "systemd-cryptsetup@enc.service" ];
+    after = lib.swarselsystems.mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+    requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
     # mount the root fs before clearing
     before = [ "sysroot.mount" ];
     unitConfig.DefaultDependencies = "no";
@@ -6814,7 +7147,7 @@ Normally, doing that also resets the lecture that happens on the first use of <c
 
       # We first mount the btrfs root to /mnt
       # so we can manipulate btrfs subvolumes.
-      mount -o subvol=/ /dev/mapper/cryptroot /mnt
+      mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
       btrfs subvolume list -o /mnt/root
 
       # While we're tempted to just delete /root and create
@@ -6831,13 +7164,13 @@ Normally, doing that also resets the lecture that happens on the first use of <c
       cut -f9 -d' ' |
       while read subvolume; do
         echo "deleting /$subvolume subvolume..."
-        # btrfs subvolume delete "/mnt/$subvolume"
+        btrfs subvolume delete "/mnt/$subvolume"
       done &amp;&amp;
       echo "deleting /root subvolume..." &amp;&amp;
-      # btrfs subvolume delete /mnt/root
+      btrfs subvolume delete /mnt/root
 
       echo "restoring blank /root subvolume..."
-      # btrfs subvolume snapshot /mnt/root-blank /mnt/root
+      btrfs subvolume snapshot /mnt/root-blank /mnt/root
 
       # Once we're done rolling back to a blank snapshot,
       # we can unmount /mnt and continue on the boot process.
@@ -6846,7 +7179,7 @@ Normally, doing that also resets the lecture that happens on the first use of <c
   };
 
 
-  environment.persistence."/persist" = lib.mkIf config.swarselsystems.impermanence {
+  environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
     hideMounts = true;
     directories =
       [
@@ -6854,22 +7187,19 @@ Normally, doing that also resets the lecture that happens on the first use of <c
         "/srv"
         "/etc/nixos"
         "/etc/nix"
-        "/home/swarsel/.dotfiles"
         "/etc/NetworkManager/system-connections"
-        "/etc/secureboot"
+        # "/etc/secureboot"
+        "/home/swarsel/.dotfiles"
         "/var/db/sudo"
         "/var/cache"
         "/var/lib"
       ];
 
     files = [
-      # ssh stuff
-      /*
         "/etc/ssh/ssh_host_ed25519_key"
         "/etc/ssh/ssh_host_ed25519_key.pub"
         "/etc/ssh/ssh_host_rsa_key"
         "/etc/ssh/ssh_host_rsa_key.pub"
-        */
     ];
   };
 
@@ -7095,6 +7425,31 @@ Since I hide the waybar completely during normal operation, I run the risk of no
       # Every Minute
       OnCalendar = "*-*-* *:*:00";
       Unit = "battery-low.service";
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf0c4047" class="outline-5">
+<h5 id="orgf0c4047"><span class="section-number-5">4.3.1.32.</span> Lanzaboote</h5>
+<div class="outline-text-5" id="text-4-3-1-32">
+<p>
+This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, config, ... }:
+{
+  boot = {
+    loader = {
+      efi.canTouchEfiVariables = true;
+      systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+    };
+    lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup &amp;&amp; config.swarselsystems.isSecureBoot) {
+      enable = true;
+      pkiBundle = "/var/lib/sbctl";
     };
   };
 }
@@ -9268,6 +9623,7 @@ These options are really only to be used on the iso image in order to run nixos-
     sops
     vim
     just
+    sbctl
   ];
 
   programs = {
@@ -9448,6 +9804,8 @@ This holds packages that I can use as provided, or with small modifications (as 
     deadnix
     statix
     nix-tree
+    manix
+    comma
 
     # shellscripts
     shfmt
@@ -9526,6 +9884,7 @@ This holds packages that I can use as provided, or with small modifications (as 
     wtype
     wl-clipboard
     wl-mirror
+    wf-recorder
 
     # screenshotting tools
     grim
@@ -11826,7 +12185,8 @@ in
             "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
             "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
             "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-            "${modifier}+m" = "exec swarselcheck -s";
+            "${modifier}+m" = "exec swaymsg workspace back_and_forth";
+            "${modifier}+a" = "exec swarselcheck -s";
             "${modifier}+x" = "exec swarselcheck -k";
             "${modifier}+d" = "exec swarselcheck -d";
             "${modifier}+w" = "exec swarselcheck -e";
@@ -11844,6 +12204,7 @@ in
             "${modifier}+h" = "exec hyprpicker | wl-copy";
             "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
             "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+            "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
             "${modifier}+1" = "workspace 1:一";
             "${modifier}+Shift+1" = "move container to workspace 1:一";
             "${modifier}+2" = "workspace 2:二";
@@ -12245,6 +12606,7 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
   home.packages = with pkgs; [
     stable.lutris
     wine
+    winetricks
     libudev-zero
     dwarfs
     fuse-overlayfs
@@ -12266,6 +12628,7 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 
     pokefinder
     retroarch
+    flips
   ];
   #   };
   # };
@@ -16554,7 +16917,7 @@ Prints a reasuring message to proove good faith."
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-21 Sa 04:43</p>
+<p class="date">Created: 2024-12-28 Sa 16:43</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
