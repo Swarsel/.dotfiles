@@ -1,7 +1,7 @@
-{ writeShellApplication, fzf, findutils, home-manager, ... }:
+{ name, writeShellApplication, fzf, findutils, home-manager, ... }:
 
 writeShellApplication {
-  name = "hm-specialisation";
+  inherit name;
   runtimeInputs = [ fzf findutils home-manager ];
   text = ''
     genpath=$(home-manager generations | head -1 | awk '{print $7}')

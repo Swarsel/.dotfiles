@@ -1,7 +1,4 @@
-{ self, writeShellApplication, openssh }:
-let
-  name = "swarsel-bootstrap";
-in
+{ self, name, writeShellApplication, openssh }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ openssh ];

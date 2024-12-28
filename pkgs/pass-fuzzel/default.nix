@@ -1,7 +1,4 @@
-{ self, writeShellApplication, libnotify, pass, fuzzel, wtype }:
-let
-  name = "pass-fuzzel";
-in
+{ self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];

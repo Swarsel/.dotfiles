@@ -1,5 +1,6 @@
 { self, lib, systems, inputs, outputs, ... }:
 {
+
   mkIfElseList = p: yes: no: lib.mkMerge [
     (lib.mkIf p yes)
     (lib.mkIf (!p) no)
@@ -48,6 +49,7 @@
   };
 
   mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
+
   mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type pkgs) hosts);
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
@@ -65,7 +67,7 @@
   mkPackages = names: pkgs: builtins.listToAttrs (map
     (name: {
       inherit name;
-      value = pkgs.callPackage "${self}/pkgs/${name}" { inherit self; };
+      value = pkgs.callPackage "${self}/pkgs/${name}" { inherit self name; };
     })
     names);
 

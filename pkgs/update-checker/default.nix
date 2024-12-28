@@ -1,7 +1,4 @@
-{ self, writeShellApplication, nvd }:
-let
-  name = "update-checker";
-in
+{ self, name, writeShellApplication, nvd }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ nvd ];

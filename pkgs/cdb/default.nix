@@ -1,7 +1,7 @@
-{ writeShellApplication, fzf, ... }:
+{ name, writeShellApplication, fzf, ... }:
 
 writeShellApplication {
-  name = "cdb";
+  inherit name;
   runtimeInputs = [ fzf ];
   text = ''
     git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"

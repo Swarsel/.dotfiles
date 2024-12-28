@@ -1,7 +1,4 @@
-{ self, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
-let
-  name = "swarselcheck";
-in
+{ self, name, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];

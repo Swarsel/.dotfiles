@@ -1,7 +1,4 @@
-{ self, writeShellApplication, git }:
-let
-  name = "swarsel-rebuild";
-in
+{ self, name, writeShellApplication, git }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];

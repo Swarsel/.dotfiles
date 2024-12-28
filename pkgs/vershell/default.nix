@@ -1,7 +1,7 @@
-{ writeShellApplication, ... }:
+{ name, writeShellApplication, ... }:
 
 writeShellApplication {
-  name = "vershell";
+  inherit name;
   runtimeInputs = [ ];
   text = ''
     nix shell github:nixos/nixpkgs/"$1"#"$2";

@@ -2085,6 +2085,10 @@ As such, I also define three additional overlays:
 3) =nixpkgs-stable=
    This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
 
+Also, this is where I define all of my own modules. These are mostly used for setting some host-specifics directly than opposed to through multiple options.
+
+Lastly, I add some of my own library functions to be used alongside the functions provided by =nixpkgs= and =home-manager=.
+
 *** Packages
 :PROPERTIES:
 :CUSTOM_ID: h:64a5cc16-6b16-4802-b421-c67ccef853e1
@@ -2190,10 +2194,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 #+end_src
 
 #+begin_src nix :tangle pkgs/pass-fuzzel/default.nix
-  { self, writeShellApplication, libnotify, pass, fuzzel, wtype }:
-  let
-    name = "pass-fuzzel";
-  in
+  { self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
@@ -2252,17 +2253,17 @@ This script allows for quick git home-manager specialisation switching.
 
 
 #+begin_src nix :tangle pkgs/hm-specialisation/default.nix
-    { writeShellApplication, fzf, findutils, home-manager, ... }:
+  { name, writeShellApplication, fzf, findutils, home-manager, ... }:
 
-    writeShellApplication {
-      name = "hm-specialisation";
-      runtimeInputs = [ fzf findutils home-manager ];
-      text = ''
-        genpath=$(home-manager generations | head -1 | awk '{print $7}')
-        dirs=$(find "$genpath/specialisation" -type l 2>/dev/null; [ -d "$genpath" ] && echo "$genpath")
-        "$(echo "$dirs" | fzf --prompt="Choose home-manager specialisation to activate")"/activate
-      '';
-    }
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ fzf findutils home-manager ];
+    text = ''
+      genpath=$(home-manager generations | head -1 | awk '{print $7}')
+      dirs=$(find "$genpath/specialisation" -type l 2>/dev/null; [ -d "$genpath" ] && echo "$genpath")
+      "$(echo "$dirs" | fzf --prompt="Choose home-manager specialisation to activate")"/activate
+    '';
+  }
 
 
 #+end_src
@@ -2276,10 +2277,10 @@ This script allows for quick git worktree switching.
 
 
 #+begin_src nix :tangle pkgs/cdw/default.nix
-  { writeShellApplication, fzf, ... }:
+  { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
-    name = "cdw";
+    inherit name;
     runtimeInputs = [ fzf ];
     text = ''
       cd "$(git worktree list | fzf | awk '{print $1}')"
@@ -2297,10 +2298,10 @@ This script allows for quick git worktree switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/cdb/default.nix
-  { writeShellApplication, fzf, ... }:
+  { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
-    name = "cdb";
+    inherit name;
     runtimeInputs = [ fzf ];
     text = ''
       git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
@@ -2318,10 +2319,10 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 
 
 #+begin_src nix :tangle pkgs/bak/default.nix
-  { writeShellApplication, ... }:
+  { name, writeShellApplication, ... }:
 
   writeShellApplication {
-    name = "bak";
+    inherit name;
     text = ''
       cp -r "$1"{,.bak}
     '';
@@ -2339,10 +2340,10 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 
 #+begin_src nix :tangle pkgs/timer/default.nix
-  { writeShellApplication, speechd, ... }:
+  { name, writeShellApplication, speechd, ... }:
 
   writeShellApplication {
-    name = "timer";
+    inherit name;
     runtimeInputs = [ speechd ];
     text = ''
       sleep "$1"; while true; do spd-say "$2"; sleep 0.5; done;
@@ -2385,10 +2386,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 #+end_src
 
 #+begin_src nix :tangle pkgs/e/default.nix
-  { self, writeShellApplication, emacs30-pgtk, sway, jq }:
-  let
-    name = "e";
-  in
+  { self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ emacs30-pgtk sway jq ];
@@ -2514,10 +2512,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarselcheck/default.nix
-  { self, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
-  let
-    name = "swarselcheck";
-  in
+  { self, name, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];
@@ -2561,10 +2556,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 #+end_src
 
 #+begin_src nix :tangle pkgs/waybarupdate/default.nix
-  { self, writeShellApplication, git }:
-  let
-    name = "waybarupdate";
-  in
+  { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
@@ -2589,10 +2581,7 @@ This app quickly toggles between 5% and 0% transparency.
 #+end_src
 
 #+begin_src nix :tangle pkgs/opacitytoggle/default.nix
-  { self, writeShellApplication, sway }:
-  let
-    name = "opacitytoggle";
-  in
+  { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
@@ -2631,10 +2620,7 @@ This utility is used to compare the current state of the root directory with the
 #+end_src
 
 #+begin_src nix :tangle pkgs/fs-diff/default.nix
-  { self, writeShellApplication }:
-  let
-    name = "fs-diff";
-  in
+  { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
     text = builtins.readFile "${self}/scripts/${name}.sh";
@@ -2666,10 +2652,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+end_src
 
 #+begin_src nix :tangle pkgs/update-checker/default.nix
-  { self, writeShellApplication, nvd }:
-  let
-    name = "update-checker";
-  in
+  { self, name, writeShellApplication, nvd }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ nvd ];
@@ -2686,10 +2669,10 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src nix :tangle pkgs/github-notifications/default.nix
-  { writeShellApplication, jq, ... }:
+  { name, writeShellApplication, jq, ... }:
 
   writeShellApplication {
-    name = "github-notifications";
+    inherit name;
     runtimeInputs = [ jq ];
     text = ''
       count=$(curl -u Swarsel:"$(cat /run/user/1000/secrets/github_notif)" https://api.github.com/notifications | jq '. | length')
@@ -2729,10 +2712,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src nix :tangle pkgs/screenshare/default.nix
-  { self, writeShellApplication, sway }:
-  let
-    name = "screenshare";
-  in
+  { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
@@ -3091,10 +3071,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 
 #+begin_src nix :tangle pkgs/swarsel-bootstrap/default.nix
-  { self, writeShellApplication, openssh }:
-  let
-    name = "swarsel-bootstrap";
-  in
+  { self, name, writeShellApplication, openssh }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ openssh ];
@@ -3199,10 +3176,7 @@ This program builds a configuration locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-rebuild/default.nix
-  { self, writeShellApplication, git }:
-  let
-    name = "swarsel-rebuild";
-  in
+  { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
@@ -3383,10 +3357,7 @@ This program sets up a new NixOS host locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-install/default.nix
-  { self, writeShellApplication, git }:
-  let
-    name = "swarsel-install";
-  in
+  { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
@@ -3479,10 +3450,7 @@ This program sets up a new NixOS host locally.
 
 
 #+begin_src nix :tangle pkgs/swarsel-postinstall/default.nix
-  { self, writeShellApplication, git }:
-  let
-    name = "swarsel-postinstall";
-  in
+  { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
@@ -3498,15 +3466,15 @@ This program sets up a new NixOS host locally.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/t2ts/default.nix
-    { writeShellApplication, ... }:
+  { name, writeShellApplication, ... }:
 
-    writeShellApplication {
-      name = "t2ts";
-      runtimeInputs = [ ];
-      text = ''
-        date -d"$1" +%s
-      '';
-    }
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ ];
+    text = ''
+      date -d"$1" +%s
+    '';
+  }
 
 #+end_src
 
@@ -3518,10 +3486,10 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/ts2t/default.nix
-  { writeShellApplication, ... }:
+  { name, writeShellApplication, ... }:
 
   writeShellApplication {
-    name = "ts2t";
+    inherit name;
     runtimeInputs = [ ];
     text = ''
       date -d @"$1" 2>/dev/null || date -r "$1"
@@ -3535,10 +3503,10 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/vershell/default.nix
-  { writeShellApplication, ... }:
+  { name, writeShellApplication, ... }:
 
   writeShellApplication {
-    name = "vershell";
+    inherit name;
     runtimeInputs = [ ];
     text = ''
       nix shell github:nixos/nixpkgs/"$1"#"$2";

@@ -1,7 +1,4 @@
-{ self, writeShellApplication, emacs30-pgtk, sway, jq }:
-let
-  name = "e";
-in
+{ self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ emacs30-pgtk sway jq ];

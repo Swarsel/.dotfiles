@@ -1,7 +1,7 @@
-{ writeShellApplication, ... }:
+{ name, writeShellApplication, ... }:
 
 writeShellApplication {
-  name = "t2ts";
+  inherit name;
   runtimeInputs = [ ];
   text = ''
     date -d"$1" +%s

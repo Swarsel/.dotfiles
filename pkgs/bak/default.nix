@@ -1,7 +1,7 @@
-{ writeShellApplication, ... }:
+{ name, writeShellApplication, ... }:
 
 writeShellApplication {
-  name = "bak";
+  inherit name;
   text = ''
     cp -r "$1"{,.bak}
   '';

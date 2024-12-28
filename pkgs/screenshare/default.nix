@@ -1,7 +1,4 @@
-{ self, writeShellApplication, sway }:
-let
-  name = "screenshare";
-in
+{ self, name, writeShellApplication, sway }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
