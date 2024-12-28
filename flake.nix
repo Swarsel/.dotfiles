@@ -115,6 +115,8 @@
       inputs = { };
     };
 
+    nix-topology.url = "github:oddlama/nix-topology";
+
   };
 
   outputs =
@@ -169,6 +171,7 @@
         inputs.impermanence.nixosModules.impermanence
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+        inputs.nix-topology.nixosModules.default
         ./profiles/common/nixos
       ];
 
@@ -283,6 +286,18 @@
         };
 
       };
+
+      topology =
+
+        forEachSystem (pkgs: import inputs.nix-topology {
+          inherit pkgs;
+          modules = [
+            # Your own file to define global topology. Works in principle like a nixos module but uses different options.
+            # ./topology.nix
+            { inherit (self) nixosConfigurations; }
+          ];
+        });
+
 
     };
 }

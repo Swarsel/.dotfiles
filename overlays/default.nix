@@ -65,6 +65,7 @@ in
     // (zjstatus final prev)
     // (inputs.nur.overlays.default final prev)
     // (inputs.emacs-overlay.overlay final prev)
+    // (inputs.nix-topology.overlays.default final prev)
     // (inputs.nixgl.overlay final prev);
 
 }

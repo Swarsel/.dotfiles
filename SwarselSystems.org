@@ -715,7 +715,7 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
               <<flakenixosconf>>
 
             homeConfigurations = {
-               <<flakehomeconf>>
+              <<flakehomeconf>>
             };
 
             darwinConfigurations =
@@ -724,6 +724,9 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
             nixOnDroidConfigurations = {
               <<flakedroidconf>>
             };
+
+            topology =
+              <<topologyconf>>
 
           };
       }
@@ -836,6 +839,8 @@ A short overview over each input and what it does:
   This is a private repository that I use for settings in modules that do not expose a =secretsFile= (or similar) option. An example is the =LastFM.ApiKey= option in [[#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72][navidrome]]:
   =LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";=
 When setting this option normally, the password would normally be written world-readable not only in the nix store, but also in the configuration. Hence, I put such passwords into a private repository. This allows me to keep purity of the flake while keeping a level of security on these secrets.
+- [[https://github.com/oddlama/nix-topology][nix-topology]]
+  This automatically creates a topology diagram of my configuration.
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
@@ -939,6 +944,8 @@ When setting this option normally, the password would normally be written world-
     inputs = { };
   };
 
+  nix-topology.url = "github:oddlama/nix-topology";
+
 #+end_src
 ** let
 :PROPERTIES:
@@ -958,69 +965,70 @@ The interesting part is in the start:
 
 #+begin_src nix :tangle no :noweb-ref flakelet
 
-  inherit (self) outputs;
-  lib = nixpkgs.lib // home-manager.lib;
+    inherit (self) outputs;
+    lib = nixpkgs.lib // home-manager.lib;
 
-  pkgsFor = lib.genAttrs (import systems) (
-    system:
-    import nixpkgs {
-      inherit system;
-      config.allowUnfree = true;
-    }
-  );
-  forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
-  forAllSystems = lib.genAttrs [
-    "x86_64-linux"
-    "aarch64-linux"
-    "x86_64-darwin"
-    "aarch64-darwin"
-  ];
-  mkFullHost = host: isNixos: {
-    ${host} =
-      let
-        func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-        systemFunc = func;
-      in
-      systemFunc {
-        specialArgs = {
-          inherit inputs outputs self;
-          lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+    pkgsFor = lib.genAttrs (import systems) (
+      system:
+      import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      }
+    );
+    forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+    forAllSystems = lib.genAttrs [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
+    mkFullHost = host: isNixos: {
+      ${host} =
+        let
+          func = if isNixos then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+          systemFunc = func;
+        in
+        systemFunc {
+          specialArgs = {
+            inherit inputs outputs self;
+            lib = lib.extend (_: _: { swarselsystems = import ./lib { inherit lib; }; });
+          };
+          modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
         };
-        modules = [ ./hosts/${if isNixos then "nixos" else "darwin"}/${host} ];
-      };
-  };
-  mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
-  readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
+    };
+    mkFullHostConfigs = hosts: isNixos: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host isNixos) hosts);
+    readHosts = folder: lib.attrNames (builtins.readDir ./hosts/${folder});
 
-  # NixOS modules that can only be used on NixOS systems
-  nixModules = [
-    inputs.stylix.nixosModules.stylix
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.disko.nixosModules.disko
-    inputs.impermanence.nixosModules.impermanence
-    inputs.sops-nix.nixosModules.sops
-    inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-    ./profiles/common/nixos
-  ];
+    # NixOS modules that can only be used on NixOS systems
+    nixModules = [
+      inputs.stylix.nixosModules.stylix
+      inputs.lanzaboote.nixosModules.lanzaboote
+      inputs.disko.nixosModules.disko
+      inputs.impermanence.nixosModules.impermanence
+      inputs.sops-nix.nixosModules.sops
+      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+      inputs.nix-topology.nixosModules.default
+      ./profiles/common/nixos
+    ];
 
-  # Home-Manager modules wanted on non-NixOS systems
-  homeModules = [
-    inputs.stylix.homeManagerModules.stylix
-  ];
+    # Home-Manager modules wanted on non-NixOS systems
+    homeModules = [
+      inputs.stylix.homeManagerModules.stylix
+    ];
 
-  # Home-Manager modules wanted on both NixOS and non-NixOS systems
-  mixedModules = [
-    inputs.sops-nix.homeManagerModules.sops
-    inputs.nix-index-database.hmModules.nix-index
-    ./profiles/common/home
-  ];
+    # Home-Manager modules wanted on both NixOS and non-NixOS systems
+    mixedModules = [
+      inputs.sops-nix.homeManagerModules.sops
+      inputs.nix-index-database.hmModules.nix-index
+      ./profiles/common/home
+    ];
 
-  # For adding things to _module.args (making arguments available globally)
-  # moduleArgs = [
-  #   {
-  #     _module.args = { inherit self; };
-  #   }
-  # ];
+    # For adding things to _module.args (making arguments available globally)
+    # moduleArgs = [
+    #   {
+    #     _module.args = { inherit self; };
+    #   }
+    # ];
 
 #+end_src
 ** General (outputs)
@@ -1168,6 +1176,22 @@ Nix on Android also demands an own flake output, which is provided here.
       ./hosts/magicant
     ];
   };
+
+#+end_src
+
+** topologyConfigurations
+
+
+#+begin_src nix :tangle no :noweb-ref topologyconf
+
+  forEachSystem (pkgs: import inputs.nix-topology {
+    inherit pkgs;
+    modules = [
+      # Your own file to define global topology. Works in principle like a nixos module but uses different options.
+      # ./topology.nix
+      { inherit (self) nixosConfigurations; }
+    ];
+  });
 
 #+end_src
 
@@ -3557,6 +3581,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       // (zjstatus final prev)
       // (inputs.nur.overlays.default final prev)
       // (inputs.emacs-overlay.overlay final prev)
+      // (inputs.nix-topology.overlays.default final prev)
       // (inputs.nixgl.overlay final prev);
 
   }
