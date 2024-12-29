@@ -542,6 +542,9 @@ Nix on Android also demands an own flake output, which is provided here.
 #+end_src
 
 ** topologyConfigurations
+:PROPERTIES:
+:CUSTOM_ID: h:1337e267-bca3-4c65-863f-9f44b753dee4
+:END:
 
 
 #+begin_src nix :tangle no :noweb-ref topologyconf
@@ -573,10 +576,16 @@ This section mainly exists house different `default.nix` files to define some mo
 Every host is housed in the =hosts/= directory, which is then subdivided by each respective system (=nixos/=, =home-manager/=, =nix-on-droid/=, =darwin/=). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 
 *** Template
+:PROPERTIES:
+:CUSTOM_ID: h:373bd9e8-616e-434e-bfab-c216ce4470e9
+:END:
 
 This is the template that I use for new deployments of personal machines. Servers are usually highly tailored to their specific task and I do not consider it worth a time to craft a template for that. Also, at least at the current time, I only provide a template for NixOS hosts, as I rarely ever use anything else.
 
 **** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:859aec97-65a2-4633-b7d8-73d4ccf89cc5
+:END:
 
 #+begin_src nix :tangle templates/hosts/nixos/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
@@ -659,6 +668,9 @@ This is the template that I use for new deployments of personal machines. Server
   }
 #+end_src
 **** disko
+:PROPERTIES:
+:CUSTOM_ID: h:24757d1e-6e88-4843-ab20-5e0c1b7ae29e
+:END:
 
 Acceptance of arbitraty argumments is here needed because =disko= passes =diskoFile= to this file.
 
@@ -801,6 +813,9 @@ This is a list of all physical machines that I maintain.
 My work machine. Built for more security, this is the gold standard of my configurations at the moment.
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
+:END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
@@ -1026,6 +1041,9 @@ My work machine. Built for more security, this is the gold standard of my config
 #+end_src
 
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
+:END:
 
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
@@ -1070,6 +1088,9 @@ My work machine. Built for more security, this is the gold standard of my config
 
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:e0da04c7-4199-44b0-b525-6cfc64072b45
+:END:
 
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/disk-config.nix
   {
@@ -1159,6 +1180,9 @@ My work machine. Built for more security, this is the gold standard of my config
 This is my main server that I run at home. It handles most tasks that require bigger amounts of storage than I can receive for free at OCI. Also it houses some data that I find too sensitive to hand over to Oracle.
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
+:END:
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
   { self, inputs, outputs, config, ... }:
   let
@@ -1235,6 +1259,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0
+:END:
 #+begin_src nix :tangle hosts/nixos/winters/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
@@ -1494,11 +1521,20 @@ This machine mainly acts as an external sync helper. It manages the following th
 
 #+end_src
 *** Utility hosts
+:PROPERTIES:
+:CUSTOM_ID: h:89ce533d-4856-4988-b456-0951d4453db8
+:END:
 **** Toto (Physical/VM)
+:PROPERTIES:
+:CUSTOM_ID: h:6b495f0e-fc11-44c8-a9e8-83f3d95c8857
+:END:
 
 This is a slim setup for developing base configuration. I do not track the hardware-configuration for this host here because I often switch this configuration between running on a QEMU VM and a physical laptop and do not want to constantly adapt the config here to reflect the current state.
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
+:END:
 #+begin_src nix :tangle hosts/nixos/toto/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
@@ -1600,6 +1636,9 @@ This is a slim setup for developing base configuration. I do not track the hardw
 #+end_src
 
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
+:END:
 
 #+begin_src nix :tangle hosts/nixos/toto/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
@@ -1922,6 +1961,9 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 #+end_src
 
 **** ChaosTheatre (Demo Physical/VM)
+:PROPERTIES:
+:CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
+:END:
 
 This is just a demo host. It applies all the configuration found in the common parts of the flake, but disables all secrets-related features (as they would not work without the proper SSH keys).
 
@@ -3000,6 +3042,9 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 #+end_src
 
 **** swarsel-rebuild
+:PROPERTIES:
+:CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
+:END:
 
 This program builds a configuration locally.
 
@@ -3105,6 +3150,9 @@ This program builds a configuration locally.
 #+end_src
 
 **** swarsel-install
+:PROPERTIES:
+:CUSTOM_ID: h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435
+:END:
 
 This program sets up a new NixOS host locally.
 
@@ -3286,6 +3334,9 @@ This program sets up a new NixOS host locally.
 #+end_src
 
 **** swarsel-postinstall
+:PROPERTIES:
+:CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
+:END:
 
 This program sets up a new NixOS host locally.
 
@@ -3418,6 +3469,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** vershell
+:PROPERTIES:
+:CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
+:END:
 
 This script allows for quick git branch switching.
 
@@ -3435,6 +3489,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** eontimer
+:PROPERTIES:
+:CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
+:END:
 
 This script allows for quick git branch switching.
 
@@ -3689,6 +3746,9 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 #+end_src
 
 ***** Server
+:PROPERTIES:
+:CUSTOM_ID: h:d10f8aaf-2f71-4e80-ba05-37bfc98c99b6
+:END:
 
 #+begin_src nix :tangle modules/nixos/server.nix
   { lib, ... }:
@@ -4234,6 +4294,9 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
 #+end_src
 
 *** Library functions
+:PROPERTIES:
+:CUSTOM_ID: h:4d38c9f7-2680-4c02-a1f4-ed8db0d55ce4
+:END:
 
 This section defines all functions of my own that I add to =lib=. These are used in all places over the config, with many of them being used in =flake.nix=.
 
@@ -5956,6 +6019,9 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 #+end_src
 
 **** Lanzaboote
+:PROPERTIES:
+:CUSTOM_ID: h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377
+:END:
 
 This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
 
@@ -12168,6 +12234,9 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 #+end_src
 
 **** evil-visual-mark-mode
+:PROPERTIES:
+:CUSTOM_ID: h:df6729b6-2135-4070-bcab-a6a26f0fb2c4
+:END:
 
 #+begin_src emacs-lisp
 
@@ -14101,6 +14170,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 #+end_src
 *** Less logging
+:PROPERTIES:
+:CUSTOM_ID: h:438d928f-77a8-477a-ac8b-ca54ec673f91
+:END:
 
 #+begin_src emacs-lisp
 
@@ -14175,6 +14247,9 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
   };
 #+end_src
 * Appendix B: Supplementary Files
+:PROPERTIES:
+:CUSTOM_ID: h:8fc9f66a-7412-4091-8dee-a06f897baf67
+:END:
 
 This section now holds some of the configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using =home.file=.
 
@@ -14653,6 +14728,9 @@ This is the stylesheet used by waybar.
 
 #+end_src
 ** justfile
+:PROPERTIES:
+:CUSTOM_ID: h:788937cf-8816-466b-8e57-1b695cb50f52
+:END:
 This file defines a few workflows that I often need to run when working on my configuration. This works similar to =make=, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or =.PHONY= recipes.
 
 (In the org-src block I still call it a Makefile in order to get syntax highlighting)
@@ -14689,6 +14767,9 @@ This file defines a few workflows that I often need to run when working on my co
 
 #+end_src
 ** statix.toml
+:PROPERTIES:
+:CUSTOM_ID: h:d4dcb884-f24f-4786-8fa6-9f36c88a706e
+:END:
 
 This file is used to tell =statix= which checks and folders/fiels to ignore, as well as to specify the nix version that it should use.
 
