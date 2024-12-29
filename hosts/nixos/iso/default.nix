@@ -81,7 +81,7 @@ in
   };
 
   programs.bash.shellAliases = {
-    "swarsel-install" = "nix run github:Swarsel/.dotfiles#install --";
+    "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
   };
 
   system.activationScripts.cache = {
