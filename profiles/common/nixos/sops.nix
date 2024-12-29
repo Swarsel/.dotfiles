@@ -45,15 +45,15 @@ in
         WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
         WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
       '';
-      ".authinfo" = {
-        owner = "swarsel";
-        path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
-        content = ''
-          machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
-          machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password ${config.sops.placeholder.githubforgepass}
-          machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
-        '';
-      };
+      # ".authinfo" = {
+      #   owner = "swarsel";
+      #   path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
+      #   content = ''
+      #     machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
+      #     machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password ${config.sops.placeholder.githubforgepass}
+      #     machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
+      #   '';
+      # };
     };
   };
 }

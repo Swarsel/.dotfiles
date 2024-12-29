@@ -78,14 +78,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                                              # Remove any * and & entries for this host
-                                              /[*&]$key_name/ d;
-                                              # Inject a new age: entry
-                                              # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                              /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                              # Inject a new hosts or user: entry
-                                              /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                              }" $SOPS_FILE
+                                                # Remove any * and & entries for this host
+                                                /[*&]$key_name/ d;
+                                                # Inject a new age: entry
+                                                # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                                /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                                # Inject a new hosts or user: entry
+                                                /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                                }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }

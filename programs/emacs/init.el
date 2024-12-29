@@ -157,14 +157,7 @@ create a new one."
             [C-backspace] #'up-directory)
 
 (defun swarsel/org-mode-setup ()
-  ;; (org-indent-mode)
   (variable-pitch-mode 1)
-  ;;(auto-fill-mode 0)
-  ;; (setq display-line-numbers-type 'relative
-  ;;       display-line-numbers-current-absolute 1
-  ;;       display-line-numbers-width-start nil
-  ;;       display-line-numbers-width 6
-  ;;       display-line-numbers-grow-only 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
   (visual-line-mode 1))
 
@@ -178,20 +171,20 @@ create a new one."
   (let ((default-directory (expand-file-name "~/.dotfiles")))
     (shell-command "nixpkgs-fmt . > /dev/null")))
 
-  (defun swarsel/org-babel-tangle-config ()
+(defun swarsel/org-babel-tangle-config ()
   (interactive)
-    (when (string-equal (buffer-file-name)
-                        swarsel-swarsel-org-filepath)
-      ;; Dynamic scoping to the rescue
-      (let ((org-confirm-babel-evaluate nil))
-        ;; (org-html-export-to-html)
-        (org-babel-tangle)
-        (swarsel/run-formatting)
-        )))
+  (when (string-equal (buffer-file-name)
+                      swarsel-swarsel-org-filepath)
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      ;; (org-html-export-to-html)
+      (org-babel-tangle)
+      (swarsel/run-formatting)
+      )))
 
-  (setq org-html-htmlize-output-type nil)
+(setq org-html-htmlize-output-type nil)
 
-  ;; (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
+;; (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'swarsel/org-babel-tangle-config)))
 
 (defun org-fold-outer ()
   (interactive)
@@ -216,35 +209,6 @@ create a new one."
   (interactive)
   (corfu-quit)
   (evil-next-visual-line))
-
-;; run the python inferior shell immediately upon entering a python buffer
-;; (add-hook 'python-mode-hook 'swarsel/run-python)
-
-;; (defun swarsel/run-python ()
-;;   (save-selected-window
-;;     (switch-to-buffer-other-window (process-buffer (python-shell-get-or-create-process (python-shell-parse-command))))))
-
-;; reload python shell automatically
-(defun my-python-shell-run ()
-  (interactive)
-  (when (get-buffer-process "*Python*")
-    (set-process-query-on-exit-flag (get-buffer-process "*Python*") nil)
-    (kill-process (get-buffer-process "*Python*"))
-    ;; Uncomment If you want to clean the buffer too.
-    ;;(kill-buffer "*Python*")
-    ;; Not so fast!
-    (sleep-for 0.5))
-  (run-python (python-shell-parse-command) nil nil)
-  (python-shell-send-buffer)
-  ;; Pop new window only if shell isnt visible
-  ;; in any frame.
-  (unless (get-buffer-window "*Python*" t)
-    (python-shell-switch-to-shell)))
-
-(defun my-python-shell-run-region ()
-  (interactive)
-  (python-shell-send-region (region-beginning) (region-end))
-  (python-shell-switch-to-shell))
 
 (defun swarsel/prefix-block (start end)
   (interactive "r")
@@ -273,24 +237,24 @@ create a new one."
   (call-interactively 'nixpkgs-fmt-region))
 
 
-  (defun swarsel/org-nixpkgs-fmt-block ()
-    (interactive)
-    (save-excursion
-      (let* ((element (org-element-at-point))
-             (begin (org-element-property :begin element))
-             (end (org-element-property :end element))
-             (lang (org-element-property :language element)))
-        (when lang
-          (goto-char begin)
-          (forward-line)
-          (insert "{")
-          (goto-char end)
-          (forward-line -1)
-          (beginning-of-line)
-          (forward-char -1)
-          (insert "}")
-          (org-babel-mark-block)
-          (call-interactively 'nixpkgs-fmt-region)))))
+(defun swarsel/org-nixpkgs-fmt-block ()
+  (interactive)
+  (save-excursion
+    (let* ((element (org-element-at-point))
+           (begin (org-element-property :begin element))
+           (end (org-element-property :end element))
+           (lang (org-element-property :language element)))
+      (when lang
+        (goto-char begin)
+        (forward-line)
+        (insert "{")
+        (goto-char end)
+        (forward-line -1)
+        (beginning-of-line)
+        (forward-char -1)
+        (insert "}")
+        (org-babel-mark-block)
+        (call-interactively 'nixpkgs-fmt-region)))))
 
 (defun swarsel/minibuffer-setup-hook ()
   (setq gc-cons-threshold most-positive-fixnum))
@@ -302,159 +266,122 @@ create a new one."
 (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
 
 ;; Make ESC quit prompts
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-  ;; Set up general keybindings
-  (use-package general
-    :config
-    (general-create-definer swarsel/leader-keys
-      :keymaps '(normal insert visual emacs)
-      :prefix "SPC"
-      :global-prefix "C-SPC")
+;; Set up general keybindings
+(use-package general
+  :config
+  (general-create-definer swarsel/leader-keys
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-SPC")
 
-    (swarsel/leader-keys
-      "e"  '(:ignore e :which-key "evil")
-      "eo" '(evil-jump-backward :which-key "cursor jump backwards")
-      "eO" '(evil-jump-forward :which-key "cursor jump forwards")
-      "t"  '(:ignore t :which-key "toggles")
-      "ts" '(hydra-text-scale/body :which-key "scale text")
-      "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
-      "tl" '(display-line-numbers-mode :which-key "line numbers")
-      "tp" '(evil-cleverparens-mode :wk "cleverparens")
-      "to" '(olivetti-mode :wk "olivetti")
-      "td" '(darkroom-tentative-mode :wk "darkroom")
-      "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
-      "m"  '(:ignore m :which-key "modes/programs")
-      "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
-      "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
-      "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
-      "mp" '(popper-toggle :which-key "popper")
-      "md" '(dirvish :which-key "dirvish")
-      "mr" '(bjm/elfeed-load-db-and-open :which-key "elfeed")
-      "o"  '(:ignore o :which-key "org")
-      "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
-      "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
-      "oa" '((lambda () (interactive) (org-refile)) :which-key "org-refile")
-      "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
-      "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
-      "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
-      "os" '(shfmt-region :which-key "format sh-block")
-      "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
-      "on" '(nixpkgs-fmt-region :which-key "format nix-block")
-      "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
-      "oe" '(org-html-export-to-html :which-key "export to html")
-      "c"  '(:ignore c :which-key "capture")
-      "ct" '((lambda () (interactive) (org-capture nil "tt")) :which-key "task")
-      ;; "cj" '((lambda () (interactive) (org-capture nil "jj")) :which-key "journal")
-      ;; "cs" '(markdown-download-screenshot :which-key "screenshot")
-      "l"  '(:ignore l :which-key "links")
-      "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
-      "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
-      "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
-      "ls" '((lambda () (interactive) (find-file "/smb:Swarsel@winters:")) :which-key "Server")
-      "lo" '(dired swarsel-obsidian-vault-directory :which-key "obsidian")
-      ;; "la" '((lambda () (interactive) (find-file swarsel-org-anki-filepath)) :which-key "anki")
-      ;; "ln" '((lambda () (interactive) (find-file swarsel-nix-org-filepath)) :which-key "Nix.org")
-      "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
-      "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
-      ;; "a"   '(:ignore a :which-key "anki")
-      ;; "ap"  '(anki-editor-push-tree :which-key "push new cards")
-      ;; "an"  '((lambda () (interactive) (org-capture nil "a")) :which-key "new card")
-      ;; "as"  '(swarsel-anki-set-deck-and-notetype :which-key "change deck and notetype")
-      "h"   '(:ignore h :which-key "help")
-      "hy"  '(yas-describe-tables :which-key "yas tables")
-      "hb"  '(embark-bindings :which-key "current key bindings")
-      "h"   '(:ignore t :which-key "describe")
-      "he"  'view-echo-area-messages
-      "hf"  'describe-function
-      "hF"  'describe-face
-      "hl"  '(view-lossage :which-key "show command keypresses")
-      "hL"  'find-library
-      "hm"  'describe-mode
-      "ho"  'describe-symbol
-      "hk"  'describe-key
-      "hK"  'describe-keymap
-      "hp"  'describe-package
-      "hv"  'describe-variable
-      "hd"  'devdocs-lookup
-      "w"   '(:ignore t :which-key "window")
-      "wl"  'windmove-right
-      "w <right>"  'windmove-right
-      "wh"  'windmove-left
-      "w <left>"  'windmove-left
-      "wk"  'windmove-up
-      "w <up>"  'windmove-up
-      "wj"  'windmove-down
-      "w <down>"  'windmove-down
-      "wr"  'winner-redo
-      "wd"  'delete-window
-      "w="  'balance-windows-area
-      "wD"  'kill-buffer-and-window
-      "wu"  'winner-undo
-      "wr"  'winner-redo
-      "w/"  'evil-window-vsplit
-"w\\"  'evil-window-vsplit
-      "w-"  'evil-window-split
-      "wm"  '(delete-other-windows :wk "maximize")
-      "<right>" 'up-list
-      "<left>" 'down-list
-      ))
+  (swarsel/leader-keys
+    "e"  '(:ignore e :which-key "evil")
+    "eo" '(evil-jump-backward :which-key "cursor jump backwards")
+    "eO" '(evil-jump-forward :which-key "cursor jump forwards")
+    "t"  '(:ignore t :which-key "toggles")
+    "ts" '(hydra-text-scale/body :which-key "scale text")
+    "te" '(swarsel/toggle-evil-state :which-key "emacs/evil")
+    "tl" '(display-line-numbers-mode :which-key "line numbers")
+    "tp" '(evil-cleverparens-mode :wk "cleverparens")
+    "to" '(olivetti-mode :wk "olivetti")
+    "td" '(darkroom-tentative-mode :wk "darkroom")
+    "tw" '((lambda () (interactive) (toggle-truncate-lines)) :which-key "line wrapping")
+    "m"  '(:ignore m :which-key "modes/programs")
+    "mm" '((lambda () (interactive) (mu4e)) :which-key "mu4e")
+    "mg" '((lambda () (interactive) (magit-list-repositories)) :which-key "magit-list-repos")
+    "mc" '((lambda () (interactive) (swarsel/open-calendar)) :which-key "calendar")
+    "mp" '(popper-toggle :which-key "popper")
+    "md" '(dirvish :which-key "dirvish")
+    "mr" '(bjm/elfeed-load-db-and-open :which-key "elfeed")
+    "o"  '(:ignore o :which-key "org")
+    "op" '((lambda () (interactive) (org-present)) :which-key "org-present")
+    "oa" '((lambda () (interactive) (org-agenda)) :which-key "org-agenda")
+    "oa" '((lambda () (interactive) (org-refile)) :which-key "org-refile")
+    "ob" '((lambda () (interactive) (org-babel-mark-block)) :which-key "Mark whole src-block")
+    "ol" '((lambda () (interactive) (org-insert-link)) :which-key "insert link")
+    "oc" '((lambda () (interactive) (org-store-link)) :which-key "copy (=store) link")
+    "os" '(shfmt-region :which-key "format sh-block")
+    "od" '((lambda () (interactive) (org-babel-demarcate-block)) :which-key "demarcate (split) src-block")
+    "on" '(nixpkgs-fmt-region :which-key "format nix-block")
+    "ot" '(swarsel/org-babel-tangle-config :which-key "tangle file")
+    "oe" '(org-html-export-to-html :which-key "export to html")
+    "c"  '(:ignore c :which-key "capture")
+    "ct" '((lambda () (interactive) (org-capture nil "tt")) :which-key "task")
+    "l"  '(:ignore l :which-key "links")
+    "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
+    "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+    "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
+    "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
+    "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
+    "h"   '(:ignore h :which-key "help")
+    "hy"  '(yas-describe-tables :which-key "yas tables")
+    "hb"  '(embark-bindings :which-key "current key bindings")
+    "h"   '(:ignore t :which-key "describe")
+    "he"  'view-echo-area-messages
+    "hf"  'describe-function
+    "hF"  'describe-face
+    "hl"  '(view-lossage :which-key "show command keypresses")
+    "hL"  'find-library
+    "hm"  'describe-mode
+    "ho"  'describe-symbol
+    "hk"  'describe-key
+    "hK"  'describe-keymap
+    "hp"  'describe-package
+    "hv"  'describe-variable
+    "hd"  'devdocs-lookup
+    "w"   '(:ignore t :which-key "window")
+    "wl"  'windmove-right
+    "w <right>"  'windmove-right
+    "wh"  'windmove-left
+    "w <left>"  'windmove-left
+    "wk"  'windmove-up
+    "w <up>"  'windmove-up
+    "wj"  'windmove-down
+    "w <down>"  'windmove-down
+    "wr"  'winner-redo
+    "wd"  'delete-window
+    "w="  'balance-windows-area
+    "wD"  'kill-buffer-and-window
+    "wu"  'winner-undo
+    "wr"  'winner-redo
+    "w/"  'evil-window-vsplit
+    "w\\"  'evil-window-vsplit
+    "w-"  'evil-window-split
+    "wm"  '(delete-other-windows :wk "maximize")
+    "<right>" 'up-list
+    "<left>" 'down-list
+    ))
 
-  ;; General often used hotkeys
-  (general-define-key
-   "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
-   ;; "C-M-d" 'swarsel-obsidian-daily ; open daily obsidian file and create if not exist
-   ;; "C-M-S" 'swarsel-anki-set-deck-and-notetype ; switch deck and notetype for new anki cards
-   ;; "C-M-s" 'markdown-download-screenshot ; wrapper for org-download-screenshot
-   "C-c d" 'crux-duplicate-current-line-or-region
-   "C-c D" 'crux-duplicate-and-comment-current-line-or-region
-   "<DUMMY-m>" 'swarsel/last-buffer
-   "M-\\" 'indent-region
-   "C-<f9>" 'my-python-shell-run
-   "<Paste>" 'yank
-   "<Cut>" 'kill-region
-   "<Copy>" 'kill-ring-save
-   "<undo>" 'evil-undo
-   "<redo>" 'evil-redo
-   "C-S-c C-S-c" 'mc/edit-lines
-   "C->" 'mc/mark-next-like-this
-   "C-<" 'mc/mark-previous-like-this
-   "C-c C-<" 'mc/mark-all-like-this
-   )
+;; General often used hotkeys
+(general-define-key
+ "C-M-a" (lambda () (interactive) (org-capture nil "a")) ; make new anki card
+ "C-c d" 'crux-duplicate-current-line-or-region
+ "C-c D" 'crux-duplicate-and-comment-current-line-or-region
+ "<DUMMY-m>" 'swarsel/last-buffer
+ "M-\\" 'indent-region
+ "<Paste>" 'yank
+ "<Cut>" 'kill-region
+ "<Copy>" 'kill-ring-save
+ "<undo>" 'evil-undo
+ "<redo>" 'evil-redo
+ "C-S-c C-S-c" 'mc/edit-lines
+ "C->" 'mc/mark-next-like-this
+ "C-<" 'mc/mark-previous-like-this
+ "C-c C-<" 'mc/mark-all-like-this
+ )
 
 ;; set Nextcloud directory for journals etc.
-(setq swarsel-sync-directory "~/Nextcloud"
-      swarsel-emacs-directory "~/.emacs.d"
-      swarsel-dotfiles-directory "~/.dotfiles"
-      swarsel-projects-directory "~/Documents/GitHub")
-
-(setq swarsel-emacs-org-filepath (expand-file-name "Emacs.org" swarsel-dotfiles-directory)
-      swarsel-nix-org-filepath (expand-file-name "Nix.org" swarsel-dotfiles-directory)
-      swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
-      )
-
-
-;; set Emacs main configuration .org names
-(setq swarsel-emacs-org-file "Emacs.org"
-      swarsel-anki-org-file "Anki.org"
-      swarsel-tasks-org-file "Tasks.org"
-      swarsel-archive-org-file "Archive.org"
-      swarsel-org-folder-name "Org"
-      swarsel-obsidian-daily-folder-name "⭐ Personal/Journal"
-      swarsel-obsidian-folder-name "Obsidian"
-      swarsel-obsidian-vault-name "Main")
-
-
-;; set directory paths
-(setq swarsel-org-directory (expand-file-name swarsel-org-folder-name  swarsel-sync-directory)) ; path to org folder
-(setq swarsel-obsidian-directory (expand-file-name swarsel-obsidian-folder-name swarsel-sync-directory)) ; path to obsidian
-(setq swarsel-obsidian-vault-directory (expand-file-name swarsel-obsidian-vault-name swarsel-obsidian-directory)) ; path to obsidian vault
-(setq swarsel-obsidian-daily-directory (expand-file-name swarsel-obsidian-daily-folder-name swarsel-obsidian-vault-directory)) ; path to obsidian daily folder
-
-;; filepaths to certain documents
-(setq swarsel-org-anki-filepath (expand-file-name swarsel-anki-org-file swarsel-org-directory) ; path to anki export file
-      swarsel-org-tasks-filepath (expand-file-name swarsel-tasks-org-file swarsel-org-directory)
-      swarsel-org-archive-filepath (expand-file-name swarsel-archive-org-file swarsel-org-directory))
+(setq
+ swarsel-emacs-directory "~/.emacs.d"
+ swarsel-dotfiles-directory "~/.dotfiles"
+ swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
+ swarsel-tasks-org-file "Tasks.org"
+ swarsel-archive-org-file "Archive.org"
+ swarsel-work-projects-directory "~/Documents/Work"
+ swarsel-private-projects-directory "~/Documents/Private"
+ )
 
 ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs/")
@@ -554,8 +481,8 @@ create a new one."
   (run-with-idle-timer 15 t
                        (lambda ()
                          ;; (message "Garbage Collector has run for %.06fsec"
-                                  (k-time (garbage-collect)))))
-                         ;; )
+                         (k-time (garbage-collect)))))
+;; )
 
 (setq-default indent-tabs-mode nil
               tab-width 2)
@@ -660,6 +587,9 @@ create a new one."
   :config
   (global-evil-surround-mode 1))
 
+(use-package evil-visual-mark-mode
+  :config (evil-visual-mark-mode))
+
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
@@ -675,8 +605,6 @@ create a new one."
                     :family "IBM Plex Sans"
                     :weight 'regular
                     :height 1.06)
-
-;; these settings used to be in custom.el
 
 (use-package solaire-mode
   :custom
@@ -900,7 +828,7 @@ create a new one."
 (setq-default indicate-buffer-boundaries t)
 
 ;; (setq auth-sources '( "~/.emacs.d/.caldav" "~/.emacs.d/.authinfo.gpg")
-      ;; auth-source-cache-expiry nil) ; default is 2h
+;; auth-source-cache-expiry nil) ; default is 2h
 
 (setq auth-sources '( "~/.emacs.d/.authinfo")
       auth-source-cache-expiry nil)
@@ -918,109 +846,23 @@ create a new one."
   (setq org-startup-folded t)
   (setq org-support-shift-select t)
 
-  ;; (setq org-agenda-start-with-log-mode t)
-  ;; (setq org-log-done 'time)
-  ;; (setq org-log-into-drawer t)
+  (setq org-agenda-start-with-log-mode t)
+  (setq org-log-done 'time)
+  (setq org-log-into-drawer t)
   (setq org-startup-with-inline-images t)
   (setq org-export-headline-levels 6)
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
-(setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
-                         "/home/swarsel/Nextcloud/Org/Archive.org"
-                         "/home/swarsel/Nextcloud/Org/Anki.org"
-                         "/home/swarsel/Calendars/leon_cal.org"))
+  (setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
+                           "/home/swarsel/Nextcloud/Org/Archive.org"
+                           ))
 
-(setq org-refile-targets
-      '((swarsel-archive-org-file :maxlevel . 1)
-        (swarsel-anki-org-file :maxlevel . 1)
-        (swarsel-tasks-org-file :maxlevel . 1)))
+  (setq org-refile-targets
+        '((swarsel-archive-org-file :maxlevel . 1)
+          (swarsel-tasks-org-file :maxlevel . 1)))
 
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-        (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANC(k@)")))
-
-
-;; Configure custom agenda views
-(setq org-agenda-custom-commands
-      '(("d" "Dashboard"
-         ((agenda "" ((org-deadline-warning-days 7)))
-          (todo "NEXT"
-                ((org-agenda-overriding-header "Next Tasks")))
-          (tags-todo "agenda/ACTIVE" ((org-agenda-overriding-header "Active Projects")))))
-
-        ("n" "Next Tasks"
-         ((todo "NEXT"
-                ((org-agenda-overriding-header "Next Tasks")))))
-
-        ("W" "Work Tasks" tags-todo "+work-email")
-
-
-        ("w" "Workflow Status"
-         ((todo "WAIT"
-                ((org-agenda-overriding-header "Waiting on External")
-                 (org-agenda-files org-agenda-files)))
-          (todo "REVIEW"
-                ((org-agenda-overriding-header "In Review")
-                 (org-agenda-files org-agenda-files)))
-          (todo "PLAN"
-                ((org-agenda-overriding-header "In Planning")
-                 (org-agenda-todo-list-sublevels nil)
-                 (org-agenda-files org-agenda-files)))
-          (todo "BACKLOG"
-                ((org-agenda-overriding-header "Project Backlog")
-                 (org-agenda-todo-list-sublevels nil)
-                 (org-agenda-files org-agenda-files)))
-          (todo "READY"
-                ((org-agenda-overriding-header "Ready for Work")
-                 (org-agenda-files org-agenda-files)))
-          (todo "ACTIVE"
-                ((org-agenda-overriding-header "Active Projects")
-                 (org-agenda-files org-agenda-files)))
-          (todo "COMPLETED"
-                ((org-agenda-overriding-header "Completed Projects")
-                 (org-agenda-files org-agenda-files)))
-          (todo "CANC"
-                ((org-agenda-overriding-header "Cancelled Projects")
-                 (org-agenda-files org-agenda-files)))))))
-
-(setq org-capture-templates
-      `(
-        ("a" "Anki basic"
-         entry
-         (file+headline swarsel-org-anki-filepath "Dispatch")
-         (function swarsel-anki-make-template-string))
-
-        ("A" "Anki cloze"
-         entry
-         (file+headline org-swarsel-anki-file "Dispatch")
-         "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: 🦁 All::01 ❤️ Various::00 ✨ Allgemein\n:END:\n** Text\n%?\n** Extra\n")
-        ("t" "Tasks / Projects")
-        ("tt" "Task" entry (file+olp swarsel-org-tasks-filepath "Inbox")
-         "* TODO %?\n  %U\n  %a\n  %i" :empty-lines 1)
-        ))
-)
-
-;; Set faces for heading levels
-(with-eval-after-load 'org-faces  (dolist (face '((org-level-1 . 1.1)
-                                                  (org-level-2 . 0.9)
-                                                  (org-level-3 . 0.9)
-                                                  (org-level-4 . 0.9)
-                                                  (org-level-5 . 0.9)
-                                                  (org-level-6 . 0.9)
-                                                  (org-level-7 . 0.9)
-                                                  (org-level-8 . 0.9)))
-                                    (set-face-attribute (car face) nil :font swarsel-alt-font :weight 'medium :height (cdr face)))
-
-                      ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-                      (set-face-attribute 'org-block nil   :inherit 'fixed-pitch)
-                      (set-face-attribute 'org-table nil   :inherit 'fixed-pitch)
-                      (set-face-attribute 'org-formula nil   :inherit 'fixed-pitch)
-                      (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-                      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-                      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-                      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-                      (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+  )
 
 (use-package org-appear
   :hook (org-mode . org-appear-mode)
@@ -1037,18 +879,31 @@ create a new one."
 
 (setq org-src-preserve-indentation nil)
 
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (python . t)
-     (js . t)
-     (shell . t)
-     ))
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)
+   (js . t)
+   (shell . t)
+   ))
 
-  (push '("conf-unix" . conf-unix) org-src-lang-modes)
+(push '("conf-unix" . conf-unix) org-src-lang-modes)
 
-  (setq org-export-with-broken-links 'mark)
-  (setq org-confirm-babel-evaluate nil)
+(setq org-export-with-broken-links 'mark)
+(setq org-confirm-babel-evaluate nil)
+
+;; tangle is too slow, try to speed it up
+(defadvice org-babel-tangle-single-block (around inhibit-redisplay activate protect compile)
+  "inhibit-redisplay and inhibit-message to avoid flicker."
+  (let ((inhibit-redisplay t)
+        (inhibit-message t))
+    ad-do-it))
+
+(defadvice org-babel-tangle (around time-it activate compile)
+  "Display the execution time"
+  (let ((tim (current-time)))
+    ad-do-it
+    (message "org-tangle took %f sec" (float-time (time-subtract (current-time) tim)))))
 
 (require 'org-tempo)
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
@@ -1071,20 +926,7 @@ create a new one."
 (setq TeX-electric-sub-and-superscript t)
 ;; (setq reftex-plug-into-AUCTeX t)
 
-(use-package org-download
-  :after org
-  :defer nil
-  :custom
-  (org-download-method 'directory)
-  (org-download-image-dir "./images")
-  (org-download-heading-lvl 0)
-  (org-download-timestamp "org_%Y%m%d-%H%M%S_")
-  ;;(org-image-actual-width 500)
-  (org-download-screenshot-method "grim -g \"$(slurp)\" %s")
-  :bind
-  ("C-M-y" . org-download-screenshot)
-  :config
-  (require 'org-download))
+
 
 (use-package org-fragtog)
 (add-hook 'org-mode-hook 'org-fragtog-mode)
@@ -1246,11 +1088,6 @@ create a new one."
             (local-set-key (kbd "C-c C-x C-u") 'markdown-toggle-url-hiding)
             ))
 
-(use-package olivetti
-  :init
-  (setq olivetti-body-width 100)
-  (setq olivetti-recall-visual-line-mode-entry-state t))
-
 (use-package elfeed)
 
 (use-package elfeed-goodies)
@@ -1278,10 +1115,6 @@ create a new one."
 (define-key elfeed-search-mode-map (kbd "j") 'next-line)
 (define-key elfeed-search-mode-map (kbd "k") 'previous-line)
 (define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
-
-(use-package darkroom
-  :init
-  (setq darkroom-text-scale-increase 3))
 
 (use-package rg)
 
@@ -1329,8 +1162,6 @@ create a new one."
   :config
   (setq avy-all-windows 'all-frames))
 
-(use-package crdt)
-
 (use-package devdocs)
 
 (add-hook 'python-mode-hook
@@ -1359,14 +1190,13 @@ create a new one."
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
   (when (file-directory-p swarsel-projects-directory)
-    (setq projectile-project-search-path (list swarsel-projects-directory)))
+    (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory)))
   (setq projectile-switch-project-action #'magit-status))
 
 (use-package magit
   :config
-  (setq magit-repository-directories `((,swarsel-projects-directory  . 1)
-                                       (,swarsel-emacs-directory . 0)
-                                       (,swarsel-obsidian-directory . 0)
+  (setq magit-repository-directories `((,swarsel-work-projects-directory  . 1)
+                                       (,swarsel-private-projects-directory . 1)
                                        ("~/.dotfiles/" . 0)))
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window
@@ -1383,10 +1213,7 @@ create a new one."
 
 (with-eval-after-load 'forge
   (add-to-list 'forge-alist
-               '("sgit.iue.tuwien.ac.at"
-                 "sgit.iue.tuwien.ac.at/api/v1"
-                 "sgit.iue.tuwien.ac.at"
-                 forge-gitea-repository)))
+               ))
 
 (use-package git-timemachine
   :hook (git-time-machine-mode . evil-normalize-keymaps)
@@ -1417,12 +1244,6 @@ create a new one."
 (use-package rainbow-mode
   :config (rainbow-mode))
 
-;; (use-package corfu
-;;   :custom
-;;   (corfu-cycle t)
-;;   :init
-;;   (global-corfu-mode))
-
 (use-package corfu
   :init
   (global-corfu-mode)
@@ -1431,7 +1252,7 @@ create a new one."
   :custom
   (corfu-auto t)
   (corfu-auto-prefix 3)
-  (corfu-auto-delay 0.3)
+  (corfu-auto-delay 1)
   (corfu-cycle t)
   (corfu-quit-no-match 'separator)
   (corfu-separator ?\s)
@@ -1483,22 +1304,6 @@ create a new one."
   ("C-z ^" . cape-tex)
   ("C-z &" . cape-sgml)
   ("C-z r" . cape-rfc1345)
-  ;; Add to the global default value of `completion-at-point-functions' which is
-  ;; used by `completion-at-point'.  The order of the functions matters, the
-  ;; first function returning a result wins.  Note that the list of buffer-local
-  ;; completion functions takes precedence over the global list.
-  ;; (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  ;; (add-to-list 'completion-at-point-functions #'cape-file)
-  ;; (add-to-list 'completion-at-point-functions #'cape-elisp-block)
-  ;; (add-to-list 'completion-at-point-functions #'cape-history)
-  ;; (add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
-  ;; (add-to-list 'completion-at-point-functions #'cape-sgml)
-  ;; (add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;; (add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;; (add-to-list 'completion-at-point-functions #'cape-dict)
-  ;; (add-to-list 'completion-at-point-functions #'cape-elisp-symbol)
-  ;; (add-to-list 'completion-at-point-functions #'cape-line)
   )
 
 (use-package rustic
@@ -1549,64 +1354,10 @@ create a new one."
 (use-package evil-nerd-commenter
   :bind ("M-/" . evilnc-comment-or-uncomment-lines))
 
-(use-package yasnippet
-  :init (yas-global-mode 1)
-  :config
-  (yas-reload-all))
-
-(setq wtf/latex-mathbb-prefix "''")
-(setq swarsel/latex-mathcal-prefix "``")
-
-(use-package yasnippet
-  :config
-
-  (setq wtf/english-alphabet
-        '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
-
-  (dolist (elem wtf/english-alphabet)
-    (when (string-equal elem (downcase elem))
-      (add-to-list 'wtf/english-alphabet (upcase elem))))
-
-
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (list (concat wtf/latex-mathbb-prefix elem) (concat "\\mathbb{" elem "}") (concat "Mathbb letter " elem)))
-    wtf/english-alphabet))
-
-  (yas-define-snippets
-   'latex-mode
-   (mapcar
-    (lambda (elem)
-      (list (concat swarsel/latex-mathcal-prefix elem) (concat "\\mathcal{" elem "}") (concat "Mathcal letter " elem)))
-    wtf/english-alphabet))
-
-  (setq swtf/latex-math-symbols
-        '(("x" . "\\times")
-          ("*" . "\\cdot")
-          ("." . "\\ldots")
-          ("op" . "\\operatorname{$1}$0")
-          ("o" . "\\circ")
-          ("V" . "\\forall")
-          ("v" . "\\vee")
-          ("w" . "\\wedge")
-          ("q" . "\\quad")
-          ("f" . "\\frac{$1}{$2}$0")
-          ("s" . "\\sum_{$1}^{$2}$0")
-          ("p" . "\\prod_{$1}^{$2}$0")
-          ("e" . "\\exists")
-          ("i" . "\\int_{$1}^{$2}$0")
-          ("c" . "\\cap")
-          ("u" . "\\cup")
-          ("0" . "\\emptyset")))
-
-  )
-
 (use-package eglot
   :config
   (add-to-list 'eglot-server-programs
-       '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
+               '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
   :hook
   ((python-mode
     python-ts-mode
@@ -1648,12 +1399,8 @@ create a new one."
   :hook (flymake-mode . sideline-mode)
   :init
   (setq sideline-flymake-display-mode 'point) ; 'point to show errors only on point
-                                              ; 'line to show errors on the current line
+                                        ; 'line to show errors on the current line
   (setq sideline-backends-right '(sideline-flymake)))
-
-(use-package breadcrumb
-  ;; :config (breadcrumb-mode)
-  )
 
 (setq backup-by-copying-when-linked t)
 
@@ -1708,14 +1455,6 @@ create a new one."
    ("M-e" . dirvish-emerge-menu)
    ("M-j" . dirvish-fd-jump)))
 
-;; (use-package pdf-tools
-;;   :init
-;;   (if (not (boundp 'pdf-tools-directory))
-;;       (pdf-tools-install))
-;;   :mode ("\\.pdf" . pdf-view-mode))
-
-(use-package ein)
-
 (use-package undo-tree
   :init (global-undo-tree-mode)
   :bind (:map undo-tree-visualizer-mode-map
@@ -1726,11 +1465,6 @@ create a new one."
   :config
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo"))))
 
-;; (add-hook 'prog-mode-hook 'undo-tree-mode)
-;; (add-hook 'text-mode-hook 'undo-tree-mode)
-;; (add-hook 'org-mode-hook 'undo-tree-mode)
-;; (add-hook 'latex-mode-hook 'undo-tree-mode)
-
 (use-package hydra)
 
 ;; change the text size of the current buffer
@@ -1739,103 +1473,6 @@ create a new one."
   ("j" text-scale-increase "in")
   ("k" text-scale-decrease "out")
   ("f" nil "finished" :exit t))
-
-;; (use-package obsidian
-;;   :ensure t
-;;   :demand t
-;;   :config
-;;   (obsidian-specify-path swarsel-obsidian-vault-directory)
-;;   (global-obsidian-mode t)
-;;   :custom
-;;   ;; This directory will be used for `obsidian-capture' if set.
-;;   (obsidian-inbox-directory "Inbox")
-;;   (bind-key (kbd "C-c M-o") 'obsidian-hydra/body 'obsidian-mode-map)
-;;   :bind (:map obsidian-mode-map
-;;               ;; Replace C-c C-o with Obsidian.el's implementation. It's ok to use another key binding.
-;;               ("C-c C-o" . obsidian-follow-link-at-point)
-;;               ;; Jump to backlinks
-;;               ("C-c C-b" . obsidian-backlink-jump)
-;;               ;; If you prefer you can use `obsidian-insert-link'
-;;               ("C-c C-l" . obsidian-insert-wikilink)))
-
-;; (use-package anki-editor
-;;   :after org
-;;   :bind (:map org-mode-map
-;;               ("<f12>" . anki-editor-cloze-region-auto-incr)
-;;               ("<f11>" . anki-editor-cloze-region-dont-incr)
-;;               ("<f10>" . anki-editor-reset-cloze-number)
-;;               ("<f9>"  . anki-editor-push-tree))
-;;   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
-;;   :config
-;;   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
-;;         anki-editor-org-tags-as-anki-tags t)
-
-;;   (defun anki-editor-cloze-region-auto-incr (&optional arg)
-;;     "Cloze region without hint and increase card number."
-;;     (interactive)
-;;     (anki-editor-cloze-region swarsel-anki-editor-cloze-number "")
-;;     (setq swarsel-anki-editor-cloze-number (1+ swarsel-anki-editor-cloze-number))
-;;     (forward-sexp))
-;;   (defun anki-editor-cloze-region-dont-incr (&optional arg)
-;;     "Cloze region without hint using the previous card number."
-;;     (interactive)
-;;     (anki-editor-cloze-region (1- swarsel-anki-editor-cloze-number) "")
-;;     (forward-sexp))
-;;   (defun anki-editor-reset-cloze-number (&optional arg)
-;;     "Reset cloze number to ARG or 1"
-;;     (interactive)
-;;     (setq swarsel-anki-editor-cloze-number (or arg 1)))
-;;   (defun anki-editor-push-tree ()
-;;     "Push all notes under a tree."
-;;     (interactive)
-;;     (anki-editor-push-notes '(4))
-;;     (anki-editor-reset-cloze-number))
-;;   ;; Initialize
-;;   (anki-editor-reset-cloze-number)
-;;   )
-
-;; (require 'anki-editor)
-
-;; (defvar swarsel-anki-deck nil)
-;; (defvar swarsel-anki-notetype nil)
-;; (defvar swarsel-anki-fields nil)
-
-;; (defun swarsel-anki-set-deck-and-notetype ()
-;;   (interactive)
-;;   (setq swarsel-anki-deck  (completing-read "Choose a deck: "
-;;                                             (sort (anki-editor-deck-names) #'string-lessp)))
-;;   (setq swarsel-anki-notetype (completing-read "Choose a note type: "
-;;                                                (sort (anki-editor-note-types) #'string-lessp)))
-;;   (setq swarsel-anki-fields (progn
-;;                               (anki-editor--anki-connect-invoke-result "modelFieldNames" `((modelName . ,swarsel-anki-notetype)))))
-;;   )
-
-;; (defun swarsel-anki-make-template-string ()
-;;   (if (not swarsel-anki-deck)
-;;       (call-interactively 'swarsel-anki-set-deck-and-notetype))
-;;   (setq swarsel-temp swarsel-anki-fields)
-;;   (concat (concat "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: " swarsel-anki-notetype "\n:ANKI_DECK: " swarsel-anki-deck "\n:END:\n** ")(pop swarsel-temp) "\n%?\n** " (mapconcat 'identity swarsel-temp "\n\n** ") "\n\n"))
-
-;; (defun swarsel-today()
-;;   (format-time-string "%Y-%m-%d"))
-
-;; (defun swarsel-obsidian-daily ()
-;;   (interactive)
-;;   (if (not (file-exists-p (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
-;;       (write-region "" nil (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory))
-;;     )
-;;   (find-file (expand-file-name (concat (swarsel-today) ".md") swarsel-obsidian-daily-directory)))
-
-;; (let ((mu4epath
-;;        (concat
-;;         (f-dirname
-;;          (file-truename
-;;           (executable-find "mu")))
-;;         "/../share/emacs/site-lisp/mu4e")))
-;;   (when (and
-;;          (string-prefix-p "/nix/store/" mu4epath)
-;;          (file-directory-p mu4epath))
-;;     (add-to-list 'load-path mu4epath)))
 
 (use-package mu4e
   :ensure nil
@@ -2002,114 +1639,11 @@ create a new one."
           )))
 
 (use-package vterm
-    :ensure t)
-
-(defun sudo-find-file (file-name)
-"Like find file, but opens the file as root."
-(interactive "FSudo Find File: ")
-(let ((tramp-file-name (concat "/sudo::" (expand-file-name file-name))))
-  (find-file tramp-file-name)))
-;;; vterm/config.el -*- lexical-binding: t; -*-
-
-  ;; Original functions overwrites tramp path with a guessed path.
-  ;; However it breaks if remote fqdn/hostname is not resolvale by local machine
-  ;; could also break on port forwarding, multihops,
-  ;; custom protocol such as: docker, vagrant, ...
-  ;; *if* you try to shell-side configure them.
-  ;; Easily testable with vagrant ssh port on localhost.
-  ;; My workflow is to open a tramp dired on / of the remote to get a
-  ;; "foothold" then open vterms from there.
-  (defun vterm--get-directory (path)
-    "[OVERLOADED] Get normalized directory to PATH."
-    (when path
-      (let (directory)
-        (if (string-match "^\\(.*?\\)@\\(.*?\\):\\(.*?\\)$" path)
-            (progn
-              (let ((user (match-string 1 path))
-                    (host (match-string 2 path))
-                    (dir (match-string 3 path)))
-                (if (and (string-equal user user-login-name)
-                         (string-equal host (system-name)))
-                    (progn
-                      (when (file-directory-p dir)
-                        (setq directory (file-name-as-directory dir))))
-                  (setq directory
-                        ;; Bellow is what i altered
-                        (file-name-as-directory (concat (file-remote-p default-directory) dir))))))
-          (when (file-directory-p path)
-            (setq directory (file-name-as-directory path))))
-        directory)))
-  ;; Injects the payload to the vterm buffer.
-  (defun me/vterm-load-config ()
-    "Pass local configuration files to vterm.
-
-Allows remote vterm to be shell-side configured,
-without altering remote config.
-Also adds my personal configuration that does not rely
-too much on external packages.
-Prints a reasuring message to proove good faith."
-    (interactive)
-    (let (;; Bellow messages to reassure other users that look at history
-          (reasuring-message (format "Configuring shell of user %s to be emacs comptible"
-                                     user-full-name))
-          (reasuring-notice "This action is shell local, it will not affect other shells")
-          ;; Bellow lies my configuration
-          (basic-func-script (f-read-text (concat (getenv "HOME")
-                                                  "/.emacs.d/shells/sources/functions.sh")))
-          ;; Bellow lies the vterm shell-side configuration
-          ;; Must be sourced last
-          (vterm-func-script (f-read-text (concat
-                                           (file-name-directory (find-library-name "vterm"))
-                                           "/etc/emacs-vterm-bash.sh"))))
-      (vterm-insert (format "# START: %s\n" reasuring-message))
-      (vterm-insert (format "# %s\n" reasuring-notice))
-      ;; Create one single block in history
-      (vterm-insert "{\n")
-      (vterm-insert basic-func-script)
-      (vterm-insert vterm-func-script)
-      (vterm-insert "}\n")
-      ;; End the single block in history
-      (vterm-insert (format "# %s\n" reasuring-notice))
-      (vterm-insert (format "# STOP: %s\n" reasuring-message))
-      )
-    )
-
-  ;; find-file-other-window does not works great on remote:
-  ;; if given an absolute path on a remote host,
-  ;; the path will be understood as a local file since no
-  ;; tramp prefix is present, and bash does not care
-  ;; about tramp prefixes.
-  ;; Bellow we solve context before sending it to
-  ;; ffow
-  (defun me/vterm--find-file-other-window-wrapper (file)
-    "Help vterm find a FILE."
-    (find-file-other-window (me/vterm--ffow-resolver file)))
-  (defun me/vterm--ffow-resolver (file)
-    "Help vterm resolve FILE."
-    (cond
-     ;; "/sudo::"
-     ;; doom--sudo-file-path do the trick for us
-     ((s-starts-with-p "/sudo::" file)
-       (sudo-find-file
-        (concat (file-remote-p default-directory)
-                (substring-no-properties file 7))))
-     ;; "/" means we want the "Relative root"
-     ;; try appending the remote prefix if relevent
-     ((s-starts-with-p "/" file)
-      (concat (file-remote-p default-directory) file))
-     ;; we got a relative path
-     ;; we don't need to help ffow to find it
-     (t
-      file)))
-
-  ;; The variable vterm-eval-cmds is a SERIOUSLY SENSIBLE variable !
-  ;; Do not be the guy that adds RCE into their config !
-
-  ;; Allow customed ffow to be called from vterm
-  ;; ffow should be as safe as find-file which is already trusted
-  ;; we append our resolver that only manipulate strings,
-  ;; Proove me wrong but i think it's safe.
-  (add-to-list 'vterm-eval-cmds '("find-file-other-window"
-                                  me/vterm--find-file-other-window-wrapper))
+  :ensure t)
 
 (use-package multiple-cursors)
+
+(setq mu4e--log-max-size 1000)
+(setq message-log-max 30)
+(setq comint-buffer-maximum-size 50)
+(add-hook 'comint-output-filter-functions 'comint-truncate-buffer)

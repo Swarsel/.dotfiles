@@ -97,7 +97,7 @@ in
     openssh = {
       enable = true;
       extraConfig = ''
-        '';
+          '';
     };
 
     syncthing = {

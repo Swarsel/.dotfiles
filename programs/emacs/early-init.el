@@ -9,9 +9,7 @@
 (add-hook 'emacs-startup-hook
           (lambda ()
             (progn
-              ;; (setq gc-cons-threshold (* 1000 1000 8)
-              ;; (setq gc-cons-threshold #x40000000
-                 (setq gc-cons-threshold (* 32 1024 1024)
+              (setq gc-cons-threshold (* 32 1024 1024)
                     gc-cons-percentage 0.1
                     jit-lock-defer-time 0.05
                     read-process-output-max (* 1024 1024)
