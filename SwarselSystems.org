@@ -652,6 +652,58 @@ window#waybar.hidden {
 }
 
 #+end_src
+** justfile
+  This file defines a few workflows that I often need to run when working on my configuration. This works similar to =make=, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or =.PHONY= recipes.
+
+  (In the org-src block I still call it a Makefile in order to get syntax highlighting)
+
+  #+begin_src makefile :tangle justfile
+
+default:
+  @just --list
+
+check:
+  nix flake check --keep-going
+
+check-trace:
+  nix flake check --show-trace
+
+update:
+  nix flake update
+
+iso:
+  rm -rf result
+  nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
+
+iso-flake FLAKE SYSTEM="x86_64" FORMAT="iso":
+  nixos-generate --flake .#{{FLAKE}} -f {{FORMAT}} --system {{SYSTEM}}
+
+iso-install DRIVE: iso
+  sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
+
+dd DRIVE ISO:
+  sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
+
+sync USER HOST:
+  rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+
+  #+end_src
+** statix.toml
+
+This file is used to tell =statix= which checks and folders/fiels to ignore, as well as to specify the nix version that it should use.
+
+I need this mainly to disable the =repeated_keys= check, which checks if there is an attribute set called twice without stepping into it. While in general this should be avoided, since I am tangling some files and need to use the top-level attribute in each org-src block, the check would fail for all these cases.
+
+#+begin_src toml :tangle statix.toml
+
+  disabled = [
+    "repeated_keys"
+  ]
+  nix_version = '2.4'
+  ignore = ['.direnv']
+
+#+end_src
+
 * flake.nix
 :PROPERTIES:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
@@ -659,7 +711,7 @@ window#waybar.hidden {
 
 Handling the flake.nix file used to be a bit of a chore, since it felt like writing so much boilerplate code just to define new systems. The noweb-approach here makes this a little bit less painful.
 
-These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android) and [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]] (for Darwin systems, also known as Macs). There also used to be a [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that used to define a Proxmox LXC image when I was still using Proxmox as my main server. An example of the repository at that time would be =acc0ad6 main Add several NixOS hosts on Proxmox and Oracle Cloud=.
+These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android) and [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]] (for Darwin systems, also known as Macs). There also used to be a [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that used to define a Proxmox LXC image when I was still using Proxmox as my main server. An example of the repository at that time would be =acc0ad6: Add several NixOS hosts on Proxmox and Oracle Cloud=.
 
 
 
@@ -1187,7 +1239,7 @@ This is a list of all physical machines that I maintain.
 
 My work machine. Built for more security, this is the gold standard of my configurations at the moment.
 
-
+***** Main Configuration
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
@@ -1408,6 +1460,132 @@ My work machine. Built for more security, this is the gold standard of my config
 
 #+end_src
 
+***** hardware-configuration
+
+#+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
+  { config, lib, modulesPath, ... }:
+  {
+    imports =
+      [
+        (modulesPath + "/installer/scan/not-detected.nix")
+      ];
+
+    boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+    boot.initrd.kernelModules = [ ];
+    boot.kernelModules = [ "kvm-amd" ];
+
+    # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
+    # TODO: figure out if this is worth it
+    # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
+    # ref:
+    # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
+    # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
+    # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
+    boot.kernelParams = [ "amdgpu.dcdebugmask=0x410" ];
+
+    boot.extraModulePackages = [ ];
+    boot.initrd.luks.devices."cryptroot" = {
+      # improve performance on ssds
+      bypassWorkqueues = true;
+      preLVM = true;
+    };
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.enp196s0f3u1c2.useDHCP = lib.mkDefault true;
+    # networking.interfaces.wlp4s0.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+
+
+#+end_src
+***** disko
+
+#+begin_src nix :tangle hosts/nixos/nbl-imba-2/disk-config.nix
+  {
+    disko.devices = {
+      disk = {
+        nvme0n1 = {
+          type = "disk";
+          device = "/dev/nvme0n1";
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                label = "boot";
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [
+                    "defaults"
+                  ];
+                };
+              };
+              luks = {
+                size = "100%";
+                label = "luks";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  extraOpenArgs = [
+                    "--allow-discards"
+                    "--perf-no_read_workqueue"
+                    "--perf-no_write_workqueue"
+                  ];
+                  # https://0pointer.net/blog/unlocking-luks2-volumes-with-tpm2-fido2-pkcs11-security-hardware-on-systemd-248.html
+                  settings = { crypttabExtraOpts = [ "fido2-device=auto" "token-timeout=10" ]; };
+                  content = {
+                    type = "btrfs";
+                    extraArgs = [ "-L" "nixos" "-f" ];
+                    subvolumes = {
+                      "/root" = {
+                        mountpoint = "/";
+                        mountOptions = [ "subvol=root" "compress=zstd" "noatime" ];
+                      };
+                      "/home" = {
+                        mountpoint = "/home";
+                        mountOptions = [ "subvol=home" "compress=zstd" "noatime" ];
+                      };
+                      "/nix" = {
+                        mountpoint = "/nix";
+                        mountOptions = [ "subvol=nix" "compress=zstd" "noatime" ];
+                      };
+                      "/persist" = {
+                        mountpoint = "/persist";
+                        mountOptions = [ "subvol=persist" "compress=zstd" "noatime" ];
+                      };
+                      "/log" = {
+                        mountpoint = "/var/log";
+                        mountOptions = [ "subvol=log" "compress=zstd" "noatime" ];
+                      };
+                      "/swap" = {
+                        mountpoint = "/swap";
+                        swap.swapfile.size = "64G";
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = true;
+    fileSystems."/var/log".neededForBoot = true;
+  }
+
+#+end_src
 **** Winters (Server)
 :PROPERTIES:
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
@@ -1415,6 +1593,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
 This is my main server that I run at home. It handles most tasks that require bigger amounts of storage than I can receive for free at OCI. Also it houses some data that I find too sensitive to hand over to Oracle.
 
+***** Main Configuration
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
   { self, inputs, outputs, config, ... }:
   let
@@ -1490,6 +1669,50 @@ This is my main server that I run at home. It handles most tasks that require bi
 
 #+end_src
 
+***** hardware-configuration
+#+begin_src nix :tangle hosts/nixos/winters/hardware-configuration.nix
+  { config, lib, modulesPath, ... }:
+
+  {
+    imports =
+      [
+        (modulesPath + "/installer/scan/not-detected.nix")
+      ];
+
+    boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" ];
+    boot.initrd.kernelModules = [ ];
+    boot.kernelModules = [ "kvm-intel" ];
+    boot.extraModulePackages = [ ];
+
+    boot.supportedFilesystems = [ "zfs" ];
+    boot.zfs.extraPools = [ "Vault" ];
+
+    fileSystems."/" =
+      {
+        device = "/dev/disk/by-uuid/30e2f96a-b01d-4c27-9ebb-d5d7e9f0031f";
+        fsType = "ext4";
+      };
+
+    fileSystems."/boot" =
+      {
+        device = "/dev/disk/by-uuid/F0D8-8BD1";
+        fsType = "vfat";
+      };
+
+    swapDevices =
+      [{ device = "/dev/disk/by-uuid/a8eb6f3b-69bf-4160-90aa-9247abc108e0"; }];
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+#+end_src
 **** nbm-imba-166 (MacBook Pro)
 :PROPERTIES:
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
@@ -1528,8 +1751,6 @@ A Mac notebook that I have received from work. I use this machine for getting ac
         isBtrfs = false;
       };
     };
-
-
   }
 #+end_src
 
@@ -1540,7 +1761,7 @@ A Mac notebook that I have received from work. I use this machine for getting ac
 
 My phone. I use only a minimal config for remote debugging here.
 
-#+begin_src nix :tangle hosts/nix-on-droid/magicant/default.nix
+#+begin_src nix :tangle hosts/android/magicant/default.nix
 
   { pkgs, ... }: {
     environment = {
@@ -1611,11 +1832,6 @@ This machine mainly acts as an external sync helper. It manages the following th
 - Syncthing backup of replaceable data
 
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
-
-***** NixOS
-:PROPERTIES:
-:CUSTOM_ID: h:e5fbb73a-799a-438f-a88c-fc14d110ac9c
-:END:
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
   { self, inputs, outputs, lib, ... }:
@@ -1715,8 +1931,9 @@ This machine mainly acts as an external sync helper. It manages the following th
 *** Utility hosts
 **** Toto (Physical/VM)
 
-This is a slim setup for developing base configuration.
+This is a slim setup for developing base configuration. I do not track the hardware-configuration for this host here because I often switch this configuration between running on a QEMU VM and a physical laptop and do not want to constantly adapt the config here to reflect the current state.
 
+***** Main Configuration
 #+begin_src nix :tangle hosts/nixos/toto/default.nix
   { self, inputs, outputs, config, pkgs, lib, ... }:
   let
@@ -1813,6 +2030,140 @@ This is a slim setup for developing base configuration.
 
 #+end_src
 
+***** disko
+
+#+begin_src nix :tangle hosts/nixos/toto/disk-config.nix
+  # NOTE: ... is needed because dikso passes diskoFile
+  { lib
+  , pkgs
+  , config
+  , rootDisk
+  , ...
+  }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+              luks = lib.mkIf config.swarselsystems.isCrypted {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                  settings = {
+                    allowDiscards = true;
+                    # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                    crypttabExtraOpts = [
+                      "fido2-device=auto"
+                      "token-timeout=10"
+                    ];
+                  };
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                    '';
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+
+    environment.systemPackages = [
+      pkgs.yubikey-manager
+    ];
+  }
+
+
+#+end_src
 **** drugstore (ISO)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
@@ -1964,7 +2315,7 @@ swarsel-install -n chaostheatre
 
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
 
-#+begin_src nix :tangle hosts/home-manager/default/default.nix
+#+begin_src nix :tangle hosts/home/default/default.nix
   { self, inputs, outputs, config, ... }:
   {
 
@@ -4310,6 +4661,106 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
     };
   };
 
+
+}
+#+end_src
+
+*** Library functions
+
+  This section defines all functions of my own that I add to =lib=. These are used in all places over the config, with many of them being used in =flake.nix=.
+
+  A breakdown of each function:
+
+#+begin_src nix :tangle lib/default.nix
+{ self, lib, systems, inputs, outputs, ... }:
+{
+
+  mkIfElseList = p: yes: no: lib.mkMerge [
+    (lib.mkIf p yes)
+    (lib.mkIf (!p) no)
+  ];
+
+  mkIfElse = p: yes: no: if p then yes else no;
+
+  forAllSystems = lib.genAttrs [
+    "x86_64-linux"
+    "aarch64-linux"
+    "x86_64-darwin"
+    "aarch64-darwin"
+  ];
+
+  pkgsFor = lib.genAttrs (import systems) (system:
+    import inputs.nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+    }
+  );
+
+  forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
+
+  mkFullHost = host: type: {
+    ${host} =
+      let
+        systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+      in
+      systemFunc {
+        specialArgs = { inherit inputs outputs lib self; };
+        modules = [ "${self}/hosts/${type}/${host}" ];
+      };
+  };
+
+  mkHalfHost = host: type: pkgs: {
+    ${host} =
+      let
+        systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+      in
+      systemFunc {
+        inherit pkgs;
+        extraSpecialArgs = { inherit inputs outputs; };
+        modules = [ "${self}/hosts/${type}/${host}" ];
+      };
+  };
+
+  mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
+
+  mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type pkgs) hosts);
+
+  readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+
+  mkApps = system: names: self: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = {
+        type = "app";
+        program = "${self.packages.${system}.${name}}/bin/${name}";
+      };
+    })
+    names);
+
+  mkPackages = names: pkgs: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = pkgs.callPackage "${self}/pkgs/${name}" { inherit self name; };
+    })
+    names);
+
+
+  mkModules = names: type: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = import "${self}/modules/${type}/${name}.nix";
+    })
+    names);
+
+  eachMonitor = _: monitor: {
+    inherit (monitor) name;
+    value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
+  };
+
+  eachOutput = _: monitor: {
+    inherit (monitor) name;
+    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
+  };
 
 }
 #+end_src

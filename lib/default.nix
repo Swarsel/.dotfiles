@@ -15,8 +15,7 @@
     "aarch64-darwin"
   ];
 
-  pkgsFor = lib.genAttrs (import systems) (
-    system:
+  pkgsFor = lib.genAttrs (import systems) (system:
     import inputs.nixpkgs {
       inherit system;
       config.allowUnfree = true;
