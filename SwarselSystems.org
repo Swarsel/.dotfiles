@@ -105,605 +105,6 @@ window.addEventListener('load', addDarkmodeWidget);
 
 The rest of this file will now contain actual code that is used in the configuration.
 
-* Noweb-Ref blocks and supplementary files
-:PROPERTIES:
-:CUSTOM_ID: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4
-:END:
-
-These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
-
-Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
-
-This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
-
-Also, this section now holds some of the longer configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using =home.file=.
-
-** Theme (stylix)
-:PROPERTIES:
-:CUSTOM_ID: h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78
-:END:
-
-For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
-
-The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
-
-This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here is, however, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now).
-
-
-#+begin_src nix :tangle no :noweb-ref theme
-
-  enable = true;
-  base16Scheme = "${self}/wallpaper/swarsel.yaml";
-  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
-  polarity = "dark";
-  opacity.popups = 0.5;
-  cursor = {
-    package = pkgs.capitaine-cursors;
-    name = "capitaine-cursors";
-    size = 16;
-  };
-  fonts = {
-    sizes = {
-      terminal = 10;
-      applications = 11;
-    };
-    serif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    sansSerif = {
-      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-      package = pkgs.cantarell-fonts;
-      # package = pkgs.montserrat;
-      name = "Cantarell";
-      # name = "FiraCode Nerd Font Propo";
-      # name = "Montserrat";
-    };
-
-    monospace = {
-      package = pkgs.nerd-fonts.fira-mono; # has overrides
-
-      name = "FiraCode Nerd Font Mono";
-    };
-
-    emoji = {
-      package = pkgs.noto-fonts-emoji;
-      name = "Noto Color Emoji";
-    };
-  };
-
-#+end_src
-** Server Emacs config
-:PROPERTIES:
-:CUSTOM_ID: h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8
-:END:
-
-On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using =bjm/elfeed-updater=. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change =(elfeed-db-load)= in =bjm/elfeed-updater= to =(elfeed-db-save)=.
-
-
-#+begin_src emacs-lisp :tangle programs/emacs/server.el
-(require 'package)
-
-(package-initialize nil)
-(setq package-enable-at-startup nil)
-
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
-
-
-(package-initialize)
-
-(let ((default-directory  "~/.emacs.d/elpa/"))
-  (normal-top-level-add-subdirs-to-load-path))
-
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
-(require 'use-package)
-
-(use-package elfeed
-  :ensure t
-  :bind (:map elfeed-search-mode-map
-              ("q" . bjm/elfeed-save-db-and-bury)))
-
-(require 'elfeed)
-
-(use-package elfeed-org
-  :ensure t
-  :config
-  (elfeed-org)
-  (setq rmh-elfeed-org-files (list "/var/lib/syncthing/.elfeed/elfeed.org")))
-
-(use-package elfeed-goodies
-  :ensure t)
-
-(elfeed-goodies/setup)
-
-(use-package elfeed-web
-  :ensure t)
-
-(global-set-key (kbd "C-x w") 'bjm/elfeed-load-db-and-open)
-
-(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
-(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
-(define-key elfeed-search-mode-map (kbd "j") 'next-line)
-(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
-(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
-
-
-(defun bjm/elfeed-save-db-and-bury ()
-  "Wrapper to save the elfeed db to disk before burying buffer"
-  (interactive)
-  (elfeed-db-save)
-  (quit-window))
-
-(defun bjm/elfeed-load-db-and-open ()
-  "Wrapper to load the elfeed db from disk before opening"
-  (interactive)
-  (elfeed-db-load)
-  (elfeed)
-  (elfeed-search-update--force)
-  (elfeed-update))
-
-(defun bjm/elfeed-updater ()
-  "Wrapper to load the elfeed db from disk before opening"
-  (interactive)
-  (elfeed-db-load))
-
-(run-with-timer 0 (* 1 60) 'bjm/elfeed-updater)
-
-(setq httpd-port 9812)
-(setq httpd-host "0.0.0.0")
-(setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
-(setq elfeed-db-directory "/var/lib/syncthing/.elfeed/db/")
-
-(httpd-start)
-(elfeed-web-start)
-
-#+end_src
-** tridactylrc
-:PROPERTIES:
-:CUSTOM_ID: h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51
-:END:
-
-This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
-
-
-#+begin_src :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
-
-sanitise tridactyllocal tridactylsync
-
-colourscheme base16-codeschool
-
-" General Settings
-set update.lastchecktime 1720629386560
-set update.lastnaggedversion 1.24.1
-set update.nag true
-set update.nagwait 7
-set update.checkintervalsecs 86400
-set configversion 2.0
-set searchurls.no https://search.nixos.org/options?query=
-set searchurls.np https://search.nixos.org/packages?query=
-set searchurls.hm https://home-manager-options.extranix.com/?query=
-set completions.Tab.statusstylepretty true
-set hintfiltermode vimperator-reflow
-set hintnames numeric
-
-" Binds
-bind <C-m> buffer #
-bind gd tabdetach
-bind gD composite tabduplicate; tabdetach
-bind d composite tabprev; tabclose #
-bind D tabclose
-bind c hint
-bindurl ^http(s)?://www\.google\.com c hint -Jc [class="LC20lb MBeuO DKV0Md"],[class="YmvwI"],[class="YyVfkd"],[class="fl"]
-bindurl ^http(s)?://news\.ycombinator\.com c hint -Jc [class="titleline"],[class="age"]
-bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label"]
-bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
-
-" Search in page
-set findcase smart
-bind / fillcmdline find
-bind ? fillcmdline find -?
-bind n findnext 1
-bind N findnext -1
-
-bind j scrollline 4
-bind k scrollline -4
-
-
-" WARNING: This file defines and runs a command called fixamo_quiet. If you
-" also have a malicious addon that operates on `<all_urls>` installed this
-" will allow it to steal your firefox account credentials!
-"
-" With those credentials, an attacker can read anything in your sync account,
-" publish addons to the AMO, etc, etc.
-"
-" Without this command a malicious addon can steal credentials from any site
-" that you visit that is not in the restrictedDomains list.
-"
-" You should comment out the fixamo lines unless you are entirely sure that
-" they are what you want.
-command fixamo_quiet jsb tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""'))
-command fixamo js tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""').then(tri.excmds.fillcmdline_tmp(3000, "Permissions added to user.js. Please restart Firefox to make them take affect.")))
-
-fixamo_quiet
-set allowautofocus false
-
-" The following modification allows Tridactyl to function on more pages, e.g. raw GitHub pages.
-" You may not wish to run this. Mozilla strongly feels that you shouldn't.
-" Read https://wiki.mozilla.org/Security/CSP#Goals for more information.
-"
-" Equivalent to `set csp clobber` before it was removed.
-" This weakens your defences against cross-site-scripting attacks
-" and other types of code-injection by reducing the strictness
-" of Content Security Policy on all sites in a couple of ways.
-"
-" We remove the sandbox directive
-" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox
-" which allows our iframe (and anyone else's) to run on any website.
-"
-" We weaken the style-src directive
-" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
-" to allow us to theme our elements.
-" This exposes you to 'cross site styling' attacks
-jsb browser.webRequest.onHeadersReceived.addListener(tri.request.clobberCSP,{urls:["<all_urls>"],types:["main_frame"]},["blocking","responseHeaders"])
-
-" default is 300ms
-set hintdelay 100
-
-" Some pages like github break on the tridactyl quick search. have this as a fallback
-unbind <C-f>
-
-" Subconfig Settings
-seturl www.google.com followpagepatterns.next Next
-seturl www.google.com followpagepatterns.prev Previous
-
-" Autocmds
-autocmd DocStart undefined mode ignore
-autocmd DocStart pokerogue.net mode ignore
-autocmd DocStart typelit.io mode ignore
-autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
-
-" For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
-" vim: set filetype=tridactyl
-
-#+end_src
-** Waybar style.css
-:PROPERTIES:
-:CUSTOM_ID: h:77b1c523-5074-4610-b320-90af95e6134d
-:END:
-
-This is the stylesheet used by waybar.
-
-#+begin_src css :tangle programs/waybar/style.css :mkdirp yes
-@define-color foreground #fdf6e3;
-@define-color background #1a1a1a;
-@define-color background-alt #292b2e;
-@define-color foreground-warning #268bd2;
-@define-color background-warning @background;
-@define-color foreground-error red;
-@define-color background-error @background;
-@define-color foreground-critical gold;
-@define-color background-critical blue;
-
-
- * {
-    border: none;
-    border-radius: 0;
-    font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
-    font-size: 14px;
-    min-height: 0;
-    margin: -1px 0px;
-}
-
-window#waybar {
-        background: transparent;
-        color: @foreground;
-        transition-duration: .5s;
-}
-
-window#waybar.hidden {
-    opacity: 0.2;
-}
-
-
-#mpris {
-    padding: 0 10px;
-    background-color: transparent;
-    color: #1DB954;
-    font-family: Monospace;
-    font-size: 12px;
-}
-
-#custom-right-arrow-dark,
-#custom-left-arrow-dark {
-        color: @background;
-        background: @background-alt;
-        font-size: 24px;
-}
-
-#window {
-        font-size: 12px;
-        padding: 0 20px;
-}
-
-#mode {
-    background: @background-critical;
-    color: @foreground-critical;
-    padding: 0 3px;
-}
-
-#privacy,
-#custom-configwarn {
-    color: black;
-    padding: 0 3px;
-    animation-name: configblink;
-    animation-duration: 0.5s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
-}
-
-#custom-nix-updates {
-    color: white;
-    padding: 0 3px;
-}
-
-#custom-outer-right-arrow-dark,
-#custom-outer-left-arrow-dark {
-        color: @background;
-        font-size: 24px;
-}
-
-#custom-outer-left-arrow-dark,
-#custom-left-arrow-dark,
-#custom-left-arrow-light {
-        margin: 0 -1px;
-}
-
-#custom-right-arrow-light,
-#custom-left-arrow-light {
-        color: @background-alt;
-        background: @background;
-        font-size: 24px;
-}
-
-#workspaces,
-#clock.1,
-#clock.2,
-#clock.3,
-#pulseaudio,
-#memory,
-#cpu,
-#temperature,
-#custom-scratchpad-indicator,
-#power-profiles-daemon,
-#idle_inhibitor,
-#backlight-slider,
-#mpris,
-#tray {
-    background: @background;
-}
-
-#network,
-#custom-vpn,
-#clock.2,
-#battery,
-#cpu,
-#custom-pseudobat,
-#disk {
-    background: @background-alt;
-}
-
-
-#workspaces button {
-        padding: 0 2px;
-        color: #fdf6e3;
-}
-#workspaces button.focused {
-        color: @foreground-warning;
-}
-
-#workspaces button:hover {
-    background: @foreground;
-    color: @background;
-        border: @foreground;
-        padding: 0 2px;
-        box-shadow: inherit;
-        text-shadow: inherit;
-}
-
-#workspaces button.urgent {
-    color: @background-critical;
-    background: @foreground-critical;
-}
-
-#custom-vpn,
-#network {
-    color: #cc99c9;
-}
-
-#temperature,
-#power-profiles-daemon {
-    color: #9ec1cf;
-}
-
-#disk {
-    /*color: #b58900;*/
-    color: #9ee09e;
-}
-
-#custom-scratchpad-indicator {
-    color: #ffffff;
-}
-
-#disk.warning {
-    color:            @foreground-error;
-    background-color: @background-error;
-}
-#disk.critical,
-#temperature.critical {
-    color:            @foreground-critical;
-    background-color: @background-critical;
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
-}
-#pulseaudio.muted {
-    color: @foreground-error;
-}
-#memory {
-        /*color: #2aa198;*/
-        color: #fdfd97;
-}
-#cpu {
-    /*color: #6c71c4;*/
-    color: #feb144;
-}
-
-#pulseaudio {
-    /*color: #268bd2;*/
-    color: #ff6663;
-}
-
-#battery,
-#custom-pseudobat {
-        color: cyan;
-}
-#battery.discharging {
-    color:      #859900;
-}
-
-@keyframes blink {
-    to {
-        color:            @foreground-error;
-        background-color: @background-error;
-    }
-}
-@keyframes configblink {
-    to {
-        color:            @foreground-error;
-        background-color: transparent;
-    }
-}
-
-#battery.critical:not(.charging) {
-    color:            @foreground-critical;
-    background-color: @background-critical;
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
-}
-
-#backlight-slider slider {
-    min-height: 0px;
-    min-width: 0px;
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-}
-#backlight-slider trough {
-    min-height: 5px;
-    min-width: 80px;
-    border-radius: 5px;
-    background-color: black;
-}
-#backlight-slider highlight {
-    min-width: 0px;
-    border-radius: 5px;
-    background-color: grey;
-}
-
-#clock.1,
-#clock.2,
-#clock.3 {
-    font-family: Monospace;
-}
-
-#clock,
-#pulseaudio,
-#memory,
-#cpu,
-#tray,
-#temperature,
-#power-profiles-daemon,
-#network,
-#custom-vpn,
-#mpris,
-#battery,
-#custom-scratchpad-indicator,
-#custom-pseudobat,
-#disk {
-    padding: 0 3px;
-}
-
-#+end_src
-** justfile
-  This file defines a few workflows that I often need to run when working on my configuration. This works similar to =make=, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or =.PHONY= recipes.
-
-  (In the org-src block I still call it a Makefile in order to get syntax highlighting)
-
-  #+begin_src makefile :tangle justfile
-
-default:
-  @just --list
-
-check:
-  nix flake check --keep-going
-
-check-trace:
-  nix flake check --show-trace
-
-update:
-  nix flake update
-
-iso:
-  rm -rf result
-  nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
-
-iso-flake FLAKE SYSTEM="x86_64" FORMAT="iso":
-  nixos-generate --flake .#{{FLAKE}} -f {{FORMAT}} --system {{SYSTEM}}
-
-iso-install DRIVE: iso
-  sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
-
-dd DRIVE ISO:
-  sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
-
-sync USER HOST:
-  rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
-
-  #+end_src
-** statix.toml
-
-This file is used to tell =statix= which checks and folders/fiels to ignore, as well as to specify the nix version that it should use.
-
-I need this mainly to disable the =repeated_keys= check, which checks if there is an attribute set called twice without stepping into it. While in general this should be avoided, since I am tangling some files and need to use the top-level attribute in each org-src block, the check would fail for all these cases.
-
-#+begin_src toml :tangle statix.toml
-
-  disabled = [
-    "repeated_keys"
-  ]
-  nix_version = '2.4'
-  ignore = ['.direnv']
-
-#+end_src
-
 * flake.nix
 :PROPERTIES:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
@@ -1225,6 +626,220 @@ This holds most of the NixOS side of configuration.
 This section mainly exists house different `default.nix` files to define some modules that should be loaded on respective systems.
 Every host is housed in the =hosts/= directory, which is then subdivided by each respective system (=nixos/=, =home-manager/=, =nix-on-droid/=, =darwin/=). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 
+*** Template
+
+This is the template that I use for new deployments of personal machines. Servers are usually highly tailored to their specific task and I do not consider it worth a time to craft a template for that. Also, at least at the current time, I only provide a template for NixOS hosts, as I rarely ever use anything else.
+
+**** Main Configuration
+
+#+begin_src nix :tangle templates/hosts/nixos/default.nix
+  { self, inputs, outputs, config, pkgs, lib, ... }:
+  let
+    profilesPath = "${self}/profiles";
+    sharedOptions = {
+      isBtrfs = true;
+    };
+  in
+  {
+
+    imports = outputs.nixModules ++ [
+      # ---- nixos-hardware here ----
+
+      ./hardware-configuration.nix
+      ./disk-config.nix
+
+      "${profilesPath}/optional/nixos/virtualbox.nix"
+      # "${profilesPath}/optional/nixos/vmware.nix"
+      "${profilesPath}/optional/nixos/autologin.nix"
+      "${profilesPath}/optional/nixos/nswitch-rcm.nix"
+      "${profilesPath}/optional/nixos/gaming.nix"
+
+      inputs.home-manager.nixosModules.home-manager
+      {
+        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+          "${profilesPath}/optional/home/gaming.nix"
+        ] ++ (builtins.attrValues outputs.homeManagerModules);
+      }
+    ] ++ (builtins.attrValues outputs.nixosModules);
+
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    boot = {
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+    networking = {
+      hostName = "TEMPLATE";
+      firewall.enable = true;
+    };
+
+    swarselsystems = lib.recursiveUpdate
+      {
+        wallpaper = self + /wallpaper/lenovowp.png;
+        hasBluetooth = true;
+        hasFingerprint = true;
+        isImpermanence = true;
+        isSecureBoot = true;
+        isCrypted = true;
+        isSwap = true;
+        swapSize = "32G";
+        rootDisk = "TEMPLATE";
+      }
+      sharedOptions;
+
+    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+      {
+        isLaptop = true;
+        isNixos = true;
+        flakePath = "/home/swarsel/.dotfiles";
+        cpuCount = 16;
+        startup = [
+          { command = "nextcloud --background"; }
+          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          { command = "ANKI_WAYLAND=1 anki"; }
+          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+          { command = "nm-applet"; }
+          { command = "feishin"; }
+        ];
+      }
+      sharedOptions;
+  }
+#+end_src
+**** disko
+
+Acceptance of arbitraty argumments is here needed because =disko= passes =diskoFile= to this file.
+
+#+begin_src nix :tangle templates/hosts/nixos/disk-config.nix
+  { lib, pkgs, config, rootDisk, ... }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+              luks = lib.mkIf config.swarselsystems.isCrypted {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                  settings = {
+                    allowDiscards = true;
+                    # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                    crypttabExtraOpts = [
+                      "fido2-device=auto"
+                      "token-timeout=10"
+                    ];
+                  };
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                    '';
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+
+    environment.systemPackages = [
+      pkgs.yubikey-manager
+    ];
+  }
+#+end_src
 *** Physical hosts
 :PROPERTIES:
 :CUSTOM_ID: h:58dc6384-0d19-4f71-9043-4014bd033ba2
@@ -15231,5 +14846,604 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 #+begin_src emacs-lisp
 
 (use-package multiple-cursors)
+
+#+end_src
+* Appendix A: Noweb-Ref blocks
+:PROPERTIES:
+:CUSTOM_ID: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4
+:END:
+
+These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
+
+Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
+
+This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
+** Theme (stylix)
+:PROPERTIES:
+:CUSTOM_ID: h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78
+:END:
+
+For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
+
+The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+
+This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here is, however, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now).
+
+
+#+begin_src nix :tangle no :noweb-ref theme
+
+  enable = true;
+  base16Scheme = "${self}/wallpaper/swarsel.yaml";
+  # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+  polarity = "dark";
+  opacity.popups = 0.5;
+  cursor = {
+    package = pkgs.capitaine-cursors;
+    name = "capitaine-cursors";
+    size = 16;
+  };
+  fonts = {
+    sizes = {
+      terminal = 10;
+      applications = 11;
+    };
+    serif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
+
+    sansSerif = {
+      # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+      package = pkgs.cantarell-fonts;
+      # package = pkgs.montserrat;
+      name = "Cantarell";
+      # name = "FiraCode Nerd Font Propo";
+      # name = "Montserrat";
+    };
+
+    monospace = {
+      package = pkgs.nerd-fonts.fira-mono; # has overrides
+
+      name = "FiraCode Nerd Font Mono";
+    };
+
+    emoji = {
+      package = pkgs.noto-fonts-emoji;
+      name = "Noto Color Emoji";
+    };
+  };
+
+#+end_src
+* Appendix B: Supplementary Files
+
+This section now holds some of the configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using =home.file=.
+
+** Server Emacs config
+:PROPERTIES:
+:CUSTOM_ID: h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8
+:END:
+
+On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using =bjm/elfeed-updater=. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change =(elfeed-db-load)= in =bjm/elfeed-updater= to =(elfeed-db-save)=.
+
+
+#+begin_src emacs-lisp :tangle programs/emacs/server.el
+(require 'package)
+
+(package-initialize nil)
+(setq package-enable-at-startup nil)
+
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/") t)
+
+
+(package-initialize)
+
+(let ((default-directory  "~/.emacs.d/elpa/"))
+  (normal-top-level-add-subdirs-to-load-path))
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+
+(use-package elfeed
+  :ensure t
+  :bind (:map elfeed-search-mode-map
+              ("q" . bjm/elfeed-save-db-and-bury)))
+
+(require 'elfeed)
+
+(use-package elfeed-org
+  :ensure t
+  :config
+  (elfeed-org)
+  (setq rmh-elfeed-org-files (list "/var/lib/syncthing/.elfeed/elfeed.org")))
+
+(use-package elfeed-goodies
+  :ensure t)
+
+(elfeed-goodies/setup)
+
+(use-package elfeed-web
+  :ensure t)
+
+(global-set-key (kbd "C-x w") 'bjm/elfeed-load-db-and-open)
+
+(define-key elfeed-show-mode-map (kbd "j") 'elfeed-goodies/split-show-next)
+(define-key elfeed-show-mode-map (kbd "k") 'elfeed-goodies/split-show-prev)
+(define-key elfeed-search-mode-map (kbd "j") 'next-line)
+(define-key elfeed-search-mode-map (kbd "k") 'previous-line)
+(define-key elfeed-show-mode-map (kbd "S-SPC") 'scroll-down-command)
+
+
+(defun bjm/elfeed-save-db-and-bury ()
+  "Wrapper to save the elfeed db to disk before burying buffer"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window))
+
+(defun bjm/elfeed-load-db-and-open ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force)
+  (elfeed-update))
+
+(defun bjm/elfeed-updater ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load))
+
+(run-with-timer 0 (* 1 60) 'bjm/elfeed-updater)
+
+(setq httpd-port 9812)
+(setq httpd-host "0.0.0.0")
+(setq httpd-root "/root/.emacs.d/elpa/elfeed-web-20240729.1741/")
+(setq elfeed-db-directory "/var/lib/syncthing/.elfeed/db/")
+
+(httpd-start)
+(elfeed-web-start)
+
+#+end_src
+** tridactylrc
+:PROPERTIES:
+:CUSTOM_ID: h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51
+:END:
+
+This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
+
+
+#+begin_src :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
+
+sanitise tridactyllocal tridactylsync
+
+colourscheme base16-codeschool
+
+" General Settings
+set update.lastchecktime 1720629386560
+set update.lastnaggedversion 1.24.1
+set update.nag true
+set update.nagwait 7
+set update.checkintervalsecs 86400
+set configversion 2.0
+set searchurls.no https://search.nixos.org/options?query=
+set searchurls.np https://search.nixos.org/packages?query=
+set searchurls.hm https://home-manager-options.extranix.com/?query=
+set completions.Tab.statusstylepretty true
+set hintfiltermode vimperator-reflow
+set hintnames numeric
+
+" Binds
+bind <C-m> buffer #
+bind gd tabdetach
+bind gD composite tabduplicate; tabdetach
+bind d composite tabprev; tabclose #
+bind D tabclose
+bind c hint
+bindurl ^http(s)?://www\.google\.com c hint -Jc [class="LC20lb MBeuO DKV0Md"],[class="YmvwI"],[class="YyVfkd"],[class="fl"]
+bindurl ^http(s)?://news\.ycombinator\.com c hint -Jc [class="titleline"],[class="age"]
+bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label"]
+bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
+
+" Search in page
+set findcase smart
+bind / fillcmdline find
+bind ? fillcmdline find -?
+bind n findnext 1
+bind N findnext -1
+
+bind j scrollline 4
+bind k scrollline -4
+
+
+" WARNING: This file defines and runs a command called fixamo_quiet. If you
+" also have a malicious addon that operates on `<all_urls>` installed this
+" will allow it to steal your firefox account credentials!
+"
+" With those credentials, an attacker can read anything in your sync account,
+" publish addons to the AMO, etc, etc.
+"
+" Without this command a malicious addon can steal credentials from any site
+" that you visit that is not in the restrictedDomains list.
+"
+" You should comment out the fixamo lines unless you are entirely sure that
+" they are what you want.
+command fixamo_quiet jsb tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""'))
+command fixamo js tri.excmds.setpref("privacy.resistFingerprinting.block_mozAddonManager", "true").then(tri.excmds.setpref("extensions.webextensions.restrictedDomains", '""').then(tri.excmds.fillcmdline_tmp(3000, "Permissions added to user.js. Please restart Firefox to make them take affect.")))
+
+fixamo_quiet
+set allowautofocus false
+
+" The following modification allows Tridactyl to function on more pages, e.g. raw GitHub pages.
+" You may not wish to run this. Mozilla strongly feels that you shouldn't.
+" Read https://wiki.mozilla.org/Security/CSP#Goals for more information.
+"
+" Equivalent to `set csp clobber` before it was removed.
+" This weakens your defences against cross-site-scripting attacks
+" and other types of code-injection by reducing the strictness
+" of Content Security Policy on all sites in a couple of ways.
+"
+" We remove the sandbox directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox
+" which allows our iframe (and anyone else's) to run on any website.
+"
+" We weaken the style-src directive
+" https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/style-src
+" to allow us to theme our elements.
+" This exposes you to 'cross site styling' attacks
+jsb browser.webRequest.onHeadersReceived.addListener(tri.request.clobberCSP,{urls:["<all_urls>"],types:["main_frame"]},["blocking","responseHeaders"])
+
+" default is 300ms
+set hintdelay 100
+
+" Some pages like github break on the tridactyl quick search. have this as a fallback
+unbind <C-f>
+
+" Subconfig Settings
+seturl www.google.com followpagepatterns.next Next
+seturl www.google.com followpagepatterns.prev Previous
+
+" Autocmds
+autocmd DocStart undefined mode ignore
+autocmd DocStart pokerogue.net mode ignore
+autocmd DocStart typelit.io mode ignore
+autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
+
+" For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
+" vim: set filetype=tridactyl
+
+#+end_src
+** Waybar style.css
+:PROPERTIES:
+:CUSTOM_ID: h:77b1c523-5074-4610-b320-90af95e6134d
+:END:
+
+This is the stylesheet used by waybar.
+
+#+begin_src css :tangle programs/waybar/style.css :mkdirp yes
+@define-color foreground #fdf6e3;
+@define-color background #1a1a1a;
+@define-color background-alt #292b2e;
+@define-color foreground-warning #268bd2;
+@define-color background-warning @background;
+@define-color foreground-error red;
+@define-color background-error @background;
+@define-color foreground-critical gold;
+@define-color background-critical blue;
+
+
+ * {
+    border: none;
+    border-radius: 0;
+    font-family: "FiraCode Nerd Font Propo", "Font Awesome 5 Free";
+    font-size: 14px;
+    min-height: 0;
+    margin: -1px 0px;
+}
+
+window#waybar {
+        background: transparent;
+        color: @foreground;
+        transition-duration: .5s;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+
+#mpris {
+    padding: 0 10px;
+    background-color: transparent;
+    color: #1DB954;
+    font-family: Monospace;
+    font-size: 12px;
+}
+
+#custom-right-arrow-dark,
+#custom-left-arrow-dark {
+        color: @background;
+        background: @background-alt;
+        font-size: 24px;
+}
+
+#window {
+        font-size: 12px;
+        padding: 0 20px;
+}
+
+#mode {
+    background: @background-critical;
+    color: @foreground-critical;
+    padding: 0 3px;
+}
+
+#privacy,
+#custom-configwarn {
+    color: black;
+    padding: 0 3px;
+    animation-name: configblink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#custom-nix-updates {
+    color: white;
+    padding: 0 3px;
+}
+
+#custom-outer-right-arrow-dark,
+#custom-outer-left-arrow-dark {
+        color: @background;
+        font-size: 24px;
+}
+
+#custom-outer-left-arrow-dark,
+#custom-left-arrow-dark,
+#custom-left-arrow-light {
+        margin: 0 -1px;
+}
+
+#custom-right-arrow-light,
+#custom-left-arrow-light {
+        color: @background-alt;
+        background: @background;
+        font-size: 24px;
+}
+
+#workspaces,
+#clock.1,
+#clock.2,
+#clock.3,
+#pulseaudio,
+#memory,
+#cpu,
+#temperature,
+#custom-scratchpad-indicator,
+#power-profiles-daemon,
+#idle_inhibitor,
+#backlight-slider,
+#mpris,
+#tray {
+    background: @background;
+}
+
+#network,
+#custom-vpn,
+#clock.2,
+#battery,
+#cpu,
+#custom-pseudobat,
+#disk {
+    background: @background-alt;
+}
+
+
+#workspaces button {
+        padding: 0 2px;
+        color: #fdf6e3;
+}
+#workspaces button.focused {
+        color: @foreground-warning;
+}
+
+#workspaces button:hover {
+    background: @foreground;
+    color: @background;
+        border: @foreground;
+        padding: 0 2px;
+        box-shadow: inherit;
+        text-shadow: inherit;
+}
+
+#workspaces button.urgent {
+    color: @background-critical;
+    background: @foreground-critical;
+}
+
+#custom-vpn,
+#network {
+    color: #cc99c9;
+}
+
+#temperature,
+#power-profiles-daemon {
+    color: #9ec1cf;
+}
+
+#disk {
+    /*color: #b58900;*/
+    color: #9ee09e;
+}
+
+#custom-scratchpad-indicator {
+    color: #ffffff;
+}
+
+#disk.warning {
+    color:            @foreground-error;
+    background-color: @background-error;
+}
+#disk.critical,
+#temperature.critical {
+    color:            @foreground-critical;
+    background-color: @background-critical;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+#pulseaudio.muted {
+    color: @foreground-error;
+}
+#memory {
+        /*color: #2aa198;*/
+        color: #fdfd97;
+}
+#cpu {
+    /*color: #6c71c4;*/
+    color: #feb144;
+}
+
+#pulseaudio {
+    /*color: #268bd2;*/
+    color: #ff6663;
+}
+
+#battery,
+#custom-pseudobat {
+        color: cyan;
+}
+#battery.discharging {
+    color:      #859900;
+}
+
+@keyframes blink {
+    to {
+        color:            @foreground-error;
+        background-color: @background-error;
+    }
+}
+@keyframes configblink {
+    to {
+        color:            @foreground-error;
+        background-color: transparent;
+    }
+}
+
+#battery.critical:not(.charging) {
+    color:            @foreground-critical;
+    background-color: @background-critical;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#backlight-slider slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+#backlight-slider trough {
+    min-height: 5px;
+    min-width: 80px;
+    border-radius: 5px;
+    background-color: black;
+}
+#backlight-slider highlight {
+    min-width: 0px;
+    border-radius: 5px;
+    background-color: grey;
+}
+
+#clock.1,
+#clock.2,
+#clock.3 {
+    font-family: Monospace;
+}
+
+#clock,
+#pulseaudio,
+#memory,
+#cpu,
+#tray,
+#temperature,
+#power-profiles-daemon,
+#network,
+#custom-vpn,
+#mpris,
+#battery,
+#custom-scratchpad-indicator,
+#custom-pseudobat,
+#disk {
+    padding: 0 3px;
+}
+
+#+end_src
+** justfile
+  This file defines a few workflows that I often need to run when working on my configuration. This works similar to =make=, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or =.PHONY= recipes.
+
+  (In the org-src block I still call it a Makefile in order to get syntax highlighting)
+
+  #+begin_src makefile :tangle justfile
+
+default:
+  @just --list
+
+check:
+  nix flake check --keep-going
+
+check-trace:
+  nix flake check --show-trace
+
+update:
+  nix flake update
+
+iso:
+  rm -rf result
+  nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
+
+iso-flake FLAKE SYSTEM="x86_64" FORMAT="iso":
+  nixos-generate --flake .#{{FLAKE}} -f {{FORMAT}} --system {{SYSTEM}}
+
+iso-install DRIVE: iso
+  sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
+
+dd DRIVE ISO:
+  sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
+
+sync USER HOST:
+  rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+
+  #+end_src
+** statix.toml
+
+This file is used to tell =statix= which checks and folders/fiels to ignore, as well as to specify the nix version that it should use.
+
+I need this mainly to disable the =repeated_keys= check, which checks if there is an attribute set called twice without stepping into it. While in general this should be avoided, since I am tangling some files and need to use the top-level attribute in each org-src block, the check would fail for all these cases.
+
+#+begin_src toml :tangle statix.toml
+
+  disabled = [
+    "repeated_keys"
+  ]
+  nix_version = '2.4'
+  ignore = ['.direnv']
 
 #+end_src
