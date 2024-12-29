@@ -144,7 +144,8 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
     - and [Wombat's book](https://mhwombat.codeberg.page/nix-book/)
     - or the [Zero to Nix series](https://zero-to-nix.com/)
     - Practical nix flakes article: https://serokell.io/blog/practical-nix-flakes
-  - Also useful is the [NixOS wiki](https://nixos.wiki/wiki/Main_Page), but some pages are outdated, so use with some care
+  - Also useful is the [official NixOS Wiki](https://wiki.nixos.org/wiki/NixOS_Wiki)
+    - there is also the [unofficial NixOS Wiki](https://nixos.wiki/) that tends to be a bit outdated, use with care
 - Some resources for specific nix tools:
   - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
   - You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
