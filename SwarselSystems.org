@@ -154,7 +154,6 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
           inputs@{ self
           , nixpkgs
           , home-manager
-          , nix-darwin
           , systems
           , ...
           }:
@@ -502,17 +501,17 @@ In this section I am creating some attributes that define general concepts of my
         NIX_CONFIG = "experimental-features = nix-command flakes";
         inherit (checks.pre-commit-check) shellHook;
         buildInputs = checks.pre-commit-check.enabledPackages;
-        nativeBuildInputs = with pkgs; [
-          nix
-          home-manager
-          git
-          just
-          age
-          ssh-to-age
-          sops
-          statix
-          deadnix
-          nixpkgs-fmt
+        nativeBuildInputs = [
+          pkgs.nix
+          pkgs.home-manager
+          pkgs.git
+          pkgs.just
+          pkgs.age
+          pkgs.ssh-to-age
+          pkgs.sops
+          pkgs.statix
+          pkgs.deadnix
+          pkgs.nixpkgs-fmt
         ];
       };
     }
@@ -1923,7 +1922,7 @@ swarsel-install -n chaostheatre
 
 #+end_src
 
-**** Home-manager only (non-NixOS)
+**** Home-manager only (default non-NixOS)
 :PROPERTIES:
 :CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
 :END:
@@ -1931,7 +1930,7 @@ swarsel-install -n chaostheatre
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
 
 #+begin_src nix :tangle hosts/home/default/default.nix
-  { self, inputs, outputs, config, ... }:
+  { self, outputs, config, ... }:
   {
 
     imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
@@ -4338,7 +4337,7 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
 
   mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
 
-  mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type pkgs) hosts);
+  mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkHalfHost host type pkgs) hosts);
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
 

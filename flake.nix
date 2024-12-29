@@ -123,7 +123,6 @@
     inputs@{ self
     , nixpkgs
     , home-manager
-    , nix-darwin
     , systems
     , ...
     }:
@@ -193,17 +192,17 @@
             NIX_CONFIG = "experimental-features = nix-command flakes";
             inherit (checks.pre-commit-check) shellHook;
             buildInputs = checks.pre-commit-check.enabledPackages;
-            nativeBuildInputs = with pkgs; [
-              nix
-              home-manager
-              git
-              just
-              age
-              ssh-to-age
-              sops
-              statix
-              deadnix
-              nixpkgs-fmt
+            nativeBuildInputs = [
+              pkgs.nix
+              pkgs.home-manager
+              pkgs.git
+              pkgs.just
+              pkgs.age
+              pkgs.ssh-to-age
+              pkgs.sops
+              pkgs.statix
+              pkgs.deadnix
+              pkgs.nixpkgs-fmt
             ];
           };
         }

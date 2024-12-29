@@ -1,4 +1,4 @@
-{ self, inputs, outputs, config, ... }:
+{ self, outputs, config, ... }:
 {
 
   imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
