@@ -184,7 +184,7 @@
 
       devShells = lib.swarselsystems.forAllSystems (system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = lib.swarselsystems.pkgsFor.${system};
           checks = self.checks.${system};
         in
         {
