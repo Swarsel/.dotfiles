@@ -194,13 +194,12 @@
             proxy = { };
             vpn = {
               auth = "sha1";
-              ca =
-                "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
+              ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
               challenge-response-flags = "2";
               cipher = "aes-128-cbc";
               compress = "yes";
               connection-type = "password";
-              crl-verify-file = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-crl-verify.pem";
+              crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
               dev = "tun";
               password-flags = "0";
               remote = "sweden.privacy.network:1198";

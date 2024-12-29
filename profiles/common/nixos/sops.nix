@@ -1,4 +1,7 @@
-{ config, lib, ... }:
+{ self, config, lib, ... }:
+let
+  certsSopsFile = self + /secrets/certs/secrets.yaml;
+in
 {
   sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
@@ -25,6 +28,8 @@
       githubforgepass = { };
       gitlabforgeuser = { };
       gitlabforgepass = { };
+      "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
+      "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
     };
     templates = {
       "network-manager.env".content = ''

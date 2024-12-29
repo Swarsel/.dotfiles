@@ -5070,13 +5070,12 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               proxy = { };
               vpn = {
                 auth = "sha1";
-                ca =
-                  "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-ca.pem";
+                ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
                 challenge-response-flags = "2";
                 cipher = "aes-128-cbc";
                 compress = "yes";
                 connection-type = "password";
-                crl-verify-file = "${config.users.users.swarsel.home}/.dotfiles/secrets/certs/sweden-aes-128-cbc-udp-dns-crl-verify.pem";
+                crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
                 dev = "tun";
                 password-flags = "0";
                 remote = "sweden.privacy.network:1198";
@@ -5167,7 +5166,10 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - update entry for sops.age.sshKeyPaths
 
 #+begin_src nix :tangle profiles/common/nixos/sops.nix
-  { config, lib, ... }:
+  { self, config, lib, ... }:
+  let
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
+  in
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
@@ -5194,6 +5196,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         githubforgepass = { };
         gitlabforgeuser = { };
         gitlabforgepass = { };
+        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
+        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
       };
       templates = {
         "network-manager.env".content = ''
