@@ -21,6 +21,9 @@
     # dict
     (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
+    # browser
+    vieb
+
     # utilities
     util-linux
     nmap
