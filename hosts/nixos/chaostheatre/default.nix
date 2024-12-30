@@ -1,4 +1,4 @@
-{ self, inputs, outputs, config, pkgs, lib, ... }:
+{ self, inputs, outputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -46,6 +46,7 @@ in
     wallpaper = self + /wallpaper/lenovowp.png;
     initialSetup = true;
     isPublic = true;
+    isLinux = true;
   };
 
   home-manager.users.swarsel.swarselsystems = {

@@ -80,6 +80,7 @@ in
     hasBluetooth = false;
     hasFingerprint = false;
     isImpermanence = false;
+    isLinux = true;
     isBtrfs = false;
     flakePath = "/root/.dotfiles";
     server = {

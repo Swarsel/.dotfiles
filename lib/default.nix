@@ -42,7 +42,7 @@
       in
       systemFunc {
         inherit pkgs;
-        extraSpecialArgs = { inherit inputs outputs; };
+        extraSpecialArgs = { inherit inputs outputs lib self; };
         modules = [ "${self}/hosts/${type}/${host}" ];
       };
   };

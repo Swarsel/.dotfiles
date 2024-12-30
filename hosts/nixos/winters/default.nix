@@ -1,4 +1,4 @@
-{ self, inputs, outputs, config, ... }:
+{ self, inputs, outputs, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -21,14 +21,6 @@ in
 
   ] ++ (builtins.attrValues outputs.nixosModules);
 
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
@@ -48,6 +40,7 @@ in
     hasFingerprint = false;
     isImpermanence = false;
     isBtrfs = false;
+    isLinux = true;
     flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;

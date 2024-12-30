@@ -1,16 +1,33 @@
-{ lib, config, pkgs, ... }:
+{ lib, inputs, config, ... }:
 {
-  nix = {
-    package = lib.mkDefault pkgs.nix;
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-        "ca-derivations"
-        "pipe-operators"
-      ];
+  nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    lib.mkIf (!config.swarselsystems.isNixos) {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+          "cgroups"
+          "pipe-operators"
+        ];
+        trusted-users = [ "@wheel" "swarsel" ];
+        connect-timeout = 5;
+        bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+        fallback = true;
+        min-free = 128000000;
+        max-free = 1000000000;
+        flake-registry = "";
+        auto-optimise-store = true;
+        warn-dirty = false;
+        max-jobs = 1;
+        use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+      };
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
     };
-  };
 
   programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
@@ -23,4 +40,5 @@
       FLAKE = "${config.home.homeDirectory}/.dotfiles";
     };
   };
+
 }

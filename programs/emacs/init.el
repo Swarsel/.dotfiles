@@ -1189,8 +1189,9 @@ create a new one."
   ("C-c p" . projectile-command-map) ; all projectile commands under this
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
-  (when (file-directory-p swarsel-projects-directory)
-    (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory)))
+  (when (file-directory-p swarsel-work-projects-directory)
+    (when (file-directory-p swarsel-private-projects-directory)
+      (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
   (setq projectile-switch-project-action #'magit-status))
 
 (use-package magit
@@ -1210,10 +1211,6 @@ create a new one."
 
 (use-package forge
   :after magit)
-
-(with-eval-after-load 'forge
-  (add-to-list 'forge-alist
-               ))
 
 (use-package git-timemachine
   :hook (git-time-machine-mode . evil-normalize-keymaps)

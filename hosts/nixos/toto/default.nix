@@ -1,4 +1,4 @@
-{ self, inputs, outputs, config, pkgs, lib, ... }:
+{ self, inputs, outputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -39,13 +39,6 @@ in
   ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
   environment.systemPackages = with pkgs; [
     curl
     git
@@ -78,6 +71,7 @@ in
       isCrypted = true;
       isSecureBoot = false;
       isSwap = true;
+      isLinux = true;
       swapSize = "8G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";

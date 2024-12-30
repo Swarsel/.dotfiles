@@ -5,7 +5,7 @@ _:
     enableZshIntegration = true;
     settings = {
       add_newline = false;
-      format = "$character";
+      format = "$shlvl$character";
       right_format = "$all";
       command_timeout = 3000;
 
@@ -18,7 +18,7 @@ _:
 
       git_status = {
         style = "bg:#394260";
-        format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+        format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
       };
 
       character = {
@@ -26,7 +26,23 @@ _:
         error_symbol = "[λ](bold red)";
       };
 
-      aws.symbol = "  ";
+      shlvl = {
+        disabled = false;
+        symbol = "↳";
+        format = "[$symbol]($style) ";
+        repeat = true;
+        repeat_offset = 1;
+        style = "blue";
+      };
+
+      nix_shell = {
+        disabled = false;
+        heuristic = true;
+        format = "[$symbol$name]($style)";
+        symbol = " ";
+      };
+
+      aws.symbol = " ";
       buf.symbol = " ";
       c.symbol = " ";
       conda.symbol = " ";
@@ -49,7 +65,6 @@ _:
       memory_usage.symbol = "󰍛 ";
       meson.symbol = "󰔷 ";
       nim.symbol = "󰆥 ";
-      nix_shell.symbol = " ";
       nodejs.symbol = " ";
 
       os.symbols = {

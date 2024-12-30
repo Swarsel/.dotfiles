@@ -817,7 +817,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, outputs, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -850,12 +850,6 @@ My work machine. Built for more security, this is the gold standard of my config
     ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
 
     networking.networkmanager.wifi.scanRandMacAddress = false;
 
@@ -902,6 +896,7 @@ My work machine. Built for more security, this is the gold standard of my config
         isImpermanence = false;
         isSecureBoot = true;
         isCrypted = true;
+        isLinux = true;
       }
       sharedOptions;
 
@@ -1184,7 +1179,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
-  { self, inputs, outputs, config, ... }:
+  { self, inputs, outputs, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -1207,14 +1202,6 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     ] ++ (builtins.attrValues outputs.nixosModules);
 
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
@@ -1234,6 +1221,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       hasFingerprint = false;
       isImpermanence = false;
       isBtrfs = false;
+      isLinux = true;
       flakePath = "/home/swarsel/.dotfiles";
       server = {
         enable = true;
@@ -1508,6 +1496,7 @@ This machine mainly acts as an external sync helper. It manages the following th
       hasBluetooth = false;
       hasFingerprint = false;
       isImpermanence = false;
+      isLinux = true;
       isBtrfs = false;
       flakePath = "/root/.dotfiles";
       server = {
@@ -1536,7 +1525,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix :tangle hosts/nixos/toto/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, outputs, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -1577,13 +1566,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
     ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
     environment.systemPackages = with pkgs; [
       curl
       git
@@ -1616,6 +1598,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
         isCrypted = true;
         isSecureBoot = false;
         isSwap = true;
+        isLinux = true;
         swapSize = "8G";
         # rootDisk = "/dev/nvme0n1";
         rootDisk = "/dev/vda";
@@ -1971,7 +1954,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, outputs, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -2019,6 +2002,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       wallpaper = self + /wallpaper/lenovowp.png;
       initialSetup = true;
       isPublic = true;
+      isLinux = true;
     };
 
     home-manager.users.swarsel.swarselsystems = {
@@ -3738,6 +3722,7 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
     options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
     options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+    options.swarselsystems.isLinux = lib.mkEnableOption "whether this is a linux machine";
 
     options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
@@ -4347,7 +4332,7 @@ A breakdown of each function:
         in
         systemFunc {
           inherit pkgs;
-          extraSpecialArgs = { inherit inputs outputs; };
+          extraSpecialArgs = { inherit inputs outputs lib self; };
           modules = [ "${self}/hosts/${type}/${host}" ];
         };
     };
@@ -4476,13 +4461,43 @@ This section is for setting things that should be used on hosts that are using t
 :END:
 
 
-Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
+We disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like =nix shell= (without it, we will always download the newest version of nixpkgs for these commands).
 
 Also, the system state version is set here. No need to touch it.
 
+A breakdown of the flags being set:
+  - =nixpgks.config.allowUnfree=: allows packages with an unfree license to be built
+  - nix.settings:
+    - experimental-features:
+      - nix-command: Enables the =nix= command from nix 2.4
+      - flakes: Enables flakes to be used
+      - ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuiluds - to be used with my TODO private hydra and the binary cache =cache.ngi0.nixos.org= in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]
+      - cgroups: allows the use of cgroups in builds
+      - pipe-operators: Enables 'piping' instead of the classic currying syntax - =fun arg= can be expressed as =arg |> fun=. Associatively, it is weaker than functions: =a |> b |> d c |> e = e ((d c) (b a))=
+    - trusted-users: these users have elevated privileges in nix (mostly used to acknowledge binary caches) - root is added per default here
+    - connect-timeout: normally, nix tries to reach the cache for 300 seconds for each derivation per cache. This setting lets me change that
+    - bash-prompt-prefix: adds a prefix to shells spawned by =nix develop=
+    - [min,max]-free: amounts of space where intermittent GC will be run during builds
+    - flake registry: URI of the global flake registry (I disable it)
+    - auto-optimise-store: create hardlinks in the nix store to save space
+    - warn-dirty: I do not need to see the warning when I have uncommited changes
+    - max-jobs: How many build jobs should be run in parallel. =auto= sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now =1=, but used to be =auto=, I set this manually just to be safe in the future.
+    - use-cgroups: Actually run builds within cgroups
+  - nix.channel.enable: whether to use channels
+  - nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. =nixpkgs= directly in =nix repl=
+  - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
+
 #+begin_src nix :tangle profiles/common/nixos/settings.nix
-  { lib, inputs, ... }:
+  { lib, config, outputs, inputs, ... }:
   {
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
     nix =
       let
         flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -4493,11 +4508,21 @@ Also, the system state version is set here. No need to touch it.
             "nix-command"
             "flakes"
             "ca-derivations"
+            "cgroups"
             "pipe-operators"
           ];
-          trusted-users = [ "swarsel" ];
+          trusted-users = [ "@wheel" "swarsel" ];
+          connect-timeout = 5;
+          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+          fallback = true;
+          min-free = 128000000;
+          max-free = 1000000000;
           flake-registry = "";
+          auto-optimise-store = true;
           warn-dirty = false;
+          max-jobs = 1;
+          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
         };
         channel.enable = false;
         registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
@@ -8253,19 +8278,36 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix :tangle profiles/common/home/settings.nix
-  { lib, config, pkgs, ... }:
+  { lib, inputs, config, ... }:
   {
-    nix = {
-      package = lib.mkDefault pkgs.nix;
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "ca-derivations"
-          "pipe-operators"
-        ];
+    nix =
+      let
+        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+      in
+      lib.mkIf (!config.swarselsystems.isNixos) {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+            "ca-derivations"
+            "cgroups"
+            "pipe-operators"
+          ];
+          trusted-users = [ "@wheel" "swarsel" ];
+          connect-timeout = 5;
+          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+          fallback = true;
+          min-free = 128000000;
+          max-free = 1000000000;
+          flake-registry = "";
+          auto-optimise-store = true;
+          warn-dirty = false;
+          max-jobs = 1;
+          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+        };
+        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       };
-    };
 
     programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
@@ -8278,6 +8320,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
         FLAKE = "${config.home.homeDirectory}/.dotfiles";
       };
     };
+
   }
 #+end_src
 
@@ -9021,7 +9064,7 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
       enableZshIntegration = true;
       settings = {
         add_newline = false;
-        format = "$character";
+        format = "$shlvl$character";
         right_format = "$all";
         command_timeout = 3000;
 
@@ -9034,7 +9077,7 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
 
         git_status = {
           style = "bg:#394260";
-          format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+          format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
         };
 
         character = {
@@ -9042,7 +9085,23 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
           error_symbol = "[λ](bold red)";
         };
 
-        aws.symbol = "  ";
+        shlvl = {
+          disabled = false;
+          symbol = "↳";
+          format = "[$symbol]($style) ";
+          repeat = true;
+          repeat_offset = 1;
+          style = "blue";
+        };
+
+        nix_shell = {
+          disabled = false;
+          heuristic = true;
+          format = "[$symbol$name]($style)";
+          symbol = " ";
+        };
+
+        aws.symbol = " ";
         buf.symbol = " ";
         c.symbol = " ";
         conda.symbol = " ";
@@ -9065,7 +9124,6 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
         memory_usage.symbol = "󰍛 ";
         meson.symbol = "󰔷 ";
         nim.symbol = "󰆥 ";
-        nix_shell.symbol = " ";
         nodejs.symbol = " ";
 
         os.symbols = {
@@ -13405,8 +13463,9 @@ projectile is useful for keeping track of your git projects within Emacs. I most
     ("C-c p" . projectile-command-map) ; all projectile commands under this
     :init
     ;; NOTE: Set this to the folder where you keep your Git repos!
-    (when (file-directory-p swarsel-projects-directory)
-      (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory)))
+    (when (file-directory-p swarsel-work-projects-directory)
+      (when (file-directory-p swarsel-private-projects-directory)
+        (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
     (setq projectile-switch-project-action #'magit-status))
 
 #+end_src
@@ -13469,9 +13528,6 @@ NOTE: Make sure to configure a GitHub token before using this package!
   (use-package forge
     :after magit)
 
-  (with-eval-after-load 'forge
-    (add-to-list 'forge-alist
-                 ))
 #+end_src
 
 *** git-timemachine

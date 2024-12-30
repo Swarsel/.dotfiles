@@ -27,6 +27,7 @@
   options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
   options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+  options.swarselsystems.isLinux = lib.mkEnableOption "whether this is a linux machine";
 
   options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
