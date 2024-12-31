@@ -167,7 +167,7 @@
         }
       );
 
-      templates = import ./templates;
+      templates = import ./templates { inherit lib; };
 
       checks = lib.swarselsystems.forAllSystems (system:
         let

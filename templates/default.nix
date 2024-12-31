@@ -1,8 +1,8 @@
-rec {
-  python = {
-    path = ./python;
-    description =
-      "Python Project";
-  };
-  default = python;
-}
+{ lib, ... }:
+let
+  templateNames = [
+    "python"
+    "rust"
+  ];
+in
+lib.swarselsystems.mkTemplates templateNames

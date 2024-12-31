@@ -78,6 +78,16 @@
     })
     names);
 
+  mkTemplates = names: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = {
+        path = "${self}/templates/${name}";
+        description = "${name} project ";
+      };
+    })
+    names);
+
   eachMonitor = _: monitor: {
     inherit (monitor) name;
     value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];

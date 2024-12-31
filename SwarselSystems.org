@@ -171,55 +171,6 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
         };
   }
 #+end_src
-** Pre-commit-hooks (Checks)
-:PROPERTIES:
-:CUSTOM_ID: h:cbd5002c-e0fa-434a-951b-e05b179e4e3f
-:END:
-
-This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=)
-
-#+begin_src nix :tangle checks/default.nix
-  { self, inputs, pkgs, system, ... }:
-  {
-    pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
-      src = "${self}";
-      hooks = {
-        check-added-large-files.enable = true;
-        check-case-conflicts.enable = true;
-        check-executables-have-shebangs.enable = true;
-        check-shebang-scripts-are-executable.enable = false;
-        check-merge-conflicts.enable = true;
-        deadnix.enable = true;
-        detect-private-keys.enable = true;
-        end-of-file-fixer.enable = true;
-        fix-byte-order-marker.enable = true;
-        flake-checker.enable = true;
-        forbid-new-submodules.enable = true;
-        mixed-line-endings.enable = true;
-        nixpkgs-fmt.enable = true;
-        statix.enable = true;
-        trim-trailing-whitespace.enable = true;
-
-        destroyed-symlinks = {
-          enable = true;
-          entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
-        };
-
-        shellcheck = {
-          enable = true;
-          entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
-        };
-
-        shfmt = {
-          enable = true;
-          entry = "${pkgs.shfmt}/bin/shfmt -i 4 -sr -d -s -l";
-        };
-
-      };
-    };
-  }
-#+end_src
-
 ** Inputs
 :PROPERTIES:
 :CUSTOM_ID: h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2
@@ -464,7 +415,7 @@ In this section I am creating some attributes that define general concepts of my
         }
     );
 
-    templates = import ./templates;
+    templates = import ./templates { inherit lib; };
 
     checks = lib.swarselsystems.forAllSystems (system:
       let
@@ -472,6 +423,72 @@ In this section I am creating some attributes that define general concepts of my
       in
         import ./checks { inherit self inputs system pkgs; }
     );
+
+#+end_src
+
+** Pre-commit-hooks (Checks)
+:PROPERTIES:
+:CUSTOM_ID: h:cbd5002c-e0fa-434a-951b-e05b179e4e3f
+:END:
+
+This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=)
+
+#+begin_src nix :tangle checks/default.nix
+  { self, inputs, pkgs, system, ... }:
+  {
+    pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
+      src = "${self}";
+      hooks = {
+        check-added-large-files.enable = true;
+        check-case-conflicts.enable = true;
+        check-executables-have-shebangs.enable = true;
+        check-shebang-scripts-are-executable.enable = false;
+        check-merge-conflicts.enable = true;
+        deadnix.enable = true;
+        detect-private-keys.enable = true;
+        end-of-file-fixer.enable = true;
+        fix-byte-order-marker.enable = true;
+        flake-checker.enable = true;
+        forbid-new-submodules.enable = true;
+        mixed-line-endings.enable = true;
+        nixpkgs-fmt.enable = true;
+        statix.enable = true;
+        trim-trailing-whitespace.enable = true;
+
+        destroyed-symlinks = {
+          enable = true;
+          entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
+        };
+
+        shellcheck = {
+          enable = true;
+          entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
+        };
+
+        shfmt = {
+          enable = true;
+          entry = "${pkgs.shfmt}/bin/shfmt -i 4 -sr -d -s -l";
+        };
+
+      };
+    };
+  }
+#+end_src
+
+** Templates
+
+This file defines the templates that are being exposed by the flake. These can be used by running =nix flake init -t github:Swarsel/.dotfiles#<TEMPLATE_NAME>=.
+
+
+#+begin_src nix :tangle templates/default.nix
+  { lib, ... }:
+  let
+    templateNames = [
+      "python"
+      "rust"
+    ];
+  in
+    lib.swarselsystems.mkTemplates templateNames
 
 #+end_src
 
@@ -4390,6 +4407,15 @@ A breakdown of each function:
         value = import "${self}/modules/${type}/${name}.nix";
       })
       names);
+
+    mkTemplates = names: builtins.listToAttrs (map
+      (name: {
+        inherit name;
+        value = {
+          path = "${self}/templates/${name}";
+          description = "${name} project ";
+        };
+    }) names);
 
     eachMonitor = _: monitor: {
       inherit (monitor) name;
