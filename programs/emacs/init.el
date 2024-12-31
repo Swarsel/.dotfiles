@@ -503,8 +503,8 @@ create a new one."
   (set-face-attribute 'highlight-indent-guides-stack-even-face nil :background "gray40")
   (set-face-attribute 'highlight-indent-guides-stack-odd-face nil :background "gray50"))
 
-(use-package aggressive-indent)
-(global-aggressive-indent-mode 1)
+;; (use-package aggressive-indent)
+;; (global-aggressive-indent-mode 1)
 
 (setq mouse-wheel-scroll-amount
       '(1

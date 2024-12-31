@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2024-12-29 So 20:11 -->
+<!-- 2024-12-31 Di 21:56 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -204,16 +204,17 @@
 <li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a></li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2. flake.nix</a>
 <ul>
-<li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">2.1. flake.nix template</a></li>
-<li><a href="#h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">2.2. Pre-commit-hooks (Checks)</a></li>
-<li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.3. Inputs</a></li>
-<li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.4. let</a></li>
-<li><a href="#h:54cd8f65-a3ba-43c3-ae37-5f04383fe720">2.5. General (outputs)</a></li>
-<li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.6. nixosConfigurations</a></li>
-<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.7. darwinConfigurations</a></li>
-<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.8. homeConfigurations</a></li>
-<li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.9. nixOnDroidConfigurations</a></li>
-<li><a href="#h:1337e267-bca3-4c65-863f-9f44b753dee4">2.10. topologyConfigurations</a></li>
+<li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">2.1. flake.nix skeleton</a></li>
+<li><a href="#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">2.2. Inputs</a></li>
+<li><a href="#h:df0072bc-853f-438f-bd85-bfc869501015">2.3. let</a></li>
+<li><a href="#h:54cd8f65-a3ba-43c3-ae37-5f04383fe720">2.4. General (outputs)</a></li>
+<li><a href="#h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">2.5. Pre-commit-hooks (Checks)</a></li>
+<li><a href="#org8c1f77d">2.6. Templates</a></li>
+<li><a href="#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">2.7. nixosConfigurations</a></li>
+<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.8. darwinConfigurations</a></li>
+<li><a href="#h:f881aa05-a670-48dd-a57b-2916abdcb692">2.9. homeConfigurations</a></li>
+<li><a href="#h:5f6ef553-59f9-4239-b6f3-63d33b57f335">2.10. nixOnDroidConfigurations</a></li>
+<li><a href="#h:1337e267-bca3-4c65-863f-9f44b753dee4">2.11. topologyConfigurations</a></li>
 </ul>
 </li>
 <li><a href="#h:02cd20be-1ffa-4904-9d5a-da5a89ba1421">3. System</a>
@@ -293,6 +294,7 @@
 <li><a href="#h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">3.2.1.22. ts2t</a></li>
 <li><a href="#h:7806b129-a4a5-4d10-af27-6cbeafbcb294">3.2.1.23. vershell</a></li>
 <li><a href="#h:9fda7829-09a4-4b8f-86f6-08b078ab2874">3.2.1.24. eontimer</a></li>
+<li><a href="#org56f9a91">3.2.1.25. project</a></li>
 </ul>
 </li>
 <li><a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">3.2.2. Overlays (additions, overrides, nixpkgs-stable)</a></li>
@@ -553,6 +555,7 @@
 <li><a href="#h:b06a378d-5248-4451-8eee-e65a3a768b1d">4.3.7.4. evil-cleverparens</a></li>
 <li><a href="#h:aac82e5e-d882-4870-b644-ebdd0a2daae3">4.3.7.5. evil-surround</a></li>
 <li><a href="#h:df6729b6-2135-4070-bcab-a6a26f0fb2c4">4.3.7.6. evil-visual-mark-mode</a></li>
+<li><a href="#org0478d06">4.3.7.7. evil-textobj-tree-sitter</a></li>
 </ul>
 </li>
 <li><a href="#h:e888d7a7-1755-4109-af11-5358b8cf140e">4.3.8. ispell</a></li>
@@ -681,7 +684,7 @@
 </div>
 </div>
 <p>
-<b>This file has 57175 words spanning 14786 lines and was last revised on 2024-12-29 20:11:24 +0100.</b>
+<b>This file has 57884 words spanning 14894 lines and was last revised on 2024-12-31 21:56:30 +0100.</b>
 </p>
 
 <p>
@@ -734,7 +737,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-29 20:11:24 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2024-12-31 21:56:30 +0100)
 </p></li>
 </ul>
 
@@ -746,7 +749,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/qg96jwf3hwpzyydpibyg6vz1dk525cmj-emacs-pgtk-20241209.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --without-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/hzdmp1fxycaibbpk8lr0imjzi8n7yr4i-emacs-pgtk-20241230.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --without-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -826,7 +829,7 @@ These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e3
 </p>
 </div>
 <div id="outline-container-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b" class="outline-3">
-<h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">2.1.</span> flake.nix template</h3>
+<h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">2.1.</span> flake.nix skeleton</h3>
 <div class="outline-text-3" id="text-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">
 <p>
 This sections puts together the <code>flake.nix</code> file from the <a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a> section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
@@ -1014,6 +1017,8 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
           }
       );
 
+      templates = import ./templates { inherit lib; };
+
       checks = lib.swarselsystems.forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -1064,59 +1069,8 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
 </div>
 </div>
 </div>
-<div id="outline-container-h:cbd5002c-e0fa-434a-951b-e05b179e4e3f" class="outline-3">
-<h3 id="h:cbd5002c-e0fa-434a-951b-e05b179e4e3f"><span class="section-number-3">2.2.</span> Pre-commit-hooks (Checks)</h3>
-<div class="outline-text-3" id="text-h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">
-<p>
-This file defines a number of checks that can either be run by calling <code>nix flake check</code> or while in a <code>nix-shell</code> or <code>nix develop</code>. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as <code>statix</code> and <code>deadnix</code>)
-</p>
-
-<div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, pkgs, system, ... }:
-{
-  pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
-    src = "${self}";
-    hooks = {
-      check-added-large-files.enable = true;
-      check-case-conflicts.enable = true;
-      check-executables-have-shebangs.enable = true;
-      check-shebang-scripts-are-executable.enable = false;
-      check-merge-conflicts.enable = true;
-      deadnix.enable = true;
-      detect-private-keys.enable = true;
-      end-of-file-fixer.enable = true;
-      fix-byte-order-marker.enable = true;
-      flake-checker.enable = true;
-      forbid-new-submodules.enable = true;
-      mixed-line-endings.enable = true;
-      nixpkgs-fmt.enable = true;
-      statix.enable = true;
-      trim-trailing-whitespace.enable = true;
-
-      destroyed-symlinks = {
-        enable = true;
-        entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
-      };
-
-      shellcheck = {
-        enable = true;
-        entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
-      };
-
-      shfmt = {
-        enable = true;
-        entry = "${pkgs.shfmt}/bin/shfmt -i 4 -sr -d -s -l";
-      };
-
-    };
-  };
-}
-</pre>
-</div>
-</div>
-</div>
 <div id="outline-container-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2" class="outline-3">
-<h3 id="h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2"><span class="section-number-3">2.3.</span> Inputs</h3>
+<h3 id="h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2"><span class="section-number-3">2.2.</span> Inputs</h3>
 <div class="outline-text-3" id="text-h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2">
 <p>
 Here we define inputs and outputs of the flake. First, the following list is for the outputs of the flake.
@@ -1257,7 +1211,7 @@ nix-topology.url = "github:oddlama/nix-topology";
 </div>
 </div>
 <div id="outline-container-h:df0072bc-853f-438f-bd85-bfc869501015" class="outline-3">
-<h3 id="h:df0072bc-853f-438f-bd85-bfc869501015"><span class="section-number-3">2.4.</span> let</h3>
+<h3 id="h:df0072bc-853f-438f-bd85-bfc869501015"><span class="section-number-3">2.3.</span> let</h3>
 <div class="outline-text-3" id="text-h:df0072bc-853f-438f-bd85-bfc869501015">
 <p>
 Here I define a few variables that I need for my system specifications. First and foremost, <code>pkgs</code>, which gets passed the emacs-overlay, nur, and nixgl modules to it. With this, I can grab all these packages by referencing <code>pkgs.&lt;name&gt;</code> instead of having to put e.g. <code>nixgl.auto.nixGLDefault</code>.
@@ -1313,7 +1267,7 @@ mixedModules = [
 </div>
 </div>
 <div id="outline-container-h:54cd8f65-a3ba-43c3-ae37-5f04383fe720" class="outline-3">
-<h3 id="h:54cd8f65-a3ba-43c3-ae37-5f04383fe720"><span class="section-number-3">2.5.</span> General (outputs)</h3>
+<h3 id="h:54cd8f65-a3ba-43c3-ae37-5f04383fe720"><span class="section-number-3">2.4.</span> General (outputs)</h3>
 <div class="outline-text-3" id="text-h:54cd8f65-a3ba-43c3-ae37-5f04383fe720">
 <p>
 In this section I am creating some attributes that define general concepts of my configuration:
@@ -1391,6 +1345,8 @@ devShells = lib.swarselsystems.forAllSystems (system:
     }
 );
 
+templates = import ./templates { inherit lib; };
+
 checks = lib.swarselsystems.forAllSystems (system:
   let
     pkgs = nixpkgs.legacyPackages.${system};
@@ -1402,8 +1358,85 @@ checks = lib.swarselsystems.forAllSystems (system:
 </div>
 </div>
 </div>
+<div id="outline-container-h:cbd5002c-e0fa-434a-951b-e05b179e4e3f" class="outline-3">
+<h3 id="h:cbd5002c-e0fa-434a-951b-e05b179e4e3f"><span class="section-number-3">2.5.</span> Pre-commit-hooks (Checks)</h3>
+<div class="outline-text-3" id="text-h:cbd5002c-e0fa-434a-951b-e05b179e4e3f">
+<p>
+This file defines a number of checks that can either be run by calling <code>nix flake check</code> or while in a <code>nix-shell</code> or <code>nix develop</code>. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as <code>statix</code> and <code>deadnix</code>)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, inputs, pkgs, system, ... }:
+{
+  pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
+    src = "${self}";
+    hooks = {
+      check-added-large-files.enable = true;
+      check-case-conflicts.enable = true;
+      check-executables-have-shebangs.enable = true;
+      check-shebang-scripts-are-executable.enable = false;
+      check-merge-conflicts.enable = true;
+      deadnix.enable = true;
+      detect-private-keys.enable = true;
+      end-of-file-fixer.enable = true;
+      fix-byte-order-marker.enable = true;
+      flake-checker.enable = true;
+      forbid-new-submodules.enable = true;
+      mixed-line-endings.enable = true;
+      nixpkgs-fmt.enable = true;
+      statix.enable = true;
+      trim-trailing-whitespace.enable = true;
+
+      destroyed-symlinks = {
+        enable = true;
+        entry = "${inputs.pre-commit-hooks.checks.${system}.pre-commit-hooks}/bin/destroyed-symlinks";
+      };
+
+      shellcheck = {
+        enable = true;
+        entry = "${pkgs.shellcheck}/bin/shellcheck --shell=bash";
+      };
+
+      shfmt = {
+        enable = true;
+        entry = "${pkgs.shfmt}/bin/shfmt -i 4 -sr -d -s -l";
+      };
+
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org8c1f77d" class="outline-3">
+<h3 id="org8c1f77d"><span class="section-number-3">2.6.</span> Templates</h3>
+<div class="outline-text-3" id="text-2-6">
+<p>
+This file defines the templates that are being exposed by the flake. These can be used by running <code>nix flake init -t github:Swarsel/.dotfiles#&lt;TEMPLATE_NAME&gt;</code>.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, ... }:
+let
+  templateNames = [
+    "python"
+    "rust"
+    "go"
+    "cpp"
+    "latex"
+    "default"
+  ];
+in
+lib.swarselsystems.mkTemplates templateNames
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:9c9b9e3b-8771-44fa-ba9e-5056ae809655" class="outline-3">
-<h3 id="h:9c9b9e3b-8771-44fa-ba9e-5056ae809655"><span class="section-number-3">2.6.</span> nixosConfigurations</h3>
+<h3 id="h:9c9b9e3b-8771-44fa-ba9e-5056ae809655"><span class="section-number-3">2.7.</span> nixosConfigurations</h3>
 <div class="outline-text-3" id="text-h:9c9b9e3b-8771-44fa-ba9e-5056ae809655">
 <p>
 This section used to be much longer, since I performed all of my imports right here in the past. Since then, I have however refactored and now my important hosts can be defined in little space. Once I have fully transitioned my server to NixOS too this section will become even smaller once more.
@@ -1422,7 +1455,7 @@ Note: The preceding <code>nixosConfigurations</code> is found in <a href="#h:aee
 </div>
 </div>
 <div id="outline-container-h:f881aa05-a670-48dd-a57b-2916abdcb692" class="outline-3">
-<h3 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-3">2.7.</span> darwinConfigurations</h3>
+<h3 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-3">2.8.</span> darwinConfigurations</h3>
 <div class="outline-text-3" id="text-h:f881aa05-a670-48dd-a57b-2916abdcb692">
 <p>
 And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
@@ -1440,7 +1473,7 @@ Note: The preceding <code>darwinConfigurations</code> is found in <a href="#h:ae
 </div>
 </div>
 <div id="outline-container-h:f881aa05-a670-48dd-a57b-2916abdcb692" class="outline-3">
-<h3 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-3">2.8.</span> homeConfigurations</h3>
+<h3 id="h:f881aa05-a670-48dd-a57b-2916abdcb692"><span class="section-number-3">2.9.</span> homeConfigurations</h3>
 <div class="outline-text-3" id="text-h:f881aa05-a670-48dd-a57b-2916abdcb692">
 <p>
 In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
@@ -1462,7 +1495,7 @@ lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home
 </div>
 </div>
 <div id="outline-container-h:5f6ef553-59f9-4239-b6f3-63d33b57f335" class="outline-3">
-<h3 id="h:5f6ef553-59f9-4239-b6f3-63d33b57f335"><span class="section-number-3">2.9.</span> nixOnDroidConfigurations</h3>
+<h3 id="h:5f6ef553-59f9-4239-b6f3-63d33b57f335"><span class="section-number-3">2.10.</span> nixOnDroidConfigurations</h3>
 <div class="outline-text-3" id="text-h:5f6ef553-59f9-4239-b6f3-63d33b57f335">
 <p>
 Nix on Android also demands an own flake output, which is provided here.
@@ -1484,7 +1517,7 @@ lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "a
 </div>
 </div>
 <div id="outline-container-h:1337e267-bca3-4c65-863f-9f44b753dee4" class="outline-3">
-<h3 id="h:1337e267-bca3-4c65-863f-9f44b753dee4"><span class="section-number-3">2.10.</span> topologyConfigurations</h3>
+<h3 id="h:1337e267-bca3-4c65-863f-9f44b753dee4"><span class="section-number-3">2.11.</span> topologyConfigurations</h3>
 <div class="outline-text-3" id="text-h:1337e267-bca3-4c65-863f-9f44b753dee4">
 <div class="org-src-container">
 <pre class="src src-nix">
@@ -1763,7 +1796,7 @@ My work machine. Built for more security, this is the gold standard of my config
 <h6 id="h:567c0055-f5f7-4e53-8f13-d767d7166e9d"><span class="section-number-6">3.1.2.1.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:567c0055-f5f7-4e53-8f13-d767d7166e9d">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -1796,12 +1829,6 @@ in
   ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
 
   networking.networkmanager.wifi.scanRandMacAddress = false;
 
@@ -1814,15 +1841,15 @@ in
     resumeDevice = "/dev/disk/by-label/nixos";
   };
 
-  hardware = {
-    amdgpu = {
-      opencl.enable = true;
-      amdvlk = {
-        enable = true;
-        support32Bit.enable = true;
-      };
-    };
-  };
+  # hardware = {
+  #   amdgpu = {
+  #     opencl.enable = true;
+  #     amdvlk = {
+  #       enable = true;
+  #       support32Bit.enable = true;
+  #     };
+  #   };
+  # };
 
   programs.fw-fanctrl.enable = true;
 
@@ -1848,6 +1875,7 @@ in
       isImpermanence = false;
       isSecureBoot = true;
       isCrypted = true;
+      isLinux = true;
     }
     sharedOptions;
 
@@ -2134,7 +2162,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 <h6 id="h:8ad68406-4a75-45ba-97ad-4c310b921124"><span class="section-number-6">3.1.2.2.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:8ad68406-4a75-45ba-97ad-4c310b921124">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -2157,14 +2185,6 @@ in
 
   ] ++ (builtins.attrValues outputs.nixosModules);
 
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
@@ -2184,6 +2204,7 @@ in
     hasFingerprint = false;
     isImpermanence = false;
     isBtrfs = false;
+    isLinux = true;
     flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;
@@ -2476,6 +2497,7 @@ in
     hasBluetooth = false;
     hasFingerprint = false;
     isImpermanence = false;
+    isLinux = true;
     isBtrfs = false;
     flakePath = "/root/.dotfiles";
     server = {
@@ -2507,7 +2529,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 <h6 id="h:4e53b40b-98b2-4615-b1b0-3696a75edd6e"><span class="section-number-6">3.1.4.1.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:4e53b40b-98b2-4615-b1b0-3696a75edd6e">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -2548,13 +2570,6 @@ in
   ] ++ (builtins.attrValues outputs.nixosModules);
 
 
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
-
   environment.systemPackages = with pkgs; [
     curl
     git
@@ -2587,6 +2602,7 @@ in
       isCrypted = true;
       isSecureBoot = false;
       isSwap = true;
+      isLinux = true;
       swapSize = "8G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";
@@ -2958,7 +2974,7 @@ I also set the <code>WLR_RENDERER_ALLOW_SOFTWARE=1</code> to allow this configur
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, outputs, config, pkgs, lib, ... }:
+<pre class="src src-nix">{ self, inputs, outputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -3006,6 +3022,7 @@ in
     wallpaper = self + /wallpaper/lenovowp.png;
     initialSetup = true;
     isPublic = true;
+    isLinux = true;
   };
 
   home-manager.users.swarsel.swarselsystems = {
@@ -3088,6 +3105,7 @@ let
     "ts2t"
     "vershell"
     "eontimer"
+    "project"
   ];
 in
 lib.swarselsystems.mkPackages packageNames pkgs
@@ -3497,10 +3515,10 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
+<pre class="src src-nix">{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];
+  runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
   text = builtins.readFile "${self}/scripts/${name}.sh";
 }
 
@@ -4607,6 +4625,30 @@ python3Packages.buildPythonApplication rec {
 </div>
 </div>
 </div>
+<div id="outline-container-org56f9a91" class="outline-5">
+<h5 id="org56f9a91"><span class="section-number-5">3.2.1.25.</span> project</h5>
+<div class="outline-text-5" id="text-3-2-1-25">
+<div class="org-src-container">
+<pre class="src src-shell">set -euo pipefail
+
+if [ ! -d "$(pwd)/.git" ]; then
+    git init
+fi
+nix flake init --template "$FLAKE"#"$1"
+direnv allow
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix">{ self, name, writeShellApplication }:
+writeShellApplication {
+  inherit name;
+  text = builtins.readFile "${self}/scripts/${name}.sh";
+}
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:5e3e21e0-57af-4dad-b32f-6400af9b7aab" class="outline-4">
 <h4 id="h:5e3e21e0-57af-4dad-b32f-6400af9b7aab"><span class="section-number-4">3.2.2.</span> Overlays (additions, overrides, nixpkgs-stable)</h4>
@@ -4649,11 +4691,11 @@ let
       dolphin # gc/wii
     ]);
 
-    # #river = prev.river.overrideAttrs (oldAttrs: rec {
+    # luakit = prev.river.overrideAttrs (oldAttrs: rec {
     #   pname = "river";
     #   version = "git";
     #   src = prev.fetchFromGitHub {
-    #     owner = "riverwm";
+    #     owner = "luakit";
     #     repo = pname;
     #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
     #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
@@ -4808,6 +4850,7 @@ I usually use <code>mutableUsers = false</code> in my NixOS configuration. Howev
   options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
   options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
   options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+  options.swarselsystems.isLinux = lib.mkEnableOption "whether this is a linux machine";
 
   options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
   options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
@@ -5458,7 +5501,7 @@ A breakdown of each function:
       in
       systemFunc {
         inherit pkgs;
-        extraSpecialArgs = { inherit inputs outputs; };
+        extraSpecialArgs = { inherit inputs outputs lib self; };
         modules = [ "${self}/hosts/${type}/${host}" ];
       };
   };
@@ -5491,6 +5534,16 @@ A breakdown of each function:
     (name: {
       inherit name;
       value = import "${self}/modules/${type}/${name}.nix";
+    })
+    names);
+
+  mkTemplates = names: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = {
+        path = "${self}/templates/${name}";
+        description = "${name} project ";
+      };
     })
     names);
 
@@ -5591,16 +5644,54 @@ This section is for setting things that should be used on hosts that are using t
 <h5 id="h:24c9146f-2147-4fd5-bafc-d5853e15cf12"><span class="section-number-5">3.3.1.2.</span> General NixOS settings (stateVersion)</h5>
 <div class="outline-text-5" id="text-h:24c9146f-2147-4fd5-bafc-d5853e15cf12">
 <p>
-Also, we disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
+We disable the warnings that trigger when rebuilding with a dirty flake. At this point, I am also disabling channels and pinning the flake registry - the latter lets me use the local version of nixpkgs for commands like <code>nix shell</code> (without it, we will always download the newest version of nixpkgs for these commands).
 </p>
 
 <p>
 Also, the system state version is set here. No need to touch it.
 </p>
 
+<p>
+A breakdown of the flags being set:
+</p>
+<ul class="org-ul">
+<li><code>nixpgks.config.allowUnfree</code>: allows packages with an unfree license to be built</li>
+<li>nix.settings:
+<ul class="org-ul">
+<li>experimental-features:
+<ul class="org-ul">
+<li>nix-command: Enables the <code>nix</code> command from nix 2.4</li>
+<li>flakes: Enables flakes to be used</li>
+<li>ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuiluds - to be used with my TODO private hydra and the binary cache <code>cache.ngi0.nixos.org</code> in <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">flake.nix template</a></li>
+<li>cgroups: allows the use of cgroups in builds</li>
+<li>pipe-operators: Enables 'piping' instead of the classic currying syntax - <code>fun arg</code> can be expressed as <code>arg |&gt; fun</code>. Associatively, it is weaker than functions: <code>a |&gt; b |&gt; d c |&gt; e = e ((d c) (b a))</code></li>
+</ul></li>
+<li>trusted-users: these users have elevated privileges in nix (mostly used to acknowledge binary caches) - root is added per default here</li>
+<li>connect-timeout: normally, nix tries to reach the cache for 300 seconds for each derivation per cache. This setting lets me change that</li>
+<li>bash-prompt-prefix: adds a prefix to shells spawned by <code>nix develop</code></li>
+<li>[min,max]-free: amounts of space where intermittent GC will be run during builds</li>
+<li>flake registry: URI of the global flake registry (I disable it)</li>
+<li>auto-optimise-store: create hardlinks in the nix store to save space</li>
+<li>warn-dirty: I do not need to see the warning when I have uncommited changes</li>
+<li>max-jobs: How many build jobs should be run in parallel. <code>auto</code> sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now <code>1</code>, but used to be <code>auto</code>, I set this manually just to be safe in the future.</li>
+<li>use-cgroups: Actually run builds within cgroups</li>
+</ul></li>
+<li>nix.channel.enable: whether to use channels</li>
+<li>nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. <code>nixpkgs</code> directly in <code>nix repl</code></li>
+<li>nix.nixPath: Basically the same as <code>nix.registry</code>, but for the legacy nix commands</li>
+</ul>
+
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, inputs, ... }:
+<pre class="src src-nix">{ lib, config, outputs, inputs, ... }:
 {
+
+  nixpkgs = {
+    overlays = [ outputs.overlays.default ];
+    config = {
+      allowUnfree = true;
+    };
+  };
+
   nix =
     let
       flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -5611,11 +5702,21 @@ Also, the system state version is set here. No need to touch it.
           "nix-command"
           "flakes"
           "ca-derivations"
+          "cgroups"
           "pipe-operators"
         ];
-        trusted-users = [ "swarsel" ];
+        trusted-users = [ "@wheel" "swarsel" ];
+        connect-timeout = 5;
+        bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+        fallback = true;
+        min-free = 128000000;
+        max-free = 1000000000;
         flake-registry = "";
+        auto-optimise-store = true;
         warn-dirty = false;
+        max-jobs = 1;
+        use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
       };
       channel.enable = false;
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
@@ -5699,57 +5800,57 @@ Mostly used to install some compilers and lsp's that I want to have available wh
     # lsp-related -------------------------------
     # nix
     # latex
-    texlab
+    # texlab
     ghostscript_headless
     # wireguard
     wireguard-tools
     # rust
-    rust-analyzer
-    clippy
-    rustfmt
+    # rust-analyzer
+    # clippy
+    # rustfmt
     # go
-    go
-    gopls
+    # go
+    # gopls
     # nix
     nixd
     # zig
     zig
     zls
     # cpp
-    clang-tools
+    # clang-tools
     # + cuda
-    cudatoolkit
+    # cudatoolkit
     # ansible
-    ansible-lint
-    ansible-language-server
-    molecule
+    # ansible-lint
+    # ansible-language-server
+    # molecule
     #lsp-bridge / python
-    gcc
-    gdb
-    (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
+    # gcc
+    # gdb
+    # (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
     # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
     # --------------------------------------------
 
-    (stdenv.mkDerivation {
-      name = "oama";
+    # (stdenv.mkDerivation {
+    #   name = "oama";
 
-      src = pkgs.fetchurl {
-        name = "oama";
-        url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-        sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
-      };
+    #   src = pkgs.fetchurl {
+    #     name = "oama";
+    #     url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+    #     sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+    #   };
 
-      phases = [
-        "unpackPhase"
-      ];
+    #   phases = [
+    #     "unpackPhase"
+    #   ];
 
-      unpackPhase = ''
-        mkdir -p $out/bin
-        tar xvf $src -C $out/
-        mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
-      '';
+    #   unpackPhase = ''
+    #     mkdir -p $out/bin
+    #     tar xvf $src -C $out/
+    #     mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+    #   '';
 
-    })
+    # })
 
   ];
 }
@@ -6409,8 +6510,7 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
 {
   stylix = {
     enable = true;
-    base16Scheme = "${self}/wallpaper/swarsel.yaml";
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    base16Scheme = "${self}/programs/stylix/swarsel.yaml";
     polarity = "dark";
     opacity.popups = 0.5;
     cursor = {
@@ -6864,8 +6964,8 @@ When a program does not work, start with <code>nix-ldd &lt;program&gt;</code>. T
       gdk-pixbuf
       glew110
       glib
-      gnome2.GConf
-      gnome2.pango
+      stable.gnome2.GConf
+      pango
       gtk2
       gtk3
       icu
@@ -7192,6 +7292,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 
   virtualisation.podman = {
     enable = true;
+    package = pkgs.stable.podman;
   };
 
 }
@@ -9152,6 +9253,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 
       programs.steam = {
         enable = true;
+        package = pkgs.stable.steam;
         extraCompatPackages = [
           pkgs.proton-ge-bin
         ];
@@ -9556,19 +9658,36 @@ Again, we adapt <code>nix</code> to our needs, enable the home-manager command f
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix">{ lib, inputs, config, ... }:
 {
-  nix = {
-    package = lib.mkDefault pkgs.nix;
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-        "ca-derivations"
-        "pipe-operators"
-      ];
+  nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    lib.mkIf (!config.swarselsystems.isNixos) {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+          "cgroups"
+          "pipe-operators"
+        ];
+        trusted-users = [ "@wheel" "swarsel" ];
+        connect-timeout = 5;
+        bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+        fallback = true;
+        min-free = 128000000;
+        max-free = 1000000000;
+        flake-registry = "";
+        auto-optimise-store = true;
+        warn-dirty = false;
+        max-jobs = 1;
+        use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+      };
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
     };
-  };
 
   programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
@@ -9581,6 +9700,7 @@ Again, we adapt <code>nix</code> to our needs, enable the home-manager command f
       FLAKE = "${config.home.homeDirectory}/.dotfiles";
     };
   };
+
 }
 </pre>
 </div>
@@ -9623,7 +9743,7 @@ This holds packages that I can use as provided, or with small modifications (as 
     picard-tools
     audacity
     sox
-    feishin
+    stable.feishin
 
     # printing
     cups
@@ -9631,6 +9751,9 @@ This holds packages that I can use as provided, or with small modifications (as 
 
     # dict
     (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
+
+    # browser
+    vieb
 
     # utilities
     util-linux
@@ -9673,7 +9796,7 @@ This holds packages that I can use as provided, or with small modifications (as 
     vesktop # discord client
     nextcloud-client
     spotify-player
-    element-desktop-wayland
+    element-desktop
     nicotine-plus
     stable.transmission
     mktorrent
@@ -9808,42 +9931,9 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
     ts2t
     vershell
     eontimer
+    project
 
     swarsel-bootstrap
-
-    (pkgs.writeScriptBin "project" ''
-      #! ${pkgs.bash}/bin/bash
-      if [ "$1" == "rust" ]; then
-      cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
-      cp ~/.dotfiles/templates/toolchain.toml .
-      elif [ "$1" == "cpp" ]; then
-      cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
-      elif [ "$1" == "python" ]; then
-      cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
-      elif [ "$1" == "cuda" ]; then
-      cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
-      elif [ "$1" == "other" ]; then
-      cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
-      elif [ "$1" == "latex" ]; then
-        if [ "$2" == "" ]; then
-        echo "No filename specified, usage: 'project latex &lt;NAME&gt;'"
-        exit 0
-        fi
-      cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
-      exit 0
-      else
-      echo "No valid argument given. Valid arguments are rust cpp python, cuda"
-      exit 0
-      fi
-      echo "use flake" &gt;&gt; .envrc
-      direnv allow
-    '')
-
-
-
-
-
-
   ];
 }
 </pre>
@@ -9966,8 +10056,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 {
   stylix = lib.mkIf (!config.swarselsystems.isNixos) {
     enable = true;
-    base16Scheme = "${self}/wallpaper/swarsel.yaml";
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    base16Scheme = "${self}/programs/stylix/swarsel.yaml";
     polarity = "dark";
     opacity.popups = 0.5;
     cursor = {
@@ -10294,6 +10383,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 {
   programs.direnv = {
     enable = true;
+    silent = true;
     nix-direnv.enable = true;
   };
 }
@@ -10417,7 +10507,7 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
     enableZshIntegration = true;
     settings = {
       add_newline = false;
-      format = "$character";
+      format = "$shlvl$character";
       right_format = "$all";
       command_timeout = 3000;
 
@@ -10430,7 +10520,7 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 
       git_status = {
         style = "bg:#394260";
-        format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+        format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
       };
 
       character = {
@@ -10438,7 +10528,23 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
         error_symbol = "[λ](bold red)";
       };
 
-      aws.symbol = "  ";
+      shlvl = {
+        disabled = false;
+        symbol = "↳";
+        format = "[$symbol]($style) ";
+        repeat = true;
+        repeat_offset = 1;
+        style = "blue";
+      };
+
+      nix_shell = {
+        disabled = false;
+        heuristic = true;
+        format = "[$symbol$name]($style)";
+        symbol = " ";
+      };
+
+      aws.symbol = " ";
       buf.symbol = " ";
       c.symbol = " ";
       conda.symbol = " ";
@@ -10461,7 +10567,6 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
       memory_usage.symbol = "󰍛 ";
       meson.symbol = "󰔷 ";
       nim.symbol = "󰆥 ";
-      nix_shell.symbol = " ";
       nodejs.symbol = " ";
 
       os.symbols = {
@@ -12416,7 +12521,7 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 
     quark-goldleaf
     # gog games installing
-    heroic
+    # heroic
 
     # minecraft
     prismlauncher # has overrides
@@ -13673,8 +13778,8 @@ Lastly, I load the <code>highlight-indent-guides</code> package. This adds a nea
   (set-face-attribute 'highlight-indent-guides-stack-even-face nil :background "gray40")
   (set-face-attribute 'highlight-indent-guides-stack-odd-face nil :background "gray50"))
 
-(use-package aggressive-indent)
-(global-aggressive-indent-mode 1)
+;; (use-package aggressive-indent)
+;; (global-aggressive-indent-mode 1)
 
 </pre>
 </div>
@@ -13851,6 +13956,23 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 (use-package evil-visual-mark-mode
   :config (evil-visual-mark-mode))
 
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org0478d06" class="outline-5">
+<h5 id="org0478d06"><span class="section-number-5">4.3.7.7.</span> evil-textobj-tree-sitter</h5>
+<div class="outline-text-5" id="text-4-3-7-7">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+(use-package evil-textobj-tree-sitter)
+;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
+(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
+(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+
+;; You can also bind multiple items and we will match the first one we can find
+(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
 </pre>
 </div>
 </div>
@@ -14608,6 +14730,7 @@ This provides several utilities for LaTeX in Emacs, including many completions a
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
+(setq-default TeX-engine 'luatex)
 (setq-default TeX-master nil)
 
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
@@ -15022,39 +15145,41 @@ In order to update the language grammars, run the next command below.
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-(use-package emacs
-  :ensure nil
-  :init
-  (setq treesit-language-source-alist
-        '((bash . ("https://github.com/tree-sitter/tree-sitter-bash"))
-          (c . ("https://github.com/tree-sitter/tree-sitter-c"))
-          (cmake . ("https://github.com/uyha/tree-sitter-cmake"))
-          (cpp . ("https://github.com/tree-sitter/tree-sitter-cpp"))
-          (css . ("https://github.com/tree-sitter/tree-sitter-css"))
-          (elisp . ("https://github.com/Wilfred/tree-sitter-elisp"))
-          (go . ("https://github.com/tree-sitter/tree-sitter-go"))
-          (html . ("https://github.com/tree-sitter/tree-sitter-html"))
-          (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
-          (json . ("https://github.com/tree-sitter/tree-sitter-json"))
-          (julia . ("https://github.com/tree-sitter/tree-sitter-julia"))
-          (latex . ("https://github.com/latex-lsp/tree-sitter-latex"))
-          (make . ("https://github.com/alemuller/tree-sitter-make"))
-          (markdown . ("https://github.com/ikatyang/tree-sitter-markdown"))
-          (nix . ("https://github.com/nix-community/tree-sitter-nix"))
-          (R . ("https://github.com/r-lib/tree-sitter-r"))
-          (python . ("https://github.com/tree-sitter/tree-sitter-python"))
-          (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "typescript/src" "typescript"))
-          (rust . ("https://github.com/tree-sitter/tree-sitter-rust"))
-          (sql . ("https://github.com/m-novikov/tree-sitter-sql"))
-          (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
-          (tsx  . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
-          (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))))
-  )
+;; (use-package emacs
+;;   :ensure nil
+;;   :init
+;;   (setq treesit-language-source-alist
+;;         '((bash . ("https://github.com/tree-sitter/tree-sitter-bash"))
+;;           (c . ("https://github.com/tree-sitter/tree-sitter-c"))
+;;           (cmake . ("https://github.com/uyha/tree-sitter-cmake"))
+;;           (cpp . ("https://github.com/tree-sitter/tree-sitter-cpp"))
+;;           (css . ("https://github.com/tree-sitter/tree-sitter-css"))
+;;           (elisp . ("https://github.com/Wilfred/tree-sitter-elisp"))
+;;           (go . ("https://github.com/tree-sitter/tree-sitter-go"))
+;;           (html . ("https://github.com/tree-sitter/tree-sitter-html"))
+;;           (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
+;;           (json . ("https://github.com/tree-sitter/tree-sitter-json"))
+;;           (julia . ("https://github.com/tree-sitter/tree-sitter-julia"))
+;;           (latex . ("https://github.com/latex-lsp/tree-sitter-latex"))
+;;           (make . ("https://github.com/alemuller/tree-sitter-make"))
+;;           (markdown . ("https://github.com/ikatyang/tree-sitter-markdown"))
+;;           (nix . ("https://github.com/nix-community/tree-sitter-nix"))
+;;           (R . ("https://github.com/r-lib/tree-sitter-r"))
+;;           (python . ("https://github.com/tree-sitter/tree-sitter-python"))
+;;           (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "typescript/src" "typescript"))
+;;           (rust . ("https://github.com/tree-sitter/tree-sitter-rust"))
+;;           (sql . ("https://github.com/m-novikov/tree-sitter-sql"))
+;;           (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
+;;           (tsx  . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
+;;           (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))))
+;;   )
 
 (use-package treesit-auto
+  :custom
+  (setq treesit-auto-install t)
   :config
-  (global-treesit-auto-mode)
-  (setq treesit-auto-install 'prompt))
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
 
 
 </pre>
@@ -15064,11 +15189,18 @@ In order to update the language grammars, run the next command below.
 <div id="outline-container-h:82ddeef2-99f8-465b-ba36-07c3eaad717b" class="outline-4">
 <h4 id="h:82ddeef2-99f8-465b-ba36-07c3eaad717b"><span class="section-number-4">4.4.13.</span> direnv (envrc)</h4>
 <div class="outline-text-4" id="text-h:82ddeef2-99f8-465b-ba36-07c3eaad717b">
+<p>
+In emacs, there are two packages for managing dev environments - emacs-direnv (direnv) and envrc. Direnv uses the global Emacs environment whereas envrc is buffer-local. I do not really care about this difference. What is more important to me is that emacs should not block upon handling a bigger flake.nix while setting up the dev environment. This seems to be better handled by envrc.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-(use-package direnv
-  :custom (direnv-always-show-summary nil)
-  :config (direnv-mode))
+;; (use-package direnv
+;;   :custom (direnv-always-show-summary nil)
+;;   :config (direnv-mode))
+
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
 
 </pre>
 </div>
@@ -15146,8 +15278,9 @@ projectile is useful for keeping track of your git projects within Emacs. I most
   ("C-c p" . projectile-command-map) ; all projectile commands under this
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
-  (when (file-directory-p swarsel-projects-directory)
-    (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory)))
+  (when (file-directory-p swarsel-work-projects-directory)
+    (when (file-directory-p swarsel-private-projects-directory)
+      (setq projectile-project-search-path (list swarsel-work-projects-directory swarsel-private-projects-directory))))
   (setq projectile-switch-project-action #'magit-status))
 
 </pre>
@@ -15224,9 +15357,6 @@ create classic token with repo; user; read:org permissions
 (use-package forge
   :after magit)
 
-(with-eval-after-load 'forge
-  (add-to-list 'forge-alist
-               ))
 </pre>
 </div>
 </div>
@@ -15538,6 +15668,8 @@ After having tried out <code>lsp-mode</code> and <code>lsp-bridge</code> for a w
     c-ts-mode
     c++-mode
     c++-ts-mode
+    go-mode
+    go-ts-mode
     rust-ts-mode
     rustic-mode
     tex-mode
@@ -16042,8 +16174,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 
 <div class="org-src-container">
 <pre class="src src-nix">enable = true;
-base16Scheme = "${self}/wallpaper/swarsel.yaml";
-# base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+base16Scheme = "${self}/programs/stylix/swarsel.yaml";
 polarity = "dark";
 opacity.popups = 0.5;
 cursor = {
@@ -16648,7 +16779,7 @@ ignore = ['.direnv']
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2024-12-29 So 20:11</p>
+<p class="date">Created: 2024-12-31 Di 21:56</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

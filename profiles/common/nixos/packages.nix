@@ -59,57 +59,57 @@
     # lsp-related -------------------------------
     # nix
     # latex
-    texlab
+    # texlab
     ghostscript_headless
     # wireguard
     wireguard-tools
     # rust
-    rust-analyzer
-    clippy
-    rustfmt
+    # rust-analyzer
+    # clippy
+    # rustfmt
     # go
-    go
-    gopls
+    # go
+    # gopls
     # nix
     nixd
     # zig
     zig
     zls
     # cpp
-    clang-tools
+    # clang-tools
     # + cuda
-    cudatoolkit
+    # cudatoolkit
     # ansible
     # ansible-lint
     # ansible-language-server
     # molecule
     #lsp-bridge / python
-    gcc
-    gdb
+    # gcc
+    # gdb
     # (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
     # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
     # --------------------------------------------
 
-    (stdenv.mkDerivation {
-      name = "oama";
+    # (stdenv.mkDerivation {
+    #   name = "oama";
 
-      src = pkgs.fetchurl {
-        name = "oama";
-        url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-        sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
-      };
+    #   src = pkgs.fetchurl {
+    #     name = "oama";
+    #     url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
+    #     sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
+    #   };
 
-      phases = [
-        "unpackPhase"
-      ];
+    #   phases = [
+    #     "unpackPhase"
+    #   ];
 
-      unpackPhase = ''
-        mkdir -p $out/bin
-        tar xvf $src -C $out/
-        mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
-      '';
+    #   unpackPhase = ''
+    #     mkdir -p $out/bin
+    #     tar xvf $src -C $out/
+    #     mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
+    #   '';
 
-    })
+    # })
 
   ];
 }
