@@ -2,8 +2,7 @@
 {
   stylix = {
     enable = true;
-    base16Scheme = "${self}/wallpaper/swarsel.yaml";
-    # base16Scheme = "${pkgs.base16-schemes}/share/themes/shapeshifter.yaml";
+    base16Scheme = "${self}/programs/stylix/swarsel.yaml";
     polarity = "dark";
     opacity.popups = 0.5;
     cursor = {
