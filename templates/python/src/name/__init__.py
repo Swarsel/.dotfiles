@@ -1,2 +1,2 @@
 def hello() -> None:
-    print("Hello from hello-world!")
+    print("Hello from testing!")

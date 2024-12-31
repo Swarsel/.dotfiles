@@ -5,7 +5,6 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "urllib3>=2.2.3",
 ]
 
 [project.scripts]
@@ -17,5 +16,17 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.6.7",
+  {include-group = "test"},
+  {include-group = "lint"},
+  {include-group = "lsp"},
+]
+lsp = [
+  "python-lsp-server",
+]
+lint = [
+  "ruff>=0.6.7",
+]
+test = [
+  "pytest-cov>=6.0.0",
+  "pytest>=8.3.3",
 ]

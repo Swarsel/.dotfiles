@@ -1,3 +1,5 @@
+# based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
+
 {
   description = "Hello world flake using uv2nix";
 
@@ -32,13 +34,13 @@
     }:
     let
       inherit (nixpkgs) lib;
+      pname = "name";
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
 
       # Load a uv workspace from a workspace root.
       # Uv2nix treats all uv projects as workspace projects.
       workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
 
-      # Create package overlay from workspace.
       overlay = workspace.mkPyprojectOverlay {
         # Prefer prebuilt binary wheels as a package source.
         # Sdists are less likely to "just work" because of the metadata missing from uv.lock.
@@ -50,26 +52,71 @@
         # };
       };
 
-      # Extend generated overlay with build fixups
-      #
-      # Uv2nix can only work with what it has, and uv.lock is missing essential metadata to perform some builds.
-      # This is an additional overlay implementing build fixups.
-      # See:
-      # - https://pyproject-nix.github.io/uv2nix/FAQ.html
 
-      # Construct package set
       pythonSets = forAllSystems
         (system:
           let
+            inherit (pkgs) stdenv;
             pkgs = nixpkgs.legacyPackages.${system};
-            pyprojectOverrides = _final: _prev: {
+            pyprojectOverrides = final: prev: {
               # Implement build fixups here.
+              ${pname} = prev.${pname}.overrideAttrs (old: {
+
+                passthru = old.passthru // {
+                  # Put all tests in the passthru.tests attribute set.
+                  # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+                  #
+                  # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+                  tests =
+                    let
+
+                      virtualenv = final.mkVirtualEnv "${pname}-pytest-env" {
+                        ${pname} = [ "test" ];
+                      };
+
+                    in
+                    (old.tests or { })
+                      // {
+                      pytest = stdenv.mkDerivation {
+                        name = "${final.${pname}.name}-pytest";
+                        inherit (final.${pname}) src;
+                        nativeBuildInputs = [
+                          virtualenv
+                        ];
+                        dontConfigure = true;
+
+                        # Because this package is running tests, and not actually building the main package
+                        # the build phase is running the tests.
+                        #
+                        # We also output a HTML coverage report, which is used as the build output.
+                        buildPhase = ''
+                          runHook preBuild
+                          pytest --cov tests --cov-report html
+                          runHook postBuild
+                        '';
+
+                        # Install the HTML coverage report into the build output.
+                        #
+                        # If you wanted to install multiple test output formats such as TAP outputs
+                        # you could make this derivation a multiple-output derivation.
+                        #
+                        # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
+                        installPhase = ''
+                          runHook preInstall
+                          mv htmlcov $out
+                          runHook postInstall
+                        '';
+                      };
+
+                    };
+                };
+              });
             };
+
             baseSet = pkgs.callPackage pyproject-nix.build.packages {
               python = pkgs.python312;
             };
           in
-          # Use base package set from pyproject.nix builders
           baseSet.overrideScope
             (
               lib.composeManyExtensions [
@@ -81,18 +128,12 @@
 
     in
     {
-      # Package a virtual environment as our main application.
-      #
-      # Enable no optional dependencies for production build.
       packages = forAllSystems (system:
         let
           pythonSet = pythonSets.${system};
         in
-        { default = pythonSet.mkVirtualEnv "name-env" workspace.deps.default; });
+        { default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default; });
 
-      # This example provides two different modes of development:
-      # - Impurely using uv to manage virtual environments
-      # - Pure development using uv2nix to manage virtual environments
       devShells = forAllSystems
         (system:
           let
@@ -100,10 +141,6 @@
             pkgs = nixpkgs.legacyPackages.${system};
           in
           {
-            # This devShell uses uv2nix to construct a virtual environment purely from Nix, using the same dependency specification as the application.
-            # The notable difference is that we also apply another overlay here enabling editable mode ( https://setuptools.pypa.io/en/latest/userguide/development_mode.html ).
-            #
-            # This means that any changes done to your local files do not require a rebuild.
             default =
               let
                 # Create an overlay enabling editable mode for all local dependencies.
@@ -117,10 +154,9 @@
                 # Override previous set with our overrideable overlay.
                 editablePythonSet = pythonSet.overrideScope editableOverlay;
 
-                # Build virtual environment, with local packages being editable.
-                #
-                # Enable all optional dependencies for development.
-                virtualenv = editablePythonSet.mkVirtualEnv "name-dev-env" workspace.deps.all;
+                virtualenv = editablePythonSet.mkVirtualEnv "${pname}-dev-env" {
+                  ${pname} = [ "dev" ];
+                };
 
               in
               pkgs.mkShell {
@@ -129,7 +165,7 @@
                   pkgs.uv
                 ];
                 shellHook = ''
-                      # Undo dependency propagation by nixpkgs.
+                  # Undo dependency propagation by nixpkgs.
                   unset PYTHONPATH
 
                   # Don't create venv using uv
@@ -143,5 +179,18 @@
                 '';
               };
           });
+
+      checks = forAllSystems (
+        system:
+        let
+          pythonSet = pythonSets.${system};
+        in
+        {
+          inherit (pythonSet.${pname}.passthru.tests) pytest;
+        }
+      );
+
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+
     };
 }
