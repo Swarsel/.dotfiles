@@ -488,6 +488,7 @@ This file defines the templates that are being exposed by the flake. These can b
       "rust"
       "go"
       "cpp"
+      "latex"
       "default"
     ];
   in
@@ -13002,20 +13003,21 @@ This provides several utilities for LaTeX in Emacs, including many completions a
 
 #+begin_src emacs-lisp
 
-  (use-package auctex)
-  (setq TeX-auto-save t)
-  (setq TeX-save-query nil)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil)
+    (use-package auctex)
+    (setq TeX-auto-save t)
+    (setq TeX-save-query nil)
+    (setq TeX-parse-self t)
+    (setq-default TeX-engine 'luatex)
+    (setq-default TeX-master nil)
 
-  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-  (add-hook 'LaTeX-mode-hook 'reftex-mode)
-  (setq LaTeX-electric-left-right-brace t)
-  (setq font-latex-fontify-script nil)
-  (setq TeX-electric-sub-and-superscript t)
-  ;; (setq reftex-plug-into-AUCTeX t)
+    (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+    (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+    (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+    (add-hook 'LaTeX-mode-hook 'reftex-mode)
+    (setq LaTeX-electric-left-right-brace t)
+    (setq font-latex-fontify-script nil)
+    (setq TeX-electric-sub-and-superscript t)
+    ;; (setq reftex-plug-into-AUCTeX t)
 
 #+end_src
 

@@ -5,6 +5,7 @@ let
     "rust"
     "go"
     "cpp"
+    "latex"
     "default"
   ];
 in

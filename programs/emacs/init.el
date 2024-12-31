@@ -924,6 +924,7 @@ create a new one."
 (setq TeX-auto-save t)
 (setq TeX-save-query nil)
 (setq TeX-parse-self t)
+(setq-default TeX-engine 'luatex)
 (setq-default TeX-master nil)
 
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)

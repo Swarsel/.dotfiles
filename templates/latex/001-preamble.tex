@@ -1,0 +1,204 @@
+%! TEX root = **/000-main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% LaTeX preamble, load in main.tex with: \input{preamble}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[12pt, oneside]{article}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+
+% for debugging overfulls
+%\documentclass[draft, 12pt, oneside]{article}
+%\usepackage[showframe, a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% FONTS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[T1]{fontenc}
+\usepackage{fontspec}
+\usepackage{microtype}
+
+\setmonofont[Scale=MatchLowercase]{DejaVu Sans Mono}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% LANGUAGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{polyglossia}
+\setdefaultlanguage{english}
+\setotherlanguages{spanish,catalan}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% BIBLIOGRAPHY
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[
+    backend=biber,
+    style=numeric,
+]{biblatex}
+\DeclareNameAlias{default}{family-given}
+
+\addbibresource{biblio.bib}
+
+\usepackage{fvextra}        % Req by minted (must load before csquotes)
+\usepackage{csquotes}       % For bibliography quotations
+\DeclareQuoteAlias{spanish}{catalan}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% COMMON
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{color, xcolor}     % more colors
+
+\usepackage{graphicx}   % graphics
+\graphicspath{{./figures/}}
+
+\usepackage{comment}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% MATHS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{mathtools}  % amsmath + more
+\usepackage{amsthm}     % Theorem enviroment
+\usepackage{amssymb}    % More symbols
+\usepackage{amstext}    % Text inside mathenv
+
+%\usepackage{relsize}    % Bigger math with mathlarger{___}
+%\usepackage{nicefrac}   % nice fractions in one line
+
+%\usepackage{IEEEtrantools} % Complex equation arrays
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% REFERENCES (load order is important)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{varioref} % reference far away (1)
+\usepackage[colorlinks = true]{hyperref} % links in references (2)
+\usepackage{cleveref} % smart references (3)
+%hyperref configuration so that it doesn't contrast so much colorlinks,
+\hypersetup{
+   linkcolor={black},
+   citecolor={black},
+   %linkcolor={red!50!black},
+   %citecolor={blue!50!black},
+   urlcolor={blue!80!black}
+}
+
+\usepackage[bottom]{footmisc} % Footnotes at bottom of page
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% FIGURES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage[export]{adjustbox}  % Adjust table size
+\usepackage{float}               % Force tables and images position (H and H!)
+%\usepackage{wrapfig}            % Wrap images like in HTML
+
+\usepackage[justification=centering]{caption}
+%\usepackage{subcaption}                     % Subfigures
+%\usepackage[framemethod=tikz]{mdframed}     % Custom frames
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TABLES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{colortbl, booktabs} % Better tables
+%\usepackage{tabularx}
+%\usepackage{longtable} % Multiple page table (does not work with tabularx)
+\usepackage{xltabular, colortbl, booktabs} % longtable + tabularx (has bug with booktabs: fix below)
+
+% Split cell in lines and more formating options inside table
+\usepackage{array, multirow, multicol, makecell}
+
+%%%
+% bug fix for booktabs + xltabular incompatibility
+\makeatletter
+\def\@BTrule[#1]{%
+  \ifx\longtable\undefined
+    \let\@BTswitch\@BTnormal
+  \else\ifx\hline\LT@hline
+    \nobreak
+    \let\@BTswitch\@BLTrule
+  \else
+     \let\@BTswitch\@BTnormal
+  \fi\fi
+  \global\@thisrulewidth=#1\relax
+  \ifnum\@thisruleclass=\tw@\vskip\@aboverulesep\else
+  \ifnum\@lastruleclass=\z@\vskip\@aboverulesep\else
+  \ifnum\@lastruleclass=\@ne\vskip\doublerulesep\fi\fi\fi
+  \@BTswitch}
+\makeatother
+%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SIUNITX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage[alsoload=hep]{siunitx}          % SI units and uncertainties
+%\sisetup{locale = FR}                       % Commas and so on for spanish
+%\sisetup{separate-uncertainty=true}
+%\sisetup{
+  %per-mode=fraction,
+  %fraction-function=\nicefrac
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TIKZ
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{tikz}
+%\usetikzlibrary{arrows}
+%\usetikzlibrary{scopes}
+%\usetikzlibrary{babel}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% MINTED
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{minted}
+\definecolor{codeBg}{HTML}{FFFDE7}
+\setminted{
+    %style=pastie,
+    frame=lines,
+    framesep=3mm,
+    linenos,
+    breaklines=true,
+    encoding=utf8,
+    fontsize=\footnotesize,
+    bgcolor=codeBg
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CUSTOM COMMANDS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% empty whitepage without numbering
+\newcommand{\whitepage}{
+    \clearpage\thispagestyle{empty}\addtocounter{page}{-1} \newpage \clearpage
+}
+
+% Add command before appendix section for page numbering: A-1
+\newcommand{\appendixpagenumbering}{
+    \break
+    \pagenumbering{arabic}
+    \renewcommand{\thepage}{\thesection-\arabic{page}}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CUSTOM MATH OPERATORS (functions not in italic in math mode)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\DeclareMathOperator{\arcsec}{arcsec}
+%\DeclareMathOperator{\arccot}{arccot}
+%\DeclareMathOperator{\arccsc}{arccsc}
+%\DeclareMathOperator{\cis}{cis}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% MISC
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{datetime} % Customize date
+%% \monthyeardate\today gives the date without the day
+%\newdateformat{monthyeardate}{%
+    %\monthname[\THEMONTH], \THEYEAR}
