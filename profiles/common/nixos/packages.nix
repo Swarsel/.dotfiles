@@ -80,13 +80,13 @@
     # + cuda
     cudatoolkit
     # ansible
-    ansible-lint
-    ansible-language-server
-    molecule
+    # ansible-lint
+    # ansible-language-server
+    # molecule
     #lsp-bridge / python
     gcc
     gdb
-    (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
+    # (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
     # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
     # --------------------------------------------
 

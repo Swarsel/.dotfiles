@@ -167,6 +167,8 @@
         }
       );
 
+      templates = import ./templates;
+
       checks = lib.swarselsystems.forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};

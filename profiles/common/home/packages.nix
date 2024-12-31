@@ -12,7 +12,7 @@
     picard-tools
     audacity
     sox
-    feishin
+    stable.feishin
 
     # printing
     cups
@@ -65,7 +65,7 @@
     vesktop # discord client
     nextcloud-client
     spotify-player
-    element-desktop-wayland
+    element-desktop
     nicotine-plus
     stable.transmission
     mktorrent

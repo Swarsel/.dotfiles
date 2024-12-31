@@ -31,8 +31,8 @@
       gdk-pixbuf
       glew110
       glib
-      gnome2.GConf
-      gnome2.pango
+      stable.gnome2.GConf
+      pango
       gtk2
       gtk3
       icu

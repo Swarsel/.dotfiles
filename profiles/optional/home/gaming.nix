@@ -19,7 +19,7 @@
 
     quark-goldleaf
     # gog games installing
-    heroic
+    # heroic
 
     # minecraft
     prismlauncher # has overrides

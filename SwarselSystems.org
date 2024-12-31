@@ -862,15 +862,15 @@ My work machine. Built for more security, this is the gold standard of my config
       resumeDevice = "/dev/disk/by-label/nixos";
     };
 
-    hardware = {
-      amdgpu = {
-        opencl.enable = true;
-        amdvlk = {
-          enable = true;
-          support32Bit.enable = true;
-        };
-      };
-    };
+    # hardware = {
+    #   amdgpu = {
+    #     opencl.enable = true;
+    #     amdvlk = {
+    #       enable = true;
+    #       support32Bit.enable = true;
+    #     };
+    #   };
+    # };
 
     programs.fw-fanctrl.enable = true;
 
@@ -2458,10 +2458,10 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarselcheck/default.nix
-  { self, name, writeShellApplication, kitty, element-desktop-wayland, vesktop, spotify-player, jq }:
+  { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ kitty element-desktop-wayland vesktop spotify-player jq ];
+    runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
     text = builtins.readFile "${self}/scripts/${name}.sh";
   }
 
@@ -4625,13 +4625,13 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # + cuda
       cudatoolkit
       # ansible
-      ansible-lint
-      ansible-language-server
-      molecule
+      # ansible-lint
+      # ansible-language-server
+      # molecule
       #lsp-bridge / python
       gcc
       gdb
-      (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
+      # (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
       # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
       # --------------------------------------------
 
@@ -5654,8 +5654,8 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
         gdk-pixbuf
         glew110
         glib
-        gnome2.GConf
-        gnome2.pango
+        stable.gnome2.GConf
+        pango
         gtk2
         gtk3
         icu
@@ -5966,6 +5966,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 
     virtualisation.podman = {
       enable = true;
+      package = pkgs.stable.podman;
     };
 
   }
@@ -7891,6 +7892,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 
         programs.steam = {
           enable = true;
+          package = pkgs.stable.steam;
           extraCompatPackages = [
             pkgs.proton-ge-bin
           ];
@@ -8357,7 +8359,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       picard-tools
       audacity
       sox
-      feishin
+      stable.feishin
 
       # printing
       cups
@@ -8410,7 +8412,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       vesktop # discord client
       nextcloud-client
       spotify-player
-      element-desktop-wayland
+      element-desktop
       nicotine-plus
       stable.transmission
       mktorrent
@@ -11021,7 +11023,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 
       quark-goldleaf
       # gog games installing
-      heroic
+      # heroic
 
       # minecraft
       prismlauncher # has overrides
