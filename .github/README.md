@@ -144,6 +144,10 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
     - and [Wombat's book](https://mhwombat.codeberg.page/nix-book/)
     - or the [Zero to Nix series](https://zero-to-nix.com/)
     - Practical nix flakes article: https://serokell.io/blog/practical-nix-flakes
+  - A bit on Overlays:
+    - Overview on overlays: [Mastering Nixpkgs overlays article](https://nixcademy.com/posts/mastering-nixpkgs-overlays-techniques-and-best-practice/)
+    - Some examples on best practises: [Do's and Don'ts of overlays](https://flyingcircus.io/news/detailsansicht/nixos-the-dos-and-donts-of-nixpkgs-overlays)
+    - Blog article about overrides: https://bobvanderlinden.me/customizing-packages-in-nix/#using-modified-packages
   - Also useful is the [official NixOS Wiki](https://wiki.nixos.org/wiki/NixOS_Wiki)
     - there is also the [unofficial NixOS Wiki](https://nixos.wiki/) that tends to be a bit outdated, use with care
 - Some resources for specific nix tools:
