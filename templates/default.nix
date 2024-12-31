@@ -5,6 +5,7 @@ let
     "rust"
     "go"
     "cpp"
+    "default"
   ];
 in
 lib.swarselsystems.mkTemplates templateNames
