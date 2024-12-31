@@ -1376,6 +1376,8 @@ create a new one."
     c-ts-mode
     c++-mode
     c++-ts-mode
+    go-mode
+    go-ts-mode
     rust-ts-mode
     rustic-mode
     tex-mode

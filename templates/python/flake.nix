@@ -1,7 +1,7 @@
 # based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
 
 {
-  description = "Hello world flake using uv2nix";
+  description = "Python flake using uv2nix";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

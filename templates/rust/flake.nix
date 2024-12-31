@@ -1,5 +1,6 @@
+# heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/rust-fenix-naersk/flake.nix
 {
-  description = "Nix Flake Template for Rust using Fenix and Naersk";
+  description = "Rust Flake using Fenix and Naersk";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
