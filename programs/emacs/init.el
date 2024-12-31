@@ -590,6 +590,15 @@ create a new one."
 (use-package evil-visual-mark-mode
   :config (evil-visual-mark-mode))
 
+(use-package evil-textobj-tree-sitter)
+;; bind `function.outer`(entire function block) to `f` for use in things like `vaf`, `yaf`
+(define-key evil-outer-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.outer"))
+;; bind `function.inner`(function block without name and args) to `f` for use in things like `vif`, `yif`
+(define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
+
+;; You can also bind multiple items and we will match the first one we can find
+(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
@@ -1118,39 +1127,42 @@ create a new one."
 
 (use-package rg)
 
-(use-package emacs
-  :ensure nil
-  :init
-  (setq treesit-language-source-alist
-        '((bash . ("https://github.com/tree-sitter/tree-sitter-bash"))
-          (c . ("https://github.com/tree-sitter/tree-sitter-c"))
-          (cmake . ("https://github.com/uyha/tree-sitter-cmake"))
-          (cpp . ("https://github.com/tree-sitter/tree-sitter-cpp"))
-          (css . ("https://github.com/tree-sitter/tree-sitter-css"))
-          (elisp . ("https://github.com/Wilfred/tree-sitter-elisp"))
-          (go . ("https://github.com/tree-sitter/tree-sitter-go"))
-          (html . ("https://github.com/tree-sitter/tree-sitter-html"))
-          (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
-          (json . ("https://github.com/tree-sitter/tree-sitter-json"))
-          (julia . ("https://github.com/tree-sitter/tree-sitter-julia"))
-          (latex . ("https://github.com/latex-lsp/tree-sitter-latex"))
-          (make . ("https://github.com/alemuller/tree-sitter-make"))
-          (markdown . ("https://github.com/ikatyang/tree-sitter-markdown"))
-          (nix . ("https://github.com/nix-community/tree-sitter-nix"))
-          (R . ("https://github.com/r-lib/tree-sitter-r"))
-          (python . ("https://github.com/tree-sitter/tree-sitter-python"))
-          (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "typescript/src" "typescript"))
-          (rust . ("https://github.com/tree-sitter/tree-sitter-rust"))
-          (sql . ("https://github.com/m-novikov/tree-sitter-sql"))
-          (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
-          (tsx  . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
-          (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))))
-  )
+;; (use-package emacs
+;;   :ensure nil
+;;   :init
+;;   (setq treesit-language-source-alist
+;;         '((bash . ("https://github.com/tree-sitter/tree-sitter-bash"))
+;;           (c . ("https://github.com/tree-sitter/tree-sitter-c"))
+;;           (cmake . ("https://github.com/uyha/tree-sitter-cmake"))
+;;           (cpp . ("https://github.com/tree-sitter/tree-sitter-cpp"))
+;;           (css . ("https://github.com/tree-sitter/tree-sitter-css"))
+;;           (elisp . ("https://github.com/Wilfred/tree-sitter-elisp"))
+;;           (go . ("https://github.com/tree-sitter/tree-sitter-go"))
+;;           (html . ("https://github.com/tree-sitter/tree-sitter-html"))
+;;           (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
+;;           (json . ("https://github.com/tree-sitter/tree-sitter-json"))
+;;           (julia . ("https://github.com/tree-sitter/tree-sitter-julia"))
+;;           (latex . ("https://github.com/latex-lsp/tree-sitter-latex"))
+;;           (make . ("https://github.com/alemuller/tree-sitter-make"))
+;;           (markdown . ("https://github.com/ikatyang/tree-sitter-markdown"))
+;;           (nix . ("https://github.com/nix-community/tree-sitter-nix"))
+;;           (R . ("https://github.com/r-lib/tree-sitter-r"))
+;;           (python . ("https://github.com/tree-sitter/tree-sitter-python"))
+;;           (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "typescript/src" "typescript"))
+;;           (rust . ("https://github.com/tree-sitter/tree-sitter-rust"))
+;;           (sql . ("https://github.com/m-novikov/tree-sitter-sql"))
+;;           (toml . ("https://github.com/tree-sitter/tree-sitter-toml"))
+;;           (tsx  . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
+;;           (yaml . ("https://github.com/ikatyang/tree-sitter-yaml"))))
+;;   )
 
 (use-package treesit-auto
+  :custom
+  (setq treesit-auto-install t)
   :config
-  (global-treesit-auto-mode)
-  (setq treesit-auto-install 'prompt))
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (global-treesit-auto-mode))
+
 ;; (use-package direnv
 ;;   :custom (direnv-always-show-summary nil)
 ;;   :config (direnv-mode))
