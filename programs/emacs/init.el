@@ -1151,10 +1151,12 @@ create a new one."
   :config
   (global-treesit-auto-mode)
   (setq treesit-auto-install 'prompt))
+;; (use-package direnv
+;;   :custom (direnv-always-show-summary nil)
+;;   :config (direnv-mode))
 
-(use-package direnv
-  :custom (direnv-always-show-summary nil)
-  :config (direnv-mode))
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
 
 (use-package avy
   :bind

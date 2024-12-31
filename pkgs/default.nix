@@ -24,6 +24,7 @@ let
     "ts2t"
     "vershell"
     "eontimer"
+    "project"
   ];
 in
 lib.swarselsystems.mkPackages packageNames pkgs

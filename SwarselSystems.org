@@ -415,61 +415,63 @@ In this section I am creating some attributes that define general concepts of my
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
 
-  inherit lib nixModules mixedModules homeModules;
+    inherit lib nixModules mixedModules homeModules;
 
-  nixosModules = import ./modules/nixos { inherit lib; };
-  homeManagerModules = import ./modules/home { inherit lib; };
-  packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
-  formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-  overlays = import ./overlays { inherit self lib inputs; };
+    nixosModules = import ./modules/nixos { inherit lib; };
+    homeManagerModules = import ./modules/home { inherit lib; };
+    packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+    formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+    overlays = import ./overlays { inherit self lib inputs; };
 
-  apps = lib.swarselsystems.forAllSystems (system:
-    let
-      appNames = [
-        "swarsel-bootstrap"
-        "swarsel-install"
-        "swarsel-rebuild"
-        "swarsel-postinstall"
-      ];
-      appSet = lib.swarselsystems.mkApps system appNames self;
-    in
-      {
-        inherit appSet;
-        default = appSet.bootstrap;
-      });
+    apps = lib.swarselsystems.forAllSystems (system:
+      let
+        appNames = [
+          "swarsel-bootstrap"
+          "swarsel-install"
+          "swarsel-rebuild"
+          "swarsel-postinstall"
+        ];
+        appSet = lib.swarselsystems.mkApps system appNames self;
+      in
+        {
+          inherit appSet;
+          default = appSet.bootstrap;
+        });
 
-  devShells = lib.swarselsystems.forAllSystems (system:
-    let
-      pkgs = lib.swarselsystems.pkgsFor.${system};
-      checks = self.checks.${system};
-    in
-      {
-        default = pkgs.mkShell {
-          NIX_CONFIG = "experimental-features = nix-command flakes";
-          inherit (checks.pre-commit-check) shellHook;
-          buildInputs = checks.pre-commit-check.enabledPackages;
-          nativeBuildInputs = [
-            pkgs.nix
-            pkgs.home-manager
-            pkgs.git
-            pkgs.just
-            pkgs.age
-            pkgs.ssh-to-age
-            pkgs.sops
-            pkgs.statix
-            pkgs.deadnix
-            pkgs.nixpkgs-fmt
-          ];
-        };
-      }
-  );
+    devShells = lib.swarselsystems.forAllSystems (system:
+      let
+        pkgs = lib.swarselsystems.pkgsFor.${system};
+        checks = self.checks.${system};
+      in
+        {
+          default = pkgs.mkShell {
+            NIX_CONFIG = "experimental-features = nix-command flakes";
+            inherit (checks.pre-commit-check) shellHook;
+            buildInputs = checks.pre-commit-check.enabledPackages;
+            nativeBuildInputs = [
+              pkgs.nix
+              pkgs.home-manager
+              pkgs.git
+              pkgs.just
+              pkgs.age
+              pkgs.ssh-to-age
+              pkgs.sops
+              pkgs.statix
+              pkgs.deadnix
+              pkgs.nixpkgs-fmt
+            ];
+          };
+        }
+    );
 
-  checks = lib.swarselsystems.forAllSystems (system:
-    let
-      pkgs = nixpkgs.legacyPackages.${system};
-    in
-      import ./checks { inherit self inputs system pkgs; }
-  );
+    templates = import ./templates;
+
+    checks = lib.swarselsystems.forAllSystems (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in
+        import ./checks { inherit self inputs system pkgs; }
+    );
 
 #+end_src
 
@@ -2071,6 +2073,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "ts2t"
       "vershell"
       "eontimer"
+      "project"
     ];
   in
   lib.swarselsystems.mkPackages packageNames pkgs
@@ -3530,6 +3533,26 @@ This script allows for quick git branch switching.
 
   }
 
+#+end_src
+
+**** project
+
+#+begin_src shell :tangle scripts/project.sh
+  set -euo pipefail
+
+  if [ ! -d "$(pwd)/.git" ]; then
+      git init
+  fi
+  nix flake init --template "$FLAKE"#"$1"
+  direnv allow
+#+end_src
+
+#+begin_src nix :tangle pkgs/project/default.nix
+  { self, name, writeShellApplication }:
+  writeShellApplication {
+    inherit name;
+    text = builtins.readFile "${self}/scripts/${name}.sh";
+  }
 #+end_src
 
 *** Overlays (additions, overrides, nixpkgs-stable)
@@ -8545,42 +8568,9 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       ts2t
       vershell
       eontimer
+      project
 
       swarsel-bootstrap
-
-      (pkgs.writeScriptBin "project" ''
-        #! ${pkgs.bash}/bin/bash
-        if [ "$1" == "rust" ]; then
-        cp ~/.dotfiles/templates/rust_flake.nix ./flake.nix
-        cp ~/.dotfiles/templates/toolchain.toml .
-        elif [ "$1" == "cpp" ]; then
-        cp ~/.dotfiles/templates/cpp_flake.nix ./flake.nix
-        elif [ "$1" == "python" ]; then
-        cp ~/.dotfiles/templates/py_flake.nix ./flake.nix
-        elif [ "$1" == "cuda" ]; then
-        cp ~/.dotfiles/templates/cu_flake.nix ./flake.nix
-        elif [ "$1" == "other" ]; then
-        cp ~/.dotfiles/templates/other_flake.nix ./flake.nix
-        elif [ "$1" == "latex" ]; then
-          if [ "$2" == "" ]; then
-          echo "No filename specified, usage: 'project latex <NAME>'"
-          exit 0
-          fi
-        cp ~/.dotfiles/templates/tex_standard.tex ./"$2".tex
-        exit 0
-        else
-        echo "No valid argument given. Valid arguments are rust cpp python, cuda"
-        exit 0
-        fi
-        echo "use flake" >> .envrc
-        direnv allow
-      '')
-
-
-
-
-
-
     ];
   }
 #+end_src
@@ -8954,6 +8944,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
   {
     programs.direnv = {
       enable = true;
+      silent = true;
       nix-direnv.enable = true;
     };
   }
@@ -13394,11 +13385,16 @@ In order to update the language grammars, run the next command below.
 :CUSTOM_ID: h:82ddeef2-99f8-465b-ba36-07c3eaad717b
 :END:
 
+In emacs, there are two packages for managing dev environments - emacs-direnv (direnv) and envrc. Direnv uses the global Emacs environment whereas envrc is buffer-local. I do not really care about this difference. What is more important to me is that emacs should not block upon handling a bigger flake.nix while setting up the dev environment. This seems to be better handled by envrc.
+
 #+begin_src emacs-lisp
 
-  (use-package direnv
-    :custom (direnv-always-show-summary nil)
-    :config (direnv-mode))
+  ;; (use-package direnv
+  ;;   :custom (direnv-always-show-summary nil)
+  ;;   :config (direnv-mode))
+
+  (use-package envrc
+    :hook (after-init . envrc-global-mode))
 
 #+end_src
 
