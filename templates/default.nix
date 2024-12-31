@@ -4,6 +4,7 @@ let
     "python"
     "rust"
     "go"
+    "cpp"
   ];
 in
 lib.swarselsystems.mkTemplates templateNames
