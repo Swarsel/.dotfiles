@@ -13,16 +13,16 @@ in
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${profilesPath}/optional/nixos/virtualbox.nix"
-    # "${profilesPath}/optional/nixos/vmware.nix"
-    "${profilesPath}/optional/nixos/autologin.nix"
-    "${profilesPath}/optional/nixos/nswitch-rcm.nix"
-    "${profilesPath}/optional/nixos/gaming.nix"
+    "${profilesPath}/nixos/optional/virtualbox.nix"
+    # "${profilesPath}/nixos/optional/vmware.nix"
+    "${profilesPath}/nixos/optional/autologin.nix"
+    "${profilesPath}/nixos/optional/nswitch-rcm.nix"
+    "${profilesPath}/nixos/optional/gaming.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = outputs.mixedModules ++ [
-        "${profilesPath}/optional/home/gaming.nix"
+        "${profilesPath}/home/optional/gaming.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);

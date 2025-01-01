@@ -6,13 +6,13 @@ in
   imports = [
 
     inputs.sops-nix.nixosModules.sops
-    "${profilesPath}/server/nixos"
+    "${profilesPath}/nixos/server"
     ./hardware-configuration.nix
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = [
-        "${profilesPath}/server/home"
+        "${profilesPath}/home/server"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
 

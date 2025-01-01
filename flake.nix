@@ -100,7 +100,7 @@
         inputs.sops-nix.nixosModules.sops
         inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         inputs.nix-topology.nixosModules.default
-        ./profiles/common/nixos
+        ./profiles/nixos/common
       ];
 
       # Home-Manager modules wanted on non-NixOS systems
@@ -112,7 +112,7 @@
       mixedModules = [
         inputs.sops-nix.homeManagerModules.sops
         inputs.nix-index-database.hmModules.nix-index
-        ./profiles/common/home
+        ./profiles/home/common
       ];
 
     in

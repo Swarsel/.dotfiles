@@ -9,13 +9,13 @@ in
 
     ./hardware-configuration.nix
 
-    "${profilesPath}/optional/nixos/autologin.nix"
-    "${profilesPath}/server/nixos"
+    "${profilesPath}/nixos/optional/autologin.nix"
+    "${profilesPath}/nixos/server"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = [
-        "${profilesPath}/server/home"
+        "${profilesPath}/home/server"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
 

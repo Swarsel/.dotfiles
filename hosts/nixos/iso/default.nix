@@ -18,7 +18,7 @@ in
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = [
-        "${self}/profiles/common/home/settings.nix"
+        "${self}/profiles/home/common/settings.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ];

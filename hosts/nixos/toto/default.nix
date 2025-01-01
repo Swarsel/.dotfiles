@@ -16,23 +16,23 @@ in
     inputs.impermanence.nixosModules.impermanence
     inputs.lanzaboote.nixosModules.lanzaboote
 
-    "${profilesPath}/optional/nixos/autologin.nix"
-    "${profilesPath}/common/nixos/settings.nix"
-    "${profilesPath}/common/nixos/home-manager.nix"
-    "${profilesPath}/common/nixos/xserver.nix"
-    "${profilesPath}/common/nixos/users.nix"
-    "${profilesPath}/common/nixos/impermanence.nix"
-    "${profilesPath}/common/nixos/lanzaboote.nix"
-    "${profilesPath}/common/nixos/sops.nix"
-    "${profilesPath}/server/nixos/ssh.nix"
+    "${profilesPath}/nixos/optional/autologin.nix"
+    "${profilesPath}/nixos/common/settings.nix"
+    "${profilesPath}/nixos/common/home-manager.nix"
+    "${profilesPath}/nixos/common/xserver.nix"
+    "${profilesPath}/nixos/common/users.nix"
+    "${profilesPath}/nixos/common/impermanence.nix"
+    "${profilesPath}/nixos/common/lanzaboote.nix"
+    "${profilesPath}/nixos/common/sops.nix"
+    "${profilesPath}/nixos/server/ssh.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users.swarsel.imports = [
         inputs.sops-nix.homeManagerModules.sops
-        "${profilesPath}/common/home/settings.nix"
-        "${profilesPath}/common/home/sops.nix"
-        "${profilesPath}/common/home/ssh.nix"
+        "${profilesPath}/home/common/settings.nix"
+        "${profilesPath}/home/common/sops.nix"
+        "${profilesPath}/home/common/ssh.nix"
 
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }

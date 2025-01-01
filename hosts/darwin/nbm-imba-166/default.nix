@@ -4,12 +4,12 @@ let
 in
 {
   imports = [
-    "${profilesPath}/darwin/common/nixos"
+    "${profilesPath}/darwin/nixos/common"
 
     inputs.home-manager.darwinModules.home-manager
     {
       home-manager.users."leon.schwarzaeugl".imports = [
-        "${profilesPath}/darwin/common/home"
+        "${profilesPath}/darwin/home"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules);

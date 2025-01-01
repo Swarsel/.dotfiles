@@ -4,7 +4,7 @@ let
 in
 {
   imports = [
-    "${profilesPath}/common/home/settings.nix"
+    "${profilesPath}/home/common/settings.nix"
     ./symlink.nix
   ];
 }

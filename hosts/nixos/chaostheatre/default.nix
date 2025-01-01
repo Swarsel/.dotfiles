@@ -8,7 +8,7 @@ in
 
     ./hardware-configuration.nix
 
-    "${profilesPath}/optional/nixos/autologin.nix"
+    "${profilesPath}/nixos/optional/autologin.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {

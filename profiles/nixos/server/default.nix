@@ -4,14 +4,14 @@ let
 in
 {
   imports = [
-    "${profilesPath}/common/nixos/settings.nix"
-    "${profilesPath}/common/nixos/home-manager.nix"
-    "${profilesPath}/common/nixos/xserver.nix"
-    "${profilesPath}/common/nixos/gc.nix"
-    "${profilesPath}/common/nixos/store.nix"
-    "${profilesPath}/common/nixos/time.nix"
-    "${profilesPath}/common/nixos/users.nix"
-    "${profilesPath}/common/nixos/nix-ld.nix"
+    "${profilesPath}/nixos/common/settings.nix"
+    "${profilesPath}/nixos/common/home-manager.nix"
+    "${profilesPath}/nixos/common/xserver.nix"
+    "${profilesPath}/nixos/common/gc.nix"
+    "${profilesPath}/nixos/common/store.nix"
+    "${profilesPath}/nixos/common/time.nix"
+    "${profilesPath}/nixos/common/users.nix"
+    "${profilesPath}/nixos/common/nix-ld.nix"
     ./settings.nix
     ./packages.nix
     ./sops.nix
