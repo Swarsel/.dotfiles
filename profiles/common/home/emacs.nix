@@ -16,7 +16,7 @@
       extraEmacsPackages = epkgs: [
         epkgs.mu4e
         epkgs.use-package
-        # epkgs.lsp-bridge
+        epkgs.lsp-bridge
         epkgs.doom-themes
         epkgs.vterm
         epkgs.treesit-grammars.with-all-grammars

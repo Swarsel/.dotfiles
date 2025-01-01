@@ -81,7 +81,7 @@
     # cudatoolkit
     # ansible
     # ansible-lint
-    # ansible-language-server
+    ansible-language-server
     # molecule
     #lsp-bridge / python
     # gcc

@@ -4680,7 +4680,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # cudatoolkit
       # ansible
       # ansible-lint
-      # ansible-language-server
+      ansible-language-server
       # molecule
       #lsp-bridge / python
       # gcc
@@ -9820,7 +9820,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
         extraEmacsPackages = epkgs: [
           epkgs.mu4e
           epkgs.use-package
-          # epkgs.lsp-bridge
+          epkgs.lsp-bridge
           epkgs.doom-themes
           epkgs.vterm
           epkgs.treesit-grammars.with-all-grammars
@@ -11729,73 +11729,6 @@ These functions are used here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][Corfu]
 
 #+end_src
 
-**** Nix common prefix bracketer
-:PROPERTIES:
-:CUSTOM_ID: h:79288251-3b8d-4bc4-ae2c-448fce709fbd
-:END:
-
-This function searches for common delimiters in region and removes them, summarizing all captured lines by it.
-
-#+begin_src emacs-lisp
-
-  (defun swarsel/prefix-block (start end)
-    (interactive "r")
-    (save-excursion
-      (goto-char start)
-      (setq start (line-beginning-position))
-      (goto-char end)
-      (setq end (line-end-position))
-      (let ((common-prefix (save-excursion
-                             (goto-char start)
-                             (if (re-search-forward "^\\([^.\n]+\\)\\." end t)
-                                 (match-string 1)
-                               (error "No common prefix found")))))
-        (save-excursion
-          (goto-char start)
-          (insert common-prefix " = {\n")
-          (goto-char (+ end (length common-prefix) 6))
-          (insert "};\n")
-          (goto-char start)
-          (while (re-search-forward (concat "^" (regexp-quote common-prefix) "\\.") end t)
-            (replace-match ""))))))
-
-#+end_src
-
-**** Nix formatters
-:PROPERTIES:
-:CUSTOM_ID: h:a6b9dd66-571b-4916-8793-65b6a17afd76
-:END:
-
-This formats the org code block at =point= in accordance to the =nixpkgs-fmt= formatter
-
-#+begin_src emacs-lisp
-
-  (defun swarsel/org-nixpkgs-fmt-block-lite ()
-    (interactive)
-    (org-babel-mark-block)
-    (call-interactively 'nixpkgs-fmt-region))
-
-
-  (defun swarsel/org-nixpkgs-fmt-block ()
-    (interactive)
-    (save-excursion
-      (let* ((element (org-element-at-point))
-             (begin (org-element-property :begin element))
-             (end (org-element-property :end element))
-             (lang (org-element-property :language element)))
-        (when lang
-          (goto-char begin)
-          (forward-line)
-          (insert "{")
-          (goto-char end)
-          (forward-line -1)
-          (beginning-of-line)
-          (forward-char -1)
-          (insert "}")
-          (org-babel-mark-block)
-          (call-interactively 'nixpkgs-fmt-region)))))
-#+end_src
-
 **** Disable garbace collection while minibuffer is active
 :PROPERTIES:
 :CUSTOM_ID: h:3c436647-71e6-441c-b452-d817ad2f8331
@@ -12099,6 +12032,8 @@ Normally when switching themes in emacs, the user will be warned that themes can
 
 When Emacs compiles stuff, it often shows a bunch of warnings that I do not need to deal with. Here we silence those. Some will be disabled completely, and some only when we have native compilation available (which should be most of the time, however).
 
+This is really not needed anymore ever since I started managing my emacs packages with nix, but I still keep this around in case I ever move away from it.
+
 #+begin_src emacs-lisp
 
   (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
@@ -12113,7 +12048,7 @@ When Emacs compiles stuff, it often shows a bunch of warnings that I do not need
 :CUSTOM_ID: h:1667913c-2272-4010-bf3a-356455b97c83
 :END:
 
-This sets up automatic garbage collection when the frame is unused.
+This sets up automatic garbage collection when the frame is unused. There is a lot of discussion on whether it is smart to tamper with garbage collection - in my eyes it is worth running this, because I often times switch away from Emacs for a while when researching. That times can be then used to run GC.
 
 #+begin_src emacs-lisp
   (setq garbage-collection-messages nil)
@@ -12331,6 +12266,10 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 #+end_src
 **** evil-textobj-tree-sitter
 
+This adds support for tree-sitter objects. This allows for the following chords:
+  - "...af" around function
+  - "...if" inside function
+
 #+begin_src emacs-lisp
 
   (use-package evil-textobj-tree-sitter)
@@ -12340,7 +12279,8 @@ This minor-mode adds functionality for doing better surround-commands; for examp
   (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
 
   ;; You can also bind multiple items and we will match the first one we can find
-  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+  (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
+
 #+end_src
 *** ispell
 :PROPERTIES:
@@ -13222,6 +13162,14 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
     :mode "Jenkinsfile")
 
 #+end_src
+*** Ansible
+
+
+#+begin_src emacs-lisp
+
+(use-package ansible)
+
+#+end_src
 *** Dockerfile
 :PROPERTIES:
 :CUSTOM_ID: h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3
@@ -13842,15 +13790,26 @@ Still, this is avery convenient package.
 :CUSTOM_ID: h:6cf0310b-2fdf-45f0-9845-4704649777eb
 :END:
 
-After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say that =eglot= feels the most clean and fast to me.
+Up comes the section of lsp clients for Emacs. For a longer time, I thought that I had to choose one only, and after having started with =lsp-mode= I had tried out =lsp-booster= and then went to =eglot=. My requirements are as follow:
+
+Must have:
+  - mostly unintrusive, non-blocking
+  - fast (configurable) completion
+  - xref (or similar)
+
+Nice to have:
+  - Debugger
+  - Multi-lsp support (running two lsp's on a single project)
+  - Native Emacs support
+
+=eglot= fills most items on the first list except for the non-blocking issue initially. It blocks sometimes on bigger projects as well as when entering directories using (nix-)direnv and the lsp is not yet loaded. The first issue is solved by using =eglot-booster=, which increases the parsing speed by what feels like a huge margin (but I never ran any actual tests). The second issue is solved with =eglot-sync-connect=, which avoids blocking the interface while the server is starting.
+
+A blocking issue can still occur while entering a direnv that has a longer evaluation/build time. That issue can only be fixed by using Mic92's [[https://github.com/Mic92/emacs-direnv][emacs-direnv fork]], which calls direnv asynchronously, which in turn avoids the blocking. I am not using this on a daily basis however, since my environments are normally cached anyways and most of them (except for the LaTeX one) are not blocking for long enough for this to be worth it. However, I am considering spinning up my own fork of this at some point.
 
 
 #+begin_src emacs-lisp
 
   (use-package eglot
-    :config
-    (add-to-list 'eglot-server-programs
-                 '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
     :hook
     ((python-mode
       python-ts-mode
@@ -13864,7 +13823,6 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
       rustic-mode
       tex-mode
       LaTeX-mode
-      yaml-ts-mode
       ) . (lambda () (progn
                        (eglot-ensure)
                        (add-hook 'before-save-hook 'eglot-format nil 'local))))
@@ -13889,6 +13847,41 @@ After having tried out =lsp-mode= and =lsp-bridge= for a while each, I must say 
     (eglot-booster-mode))
 
   (defalias 'start-lsp-server #'eglot)
+
+#+end_src
+*** lsp-mode & company
+
+
+#+begin_src emacs-lisp
+
+  (use-package lsp-bridge
+    :ensure nil)
+
+  (use-package lsp-mode
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :commands lsp)
+
+  (use-package company)
+
+#+end_src
+
+*** lsp-bridge
+
+
+#+begin_src emacs-lisp
+
+  (use-package lsp-bridge
+    :ensure nil)
+
+  (use-package lsp-mode
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :commands lsp)
+
+  (use-package company)
 
 #+end_src
 

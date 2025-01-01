@@ -210,52 +210,6 @@ create a new one."
   (corfu-quit)
   (evil-next-visual-line))
 
-(defun swarsel/prefix-block (start end)
-  (interactive "r")
-  (save-excursion
-    (goto-char start)
-    (setq start (line-beginning-position))
-    (goto-char end)
-    (setq end (line-end-position))
-    (let ((common-prefix (save-excursion
-                           (goto-char start)
-                           (if (re-search-forward "^\\([^.\n]+\\)\\." end t)
-                               (match-string 1)
-                             (error "No common prefix found")))))
-      (save-excursion
-        (goto-char start)
-        (insert common-prefix " = {\n")
-        (goto-char (+ end (length common-prefix) 6))
-        (insert "};\n")
-        (goto-char start)
-        (while (re-search-forward (concat "^" (regexp-quote common-prefix) "\\.") end t)
-          (replace-match ""))))))
-
-(defun swarsel/org-nixpkgs-fmt-block-lite ()
-  (interactive)
-  (org-babel-mark-block)
-  (call-interactively 'nixpkgs-fmt-region))
-
-
-(defun swarsel/org-nixpkgs-fmt-block ()
-  (interactive)
-  (save-excursion
-    (let* ((element (org-element-at-point))
-           (begin (org-element-property :begin element))
-           (end (org-element-property :end element))
-           (lang (org-element-property :language element)))
-      (when lang
-        (goto-char begin)
-        (forward-line)
-        (insert "{")
-        (goto-char end)
-        (forward-line -1)
-        (beginning-of-line)
-        (forward-char -1)
-        (insert "}")
-        (org-babel-mark-block)
-        (call-interactively 'nixpkgs-fmt-region)))))
-
 (defun swarsel/minibuffer-setup-hook ()
   (setq gc-cons-threshold most-positive-fixnum))
 
@@ -597,7 +551,7 @@ create a new one."
 (define-key evil-inner-text-objects-map "f" (evil-textobj-tree-sitter-get-textobj "function.inner"))
 
 ;; You can also bind multiple items and we will match the first one we can find
-(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("conditional.outer" "loop.outer")))
+(define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
 
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
@@ -1065,6 +1019,8 @@ create a new one."
 (use-package jenkinsfile-mode
   :mode "Jenkinsfile")
 
+(use-package ansible)
+
 (use-package dockerfile-mode
   :mode "Dockerfile")
 
@@ -1367,9 +1323,6 @@ create a new one."
   :bind ("M-/" . evilnc-comment-or-uncomment-lines))
 
 (use-package eglot
-  :config
-  (add-to-list 'eglot-server-programs
-               '(yaml-ts-mode . ("ansible-language-server" "--stdio")))
   :hook
   ((python-mode
     python-ts-mode
@@ -1383,7 +1336,6 @@ create a new one."
     rustic-mode
     tex-mode
     LaTeX-mode
-    yaml-ts-mode
     ) . (lambda () (progn
                      (eglot-ensure)
                      (add-hook 'before-save-hook 'eglot-format nil 'local))))
@@ -1408,6 +1360,28 @@ create a new one."
   (eglot-booster-mode))
 
 (defalias 'start-lsp-server #'eglot)
+
+(use-package lsp-bridge
+  :ensure nil)
+
+(use-package lsp-mode
+  :init
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :commands lsp)
+
+(use-package company)
+
+(use-package lsp-bridge
+  :ensure nil)
+
+(use-package lsp-mode
+  :init
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  (setq lsp-keymap-prefix "C-c l")
+  :commands lsp)
+
+(use-package company)
 
 (use-package sideline-flymake
   :hook (flymake-mode . sideline-mode)
