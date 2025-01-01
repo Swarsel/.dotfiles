@@ -171,7 +171,7 @@
 
       checks = lib.swarselsystems.forAllSystems (system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = lib.swarselsystems.pkgsFor.${system};
         in
         import ./checks { inherit self inputs system pkgs; }
       );

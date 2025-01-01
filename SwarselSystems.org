@@ -419,7 +419,7 @@ In this section I am creating some attributes that define general concepts of my
 
     checks = lib.swarselsystems.forAllSystems (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = lib.swarselsystems.pkgsFor.${system};
       in
         import ./checks { inherit self inputs system pkgs; }
     );
