@@ -845,6 +845,7 @@ My work machine. Built for more security, this is the gold standard of my config
     profilesPath = "${self}/profiles";
     sharedOptions = {
       isBtrfs = true;
+      isLinux = true;
     };
   in
   {
@@ -919,7 +920,6 @@ My work machine. Built for more security, this is the gold standard of my config
         isImpermanence = false;
         isSecureBoot = true;
         isCrypted = true;
-        isLinux = true;
       }
       sharedOptions;
 
@@ -1553,6 +1553,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
     profilesPath = "${self}/profiles";
     sharedOptions = {
       isBtrfs = true;
+      isLinux = true;
     };
   in
   {
@@ -1621,7 +1622,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
         isCrypted = true;
         isSecureBoot = false;
         isSwap = true;
-        isLinux = true;
         swapSize = "8G";
         # rootDisk = "/dev/nvme0n1";
         rootDisk = "/dev/vda";
@@ -2095,6 +2095,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
       "vershell"
       "eontimer"
       "project"
+      "fhs"
     ];
   in
   lib.swarselsystems.mkPackages packageNames pkgs
@@ -3504,25 +3505,37 @@ This script allows for quick git branch switching.
 This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/eontimer/default.nix
-  { pkgs, python3Packages, ... }:
-
-  python3Packages.buildPythonApplication rec {
+  { lib
+  , python3
+  , fetchFromGitHub
+  , makeDesktopItem
+  , writeShellScript
+  , ...
+  }:
+  let
+    wrapper = writeShellScript "eontimer-wrapper" ''
+      export QT_QPA_PLATFORM=xcb
+      exec @out@/bin/EonTimer
+    '';
+  in
+  python3.pkgs.buildPythonApplication rec {
     pname = "eontimer";
-    version = "3.0.0";
+    version = "3.0.0-rc.6";
     pyproject = true;
 
-    src = pkgs.fetchFromGitHub {
+    src = fetchFromGitHub {
       owner = "DasAmpharos";
       repo = "EonTimer";
-      rev = "9449e6158f0aa6eaa24b3b1d0a427aa198b5c0e4";
+      rev = version;
       hash = "sha256-+XN/VGGlEg2gVncRZrWDOZ2bfxt8xyIu22F2wHlG6YI=";
     };
 
-    build-system = with python3Packages; [
-      setuptools
+    build-system = [
+      python3.pkgs.setuptools
+      python3.pkgs.wheel
     ];
 
-    dependencies = with python3Packages; [
+    dependencies = with python3.pkgs; [
       altgraph
       certifi
       charset-normalizer
@@ -3542,16 +3555,50 @@ This script allows for quick git branch switching.
       urllib3
     ];
 
+    nativeBuildInputs = [
+      python3.pkgs.pyinstaller
+    ];
+
     buildPhase = ''
-      ${pkgs.python3Packages.pyinstaller}/bin/pyinstaller EonTimer.spec
+      runHook preBuild
+
+      pyinstaller --clean --noconfirm EonTimer.spec
+
+      runHook postBuild
     '';
 
     installPhase = ''
+      runHook preInstall
+
       mkdir -p $out/bin
+      mkdir -p $out/share/applications
       cp dist/EonTimer $out/bin/
+      install -Dm755 -T ${wrapper} $out/bin/eontimer
+      substituteInPlace $out/bin/eontimer --subst-var out
+
+      runHook postInstall
+    '';
+
+    postInstall = ''
+      install -Dm755 -t $out/share/applications ${
+           makeDesktopItem {
+             name = "eontimer";
+             desktopName = "EonTimer";
+             comment = "Start EonTimer";
+             exec = "eontimer";
+           }
+         }/share/applications/eontimer.desktop
     '';
 
 
+
+    meta = {
+      description = "Pokémon RNG Timer";
+      homepage = "https://github.com/DasAmpharos/EonTimer";
+      license = lib.licenses.mit;
+      maintainers = with lib.maintainers; [ ];
+      mainProgram = "eon-timer";
+    };
   }
 
 #+end_src
@@ -3574,6 +3621,23 @@ This script allows for quick git branch switching.
     inherit name;
     text = builtins.readFile "${self}/scripts/${name}.sh";
   }
+#+end_src
+
+**** fhs
+
+
+#+begin_src nix :tangle pkgs/fhs/default.nix
+  { name, pkgs, ... }:
+  let
+    base = pkgs.appimageTools.defaultFhsEnvArgs;
+  in
+  pkgs.buildFHSEnv (base // {
+    name = "fhs";
+    targetPkgs = pkgs: (base.targetPkgs pkgs) ++ [ pkgs.pkg-config ];
+    profile = "export FHS=1";
+    runScript = "zsh";
+    extraOutputsToInstall = [ "dev" ];
+  })
 #+end_src
 
 *** Overlays (additions, overrides, nixpkgs-stable)
@@ -3837,7 +3901,7 @@ This holds modules that are to be used on most hosts. These are also the most im
       "monitors"
       "input"
       "nixos"
-      "darwin"
+      "setup"
       "waybar"
       "startup"
       "wallpaper"
@@ -4078,17 +4142,18 @@ These are some extra options that will be used if the machine also runs NixOS. F
   }
 #+end_src
 
-***** darwin
+***** setup
 :PROPERTIES:
 :CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
 :END:
 
 Provides settings related to nix-darwin systems. At the moment, I am only making use of a =isDarwin= flag.
 
-#+begin_src nix :noweb yes :tangle modules/home/darwin.nix
+#+begin_src nix :noweb yes :tangle modules/home/setup.nix
   { lib, ... }:
   {
     options.swarselsystems.isDarwin = lib.mkEnableOption "darwin host";
+    options.swarselsystems.isLinux = lib.mkEnableOption "whether this is a linux machine";
   }
 #+end_src
 
@@ -8334,36 +8399,30 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix :tangle profiles/home/common/settings.nix
-  { lib, inputs, config, ... }:
+  { lib, config, ... }:
   {
-    nix =
-      let
-        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-      in
-      lib.mkIf (!config.swarselsystems.isNixos) {
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-            "ca-derivations"
-            "cgroups"
-            "pipe-operators"
-          ];
-          trusted-users = [ "@wheel" "swarsel" ];
-          connect-timeout = 5;
-          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
-          fallback = true;
-          min-free = 128000000;
-          max-free = 1000000000;
-          flake-registry = "";
-          auto-optimise-store = true;
-          warn-dirty = false;
-          max-jobs = 1;
-          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
-        };
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+    nix = lib.mkIf (!config.swarselsystems.isNixos) {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+          "ca-derivations"
+          "cgroups"
+          "pipe-operators"
+        ];
+        trusted-users = [ "@wheel" "swarsel" ];
+        connect-timeout = 5;
+        bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+        fallback = true;
+        min-free = 128000000;
+        max-free = 1000000000;
+        auto-optimise-store = true;
+        warn-dirty = false;
+        max-jobs = 1;
+        use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
       };
+    };
 
     programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
@@ -8442,6 +8501,9 @@ This holds packages that I can use as provided, or with small modifications (as 
       deadnix
       statix
       nix-tree
+      nix-diff
+      nix-visualize
+      nix-init
       manix
       comma
 
@@ -8600,7 +8662,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       vershell
       eontimer
       project
-
+      fhs
       swarsel-bootstrap
     ];
   }
@@ -9262,7 +9324,10 @@ Here we set some aliases (some of them should be shellApplications instead) as w
           cd-orig = "cd";
           cat-orig = "cat";
           cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+          nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
           nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+          nix-ldd-locate = "nix-locate --minimal --top-level -w ";
+          nix-store-search = "ls /nix/store | grep";
           fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
           lt = "eza -las modified --total-size";
           boot-diff = "nix store diff-closures /run/*-system";

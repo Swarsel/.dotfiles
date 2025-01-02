@@ -19,7 +19,10 @@
         cd-orig = "cd";
         cat-orig = "cat";
         cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+        nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
         nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+        nix-ldd-locate = "nix-locate --minimal --top-level -w ";
+        nix-store-search = "ls /nix/store | grep";
         fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
         lt = "eza -las modified --total-size";
         boot-diff = "nix store diff-closures /run/*-system";

@@ -3,6 +3,7 @@ let
   profilesPath = "${self}/profiles";
   sharedOptions = {
     isBtrfs = true;
+    isLinux = true;
   };
 in
 {
@@ -77,7 +78,6 @@ in
       isImpermanence = false;
       isSecureBoot = true;
       isCrypted = true;
-      isLinux = true;
     }
     sharedOptions;
 

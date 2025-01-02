@@ -22,7 +22,7 @@
     vershell
     eontimer
     project
-
+    fhs
     swarsel-bootstrap
   ];
 }

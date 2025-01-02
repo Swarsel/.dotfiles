@@ -6,7 +6,7 @@ let
     "monitors"
     "input"
     "nixos"
-    "darwin"
+    "setup"
     "waybar"
     "startup"
     "wallpaper"

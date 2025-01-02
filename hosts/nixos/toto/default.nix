@@ -3,6 +3,7 @@ let
   profilesPath = "${self}/profiles";
   sharedOptions = {
     isBtrfs = true;
+    isLinux = true;
   };
 in
 {
@@ -71,7 +72,6 @@ in
       isCrypted = true;
       isSecureBoot = false;
       isSwap = true;
-      isLinux = true;
       swapSize = "8G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";

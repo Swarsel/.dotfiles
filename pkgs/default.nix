@@ -25,6 +25,7 @@ let
     "vershell"
     "eontimer"
     "project"
+    "fhs"
   ];
 in
 lib.swarselsystems.mkPackages packageNames pkgs

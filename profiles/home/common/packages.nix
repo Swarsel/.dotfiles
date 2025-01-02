@@ -41,6 +41,9 @@
     deadnix
     statix
     nix-tree
+    nix-diff
+    nix-visualize
+    nix-init
     manix
     comma
 
