@@ -1,11 +1,5 @@
 { lib, ... }:
 let
-  moduleNames = [
-    "wallpaper"
-    "hardware"
-    "setup"
-    "server"
-    "input"
-  ];
+  moduleNames = lib.swarselsystems.readNix "modules/nixos";
 in
 lib.swarselsystems.mkModules moduleNames "nixos"

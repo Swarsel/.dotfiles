@@ -2070,33 +2070,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 #+begin_src nix :tangle pkgs/default.nix
   { lib, pkgs, ... }:
   let
-    packageNames = [
-      "pass-fuzzel"
-      "cura5"
-      "hm-specialisation"
-      "cdw"
-      "cdb"
-      "bak"
-      "timer"
-      "e"
-      "swarselcheck"
-      "waybarupdate"
-      "opacitytoggle"
-      "fs-diff"
-      "update-checker"
-      "github-notifications"
-      "screenshare"
-      "swarsel-bootstrap"
-      "swarsel-rebuild"
-      "swarsel-install"
-      "swarsel-postinstall"
-      "t2ts"
-      "ts2t"
-      "vershell"
-      "eontimer"
-      "project"
-      "fhs"
-    ];
+    packageNames = lib.swarselsystems.readNix "pkgs";
   in
   lib.swarselsystems.mkPackages packageNames pkgs
 
@@ -3738,17 +3712,11 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
 #+begin_src nix :tangle modules/nixos/default.nix
-  { lib, ... }:
-  let
-    moduleNames = [
-      "wallpaper"
-      "hardware"
-      "setup"
-      "server"
-      "input"
-    ];
-  in
-  lib.swarselsystems.mkModules moduleNames "nixos"
+{ lib, ... }:
+let
+  moduleNames = lib.swarselsystems.readNix "modules/nixos";
+in
+lib.swarselsystems.mkModules moduleNames "nixos"
 
 #+end_src
 
@@ -3895,19 +3863,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+BEGIN_src nix :tangle modules/home/default.nix
   { lib, ... }:
   let
-    moduleNames = [
-      "laptop"
-      "hardware"
-      "monitors"
-      "input"
-      "nixos"
-      "setup"
-      "waybar"
-      "startup"
-      "wallpaper"
-      "filesystem"
-      "firefox"
-    ];
+    moduleNames = lib.swarselsystems.readNix "modules/home";
   in
   lib.swarselsystems.mkModules moduleNames "home"
 #+end_src
@@ -4451,6 +4407,7 @@ A breakdown of each function:
     mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkHalfHost host type pkgs) hosts);
 
     readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+    readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
     mkApps = system: names: self: builtins.listToAttrs (map
       (name: {
@@ -4473,7 +4430,7 @@ A breakdown of each function:
     mkModules = names: type: builtins.listToAttrs (map
       (name: {
         inherit name;
-        value = import "${self}/modules/${type}/${name}.nix";
+        value = import "${self}/modules/${type}/${name}";
       })
       names);
 

@@ -1,17 +1,5 @@
 { lib, ... }:
 let
-  moduleNames = [
-    "laptop"
-    "hardware"
-    "monitors"
-    "input"
-    "nixos"
-    "setup"
-    "waybar"
-    "startup"
-    "wallpaper"
-    "filesystem"
-    "firefox"
-  ];
+  moduleNames = lib.swarselsystems.readNix "modules/home";
 in
 lib.swarselsystems.mkModules moduleNames "home"

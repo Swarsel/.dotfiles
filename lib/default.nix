@@ -52,6 +52,7 @@
   mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkHalfHost host type pkgs) hosts);
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
+  readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
   mkApps = system: names: self: builtins.listToAttrs (map
     (name: {
@@ -74,7 +75,7 @@
   mkModules = names: type: builtins.listToAttrs (map
     (name: {
       inherit name;
-      value = import "${self}/modules/${type}/${name}.nix";
+      value = import "${self}/modules/${type}/${name}";
     })
     names);
 
