@@ -1,11 +1,5 @@
-{ self, ... }:
-let
-  profilesPath = "${self}/profiles";
-in
+_:
 {
-  imports = [
-    "${profilesPath}/nixos/home-manager.nix"
-  ];
 
   nix.settings.experimental-features = "nix-command flakes";
   nixpkgs = {

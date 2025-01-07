@@ -4,8 +4,8 @@ let
 in
 {
   imports = [
-
     inputs.sops-nix.nixosModules.sops
+
     "${profilesPath}/nixos/server"
     ./hardware-configuration.nix
 
@@ -48,6 +48,7 @@ in
   zramSwap.enable = false;
 
   networking = {
+    nftables.enable = lib.mkForce false;
     firewall.allowedTCPPorts = [ 8384 22000 ];
     firewall.allowedUDPPorts = [ 21027 22000 ];
     hostName = "sync";

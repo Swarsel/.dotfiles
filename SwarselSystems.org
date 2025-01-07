@@ -1443,8 +1443,8 @@ This machine mainly acts as an external sync helper. It manages the following th
   in
   {
     imports = [
-
       inputs.sops-nix.nixosModules.sops
+
       "${profilesPath}/nixos/server"
       ./hardware-configuration.nix
 
@@ -1487,6 +1487,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     zramSwap.enable = false;
 
     networking = {
+      nftables.enable = lib.mkForce false;
       firewall.allowedTCPPorts = [ 8384 22000 ];
       firewall.allowedUDPPorts = [ 21027 22000 ];
       hostName = "sync";
@@ -3729,12 +3730,12 @@ lib.swarselsystems.mkModules moduleNames "nixos"
 This lets me set the wallpaper that I want to use. Duplicated with home-manager options because mixing system and user level configuration is not a good idea.
 
 #+begin_src nix :tangle modules/nixos/wallpaper.nix
-  { lib, ... }:
+  { self, lib, ... }:
 
   {
     options.swarselsystems.wallpaper = lib.mkOption {
       type = lib.types.path;
-      default = "";
+      default = "${self}/wallpaper/lenovowp.png";
     };
   }
 
@@ -5799,7 +5800,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     # So if it doesn't run, the btrfs system effectively acts like a normal system
     # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
 
-    boot.initrd.systemd.enable = true;
+    boot.initrd.systemd.enable = lib.mkIf config.swarselsystems.isImpermanence true;
 
     boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
       description = "Rollback BTRFS root subvolume to a pristine state";
@@ -5973,20 +5974,6 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
       };
     };
 
-  }
-#+end_src
-
-**** safeeyes
-:PROPERTIES:
-:CUSTOM_ID: h:d33c93f5-0ac8-44e5-8756-02dc0e6975e4
-:END:
-
-A friend of mine used this service and I used to make fun of him. But I have to admit this is actually a nice program. It forces you to look away from the screen from time to time, reducing eye strain.
-
-#+begin_src nix :tangle profiles/nixos/common/safeeyes.nix
-  _:
-  {
-    services.safeeyes.enable = true;
   }
 #+end_src
 
@@ -7845,14 +7832,8 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/darwin/nixos/default.nix
-  { self, ... }:
-  let
-    profilesPath = "${self}/profiles";
-  in
+  _:
   {
-    imports = [
-      "${profilesPath}/nixos/home-manager.nix"
-    ];
 
     nix.settings.experimental-features = "nix-command flakes";
     nixpkgs = {
