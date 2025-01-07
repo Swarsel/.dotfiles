@@ -1,10 +1,10 @@
-{ self, ... }:
+{ self, lib, ... }:
 let
+  importNames = lib.swarselsystems.readNix "profiles/home/server";
   profilesPath = "${self}/profiles";
 in
 {
-  imports = [
+  imports = lib.swarselsystems.mkImports importNames "profiles/home/server" ++ [
     "${profilesPath}/home/common/settings.nix"
-    ./symlink.nix
   ];
 }

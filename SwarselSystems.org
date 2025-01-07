@@ -4444,6 +4444,8 @@ A breakdown of each function:
       })
       names);
 
+    mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
+
     eachMonitor = _: monitor: {
       inherit (monitor) name;
       value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
@@ -4478,49 +4480,12 @@ These are system-level settings specific to NixOS machines. All settings that ar
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
 #+begin_src nix :tangle profiles/nixos/common/default.nix
-  _:
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "profiles/nixos/common";
+  in
   {
-    imports = [
-      ./settings.nix
-      ./home-manager.nix
-      ./xserver.nix
-      ./users.nix
-      ./env.nix
-      ./stylix.nix
-      ./polkit.nix
-      ./gc.nix
-      ./store.nix
-      ./systemd.nix
-      ./network.nix
-      ./time.nix
-      ./hardware.nix
-      ./pipewire.nix
-      ./sops.nix
-      ./packages.nix
-      ./programs.nix
-      ./zsh.nix
-      ./syncthing.nix
-      ./blueman.nix
-      ./networkdevices.nix
-      ./gvfs.nix
-      ./interceptiontools.nix
-      ./hardwarecompatibility.nix
-      ./login.nix
-      ./stylix.nix
-      ./power-profiles-daemon.nix
-      # ./impermanence.nix
-      ./nvd-rebuild.nix
-      ./nix-ld.nix
-      ./gnome-keyring.nix
-      ./sway.nix
-      ./xdg-portal.nix
-      # ./yubikey-touch-detector.nix
-      # ./safeeyes.nix
-      ./distrobox.nix
-      ./lid.nix
-      ./lowbattery.nix
-      ./lanzaboote.nix
-    ];
+    imports = lib.swarselsystems.mkImports importNames "profiles/nixos/common";
 
     nixpkgs.config.permittedInsecurePackages = [
       "jitsi-meet-1.0.8043"
@@ -6159,12 +6124,13 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 Also, the system state version is set here. No need to touch it.
 
 #+begin_src nix :tangle profiles/nixos/server/default.nix
-  { self, ... }:
+  { self, lib, ... }:
   let
+    importNames = lib.swarselsystems.readNix "profiles/nixos/server";
     profilesPath = "${self}/profiles";
   in
   {
-    imports = [
+    imports = lib.swarselsystems.mkImports importNames "profiles/nixos/server" ++ [
       "${profilesPath}/nixos/common/settings.nix"
       "${profilesPath}/nixos/common/home-manager.nix"
       "${profilesPath}/nixos/common/xserver.nix"
@@ -6173,31 +6139,6 @@ Also, the system state version is set here. No need to touch it.
       "${profilesPath}/nixos/common/time.nix"
       "${profilesPath}/nixos/common/users.nix"
       "${profilesPath}/nixos/common/nix-ld.nix"
-      ./settings.nix
-      ./packages.nix
-      ./sops.nix
-      ./ssh.nix
-      ./nfs.nix
-      ./nginx.nix
-      ./kavita.nix
-      ./jellyfin.nix
-      ./navidrome.nix
-      ./spotifyd.nix
-      ./mpd.nix
-      ./matrix.nix
-      ./pipewire.nix
-      ./nextcloud.nix
-      ./immich.nix
-      ./paperless.nix
-      ./transmission.nix
-      ./syncthing.nix
-      ./restic.nix
-      ./monitoring.nix
-      ./jenkins.nix
-      ./emacs.nix
-      ./forgejo.nix
-      ./ankisync.nix
-      ./freshrss.nix
     ];
   }
 #+end_src
@@ -8308,43 +8249,12 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/home/common/default.nix
-  _:
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "profiles/home/common";
+  in
   {
-    imports = [
-      ./settings.nix
-      ./packages.nix
-      ./custom-packages.nix
-      ./sops.nix
-      ./ssh.nix
-      ./stylix.nix
-      ./desktop.nix
-      ./symlink.nix
-      ./env.nix
-      ./programs.nix
-      ./nix-index.nix
-      ./password-store.nix
-      ./direnv.nix
-      ./eza.nix
-      ./git.nix
-      ./fuzzel.nix
-      ./starship.nix
-      ./kitty.nix
-      ./zsh.nix
-      ./mail.nix
-      ./emacs.nix
-      ./waybar.nix
-      ./firefox.nix
-      ./gnome-keyring.nix
-      ./kdeconnect.nix
-      ./mako.nix
-      ./sway.nix
-      ./gpg-agent.nix
-      ./gammastep.nix
-      # ./safeeyes.nix
-      ./yubikey-touch-detector.nix
-      ./zellij.nix
-      ./tmux.nix
-    ];
+    imports = lib.swarselsystems.mkImports importNames "profiles/home/common";
   }
 #+end_src
 
@@ -10975,14 +10885,14 @@ This service changes the screen hue at night. I am not sure if that really does 
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix :tangle profiles/home/server/default.nix
-  { self, ... }:
+  { self, lib, ... }:
   let
+    importNames = lib.swarselsystems.readNix "profiles/home/server";
     profilesPath = "${self}/profiles";
   in
   {
-    imports = [
+    imports = lib.swarselsystems.mkImports importNames "profiles/home/server" ++ [
       "${profilesPath}/home/common/settings.nix"
-      ./symlink.nix
     ];
   }
 #+end_src

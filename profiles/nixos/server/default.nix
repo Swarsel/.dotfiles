@@ -1,9 +1,10 @@
-{ self, ... }:
+{ self, lib, ... }:
 let
+  importNames = lib.swarselsystems.readNix "profiles/nixos/server";
   profilesPath = "${self}/profiles";
 in
 {
-  imports = [
+  imports = lib.swarselsystems.mkImports importNames "profiles/nixos/server" ++ [
     "${profilesPath}/nixos/common/settings.nix"
     "${profilesPath}/nixos/common/home-manager.nix"
     "${profilesPath}/nixos/common/xserver.nix"
@@ -12,30 +13,5 @@ in
     "${profilesPath}/nixos/common/time.nix"
     "${profilesPath}/nixos/common/users.nix"
     "${profilesPath}/nixos/common/nix-ld.nix"
-    ./settings.nix
-    ./packages.nix
-    ./sops.nix
-    ./ssh.nix
-    ./nfs.nix
-    ./nginx.nix
-    ./kavita.nix
-    ./jellyfin.nix
-    ./navidrome.nix
-    ./spotifyd.nix
-    ./mpd.nix
-    ./matrix.nix
-    ./pipewire.nix
-    ./nextcloud.nix
-    ./immich.nix
-    ./paperless.nix
-    ./transmission.nix
-    ./syncthing.nix
-    ./restic.nix
-    ./monitoring.nix
-    ./jenkins.nix
-    ./emacs.nix
-    ./forgejo.nix
-    ./ankisync.nix
-    ./freshrss.nix
   ];
 }

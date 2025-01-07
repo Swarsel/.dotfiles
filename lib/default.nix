@@ -89,6 +89,8 @@
     })
     names);
 
+  mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
+
   eachMonitor = _: monitor: {
     inherit (monitor) name;
     value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
