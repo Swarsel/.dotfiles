@@ -553,6 +553,8 @@ create a new one."
 ;; You can also bind multiple items and we will match the first one we can find
 (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
 
+(use-package evil-numbers)
+
 ;; set the NixOS wordlist by hand
 (setq ispell-alternate-dictionary (getenv "WORDLIST"))
 
