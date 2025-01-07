@@ -59,7 +59,7 @@
           buildInputs = [ latex-packages dev-packages ];
         };
 
-        formatter = pkgs.nixpgks-fmt;
+        formatter = pkgs.nixpkgs-fmt;
 
         packages = flake-utils.lib.flattenTree {
           default = import ./build-document.nix {
