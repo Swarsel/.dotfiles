@@ -6,8 +6,8 @@
         mkdir -p $out/etc/profile.d
         substitute ${self + /scripts/command-not-found.sh}        \
           $out/etc/profile.d/command-not-found.sh                 \
-          --replace @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-          --replace @tput@ ${pkgs.ncurses}/bin/tput
+          --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+          --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
       '';
     in
 
