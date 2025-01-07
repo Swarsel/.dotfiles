@@ -23,6 +23,7 @@
 
     # browser
     vieb
+    mgba
 
     # utilities
     util-linux
