@@ -100,6 +100,7 @@ in
             "${modifier}+Shift+Down" = "move down 40px";
             "${modifier}+Shift+Up" = "move up 40px";
             "${modifier}+Ctrl+Shift+c" = "reload";
+            "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
             "${modifier}+Return" = "exec kitty";

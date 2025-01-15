@@ -13,6 +13,7 @@
     audacity
     sox
     stable.feishin
+    calibre
 
     # printing
     cups
@@ -45,6 +46,7 @@
     nix-diff
     nix-visualize
     nix-init
+    nix-inspect
     manix
     comma
 

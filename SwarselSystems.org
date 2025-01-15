@@ -3615,6 +3615,25 @@ This script allows for quick git branch switching.
   })
 #+end_src
 
+**** swarsel-displaypower
+
+A crude script to power on all displays that might be attached. Needed because sometimes displays do not awake from sleep.
+
+#+begin_src shell :tangle scripts/swarsel-displaypower.sh
+  swaymsg output eDP-1 power on > /dev/null 2>&1 || true
+  swaymsg output eDP-2 power on > /dev/null 2>&1 || true
+#+end_src
+
+#+begin_src nix :tangle pkgs/swarsel-displaypower/default.nix
+  { self, name, writeShellApplication, sway }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ sway ];
+    text = builtins.readFile "${self}/scripts/${name}.sh";
+  }
+
+#+end_src
+
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -6055,7 +6074,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
         Type = "simple";
         ExecStart = pkgs.writeShellScript "battery-low-notification"
           ''
-            if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+")));
+            if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
             then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
             fi;
           '';
@@ -8321,6 +8340,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       audacity
       sox
       stable.feishin
+      calibre
 
       # printing
       cups
@@ -8353,6 +8373,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       nix-diff
       nix-visualize
       nix-init
+      nix-inspect
       manix
       comma
 
@@ -8513,6 +8534,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       project
       fhs
       swarsel-bootstrap
+      swarsel-displaypower
     ];
   }
 #+end_src
@@ -10601,6 +10623,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Shift+Down" = "move down 40px";
               "${modifier}+Shift+Up" = "move up 40px";
               "${modifier}+Ctrl+Shift+c" = "reload";
+              "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
               "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
               "${modifier}+r" = "mode resize";
               "${modifier}+Return" = "exec kitty";
@@ -10994,6 +11017,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       rclone
       awscli2
       libguestfs-with-appliance
+      stable.prometheus.cli
     ];
 
     home.sessionVariables = {

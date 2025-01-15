@@ -9,6 +9,7 @@
     rclone
     awscli2
     libguestfs-with-appliance
+    stable.prometheus.cli
   ];
 
   home.sessionVariables = {
