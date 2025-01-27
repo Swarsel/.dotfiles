@@ -79,6 +79,7 @@ in
     libisoburn
     govc
     terraform
+    graphviz
 
     # vm
     virt-manager
