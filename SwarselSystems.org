@@ -3634,6 +3634,38 @@ A crude script to power on all displays that might be attached. Needed because s
 
 #+end_src
 
+**** swarsel-mgba
+:PROPERTIES:
+:CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
+:END:
+
+AppImage version of mgba in which the lua scripting works.
+
+
+#+begin_src nix :tangle pkgs/swarsel-mgba/default.nix
+  { appimageTools, fetchurl, ... }:
+  let
+    pname = "mgba";
+    version = "0.10.4";
+    src = fetchurl {
+      url = "https://github.com/mgba-emu/mgba/releases/download/${version}/mGBA-${version}-appimage-x64.appimage";
+      hash = "sha256-rDihDfuA8DqxvCe6UeavCzpjeU+fSqUbFnyTNC2dc1I=";
+    };
+    appimageContents = appimageTools.extractType2 { inherit pname version src; };
+  in
+  appimageTools.wrapType2 {
+    inherit pname version src;
+    extraInstallCommands = ''
+      install -Dm444 ${appimageContents}/io.mgba.mGBA.desktop -t $out/share/applications
+      substituteInPlace $out/share/applications/io.mgba.mGBA.desktop \
+        --replace-fail 'Exec=mgba-qt %f' 'Exec=mgba'
+      cp -r ${appimageContents}/usr/share/icons $out/share
+    '';
+
+  }
+
+#+end_src
+
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -3649,7 +3681,7 @@ When adding a new entry here, do not forget to add it in the default output of t
   let
     additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
 
-    modifications = _: prev: {
+    modifications = final: prev: {
       vesktop = prev.vesktop.override {
         withSystemVencord = true;
       };
@@ -3661,6 +3693,8 @@ When adding a new entry here, do not forget to add it in the default output of t
           prev.plasma5Packages.plasma-browser-integration
         ];
       };
+
+      mgba = final.swarsel-mgba;
 
       retroarch = prev.retroarch.withCores (cores: with cores; [
         snes9x # snes
