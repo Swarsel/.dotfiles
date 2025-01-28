@@ -10337,6 +10337,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
 
         settings = {
           "extensions.autoDisableScopes" = 0;
+          "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
           "browser.bookmarks.showMobileBookmarks" = lock-true;
           "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
           "browser.search.suggest.enabled" = lock-false;
@@ -11103,8 +11104,22 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
       firefox = {
         profiles = {
-          dc_adm = lib.recursiveUpdate { id = 1; } config.swarselsystems.firefox;
-          cl_adm = lib.recursiveUpdate { id = 2; } config.swarselsystems.firefox;
+          dc_adm = lib.recursiveUpdate
+            {
+              id = 1;
+              settings = {
+                "browser.startup.homepage" = "https://tower.vbc.ac.at";
+              };
+            }
+            config.swarselsystems.firefox;
+          cl_adm = lib.recursiveUpdate
+            {
+              id = 2;
+              settings = {
+                "browser.startup.homepage" = "https://portal.azure.com";
+              };
+            }
+            config.swarselsystems.firefox;
           ws_adm = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
         };
       };
@@ -14434,6 +14449,7 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 
 This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
 
+The =command= command can be supplied with a =-p= flag that will take a single argmuent which is exposed as =JS_ARG=. I use this in a function that switches to an open tab if it exists and otherwise creates it.
 
 #+begin_src :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
 
@@ -14466,6 +14482,32 @@ bindurl ^http(s)?://www\.google\.com c hint -Jc [class="LC20lb MBeuO DKV0Md"],[c
 bindurl ^http(s)?://news\.ycombinator\.com c hint -Jc [class="titleline"],[class="age"]
 bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label"]
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
+
+" Work
+command tab_or_tabopen jsb -p (async () => { let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
+
+bind gwa tab_or_tabopen apic-impimba-1.m.imp.ac.at
+bind gwA tab_or_tabopen artifactory.imp.ac.at
+bind gwb tab_or_tabopen bitbucket.vbc.ac.at
+bind gwc tab_or_tabopen vbc.atlassian.net/wiki
+bind gwd tab_or_tabopen datadomain-impimba-2.imp.ac.at
+bind gwe tab_or_tabopen exivity.vbc.ac.at
+bind gwg tab_or_tabopen github.com
+bind gwG tab_or_tabopen goc.egi.eu
+bind gwh tab_or_tabopen jupyterhub.vbc.ac.at
+bind gwH tab_or_tabopen test-jupyterhub.vbc.ac.at
+bind gwj tab_or_tabopen jenkins.vbc.ac.at
+bind gwJ tab_or_tabopen test-jenkins.vbc.ac.at
+bind gwl tab_or_tabopen lucid.app
+bind gwm tab_or_tabopen monitoring.vbc.ac.at/grafana
+bind gwM tab_or_tabopen monitoring.vbc.ac.at/prometheus
+bind gwn tab_or_tabopen netbox.vbc.ac.at
+bind gwN tab_or_tabopen nap.imp.ac.at
+bind gwo tab_or_tabopen outlook.office.com
+bind gws tab_or_tabopen satellite.vbc.ac.at
+bind gwt tab_or_tabopen tower.vbc.ac.at
+bind gwv tab_or_tabopen vc-impimba-1.m.imp.ac.at/ui
+bind gwx tab_or_tabopen xclarity.vbc.ac.at
 
 " Search in page
 set findcase smart

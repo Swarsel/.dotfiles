@@ -192,6 +192,7 @@ in
 
       settings = {
         "extensions.autoDisableScopes" = 0;
+        "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
         "browser.bookmarks.showMobileBookmarks" = lock-true;
         "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
         "browser.search.suggest.enabled" = lock-false;

@@ -60,8 +60,22 @@
 
     firefox = {
       profiles = {
-        dc_adm = lib.recursiveUpdate { id = 1; } config.swarselsystems.firefox;
-        cl_adm = lib.recursiveUpdate { id = 2; } config.swarselsystems.firefox;
+        dc_adm = lib.recursiveUpdate
+          {
+            id = 1;
+            settings = {
+              "browser.startup.homepage" = "https://tower.vbc.ac.at";
+            };
+          }
+          config.swarselsystems.firefox;
+        cl_adm = lib.recursiveUpdate
+          {
+            id = 2;
+            settings = {
+              "browser.startup.homepage" = "https://portal.azure.com";
+            };
+          }
+          config.swarselsystems.firefox;
         ws_adm = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
       };
     };
