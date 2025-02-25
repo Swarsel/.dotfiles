@@ -282,6 +282,7 @@ in
 
         exec systemctl --user import-environment
         exec swayidle -w
+        seat seat0 hide_cursor 1000
 
 
         ${swayfxSettings}

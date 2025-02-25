@@ -6,8 +6,10 @@
     polarity = "dark";
     opacity.popups = 0.5;
     cursor = {
-      package = pkgs.capitaine-cursors;
-      name = "capitaine-cursors";
+      package = pkgs.banana-cursor;
+      # package = pkgs.capitaine-cursors;
+      name = "Banana";
+      # name = "capitaine-cursors";
       size = 16;
     };
     fonts = {
