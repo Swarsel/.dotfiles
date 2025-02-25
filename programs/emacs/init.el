@@ -400,6 +400,7 @@ create a new one."
       password-cache-expiry nil
       )
 (setq browse-url-browser-function 'browse-url-firefox)
+(setenv "DISPLAY" ":0")
 ;; disable a keybind that does more harm than good
 (global-set-key [remap suspend-frame]
                 (lambda ()
