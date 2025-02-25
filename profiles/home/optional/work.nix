@@ -21,6 +21,11 @@
     git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
     zsh = {
+      shellAliases = {
+        dssh = "ssh -l dc_adm_schwarzaeugl";
+        cssh = "ssh -l cl_adm_schwarzaeugl";
+        wssh = "ssh -l ws_adm_schwarzaeugl";
+      };
       cdpath = [
         "~/Documents/Work"
       ];
@@ -33,23 +38,34 @@
       };
     };
 
-
     ssh = {
       matchBlocks = {
         "uc" = {
           hostname = "uc.clip.vbc.ac.at";
           user = "stack";
         };
-        "uc-stg" = {
+        "uc.stg" = {
           hostname = "uc.staging.clip.vbc.ac.at";
+          user = "stack";
+        };
+        "uc.staging" = {
+          hostname = "uc.staging.clip.vbc.ac.at";
+          user = "stack";
+        };
+        "uc.dev" = {
+          hostname = "uc.dev.clip.vbc.ac.at";
           user = "stack";
         };
         "cbe" = {
           hostname = "cbe.vbc.ac.at";
           user = "dc_adm_schwarzaeugl";
         };
-        "cbe-stg" = {
-          hostname = "cbe.staging.vbc.ac.at";
+        "cbe.stg" = {
+          hostname = "cbe.staging.clip.vbc.ac.at";
+          user = "dc_adm_schwarzaeugl";
+        };
+        "cbe.staging" = {
+          hostname = "cbe.staging.clip.vbc.ac.at";
           user = "dc_adm_schwarzaeugl";
         };
         "*.vbc.ac.at" = {

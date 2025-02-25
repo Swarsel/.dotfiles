@@ -42,7 +42,14 @@ in
     };
   };
 
-  networking.firewall.trustedInterfaces = [ "virbr0" ];
+  networking = {
+    firewall.trustedInterfaces = [ "virbr0" ];
+    search = [
+      "vbc.ac.at"
+      "clip.vbc.ac.at"
+      "imp.univie.ac.at"
+    ];
+  };
 
   virtualisation = {
     docker.enable = true;

@@ -5,6 +5,7 @@ _:
     forwardAgent = true;
     extraConfig = ''
       SetEnv TERM=xterm-256color
+      ServerAliveInterval 20
     '';
     matchBlocks = {
       # Local machines

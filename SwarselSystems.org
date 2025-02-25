@@ -8133,7 +8133,14 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       };
     };
 
-    networking.firewall.trustedInterfaces = [ "virbr0" ];
+    networking = {
+      firewall.trustedInterfaces = [ "virbr0" ];
+      search = [
+        "vbc.ac.at"
+        "clip.vbc.ac.at"
+        "imp.univie.ac.at"
+      ];
+    };
 
     virtualisation = {
       docker.enable = true;
@@ -8660,6 +8667,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
       forwardAgent = true;
       extraConfig = ''
         SetEnv TERM=xterm-256color
+        ServerAliveInterval 20
       '';
       matchBlocks = {
         # Local machines
@@ -10927,6 +10935,11 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
       zsh = {
+        shellAliases = {
+          dssh = "ssh -l dc_adm_schwarzaeugl";
+          cssh = "ssh -l cl_adm_schwarzaeugl";
+          wssh = "ssh -l ws_adm_schwarzaeugl";
+        };
         cdpath = [
           "~/Documents/Work"
         ];
@@ -10939,23 +10952,34 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
       };
 
-
       ssh = {
         matchBlocks = {
           "uc" = {
             hostname = "uc.clip.vbc.ac.at";
             user = "stack";
           };
-          "uc-stg" = {
+          "uc.stg" = {
             hostname = "uc.staging.clip.vbc.ac.at";
+            user = "stack";
+          };
+          "uc.staging" = {
+            hostname = "uc.staging.clip.vbc.ac.at";
+            user = "stack";
+          };
+          "uc.dev" = {
+            hostname = "uc.dev.clip.vbc.ac.at";
             user = "stack";
           };
           "cbe" = {
             hostname = "cbe.vbc.ac.at";
             user = "dc_adm_schwarzaeugl";
           };
-          "cbe-stg" = {
-            hostname = "cbe.staging.vbc.ac.at";
+          "cbe.stg" = {
+            hostname = "cbe.staging.clip.vbc.ac.at";
+            user = "dc_adm_schwarzaeugl";
+          };
+          "cbe.staging" = {
+            hostname = "cbe.staging.clip.vbc.ac.at";
             user = "dc_adm_schwarzaeugl";
           };
           "*.vbc.ac.at" = {
