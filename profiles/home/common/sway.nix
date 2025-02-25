@@ -16,7 +16,7 @@ in
     wrapperFeatures.gtk = true;
     config = rec {
       modifier = "Mod4";
-      terminal = "kitty";
+      # terminal = "kitty";
       menu = "fuzzel";
       bars = [{
         command = "waybar";
@@ -103,7 +103,7 @@ in
             "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
-            "${modifier}+Return" = "exec kitty";
+            "${modifier}+Return" = "exec swarselzellij";
             "${modifier}+Print" = "exec screenshare";
             # "XF86AudioRaiseVolume" = "exec pa 5%";
             "XF86AudioRaiseVolume" = "exec pamixer -i 5";
@@ -132,7 +132,7 @@ in
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [
-        { command = "kitty -T kittyterm"; }
+        { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
         { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
       ];
       window = {

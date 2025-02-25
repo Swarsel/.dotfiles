@@ -25,5 +25,6 @@
     fhs
     swarsel-bootstrap
     swarsel-displaypower
+    swarselzellij
   ];
 }

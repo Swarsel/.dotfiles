@@ -25,7 +25,7 @@ if [[ $kitty -eq 1 ]]; then
     STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
     CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
     if [ "$CHECK" == "" ]; then
-        exec kitty -T kittyterm &
+        exec kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &
         sleep 1
     fi
     if [ "$STR" == "" ]; then
