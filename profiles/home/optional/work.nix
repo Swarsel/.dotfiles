@@ -80,7 +80,7 @@
           {
             id = 1;
             settings = {
-              "browser.startup.homepage" = "https://tower.vbc.ac.at";
+              "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
             };
           }
           config.swarselsystems.firefox;
