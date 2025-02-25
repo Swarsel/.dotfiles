@@ -16,12 +16,6 @@
 
     keyboard.qmk.enable = true;
 
-
-    pulseaudio = {
-      enable = lib.mkIf (!config.services.pipewire.enable) true;
-      package = pkgs.pulseaudioFull;
-    };
-
     enableAllFirmware = true;
 
     bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {

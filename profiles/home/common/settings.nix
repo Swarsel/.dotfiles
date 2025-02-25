@@ -23,6 +23,8 @@
     };
   };
 
+  nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+
   programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
   home = {

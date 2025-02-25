@@ -15,50 +15,52 @@ in
     default = {
       isDefault = false;
       userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
-      extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-        tridactyl
-        tampermonkey
-        sidebery
-        browserpass
-        clearurls
-        darkreader
-        enhancer-for-youtube
-        istilldontcareaboutcookies
-        translate-web-pages
-        ublock-origin
-        reddit-enhancement-suite
-        sponsorblock
-        web-archives
-        onepassword-password-manager
-        single-file
-        widegithub
-        enhanced-github
-        unpaywall
-        don-t-fuck-with-paste
-        plasma-integration
-        (buildFirefoxXpiAddon {
-          pname = "shortkeys";
-          version = "4.0.2";
-          addonId = "Shortkeys@Shortkeys.com";
-          url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-          sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-          meta = with lib;
-            {
-              description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-              mozPermissions = [
-                "tabs"
-                "downloads"
-                "clipboardWrite"
-                "browsingData"
-                "storage"
-                "bookmarks"
-                "sessions"
-                "<all_urls>"
-              ];
-              platforms = platforms.all;
-            };
-        })
-      ];
+      extensions = {
+        packages = with pkgs.nur.repos.rycee.firefox-addons; [
+          tridactyl
+          tampermonkey
+          sidebery
+          browserpass
+          clearurls
+          darkreader
+          enhancer-for-youtube
+          istilldontcareaboutcookies
+          translate-web-pages
+          ublock-origin
+          reddit-enhancement-suite
+          sponsorblock
+          web-archives
+          onepassword-password-manager
+          single-file
+          widegithub
+          enhanced-github
+          unpaywall
+          don-t-fuck-with-paste
+          plasma-integration
+          (buildFirefoxXpiAddon {
+            pname = "shortkeys";
+            version = "4.0.2";
+            addonId = "Shortkeys@Shortkeys.com";
+            url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+            sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+            meta = with lib;
+              {
+                description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+                mozPermissions = [
+                  "tabs"
+                  "downloads"
+                  "clipboardWrite"
+                  "browsingData"
+                  "storage"
+                  "bookmarks"
+                  "sessions"
+                  "<all_urls>"
+                ];
+                platforms = platforms.all;
+              };
+          })
+        ];
+      };
 
       settings =
         {

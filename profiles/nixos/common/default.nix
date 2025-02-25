@@ -8,6 +8,7 @@ in
   nixpkgs.config.permittedInsecurePackages = [
     "jitsi-meet-1.0.8043"
     "electron-29.4.6"
+    "SDL_ttf-2.0.11"
   ];
 
 }

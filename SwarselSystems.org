@@ -886,15 +886,15 @@ My work machine. Built for more security, this is the gold standard of my config
       resumeDevice = "/dev/disk/by-label/nixos";
     };
 
-    # hardware = {
-    #   amdgpu = {
-    #     opencl.enable = true;
-    #     amdvlk = {
-    #       enable = true;
-    #       support32Bit.enable = true;
-    #     };
-    #   };
-    # };
+    hardware = {
+      amdgpu = {
+        opencl.enable = true;
+        amdvlk = {
+          enable = true;
+          support32Bit.enable = true;
+        };
+      };
+    };
 
     programs.fw-fanctrl.enable = true;
 
@@ -4259,50 +4259,52 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
       default = {
         isDefault = false;
         userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
-        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-          tridactyl
-          tampermonkey
-          sidebery
-          browserpass
-          clearurls
-          darkreader
-          enhancer-for-youtube
-          istilldontcareaboutcookies
-          translate-web-pages
-          ublock-origin
-          reddit-enhancement-suite
-          sponsorblock
-          web-archives
-          onepassword-password-manager
-          single-file
-          widegithub
-          enhanced-github
-          unpaywall
-          don-t-fuck-with-paste
-          plasma-integration
-          (buildFirefoxXpiAddon {
-            pname = "shortkeys";
-            version = "4.0.2";
-            addonId = "Shortkeys@Shortkeys.com";
-            url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-            sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-            meta = with lib;
-              {
-                description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                mozPermissions = [
-                  "tabs"
-                  "downloads"
-                  "clipboardWrite"
-                  "browsingData"
-                  "storage"
-                  "bookmarks"
-                  "sessions"
-                  "<all_urls>"
-                ];
-                platforms = platforms.all;
-              };
-          })
-        ];
+        extensions = {
+          packages = with pkgs.nur.repos.rycee.firefox-addons; [
+            tridactyl
+            tampermonkey
+            sidebery
+            browserpass
+            clearurls
+            darkreader
+            enhancer-for-youtube
+            istilldontcareaboutcookies
+            translate-web-pages
+            ublock-origin
+            reddit-enhancement-suite
+            sponsorblock
+            web-archives
+            onepassword-password-manager
+            single-file
+            widegithub
+            enhanced-github
+            unpaywall
+            don-t-fuck-with-paste
+            plasma-integration
+            (buildFirefoxXpiAddon {
+              pname = "shortkeys";
+              version = "4.0.2";
+              addonId = "Shortkeys@Shortkeys.com";
+              url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+              sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+              meta = with lib;
+                {
+                  description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+                  mozPermissions = [
+                    "tabs"
+                    "downloads"
+                    "clipboardWrite"
+                    "browsingData"
+                    "storage"
+                    "bookmarks"
+                    "sessions"
+                    "<all_urls>"
+                  ];
+                  platforms = platforms.all;
+                };
+            })
+          ];
+        };
 
         settings =
           {
@@ -4544,6 +4546,7 @@ This section is for setting things that should be used on hosts that are using t
     nixpkgs.config.permittedInsecurePackages = [
       "jitsi-meet-1.0.8043"
       "electron-29.4.6"
+      "SDL_ttf-2.0.11"
     ];
 
   }
@@ -4954,12 +4957,6 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
       keyboard.qmk.enable = true;
 
-
-      pulseaudio = {
-        enable = lib.mkIf (!config.services.pipewire.enable) true;
-        package = pkgs.pulseaudioFull;
-      };
-
       enableAllFirmware = true;
 
       bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
@@ -4978,6 +4975,21 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   }
 #+end_src
 
+**** Pulseaudio
+
+This is only used on systems not running Pipewire.
+
+
+#+begin_src nix :tangle profiles/nixos/common/pulseaudio.nix
+  { config, pkgs, lib, ... }: {
+
+    services.pulseaudio = {
+      enable = lib.mkIf (!config.services.pipewire.enable) true;
+      package = pkgs.pulseaudioFull;
+    };
+
+  }
+#+end_src
 **** Pipewire
 :PROPERTIES:
 :CUSTOM_ID: h:aa433f5e-a455-4414-b76b-0a2692fa06aa
@@ -8326,6 +8338,8 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
       };
     };
 
+    nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+
     programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
     home = {
@@ -8498,7 +8512,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       # the following packages are used (in some way) by waybar
       playerctl
       pavucontrol
-      pamixer
+      stable.pamixer
       # gnome.gnome-clocks
       # wlogout
       # jdiskreport
@@ -10291,49 +10305,57 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
         id = 0;
         isDefault = true;
         userChrome = builtins.readFile (self + /programs/firefox/chrome/userChrome.css);
-        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-          tridactyl
-          tampermonkey
-          sidebery
-          browserpass
-          clearurls
-          darkreader
-          enhancer-for-youtube
-          istilldontcareaboutcookies
-          translate-web-pages
-          ublock-origin
-          reddit-enhancement-suite
-          sponsorblock
-          web-archives
-          single-file
-          widegithub
-          enhanced-github
-          unpaywall
-          don-t-fuck-with-paste
-          plasma-integration
-          (buildFirefoxXpiAddon {
-            pname = "shortkeys";
-            version = "4.0.2";
-            addonId = "Shortkeys@Shortkeys.com";
-            url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-            sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-            meta = with lib;
-              {
-                description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                mozPermissions = [
-                  "tabs"
-                  "downloads"
-                  "clipboardWrite"
-                  "browsingData"
-                  "storage"
-                  "bookmarks"
-                  "sessions"
-                  "<all_urls>"
-                ];
-                platforms = platforms.all;
-              };
-          })
-        ];
+        extensions = {
+          packages = with pkgs.nur.repos.rycee.firefox-addons; [
+            tridactyl
+            tampermonkey
+            sidebery
+            browserpass
+            clearurls
+            darkreader
+            enhancer-for-youtube
+            istilldontcareaboutcookies
+            translate-web-pages
+            ublock-origin
+            reddit-enhancement-suite
+            sponsorblock
+            web-archives
+            single-file
+            widegithub
+            enhanced-github
+            unpaywall
+            don-t-fuck-with-paste
+            plasma-integration
+
+            # configure the default the same as trusted in order not to be annoyed
+            noscript
+
+            # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
+            (buildFirefoxXpiAddon {
+              pname = "shortkeys";
+              version = "4.0.2";
+              addonId = "Shortkeys@Shortkeys.com";
+              url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+              sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+              meta = with lib;
+                {
+                  description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+                  mozPermissions = [
+                    "tabs"
+                    "downloads"
+                    "clipboardWrite"
+                    "browsingData"
+                    "storage"
+                    "bookmarks"
+                    "sessions"
+                    "<all_urls>"
+                  ];
+                  platforms = platforms.all;
+                };
+            })
+
+          ];
+        };
 
         settings = {
           "extensions.autoDisableScopes" = 0;
