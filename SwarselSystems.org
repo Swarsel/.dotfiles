@@ -4419,43 +4419,46 @@ TODO
         systemFunc {
           specialArgs = { inherit inputs outputs lib self; };
           modules = [
+            # put inports here that are for all hosts
             inputs.disko.nixosModules.disko
             inputs.sops-nix.nixosModules.sops
             inputs.impermanence.nixosModules.impermanence
             inputs.lanzaboote.nixosModules.lanzaboote
             "${self}/hosts/${type}/${host}"
           ] ++
-          # toto (deployment sandbox) & iso should never receive general configuration
           (if (host == "toto" || host == "iso") then [ ] else
-          (
-            # sync & winters (servers) should not receive common non-server config
-            (if (host == "winters" || host == "sync") then [ ] else [
-              "${self}/profiles/${type}/common"
-              inputs.stylix.nixosModules.stylix
-              inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-              inputs.nix-topology.nixosModules.default
-            ]) ++ (if (type == "nixos") then [
-              inputs.home-manager.nixosModules.home-manager
-              {
-                home-manager.users.swarsel.imports = (
-                  # sync & winters (servers) should not receive common non-server config
-                  if (host == "winters" || host == "sync") then [ ] else [
-                    "${self}/profiles/home/common"
-                  ]
-                ) ++ [
-                  inputs.sops-nix.homeManagerModules.sops
-                  inputs.nix-index-database.hmModules.nix-index
-                ] ++ (builtins.attrValues outputs.homeModules);
-              }
-            ] else [
-              "${self}/profiles/darwin/nixos/common"
-              inputs.home-manager.darwinModules.home-manager
-              {
-                home-manager.users."leon.schwarzaeugl".imports = [
-                  "${self}/profiles/darwin/home"
-                ] ++ (builtins.attrValues outputs.homeModules);
-              }
-            ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
+          ([
+            # put inports here that are for all servers and normal hosts
+            inputs.nix-topology.nixosModules.default
+          ] ++
+          (if (host == "winters" || host == "sync") then [ ] else [
+            # put imports here that are for all normal hosts
+            "${self}/profiles/${type}/common"
+            inputs.stylix.nixosModules.stylix
+            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+          ]) ++ (if (type == "nixos") then [
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = (
+                if (host == "winters" || host == "sync") then [ ] else [
+                  # put imports here that are for all normal hosts
+                  "${self}/profiles/home/common"
+                ]
+              ) ++ [
+                # put inports here that are for all servers and normal hosts
+                inputs.sops-nix.homeManagerModules.sops
+                inputs.nix-index-database.hmModules.nix-index
+              ] ++ (builtins.attrValues outputs.homeModules);
+            }
+          ] else [
+            "${self}/profiles/darwin/nixos/common"
+            inputs.home-manager.darwinModules.home-manager
+            {
+              home-manager.users."leon.schwarzaeugl".imports = [
+                "${self}/profiles/darwin/home"
+              ] ++ (builtins.attrValues outputs.homeModules);
+            }
+          ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
           ));
         };
     };
