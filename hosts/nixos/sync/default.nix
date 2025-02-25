@@ -1,10 +1,9 @@
-{ self, inputs, outputs, lib, ... }:
+{ self, inputs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
 in
 {
   imports = [
-    inputs.sops-nix.nixosModules.sops
 
     "${profilesPath}/nixos/server"
     ./hardware-configuration.nix
@@ -13,15 +12,13 @@ in
     {
       home-manager.users.swarsel.imports = [
         "${profilesPath}/home/server"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
+      ];
     }
-
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+  ];
 
   sops = {
     defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
   };
-
 
   services.nginx = {
     virtualHosts = {

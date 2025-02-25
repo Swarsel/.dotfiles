@@ -304,8 +304,6 @@ When setting this option normally, the password would normally be written world-
 
 Here I define a few variables that I need for my system specifications. First and foremost, =pkgs=, which gets passed the emacs-overlay, nur, and nixgl modules to it. With this, I can grab all these packages by referencing =pkgs.<name>= instead of having to put e.g. =nixgl.auto.nixGLDefault=.
 
-I also define some common module lists that I can simply load depending on the fundamental system (NixOS vs. non-NixOS) - =nixModules=, =homeModules=, and =mixedModules=.
-
 The interesting part is in the start:
 - first, I define =pkgsFor=. This function reads all available systems from nixpkgs and generates pkgs for them.
 - next, =forEachSystem= is a function that can be called to declare an output for each such defined system.
@@ -319,29 +317,10 @@ The interesting part is in the start:
   lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
 
-  # NixOS modules that can only be used on NixOS systems
-  nixModules = [
-    inputs.stylix.nixosModules.stylix
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.disko.nixosModules.disko
-    inputs.impermanence.nixosModules.impermanence
-    inputs.sops-nix.nixosModules.sops
-    inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-    inputs.nix-topology.nixosModules.default
-    ./profiles/nixos/common
-  ];
 
   # Home-Manager modules wanted on non-NixOS systems
-  homeModules = [
-    inputs.stylix.homeManagerModules.stylix
-  ];
 
   # Home-Manager modules wanted on both NixOS and non-NixOS systems
-  mixedModules = [
-    inputs.sops-nix.homeManagerModules.sops
-    inputs.nix-index-database.hmModules.nix-index
-    ./profiles/home/common
-  ];
 
 #+end_src
 ** General (outputs)
@@ -366,7 +345,7 @@ In this section I am creating some attributes that define general concepts of my
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
 
-    inherit lib nixModules mixedModules homeModules;
+    inherit lib;
 
     nixosModules = import ./modules/nixos { inherit lib; };
     homeManagerModules = import ./modules/home { inherit lib; };
@@ -611,7 +590,7 @@ This is the template that I use for new deployments of personal machines. Server
 :END:
 
 #+begin_src nix :tangle templates/hosts/nixos/default.nix
-  { self, inputs, outputs, config, pkgs, lib, ... }:
+  { self, inputs, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -620,7 +599,7 @@ This is the template that I use for new deployments of personal machines. Server
   in
   {
 
-    imports = outputs.nixModules ++ [
+    imports = [
       # ---- nixos-hardware here ----
 
       ./hardware-configuration.nix
@@ -634,19 +613,11 @@ This is the template that I use for new deployments of personal machines. Server
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+        home-manager.users.swarsel.imports = [
           "${profilesPath}/home/optional/gaming.nix"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ];
       }
-    ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
+    ];
 
     boot = {
       kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
@@ -840,7 +811,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, inputs, outputs, pkgs, lib, ... }:
+  { self, inputs, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -850,12 +821,12 @@ My work machine. Built for more security, this is the gold standard of my config
   in
   {
 
-    imports = outputs.nixModules ++ [
+    imports = [
       inputs.nixos-hardware.nixosModules.framework-16-7040-amd
       inputs.fw-fanctrl.nixosModules.default
 
-      ./hardware-configuration.nix
       ./disk-config.nix
+      ./hardware-configuration.nix
 
       "${profilesPath}/nixos/optional/virtualbox.nix"
       # "${profilesPath}/nixos/optional/vmware.nix"
@@ -866,12 +837,12 @@ My work machine. Built for more security, this is the gold standard of my config
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+        home-manager.users.swarsel.imports = [
           "${profilesPath}/home/optional/gaming.nix"
           "${profilesPath}/home/optional/work.nix"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ];
       }
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+    ];
 
 
 
@@ -1203,15 +1174,13 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
-  { self, inputs, outputs, ... }:
+  { self, inputs, ... }:
   let
     profilesPath = "${self}/profiles";
   in
   {
 
     imports = [
-      inputs.sops-nix.nixosModules.sops
-
       ./hardware-configuration.nix
 
       "${profilesPath}/nixos/optional/autologin.nix"
@@ -1221,10 +1190,9 @@ This is my main server that I run at home. It handles most tasks that require bi
       {
         home-manager.users.swarsel.imports = [
           "${profilesPath}/home/server"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ];
       }
-
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+    ];
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -1324,22 +1292,8 @@ This is my main server that I run at home. It handles most tasks that require bi
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
 #+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
-  { self, inputs, outputs, ... }:
-  let
-    profilesPath = "${self}/profiles";
-  in
+  { lib, ... }:
   {
-    imports = [
-      "${profilesPath}/darwin/nixos/common"
-
-      inputs.home-manager.darwinModules.home-manager
-      {
-        home-manager.users."leon.schwarzaeugl".imports = [
-          "${profilesPath}/darwin/home"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
-
 
     # Auto upgrade nix package and the daemon service.
     services.nix-daemon.enable = true;
@@ -1437,13 +1391,12 @@ This machine mainly acts as an external sync helper. It manages the following th
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
-  { self, inputs, outputs, lib, ... }:
+  { self, inputs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
   in
   {
     imports = [
-      inputs.sops-nix.nixosModules.sops
 
       "${profilesPath}/nixos/server"
       ./hardware-configuration.nix
@@ -1452,15 +1405,13 @@ This machine mainly acts as an external sync helper. It manages the following th
       {
         home-manager.users.swarsel.imports = [
           "${profilesPath}/home/server"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ];
       }
-
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+    ];
 
     sops = {
       defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
     };
-
 
     services.nginx = {
       virtualHosts = {
@@ -1560,13 +1511,8 @@ This is a slim setup for developing base configuration. I do not track the hardw
   {
 
     imports = [
-      inputs.disko.nixosModules.disko
       "${self}/hosts/nixos/toto/disk-config.nix"
       ./hardware-configuration.nix
-
-      inputs.sops-nix.nixosModules.sops
-      inputs.impermanence.nixosModules.impermanence
-      inputs.lanzaboote.nixosModules.lanzaboote
 
       "${profilesPath}/nixos/optional/autologin.nix"
       "${profilesPath}/nixos/common/settings.nix"
@@ -1585,7 +1531,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
           "${profilesPath}/home/common/settings.nix"
           "${profilesPath}/home/common/sops.nix"
           "${profilesPath}/home/common/ssh.nix"
-
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
     ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
@@ -1812,11 +1757,6 @@ Also, an initial bash history is provided to allow for a very quick local deploy
   {
 
     imports = [
-
-      inputs.lanzaboote.nixosModules.lanzaboote
-      inputs.disko.nixosModules.disko
-      inputs.impermanence.nixosModules.impermanence
-      inputs.sops-nix.nixosModules.sops
       "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
       "${modulesPath}/installer/cd-dvd/channel.nix"
 
@@ -1934,7 +1874,12 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
   { self, outputs, config, ... }:
   {
 
-    imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+    imports = [
+      inputs.stylix.homeManagerModules.stylix
+      inputs.sops-nix.homeManagerModules.sops
+      inputs.nix-index-database.hmModules.nix-index
+      ./profiles/home/common
+    ] ++ (builtins.attrValues outputs.homeManagerModules);
 
     nixpkgs = {
       overlays = [ outputs.overlays.default ];
@@ -1978,31 +1923,16 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
-  { self, inputs, outputs, pkgs, lib, ... }:
+  { self, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
   in
   {
 
-    imports = outputs.nixModules ++ [
-
+    imports = [
       ./hardware-configuration.nix
-
       "${profilesPath}/nixos/optional/autologin.nix"
-
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
-      }
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
-
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
+    ];
 
     environment.variables = {
       WLR_RENDERER_ALLOW_SOFTWARE = 1;
@@ -4193,11 +4123,11 @@ Do not that =syncthingtray= is also not mentioned here. It is installed as a hom
 Again, I set the wallpaper here for =stylix=.
 
 #+begin_src nix :tangle modules/home/wallpaper.nix
-  { lib, ... }:
+  { self, lib, ... }:
   {
     options.swarselsystems.wallpaper = lib.mkOption {
       type = lib.types.path;
-      default = "";
+      default = self + /wallpaper/lenovowp.png;
     };
   }
 
@@ -4448,6 +4378,12 @@ This section defines all functions of my own that I add to =lib=. These are used
 
 A breakdown of each function:
 
+TODO
+- =mkFullHost=:
+  This function is used in mkFullHostConfigs. It basically dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
+  =lib.optionals= evaluates to an empty list (=[]=) in case that the conditional is not met.
+TODO
+
 #+begin_src nix :tangle lib/default.nix
   { self, lib, systems, inputs, outputs, ... }:
   {
@@ -4482,7 +4418,45 @@ A breakdown of each function:
         in
         systemFunc {
           specialArgs = { inherit inputs outputs lib self; };
-          modules = [ "${self}/hosts/${type}/${host}" ];
+          modules = [
+            inputs.disko.nixosModules.disko
+            inputs.sops-nix.nixosModules.sops
+            inputs.impermanence.nixosModules.impermanence
+            inputs.lanzaboote.nixosModules.lanzaboote
+            "${self}/hosts/${type}/${host}"
+          ] ++
+          # toto (deployment sandbox) & iso should never receive general configuration
+          (if (host == "toto" || host == "iso") then [ ] else
+          (
+            # sync & winters (servers) should not receive common non-server config
+            (if (host == "winters" || host == "sync") then [ ] else [
+              "${self}/profiles/${type}/common"
+              inputs.stylix.nixosModules.stylix
+              inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+              inputs.nix-topology.nixosModules.default
+            ]) ++ (if (type == "nixos") then [
+              inputs.home-manager.nixosModules.home-manager
+              {
+                home-manager.users.swarsel.imports = (
+                  # sync & winters (servers) should not receive common non-server config
+                  if (host == "winters" || host == "sync") then [ ] else [
+                    "${self}/profiles/home/common"
+                  ]
+                ) ++ [
+                  inputs.sops-nix.homeManagerModules.sops
+                  inputs.nix-index-database.hmModules.nix-index
+                ] ++ (builtins.attrValues outputs.homeManagerModules);
+              }
+            ] else [
+              "${self}/profiles/darwin/nixos/common"
+              inputs.home-manager.darwinModules.home-manager
+              {
+                home-manager.users."leon.schwarzaeugl".imports = [
+                  "${self}/profiles/darwin/home"
+                ] ++ (builtins.attrValues outputs.homeManagerModules);
+              }
+            ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules)
+          ));
         };
     };
 
@@ -4491,11 +4465,12 @@ A breakdown of each function:
         let
           systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
         in
-        systemFunc {
-          inherit pkgs;
-          extraSpecialArgs = { inherit inputs outputs lib self; };
-          modules = [ "${self}/hosts/${type}/${host}" ];
-        };
+        systemFunc
+          {
+            inherit pkgs;
+            extraSpecialArgs = { inherit inputs outputs lib self; };
+            modules = [ "${self}/hosts/${type}/${host}" ];
+          };
     };
 
     mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
@@ -5482,7 +5457,7 @@ Do not touch this.
 :END:
 
 #+begin_src nix :tangle profiles/nixos/common/syncthing.nix
-  _:
+  { lib, ... }:
   {
     services.syncthing = {
       enable = true;
@@ -5503,7 +5478,7 @@ Do not touch this.
           };
         };
         folders = {
-          "Default Folder" = {
+          "Default Folder" = lib.mkDefault {
             path = "/home/swarsel/Sync";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "default";
@@ -7421,7 +7396,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             };
           };
           folders = {
-            "Default Folder" = {
+            "Default Folder" = lib.mkForce {
               path = "/Vault/data/syncthing/Sync";
               type = "receiveonly";
               versioning = null;
@@ -8841,10 +8816,10 @@ Also, we link some files to the users XDG configuration home:
 Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
 #+begin_src nix :tangle profiles/home/common/symlink.nix
-  { self, ... }:
+  { self, lib, ... }:
   {
     home.file = {
-      "init.el" = {
+      "init.el" = lib.mkDefault {
         source = self + /programs/emacs/init.el;
         target = ".emacs.d/init.el";
       };
@@ -10810,7 +10785,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-**** Linking dotfiles
+**** Symlinking dotfiles
 :PROPERTIES:
 :CUSTOM_ID: h:9fac0904-b615-4d9d-9bae-54a6691999c3
 :END:
@@ -10820,10 +10795,10 @@ This section should be used in order to symlink already existing configuration f
 As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
 
 #+begin_src nix :tangle profiles/home/server/symlink.nix
-  { self, ... }:
+  { self, lib, ... }:
   {
     home.file = {
-      "init.el" = {
+      "init.el" = lib.mkForce {
         source = self + /programs/emacs/server.el;
         target = ".emacs.d/init.el";
       };

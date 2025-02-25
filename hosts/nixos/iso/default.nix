@@ -5,11 +5,6 @@ in
 {
 
   imports = [
-
-    inputs.lanzaboote.nixosModules.lanzaboote
-    inputs.disko.nixosModules.disko
-    inputs.impermanence.nixosModules.impermanence
-    inputs.sops-nix.nixosModules.sops
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/channel.nix"
 

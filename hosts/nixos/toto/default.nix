@@ -9,13 +9,8 @@ in
 {
 
   imports = [
-    inputs.disko.nixosModules.disko
     "${self}/hosts/nixos/toto/disk-config.nix"
     ./hardware-configuration.nix
-
-    inputs.sops-nix.nixosModules.sops
-    inputs.impermanence.nixosModules.impermanence
-    inputs.lanzaboote.nixosModules.lanzaboote
 
     "${profilesPath}/nixos/optional/autologin.nix"
     "${profilesPath}/nixos/common/settings.nix"
@@ -34,7 +29,6 @@ in
         "${profilesPath}/home/common/settings.nix"
         "${profilesPath}/home/common/sops.nix"
         "${profilesPath}/home/common/ssh.nix"
-
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
   ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);

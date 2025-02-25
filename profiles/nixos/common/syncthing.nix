@@ -1,4 +1,4 @@
-_:
+{ lib, ... }:
 {
   services.syncthing = {
     enable = true;
@@ -19,7 +19,7 @@ _:
         };
       };
       folders = {
-        "Default Folder" = {
+        "Default Folder" = lib.mkDefault {
           path = "/home/swarsel/Sync";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "default";

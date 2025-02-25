@@ -1,28 +1,13 @@
-{ self, inputs, outputs, pkgs, lib, ... }:
+{ self, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
 in
 {
 
-  imports = outputs.nixModules ++ [
-
+  imports = [
     ./hardware-configuration.nix
-
     "${profilesPath}/nixos/optional/autologin.nix"
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
-    }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
-
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
+  ];
 
   environment.variables = {
     WLR_RENDERER_ALLOW_SOFTWARE = 1;

@@ -1,7 +1,7 @@
-{ lib, ... }:
+{ self, lib, ... }:
 {
   options.swarselsystems.wallpaper = lib.mkOption {
     type = lib.types.path;
-    default = "";
+    default = self + /wallpaper/lenovowp.png;
   };
 }

@@ -1,12 +1,10 @@
-{ self, inputs, outputs, ... }:
+{ self, inputs, ... }:
 let
   profilesPath = "${self}/profiles";
 in
 {
 
   imports = [
-    inputs.sops-nix.nixosModules.sops
-
     ./hardware-configuration.nix
 
     "${profilesPath}/nixos/optional/autologin.nix"
@@ -16,10 +14,9 @@ in
     {
       home-manager.users.swarsel.imports = [
         "${profilesPath}/home/server"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
+      ];
     }
-
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+  ];
 
   boot = {
     loader.systemd-boot.enable = true;

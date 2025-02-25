@@ -1,4 +1,4 @@
-{ self, inputs, outputs, pkgs, lib, ... }:
+{ self, inputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -8,12 +8,12 @@ let
 in
 {
 
-  imports = outputs.nixModules ++ [
+  imports = [
     inputs.nixos-hardware.nixosModules.framework-16-7040-amd
     inputs.fw-fanctrl.nixosModules.default
 
-    ./hardware-configuration.nix
     ./disk-config.nix
+    ./hardware-configuration.nix
 
     "${profilesPath}/nixos/optional/virtualbox.nix"
     # "${profilesPath}/nixos/optional/vmware.nix"
@@ -24,12 +24,12 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+      home-manager.users.swarsel.imports = [
         "${profilesPath}/home/optional/gaming.nix"
         "${profilesPath}/home/optional/work.nix"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
+      ];
     }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+  ];
 
 
 

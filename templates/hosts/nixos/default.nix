@@ -1,4 +1,4 @@
-{ self, inputs, outputs, config, pkgs, lib, ... }:
+{ self, inputs, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -7,7 +7,7 @@ let
 in
 {
 
-  imports = outputs.nixModules ++ [
+  imports = [
     # ---- nixos-hardware here ----
 
     ./hardware-configuration.nix
@@ -21,19 +21,11 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = outputs.mixedModules ++ [
+      home-manager.users.swarsel.imports = [
         "${profilesPath}/home/optional/gaming.nix"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
+      ];
     }
-  ] ++ (builtins.attrValues outputs.nixosModules);
-
-
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
+  ];
 
   boot = {
     kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;

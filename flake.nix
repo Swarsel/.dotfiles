@@ -91,34 +91,15 @@
       lib = (nixpkgs.lib // home-manager.lib).extend (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
 
-      # NixOS modules that can only be used on NixOS systems
-      nixModules = [
-        inputs.stylix.nixosModules.stylix
-        inputs.lanzaboote.nixosModules.lanzaboote
-        inputs.disko.nixosModules.disko
-        inputs.impermanence.nixosModules.impermanence
-        inputs.sops-nix.nixosModules.sops
-        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        inputs.nix-topology.nixosModules.default
-        ./profiles/nixos/common
-      ];
 
       # Home-Manager modules wanted on non-NixOS systems
-      homeModules = [
-        inputs.stylix.homeManagerModules.stylix
-      ];
 
       # Home-Manager modules wanted on both NixOS and non-NixOS systems
-      mixedModules = [
-        inputs.sops-nix.homeManagerModules.sops
-        inputs.nix-index-database.hmModules.nix-index
-        ./profiles/home/common
-      ];
 
     in
     {
 
-      inherit lib nixModules mixedModules homeModules;
+      inherit lib;
 
       nixosModules = import ./modules/nixos { inherit lib; };
       homeManagerModules = import ./modules/home { inherit lib; };

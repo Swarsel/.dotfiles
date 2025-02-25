@@ -1,7 +1,12 @@
 { self, outputs, config, ... }:
 {
 
-  imports = outputs.homeModules ++ outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
+  imports = [
+    inputs.stylix.homeManagerModules.stylix
+    inputs.sops-nix.homeManagerModules.sops
+    inputs.nix-index-database.hmModules.nix-index
+    ./profiles/home/common
+  ] ++ (builtins.attrValues outputs.homeManagerModules);
 
   nixpkgs = {
     overlays = [ outputs.overlays.default ];

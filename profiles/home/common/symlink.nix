@@ -1,7 +1,7 @@
-{ self, ... }:
+{ self, lib, ... }:
 {
   home.file = {
-    "init.el" = {
+    "init.el" = lib.mkDefault {
       source = self + /programs/emacs/init.el;
       target = ".emacs.d/init.el";
     };

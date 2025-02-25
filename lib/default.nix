@@ -31,7 +31,45 @@
       in
       systemFunc {
         specialArgs = { inherit inputs outputs lib self; };
-        modules = [ "${self}/hosts/${type}/${host}" ];
+        modules = [
+          inputs.disko.nixosModules.disko
+          inputs.sops-nix.nixosModules.sops
+          inputs.impermanence.nixosModules.impermanence
+          inputs.lanzaboote.nixosModules.lanzaboote
+          "${self}/hosts/${type}/${host}"
+        ] ++
+        # toto (deployment sandbox) & iso should never receive general configuration
+        (if (host == "toto" || host == "iso") then [ ] else
+        (
+          # sync & winters (servers) should not receive common non-server config
+          (if (host == "winters" || host == "sync") then [ ] else [
+            "${self}/profiles/${type}/common"
+            inputs.stylix.nixosModules.stylix
+            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+            inputs.nix-topology.nixosModules.default
+          ]) ++ (if (type == "nixos") then [
+            inputs.home-manager.nixosModules.home-manager
+            {
+              home-manager.users.swarsel.imports = (
+                # sync & winters (servers) should not receive common non-server config
+                if (host == "winters" || host == "sync") then [ ] else [
+                  "${self}/profiles/home/common"
+                ]
+              ) ++ [
+                inputs.sops-nix.homeManagerModules.sops
+                inputs.nix-index-database.hmModules.nix-index
+              ] ++ (builtins.attrValues outputs.homeManagerModules);
+            }
+          ] else [
+            "${self}/profiles/darwin/nixos/common"
+            inputs.home-manager.darwinModules.home-manager
+            {
+              home-manager.users."leon.schwarzaeugl".imports = [
+                "${self}/profiles/darwin/home"
+              ] ++ (builtins.attrValues outputs.homeManagerModules);
+            }
+          ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules)
+        ));
       };
   };
 
@@ -40,11 +78,12 @@
       let
         systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
       in
-      systemFunc {
-        inherit pkgs;
-        extraSpecialArgs = { inherit inputs outputs lib self; };
-        modules = [ "${self}/hosts/${type}/${host}" ];
-      };
+      systemFunc
+        {
+          inherit pkgs;
+          extraSpecialArgs = { inherit inputs outputs lib self; };
+          modules = [ "${self}/hosts/${type}/${host}" ];
+        };
   };
 
   mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);

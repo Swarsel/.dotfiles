@@ -1,19 +1,5 @@
-{ self, inputs, outputs, ... }:
-let
-  profilesPath = "${self}/profiles";
-in
+{ lib, ... }:
 {
-  imports = [
-    "${profilesPath}/darwin/nixos/common"
-
-    inputs.home-manager.darwinModules.home-manager
-    {
-      home-manager.users."leon.schwarzaeugl".imports = [
-        "${profilesPath}/darwin/home"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
-    }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
-
 
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;

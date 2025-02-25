@@ -32,7 +32,7 @@
           };
         };
         folders = {
-          "Default Folder" = {
+          "Default Folder" = lib.mkForce {
             path = "/Vault/data/syncthing/Sync";
             type = "receiveonly";
             versioning = null;
