@@ -119,7 +119,7 @@
     unzip
 
     #nautilus
-    stable.gnome.nautilus
+    stable.nautilus
     xfce.tumbler
     libgsf
 
