@@ -3,14 +3,14 @@
   # specialisation = {
   #   gaming.configuration = {
   home.packages = with pkgs; [
-    stable.lutris
+    lutris
     wine
     winetricks
     libudev-zero
     dwarfs
     fuse-overlayfs
     # steam
-    # steam-run
+    steam-run
     patchelf
     gamescope
     vulkan-tools
@@ -18,8 +18,9 @@
     ns-usbloader
 
     quark-goldleaf
+
     # gog games installing
-    # heroic
+    heroic
 
     # minecraft
     prismlauncher # has overrides

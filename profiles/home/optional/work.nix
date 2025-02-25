@@ -10,7 +10,7 @@
     awscli2
     libguestfs-with-appliance
     stable.prometheus.cli
-    ciscoPacketTracer8
+    tigervnc
   ];
 
   home.sessionVariables = {

@@ -119,7 +119,7 @@
     unzip
 
     #nautilus
-    nautilus
+    stable.gnome.nautilus
     xfce.tumbler
     libgsf
 
@@ -136,7 +136,7 @@
     # the following packages are used (in some way) by waybar
     playerctl
     pavucontrol
-    pamixer
+    stable.pamixer
     # gnome.gnome-clocks
     # wlogout
     # jdiskreport
