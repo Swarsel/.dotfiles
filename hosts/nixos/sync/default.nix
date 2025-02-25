@@ -16,7 +16,7 @@ in
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
 
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
   sops = {
     defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";

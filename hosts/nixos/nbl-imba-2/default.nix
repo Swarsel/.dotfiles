@@ -29,7 +29,7 @@ in
         "${profilesPath}/home/optional/work.nix"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
 

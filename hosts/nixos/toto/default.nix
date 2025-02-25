@@ -37,7 +37,7 @@ in
 
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
   environment.systemPackages = with pkgs; [

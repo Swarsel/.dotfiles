@@ -12,7 +12,7 @@ in
         "${profilesPath}/darwin/home"
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
   # Auto upgrade nix package and the daemon service.

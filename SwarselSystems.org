@@ -871,7 +871,7 @@ My work machine. Built for more security, this is the gold standard of my config
           "${profilesPath}/home/optional/work.nix"
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
 
@@ -1224,7 +1224,7 @@ This is my main server that I run at home. It handles most tasks that require bi
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
 
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -1338,7 +1338,7 @@ A Mac notebook that I have received from work. I use this machine for getting ac
           "${profilesPath}/darwin/home"
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
     # Auto upgrade nix package and the daemon service.
@@ -1455,7 +1455,7 @@ This machine mainly acts as an external sync helper. It manages the following th
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
 
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
     sops = {
       defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
@@ -1588,7 +1588,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
         ] ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
     environment.systemPackages = with pkgs; [
@@ -1994,7 +1994,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       {
         home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
       }
-    ] ++ (builtins.attrValues outputs.nixosModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
     nixpkgs = {
@@ -3797,25 +3797,6 @@ lib.swarselsystems.mkModules moduleNames "nixos"
 #+end_src
 
 
-***** Wallpaper
-:PROPERTIES:
-:CUSTOM_ID: h:bd7517c6-0e0a-4063-bc81-e62cd24e7170
-:END:
-
-This lets me set the wallpaper that I want to use. Duplicated with home-manager options because mixing system and user level configuration is not a good idea.
-
-#+begin_src nix :tangle modules/nixos/wallpaper.nix
-  { self, lib, ... }:
-
-  {
-    options.swarselsystems.wallpaper = lib.mkOption {
-      type = lib.types.path;
-      default = "${self}/wallpaper/lenovowp.png";
-    };
-  }
-
-#+end_src
-
 ***** Hardware
 :PROPERTIES:
 :CUSTOM_ID: h:c6a138ff-f07f-4cae-95b9-b6daa2b11463
@@ -3851,10 +3832,6 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
       type = lib.types.str;
       default = "swarsel";
     };
-    options.swarselsystems.flakePath = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-    };
     options.swarselsystems.withHomeManager = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -3872,11 +3849,8 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
       default = "";
     };
     options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
-    options.swarselsystems.isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
-    options.swarselsystems.isLinux = lib.mkEnableOption "whether this is a linux machine";
 
-    options.swarselsystems.isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
     options.swarselsystems.isSecureBoot = lib.mkEnableOption "use secure boot on this system";
   }
@@ -3912,22 +3886,6 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
   }
 #+end_src
 
-***** Input
-:PROPERTIES:
-:CUSTOM_ID: h:45188d3c-9910-480b-beec-d5fd713b05fb
-:END:
-
-This section is for everything input-related on the NixOS side. At the moment, this is only used to define shell aliases for servers.
-
-#+begin_src nix :tangle modules/nixos/input.nix
-  { lib, ... }:
-  {
-    options.swarselsystems.shellAliases = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      default = { };
-    };
-  }
-#+end_src
 
 **** home-manager
 :PROPERTIES:
@@ -4422,6 +4380,61 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
       };
     };
 
+
+  }
+#+end_src
+
+***** stylix
+
+#+begin_src nix :noweb yes :tangle modules/home/stylix.nix
+  { self, lib, pkgs, ... }:
+  {
+    options.swarselsystems.stylix = lib.mkOption {
+      type = lib.types.attrs;
+      default = {
+        enable = true;
+        base16Scheme = "${self}/programs/stylix/swarsel.yaml";
+        polarity = "dark";
+        opacity.popups = 0.5;
+        cursor = {
+          package = pkgs.banana-cursor;
+          # package = pkgs.capitaine-cursors;
+          name = "Banana";
+          # name = "capitaine-cursors";
+          size = 16;
+        };
+        fonts = {
+          sizes = {
+            terminal = 10;
+            applications = 11;
+          };
+          serif = {
+            # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+            package = pkgs.cantarell-fonts;
+            # package = pkgs.montserrat;
+            name = "Cantarell";
+            # name = "FiraCode Nerd Font Propo";
+            # name = "Montserrat";
+          };
+          sansSerif = {
+            # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+            package = pkgs.cantarell-fonts;
+            # package = pkgs.montserrat;
+            name = "Cantarell";
+            # name = "FiraCode Nerd Font Propo";
+            # name = "Montserrat";
+          };
+          monospace = {
+            package = pkgs.nerd-fonts.fira-mono; # has overrides
+            name = "FiraCode Nerd Font Mono";
+          };
+          emoji = {
+            package = pkgs.noto-fonts-emoji;
+            name = "Noto Color Emoji";
+          };
+        };
+      };
+    };
 
   }
 #+end_src
@@ -5411,13 +5424,14 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/nixos/common/stylix.nix
-  { self, pkgs, home-manager, config, ... }:
+  { lib, config, ... }:
   {
-    stylix = {
-      <<theme>>
-      targets.grub.enable = false; # the styling makes grub more ugly
-      image = config.swarselsystems.wallpaper;
-    };
+    stylix = lib.recursiveUpdate
+      {
+        targets.grub.enable = false; # the styling makes grub more ugly
+        image = config.swarselsystems.wallpaper;
+      }
+      config.swarselsystems.stylix;
     home-manager.users.swarsel = {
       stylix = {
         targets = {
@@ -8724,16 +8738,17 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix :noweb yes :tangle profiles/home/common/stylix.nix
-  { self, lib, config, pkgs, ... }:
+  { lib, config, ... }:
   {
-    stylix = lib.mkIf (!config.swarselsystems.isNixos) {
-      <<theme>>
-      image = config.swarselsystems.wallpaper;
-      targets = {
-        emacs.enable = false;
-        waybar.enable = false;
-      };
-    };
+    stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
+      {
+        image = config.swarselsystems.wallpaper;
+        targets = {
+          emacs.enable = false;
+          waybar.enable = false;
+        };
+      }
+      config.swarselsystems.stylix);
   }
 #+end_src
 
@@ -14193,16 +14208,12 @@ These blocks are used in several places throughout the configurations, but not o
 Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
 
 This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
-** Theme (stylix)
-:PROPERTIES:
-:CUSTOM_ID: h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78
-:END:
 
 For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
 
 The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
 
-This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here is, however, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now).
+This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 
 
 #+begin_src nix :tangle no :noweb-ref theme

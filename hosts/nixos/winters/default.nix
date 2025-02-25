@@ -19,7 +19,7 @@ in
       ] ++ (builtins.attrValues outputs.homeManagerModules);
     }
 
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
   boot = {
     loader.systemd-boot.enable = true;
@@ -33,7 +33,6 @@ in
     enableIPv6 = false;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
-
 
   swarselsystems = {
     hasBluetooth = false;

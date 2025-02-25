@@ -14,7 +14,7 @@ in
     {
       home-manager.users.swarsel.imports = outputs.mixedModules ++ (builtins.attrValues outputs.homeManagerModules);
     }
-  ] ++ (builtins.attrValues outputs.nixosModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
 
 
   nixpkgs = {
