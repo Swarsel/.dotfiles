@@ -27,6 +27,7 @@
         lt = "eza -las modified --total-size";
         boot-diff = "nix store diff-closures /run/*-system";
         gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
+        cc = "wl-copy";
       }
       config.swarselsystems.shellAliases;
     autosuggestion.enable = true;
