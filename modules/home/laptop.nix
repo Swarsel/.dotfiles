@@ -7,6 +7,7 @@
       tap = "enabled";
       natural_scroll = "enabled";
       middle_emulation = "enabled";
+      drag_lock = "disabled";
     };
   };
   config.swarselsystems.waybarModules = lib.mkIf config.swarselsystems.isLaptop [

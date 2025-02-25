@@ -190,6 +190,7 @@ in
           tap = "enabled";
           natural_scroll = "enabled";
           middle_emulation = "enabled";
+          drag_lock = "disabled";
         };
         "1133:50504:Logitech_USB_Receiver" = {
           xkb_layout = "us";

@@ -18,6 +18,8 @@
     "aspnetcore-runtime-6.0.36"
     "dotnet-sdk-wrapped-6.0.428"
     "dotnet-sdk-6.0.428"
+    #
+    "SDL_ttf-2.0.11"
   ];
 
 }

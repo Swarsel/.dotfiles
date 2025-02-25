@@ -73,7 +73,7 @@
     spotify-player
     element-desktop
     nicotine-plus
-    stable.transmission
+    stable.transmission_3
     mktorrent
     hexchat
     hugo
