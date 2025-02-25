@@ -331,7 +331,7 @@ The interesting part is in the start:
 In this section I am creating some attributes that define general concepts of my configuration:
 
 - =nixosModules= imports self-defined options that I only want to use on NixOS systems. All modules are held as separately as possible, to allow for easier sharing with other people mostly.
-- =homeManagerModules= imports modules that are to be used on NixOS and non-NixOS systems. These are mostly used to define outputs (monitors), keyboards and special commands for machines.
+- =homeModules= imports modules that are to be used on NixOS and non-NixOS systems. These are mostly used to define outputs (monitors), keyboards and special commands for machines.
 - =packages= holds packages that I am building myself. These are mostly shell scripts, but also a few others such as AppImages and firefox addons.
 - =devShells= provides a development shell that can be used as a bootstrap for new installs using =nix develop= while inside the flake directory. It received an overhaul in =0a6cf0e feat: add checks to devShell=, since when it is handled using =forAllSystems= and now including pre-commit-hook checks.
 - =formatter= provides the formatter that is to be used on =.nix= files. It can be called by using =nix fmt=.
@@ -348,7 +348,7 @@ In this section I am creating some attributes that define general concepts of my
     inherit lib;
 
     nixosModules = import ./modules/nixos { inherit lib; };
-    homeManagerModules = import ./modules/home { inherit lib; };
+    homeModules = import ./modules/home { inherit lib; };
     packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
     formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
     overlays = import ./overlays { inherit self lib inputs; };
@@ -1531,9 +1531,9 @@ This is a slim setup for developing base configuration. I do not track the hardw
           "${profilesPath}/home/common/settings.nix"
           "${profilesPath}/home/common/sops.nix"
           "${profilesPath}/home/common/ssh.nix"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ] ++ (builtins.attrValues outputs.homeModules);
       }
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules);
 
 
     environment.systemPackages = with pkgs; [
@@ -1766,7 +1766,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
       {
         home-manager.users.swarsel.imports = [
           "${self}/profiles/home/common/settings.nix"
-        ] ++ (builtins.attrValues outputs.homeManagerModules);
+        ] ++ (builtins.attrValues outputs.homeModules);
       }
     ];
 
@@ -1879,7 +1879,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
       inputs.sops-nix.homeManagerModules.sops
       inputs.nix-index-database.hmModules.nix-index
       ./profiles/home/common
-    ] ++ (builtins.attrValues outputs.homeManagerModules);
+    ] ++ (builtins.attrValues outputs.homeModules);
 
     nixpkgs = {
       overlays = [ outputs.overlays.default ];
@@ -4445,7 +4445,7 @@ TODO
                 ) ++ [
                   inputs.sops-nix.homeManagerModules.sops
                   inputs.nix-index-database.hmModules.nix-index
-                ] ++ (builtins.attrValues outputs.homeManagerModules);
+                ] ++ (builtins.attrValues outputs.homeModules);
               }
             ] else [
               "${self}/profiles/darwin/nixos/common"
@@ -4453,9 +4453,9 @@ TODO
               {
                 home-manager.users."leon.schwarzaeugl".imports = [
                   "${self}/profiles/darwin/home"
-                ] ++ (builtins.attrValues outputs.homeManagerModules);
+                ] ++ (builtins.attrValues outputs.homeModules);
               }
-            ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules)
+            ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
           ));
         };
     };

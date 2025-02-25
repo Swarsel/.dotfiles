@@ -29,9 +29,9 @@ in
         "${profilesPath}/home/common/settings.nix"
         "${profilesPath}/home/common/sops.nix"
         "${profilesPath}/home/common/ssh.nix"
-      ] ++ (builtins.attrValues outputs.homeManagerModules);
+      ] ++ (builtins.attrValues outputs.homeModules);
     }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules);
+  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules);
 
 
   environment.systemPackages = with pkgs; [

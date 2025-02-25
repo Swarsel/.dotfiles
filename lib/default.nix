@@ -58,7 +58,7 @@
               ) ++ [
                 inputs.sops-nix.homeManagerModules.sops
                 inputs.nix-index-database.hmModules.nix-index
-              ] ++ (builtins.attrValues outputs.homeManagerModules);
+              ] ++ (builtins.attrValues outputs.homeModules);
             }
           ] else [
             "${self}/profiles/darwin/nixos/common"
@@ -66,9 +66,9 @@
             {
               home-manager.users."leon.schwarzaeugl".imports = [
                 "${self}/profiles/darwin/home"
-              ] ++ (builtins.attrValues outputs.homeManagerModules);
+              ] ++ (builtins.attrValues outputs.homeModules);
             }
-          ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeManagerModules)
+          ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
         ));
       };
   };

@@ -6,7 +6,7 @@
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
     ./profiles/home/common
-  ] ++ (builtins.attrValues outputs.homeManagerModules);
+  ] ++ (builtins.attrValues outputs.homeModules);
 
   nixpkgs = {
     overlays = [ outputs.overlays.default ];

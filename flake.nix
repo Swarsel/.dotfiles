@@ -102,7 +102,7 @@
       inherit lib;
 
       nixosModules = import ./modules/nixos { inherit lib; };
-      homeManagerModules = import ./modules/home { inherit lib; };
+      homeModules = import ./modules/home { inherit lib; };
       packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
       formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
       overlays = import ./overlays { inherit self lib inputs; };
