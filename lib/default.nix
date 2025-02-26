@@ -41,11 +41,11 @@
         ] ++
         (if (host == "toto" || host == "iso") then [ ] else
         ([
-          # put inports here that are for all servers and normal hosts
+          # put nixos imports here that are for all servers and normal hosts
           inputs.nix-topology.nixosModules.default
         ] ++
         (if (host == "winters" || host == "sync") then [ ] else [
-          # put imports here that are for all normal hosts
+          # put nixos imports here that are for all normal hosts
           "${self}/profiles/${type}/common"
           inputs.stylix.nixosModules.stylix
           inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -54,20 +54,22 @@
           {
             home-manager.users.swarsel.imports = (
               if (host == "winters" || host == "sync") then [ ] else [
-                # put imports here that are for all normal hosts
+                # put home-manager imports here that are for all normal hosts
                 "${self}/profiles/home/common"
               ]
             ) ++ [
-              # put inports here that are for all servers and normal hosts
+              # put home-manager imports here that are for all servers and normal hosts
               inputs.sops-nix.homeManagerModules.sops
               inputs.nix-index-database.hmModules.nix-index
             ] ++ (builtins.attrValues outputs.homeModules);
           }
         ] else [
+          # put nixos imports here that are for darwin hosts
           "${self}/profiles/darwin/nixos/common"
           inputs.home-manager.darwinModules.home-manager
           {
             home-manager.users."leon.schwarzaeugl".imports = [
+              # put home-manager imports here that are for darwin hosts
               "${self}/profiles/darwin/home"
             ] ++ (builtins.attrValues outputs.homeModules);
           }

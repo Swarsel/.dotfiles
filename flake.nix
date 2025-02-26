@@ -90,12 +90,6 @@
       inherit (self) outputs;
       lib = (nixpkgs.lib // home-manager.lib).extend (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
-
-
-      # Home-Manager modules wanted on non-NixOS systems
-
-      # Home-Manager modules wanted on both NixOS and non-NixOS systems
-
     in
     {
 
@@ -157,6 +151,7 @@
         import ./checks { inherit self inputs system pkgs; }
       );
 
+
       nixosConfigurations =
         lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
       homeConfigurations =
@@ -182,6 +177,7 @@
         # };
 
         lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+
 
       topology =
 

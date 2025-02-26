@@ -158,6 +158,7 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
       in
       {
         <<flakeoutputgeneral>>
+
         nixosConfigurations =
         <<flakenixosconf>>
         homeConfigurations =
@@ -166,6 +167,7 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
         <<flakedarwinconf>>
         nixOnDroidConfigurations =
         <<flakedroidconf>>
+
         topology =
         <<topologyconf>>
         };
@@ -302,25 +304,14 @@ When setting this option normally, the password would normally be written world-
 :CUSTOM_ID: h:df0072bc-853f-438f-bd85-bfc869501015
 :END:
 
-Here I define a few variables that I need for my system specifications. First and foremost, =pkgs=, which gets passed the emacs-overlay, nur, and nixgl modules to it. With this, I can grab all these packages by referencing =pkgs.<name>= instead of having to put e.g. =nixgl.auto.nixGLDefault=.
-
-The interesting part is in the start:
-- first, I define =pkgsFor=. This function reads all available systems from nixpkgs and generates pkgs for them.
-- next, =forEachSystem= is a function that can be called to declare an output for each such defined system.
-- =forAllSystems= is a crude function that I use for expressions that depend on =system=, as the prior two attributes already consumed it at that stage. This is only really used to generate the checks in their own file.
-- =mkFullHost= is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching =nixosSystem= or =darwinSystem=. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options).
-- =mkFullHostConfigs= is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in =hosts/= under either the =nixos/= or =darwin/= directory. These directories are being read by =readHosts= and delivered to this funtion in the later call in [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] or [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]].
+Here I define a few variables that I need for my system specifications. There used to be more here, but I managed to optimize my configuration, and only two things remain:
+- =outputs=, which is needed for =lib=
+- =lib=: This exposes a common =lib= for NixOS and home-manager that is extended by my own personal =lib= functions.
 
 #+begin_src nix :tangle no :noweb-ref flakelet
 
   inherit (self) outputs;
   lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
-
-
-
-  # Home-Manager modules wanted on non-NixOS systems
-
-  # Home-Manager modules wanted on both NixOS and non-NixOS systems
 
 #+end_src
 ** General (outputs)
@@ -4378,9 +4369,13 @@ This section defines all functions of my own that I add to =lib=. These are used
 
 A breakdown of each function:
 
-TODO
+The interesting part is in the start:
+- first, I define =pkgsFor=. This function reads all available systems from nixpkgs and generates pkgs for them.
+- next, =forEachSystem= is a function that can be called to declare an output for each such defined system.
+- =forAllSystems= is a crude function that I use for expressions that depend on =system=, as the prior two attributes already consumed it at that stage. This is only really used to generate the checks in their own file.
+- =mkFullHostConfigs= is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in =hosts/= under either the =nixos/= or =darwin/= directory. These directories are being read by =readHosts= and delivered to this funtion in the later call in [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] or [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]].
 - =mkFullHost=:
-  This function is used in mkFullHostConfigs. It basically dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
+  This is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching =nixosSystem= or =darwinSystem=. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options). This is used in mkFullHostConfigs. In more detail, it dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
   =lib.optionals= evaluates to an empty list (=[]=) in case that the conditional is not met.
 TODO
 
@@ -4428,11 +4423,11 @@ TODO
           ] ++
           (if (host == "toto" || host == "iso") then [ ] else
           ([
-            # put inports here that are for all servers and normal hosts
+            # put nixos imports here that are for all servers and normal hosts
             inputs.nix-topology.nixosModules.default
           ] ++
           (if (host == "winters" || host == "sync") then [ ] else [
-            # put imports here that are for all normal hosts
+            # put nixos imports here that are for all normal hosts
             "${self}/profiles/${type}/common"
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
@@ -4441,20 +4436,22 @@ TODO
             {
               home-manager.users.swarsel.imports = (
                 if (host == "winters" || host == "sync") then [ ] else [
-                  # put imports here that are for all normal hosts
+                  # put home-manager imports here that are for all normal hosts
                   "${self}/profiles/home/common"
                 ]
               ) ++ [
-                # put inports here that are for all servers and normal hosts
+                # put home-manager imports here that are for all servers and normal hosts
                 inputs.sops-nix.homeManagerModules.sops
                 inputs.nix-index-database.hmModules.nix-index
               ] ++ (builtins.attrValues outputs.homeModules);
             }
           ] else [
+            # put nixos imports here that are for darwin hosts
             "${self}/profiles/darwin/nixos/common"
             inputs.home-manager.darwinModules.home-manager
             {
               home-manager.users."leon.schwarzaeugl".imports = [
+                # put home-manager imports here that are for darwin hosts
                 "${self}/profiles/darwin/home"
               ] ++ (builtins.attrValues outputs.homeModules);
             }
