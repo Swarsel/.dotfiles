@@ -36,6 +36,10 @@
     findutils
     units
     vim
+    sshfs
+    fuse
+    ventoy
+    poppler_utils
 
     # nix
     alejandra
@@ -112,7 +116,7 @@
     # dirvish file previews
     fd
     imagemagick
-    poppler
+    # poppler
     ffmpegthumbnailer
     mediainfo
     gnutar
