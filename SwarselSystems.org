@@ -8099,11 +8099,12 @@ These sets of configuration do not need to be deployed on every host, for a mult
 This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in [[#h:84fd7029-ecb6-4131-9333-289982f24ffa][Gaming]] (home-manager side).
 
 #+begin_src nix :tangle profiles/nixos/optional/gaming.nix
-  { pkgs, ... }:
+  { pkgs, lib, ... }:
   {
     specialisation = {
       gaming.configuration = {
         networking = {
+          firewall.enable = lib.mkForce false;
           firewall = {
             allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
             allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
