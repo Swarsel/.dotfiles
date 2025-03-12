@@ -16,6 +16,7 @@
         passpull = "cd ~/.local/share/password-store; git pull; cd -;";
         hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
         cd = "z";
+        youtube-dl = "yt-dlp";
         cd-orig = "cd";
         cat-orig = "cat";
         cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
