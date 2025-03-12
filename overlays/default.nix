@@ -16,7 +16,8 @@ let
       ];
     };
 
-    mgba = final.swarsel-mgba;
+    # mgba = final.swarsel-mgba;
+    swayfx-unwrapped = final.swayfxoki;
 
     retroarch = prev.retroarch.withCores (cores: with cores; [
       snes9x # snes
@@ -29,17 +30,8 @@ let
       dolphin # gc/wii
     ]);
 
-    # luakit = prev.river.overrideAttrs (oldAttrs: rec {
-    #   pname = "river";
-    #   version = "git";
-    #   src = prev.fetchFromGitHub {
-    #     owner = "luakit";
-    #     repo = pname;
-    #     rev = "c16628c7f57c51d50f2d10a96c265fb0afaddb02";
-    #     hash = "sha256-E3Xtv7JeCmafiNmpuS5VuLgh1TDAbibPtMo6A9Pz6EQ=";
-    #     fetchSubmodules = true;
-    #   };
-    # });
+
+
   };
 
   nixpkgs-stable = final: _: {
@@ -65,6 +57,7 @@ in
     // (inputs.nur.overlays.default final prev)
     // (inputs.emacs-overlay.overlay final prev)
     // (inputs.nix-topology.overlays.default final prev)
+    // (inputs.scenefx.overlays.insert final prev)
     // (inputs.nixgl.overlay final prev);
 
 }

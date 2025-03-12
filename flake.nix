@@ -76,7 +76,10 @@
       inputs = { };
     };
     nix-topology.url = "github:oddlama/nix-topology";
-
+    scenefx = {
+      url = "github:wlrfx/scenefx";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs =
     inputs@{ self
