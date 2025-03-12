@@ -8,6 +8,7 @@
     lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
       enable = true;
       pkiBundle = "/var/lib/sbctl";
+      configurationLimit = 3;
     };
   };
 }
