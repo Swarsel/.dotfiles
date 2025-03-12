@@ -51,6 +51,7 @@
     nix-visualize
     nix-init
     nix-inspect
+    nixpkgs-review
     manix
     comma
 

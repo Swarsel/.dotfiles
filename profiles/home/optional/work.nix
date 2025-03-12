@@ -7,10 +7,11 @@
     docker
     postman
     rclone
-    awscli2
+    stable.awscli2
     libguestfs-with-appliance
     stable.prometheus.cli
     tigervnc
+    openstackclient
   ];
 
   home.sessionVariables = {
