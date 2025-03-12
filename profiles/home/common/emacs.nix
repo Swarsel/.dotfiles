@@ -10,7 +10,7 @@
     enable = true;
     package = pkgs.emacsWithPackagesFromUsePackage {
       config = self + /programs/emacs/init.el;
-      package = pkgs.emacs-pgtk;
+      package = pkgs.emacs-git-pgtk;
       alwaysEnsure = true;
       alwaysTangle = true;
       extraEmacsPackages = epkgs: [

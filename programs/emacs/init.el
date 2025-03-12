@@ -1277,18 +1277,18 @@ create a new one."
   ("C-z r" . cape-rfc1345)
   )
 
-(use-package rustic
-  :init
-  (setq rust-mode-treesitter-derive t)
-  :config
-  (define-key rust-ts-mode-map (kbd "C-c C-c C-r") 'rustic-cargo-run)
-  (define-key rust-ts-mode-map (kbd "C-c C-c C-b") 'rustic-cargo-build)
-  (define-key rust-ts-mode-map (kbd "C-c C-c C-k") 'rustic-cargo-check)
-  (define-key rust-ts-mode-map (kbd "C-c C-c d") 'rustic-cargo-doc)
-  (define-key rust-ts-mode-map (kbd "C-c C-c a") 'rustic-cargo-add)
-  (setq rustic-format-on-save t)
-  (setq rustic-lsp-client 'eglot)
-  :mode ("\\.rs" . rustic-mode))
+;;(use-package rustic
+;;  :init
+;;  (setq rust-mode-treesitter-derive t)
+;;  :config
+;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-r") 'rustic-cargo-run)
+;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-b") 'rustic-cargo-build)
+;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-k") 'rustic-cargo-check)
+;;  (define-key rust-ts-mode-map (kbd "C-c C-c d") 'rustic-cargo-doc)
+;; (define-key rust-ts-mode-map (kbd "C-c C-c a") 'rustic-cargo-add)
+;;  (setq rustic-format-on-save t)
+;;  (setq rustic-lsp-client 'eglot)
+;;  :mode ("\\.rs" . rustic-mode))
 
 (use-package tramp
   :init
@@ -1335,8 +1335,8 @@ create a new one."
     c++-ts-mode
     go-mode
     go-ts-mode
-    rust-ts-mode
-    rustic-mode
+    ;;rust-ts-mode
+    ;;rustic-mode
     tex-mode
     LaTeX-mode
     ) . (lambda () (progn

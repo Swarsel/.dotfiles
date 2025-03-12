@@ -234,7 +234,7 @@ When setting this option normally, the password would normally be written world-
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
-  nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  nixpkgs.url = "github:nixos/nixpkgs?rev=5f385baff93c728400d2c4ec8c9b0745b8f9e5b6";
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
   systems.url = "github:nix-systems/default-linux";
   home-manager = {
@@ -861,7 +861,26 @@ My work machine. Built for more security, this is the gold standard of my config
       };
     };
 
-    programs.fw-fanctrl.enable = true;
+    programs.fw-fanctrl = {
+      enable = true;
+      config = {
+        defaultStrategy = "lazy";
+        strategies = {
+          "lazy" = {
+            fanSpeedUpdateFrequency = 5;
+            movingAverageInterval = 30;
+            speedCurve = [
+              { temp = 0; speed = 15; }
+              { temp = 50; speed = 15; }
+              { temp = 65; speed = 25; }
+              { temp = 70; speed = 35; }
+              { temp = 75; speed = 50; }
+              { temp = 85; speed = 100; }
+            ];
+          };
+        };
+      };
+    };
 
     networking = {
       hostName = "nbl-imba-2";
@@ -9770,7 +9789,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
       enable = true;
       package = pkgs.emacsWithPackagesFromUsePackage {
         config = self + /programs/emacs/init.el;
-        package = pkgs.emacs-pgtk;
+        package = pkgs.emacs-git-pgtk;
         alwaysEnsure = true;
         alwaysTangle = true;
         extraEmacsPackages = epkgs: [
@@ -13709,18 +13728,18 @@ This sets up rustic-mode with tree-sitter support - there is still one issue to 
 
 #+begin_src emacs-lisp
 
-  (use-package rustic
-    :init
-    (setq rust-mode-treesitter-derive t)
-    :config
-    (define-key rust-ts-mode-map (kbd "C-c C-c C-r") 'rustic-cargo-run)
-    (define-key rust-ts-mode-map (kbd "C-c C-c C-b") 'rustic-cargo-build)
-    (define-key rust-ts-mode-map (kbd "C-c C-c C-k") 'rustic-cargo-check)
-    (define-key rust-ts-mode-map (kbd "C-c C-c d") 'rustic-cargo-doc)
-    (define-key rust-ts-mode-map (kbd "C-c C-c a") 'rustic-cargo-add)
-    (setq rustic-format-on-save t)
-    (setq rustic-lsp-client 'eglot)
-    :mode ("\\.rs" . rustic-mode))
+  ;;(use-package rustic
+  ;;  :init
+  ;;  (setq rust-mode-treesitter-derive t)
+  ;;  :config
+  ;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-r") 'rustic-cargo-run)
+  ;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-b") 'rustic-cargo-build)
+  ;;  (define-key rust-ts-mode-map (kbd "C-c C-c C-k") 'rustic-cargo-check)
+  ;;  (define-key rust-ts-mode-map (kbd "C-c C-c d") 'rustic-cargo-doc)
+  ;; (define-key rust-ts-mode-map (kbd "C-c C-c a") 'rustic-cargo-add)
+  ;;  (setq rustic-format-on-save t)
+  ;;  (setq rustic-lsp-client 'eglot)
+  ;;  :mode ("\\.rs" . rustic-mode))
 
 
 #+end_src
@@ -13832,8 +13851,8 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
       c++-ts-mode
       go-mode
       go-ts-mode
-      rust-ts-mode
-      rustic-mode
+      ;;rust-ts-mode
+      ;;rustic-mode
       tex-mode
       LaTeX-mode
       ) . (lambda () (progn
