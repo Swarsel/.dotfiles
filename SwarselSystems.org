@@ -297,10 +297,6 @@ When setting this option normally, the password would normally be written world-
     inputs = { };
   };
   nix-topology.url = "github:oddlama/nix-topology";
-  scenefx = {
-    url = "github:wlrfx/scenefx";
-    inputs.nixpkgs.follows = "nixpkgs";
-  };
 #+end_src
 ** let
 :PROPERTIES:
@@ -852,6 +848,8 @@ My work machine. Built for more security, this is the gold standard of my config
     };
 
     hardware = {
+      enableAllFirmware = true;
+      cpu.amd.updateMicrocode = true;
       amdgpu = {
         opencl.enable = true;
         amdvlk = {
@@ -863,23 +861,23 @@ My work machine. Built for more security, this is the gold standard of my config
 
     programs.fw-fanctrl = {
       enable = true;
-      config = {
-        defaultStrategy = "lazy";
-        strategies = {
-          "lazy" = {
-            fanSpeedUpdateFrequency = 5;
-            movingAverageInterval = 30;
-            speedCurve = [
-              { temp = 0; speed = 15; }
-              { temp = 50; speed = 15; }
-              { temp = 65; speed = 25; }
-              { temp = 70; speed = 35; }
-              { temp = 75; speed = 50; }
-              { temp = 85; speed = 100; }
-            ];
-          };
-        };
-      };
+      # config = {
+      #   defaultStrategy = "lazy";
+      #   strategies = {
+      #     "lazy" = {
+      #       fanSpeedUpdateFrequency = 5;
+      #       movingAverageInterval = 30;
+      #       speedCurve = [
+      #         { temp = 0; speed = 15; }
+      #         { temp = 50; speed = 15; }
+      #         { temp = 65; speed = 25; }
+      #         { temp = 70; speed = 35; }
+      #         { temp = 75; speed = 50; }
+      #         { temp = 85; speed = 100; }
+      #       ];
+      #     };
+      #   };
+      # };
     };
 
     networking = {
@@ -892,7 +890,14 @@ My work machine. Built for more security, this is the gold standard of my config
     services = {
       fwupd.enable = true;
       udev.extraRules = ''
+        # Make Framework 16 Ethernet Module work reliably
         ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
+
+        # disable Wakup on Framework Laptop 16 Keyboard
+        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0018", ATTR{power/wakeup}="disabled"
+
+        # disable Wakup on Framework Laptop 16 Numpad Module
+        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0014", ATTR{power/wakeup}="disabled"
       '';
     };
 
@@ -913,14 +918,11 @@ My work machine. Built for more security, this is the gold standard of my config
         isNixos = true;
         flakePath = "/home/swarsel/.dotfiles";
         cpuCount = 16;
-        # temperatureHwmon = {
-        #   isAbsolutePath = true;
-        #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-        #   input-filename = "temp1_input";
-        # };
-        #  ------   -----
-        # | DP-4 | |eDP-1|
-        #  ------   -----
+        temperatureHwmon = {
+          isAbsolutePath = true;
+          path = "/sys/devices/virtual/thermal/thermal_zone0/";
+          input-filename = "temp4_input";
+        };
         startup = [
           { command = "nextcloud --background"; }
           { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
@@ -998,7 +1000,7 @@ My work machine. Built for more security, this is the gold standard of my config
             mode = "1280x720";
             scale = "1";
             position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-            workspace = "12:S";
+            workspace = "14:T";
             output = "DP-4";
           };
         };
@@ -1041,6 +1043,7 @@ My work machine. Built for more security, this is the gold standard of my config
   }
 
 
+
 #+end_src
 
 ***** hardware-configuration
@@ -1049,25 +1052,45 @@ My work machine. Built for more security, this is the gold standard of my config
 :END:
 
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
-  { config, lib, modulesPath, ... }:
+  { config, pkgs, lib, modulesPath, ... }:
   {
     imports =
       [
         (modulesPath + "/installer/scan/not-detected.nix")
       ];
 
+    # Fix Wlan after suspend or Hibernate
+    environment.etc."systemd/system-sleep/fix-wifi.sh".source =
+      pkgs.writeShellScript "fix-wifi.sh" ''
+        case $1/$2 in
+          pre/*)
+            ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
+            echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
+            ;;
+
+          post/*)
+            ${pkgs.kmod}/bin/modprobe mt7921e
+            echo 1 > /sys/bus/pci/rescan
+            ;;
+        esac
+      '';
+
     boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
-    boot.initrd.kernelModules = [ ];
+    boot.initrd.kernelModules = [ "sg" ];
     boot.kernelModules = [ "kvm-amd" ];
 
-    # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
-    # TODO: figure out if this is worth it
-    # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
-    # ref:
-    # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
-    # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
-    # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
-    boot.kernelParams = [ "amdgpu.dcdebugmask=0x410" ];
+    boot.kernelParams = [
+      "mem_sleep_default=deep"
+      "amd_pstate=passive"
+      # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
+      # TODO: figure out if this is worth it
+      # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
+      # ref:
+      # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
+      # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
+      # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
+      "amdgpu.dcdebugmask=0x410"
+    ];
 
     boot.extraModulePackages = [ ];
     boot.initrd.luks.devices."cryptroot" = {
@@ -2415,7 +2438,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+begin_src shell :tangle scripts/swarselzellij.sh
   KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
 
-  if [[ $KITTIES -lt 1 ]]; then
+  if ((KITTIES < 1)); then
       exec kitty -o confirm_os_window_close=0 zellij attach --create main
   else
       exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
@@ -2604,21 +2627,10 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+begin_src shell :tangle scripts/screenshare.sh
   SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
-  touch /tmp/screenshare.state
-  STATE=$(< /tmp/screenshare.state)
-
-  if [[ $STATE != "1" ]]; then
-      wl-mirror "$SHARESCREEN" &
-      sleep 0.1
-      swaymsg output "$SHARESCREEN" mode "$SWARSEL_LO_RES"
-      echo 1 > /tmp/screenshare.state
-      swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 12:S'
-      swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
-  else
-      swaymsg output "$SHARESCREEN" mode "$SWARSEL_HI_RES"
-      echo 0 > /tmp/screenshare.state
-      swaymsg '[app_id=at.yrlf.wl_mirror] kill'
-  fi
+  wl-mirror "$SHARESCREEN" &
+  sleep 0.1
+  swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
+  swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
 #+end_src
 
 
@@ -3543,157 +3555,6 @@ This script allows for quick git branch switching.
 
 #+end_src
 
-**** swayfxoki
-
-
-#+begin_src nix :tangle pkgs/swayfxoki/default.nix
-  {
-    lib,
-    fetchFromGitHub,
-    stdenv,
-    systemd,
-    meson,
-    replaceVars,
-    swaybg,
-    ninja,
-    pkg-config,
-    gdk-pixbuf,
-    librsvg,
-    wayland-protocols,
-    libdrm,
-    libinput,
-    cairo,
-    pango,
-    wayland,
-    libGL,
-    libxkbcommon,
-    pcre2,
-    cmake,
-    json_c,
-    libevdev,
-    scdoc,
-    scenefx,
-    wayland-scanner,
-    xcbutilwm,
-    wlroots_0_18,
-    testers,
-    nixosTests,
-    # Used by the NixOS module:
-    isNixOS ? false,
-    enableXWayland ? true,
-    systemdSupport ? lib.meta.availableOn stdenv.hostPlatform systemd,
-    trayEnabled ? systemdSupport,
-    ...
-  }:
-
-  stdenv.mkDerivation (finalAttrs: {
-    inherit
-      enableXWayland
-      isNixOS
-      systemdSupport
-      trayEnabled
-    ;
-
-    pname = "swayfx-unwrapped";
-    version = "0.5";
-
-    src = fetchFromGitHub {
-      owner = "WillPower3309";
-      repo = "swayfx";
-      tag = "0.5";
-      hash = "sha256-gdab7zkjp/S7YVCP1t/OfOdUXZRwNvNSuRFGWEJScF8=";
-    };
-
-    patches =
-      [
-        ./load-configuration-from-etc.patch
-
-        (replaceVars ./fix-paths.patch {
-          inherit swaybg;
-        })
-      ];
-
-    strictDeps = true;
-    depsBuildBuild = [ pkg-config ];
-
-    nativeBuildInputs = [
-      meson
-      ninja
-      pkg-config
-      scdoc
-      wayland-scanner
-      cmake
-    ];
-
-    buildInputs = [
-      cairo
-      gdk-pixbuf
-      json_c
-      libdrm
-      libevdev
-      libGL
-      libinput
-      librsvg
-      libxkbcommon
-      pango
-      pcre2
-      scenefx
-      wayland
-      wayland-protocols
-      (wlroots_0_18.override { inherit (finalAttrs) enableXWayland; })
-    ] ++ lib.optionals finalAttrs.enableXWayland [ xcbutilwm ];
-
-    mesonFlags =
-      let
-        inherit (lib.strings) mesonEnable mesonOption;
-
-        # The "sd-bus-provider" meson option does not include a "none" option,
-        # but it is silently ignored iff "-Dtray=disabled".  We use "basu"
-        # (which is not in nixpkgs) instead of "none" to alert us if this
-        # changes: https://github.com/swaywm/sway/issues/6843#issuecomment-1047288761
-        # assert trayEnabled -> systemdSupport && dbusSupport;
-
-        sd-bus-provider = if systemdSupport then "libsystemd" else "basu";
-      in
-        [
-          (mesonOption "sd-bus-provider" sd-bus-provider)
-          (mesonEnable "tray" finalAttrs.trayEnabled)
-        ];
-
-    passthru = {
-      tests = {
-        basic = nixosTests.swayfx;
-        version = testers.testVersion {
-          package = finalAttrs.finalPackage;
-          command = "sway --version";
-          version = "swayfx version ${finalAttrs.version}";
-        };
-      };
-    };
-
-    meta = {
-      description = "Sway, but with eye candy!";
-      homepage = "https://github.com/WillPower3309/swayfx";
-      changelog = "https://github.com/WillPower3309/swayfx/releases/tag/${finalAttrs.version}";
-      license = lib.licenses.mit;
-      maintainers = with lib.maintainers; [
-        ricarch97
-      ];
-      platforms = lib.platforms.linux;
-      mainProgram = "sway";
-
-      longDescription = ''
-        Fork of Sway, an incredible and one of the most well established Wayland
-        compositors, and a drop-in replacement for the i3 window manager for X11.
-        SwayFX adds extra options and effects to the original Sway, such as rounded corners,
-        shadows and inactive window dimming to bring back some of the Picom X11
-        compositor functionality, which was commonly used with the i3 window manager.
-      '';
-    };
-  })
-
-#+end_src
-
 **** project
 
 #+begin_src shell :tangle scripts/project.sh
@@ -3782,6 +3643,112 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
+**** swarsel-navidrome
+
+
+#+begin_src nix :tangle pkgs/swarsel-navidrome/default.nix
+  {
+    buildGo123Module,
+    buildPackages,
+    fetchFromGitHub,
+    fetchNpmDeps,
+    lib,
+    nodejs,
+    npmHooks,
+    pkg-config,
+    stdenv,
+    ffmpeg-headless,
+    taglib,
+    zlib,
+    nixosTests,
+    nix-update-script,
+    ffmpegSupport ? true,
+    ...
+  }:
+
+  buildGo123Module rec {
+    pname = "navidrome";
+    version = "0.55.1";
+
+    src = fetchFromGitHub {
+      owner = "navidrome";
+      repo = "navidrome";
+      rev = "v${version}";
+      hash = "sha256-74sN2qZVjsD5i3BkJKYcpL3vZsVIg0H5RI70oRdZpi0=";
+    };
+
+    vendorHash = "sha256-bI0iDhATvNylKnI81eeUpgsm8YqySPyinPgBbcO0y4I=";
+
+    npmRoot = "ui";
+
+    npmDeps = fetchNpmDeps {
+      inherit src;
+      sourceRoot = "${src.name}/ui";
+      hash = "sha256-PaE1xcZX9wZRcKeqQCXbdhi4cIBWBL8ZQdww6AOB7sQ=";
+    };
+
+    nativeBuildInputs = [
+      buildPackages.makeWrapper
+      nodejs
+      npmHooks.npmConfigHook
+      pkg-config
+    ];
+
+    overrideModAttrs = oldAttrs: {
+      nativeBuildInputs = lib.filter (drv: drv != npmHooks.npmConfigHook) oldAttrs.nativeBuildInputs;
+      preBuild = null;
+    };
+
+    buildInputs = [
+      taglib
+      zlib
+    ];
+
+    ldflags = [
+      "-X github.com/navidrome/navidrome/consts.gitSha=${src.rev}"
+      "-X github.com/navidrome/navidrome/consts.gitTag=v${version}"
+    ];
+
+    CGO_CFLAGS = lib.optionals stdenv.cc.isGNU [ "-Wno-return-local-addr" ];
+
+    postPatch = ''
+      patchShebangs ui/bin/update-workbox.sh
+    '';
+
+    preBuild = ''
+      make buildjs
+    '';
+
+    tags = [
+      "netgo"
+    ];
+
+    postFixup = lib.optionalString ffmpegSupport ''
+      wrapProgram $out/bin/navidrome \
+        --prefix PATH : ${lib.makeBinPath [ ffmpeg-headless ]}
+    '';
+
+    passthru = {
+      tests.navidrome = nixosTests.navidrome;
+      updateScript = nix-update-script { };
+    };
+
+    meta = {
+      description = "Navidrome Music Server and Streamer compatible with Subsonic/Airsonic";
+      mainProgram = "navidrome";
+      homepage = "https://www.navidrome.org/";
+      license = lib.licenses.gpl3Only;
+      sourceProvenance = with lib.sourceTypes; [ fromSource ];
+      maintainers = with lib.maintainers; [
+        aciceri
+        squalus
+      ];
+      # Broken on Darwin: sandbox-exec: pattern serialization length exceeds maximum (NixOS/nix#4119)
+      broken = stdenv.hostPlatform.isDarwin;
+    };
+  }
+#+end_src
+
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -3811,7 +3778,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       };
 
       # mgba = final.swarsel-mgba;
-      swayfx-unwrapped = final.swayfxoki;
+      navidrome = final.swarsel-navidrome;
 
       retroarch = prev.retroarch.withCores (cores: with cores; [
         snes9x # snes
@@ -3851,7 +3818,6 @@ When adding a new entry here, do not forget to add it in the default output of t
       // (inputs.nur.overlays.default final prev)
       // (inputs.emacs-overlay.overlay final prev)
       // (inputs.nix-topology.overlays.default final prev)
-      // (inputs.scenefx.overlays.insert final prev)
       // (inputs.nixgl.overlay final prev);
 
   }
@@ -6234,32 +6200,56 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 This turns off the display when the lid is closed.
 
 #+begin_src nix :tangle profiles/nixos/common/lid.nix
-  _:
-  {
-    services.logind = {
-      lidSwitch = "suspend";
-      lidSwitchDocked = "ignore";
+_:
+{
+  services.logind = {
+    lidSwitch = "suspend";
+    lidSwitchDocked = "ignore";
+  };
+  services.acpid = {
+    enable = true;
+    handlers.lidClosed = {
+      event = "button/lid \\w+ close";
+      action = ''
+        cat /sys/class/backlight/amdgpu_bl1/device/enabled
+        if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
+        then
+          echo "Lid closed. Disabling fprintd."
+          systemctl stop fprintd
+          ln -s /dev/null /run/systemd/transient/fprintd.service
+          systemctl daemon-reload
+        fi
+      '';
     };
-    services.acpid = {
-      enable = true;
-      lidEventCommands =
-        ''
-          export PATH=$PATH:/run/current-system/sw/bin
-          export WAYLAND_DISPLAY=wayland-1
-          export XDG_RUNTIME_DIR=/run/user/1000
-          export SWAYSOCK=$(ls /run/user/1000/sway-ipc.* | head -n 1)
-
-          LID_STATE=$(cat /proc/acpi/button/lid/*/state | grep -q closed && echo "closed" || echo "open")
-          DOCKED=$(swaymsg -t get_outputs | grep -q 'HDMI\|DP' && echo "docked" || echo "undocked")
-
-          if [ "$LID_STATE" == "closed" ] && [ "$DOCKED" == "docked" ]; then
-              swaymsg output eDP-2 disable
-          else
-              swaymsg output eDP-2 enable
-          fi
-        '';
+    handlers.lidOpen = {
+      event = "button/lid \\w+ open";
+      action = ''
+        if ! $(systemctl is-active --quiet fprintd); then
+          echo "Lid open. Enabling fprintd."
+          rm -f /run/systemd/transient/fprintd.service
+          systemctl daemon-reload
+          systemctl start fprintd
+        fi
+      '';
     };
-  }
+    lidEventCommands =
+      ''
+        export PATH=$PATH:/run/current-system/sw/bin
+        export WAYLAND_DISPLAY=wayland-1
+        export XDG_RUNTIME_DIR=/run/user/1000
+        export SWAYSOCK=$(ls /run/user/1000/sway-ipc.* | head -n 1)
+
+        LID_STATE=$(cat /proc/acpi/button/lid/*/state | grep -q closed && echo "closed" || echo "open")
+        DOCKED=$(swaymsg -t get_outputs | grep -q 'HDMI\|DP' && echo "docked" || echo "undocked")
+
+        if [ "$LID_STATE" == "closed" ] && [ "$DOCKED" == "docked" ]; then
+            swaymsg output eDP-2 disable
+        else
+            swaymsg output eDP-2 enable
+        fi
+      '';
+  };
+}
 #+end_src
 
 **** Low battery notification
@@ -6715,9 +6705,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
           MPVCommandTemplate = "mpv --audio-device=%d --no-audio-display --pause %f";
           Jukebox = {
             Enabled = true;
-            Default = "pch";
+            Default = "default";
             Devices = [
-              [ "pch" "alsa/sysdefault:CARD=PCH" ]
+              # use mpv --audio-device=help to get these
+              [ "default" "alsa/sysdefault:CARD=PCH" ]
             ];
           };
           # Switch using --impure as these credential files are not stored within the flake
@@ -8680,8 +8671,9 @@ This holds packages that I can use as provided, or with small modifications (as 
       # wayland stuff
       wtype
       wl-clipboard
-      wl-mirror
+      stable.wl-mirror
       wf-recorder
+      kanshi
 
       # screenshotting tools
       grim
@@ -8819,7 +8811,6 @@ It is very convenient to have SSH aliases in place for machines that I use. This
         ServerAliveInterval 20
       '';
       matchBlocks = {
-        # Local machines
         "pfsense" = {
           hostname = "192.168.1.1";
           user = "root";
@@ -8834,7 +8825,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
         };
         "sync" = {
           hostname = "193.122.53.173";
-          user = "root"; #this is a oracle vm server but needs root due to nixos-infect
+          user = "root";
         };
         "songdiver" = {
           hostname = "89.168.100.65";
@@ -8843,10 +8834,6 @@ It is very convenient to have SSH aliases in place for machines that I use. This
         "pkv" = {
           hostname = "46.232.248.161";
           user = "root";
-        };
-        "efficient" = {
-          hostname = "g0.complang.tuwien.ac.at";
-          user = "ep01427399";
         };
       };
     };
@@ -8873,6 +8860,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
         targets = {
           emacs.enable = false;
           waybar.enable = false;
+          sway.useWallpaper = false;
         };
       }
       config.swarselsystems.stylix);
@@ -10574,7 +10562,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
 #+begin_src nix :tangle profiles/home/common/sway.nix
-  { config, lib, ... }:
+  { self, config, lib, ... }:
   let
     inherit (config.swarselsystems) monitors;
     workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput monitors;
@@ -10679,6 +10667,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
               "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
               "${modifier}+r" = "mode resize";
+              # "${modifier}+Return" = "exec kitty";
               "${modifier}+Return" = "exec swarselzellij";
               "${modifier}+Print" = "exec screenshare";
               # "XF86AudioRaiseVolume" = "exec pa 5%";
@@ -10704,7 +10693,15 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           };
         };
         defaultWorkspace = "workspace 1:一";
-        output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
+        # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
+        output = {
+          "${config.swarselsystems.sharescreen}" = {
+            bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+          };
+          "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
+            bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+          };
+        };
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign = workplaceOutputs;
         startup = config.swarselsystems.startup ++ [
@@ -10737,6 +10734,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             { title = "^Add$"; }
             { title = "^Picture-in-Picture$"; }
             { title = "Syncthing Tray"; }
+            { title = "^spotifytui$"; }
+            { title = "^kittyterm$"; }
             { app_id = "vesktop"; }
             { window_role = "pop-up"; }
             { window_role = "bubble"; }
@@ -10866,8 +10865,93 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
                 seat * hide_cursor 2000
 
+                exec kanshi
+                exec_always kill -1 $(pidof kanshi)
+
+                bindswitch --locked lid:on exec kanshictl switch lidclosed
+                bindswitch --locked lid:off exec kanshictl switch lidopen
+
                 ${swayfxSettings}
                 ";
+    };
+  }
+#+end_src
+
+**** Kanshi
+
+
+#+begin_src nix :tangle profiles/home/common/kanshi.nix
+  { config, ... }:
+  {
+    services.kanshi = {
+      enable = true;
+      settings = [
+        {
+          # laptop screen
+          output = {
+            criteria = config.swarselsystems.sharescreen;
+            mode = config.swarselsystems.highResolution;
+            scale = 1.0;
+          };
+        }
+        {
+          # home main screen
+          output = {
+            criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            scale = 1.0;
+            mode = "2560x1440";
+          };
+        }
+        {
+          profile = {
+            name = "lidopen";
+            outputs = [
+              {
+                criteria = "eDP-2";
+                status = "enable";
+                scale = 1.0;
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "lidopen";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "enable";
+                scale = 1.7;
+                position = "2560,0";
+              }
+              {
+                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                scale = 1.0;
+                mode = "2560x1440";
+                position = "0,0";
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "lidclosed";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "disable";
+                position = "2560,0";
+              }
+              {
+                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+                scale = 1.0;
+                mode = "2560x1440";
+                position = "0,0";
+              }
+            ];
+          };
+        }
+      ];
     };
   }
 #+end_src
@@ -11066,7 +11150,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix :tangle profiles/home/optional/work.nix :noweb yes
-  { config, pkgs, lib, ... }:
+  { self, config, pkgs, lib, ... }:
   {
     home.packages = with pkgs; [
       stable.teams-for-linux
@@ -11086,6 +11170,21 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
       DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
     };
+
+    wayland.windowManager.sway.config = {
+      output = {
+        "Applied Creative Technology Transmitter QUATTRO201811" = {
+          bg = "${self}/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+        };
+        "Hewlett Packard HP Z24i CN44250RDT" = {
+          bg = "${self}/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+        };
+        "HP Inc. HP 732pk CNC4080YL5" = {
+          bg = "${self}/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+        };
+      };
+    };
+
     programs = {
       git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
@@ -11180,6 +11279,124 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
           "edibdbjcniadpccecjdfdjjppcpchdlm"
           # browserpass
           "naepdomgkenhinolocfifgehidddafch"
+        ];
+      };
+    };
+
+    services = {
+      kanshi = {
+        settings = [
+          {
+            # seminary room
+            output = {
+              criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+              scale = 1.0;
+              mode = "1280x720";
+            };
+          }
+          {
+            # work main screen
+            output = {
+              criteria = "HP Inc. HP 732pk CNC4080YL5";
+              scale = 1.0;
+              mode = "3840x2160";
+            };
+          }
+          {
+            # work side screen
+            output = {
+              criteria = "Hewlett Packard HP Z24i CN44250RDT";
+              scale = 1.0;
+              mode = "1920x1200";
+              transform = "270";
+            };
+          }
+          {
+            profile = {
+              name = "lidopen";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.5;
+                  position = "1462,0";
+                }
+                {
+                  criteria = "HP Inc. HP 732pk CNC4080YL5";
+                  scale = 1.4;
+                  mode = "3840x2160";
+                  position = "-1280,0";
+                }
+                {
+                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  scale = 1.0;
+                  mode = "1920x1200";
+                  transform = "90";
+                  position = "-2480,0";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidopen";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.7;
+                  position = "2560,0";
+                }
+                {
+                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                  scale = 1.0;
+                  mode = "1280x720";
+                  position = "10000,10000";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidclosed";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                }
+                {
+                  criteria = "HP Inc. HP 732pk CNC4080YL5";
+                  scale = 1.4;
+                  mode = "3840x2160";
+                  position = "-1280,0";
+                }
+                {
+                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  scale = 1.0;
+                  mode = "1920x1200";
+                  transform = "270";
+                  position = "-2480,0";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidclosed";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                }
+                {
+                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                  scale = 1.0;
+                  mode = "1280x720";
+                  position = "10000,10000";
+                }
+              ];
+            };
+          }
         ];
       };
     };

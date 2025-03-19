@@ -8,7 +8,6 @@ _:
       ServerAliveInterval 20
     '';
     matchBlocks = {
-      # Local machines
       "pfsense" = {
         hostname = "192.168.1.1";
         user = "root";
@@ -23,7 +22,7 @@ _:
       };
       "sync" = {
         hostname = "193.122.53.173";
-        user = "root"; #this is a oracle vm server but needs root due to nixos-infect
+        user = "root";
       };
       "songdiver" = {
         hostname = "89.168.100.65";
@@ -32,10 +31,6 @@ _:
       "pkv" = {
         hostname = "46.232.248.161";
         user = "root";
-      };
-      "efficient" = {
-        hostname = "g0.complang.tuwien.ac.at";
-        user = "ep01427399";
       };
     };
   };

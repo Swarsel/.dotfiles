@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ self, config, lib, ... }:
 let
   inherit (config.swarselsystems) monitors;
   workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput monitors;
@@ -103,6 +103,7 @@ in
             "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
             "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
             "${modifier}+r" = "mode resize";
+            # "${modifier}+Return" = "exec kitty";
             "${modifier}+Return" = "exec swarselzellij";
             "${modifier}+Print" = "exec screenshare";
             # "XF86AudioRaiseVolume" = "exec pa 5%";
@@ -128,7 +129,15 @@ in
         };
       };
       defaultWorkspace = "workspace 1:一";
-      output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
+      # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
+      output = {
+        "${config.swarselsystems.sharescreen}" = {
+          bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+        };
+        "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
+          bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+        };
+      };
       input = config.swarselsystems.standardinputs;
       workspaceOutputAssign = workplaceOutputs;
       startup = config.swarselsystems.startup ++ [
@@ -161,6 +170,8 @@ in
           { title = "^Add$"; }
           { title = "^Picture-in-Picture$"; }
           { title = "Syncthing Tray"; }
+          { title = "^spotifytui$"; }
+          { title = "^kittyterm$"; }
           { app_id = "vesktop"; }
           { window_role = "pop-up"; }
           { window_role = "bubble"; }
@@ -289,6 +300,12 @@ in
               exec swayidle -w
 
               seat * hide_cursor 2000
+
+              exec kanshi
+              exec_always kill -1 $(pidof kanshi)
+
+              bindswitch --locked lid:on exec kanshictl switch lidclosed
+              bindswitch --locked lid:off exec kanshictl switch lidopen
 
               ${swayfxSettings}
               ";

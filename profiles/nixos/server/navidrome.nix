@@ -51,9 +51,10 @@ in
         MPVCommandTemplate = "mpv --audio-device=%d --no-audio-display --pause %f";
         Jukebox = {
           Enabled = true;
-          Default = "pch";
+          Default = "default";
           Devices = [
-            [ "pch" "alsa/sysdefault:CARD=PCH" ]
+            # use mpv --audio-device=help to get these
+            [ "default" "alsa/sysdefault:CARD=PCH" ]
           ];
         };
         # Switch using --impure as these credential files are not stored within the flake

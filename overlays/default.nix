@@ -17,7 +17,7 @@ let
     };
 
     # mgba = final.swarsel-mgba;
-    swayfx-unwrapped = final.swayfxoki;
+    navidrome = final.swarsel-navidrome;
 
     retroarch = prev.retroarch.withCores (cores: with cores; [
       snes9x # snes
@@ -57,7 +57,6 @@ in
     // (inputs.nur.overlays.default final prev)
     // (inputs.emacs-overlay.overlay final prev)
     // (inputs.nix-topology.overlays.default final prev)
-    // (inputs.scenefx.overlays.insert final prev)
     // (inputs.nixgl.overlay final prev);
 
 }

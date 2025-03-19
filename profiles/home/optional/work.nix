@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ self, config, pkgs, lib, ... }:
 {
   home.packages = with pkgs; [
     stable.teams-for-linux
@@ -18,6 +18,21 @@
     DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
     DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
   };
+
+  wayland.windowManager.sway.config = {
+    output = {
+      "Applied Creative Technology Transmitter QUATTRO201811" = {
+        bg = "${self}/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+      };
+      "Hewlett Packard HP Z24i CN44250RDT" = {
+        bg = "${self}/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+      };
+      "HP Inc. HP 732pk CNC4080YL5" = {
+        bg = "${self}/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+      };
+    };
+  };
+
   programs = {
     git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
 
@@ -112,6 +127,124 @@
         "edibdbjcniadpccecjdfdjjppcpchdlm"
         # browserpass
         "naepdomgkenhinolocfifgehidddafch"
+      ];
+    };
+  };
+
+  services = {
+    kanshi = {
+      settings = [
+        {
+          # seminary room
+          output = {
+            criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+            scale = 1.0;
+            mode = "1280x720";
+          };
+        }
+        {
+          # work main screen
+          output = {
+            criteria = "HP Inc. HP 732pk CNC4080YL5";
+            scale = 1.0;
+            mode = "3840x2160";
+          };
+        }
+        {
+          # work side screen
+          output = {
+            criteria = "Hewlett Packard HP Z24i CN44250RDT";
+            scale = 1.0;
+            mode = "1920x1200";
+            transform = "270";
+          };
+        }
+        {
+          profile = {
+            name = "lidopen";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "enable";
+                scale = 1.5;
+                position = "1462,0";
+              }
+              {
+                criteria = "HP Inc. HP 732pk CNC4080YL5";
+                scale = 1.4;
+                mode = "3840x2160";
+                position = "-1280,0";
+              }
+              {
+                criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                scale = 1.0;
+                mode = "1920x1200";
+                transform = "90";
+                position = "-2480,0";
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "lidopen";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "enable";
+                scale = 1.7;
+                position = "2560,0";
+              }
+              {
+                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                scale = 1.0;
+                mode = "1280x720";
+                position = "10000,10000";
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "lidclosed";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "disable";
+              }
+              {
+                criteria = "HP Inc. HP 732pk CNC4080YL5";
+                scale = 1.4;
+                mode = "3840x2160";
+                position = "-1280,0";
+              }
+              {
+                criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                scale = 1.0;
+                mode = "1920x1200";
+                transform = "270";
+                position = "-2480,0";
+              }
+            ];
+          };
+        }
+        {
+          profile = {
+            name = "lidclosed";
+            outputs = [
+              {
+                criteria = config.swarselsystems.sharescreen;
+                status = "disable";
+              }
+              {
+                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                scale = 1.0;
+                mode = "1280x720";
+                position = "10000,10000";
+              }
+            ];
+          };
+        }
       ];
     };
   };

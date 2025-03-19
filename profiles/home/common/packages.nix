@@ -131,8 +131,9 @@
     # wayland stuff
     wtype
     wl-clipboard
-    wl-mirror
+    stable.wl-mirror
     wf-recorder
+    kanshi
 
     # screenshotting tools
     grim

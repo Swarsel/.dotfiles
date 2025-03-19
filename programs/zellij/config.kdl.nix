@@ -5,8 +5,6 @@
   default_shell "zsh"
   copy_on_select true
   on_force_close "detach"
-  session_name "main"
-  attach_to_session true
 
   default_layout "default"
   layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"

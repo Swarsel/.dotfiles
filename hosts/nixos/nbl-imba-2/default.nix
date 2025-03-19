@@ -45,6 +45,8 @@ in
   };
 
   hardware = {
+    enableAllFirmware = true;
+    cpu.amd.updateMicrocode = true;
     amdgpu = {
       opencl.enable = true;
       amdvlk = {
@@ -56,23 +58,23 @@ in
 
   programs.fw-fanctrl = {
     enable = true;
-    config = {
-      defaultStrategy = "lazy";
-      strategies = {
-        "lazy" = {
-          fanSpeedUpdateFrequency = 5;
-          movingAverageInterval = 30;
-          speedCurve = [
-            { temp = 0; speed = 15; }
-            { temp = 50; speed = 15; }
-            { temp = 65; speed = 25; }
-            { temp = 70; speed = 35; }
-            { temp = 75; speed = 50; }
-            { temp = 85; speed = 100; }
-          ];
-        };
-      };
-    };
+    # config = {
+    #   defaultStrategy = "lazy";
+    #   strategies = {
+    #     "lazy" = {
+    #       fanSpeedUpdateFrequency = 5;
+    #       movingAverageInterval = 30;
+    #       speedCurve = [
+    #         { temp = 0; speed = 15; }
+    #         { temp = 50; speed = 15; }
+    #         { temp = 65; speed = 25; }
+    #         { temp = 70; speed = 35; }
+    #         { temp = 75; speed = 50; }
+    #         { temp = 85; speed = 100; }
+    #       ];
+    #     };
+    #   };
+    # };
   };
 
   networking = {
@@ -85,7 +87,14 @@ in
   services = {
     fwupd.enable = true;
     udev.extraRules = ''
+      # Make Framework 16 Ethernet Module work reliably
       ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
+
+      # disable Wakup on Framework Laptop 16 Keyboard
+      ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0018", ATTR{power/wakeup}="disabled"
+
+      # disable Wakup on Framework Laptop 16 Numpad Module
+      ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0014", ATTR{power/wakeup}="disabled"
     '';
   };
 
@@ -106,14 +115,11 @@ in
       isNixos = true;
       flakePath = "/home/swarsel/.dotfiles";
       cpuCount = 16;
-      # temperatureHwmon = {
-      #   isAbsolutePath = true;
-      #   path = "/sys/devices/platform/thinkpad_hwmon/hwmon/";
-      #   input-filename = "temp1_input";
-      # };
-      #  ------   -----
-      # | DP-4 | |eDP-1|
-      #  ------   -----
+      temperatureHwmon = {
+        isAbsolutePath = true;
+        path = "/sys/devices/virtual/thermal/thermal_zone0/";
+        input-filename = "temp4_input";
+      };
       startup = [
         { command = "nextcloud --background"; }
         { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
@@ -191,7 +197,7 @@ in
           mode = "1280x720";
           scale = "1";
           position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-          workspace = "12:S";
+          workspace = "14:T";
           output = "DP-4";
         };
       };

@@ -3,7 +3,6 @@
   pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
     src = "${self}";
     hooks = {
-      check-added-large-files.enable = true;
       check-case-conflicts.enable = true;
       check-executables-have-shebangs.enable = true;
       check-shebang-scripts-are-executable.enable = false;
