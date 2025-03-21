@@ -1,28 +1,30 @@
 { lib, ... }:
 {
-  options.swarselsystems.user = lib.mkOption {
-    type = lib.types.str;
-    default = "swarsel";
-  };
-  options.swarselsystems.withHomeManager = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
-  options.swarselsystems.isSwap = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
-  options.swarselsystems.swapSize = lib.mkOption {
-    type = lib.types.str;
-    default = "8G";
-  };
-  options.swarselsystems.rootDisk = lib.mkOption {
-    type = lib.types.str;
-    default = "";
-  };
-  options.swarselsystems.isCrypted = lib.mkEnableOption "uses full disk encryption";
-  options.swarselsystems.initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+  options.swarselsystems = {
+    user = lib.mkOption {
+      type = lib.types.str;
+      default = "swarsel";
+    };
+    withHomeManager = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    isSwap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    swapSize = lib.mkOption {
+      type = lib.types.str;
+      default = "8G";
+    };
+    rootDisk = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    isCrypted = lib.mkEnableOption "uses full disk encryption";
+    initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
 
-  options.swarselsystems.isImpermanence = lib.mkEnableOption "use impermanence on this system";
-  options.swarselsystems.isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+    isImpermanence = lib.mkEnableOption "use impermanence on this system";
+    isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+  };
 }
