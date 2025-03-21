@@ -11,6 +11,8 @@
       targets = {
         emacs.enable = false;
         waybar.enable = false;
+        sway.useWallpaper = false;
+        firefox.profileNames = [ "default" ];
       };
     };
   };
