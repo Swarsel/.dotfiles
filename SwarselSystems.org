@@ -807,6 +807,7 @@ My work machine. Built for more security, this is the gold standard of my config
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
   { self, inputs, pkgs, lib, ... }:
   let
+    secretsDirectory = builtins.toString inputs.nix-secrets;
     profilesPath = "${self}/profiles";
     sharedOptions = {
       isBtrfs = true;
@@ -885,8 +886,8 @@ My work machine. Built for more security, this is the gold standard of my config
     };
 
     networking = {
-      hostName = "nbl-imba-2";
-      fqdn = "nbl-imba-2.imp.univie.ac.at";
+      hostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+      fqdn = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-fqdn");
       firewall.enable = true;
     };
 
@@ -3083,7 +3084,7 @@ This program builds a configuration locally.
   fi
 
   local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
   read -ra pub_arr <<< "$pub_key"
 
   cd .dotfiles
@@ -3239,7 +3240,7 @@ This program sets up a new NixOS host locally.
   fi
 
   local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/nbl-imba-2.pub)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
   read -ra pub_arr <<< "$pub_key"
 
   cd .dotfiles
@@ -3768,7 +3769,7 @@ When adding a new entry here, do not forget to add it in the default output of t
   let
     additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
 
-    modifications = final: prev: {
+    modifications = _: prev: {
       vesktop = prev.vesktop.override {
         withSystemVencord = true;
       };
@@ -4923,7 +4924,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
     home-manager = lib.mkIf config.swarselsystems.withHomeManager {
       useGlobalPkgs = true;
       useUserPackages = true;
-      extraSpecialArgs = inputs; # used mainly for inputs.self
+      extraSpecialArgs = { inherit (inputs) self nix-secrets; };
     };
   }
 #+end_src
@@ -6535,11 +6536,11 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       enable = true;
     };
     users.users.swarsel.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/ssh/nbl-imba-2.pub)
+      (self + /secrets/keys/ssh/yubikey.pub)
       (self + /secrets/keys/ssh/magicant.pub)
     ];
     users.users.root.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/ssh/nbl-imba-2.pub)
+      (self + /secrets/keys/ssh/yubikey.pub)
       (self + /secrets/keys/ssh/magicant.pub)
     ];
     security.sudo.extraConfig = ''
@@ -6718,10 +6719,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
           };
           # Switch using --impure as these credential files are not stored within the flake
           # sops-nix is not supported for these which is why we need to resort to these
-          LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";
-          LastFM.Secret = builtins.readFile "${secretsDirectory}/navidrome/lastfm-key";
-          Spotify.ID = builtins.readFile "${secretsDirectory}/navidrome/spotify-id";
-          Spotify.Secret = builtins.readFile "${secretsDirectory}/navidrome/spotify-secret";
+          LastFM.ApiKey = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret");
+          LastFM.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-key");
+          Spotify.ID = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-id");
+          Spotify.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-secret");
           UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
           UIWelcomeMessage = "~SwarselSound~";
         };
@@ -7525,7 +7526,11 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :END:
 
 #+begin_src nix :tangle profiles/nixos/server/syncthing.nix
-  { lib, config, ... }:
+  { lib, config, inputs, ... }:
+  let
+    secretsDirectory = builtins.toString inputs.nix-secrets;
+    workHostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+  in
   {
     config = lib.mkIf config.swarselsystems.server.syncthing {
 
@@ -7554,7 +7559,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             "sync (@oracle)" = {
               id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
             };
-            "nbl-imba-2" = {
+            "${workHostName}" = {
               id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
             };
           };
@@ -7563,7 +7568,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
               path = "/Vault/data/syncthing/Sync";
               type = "receiveonly";
               versioning = null;
-              devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "default";
             };
             "Obsidian" = {
@@ -7573,7 +7578,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
@@ -7583,7 +7588,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
@@ -7593,7 +7598,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "hgp9s-fyq3p";
             };
             "Documents" = {
@@ -7603,12 +7608,12 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "magicant" "nbl-imba-2" ];
+              devices = [ "magicant" "${workHostName}" ];
               id = "hgr3d-pfu3w";
             };
             # ".elfeed" = {
             #   path = "/Vault/data/syncthing/.elfeed";
-            #   devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             #   id = "h7xbs-fs9v1";
             # };
           };
@@ -8229,7 +8234,7 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 Options that I need specifically at work. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
 #+begin_src nix :tangle profiles/nixos/optional/work.nix
-  { self, pkgs, config, ... }:
+  { self, lib, pkgs, config, ... }:
   let
     owner = "swarsel";
     sopsFile = self + /secrets/work/secrets.yaml;
@@ -8237,16 +8242,10 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
   {
     sops = {
       secrets = {
-        clad = {
+        vcuser = {
           inherit owner sopsFile;
         };
-        dcad = {
-          inherit owner sopsFile;
-        };
-        wsad = {
-          inherit owner sopsFile;
-        };
-        imbad = {
+        vcpw = {
           inherit owner sopsFile;
         };
       };
@@ -8255,14 +8254,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     # boot.initrd.luks.yubikeySupport = true;
     programs = {
       zsh.shellInit = ''
-        export CLAD="$(cat ${config.sops.secrets.clad.path})"
-        export DCAD="$(cat ${config.sops.secrets.dcad.path})"
-        export GOVC_PASSWORD="$(cat ${config.sops.secrets.dcad.path})"
-        export WSAD="$(cat ${config.sops.secrets.wsad.path})"
-        export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
-        export DCUSER="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
-        export GOVC_USERNAME="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
-        export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args","'-O'"'
+        export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
+        export VSPHERE_PW="$(cat ${config.sops.secrets.vcpw.path})"
       '';
 
       browserpass.enable = true;
@@ -11023,13 +11016,16 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix :tangle profiles/home/common/gammastep.nix
-  _:
+  { config, lib, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+  in
   {
-    services.gammastep = {
+    services.gammastep = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
       provider = "manual";
-      latitude = 48.210033;
-      longitude = 16.363449;
+      latitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-latitude");
+      longitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-longitude");
     };
   }
 #+end_src
@@ -11165,7 +11161,13 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix :tangle profiles/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, ... }:
+  { self, config, pkgs, lib, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+    dcUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/dc-user");
+    clUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cl-user");
+    wsUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/ws-user");
+  in
   {
     home.packages = with pkgs; [
       stable.teams-for-linux
@@ -11200,14 +11202,20 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
     };
 
+    stylix.targets.firefox.profileNames = [
+      "dc"
+      "cl"
+      "ws"
+    ];
+
     programs = {
-      git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
+      git.userEmail = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/git-email");
 
       zsh = {
         shellAliases = {
-          dssh = "ssh -l dc_adm_schwarzaeugl";
-          cssh = "ssh -l cl_adm_schwarzaeugl";
-          wssh = "ssh -l ws_adm_schwarzaeugl";
+          dssh = "ssh -l ${dcUser}";
+          cssh = "ssh -l ${clUser}";
+          wssh = "ssh -l ${wsUser}";
         };
         cdpath = [
           "~/Documents/Work"
@@ -11224,42 +11232,42 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       ssh = {
         matchBlocks = {
           "uc" = {
-            hostname = "uc.clip.vbc.ac.at";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-prod");
             user = "stack";
           };
           "uc.stg" = {
-            hostname = "uc.staging.clip.vbc.ac.at";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
             user = "stack";
           };
           "uc.staging" = {
-            hostname = "uc.staging.clip.vbc.ac.at";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
             user = "stack";
           };
           "uc.dev" = {
-            hostname = "uc.dev.clip.vbc.ac.at";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-dev");
             user = "stack";
           };
           "cbe" = {
-            hostname = "cbe.vbc.ac.at";
-            user = "dc_adm_schwarzaeugl";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-prod");
+            user = dcUser;
           };
           "cbe.stg" = {
-            hostname = "cbe.staging.clip.vbc.ac.at";
-            user = "dc_adm_schwarzaeugl";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+            user = dcUser;
           };
           "cbe.staging" = {
-            hostname = "cbe.staging.clip.vbc.ac.at";
-            user = "dc_adm_schwarzaeugl";
+            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+            user = dcUser;
           };
           "*.vbc.ac.at" = {
-            user = "dc_adm_schwarzaeugl";
+            user = dcUser;
           };
         };
       };
 
       firefox = {
         profiles = {
-          dc_adm = lib.recursiveUpdate
+          dc = lib.recursiveUpdate
             {
               id = 1;
               settings = {
@@ -11267,7 +11275,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
               };
             }
             config.swarselsystems.firefox;
-          cl_adm = lib.recursiveUpdate
+          cl = lib.recursiveUpdate
             {
               id = 2;
               settings = {
@@ -11275,7 +11283,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
               };
             }
             config.swarselsystems.firefox;
-          ws_adm = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
+          ws = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
         };
       };
 
@@ -11430,23 +11438,23 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         in
         {
           firefox_dc = {
-            name = "Firefox (dc_adm)";
+            name = "Firefox (dc)";
             genericName = "Firefox dc";
-            exec = "firefox -p dc_adm";
+            exec = "firefox -p dc";
             inherit terminal categories icon;
           };
 
           firefox_ws = {
-            name = "Firefox (ws_adm)";
+            name = "Firefox (ws)";
             genericName = "Firefox ws";
-            exec = "firefox -p ws_adm";
+            exec = "firefox -p ws";
             inherit terminal categories icon;
           };
 
           firefox_cl = {
-            name = "Firefox (cl_adm)";
+            name = "Firefox (cl)";
             genericName = "Firefox cl";
-            exec = "firefox -p cl_adm";
+            exec = "firefox -p cl";
             inherit terminal categories icon;
           };
 

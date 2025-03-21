@@ -39,7 +39,7 @@ in
       enable = true;
       openFirewall = true;
       settings = {
-        LogLevel = "error";
+        LogLevel = "debug";
         Address = "127.0.0.1";
         Port = 4040;
         MusicFolder = "/Vault/Eternor/Musik";
@@ -59,10 +59,10 @@ in
         };
         # Switch using --impure as these credential files are not stored within the flake
         # sops-nix is not supported for these which is why we need to resort to these
-        LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";
-        LastFM.Secret = builtins.readFile "${secretsDirectory}/navidrome/lastfm-key";
-        Spotify.ID = builtins.readFile "${secretsDirectory}/navidrome/spotify-id";
-        Spotify.Secret = builtins.readFile "${secretsDirectory}/navidrome/spotify-secret";
+        LastFM.ApiKey = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret");
+        LastFM.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-key");
+        Spotify.ID = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-id");
+        Spotify.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-secret");
         UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
         UIWelcomeMessage = "~SwarselSound~";
       };

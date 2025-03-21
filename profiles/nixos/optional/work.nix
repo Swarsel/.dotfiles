@@ -1,4 +1,4 @@
-{ self, pkgs, config, ... }:
+{ self, lib, pkgs, config, ... }:
 let
   owner = "swarsel";
   sopsFile = self + /secrets/work/secrets.yaml;
@@ -6,16 +6,10 @@ in
 {
   sops = {
     secrets = {
-      clad = {
+      vcuser = {
         inherit owner sopsFile;
       };
-      dcad = {
-        inherit owner sopsFile;
-      };
-      wsad = {
-        inherit owner sopsFile;
-      };
-      imbad = {
+      vcpw = {
         inherit owner sopsFile;
       };
     };
@@ -24,14 +18,8 @@ in
   # boot.initrd.luks.yubikeySupport = true;
   programs = {
     zsh.shellInit = ''
-      export CLAD="$(cat ${config.sops.secrets.clad.path})"
-      export DCAD="$(cat ${config.sops.secrets.dcad.path})"
-      export GOVC_PASSWORD="$(cat ${config.sops.secrets.dcad.path})"
-      export WSAD="$(cat ${config.sops.secrets.wsad.path})"
-      export IMBAD="$(cat ${config.sops.secrets.imbad.path})"
-      export DCUSER="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
-      export GOVC_USERNAME="dc_adm_schwarzaeugl@IMP.UNIVIE.AC.AT"
-      export PACKER_SSH_EXTRA_ARGS='"--scp-extra-args","'-O'"'
+      export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
+      export VSPHERE_PW="$(cat ${config.sops.secrets.vcpw.path})"
     '';
 
     browserpass.enable = true;
@@ -52,7 +40,7 @@ in
   };
 
   virtualisation = {
-    docker.enable = true;
+    docker.enable = lib.mkIf (!config.virtualisation.podman.dockerCompat) true;
     spiceUSBRedirection.enable = true;
     libvirtd = {
       enable = true;

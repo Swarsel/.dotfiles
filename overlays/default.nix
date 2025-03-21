@@ -3,7 +3,7 @@
 let
   additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
 
-  modifications = final: prev: {
+  modifications = _: prev: {
     vesktop = prev.vesktop.override {
       withSystemVencord = true;
     };

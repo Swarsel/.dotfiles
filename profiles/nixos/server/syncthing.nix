@@ -1,4 +1,8 @@
-{ lib, config, ... }:
+{ lib, config, inputs, ... }:
+let
+  secretsDirectory = builtins.toString inputs.nix-secrets;
+  workHostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+in
 {
   config = lib.mkIf config.swarselsystems.server.syncthing {
 
@@ -27,7 +31,7 @@
           "sync (@oracle)" = {
             id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
           };
-          "nbl-imba-2" = {
+          "${workHostName}" = {
             id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
           };
         };
@@ -36,7 +40,7 @@
             path = "/Vault/data/syncthing/Sync";
             type = "receiveonly";
             versioning = null;
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             id = "default";
           };
           "Obsidian" = {
@@ -46,7 +50,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
@@ -56,7 +60,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
@@ -66,7 +70,7 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+            devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             id = "hgp9s-fyq3p";
           };
           "Documents" = {
@@ -76,12 +80,12 @@
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "magicant" "nbl-imba-2" ];
+            devices = [ "magicant" "${workHostName}" ];
             id = "hgr3d-pfu3w";
           };
           # ".elfeed" = {
           #   path = "/Vault/data/syncthing/.elfeed";
-          #   devices = [ "sync (@oracle)" "magicant" "nbl-imba-2" ];
+          #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
           #   id = "h7xbs-fs9v1";
           # };
         };

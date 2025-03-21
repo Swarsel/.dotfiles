@@ -1,5 +1,6 @@
 { self, inputs, pkgs, lib, ... }:
 let
+  secretsDirectory = builtins.toString inputs.nix-secrets;
   profilesPath = "${self}/profiles";
   sharedOptions = {
     isBtrfs = true;
@@ -78,8 +79,8 @@ in
   };
 
   networking = {
-    hostName = "nbl-imba-2";
-    fqdn = "nbl-imba-2.imp.univie.ac.at";
+    hostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+    fqdn = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-fqdn");
     firewall.enable = true;
   };
 

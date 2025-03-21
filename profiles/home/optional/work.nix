@@ -1,4 +1,10 @@
-{ self, config, pkgs, lib, ... }:
+{ self, config, pkgs, lib, nix-secrets, ... }:
+let
+  secretsDirectory = builtins.toString nix-secrets;
+  dcUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/dc-user");
+  clUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cl-user");
+  wsUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/ws-user");
+in
 {
   home.packages = with pkgs; [
     stable.teams-for-linux
@@ -33,14 +39,20 @@
     };
   };
 
+  stylix.targets.firefox.profileNames = [
+    "dc"
+    "cl"
+    "ws"
+  ];
+
   programs = {
-    git.userEmail = "leon.schwarzaeugl@imba.oeaw.ac.at";
+    git.userEmail = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/git-email");
 
     zsh = {
       shellAliases = {
-        dssh = "ssh -l dc_adm_schwarzaeugl";
-        cssh = "ssh -l cl_adm_schwarzaeugl";
-        wssh = "ssh -l ws_adm_schwarzaeugl";
+        dssh = "ssh -l ${dcUser}";
+        cssh = "ssh -l ${clUser}";
+        wssh = "ssh -l ${wsUser}";
       };
       cdpath = [
         "~/Documents/Work"
@@ -57,42 +69,42 @@
     ssh = {
       matchBlocks = {
         "uc" = {
-          hostname = "uc.clip.vbc.ac.at";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-prod");
           user = "stack";
         };
         "uc.stg" = {
-          hostname = "uc.staging.clip.vbc.ac.at";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
           user = "stack";
         };
         "uc.staging" = {
-          hostname = "uc.staging.clip.vbc.ac.at";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
           user = "stack";
         };
         "uc.dev" = {
-          hostname = "uc.dev.clip.vbc.ac.at";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-dev");
           user = "stack";
         };
         "cbe" = {
-          hostname = "cbe.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-prod");
+          user = dcUser;
         };
         "cbe.stg" = {
-          hostname = "cbe.staging.clip.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+          user = dcUser;
         };
         "cbe.staging" = {
-          hostname = "cbe.staging.clip.vbc.ac.at";
-          user = "dc_adm_schwarzaeugl";
+          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+          user = dcUser;
         };
         "*.vbc.ac.at" = {
-          user = "dc_adm_schwarzaeugl";
+          user = dcUser;
         };
       };
     };
 
     firefox = {
       profiles = {
-        dc_adm = lib.recursiveUpdate
+        dc = lib.recursiveUpdate
           {
             id = 1;
             settings = {
@@ -100,7 +112,7 @@
             };
           }
           config.swarselsystems.firefox;
-        cl_adm = lib.recursiveUpdate
+        cl = lib.recursiveUpdate
           {
             id = 2;
             settings = {
@@ -108,7 +120,7 @@
             };
           }
           config.swarselsystems.firefox;
-        ws_adm = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
+        ws = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
       };
     };
 
@@ -263,23 +275,23 @@
       in
       {
         firefox_dc = {
-          name = "Firefox (dc_adm)";
+          name = "Firefox (dc)";
           genericName = "Firefox dc";
-          exec = "firefox -p dc_adm";
+          exec = "firefox -p dc";
           inherit terminal categories icon;
         };
 
         firefox_ws = {
-          name = "Firefox (ws_adm)";
+          name = "Firefox (ws)";
           genericName = "Firefox ws";
-          exec = "firefox -p ws_adm";
+          exec = "firefox -p ws";
           inherit terminal categories icon;
         };
 
         firefox_cl = {
-          name = "Firefox (cl_adm)";
+          name = "Firefox (cl)";
           genericName = "Firefox cl";
-          exec = "firefox -p cl_adm";
+          exec = "firefox -p cl";
           inherit terminal categories icon;
         };
 
