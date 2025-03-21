@@ -3648,112 +3648,6 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-**** swarsel-navidrome
-
-
-#+begin_src nix :tangle pkgs/swarsel-navidrome/default.nix
-  {
-    buildGo123Module,
-    buildPackages,
-    fetchFromGitHub,
-    fetchNpmDeps,
-    lib,
-    nodejs,
-    npmHooks,
-    pkg-config,
-    stdenv,
-    ffmpeg-headless,
-    taglib,
-    zlib,
-    nixosTests,
-    nix-update-script,
-    ffmpegSupport ? true,
-    ...
-  }:
-
-  buildGo123Module rec {
-    pname = "navidrome";
-    version = "0.55.1";
-
-    src = fetchFromGitHub {
-      owner = "navidrome";
-      repo = "navidrome";
-      rev = "v${version}";
-      hash = "sha256-74sN2qZVjsD5i3BkJKYcpL3vZsVIg0H5RI70oRdZpi0=";
-    };
-
-    vendorHash = "sha256-bI0iDhATvNylKnI81eeUpgsm8YqySPyinPgBbcO0y4I=";
-
-    npmRoot = "ui";
-
-    npmDeps = fetchNpmDeps {
-      inherit src;
-      sourceRoot = "${src.name}/ui";
-      hash = "sha256-PaE1xcZX9wZRcKeqQCXbdhi4cIBWBL8ZQdww6AOB7sQ=";
-    };
-
-    nativeBuildInputs = [
-      buildPackages.makeWrapper
-      nodejs
-      npmHooks.npmConfigHook
-      pkg-config
-    ];
-
-    overrideModAttrs = oldAttrs: {
-      nativeBuildInputs = lib.filter (drv: drv != npmHooks.npmConfigHook) oldAttrs.nativeBuildInputs;
-      preBuild = null;
-    };
-
-    buildInputs = [
-      taglib
-      zlib
-    ];
-
-    ldflags = [
-      "-X github.com/navidrome/navidrome/consts.gitSha=${src.rev}"
-      "-X github.com/navidrome/navidrome/consts.gitTag=v${version}"
-    ];
-
-    CGO_CFLAGS = lib.optionals stdenv.cc.isGNU [ "-Wno-return-local-addr" ];
-
-    postPatch = ''
-      patchShebangs ui/bin/update-workbox.sh
-    '';
-
-    preBuild = ''
-      make buildjs
-    '';
-
-    tags = [
-      "netgo"
-    ];
-
-    postFixup = lib.optionalString ffmpegSupport ''
-      wrapProgram $out/bin/navidrome \
-        --prefix PATH : ${lib.makeBinPath [ ffmpeg-headless ]}
-    '';
-
-    passthru = {
-      tests.navidrome = nixosTests.navidrome;
-      updateScript = nix-update-script { };
-    };
-
-    meta = {
-      description = "Navidrome Music Server and Streamer compatible with Subsonic/Airsonic";
-      mainProgram = "navidrome";
-      homepage = "https://www.navidrome.org/";
-      license = lib.licenses.gpl3Only;
-      sourceProvenance = with lib.sourceTypes; [ fromSource ];
-      maintainers = with lib.maintainers; [
-        aciceri
-        squalus
-      ];
-      # Broken on Darwin: sandbox-exec: pattern serialization length exceeds maximum (NixOS/nix#4119)
-      broken = stdenv.hostPlatform.isDarwin;
-    };
-  }
-#+end_src
-
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -3783,7 +3677,6 @@ When adding a new entry here, do not forget to add it in the default output of t
       };
 
       # mgba = final.swarsel-mgba;
-      navidrome = final.swarsel-navidrome;
 
       retroarch = prev.retroarch.withCores (cores: with cores; [
         snes9x # snes
@@ -5550,6 +5443,8 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
         targets = {
           emacs.enable = false;
           waybar.enable = false;
+          sway.useWallpaper = false;
+          firefox.profileNames = [ "default" ];
         };
       };
     };
@@ -6192,6 +6087,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 
     virtualisation.podman = {
       enable = true;
+      dockerCompat = true;
       package = pkgs.stable.podman;
     };
 
@@ -6699,7 +6595,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         enable = true;
         openFirewall = true;
         settings = {
-          LogLevel = "error";
+          LogLevel = "debug";
           Address = "127.0.0.1";
           Port = 4040;
           MusicFolder = "/Vault/Eternor/Musik";
@@ -7230,7 +7126,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
       services.nextcloud = {
         enable = true;
-        package = pkgs.nextcloud30;
+        package = pkgs.nextcloud31;
         hostName = "stash.swarsel.win";
         home = "/Vault/apps/nextcloud";
         datadir = "/Vault/data/nextcloud";
@@ -8276,7 +8172,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     };
 
     virtualisation = {
-      docker.enable = true;
+      docker.enable = lib.mkIf (!config.virtualisation.podman.dockerCompat) true;
       spiceUSBRedirection.enable = true;
       libvirtd = {
         enable = true;
@@ -8861,6 +8757,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
           emacs.enable = false;
           waybar.enable = false;
           sway.useWallpaper = false;
+          firefox.profileNames = [ "default" ];
         };
       }
       config.swarselsystems.stylix);

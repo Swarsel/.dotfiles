@@ -17,7 +17,6 @@ let
     };
 
     # mgba = final.swarsel-mgba;
-    navidrome = final.swarsel-navidrome;
 
     retroarch = prev.retroarch.withCores (cores: with cores; [
       snes9x # snes
