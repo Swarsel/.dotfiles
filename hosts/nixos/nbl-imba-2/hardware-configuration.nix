@@ -21,28 +21,32 @@
       esac
     '';
 
-  boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
-  boot.initrd.kernelModules = [ "sg" ];
-  boot.kernelModules = [ "kvm-amd" ];
+  boot = {
+    initrd = {
+      availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+      kernelModules = [ "sg" ];
+      luks.devices."cryptroot" = {
+        # improve performance on ssds
+        bypassWorkqueues = true;
+        preLVM = true;
+      };
+    };
 
-  boot.kernelParams = [
-    "mem_sleep_default=deep"
-    "amd_pstate=passive"
-    # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
-    # TODO: figure out if this is worth it
-    # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
-    # ref:
-    # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
-    # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
-    # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
-    "amdgpu.dcdebugmask=0x410"
-  ];
+    kernelModules = [ "kvm-amd" ];
+    kernelParams = [
+      "mem_sleep_default=deep"
+      "amd_pstate=passive"
+      # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
+      # TODO: figure out if this is worth it
+      # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
+      # ref:
+      # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
+      # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
+      # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
+      "amdgpu.dcdebugmask=0x410"
+    ];
 
-  boot.extraModulePackages = [ ];
-  boot.initrd.luks.devices."cryptroot" = {
-    # improve performance on ssds
-    bypassWorkqueues = true;
-    preLVM = true;
+    extraModulePackages = [ ];
   };
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

@@ -1080,28 +1080,32 @@ My work machine. Built for more security, this is the gold standard of my config
         esac
       '';
 
-    boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
-    boot.initrd.kernelModules = [ "sg" ];
-    boot.kernelModules = [ "kvm-amd" ];
+    boot = {
+      initrd = {
+        availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+        kernelModules = [ "sg" ];
+        luks.devices."cryptroot" = {
+          # improve performance on ssds
+          bypassWorkqueues = true;
+          preLVM = true;
+        };
+      };
 
-    boot.kernelParams = [
-      "mem_sleep_default=deep"
-      "amd_pstate=passive"
-      # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
-      # TODO: figure out if this is worth it
-      # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
-      # ref:
-      # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
-      # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
-      # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
-      "amdgpu.dcdebugmask=0x410"
-    ];
+      kernelModules = [ "kvm-amd" ];
+      kernelParams = [
+        "mem_sleep_default=deep"
+        "amd_pstate=passive"
+        # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
+        # TODO: figure out if this is worth it
+        # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
+        # ref:
+        # https://old.reddit.com/r/framework/comments/1goh7hc/anyone_else_get_this_screen_flickering_issue/
+        # https://www.reddit.com/r/NixOS/comments/1hjruq1/graphics_corruption_on_kernel_6125_and_up/
+        # https://gitlab.freedesktop.org/drm/amd/-/issues/3797
+        "amdgpu.dcdebugmask=0x410"
+      ];
 
-    boot.extraModulePackages = [ ];
-    boot.initrd.luks.devices."cryptroot" = {
-      # improve performance on ssds
-      bypassWorkqueues = true;
-      preLVM = true;
+      extraModulePackages = [ ];
     };
 
     # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -1291,25 +1295,29 @@ This is my main server that I run at home. It handles most tasks that require bi
         (modulesPath + "/installer/scan/not-detected.nix")
       ];
 
-    boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" ];
-    boot.initrd.kernelModules = [ ];
-    boot.kernelModules = [ "kvm-intel" ];
-    boot.extraModulePackages = [ ];
+    boot = {
+      initrd.availableKernelModules = [ "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" ];
+      initrd.kernelModules = [ ];
+      kernelModules = [ "kvm-intel" ];
+      extraModulePackages = [ ];
 
-    boot.supportedFilesystems = [ "zfs" ];
-    boot.zfs.extraPools = [ "Vault" ];
+      supportedFilesystems = [ "zfs" ];
+      zfs.extraPools = [ "Vault" ];
+    };
 
-    fileSystems."/" =
-      {
-        device = "/dev/disk/by-uuid/30e2f96a-b01d-4c27-9ebb-d5d7e9f0031f";
-        fsType = "ext4";
-      };
+    fileSystems = {
+      "/" =
+        {
+          device = "/dev/disk/by-uuid/30e2f96a-b01d-4c27-9ebb-d5d7e9f0031f";
+          fsType = "ext4";
+        };
 
-    fileSystems."/boot" =
-      {
-        device = "/dev/disk/by-uuid/F0D8-8BD1";
-        fsType = "vfat";
-      };
+      "/boot" =
+        {
+          device = "/dev/disk/by-uuid/F0D8-8BD1";
+          fsType = "vfat";
+        };
+    };
 
     swapDevices =
       [{ device = "/dev/disk/by-uuid/a8eb6f3b-69bf-4160-90aa-9247abc108e0"; }];
@@ -1454,24 +1462,6 @@ This machine mainly acts as an external sync helper. It manages the following th
       defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
     };
 
-    services.nginx = {
-      virtualHosts = {
-        "sync.swarsel.win" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://localhost:8384/";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
-            };
-          };
-        };
-      };
-    };
-
     boot = {
       tmp.cleanOnBoot = true;
       loader.grub.device = "nodev";
@@ -1480,31 +1470,53 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     networking = {
       nftables.enable = lib.mkForce false;
-      firewall.allowedTCPPorts = [ 8384 22000 ];
-      firewall.allowedUDPPorts = [ 21027 22000 ];
       hostName = "sync";
       enableIPv6 = false;
       domain = "subnet03112148.vcn03112148.oraclevcn.com";
-      firewall.extraCommands = ''
-        iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
-        iptables -I INPUT -m state --state NEW -p tcp --dport 9812 -j ACCEPT
-      '';
+      firewall = {
+        allowedTCPPorts = [ 8384 22000 ];
+        allowedUDPPorts = [ 21027 22000 ];
+        extraCommands = ''
+          iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
+          iptables -I INPUT -m state --state NEW -p tcp --dport 9812 -j ACCEPT
+        '';
+      };
     };
 
     # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
-    # do not manage OCI syncthing through nix config
-    services.syncthing = {
-      enable = true;
-      guiAddress = "0.0.0.0:8384";
-      openDefaultPorts = true;
+    services = {
+      nginx = {
+        virtualHosts = {
+          "sync.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:8384/";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+
+      # do not manage OCI syncthing through nix config
+      syncthing = {
+        enable = true;
+        guiAddress = "0.0.0.0:8384";
+        openDefaultPorts = true;
+      };
     };
 
 
@@ -4947,17 +4959,19 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
   _:
   {
 
-    security.pam.services = {
-      login.u2fAuth = true;
-      sudo.u2fAuth = true;
-      swaylock.u2fAuth = true;
-      swaylock.fprintAuth = false;
-    };
-    security.polkit.enable = true;
+    security = {
+      pam.services = {
+        login.u2fAuth = true;
+        sudo.u2fAuth = true;
+        swaylock.u2fAuth = true;
+        swaylock.fprintAuth = false;
+      };
+      polkit.enable = true;
 
-    security.sudo.extraConfig = ''
-      Defaults    env_keep+=SSH_AUTH_SOCK
-    '';
+      sudo.extraConfig = ''
+        Defaults    env_keep+=SSH_AUTH_SOCK
+      '';
+    };
 
   }
 #+end_src
@@ -6442,9 +6456,11 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     security.acme = {
       acceptTerms = true;
       preliminarySelfsigned = false;
-      defaults.email = "mrswarsel@gmail.com";
-      defaults.dnsProvider = "cloudflare";
-      defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+      defaults = {
+        email = "mrswarsel@gmail.com";
+        dnsProvider = "cloudflare";
+        environmentFile = "${config.sops.templates."certs.secret".path}";
+      };
     };
 
     services.nginx = {
@@ -6879,264 +6895,271 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         };
       };
 
-      services.postgresql = {
-        enable = true;
-        initialScript = pkgs.writeText "synapse-init.sql" ''
-          CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
-          CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
-          CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
-          CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-          CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
-          CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
-            TEMPLATE template0
-            LC_COLLATE = "C"
-            LC_CTYPE = "C";
-        '';
-      };
+      systemd = {
+        timers."restart-bridges" = {
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnBootSec = "1d";
+            OnUnitActiveSec = "1d";
+            Unit = "restart-bridges.service";
+          };
+        };
 
-      services.matrix-synapse = {
-        enable = true;
-        settings = {
-          app_service_config_files = [
-            "/var/lib/matrix-synapse/telegram-registration.yaml"
-            "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-            "/var/lib/matrix-synapse/signal-registration.yaml"
-            "/var/lib/matrix-synapse/doublepuppet.yaml"
-          ];
-          server_name = matrixDomain;
-          public_baseurl = "https://${matrixDomain}";
-          listeners = [
-            {
-              port = 8008;
-              bind_addresses = [
-                "127.0.0.1"
-                # "::1"
-              ];
-              type = "http";
-              tls = false;
-              x_forwarded = true;
-              resources = [
-                {
-                  names = [ "client" "federation" ];
-                  compress = true;
-                }
-              ];
-            }
+        services = {
+          "restart-bridges" = {
+            script = ''
+              systemctl restart mautrix-whatsapp.service
+              systemctl restart mautrix-signal.service
+              systemctl restart mautrix-telegram.service
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              User = "root";
+            };
+          };
+          mautrix-telegram.path = with pkgs; [
+            lottieconverter # for animated stickers conversion, unfree package
+            ffmpeg # if converting animated stickers to webm (very slow!)
           ];
         };
-        extraConfigFiles = [
-          config.sops.templates.matrixshared.path
-        ];
       };
 
-      services.mautrix-telegram = {
-        enable = true;
-        environmentFile = config.sops.templates.mautrixtelegram.path;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-            address = "http://localhost:29317";
-            hostname = "localhost";
-            port = "29317";
-            provisioning.enabled = true;
-            id = "telegram";
-            # ephemeral_events = true; # not needed due to double puppeting
-            public = {
-              enabled = false;
-            };
-            database = "postgresql:///mautrix-telegram?host=/run/postgresql";
-          };
-          bridge = {
-            relaybot.authless_portals = true;
-            allow_avatar_remove = true;
-            allow_contact_info = true;
-            sync_channel_members = true;
-            startup_sync = true;
-            sync_create_limit = 0;
-            sync_direct_chats = true;
-            telegram_link_preview = true;
-            permissions = {
-              "*" = "relaybot";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-            animated_sticker = {
-              target = "gif";
-              args = {
-                width = 256;
-                height = 256;
-                fps = 30; # only for webm
-                background = "020202"; # only for gif, transparency not supported
-              };
-            };
-          };
+      services = {
+        postgresql = {
+          enable = true;
+          initialScript = pkgs.writeText "synapse-init.sql" ''
+            CREATE ROLE "matrix-synapse" WITH LOGIN PASSWORD 'synapse';
+            CREATE DATABASE "matrix-synapse" WITH OWNER "matrix-synapse"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-telegram" WITH LOGIN PASSWORD 'telegram';
+            CREATE DATABASE "mautrix-telegram" WITH OWNER "mautrix-telegram"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-whatsapp" WITH LOGIN PASSWORD 'whatsapp';
+            CREATE DATABASE "mautrix-whatsapp" WITH OWNER "mautrix-whatsapp"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+            CREATE ROLE "mautrix-signal" WITH LOGIN PASSWORD 'signal';
+            CREATE DATABASE "mautrix-signal" WITH OWNER "mautrix-signal"
+              TEMPLATE template0
+              LC_COLLATE = "C"
+              LC_CTYPE = "C";
+          '';
         };
-      };
-      systemd.services.mautrix-telegram.path = with pkgs; [
-        lottieconverter # for animated stickers conversion, unfree package
-        ffmpeg # if converting animated stickers to webm (very slow!)
-      ];
 
-      services.mautrix-whatsapp = {
-        enable = true;
-        registerToSynapse = false;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-            address = "http://localhost:29318";
-            hostname = "127.0.0.1";
-            port = 29318;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-            };
-          };
-          bridge = {
-            displayname_template = "{{or .FullName .PushName .JID}} (WA)";
-            history_sync = {
-              backfill = true;
-              max_initial_conversations = -1;
-              message_count = -1;
-              request_full_sync = true;
-              full_sync_config = {
-                days_limit = 900;
-                size_mb_limit = 5000;
-                storage_quota_mb = 5000;
-              };
-            };
-            login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
-            };
-            sync_manual_marked_unread = true;
-            send_presence_on_typing = true;
-            parallel_member_sync = true;
-            url_previews = true;
-            caption_in_message = true;
-            extev_polls = true;
-            permissions = {
-              "*" = "relay";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-          };
-        };
-      };
-
-      services.mautrix-signal = {
-        enable = true;
-        registerToSynapse = false;
-        settings = {
-          homeserver = {
-            address = "http://localhost:8008";
-            domain = matrixDomain;
-          };
-          appservice = {
-
-            address = "http://localhost:29328";
-            hostname = "127.0.0.1";
-            port = 29328;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-            };
-          };
-          bridge = {
-            displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
-            login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
-            };
-            caption_in_message = true;
-            permissions = {
-              "*" = "relay";
-              "@swarsel:${matrixDomain}" = "admin";
-            };
-          };
-        };
-      };
-
-      # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
-      # messages out after a while.
-
-      systemd.timers."restart-bridges" = {
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnBootSec = "1d";
-          OnUnitActiveSec = "1d";
-          Unit = "restart-bridges.service";
-        };
-      };
-
-      systemd.services."restart-bridges" = {
-        script = ''
-          systemctl restart mautrix-whatsapp.service
-          systemctl restart mautrix-signal.service
-          systemctl restart mautrix-telegram.service
-        '';
-        serviceConfig = {
-          Type = "oneshot";
-          User = "root";
-        };
-      };
-
-      services.nginx = {
-        virtualHosts = {
-          "swatrix.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            listen = [
+        matrix-synapse = {
+          enable = true;
+          settings = {
+            app_service_config_files = [
+              "/var/lib/matrix-synapse/telegram-registration.yaml"
+              "/var/lib/matrix-synapse/whatsapp-registration.yaml"
+              "/var/lib/matrix-synapse/signal-registration.yaml"
+              "/var/lib/matrix-synapse/doublepuppet.yaml"
+            ];
+            server_name = matrixDomain;
+            public_baseurl = "https://${matrixDomain}";
+            listeners = [
               {
-                addr = "0.0.0.0";
-                port = 8448;
-                ssl = true;
-                extraParameters = [
-                  "default_server"
+                port = 8008;
+                bind_addresses = [
+                  "127.0.0.1"
+                  # "::1"
                 ];
-              }
-              {
-                addr = "[::0]";
-                port = 8448;
-                ssl = true;
-                extraParameters = [
-                  "default_server"
+                type = "http";
+                tls = false;
+                x_forwarded = true;
+                resources = [
+                  {
+                    names = [ "client" "federation" ];
+                    compress = true;
+                  }
                 ];
-              }
-              {
-                addr = "0.0.0.0";
-                port = 443;
-                ssl = true;
-              }
-              {
-                addr = "[::0]";
-                port = 443;
-                ssl = true;
               }
             ];
-            locations = {
-              "~ ^(/_matrix|/_synapse/client)" = {
-                # proxyPass = "http://localhost:8008";
-                proxyPass = "http://localhost:8008";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
+          };
+          extraConfigFiles = [
+            config.sops.templates.matrixshared.path
+          ];
+        };
+
+        mautrix-telegram = {
+          enable = true;
+          environmentFile = config.sops.templates.mautrixtelegram.path;
+          settings = {
+            homeserver = {
+              address = "http://localhost:8008";
+              domain = matrixDomain;
+            };
+            appservice = {
+              address = "http://localhost:29317";
+              hostname = "localhost";
+              port = "29317";
+              provisioning.enabled = true;
+              id = "telegram";
+              # ephemeral_events = true; # not needed due to double puppeting
+              public = {
+                enabled = false;
               };
-              "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
-              "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+              database = "postgresql:///mautrix-telegram?host=/run/postgresql";
+            };
+            bridge = {
+              relaybot.authless_portals = true;
+              allow_avatar_remove = true;
+              allow_contact_info = true;
+              sync_channel_members = true;
+              startup_sync = true;
+              sync_create_limit = 0;
+              sync_direct_chats = true;
+              telegram_link_preview = true;
+              permissions = {
+                "*" = "relaybot";
+                "@swarsel:${matrixDomain}" = "admin";
+              };
+              animated_sticker = {
+                target = "gif";
+                args = {
+                  width = 256;
+                  height = 256;
+                  fps = 30; # only for webm
+                  background = "020202"; # only for gif, transparency not supported
+                };
+              };
+            };
+          };
+        };
+
+        mautrix-whatsapp = {
+          enable = true;
+          registerToSynapse = false;
+          settings = {
+            homeserver = {
+              address = "http://localhost:8008";
+              domain = matrixDomain;
+            };
+            appservice = {
+              address = "http://localhost:29318";
+              hostname = "127.0.0.1";
+              port = 29318;
+              database = {
+                type = "postgres";
+                uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+              };
+            };
+            bridge = {
+              displayname_template = "{{or .FullName .PushName .JID}} (WA)";
+              history_sync = {
+                backfill = true;
+                max_initial_conversations = -1;
+                message_count = -1;
+                request_full_sync = true;
+                full_sync_config = {
+                  days_limit = 900;
+                  size_mb_limit = 5000;
+                  storage_quota_mb = 5000;
+                };
+              };
+              login_shared_secret_map = {
+                matrixDomain = "as_token:doublepuppet";
+              };
+              sync_manual_marked_unread = true;
+              send_presence_on_typing = true;
+              parallel_member_sync = true;
+              url_previews = true;
+              caption_in_message = true;
+              extev_polls = true;
+              permissions = {
+                "*" = "relay";
+                "@swarsel:${matrixDomain}" = "admin";
+              };
+            };
+          };
+        };
+
+        mautrix-signal = {
+          enable = true;
+          registerToSynapse = false;
+          settings = {
+            homeserver = {
+              address = "http://localhost:8008";
+              domain = matrixDomain;
+            };
+            appservice = {
+
+              address = "http://localhost:29328";
+              hostname = "127.0.0.1";
+              port = 29328;
+              database = {
+                type = "postgres";
+                uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+              };
+            };
+            bridge = {
+              displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
+              login_shared_secret_map = {
+                matrixDomain = "as_token:doublepuppet";
+              };
+              caption_in_message = true;
+              permissions = {
+                "*" = "relay";
+                "@swarsel:${matrixDomain}" = "admin";
+              };
+            };
+          };
+        };
+
+        # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+        # messages out after a while.
+
+
+        nginx = {
+          virtualHosts = {
+            "swatrix.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              listen = [
+                {
+                  addr = "0.0.0.0";
+                  port = 8448;
+                  ssl = true;
+                  extraParameters = [
+                    "default_server"
+                  ];
+                }
+                {
+                  addr = "[::0]";
+                  port = 8448;
+                  ssl = true;
+                  extraParameters = [
+                    "default_server"
+                  ];
+                }
+                {
+                  addr = "0.0.0.0";
+                  port = 443;
+                  ssl = true;
+                }
+                {
+                  addr = "[::0]";
+                  port = 443;
+                  ssl = true;
+                }
+              ];
+              locations = {
+                "~ ^(/_matrix|/_synapse/client)" = {
+                  # proxyPass = "http://localhost:8008";
+                  proxyPass = "http://localhost:8008";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
+                };
+                "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+                "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+              };
             };
           };
         };
@@ -7164,34 +7187,35 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         mode = "0440";
       };
 
-      services.nextcloud = {
-        enable = true;
-        package = pkgs.nextcloud31;
-        hostName = "stash.swarsel.win";
-        home = "/Vault/apps/nextcloud";
-        datadir = "/Vault/data/nextcloud";
-        https = true;
-        configureRedis = true;
-        maxUploadSize = "4G";
-        extraApps = {
-          inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks;
+      services = {
+        nextcloud = {
+          enable = true;
+          package = pkgs.nextcloud31;
+          hostName = "stash.swarsel.win";
+          home = "/Vault/apps/nextcloud";
+          datadir = "/Vault/data/nextcloud";
+          https = true;
+          configureRedis = true;
+          maxUploadSize = "4G";
+          extraApps = {
+            inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks;
+          };
+          config = {
+            adminuser = "admin";
+            adminpassFile = config.sops.secrets.nextcloudadminpass.path;
+            dbtype = "sqlite";
+          };
         };
-        config = {
-          adminuser = "admin";
-          adminpassFile = config.sops.secrets.nextcloudadminpass.path;
-          dbtype = "sqlite";
-        };
-      };
 
-
-      services.nginx = {
-        virtualHosts = {
-          "stash.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            # config is automatically added by nixos nextcloud config.
-            # hence, only provide certificate
+        nginx = {
+          virtualHosts = {
+            "stash.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              # config is automatically added by nixos nextcloud config.
+              # hence, only provide certificate
+            };
           };
         };
       };
@@ -7617,145 +7641,151 @@ This section exposes several metrics that I use to check the health of my server
         };
       };
 
-      users.users.nextcloud-exporter = {
-        extraGroups = [ "nextcloud" ];
+      users = {
+        users = {
+          nextcloud-exporter = {
+            extraGroups = [ "nextcloud" ];
+          };
+
+          grafana = {
+            extraGroups = [ "users" ];
+          };
+        };
       };
 
-      users.users.grafana = {
-        extraGroups = [ "users" ];
-      };
-
-      services.grafana = {
-        enable = true;
-        dataDir = "/Vault/data/grafana";
-        provision = {
+      services = {
+        grafana = {
           enable = true;
-          datasources.settings = {
-            datasources = [
-              {
-                name = "prometheus";
-                type = "prometheus";
-                url = "https://status.swarsel.win/prometheus";
-                editable = false;
-                access = "proxy";
-                basicAuth = true;
-                basicAuthUser = "admin";
-                jsonData = {
-                  httpMethod = "POST";
-                  manageAlerts = true;
-                  prometheusType = "Prometheus";
-                  prometheusVersion = "> 2.50.x";
-                  cacheLevel = "High";
-                  disableRecordingRules = false;
-                  incrementalQueryOverlapWindow = "10m";
+          dataDir = "/Vault/data/grafana";
+          provision = {
+            enable = true;
+            datasources.settings = {
+              datasources = [
+                {
+                  name = "prometheus";
+                  type = "prometheus";
+                  url = "https://status.swarsel.win/prometheus";
+                  editable = false;
+                  access = "proxy";
+                  basicAuth = true;
+                  basicAuthUser = "admin";
+                  jsonData = {
+                    httpMethod = "POST";
+                    manageAlerts = true;
+                    prometheusType = "Prometheus";
+                    prometheusVersion = "> 2.50.x";
+                    cacheLevel = "High";
+                    disableRecordingRules = false;
+                    incrementalQueryOverlapWindow = "10m";
+                  };
+                  secureJsonData = {
+                    basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
+                  };
+                }
+              ];
+            };
+          };
+
+          settings = {
+            security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
+            server = {
+              http_port = 3000;
+              http_addr = "127.0.0.1";
+              protocol = "http";
+              domain = "status.swarsel.win";
+            };
+          };
+        };
+
+        prometheus = {
+          enable = true;
+          webExternalUrl = "https://status.swarsel.win/prometheus";
+          port = 9090;
+          listenAddress = "127.0.0.1";
+          globalConfig = {
+            scrape_interval = "10s";
+          };
+          webConfigFile = self + /programs/server/prometheus/web.config;
+          scrapeConfigs = [
+            {
+              job_name = "node";
+              static_configs = [{
+                targets = [ "localhost:${toString config.services.prometheus.exporters.node.port}" ];
+              }];
+            }
+            {
+              job_name = "zfs";
+              static_configs = [{
+                targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
+              }];
+            }
+            {
+              job_name = "nginx";
+              static_configs = [{
+                targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
+              }];
+            }
+            {
+              job_name = "nextcloud";
+              static_configs = [{
+                targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
+              }];
+            }
+          ];
+          exporters = {
+            node = {
+              enable = true;
+              port = 9000;
+              enabledCollectors = [ "systemd" ];
+              extraFlags = [ "--collector.ethtool" "--collector.softirqs" "--collector.tcpstat" "--collector.wifi" ];
+            };
+            zfs = {
+              enable = true;
+              port = 9134;
+              pools = [
+                "Vault"
+              ];
+            };
+            restic = {
+              enable = false;
+              port = 9753;
+            };
+            nginx = {
+              enable = true;
+              port = 9113;
+              sslVerify = false;
+              scrapeUri = "http://localhost/nginx_status";
+            };
+            nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
+              enable = true;
+              port = 9205;
+              url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
+              username = "admin";
+              passwordFile = config.sops.secrets.nextcloudadminpass.path;
+            };
+          };
+        };
+
+
+        nginx = {
+          virtualHosts = {
+            "status.swarsel.win" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              locations = {
+                "/" = {
+                  proxyPass = "http://localhost:3000";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
                 };
-                secureJsonData = {
-                  basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
+                "/prometheus" = {
+                  proxyPass = "http://localhost:9090";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  '';
                 };
-              }
-            ];
-          };
-        };
-
-        settings = {
-          security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
-          server = {
-            http_port = 3000;
-            http_addr = "127.0.0.1";
-            protocol = "http";
-            domain = "status.swarsel.win";
-          };
-        };
-      };
-
-      services.prometheus = {
-        enable = true;
-        webExternalUrl = "https://status.swarsel.win/prometheus";
-        port = 9090;
-        listenAddress = "127.0.0.1";
-        globalConfig = {
-          scrape_interval = "10s";
-        };
-        webConfigFile = self + /programs/server/prometheus/web.config;
-        scrapeConfigs = [
-          {
-            job_name = "node";
-            static_configs = [{
-              targets = [ "localhost:${toString config.services.prometheus.exporters.node.port}" ];
-            }];
-          }
-          {
-            job_name = "zfs";
-            static_configs = [{
-              targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
-            }];
-          }
-          {
-            job_name = "nginx";
-            static_configs = [{
-              targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
-            }];
-          }
-          {
-            job_name = "nextcloud";
-            static_configs = [{
-              targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
-            }];
-          }
-        ];
-        exporters = {
-          node = {
-            enable = true;
-            port = 9000;
-            enabledCollectors = [ "systemd" ];
-            extraFlags = [ "--collector.ethtool" "--collector.softirqs" "--collector.tcpstat" "--collector.wifi" ];
-          };
-          zfs = {
-            enable = true;
-            port = 9134;
-            pools = [
-              "Vault"
-            ];
-          };
-          restic = {
-            enable = false;
-            port = 9753;
-          };
-          nginx = {
-            enable = true;
-            port = 9113;
-            sslVerify = false;
-            scrapeUri = "http://localhost/nginx_status";
-          };
-          nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
-            enable = true;
-            port = 9205;
-            url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
-            username = "admin";
-            passwordFile = config.sops.secrets.nextcloudadminpass.path;
-          };
-        };
-      };
-
-
-      services.nginx = {
-        virtualHosts = {
-          "status.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:3000";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-              "/prometheus" = {
-                proxyPass = "http://localhost:9090";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
               };
             };
           };
@@ -9575,130 +9605,137 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 #+begin_src nix :tangle profiles/home/common/mail.nix
   { lib, config, ... }:
   {
-    programs.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
-      enable = true;
+    programs = {
+      mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
+        enable = true;
+      };
+      msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
+        enable = true;
+      };
+      mu = lib.mkIf (!config.swarselsystems.isPublic) {
+        enable = true;
+      };
     };
+
     services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
       enable = true;
     };
     # this is needed so that mbsync can use the passwords from sops
     systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
 
-    programs.msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
-      enable = true;
-    };
-
-    programs.mu = lib.mkIf (!config.swarselsystems.isPublic) {
-      enable = true;
-    };
-
-    accounts.email = lib.mkIf (!config.swarselsystems.isPublic) {
-      maildirBasePath = "Mail";
-      accounts.leon = {
-        primary = true;
-        address = "leon.schwarzaeugl@gmail.com";
-        userName = "leon.schwarzaeugl@gmail.com";
-        realName = "Leon Schwarzäugl";
-        passwordCommand = "cat ${config.sops.secrets.leon.path}";
-        gpg = {
-          key = "0x76FD3810215AE097";
-          signByDefault = true;
-        };
-        imap.host = "imap.gmail.com";
-        smtp.host = "smtp.gmail.com";
-        mu.enable = true;
-        msmtp = {
-          enable = true;
-        };
-        mbsync = {
-          enable = true;
-          create = "maildir";
-          expunge = "both";
-          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-          extraConfig = {
-            channel = {
-              Sync = "All";
+    accounts = {
+      email = lib.mkIf (!config.swarselsystems.isPublic) {
+        maildirBasePath = "Mail";
+        accounts = {
+          leon = {
+            primary = true;
+            address = "leon.schwarzaeugl@gmail.com";
+            userName = "leon.schwarzaeugl@gmail.com";
+            realName = "Leon Schwarzäugl";
+            passwordCommand = "cat ${config.sops.secrets.leon.path}";
+            gpg = {
+              key = "0x76FD3810215AE097";
+              signByDefault = true;
             };
-            account = {
-              Timeout = 120;
-              PipelineDepth = 1;
+            imap.host = "imap.gmail.com";
+            smtp.host = "smtp.gmail.com";
+            mu.enable = true;
+            msmtp = {
+              enable = true;
+            };
+            mbsync = {
+              enable = true;
+              create = "maildir";
+              expunge = "both";
+              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+              extraConfig = {
+                channel = {
+                  Sync = "All";
+                };
+                account = {
+                  Timeout = 120;
+                  PipelineDepth = 1;
+                };
+              };
             };
           };
-        };
-      };
 
-      accounts.swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
-        address = "leon@swarsel.win";
-        userName = "8227dc594dd515ce232eda1471cb9a19";
-        realName = "Leon Schwarzäugl";
-        passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
-        smtp = {
-          host = "in-v3.mailjet.com";
-          port = 587;
-          tls = {
-            enable = true;
-            useStartTls = true;
+          swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
+            address = "leon@swarsel.win";
+            userName = "8227dc594dd515ce232eda1471cb9a19";
+            realName = "Leon Schwarzäugl";
+            passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+            smtp = {
+              host = "in-v3.mailjet.com";
+              port = 587;
+              tls = {
+                enable = true;
+                useStartTls = true;
+              };
+            };
+            mu.enable = false;
+            msmtp = {
+              enable = true;
+            };
+            mbsync = {
+              enable = false;
+            };
           };
-        };
-        mu.enable = false;
-        msmtp = {
-          enable = true;
-        };
-        mbsync = {
-          enable = false;
-        };
-      };
 
-      accounts.nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
-        primary = false;
-        address = "nautilus.dw@gmail.com";
-        userName = "nautilus.dw@gmail.com";
-        realName = "Nautilus";
-        passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
-        imap.host = "imap.gmail.com";
-        smtp.host = "smtp.gmail.com";
-        msmtp.enable = true;
-        mu.enable = true;
-        mbsync = {
-          enable = true;
-          create = "maildir";
-          expunge = "both";
-          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-          extraConfig = {
-            channel = {
-              Sync = "All";
-            };
-            account = {
-              Timeout = 120;
-              PipelineDepth = 1;
-            };
-          };
-        };
-      };
-      accounts.mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
-        primary = false;
-        address = "mrswarsel@gmail.com";
-        userName = "mrswarsel@gmail.com";
-        realName = "Swarsel";
-        passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
-        imap.host = "imap.gmail.com";
-        smtp.host = "smtp.gmail.com";
-        msmtp.enable = true;
-        mu.enable = true;
-        mbsync = {
-          enable = true;
-          create = "maildir";
-          expunge = "both";
-          patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-          extraConfig = {
-            channel = {
-              Sync = "All";
-            };
-            account = {
-              Timeout = 120;
-              PipelineDepth = 1;
+          nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
+            primary = false;
+            address = "nautilus.dw@gmail.com";
+            userName = "nautilus.dw@gmail.com";
+            realName = "Nautilus";
+            passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
+            imap.host = "imap.gmail.com";
+            smtp.host = "smtp.gmail.com";
+            msmtp.enable = true;
+            mu.enable = true;
+            mbsync = {
+              enable = true;
+              create = "maildir";
+              expunge = "both";
+              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+              extraConfig = {
+                channel = {
+                  Sync = "All";
+                };
+                account = {
+                  Timeout = 120;
+                  PipelineDepth = 1;
+                };
+              };
             };
           };
+
+          mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
+            primary = false;
+            address = "mrswarsel@gmail.com";
+            userName = "mrswarsel@gmail.com";
+            realName = "Swarsel";
+            passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
+            imap.host = "imap.gmail.com";
+            smtp.host = "smtp.gmail.com";
+            msmtp.enable = true;
+            mu.enable = true;
+            mbsync = {
+              enable = true;
+              create = "maildir";
+              expunge = "both";
+              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+              extraConfig = {
+                channel = {
+                  Sync = "All";
+                };
+                account = {
+                  Timeout = 120;
+                  PipelineDepth = 1;
+                };
+              };
+            };
+          };
+
         };
       };
     };
@@ -15105,23 +15142,5 @@ This file defines a few workflows that I often need to run when working on my co
 
   sync USER HOST:
     rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
-
-#+end_src
-** statix.toml
-:PROPERTIES:
-:CUSTOM_ID: h:d4dcb884-f24f-4786-8fa6-9f36c88a706e
-:END:
-
-This file is used to tell =statix= which checks and folders/fiels to ignore, as well as to specify the nix version that it should use.
-
-I need this mainly to disable the =repeated_keys= check, which checks if there is an attribute set called twice without stepping into it. While in general this should be avoided, since I am tangling some files and need to use the top-level attribute in each org-src block, the check would fail for all these cases.
-
-#+begin_src toml :tangle statix.toml
-
-  disabled = [
-  "repeated_keys"
-  ]
-  nix_version = '2.4'
-  ignore = ['.direnv']
 
 #+end_src

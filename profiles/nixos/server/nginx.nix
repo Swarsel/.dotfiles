@@ -17,9 +17,11 @@
   security.acme = {
     acceptTerms = true;
     preliminarySelfsigned = false;
-    defaults.email = "mrswarsel@gmail.com";
-    defaults.dnsProvider = "cloudflare";
-    defaults.environmentFile = "${config.sops.templates."certs.secret".path}";
+    defaults = {
+      email = "mrswarsel@gmail.com";
+      dnsProvider = "cloudflare";
+      environmentFile = "${config.sops.templates."certs.secret".path}";
+    };
   };
 
   services.nginx = {
