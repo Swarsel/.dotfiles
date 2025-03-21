@@ -59,10 +59,10 @@ in
         };
         # Switch using --impure as these credential files are not stored within the flake
         # sops-nix is not supported for these which is why we need to resort to these
-        LastFM.ApiKey = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret");
-        LastFM.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-key");
-        Spotify.ID = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-id");
-        Spotify.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-secret");
+        LastFM.ApiKey = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-secret";
+        LastFM.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-key";
+        Spotify.ID = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-id";
+        Spotify.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-secret";
         UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
         UIWelcomeMessage = "~SwarselSound~";
       };

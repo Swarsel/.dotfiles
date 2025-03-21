@@ -1,7 +1,7 @@
 { lib, config, inputs, ... }:
 let
   secretsDirectory = builtins.toString inputs.nix-secrets;
-  workHostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+  workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
 in
 {
   config = lib.mkIf config.swarselsystems.server.syncthing {

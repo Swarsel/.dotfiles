@@ -79,8 +79,8 @@ in
   };
 
   networking = {
-    hostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
-    fqdn = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-fqdn");
+    hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+    fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
     firewall.enable = true;
   };
 

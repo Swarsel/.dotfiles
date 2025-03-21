@@ -1,12 +1,12 @@
-{ config, lib, nix-secrets, ... }:
+{ lib, nix-secrets, ... }:
 let
   secretsDirectory = builtins.toString nix-secrets;
 in
 {
-  services.gammastep = lib.mkIf (!config.swarselsystems.isPublic) {
+  services.gammastep = {
     enable = true;
     provider = "manual";
-    latitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-latitude");
-    longitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-longitude");
+    latitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-latitude";
+    longitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-longitude";
   };
 }

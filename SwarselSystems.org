@@ -886,8 +886,8 @@ My work machine. Built for more security, this is the gold standard of my config
     };
 
     networking = {
-      hostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
-      fqdn = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-fqdn");
+      hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+      fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
       firewall.enable = true;
     };
 
@@ -1341,15 +1341,19 @@ This is my main server that I run at home. It handles most tasks that require bi
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
 #+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
-  { lib, ... }:
+  { lib, inputs, ... }:
+  let
+    secretsDirectory = builtins.toString inputs.nix-secrets;
+    workUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/work-user";
+  in
   {
 
     # Auto upgrade nix package and the daemon service.
     services.nix-daemon.enable = true;
     services.karabiner-elements.enable = true;
 
-    home-manager.users."leon.schwarzaeugl".home = {
-      username = lib.mkForce "leon.schwarzaeugl";
+    home-manager.users.workUser.home = {
+      username = lib.mkForce workUser;
       swarselsystems = {
         isDarwin = true;
         isLaptop = true;
@@ -1570,6 +1574,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
       "${profilesPath}/nixos/optional/autologin.nix"
       "${profilesPath}/nixos/common/settings.nix"
       "${profilesPath}/nixos/common/home-manager.nix"
+      "${profilesPath}/nixos/common/home-manager-extra.nix"
       "${profilesPath}/nixos/common/xserver.nix"
       "${profilesPath}/nixos/common/users.nix"
       "${profilesPath}/nixos/common/impermanence.nix"
@@ -3260,7 +3265,12 @@ This program sets up a new NixOS host locally.
       yellow "The ssh key for this configuration is not available."
       green "Adjusting flake.nix so that the configuration is buildable"
       sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-      git add flake.nix
+      rm profiles/home/common/env.nix
+      rm profiles/home/common/gammastep.nix
+      rm profiles/home/common/git.nix
+      rm profiles/home/common/mail.nix
+      rm profiles/nixos/common/home-manager-extra.nix
+      git add .
   else
       green "Valid SSH key found! Continuing with installation"
   fi
@@ -4487,6 +4497,8 @@ TODO
       }
     );
 
+    getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
+
     forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
 
     mkFullHost = host: type: {
@@ -4856,7 +4868,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
   }
 #+end_src
 
-**** Setup home-manager
+**** Setup home-manager base
 :PROPERTIES:
 :CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
 :END:
@@ -4869,7 +4881,20 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
     home-manager = lib.mkIf config.swarselsystems.withHomeManager {
       useGlobalPkgs = true;
       useUserPackages = true;
-      extraSpecialArgs = { inherit (inputs) self nix-secrets; };
+      extraSpecialArgs = { inherit (inputs) self; };
+    };
+  }
+#+end_src
+
+**** Setup home-manager specialArgs
+
+This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on the =chaostheatre= configuration, which is why I split this section into its own file, which makes removal easier when setting that system up.
+
+#+begin_src nix :tangle profiles/nixos/common/home-manager-extra.nix
+  { inputs, config, lib, ... }:
+  {
+    home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+      extraSpecialArgs = { inherit (inputs) nix-secrets; };
     };
   }
 #+end_src
@@ -6293,6 +6318,7 @@ Also, the system state version is set here. No need to touch it.
     imports = lib.swarselsystems.mkImports importNames "profiles/nixos/server" ++ [
       "${profilesPath}/nixos/common/settings.nix"
       "${profilesPath}/nixos/common/home-manager.nix"
+      "${profilesPath}/nixos/common/home-manager-extra.nix"
       "${profilesPath}/nixos/common/xserver.nix"
       "${profilesPath}/nixos/common/gc.nix"
       "${profilesPath}/nixos/common/store.nix"
@@ -6671,10 +6697,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
           };
           # Switch using --impure as these credential files are not stored within the flake
           # sops-nix is not supported for these which is why we need to resort to these
-          LastFM.ApiKey = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret");
-          LastFM.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/lastfm-key");
-          Spotify.ID = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-id");
-          Spotify.Secret = lib.strings.trim (builtins.readFile "${secretsDirectory}/navidrome/spotify-secret");
+          LastFM.ApiKey = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-secret";
+          LastFM.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-key";
+          Spotify.ID = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-id";
+          Spotify.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-secret";
           UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
           UIWelcomeMessage = "~SwarselSound~";
         };
@@ -7489,7 +7515,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   { lib, config, inputs, ... }:
   let
     secretsDirectory = builtins.toString inputs.nix-secrets;
-    workHostName = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/worklaptop-hostname");
+    workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
   in
   {
     config = lib.mkIf config.swarselsystems.server.syncthing {
@@ -8990,13 +9016,29 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix :tangle profiles/home/common/env.nix
-  { config, ... }:
+  { lib, config, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
+    nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
+    mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
+    swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
+    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+    allMailAddresses = lib.swarselsystems.getSecret "${secretsDirectory}/mail/list";
+  in
   {
     home.sessionVariables = {
       EDITOR = "e -w";
       DISPLAY = ":0";
       SWARSEL_LO_RES = config.swarselsystems.lowResolution;
       SWARSEL_HI_RES = config.swarselsystems.highResolution;
+      SWARSEL_LEON_MAIL = leonMail;
+      SWARSEL_NAUTILUS_MAIL = nautilusMail;
+      SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
+      SWARSEL_SWARSEL_MAIL = swarselMail;
+      SWARSEL_FULLNAME = fullName;
+      SWARSEL_MAIL_ALL = allMailAddresses;
+
     };
   }
 #+end_src
@@ -9132,7 +9174,12 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix :tangle profiles/home/common/git.nix
-  { lib, ... }:
+  { lib, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
+    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+  in
   {
     programs.git = {
       enable = true;
@@ -9153,8 +9200,8 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
         key = "0x76FD3810215AE097";
         signByDefault = true;
       };
-      userEmail = lib.mkDefault "leon.schwarzaeugl@gmail.com";
-      userName = "Leon Schwarzäugl";
+      userEmail = lib.mkDefault leonMail;
+      userName = fullName;
       difftastic.enable = true;
       lfs.enable = true;
       includes = [
@@ -9603,35 +9650,43 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix :tangle profiles/home/common/mail.nix
-  { lib, config, ... }:
+  { lib, config, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
+    nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
+    mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
+    swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
+    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+  in
   {
     programs = {
-      mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
+      mbsync = {
         enable = true;
       };
-      msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
+      msmtp = {
         enable = true;
       };
-      mu = lib.mkIf (!config.swarselsystems.isPublic) {
+      mu = {
         enable = true;
       };
     };
 
-    services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
+    services.mbsync = {
       enable = true;
     };
     # this is needed so that mbsync can use the passwords from sops
-    systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
+    systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
     accounts = {
-      email = lib.mkIf (!config.swarselsystems.isPublic) {
+      email = {
         maildirBasePath = "Mail";
         accounts = {
           leon = {
             primary = true;
-            address = "leon.schwarzaeugl@gmail.com";
-            userName = "leon.schwarzaeugl@gmail.com";
-            realName = "Leon Schwarzäugl";
+            address = leonMail;
+            userName = leonMail;
+            realName = fullName;
             passwordCommand = "cat ${config.sops.secrets.leon.path}";
             gpg = {
               key = "0x76FD3810215AE097";
@@ -9660,10 +9715,10 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
             };
           };
 
-          swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
-            address = "leon@swarsel.win";
+          swarsel = {
+            address = swarselMail;
             userName = "8227dc594dd515ce232eda1471cb9a19";
-            realName = "Leon Schwarzäugl";
+            realName = fullName;
             passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
             smtp = {
               host = "in-v3.mailjet.com";
@@ -9682,10 +9737,10 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
             };
           };
 
-          nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
+          nautilus = {
             primary = false;
-            address = "nautilus.dw@gmail.com";
-            userName = "nautilus.dw@gmail.com";
+            address = nautilusMail;
+            userName = nautilusMail;
             realName = "Nautilus";
             passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
             imap.host = "imap.gmail.com";
@@ -9709,10 +9764,10 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
             };
           };
 
-          mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
+          mrswarsel = {
             primary = false;
-            address = "mrswarsel@gmail.com";
-            userName = "mrswarsel@gmail.com";
+            address = mrswarselMail;
+            userName = mrswarselMail;
             realName = "Swarsel";
             passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
             imap.host = "imap.gmail.com";
@@ -10990,16 +11045,16 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix :tangle profiles/home/common/gammastep.nix
-  { config, lib, nix-secrets, ... }:
+  { lib, nix-secrets, ... }:
   let
     secretsDirectory = builtins.toString nix-secrets;
   in
   {
-    services.gammastep = lib.mkIf (!config.swarselsystems.isPublic) {
+    services.gammastep = {
       enable = true;
       provider = "manual";
-      latitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-latitude");
-      longitude = lib.strings.trim (builtins.readFile "${secretsDirectory}/home/gammastep-longitude");
+      latitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-latitude";
+      longitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-longitude";
     };
   }
 #+end_src
@@ -11138,9 +11193,9 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
   { self, config, pkgs, lib, nix-secrets, ... }:
   let
     secretsDirectory = builtins.toString nix-secrets;
-    dcUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/dc-user");
-    clUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cl-user");
-    wsUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/ws-user");
+    dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
+    clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
+    wsUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/ws-user";
   in
   {
     home.packages = with pkgs; [
@@ -11183,7 +11238,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
     ];
 
     programs = {
-      git.userEmail = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/git-email");
+      git.userEmail = lib.swarselsystems.getSecret "${secretsDirectory}/work/git-email";
 
       zsh = {
         shellAliases = {
@@ -11206,31 +11261,31 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       ssh = {
         matchBlocks = {
           "uc" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-prod");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-prod";
             user = "stack";
           };
           "uc.stg" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
             user = "stack";
           };
           "uc.staging" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
             user = "stack";
           };
           "uc.dev" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-dev");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-dev";
             user = "stack";
           };
           "cbe" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-prod");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-prod";
             user = dcUser;
           };
           "cbe.stg" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
             user = dcUser;
           };
           "cbe.staging" = {
-            hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
             user = dcUser;
           };
           "*.vbc.ac.at" = {
@@ -11645,8 +11700,8 @@ Used here: [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]]
             (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
 
   (defun swarsel/mu4e-restore-default ()
-    (setq user-mail-address "leon@swarsel.win"
-          user-full-name "Leon Schwarzäugl"))
+    (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+          user-full-name (getenv "SWARSEL_FULLNAME")))
 
 
 #+end_src
@@ -14337,11 +14392,13 @@ The hook functions are defined here: [[#h:34506761-06b9-43b5-a818-506d9b3faf28][
             (:maildir "/Drafts"     :key ?d)
             (:maildir "/All Mail"     :key ?a)))
 
-    (setq user-mail-address "leon@swarsel.win"
-          user-full-name "Leon Schwarzäugl")
+    (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+          user-full-name (getenv "SWARSEL_FULLNAME"))
 
-
-    (setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
+    ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))
+    (setq mu4e-user-mail-address-list
+      (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
+    )
 
 
   (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)

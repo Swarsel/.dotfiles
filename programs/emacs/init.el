@@ -34,8 +34,8 @@
           (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
 
 (defun swarsel/mu4e-restore-default ()
-  (setq user-mail-address "leon@swarsel.win"
-        user-full-name "Leon Schwarzäugl"))
+  (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+        user-full-name (getenv "SWARSEL_FULLNAME")))
 
 (defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
   (let ((parent-directory (file-name-directory buffer-file-name)))
@@ -1501,11 +1501,13 @@ create a new one."
           (:maildir "/Drafts"     :key ?d)
           (:maildir "/All Mail"     :key ?a)))
 
-  (setq user-mail-address "leon@swarsel.win"
-        user-full-name "Leon Schwarzäugl")
+  (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+        user-full-name (getenv "SWARSEL_FULLNAME"))
 
-
-  (setq mu4e-user-mail-address-list '(leon.schwarzaeugl@gmail.com leon@swarsel.win nautilus.dw@gmail.com mrswarsel@gmail.com)))
+  ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))
+  (setq mu4e-user-mail-address-list
+    (mapcar #'intern (split-string (or (getenv "SWARSEL_MAIL_ALL") "") "[ ,]+" t)))
+  )
 
 
 (add-hook 'mu4e-compose-mode-hook #'swarsel/mu4e-send-from-correct-address)

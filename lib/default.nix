@@ -22,6 +22,8 @@
     }
   );
 
+  getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
+
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
 
   mkFullHost = host: type: {

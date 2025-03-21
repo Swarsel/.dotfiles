@@ -1,32 +1,40 @@
-{ lib, config, ... }:
+{ lib, config, nix-secrets, ... }:
+let
+  secretsDirectory = builtins.toString nix-secrets;
+  leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
+  nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
+  mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
+  swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
+  fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+in
 {
   programs = {
-    mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
+    mbsync = {
       enable = true;
     };
-    msmtp = lib.mkIf (!config.swarselsystems.isPublic) {
+    msmtp = {
       enable = true;
     };
-    mu = lib.mkIf (!config.swarselsystems.isPublic) {
+    mu = {
       enable = true;
     };
   };
 
-  services.mbsync = lib.mkIf (!config.swarselsystems.isPublic) {
+  services.mbsync = {
     enable = true;
   };
   # this is needed so that mbsync can use the passwords from sops
-  systemd.user.services.mbsync.Unit.After = lib.mkIf (!config.swarselsystems.isPublic) [ "sops-nix.service" ];
+  systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
   accounts = {
-    email = lib.mkIf (!config.swarselsystems.isPublic) {
+    email = {
       maildirBasePath = "Mail";
       accounts = {
         leon = {
           primary = true;
-          address = "leon.schwarzaeugl@gmail.com";
-          userName = "leon.schwarzaeugl@gmail.com";
-          realName = "Leon Schwarzäugl";
+          address = leonMail;
+          userName = leonMail;
+          realName = fullName;
           passwordCommand = "cat ${config.sops.secrets.leon.path}";
           gpg = {
             key = "0x76FD3810215AE097";
@@ -55,10 +63,10 @@
           };
         };
 
-        swarsel = lib.mkIf (!config.swarselsystems.isPublic) {
-          address = "leon@swarsel.win";
+        swarsel = {
+          address = swarselMail;
           userName = "8227dc594dd515ce232eda1471cb9a19";
-          realName = "Leon Schwarzäugl";
+          realName = fullName;
           passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
           smtp = {
             host = "in-v3.mailjet.com";
@@ -77,10 +85,10 @@
           };
         };
 
-        nautilus = lib.mkIf (!config.swarselsystems.isPublic) {
+        nautilus = {
           primary = false;
-          address = "nautilus.dw@gmail.com";
-          userName = "nautilus.dw@gmail.com";
+          address = nautilusMail;
+          userName = nautilusMail;
           realName = "Nautilus";
           passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
           imap.host = "imap.gmail.com";
@@ -104,10 +112,10 @@
           };
         };
 
-        mrswarsel = lib.mkIf (!config.swarselsystems.isPublic) {
+        mrswarsel = {
           primary = false;
-          address = "mrswarsel@gmail.com";
-          userName = "mrswarsel@gmail.com";
+          address = mrswarselMail;
+          userName = mrswarselMail;
           realName = "Swarsel";
           passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
           imap.host = "imap.gmail.com";

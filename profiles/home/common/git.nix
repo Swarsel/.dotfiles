@@ -1,4 +1,9 @@
-{ lib, ... }:
+{ lib, nix-secrets, ... }:
+let
+  secretsDirectory = builtins.toString nix-secrets;
+  leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
+  fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+in
 {
   programs.git = {
     enable = true;
@@ -19,8 +24,8 @@
       key = "0x76FD3810215AE097";
       signByDefault = true;
     };
-    userEmail = lib.mkDefault "leon.schwarzaeugl@gmail.com";
-    userName = "Leon Schwarzäugl";
+    userEmail = lib.mkDefault leonMail;
+    userName = fullName;
     difftastic.enable = true;
     lfs.enable = true;
     includes = [

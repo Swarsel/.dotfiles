@@ -1,9 +1,9 @@
 { self, config, pkgs, lib, nix-secrets, ... }:
 let
   secretsDirectory = builtins.toString nix-secrets;
-  dcUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/dc-user");
-  clUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cl-user");
-  wsUser = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/ws-user");
+  dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
+  clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
+  wsUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/ws-user";
 in
 {
   home.packages = with pkgs; [
@@ -46,7 +46,7 @@ in
   ];
 
   programs = {
-    git.userEmail = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/git-email");
+    git.userEmail = lib.swarselsystems.getSecret "${secretsDirectory}/work/git-email";
 
     zsh = {
       shellAliases = {
@@ -69,31 +69,31 @@ in
     ssh = {
       matchBlocks = {
         "uc" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-prod");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-prod";
           user = "stack";
         };
         "uc.stg" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
           user = "stack";
         };
         "uc.staging" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-stg");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
           user = "stack";
         };
         "uc.dev" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/uc-dev");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-dev";
           user = "stack";
         };
         "cbe" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-prod");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-prod";
           user = dcUser;
         };
         "cbe.stg" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
           user = dcUser;
         };
         "cbe.staging" = {
-          hostname = lib.strings.trim (builtins.readFile "${secretsDirectory}/work/cbe-stg");
+          hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
           user = dcUser;
         };
         "*.vbc.ac.at" = {
