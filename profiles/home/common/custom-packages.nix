@@ -26,5 +26,7 @@
     swarsel-bootstrap
     swarsel-displaypower
     swarselzellij
+
+    rustdesk-vbc
   ];
 }

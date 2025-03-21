@@ -75,6 +75,10 @@
       flake = false;
       inputs = { };
     };
+    vbc-nix = {
+      url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-topology.url = "github:oddlama/nix-topology";
   };
   outputs =

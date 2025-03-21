@@ -296,6 +296,10 @@ When setting this option normally, the password would normally be written world-
     flake = false;
     inputs = { };
   };
+  vbc-nix = {
+    url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
   nix-topology.url = "github:oddlama/nix-topology";
 #+end_src
 ** let
@@ -3815,6 +3819,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       // (modifications final prev)
       // (nixpkgs-stable final prev)
       // (zjstatus final prev)
+      // (inputs.vbc-nix.overlays.default final prev)
       // (inputs.nur.overlays.default final prev)
       // (inputs.emacs-overlay.overlay final prev)
       // (inputs.nix-topology.overlays.default final prev)
@@ -8755,6 +8760,8 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       swarsel-bootstrap
       swarsel-displaypower
       swarselzellij
+
+      rustdesk-vbc
     ];
   }
 #+end_src
@@ -8886,6 +8893,14 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
         name = "Ultimaker Cura";
         genericName = "Cura";
         exec = "cura";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
+      rustdesk-vbc = {
+        name = "Rustdesk VBC";
+        genericName = "rustdesk-vbc";
+        exec = "rustdesk-vbc";
         terminal = false;
         categories = [ "Application" ];
       };

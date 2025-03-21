@@ -10,6 +10,14 @@ _:
       categories = [ "Application" ];
     };
 
+    rustdesk-vbc = {
+      name = "Rustdesk VBC";
+      genericName = "rustdesk-vbc";
+      exec = "rustdesk-vbc";
+      terminal = false;
+      categories = [ "Application" ];
+    };
+
     anki = {
       name = "Anki Flashcards";
       genericName = "Anki";

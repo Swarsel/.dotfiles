@@ -54,6 +54,7 @@ in
     // (modifications final prev)
     // (nixpkgs-stable final prev)
     // (zjstatus final prev)
+    // (inputs.vbc-nix.overlays.default final prev)
     // (inputs.nur.overlays.default final prev)
     // (inputs.emacs-overlay.overlay final prev)
     // (inputs.nix-topology.overlays.default final prev)
