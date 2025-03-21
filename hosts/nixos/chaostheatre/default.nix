@@ -1,4 +1,4 @@
-{ self, pkgs, lib, ... }:
+{ self, config, pkgs, lib, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -6,6 +6,10 @@ in
 
   imports = [
     ./hardware-configuration.nix
+    ./disk-config.nix
+    {
+      _module.args.diskDevice = config.swarselsystems.rootDisk;
+    }
     "${profilesPath}/nixos/optional/autologin.nix"
   ];
 
@@ -32,6 +36,12 @@ in
     initialSetup = true;
     isPublic = true;
     isLinux = true;
+    isImpermanence = true;
+    isCrypted = true;
+    isSecureBoot = false;
+    isSwap = true;
+    swapSize = "4G";
+    rootDisk = "/dev/vda";
   };
 
   home-manager.users.swarsel.swarselsystems = {

@@ -1,7 +1,7 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
-  home.packages = with pkgs; [
+  home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
     pass-fuzzel
     cura5
     cdw

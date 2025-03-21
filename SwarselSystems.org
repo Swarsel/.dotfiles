@@ -1981,7 +1981,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
-  { self, pkgs, lib, ... }:
+  { self, config, pkgs, lib, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -1989,6 +1989,10 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
     imports = [
       ./hardware-configuration.nix
+      ./disk-config.nix
+      {
+        _module.args.diskDevice = config.swarselsystems.rootDisk;
+      }
       "${profilesPath}/nixos/optional/autologin.nix"
     ];
 
@@ -2015,6 +2019,12 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       initialSetup = true;
       isPublic = true;
       isLinux = true;
+      isImpermanence = true;
+      isCrypted = true;
+      isSecureBoot = false;
+      isSwap = true;
+      swapSize = "4G";
+      rootDisk = "/dev/vda";
     };
 
     home-manager.users.swarsel.swarselsystems = {
@@ -3109,7 +3119,15 @@ This program builds a configuration locally.
       yellow "The ssh key for this configuration is not available."
       green "Adjusting flake.nix so that the configuration is buildable"
       sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-      git add flake.nix
+      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+      rm profiles/home/common/env.nix
+      rm profiles/home/common/gammastep.nix
+      rm profiles/home/common/git.nix
+      rm profiles/home/common/mail.nix
+      rm profiles/nixos/common/home-manager-extra.nix
+      nix flake update vbc-nix
+      git add .
   else
       green "Valid SSH key found! Continuing with installation"
   fi
@@ -3146,18 +3164,20 @@ This program sets up a new NixOS host locally.
   target_hostname="chaostheatre"
   target_user="swarsel"
   persist_dir=""
+  target_disk="/dev/vda"
   disk_encryption=0
 
   function help_and_exit() {
       echo
       echo "Locally installs SwarselSystem on this machine."
       echo
-      echo "USAGE: $0 -n <target_config> [OPTIONS]"
+      echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
       echo
       echo "ARGS:"
       echo "  -n <target_config>                      specify the nixos config to deploy."
       echo "                                          Default: chaostheatre"
-      echo "                                          Default: chaostheatre"
+      echo "  -d <target_disk>                        specify disk to install on."
+      echo "                                          Default: /dev/vda"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
       echo "  -h | --help                             Print this help."
@@ -3194,6 +3214,10 @@ This program sets up a new NixOS host locally.
           shift
           target_user=$1
           ;;
+      -d)
+          shift
+          target_disk=$1
+          ;;
       -h | --help) help_and_exit ;;
       ,*)
           echo "Invalid option detected."
@@ -3209,7 +3233,7 @@ This program sets up a new NixOS host locally.
   }
   trap cleanup exit
 
-  green "~SwarselSystems~ remote installer"
+  green "~SwarselSystems~ local installer"
 
   cd /home/"$target_user"
 
@@ -3220,9 +3244,31 @@ This program sets up a new NixOS host locally.
   green "Cloning repository from GitHub"
   git clone https://github.com/Swarsel/.dotfiles.git
 
+  local_keys=$(ssh-add -L || true)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+  read -ra pub_arr <<< "$pub_key"
+
+  cd .dotfiles
+  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+      yellow "The ssh key for this configuration is not available."
+      green "Adjusting flake.nix so that the configuration is buildable ..."
+      sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+      rm profiles/home/common/env.nix
+      rm profiles/home/common/gammastep.nix
+      rm profiles/home/common/git.nix
+      rm profiles/home/common/mail.nix
+      rm profiles/nixos/common/home-manager-extra.nix
+      nix flake update vbc-nix
+      git add .
+  else
+      green "Valid SSH key found! Continuing with installation"
+  fi
+
   green "Reading system information for $target_config ..."
   DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-  green "Root Disk: $DISK"
+  green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
 
   CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
   if [[ $CRYPTED == "true" ]]; then
@@ -3256,25 +3302,6 @@ This program sets up a new NixOS host locally.
       red "Secure Boot: X"
   fi
 
-  local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
-  read -ra pub_arr <<< "$pub_key"
-
-  cd .dotfiles
-  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
-      yellow "The ssh key for this configuration is not available."
-      green "Adjusting flake.nix so that the configuration is buildable"
-      sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-      rm profiles/home/common/env.nix
-      rm profiles/home/common/gammastep.nix
-      rm profiles/home/common/git.nix
-      rm profiles/home/common/mail.nix
-      rm profiles/nixos/common/home-manager-extra.nix
-      git add .
-  else
-      green "Valid SSH key found! Continuing with installation"
-  fi
-
   if [ "$disk_encryption" -eq 1 ]; then
       while true; do
           green "Set disk encryption passphrase:"
@@ -3290,16 +3317,20 @@ This program sets up a new NixOS host locally.
       done
   fi
 
-  green "Setting up disk"
-  sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+  green "Setting up disk ..."
+  if [[ $target_config == "chaostheatre" ]]; then
+      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+  else
+      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+  fi
   sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
   sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
   sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-  green "Generating hardware configuration"
+  green "Generating hardware configuration ..."
   sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-  green "Injecting initialSetup"
+  green "Injecting initialSetup ..."
   sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
   git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
@@ -8717,10 +8748,10 @@ This holds packages that I can use as provided, or with small modifications (as 
 This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. This is a good idea so that I do not lose track of package names I have defined myself, as this was once a problem in the past already.
 
 #+begin_src nix :tangle profiles/home/common/custom-packages.nix
-  { pkgs, ... }:
+  { config, pkgs, ... }:
 
   {
-    home.packages = with pkgs; [
+    home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
       pass-fuzzel
       cura5
       cdw
@@ -9678,7 +9709,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
     # this is needed so that mbsync can use the passwords from sops
     systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-    accounts = {
+    accounts = lib.mkIf (!config.swarselsystems.isPublic) {
       email = {
         maildirBasePath = "Mail";
         accounts = {

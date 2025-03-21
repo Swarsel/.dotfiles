@@ -26,7 +26,7 @@ in
   # this is needed so that mbsync can use the passwords from sops
   systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-  accounts = {
+  accounts = lib.mkIf (!config.swarselsystems.isPublic) {
     email = {
       maildirBasePath = "Mail";
       accounts = {

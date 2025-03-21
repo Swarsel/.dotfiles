@@ -4,18 +4,20 @@ target_config="chaostheatre"
 target_hostname="chaostheatre"
 target_user="swarsel"
 persist_dir=""
+target_disk="/dev/vda"
 disk_encryption=0
 
 function help_and_exit() {
     echo
     echo "Locally installs SwarselSystem on this machine."
     echo
-    echo "USAGE: $0 -n <target_config> [OPTIONS]"
+    echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
     echo
     echo "ARGS:"
     echo "  -n <target_config>                      specify the nixos config to deploy."
     echo "                                          Default: chaostheatre"
-    echo "                                          Default: chaostheatre"
+    echo "  -d <target_disk>                        specify disk to install on."
+    echo "                                          Default: /dev/vda"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
     echo "  -h | --help                             Print this help."
@@ -52,6 +54,10 @@ while [[ $# -gt 0 ]]; do
         shift
         target_user=$1
         ;;
+    -d)
+        shift
+        target_disk=$1
+        ;;
     -h | --help) help_and_exit ;;
     *)
         echo "Invalid option detected."
@@ -67,7 +73,7 @@ function cleanup() {
 }
 trap cleanup exit
 
-green "~SwarselSystems~ remote installer"
+green "~SwarselSystems~ local installer"
 
 cd /home/"$target_user"
 
@@ -78,9 +84,31 @@ sudo rm -rf .dotfiles
 green "Cloning repository from GitHub"
 git clone https://github.com/Swarsel/.dotfiles.git
 
+local_keys=$(ssh-add -L || true)
+pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+read -ra pub_arr <<< "$pub_key"
+
+cd .dotfiles
+if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+    yellow "The ssh key for this configuration is not available."
+    green "Adjusting flake.nix so that the configuration is buildable ..."
+    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+    sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+    sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+    rm profiles/home/common/env.nix
+    rm profiles/home/common/gammastep.nix
+    rm profiles/home/common/git.nix
+    rm profiles/home/common/mail.nix
+    rm profiles/nixos/common/home-manager-extra.nix
+    nix flake update vbc-nix
+    git add .
+else
+    green "Valid SSH key found! Continuing with installation"
+fi
+
 green "Reading system information for $target_config ..."
 DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-green "Root Disk: $DISK"
+green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
 
 CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
 if [[ $CRYPTED == "true" ]]; then
@@ -114,25 +142,6 @@ else
     red "Secure Boot: X"
 fi
 
-local_keys=$(ssh-add -L || true)
-pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
-read -ra pub_arr <<< "$pub_key"
-
-cd .dotfiles
-if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
-    yellow "The ssh key for this configuration is not available."
-    green "Adjusting flake.nix so that the configuration is buildable"
-    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-    rm profiles/home/common/env.nix
-    rm profiles/home/common/gammastep.nix
-    rm profiles/home/common/git.nix
-    rm profiles/home/common/mail.nix
-    rm profiles/nixos/common/home-manager-extra.nix
-    git add .
-else
-    green "Valid SSH key found! Continuing with installation"
-fi
-
 if [ "$disk_encryption" -eq 1 ]; then
     while true; do
         green "Set disk encryption passphrase:"
@@ -148,16 +157,20 @@ if [ "$disk_encryption" -eq 1 ]; then
     done
 fi
 
-green "Setting up disk"
-sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+green "Setting up disk ..."
+if [[ $target_config == "chaostheatre" ]]; then
+    sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+else
+    sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+fi
 sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
 sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
 sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-green "Generating hardware configuration"
+green "Generating hardware configuration ..."
 sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-green "Injecting initialSetup"
+green "Injecting initialSetup ..."
 sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
 git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
