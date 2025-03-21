@@ -10,7 +10,7 @@
 
     services.nextcloud = {
       enable = true;
-      package = pkgs.nextcloud30;
+      package = pkgs.nextcloud31;
       hostName = "stash.swarsel.win";
       home = "/Vault/apps/nextcloud";
       datadir = "/Vault/data/nextcloud";
