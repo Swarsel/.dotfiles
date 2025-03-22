@@ -3985,6 +3985,12 @@ Laptops are not always plugged in, so they should show a battery icon in Waybar.
 
 This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
 
+to get the info for the secondary gpu, use `lspci -nn | grep VGA`
+It can be set to either:
+  - a number, selecting the n-th non-default GPU
+  - a PCI bus id in the form =pci-XXX_YY_ZZ_U=
+  - a PCI id in the form =vendor_id:device_id=
+
 #+begin_src nix :tangle modules/home/hardware.nix
   { lib, ... }:
   {
@@ -3992,6 +3998,11 @@ This section is mostly used to deliver the correct information to Waybar. AMD sy
       cpuCount = lib.mkOption {
         type = lib.types.int;
         default = 8;
+      };
+      isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
+      SecondaryGpuCard = lib.mkOption {
+        type = lib.types.str;
+        default = "";
       };
       temperatureHwmon = {
         isAbsolutePath = lib.mkEnableOption "absolute temperature path";
@@ -4962,7 +4973,7 @@ This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on th
   { inputs, config, lib, ... }:
   {
     home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-      extraSpecialArgs = { inherit (inputs) nix-secrets; };
+      extraSpecialArgs = { inherit (inputs) nix-secrets nixgl; };
     };
   }
 #+end_src
@@ -8582,6 +8593,33 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
       };
     };
 
+  }
+#+end_src
+
+**** nixGL
+:PROPERTIES:
+:CUSTOM_ID: h:90af1862-90b3-4c93-8730-2443bc62986a
+:END:
+
+This integrates nixGL into home-manager. NixGL provies OpenGL and Vulkan APIs to nix installed utilities. This is needed for graphical applications on non-NixOS systems.
+
+#+begin_src nix :tangle profiles/home/common/nixgl.nix
+  { lib, config, nixgl, ... }:
+  {
+    nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
+      inherit (nixgl) packages;
+      defaultWrapper = lib.mkDefault "mesa";
+      vulkan.enable = lib.mkDefault false;
+      prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
+        card = config.swarselsystem.secondaryGpuCard;
+        installScript = "mesa";
+      };
+      offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
+      installScripts = [
+        "mesa"
+        "mesaPrime"
+      ];
+    };
   }
 #+end_src
 

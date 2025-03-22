@@ -95,7 +95,6 @@
 
     in
     {
-
       inherit lib;
 
       nixosModules = import ./modules/nixos { inherit lib; };
