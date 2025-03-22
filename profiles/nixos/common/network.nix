@@ -225,7 +225,7 @@
             proxy = { };
             wifi = {
               mode = "ap";
-              ssid = "Hotspot-swarsel";
+              ssid = "Hotspot-${config.swarselsystems.mainUser}";
             };
             wifi-security = {
               group = "ccmp;";

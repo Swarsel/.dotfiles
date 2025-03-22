@@ -16,6 +16,9 @@ in
       isLaptop = true;
       isNixos = false;
       isBtrfs = false;
+      mainUser = workUser;
+      homeDir = "/home/${workUser}";
+      flakePath = "/home/${workUser}/.dotfiles";
     };
   };
 }

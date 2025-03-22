@@ -6,7 +6,7 @@
       image = config.swarselsystems.wallpaper;
     }
     config.swarselsystems.stylix;
-  home-manager.users.swarsel = {
+  home-manager.users."${config.swarselsystems.mainUser}" = {
     stylix = {
       targets = {
         emacs.enable = false;

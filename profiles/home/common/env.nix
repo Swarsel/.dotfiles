@@ -14,12 +14,13 @@ in
     DISPLAY = ":0";
     SWARSEL_LO_RES = config.swarselsystems.lowResolution;
     SWARSEL_HI_RES = config.swarselsystems.highResolution;
+  };
+  systemd.user.sessionVariables = {
     SWARSEL_LEON_MAIL = leonMail;
     SWARSEL_NAUTILUS_MAIL = nautilusMail;
     SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
     SWARSEL_SWARSEL_MAIL = swarselMail;
     SWARSEL_FULLNAME = fullName;
     SWARSEL_MAIL_ALL = allMailAddresses;
-
   };
 }

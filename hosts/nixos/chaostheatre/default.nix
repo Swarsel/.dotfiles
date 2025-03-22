@@ -1,4 +1,4 @@
-{ self, config, pkgs, lib, ... }:
+{ self, config, pkgs, lib, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -44,9 +44,8 @@ in
     rootDisk = "/dev/vda";
   };
 
-  home-manager.users.swarsel.swarselsystems = {
+  home-manager.users."${primaryUser}".swarselsystems = {
     isNixos = true;
     isPublic = true;
-    flakePath = "/home/swarsel/.dotfiles";
   };
 }

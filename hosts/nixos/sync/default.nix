@@ -1,4 +1,4 @@
-{ self, inputs, lib, ... }:
+{ self, inputs, lib, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -10,7 +10,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = [
+      home-manager.users."${primaryUser}".imports = [
         "${profilesPath}/home/server"
       ];
     }

@@ -338,64 +338,65 @@ In this section I am creating some attributes that define general concepts of my
   They are defined in [[#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab][Overlays (additions, overrides, nixpkgs-stable)]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
+  inherit lib;
 
-    inherit lib;
+  nixosModules = import ./modules/nixos { inherit lib; };
+  homeModules = import ./modules/home { inherit lib; };
+  packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+  formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+  overlays = import ./overlays { inherit self lib inputs; };
 
-    nixosModules = import ./modules/nixos { inherit lib; };
-    homeModules = import ./modules/home { inherit lib; };
-    packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
-    formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-    overlays = import ./overlays { inherit self lib inputs; };
+  apps = lib.swarselsystems.forAllSystems (system:
+    let
+      appNames = [
+        "swarsel-bootstrap"
+        "swarsel-install"
+        "swarsel-rebuild"
+        "swarsel-postinstall"
+      ];
+      appSet = lib.swarselsystems.mkApps system appNames self;
+    in
+    {
+      inherit appSet;
+      default = appSet.bootstrap;
+    });
 
-    apps = lib.swarselsystems.forAllSystems (system:
-      let
-        appNames = [
-          "swarsel-bootstrap"
-          "swarsel-install"
-          "swarsel-rebuild"
-          "swarsel-postinstall"
+  devShells = lib.swarselsystems.forAllSystems (system:
+    let
+      pkgs = lib.swarselsystems.pkgsFor.${system};
+      checks = self.checks.${system};
+    in
+    {
+      default = pkgs.mkShell {
+        NIX_CONFIG = "experimental-features = nix-command flakes";
+        inherit (checks.pre-commit-check) shellHook;
+        buildInputs = checks.pre-commit-check.enabledPackages;
+        nativeBuildInputs = [
+          pkgs.nix
+          pkgs.home-manager
+          pkgs.git
+          pkgs.just
+          pkgs.age
+          pkgs.ssh-to-age
+          pkgs.sops
+          pkgs.statix
+          pkgs.deadnix
+          pkgs.nixpkgs-fmt
         ];
-        appSet = lib.swarselsystems.mkApps system appNames self;
-      in
-        {
-          inherit appSet;
-          default = appSet.bootstrap;
-        });
+      };
+    }
+  );
 
-    devShells = lib.swarselsystems.forAllSystems (system:
-      let
-        pkgs = lib.swarselsystems.pkgsFor.${system};
-        checks = self.checks.${system};
-      in
-        {
-          default = pkgs.mkShell {
-            NIX_CONFIG = "experimental-features = nix-command flakes";
-            inherit (checks.pre-commit-check) shellHook;
-            buildInputs = checks.pre-commit-check.enabledPackages;
-            nativeBuildInputs = [
-              pkgs.nix
-              pkgs.home-manager
-              pkgs.git
-              pkgs.just
-              pkgs.age
-              pkgs.ssh-to-age
-              pkgs.sops
-              pkgs.statix
-              pkgs.deadnix
-              pkgs.nixpkgs-fmt
-            ];
-          };
-        }
-    );
+  templates = import ./templates { inherit lib; };
 
-    templates = import ./templates { inherit lib; };
+  checks = lib.swarselsystems.forAllSystems (system:
+    let
+      pkgs = lib.swarselsystems.pkgsFor.${system};
+    in
+    import ./checks { inherit self inputs system pkgs; }
+  );
 
-    checks = lib.swarselsystems.forAllSystems (system:
-      let
-        pkgs = lib.swarselsystems.pkgsFor.${system};
-      in
-        import ./checks { inherit self inputs system pkgs; }
-    );
+  diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
 
 #+end_src
 
@@ -449,6 +450,9 @@ This file defines a number of checks that can either be run by calling =nix flak
 #+end_src
 
 ** Templates
+:PROPERTIES:
+:CUSTOM_ID: h:e817f769-9aa9-4192-b649-c269080f4fee
+:END:
 
 This file defines the templates that are being exposed by the flake. These can be used by running =nix flake init -t github:Swarsel/.dotfiles#<TEMPLATE_NAME>=.
 
@@ -584,7 +588,7 @@ This is the template that I use for new deployments of personal machines. Server
 :END:
 
 #+begin_src nix :tangle templates/hosts/nixos/default.nix
-  { self, inputs, pkgs, lib, ... }:
+  { self, inputs, pkgs, lib, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -607,7 +611,7 @@ This is the template that I use for new deployments of personal machines. Server
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           "${profilesPath}/home/optional/gaming.nix"
         ];
       }
@@ -636,11 +640,10 @@ This is the template that I use for new deployments of personal machines. Server
       }
       sharedOptions;
 
-    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+    home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
       {
         isLaptop = true;
         isNixos = true;
-        flakePath = "/home/swarsel/.dotfiles";
         cpuCount = 16;
         startup = [
           { command = "nextcloud --background"; }
@@ -805,13 +808,14 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, inputs, pkgs, lib, ... }:
+  { self, inputs, pkgs, lib, primaryUser, ... }:
   let
     secretsDirectory = builtins.toString inputs.nix-secrets;
     profilesPath = "${self}/profiles";
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
+      sharescreen = "eDP-2";
     };
   in
   {
@@ -832,7 +836,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           "${profilesPath}/home/optional/gaming.nix"
           "${profilesPath}/home/optional/work.nix"
         ];
@@ -917,11 +921,12 @@ My work machine. Built for more security, this is the gold standard of my config
       }
       sharedOptions;
 
-    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+    home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
       {
         isLaptop = true;
         isNixos = true;
-        flakePath = "/home/swarsel/.dotfiles";
+        isSecondaryGpu = true;
+        SecondaryGpuCard = "pci-0000_03_00_0";
         cpuCount = 16;
         temperatureHwmon = {
           isAbsolutePath = true;
@@ -939,7 +944,6 @@ My work machine. Built for more security, this is the gold standard of my config
           { command = "1password"; }
           { command = "feishin"; }
         ];
-        sharescreen = "eDP-2";
         lowResolution = "1280x800";
         highResolution = "2560x1600";
         monitors = {
@@ -1219,7 +1223,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
-  { self, inputs, ... }:
+  { self, inputs, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -1233,7 +1237,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           "${profilesPath}/home/server"
         ];
       }
@@ -1258,7 +1262,6 @@ This is my main server that I run at home. It handles most tasks that require bi
       isImpermanence = false;
       isBtrfs = false;
       isLinux = true;
-      flakePath = "/home/swarsel/.dotfiles";
       server = {
         enable = true;
         kavita = true;
@@ -1359,6 +1362,9 @@ A Mac notebook that I have received from work. I use this machine for getting ac
         isLaptop = true;
         isNixos = false;
         isBtrfs = false;
+        mainUser = workUser;
+        homeDir = "/home/${workUser}";
+        flakePath = "/home/${workUser}/.dotfiles";
       };
     };
   }
@@ -1444,7 +1450,7 @@ This machine mainly acts as an external sync helper. It manages the following th
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
-  { self, inputs, lib, ... }:
+  { self, inputs, lib, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -1456,7 +1462,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           "${profilesPath}/home/server"
         ];
       }
@@ -1557,7 +1563,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix :tangle hosts/nixos/toto/default.nix
-  { self, inputs, outputs, pkgs, lib, ... }:
+  { self, inputs, outputs, pkgs, lib, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -1584,7 +1590,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           inputs.sops-nix.homeManagerModules.sops
           "${profilesPath}/home/common/settings.nix"
           "${profilesPath}/home/common/sops.nix"
@@ -1632,11 +1638,10 @@ This is a slim setup for developing base configuration. I do not track the hardw
       }
       sharedOptions;
 
-    home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+    home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
       {
         isLaptop = false;
         isNixos = true;
-        flakePath = "/home/swarsel/.dotfiles";
       }
       sharedOptions;
 
@@ -1808,7 +1813,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, pkgs, inputs, outputs, config, lib, modulesPath, ... }:
+  { self, pkgs, inputs, outputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
   in
@@ -1822,13 +1827,13 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
       inputs.home-manager.nixosModules.home-manager
       {
-        home-manager.users.swarsel.imports = [
+        home-manager.users."${primaryUser}".imports = [
           "${self}/profiles/home/common/settings.nix"
         ] ++ (builtins.attrValues outputs.homeModules);
       }
     ];
 
-    home-manager.users.swarsel.home = {
+    home-manager.users."${primaryUser}".home = {
       file = {
         ".bash_history" = {
           source = self + /programs/bash/.bash_history;
@@ -1859,15 +1864,15 @@ Also, an initial bash history is provided to allow for a very quick local deploy
       config.allowUnfree = true;
     };
 
-    services.getty.autologinUser = lib.mkForce "swarsel";
+    services.getty.autologinUser = lib.mkForce primaryUser;
 
     users = {
       allowNoPasswordLogin = true;
       groups.swarsel = { };
       users = {
         swarsel = {
-          name = "swarsel";
-          group = "swarsel";
+          name = primaryUser;
+          group = primaryUser;
           isNormalUser = true;
           password = "setup"; # this is overwritten after install
           openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
@@ -1875,7 +1880,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
         };
         root = {
           # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
+          openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
         };
       };
     };
@@ -1891,10 +1896,10 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
     system.activationScripts.cache = {
       text = ''
-        mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/swarsel/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/swarsel/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json > /dev/null
+        mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
+        mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
+        mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
         mkdir -p /root/.local/share/nix/
         printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
       '';
@@ -1981,7 +1986,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
-  { self, config, pkgs, lib, ... }:
+  { self, config, pkgs, lib, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
   in
@@ -2027,10 +2032,9 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       rootDisk = "/dev/vda";
     };
 
-    home-manager.users.swarsel.swarselsystems = {
+    home-manager.users."${primaryUser}".swarselsystems = {
       isNixos = true;
       isPublic = true;
-      flakePath = "/home/swarsel/.dotfiles";
     };
   }
 
@@ -2466,6 +2470,9 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 **** swarselzellij
+:PROPERTIES:
+:CUSTOM_ID: h:564c102c-e335-4f17-a613-c5a436bb4864
+:END:
 
 #+begin_src shell :tangle scripts/swarselzellij.sh
   KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
@@ -2641,7 +2648,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
     inherit name;
     runtimeInputs = [ jq ];
     text = ''
-      count=$(curl -u Swarsel:"$(cat /run/user/1000/secrets/github_notif)" https://api.github.com/notifications | jq '. | length')
+      count=$(curl -u Swarsel:"$(cat "$XDG_RUNTIME_DIR/secrets/github_notif")" https://api.github.com/notifications | jq '. | length')
 
       if [[ "$count" != "0" ]]; then
           echo "{\"text\":\"$count\"}"
@@ -2970,7 +2977,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
   $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-  $ssh_root_cmd "chown $target_user:users /home/swarsel/.ssh/ssh_host_ed25519_key"
+  $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
   # __________________________
 
   if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
@@ -3614,6 +3621,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** project
+:PROPERTIES:
+:CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
+:END:
 
 #+begin_src shell :tangle scripts/project.sh
   set -euo pipefail
@@ -3634,6 +3644,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** fhs
+:PROPERTIES:
+:CUSTOM_ID: h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0
+:END:
 
 
 #+begin_src nix :tangle pkgs/fhs/default.nix
@@ -3651,6 +3664,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** swarsel-displaypower
+:PROPERTIES:
+:CUSTOM_ID: h:814d5e7f-4b95-412d-b246-33f888514ec6
+:END:
 
 A crude script to power on all displays that might be attached. Needed because sometimes displays do not awake from sleep.
 
@@ -3838,10 +3854,6 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
   { lib, ... }:
   {
     options.swarselsystems = {
-      user = lib.mkOption {
-        type = lib.types.str;
-        default = "swarsel";
-      };
       withHomeManager = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -4134,10 +4146,6 @@ These are some extra options that will be used if the machine also runs NixOS. F
   { lib, config, ... }:
   {
     options.swarselsystems = {
-      flakePath = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
       isNixos = lib.mkEnableOption "nixos host";
       isPublic = lib.mkEnableOption "is a public machine (no secrets)";
       swayfxConfig = lib.mkOption {
@@ -4184,6 +4192,22 @@ Provides settings related to nix-darwin systems. At the moment, I am only making
     options.swarselsystems = {
       isDarwin = lib.mkEnableOption "darwin host";
       isLinux = lib.mkEnableOption "whether this is a linux machine";
+      mainUser = lib.mkOption {
+        type = lib.types.str;
+        default = "swarsel";
+      };
+      homeDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel";
+      };
+      xdgDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/run/user/1000";
+      };
+      flakePath = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel/.dotfiles";
+      };
     };
   }
 #+end_src
@@ -4428,6 +4452,9 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
 #+end_src
 
 ***** stylix
+:PROPERTIES:
+:CUSTOM_ID: h:1c4b1619-40a1-4120-8868-d213abf6a29e
+:END:
 
 #+begin_src nix :noweb yes :tangle modules/home/stylix.nix
   { self, lib, pkgs, ... }:
@@ -4505,6 +4532,10 @@ TODO
 
 #+begin_src nix :tangle lib/default.nix
   { self, lib, systems, inputs, outputs, ... }:
+  let
+    linuxUser = "swarsel";
+    macUser = "leon.schwarzaeugl";
+  in
   {
 
     mkIfElseList = p: yes: no: lib.mkMerge [
@@ -4546,6 +4577,9 @@ TODO
             inputs.impermanence.nixosModules.impermanence
             inputs.lanzaboote.nixosModules.lanzaboote
             "${self}/hosts/${type}/${host}"
+            {
+              _module.args.primaryUser = linuxUser;
+            }
           ] ++
           (if (host == "toto" || host == "iso") then [ ] else
           ([
@@ -4560,7 +4594,7 @@ TODO
           ]) ++ (if (type == "nixos") then [
             inputs.home-manager.nixosModules.home-manager
             {
-              home-manager.users.swarsel.imports = (
+              home-manager.users."${linuxUser}".imports = (
                 if (host == "winters" || host == "sync") then [ ] else [
                   # put home-manager imports here that are for all normal hosts
                   "${self}/profiles/home/common"
@@ -4576,7 +4610,7 @@ TODO
             "${self}/profiles/darwin/nixos/common"
             inputs.home-manager.darwinModules.home-manager
             {
-              home-manager.users."leon.schwarzaeugl".imports = [
+              home-manager.users."${macUser}".imports = [
                 # put home-manager imports here that are for darwin hosts
                 "${self}/profiles/darwin/home"
               ] ++ (builtins.attrValues outputs.homeModules);
@@ -4750,7 +4784,7 @@ A breakdown of the flags being set:
             "cgroups"
             "pipe-operators"
           ];
-          trusted-users = [ "@wheel" "swarsel" ];
+          trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
           connect-timeout = 5;
           bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
           bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
@@ -4918,6 +4952,9 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
 #+end_src
 
 **** Setup home-manager specialArgs
+:PROPERTIES:
+:CUSTOM_ID: h:41d1b7c6-52bf-45f3-9d83-610b469dffc0
+:END:
 
 This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on the =chaostheatre= configuration, which is why I split this section into its own file, which makes removal easier when setting that system up.
 
@@ -4966,7 +5003,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 
     users = {
       mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
-      users.swarsel = {
+      users."${config.swarselsystems.mainUser}" = {
         isNormalUser = true;
         description = "Leon S";
         password = lib.mkIf config.swarselsystems.initialSetup "setup";
@@ -5132,6 +5169,9 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 #+end_src
 
 **** Pulseaudio
+:PROPERTIES:
+:CUSTOM_ID: h:63f6773e-b321-4b1d-a206-3913658cf62d
+:END:
 
 This is only used on systems not running Pipewire.
 
@@ -5405,7 +5445,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               proxy = { };
               wifi = {
                 mode = "ap";
-                ssid = "Hotspot-swarsel";
+                ssid = "Hotspot-${config.swarselsystems.mainUser}";
               };
               wifi-security = {
                 group = "ccmp;";
@@ -5473,12 +5513,13 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   { self, config, lib, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
+    inherit (config.swarselsystems) mainUser homeDir;
   in
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-      age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+      age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
 
@@ -5500,8 +5541,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         githubforgepass = { };
         gitlabforgeuser = { };
         gitlabforgepass = { };
-        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
-        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
+        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
       };
       templates = {
         "network-manager.env".content = ''
@@ -5517,15 +5558,6 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
           WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
         '';
-        # ".authinfo" = {
-        #   owner = "swarsel";
-        #   path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
-        #   content = ''
-        #     machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
-        #     machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password ${config.sops.placeholder.githubforgepass}
-        #     machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
-        #   '';
-        # };
       };
     };
   }
@@ -5548,7 +5580,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
         image = config.swarselsystems.wallpaper;
       }
       config.swarselsystems.stylix;
-    home-manager.users.swarsel = {
+    home-manager.users."${config.swarselsystems.mainUser}" = {
       stylix = {
         targets = {
           emacs.enable = false;
@@ -5600,13 +5632,16 @@ Do not touch this.
 :END:
 
 #+begin_src nix :tangle profiles/nixos/common/syncthing.nix
-  { lib, ... }:
+  { lib, config, ... }:
+  let
+    inherit (config.swarselsystems) mainUser homeDir;
+  in
   {
     services.syncthing = {
       enable = true;
-      user = "swarsel";
-      dataDir = "/home/swarsel";
-      configDir = "/home/swarsel/.config/syncthing";
+      user = mainUser;
+      dataDir = homeDir;
+      configDir = "${homeDir}/.config/syncthing";
       openDefaultPorts = true;
       settings = {
         devices = {
@@ -5622,27 +5657,27 @@ Do not touch this.
         };
         folders = {
           "Default Folder" = lib.mkDefault {
-            path = "/home/swarsel/Sync";
+            path = "${homeDir}/Sync";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "default";
           };
           "Obsidian" = {
-            path = "/home/swarsel/Nextcloud/Obsidian";
+            path = "${homeDir}/Nextcloud/Obsidian";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
-            path = "/home/swarsel/Nextcloud/Org";
+            path = "${homeDir}/Nextcloud/Org";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
-            path = "/home/swarsel/Vpn";
+            path = "${homeDir}/Vpn";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "hgp9s-fyq3p";
           };
           ".elfeed" = {
-            path = "/home/swarsel/.elfeed";
+            path = "${homeDir}/.elfeed";
             devices = [ "sync (@oracle)" "magicant" "winters" ];
             id = "h7xbs-fs9v1";
           };
@@ -5837,7 +5872,6 @@ This section houses the greetd related settings. I do not really want to use a d
       enable = true;
       settings = {
         initial_session.command = "sway";
-        # initial_session.user ="swarsel";
         default_session.command = ''
           ${pkgs.greetd.tuigreet}/bin/tuigreet \
             --time \
@@ -5991,10 +6025,11 @@ Normally, doing that also resets the lecture that happens on the first use of =s
   { config, lib, ... }:
   let
     mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+    inherit (config.swarselsystems) homeDir isImpermanence isCrypted;
   in
   {
 
-    security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
+    security.sudo.extraConfig = lib.mkIf isImpermanence ''
       # rollback results in sudo lectures after each reboot
       Defaults lecture = never
     '';
@@ -6003,15 +6038,15 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     # So if it doesn't run, the btrfs system effectively acts like a normal system
     # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
 
-    boot.initrd.systemd.enable = lib.mkIf config.swarselsystems.isImpermanence true;
+    boot.initrd.systemd.enable = lib.mkIf isImpermanence true;
 
-    boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
+    boot.initrd.systemd.services.rollback = lib.mkIf isImpermanence {
       description = "Rollback BTRFS root subvolume to a pristine state";
       wantedBy = [ "initrd.target" ];
       # make sure it's done after encryption
       # i.e. LUKS/TPM process
-      after = lib.swarselsystems.mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
-      requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+      after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+      requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
       # mount the root fs before clearing
       before = [ "sysroot.mount" ];
       unitConfig.DefaultDependencies = "no";
@@ -6053,7 +6088,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     };
 
 
-    environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+    environment.persistence."/persist" = lib.mkIf isImpermanence {
       hideMounts = true;
       directories =
         [
@@ -6063,7 +6098,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
           "/etc/nix"
           "/etc/NetworkManager/system-connections"
           # "/etc/secureboot"
-          "/home/swarsel/.dotfiles"
+          "${homeDir}/.dotfiles"
           "/var/db/sudo"
           "/var/cache"
           "/var/lib"
@@ -6369,14 +6404,17 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
 #+begin_src nix :tangle profiles/nixos/server/settings.nix
   { lib, config, ... }:
+  let
+    inherit (config.swarselsystems) flakePath;
+  in
   {
     environment.shellAliases = lib.recursiveUpdate
       {
-        npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch;";
-        npiswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-        nipswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-        niswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch --impure;";
+        npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+        nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch;";
+        npiswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+        nipswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+        niswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch --impure;";
       }
       config.swarselsystems.shellAliases;
 
@@ -6539,12 +6577,12 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :END:
 
 #+begin_src nix :tangle profiles/nixos/server/ssh.nix
-  { self, ... }:
+  { self, config, ... }:
   {
     services.openssh = {
       enable = true;
     };
-    users.users.swarsel.openssh.authorizedKeys.keyFiles = [
+    users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
       (self + /secrets/keys/ssh/yubikey.pub)
       (self + /secrets/keys/ssh/magicant.pub)
     ];
@@ -8220,11 +8258,14 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 Auto login for the initial session.
 
 #+begin_src nix :tangle profiles/nixos/optional/autologin.nix
-  _:
+  { config, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
   {
     services = {
-      getty.autologinUser = "swarsel";
-      greetd.settings.initial_session.user = "swarsel";
+      getty.autologinUser = mainUser;
+      greetd.settings.initial_session.user = mainUser;
     };
   }
 #+end_src
@@ -8259,7 +8300,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 #+begin_src nix :tangle profiles/nixos/optional/work.nix
   { self, lib, pkgs, config, ... }:
   let
-    owner = "swarsel";
+    inherit (config.swarselsystems) mainUser homeDir xdgDir;
+    owner = mainUser;
     sopsFile = self + /secrets/work/secrets.yaml;
   in
   {
@@ -8285,7 +8327,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       _1password.enable = true;
       _1password-gui = {
         enable = true;
-        polkitPolicyOwners = [ "swarsel" ];
+        polkitPolicyOwners = [ "${mainUser}" ];
       };
     };
 
@@ -8352,7 +8394,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       openssh = {
         enable = true;
         extraConfig = ''
-            '';
+          '';
       };
 
       syncthing = {
@@ -8362,7 +8404,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
           };
           folders = {
             "Documents" = {
-              path = "/home/swarsel/Documents";
+              path = "${homeDir}/Documents";
               devices = [ "magicant" "winters" ];
               id = "hgr3d-pfu3w";
             };
@@ -8499,6 +8541,9 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
 
 #+begin_src nix :tangle profiles/home/common/settings.nix
   { lib, config, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
   {
     nix = lib.mkIf (!config.swarselsystems.isNixos) {
       settings = {
@@ -8509,7 +8554,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
           "cgroups"
           "pipe-operators"
         ];
-        trusted-users = [ "@wheel" "swarsel" ];
+        trusted-users = [ "@wheel" "${mainUser}" ];
         connect-timeout = 5;
         bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
         bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
@@ -8528,12 +8573,12 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
     programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
     home = {
-      username = lib.mkDefault "swarsel";
-      homeDirectory = lib.mkDefault "/home/${config.home.username}";
+      username = lib.mkDefault mainUser;
+      homeDirectory = lib.mkDefault "/home/${mainUser}";
       stateVersion = lib.mkDefault "23.05";
       keyboard.layout = "us";
       sessionVariables = {
-        FLAKE = "${config.home.homeDirectory}/.dotfiles";
+        FLAKE = "/home/${mainUser}/.dotfiles";
       };
     };
 
@@ -8798,19 +8843,22 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 #+begin_src nix :tangle profiles/home/common/sops.nix
   { config, lib, ... }:
+  let
+    inherit (config.swarselsystems) homeDir xdgDir;
+  in
   {
     sops = lib.mkIf (!config.swarselsystems.isPublic) {
-      age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/sops" "${config.home.homeDirectory}/.ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.home.homeDirectory}/.dotfiles/secrets/general/secrets.yaml";
+      age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
+      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
       secrets = {
-        mrswarsel = { path = "/run/user/1000/secrets/mrswarsel"; };
-        nautilus = { path = "/run/user/1000/secrets/nautilus"; };
-        leon = { path = "/run/user/1000/secrets/leon"; };
-        swarselmail = { path = "/run/user/1000/secrets/swarselmail"; };
-        github_notif = { path = "/run/user/1000/secrets/github_notif"; };
-        u2f_keys = { path = "${config.home.homeDirectory}/.config/Yubico/u2f_keys"; };
+        mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
+        nautilus = { path = "${xdgDir}/secrets/nautilus"; };
+        leon = { path = "${xdgDir}/secrets/leon"; };
+        swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+        github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+        u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
       };
     };
   }
@@ -9063,13 +9111,14 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
       DISPLAY = ":0";
       SWARSEL_LO_RES = config.swarselsystems.lowResolution;
       SWARSEL_HI_RES = config.swarselsystems.highResolution;
+    };
+    systemd.user.sessionVariables = {
       SWARSEL_LEON_MAIL = leonMail;
       SWARSEL_NAUTILUS_MAIL = nautilusMail;
       SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
       SWARSEL_SWARSEL_MAIL = swarselMail;
       SWARSEL_FULLNAME = fullName;
       SWARSEL_MAIL_ALL = allMailAddresses;
-
     };
   }
 #+end_src
@@ -9441,15 +9490,18 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 
 #+begin_src nix :tangle profiles/home/common/zsh.nix
   { config, pkgs, lib, ... }:
+  let
+    inherit (config.swarselsystems) flakePath;
+  in
   {
     programs.zsh = {
       enable = true;
       shellAliases = lib.recursiveUpdate
         {
           hg = "history | grep";
-          hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch |& nom";
-          nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-          nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+          hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
+          nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
+          nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
           magit = "emacsclient -nc -e \"(magit-status)\"";
           config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
           g = "git";
@@ -9839,10 +9891,13 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
 #+begin_src nix :tangle profiles/home/common/emacs.nix
   { self, lib, config, pkgs, ... }:
+  let
+    inherit (config.swarselsystems) homeDir isPublic;
+  in
   {
 
     # needed for elfeed
-    sops.secrets.fever = lib.mkIf (!config.swarselsystems.isPublic) { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+    sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
@@ -9908,8 +9963,8 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
     services.emacs = {
       enable = true;
-      # socketActivation.enable = false;
-      # startWithUserSession = "graphical";
+      socketActivation.enable = false;
+      startWithUserSession = "graphical";
     };
   }
 #+end_src
@@ -10946,6 +11001,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 **** Kanshi
+:PROPERTIES:
+:CUSTOM_ID: h:eb94df98-2bcd-4555-9f88-e252f93b924f
+:END:
 
 
 #+begin_src nix :tangle profiles/home/common/kanshi.nix
@@ -11032,7 +11090,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 
 #+begin_src nix :tangle profiles/home/common/gpg-agent.nix
-  { self, pkgs, ... }:
+  { self, config, pkgs, ... }:
+  let
+    inherit (config.swarselsystems) mainUser homeDir;
+  in
   {
     services.gpg-agent = {
       enable = true;
@@ -11062,7 +11123,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 
     # assure correct permissions
     systemd.user.tmpfiles.rules = [
-      "d /home/swarsel/.gnupg 700 swarsel users"
+      "d ${homeDir}/.gnupg 700 ${mainUser} users"
     ];
 
   }
@@ -11223,6 +11284,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 #+begin_src nix :tangle profiles/home/optional/work.nix :noweb yes
   { self, config, pkgs, lib, nix-secrets, ... }:
   let
+    inherit (config.swarselsystems) homeDir;
     secretsDirectory = builtins.toString nix-secrets;
     dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
     clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
@@ -11244,8 +11306,8 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
     ];
 
     home.sessionVariables = {
-      DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
-      DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
+      DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+      DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
     };
 
     wayland.windowManager.sway.config = {
@@ -12595,6 +12657,9 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 
 #+end_src
 **** evil-textobj-tree-sitter
+:PROPERTIES:
+:CUSTOM_ID: h:cd9a0fb6-e287-4c3c-8013-6aad64ef89cb
+:END:
 
 This adds support for tree-sitter objects. This allows for the following chords:
   - "...af" around function
@@ -12613,6 +12678,9 @@ This adds support for tree-sitter objects. This allows for the following chords:
 
 #+end_src
 **** evil-textobj-tree-sitter
+:PROPERTIES:
+:CUSTOM_ID: h:06002ad2-686a-42c5-82d7-61f1340e262d
+:END:
 
 
 #+begin_src emacs-lisp
@@ -13501,6 +13569,9 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 
 #+end_src
 *** Ansible
+:PROPERTIES:
+:CUSTOM_ID: h:77fa79d8-81d5-46f2-82f9-8e2922538d44
+:END:
 
 
 #+begin_src emacs-lisp
@@ -14188,6 +14259,9 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
 
 #+end_src
 *** lsp-mode & company
+:PROPERTIES:
+:CUSTOM_ID: h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75
+:END:
 
 
 #+begin_src emacs-lisp
@@ -14206,6 +14280,9 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
 #+end_src
 
 *** lsp-bridge
+:PROPERTIES:
+:CUSTOM_ID: h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61
+:END:
 
 
 #+begin_src emacs-lisp

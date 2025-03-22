@@ -1,10 +1,6 @@
 { lib, config, ... }:
 {
   options.swarselsystems = {
-    flakePath = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-    };
     isNixos = lib.mkEnableOption "nixos host";
     isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     swayfxConfig = lib.mkOption {

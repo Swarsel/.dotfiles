@@ -1,4 +1,8 @@
 { self, lib, systems, inputs, outputs, ... }:
+let
+  linuxUser = "swarsel";
+  macUser = "leon.schwarzaeugl";
+in
 {
 
   mkIfElseList = p: yes: no: lib.mkMerge [
@@ -40,6 +44,9 @@
           inputs.impermanence.nixosModules.impermanence
           inputs.lanzaboote.nixosModules.lanzaboote
           "${self}/hosts/${type}/${host}"
+          {
+            _module.args.primaryUser = linuxUser;
+          }
         ] ++
         (if (host == "toto" || host == "iso") then [ ] else
         ([
@@ -54,7 +61,7 @@
         ]) ++ (if (type == "nixos") then [
           inputs.home-manager.nixosModules.home-manager
           {
-            home-manager.users.swarsel.imports = (
+            home-manager.users."${linuxUser}".imports = (
               if (host == "winters" || host == "sync") then [ ] else [
                 # put home-manager imports here that are for all normal hosts
                 "${self}/profiles/home/common"
@@ -70,7 +77,7 @@
           "${self}/profiles/darwin/nixos/common"
           inputs.home-manager.darwinModules.home-manager
           {
-            home-manager.users."leon.schwarzaeugl".imports = [
+            home-manager.users."${macUser}".imports = [
               # put home-manager imports here that are for darwin hosts
               "${self}/profiles/darwin/home"
             ] ++ (builtins.attrValues outputs.homeModules);

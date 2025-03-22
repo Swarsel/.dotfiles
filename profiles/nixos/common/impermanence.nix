@@ -1,10 +1,11 @@
 { config, lib, ... }:
 let
   mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+  inherit (config.swarselsystems) homeDir isImpermanence isCrypted;
 in
 {
 
-  security.sudo.extraConfig = lib.mkIf config.swarselsystems.isImpermanence ''
+  security.sudo.extraConfig = lib.mkIf isImpermanence ''
     # rollback results in sudo lectures after each reboot
     Defaults lecture = never
   '';
@@ -13,15 +14,15 @@ in
   # So if it doesn't run, the btrfs system effectively acts like a normal system
   # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
 
-  boot.initrd.systemd.enable = lib.mkIf config.swarselsystems.isImpermanence true;
+  boot.initrd.systemd.enable = lib.mkIf isImpermanence true;
 
-  boot.initrd.systemd.services.rollback = lib.mkIf config.swarselsystems.isImpermanence {
+  boot.initrd.systemd.services.rollback = lib.mkIf isImpermanence {
     description = "Rollback BTRFS root subvolume to a pristine state";
     wantedBy = [ "initrd.target" ];
     # make sure it's done after encryption
     # i.e. LUKS/TPM process
-    after = lib.swarselsystems.mkIfElseList config.swarselsystems.isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
-    requires = lib.mkIf (!config.swarselsystems.isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+    after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+    requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
     # mount the root fs before clearing
     before = [ "sysroot.mount" ];
     unitConfig.DefaultDependencies = "no";
@@ -63,7 +64,7 @@ in
   };
 
 
-  environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+  environment.persistence."/persist" = lib.mkIf isImpermanence {
     hideMounts = true;
     directories =
       [
@@ -73,7 +74,7 @@ in
         "/etc/nix"
         "/etc/NetworkManager/system-connections"
         # "/etc/secureboot"
-        "/home/swarsel/.dotfiles"
+        "${homeDir}/.dotfiles"
         "/var/db/sudo"
         "/var/cache"
         "/var/lib"

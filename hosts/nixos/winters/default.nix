@@ -1,4 +1,4 @@
-{ self, inputs, ... }:
+{ self, inputs, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
 in
@@ -12,7 +12,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = [
+      home-manager.users."${primaryUser}".imports = [
         "${profilesPath}/home/server"
       ];
     }
@@ -37,7 +37,6 @@ in
     isImpermanence = false;
     isBtrfs = false;
     isLinux = true;
-    flakePath = "/home/swarsel/.dotfiles";
     server = {
       enable = true;
       kavita = true;

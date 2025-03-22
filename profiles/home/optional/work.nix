@@ -1,5 +1,6 @@
 { self, config, pkgs, lib, nix-secrets, ... }:
 let
+  inherit (config.swarselsystems) homeDir;
   secretsDirectory = builtins.toString nix-secrets;
   dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
   clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
@@ -21,8 +22,8 @@ in
   ];
 
   home.sessionVariables = {
-    DOCUMENT_DIR_PRIV = lib.mkForce "${config.home.homeDirectory}/Documents/Private";
-    DOCUMENT_DIR_WORK = lib.mkForce "${config.home.homeDirectory}/Documents/Work";
+    DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+    DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
   };
 
   wayland.windowManager.sway.config = {

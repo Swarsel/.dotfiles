@@ -1,12 +1,15 @@
 { lib, config, ... }:
+let
+  inherit (config.swarselsystems) flakePath;
+in
 {
   environment.shellAliases = lib.recursiveUpdate
     {
-      npswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-      nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch;";
-      npiswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-      nipswitch = "cd ${config.swarselsystems.flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-      niswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) switch --impure;";
+      npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+      nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch;";
+      npiswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      nipswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+      niswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch --impure;";
     }
     config.swarselsystems.shellAliases;
 

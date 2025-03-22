@@ -1,10 +1,6 @@
 { lib, ... }:
 {
   options.swarselsystems = {
-    user = lib.mkOption {
-      type = lib.types.str;
-      default = "swarsel";
-    };
     withHomeManager = lib.mkOption {
       type = lib.types.bool;
       default = true;

@@ -1,4 +1,4 @@
-{ self, inputs, outputs, pkgs, lib, ... }:
+{ self, inputs, outputs, pkgs, lib, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -25,7 +25,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = [
+      home-manager.users."${primaryUser}".imports = [
         inputs.sops-nix.homeManagerModules.sops
         "${profilesPath}/home/common/settings.nix"
         "${profilesPath}/home/common/sops.nix"
@@ -73,11 +73,10 @@ in
     }
     sharedOptions;
 
-  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
     {
       isLaptop = false;
       isNixos = true;
-      flakePath = "/home/swarsel/.dotfiles";
     }
     sharedOptions;
 

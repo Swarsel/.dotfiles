@@ -1,10 +1,13 @@
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  inherit (config.swarselsystems) mainUser homeDir;
+in
 {
   services.syncthing = {
     enable = true;
-    user = "swarsel";
-    dataDir = "/home/swarsel";
-    configDir = "/home/swarsel/.config/syncthing";
+    user = mainUser;
+    dataDir = homeDir;
+    configDir = "${homeDir}/.config/syncthing";
     openDefaultPorts = true;
     settings = {
       devices = {
@@ -20,27 +23,27 @@
       };
       folders = {
         "Default Folder" = lib.mkDefault {
-          path = "/home/swarsel/Sync";
+          path = "${homeDir}/Sync";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "default";
         };
         "Obsidian" = {
-          path = "/home/swarsel/Nextcloud/Obsidian";
+          path = "${homeDir}/Nextcloud/Obsidian";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "yjvni-9eaa7";
         };
         "Org" = {
-          path = "/home/swarsel/Nextcloud/Org";
+          path = "${homeDir}/Nextcloud/Org";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "a7xnl-zjj3d";
         };
         "Vpn" = {
-          path = "/home/swarsel/Vpn";
+          path = "${homeDir}/Vpn";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "hgp9s-fyq3p";
         };
         ".elfeed" = {
-          path = "/home/swarsel/.elfeed";
+          path = "${homeDir}/.elfeed";
           devices = [ "sync (@oracle)" "magicant" "winters" ];
           id = "h7xbs-fs9v1";
         };

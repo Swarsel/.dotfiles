@@ -1,7 +1,10 @@
-_:
+{ config, ... }:
+let
+  inherit (config.swarselsystems) mainUser;
+in
 {
   services = {
-    getty.autologinUser = "swarsel";
-    greetd.settings.initial_session.user = "swarsel";
+    getty.autologinUser = mainUser;
+    greetd.settings.initial_session.user = mainUser;
   };
 }

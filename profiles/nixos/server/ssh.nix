@@ -1,9 +1,9 @@
-{ self, ... }:
+{ self, config, ... }:
 {
   services.openssh = {
     enable = true;
   };
-  users.users.swarsel.openssh.authorizedKeys.keyFiles = [
+  users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
     (self + /secrets/keys/ssh/yubikey.pub)
     (self + /secrets/keys/ssh/magicant.pub)
   ];

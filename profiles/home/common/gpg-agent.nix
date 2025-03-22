@@ -1,4 +1,7 @@
-{ self, pkgs, ... }:
+{ self, config, pkgs, ... }:
+let
+  inherit (config.swarselsystems) mainUser homeDir;
+in
 {
   services.gpg-agent = {
     enable = true;
@@ -28,7 +31,7 @@
 
   # assure correct permissions
   systemd.user.tmpfiles.rules = [
-    "d /home/swarsel/.gnupg 700 swarsel users"
+    "d ${homeDir}/.gnupg 700 ${mainUser} users"
   ];
 
 }

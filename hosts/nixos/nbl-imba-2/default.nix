@@ -1,10 +1,11 @@
-{ self, inputs, pkgs, lib, ... }:
+{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
   secretsDirectory = builtins.toString inputs.nix-secrets;
   profilesPath = "${self}/profiles";
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
+    sharescreen = "eDP-2";
   };
 in
 {
@@ -25,7 +26,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = [
+      home-manager.users."${primaryUser}".imports = [
         "${profilesPath}/home/optional/gaming.nix"
         "${profilesPath}/home/optional/work.nix"
       ];
@@ -110,11 +111,12 @@ in
     }
     sharedOptions;
 
-  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
     {
       isLaptop = true;
       isNixos = true;
-      flakePath = "/home/swarsel/.dotfiles";
+      isSecondaryGpu = true;
+      SecondaryGpuCard = "pci-0000_03_00_0";
       cpuCount = 16;
       temperatureHwmon = {
         isAbsolutePath = true;
@@ -132,7 +134,6 @@ in
         { command = "1password"; }
         { command = "feishin"; }
       ];
-      sharescreen = "eDP-2";
       lowResolution = "1280x800";
       highResolution = "2560x1600";
       monitors = {

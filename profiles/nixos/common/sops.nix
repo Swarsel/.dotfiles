@@ -1,12 +1,13 @@
 { self, config, lib, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
+  inherit (config.swarselsystems) mainUser homeDir;
 in
 {
   sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-    age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.users.users.swarsel.home}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-    defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.users.users.swarsel.home}/.dotfiles/secrets/general/secrets.yaml";
+    age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+    defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
     validateSopsFiles = false;
 
@@ -28,8 +29,8 @@ in
       githubforgepass = { };
       gitlabforgeuser = { };
       gitlabforgepass = { };
-      "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
-      "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = "swarsel"; };
+      "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+      "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
     };
     templates = {
       "network-manager.env".content = ''
@@ -45,15 +46,6 @@ in
         WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
         WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
       '';
-      # ".authinfo" = {
-      #   owner = "swarsel";
-      #   path = "${config.users.users.swarsel.home}/.emacs.d/.authinfo";
-      #   content = ''
-      #     machine stash.swarsel.win:443 port https login ${config.sops.placeholder.stashuser} password ${config.sops.placeholder.stashpass}
-      #     machine gitlab.com/api/v4 login ${config.sops.placeholder.githubforgeuser} password ${config.sops.placeholder.githubforgepass}
-      #     machine api.github.com login ${config.sops.placeholder.gitlabforgeuser} password ${config.sops.placeholder.gitlabforgepass}
-      #   '';
-      # };
     };
   };
 }

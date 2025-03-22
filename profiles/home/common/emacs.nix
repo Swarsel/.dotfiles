@@ -1,8 +1,11 @@
 { self, lib, config, pkgs, ... }:
+let
+  inherit (config.swarselsystems) homeDir isPublic;
+in
 {
 
   # needed for elfeed
-  sops.secrets.fever = lib.mkIf (!config.swarselsystems.isPublic) { path = "${config.home.homeDirectory}/.emacs.d/.fever"; };
+  sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
   # enable emacs overlay for bleeding edge features
   # also read init.el file and install use-package packages
@@ -68,7 +71,7 @@
 
   services.emacs = {
     enable = true;
-    # socketActivation.enable = false;
-    # startWithUserSession = "graphical";
+    socketActivation.enable = false;
+    startWithUserSession = "graphical";
   };
 }

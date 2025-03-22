@@ -4,7 +4,7 @@
 
   users = {
     mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
-    users.swarsel = {
+    users."${config.swarselsystems.mainUser}" = {
       isNormalUser = true;
       description = "Leon S";
       password = lib.mkIf config.swarselsystems.initialSetup "setup";

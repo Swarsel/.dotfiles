@@ -1,13 +1,16 @@
 { config, pkgs, lib, ... }:
+let
+  inherit (config.swarselsystems) flakePath;
+in
 {
   programs.zsh = {
     enable = true;
     shellAliases = lib.recursiveUpdate
       {
         hg = "history | grep";
-        hmswitch = "home-manager --flake ${config.swarselsystems.flakePath}#$(whoami)@$(hostname) switch |& nom";
-        nswitch = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-        nboot = "sudo nixos-rebuild --flake ${config.swarselsystems.flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+        hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
+        nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
+        nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
         magit = "emacsclient -nc -e \"(magit-status)\"";
         config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
         g = "git";

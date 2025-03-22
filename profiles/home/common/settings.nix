@@ -1,4 +1,7 @@
 { lib, config, ... }:
+let
+  inherit (config.swarselsystems) mainUser;
+in
 {
   nix = lib.mkIf (!config.swarselsystems.isNixos) {
     settings = {
@@ -9,7 +12,7 @@
         "cgroups"
         "pipe-operators"
       ];
-      trusted-users = [ "@wheel" "swarsel" ];
+      trusted-users = [ "@wheel" "${mainUser}" ];
       connect-timeout = 5;
       bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
       bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
@@ -26,14 +29,15 @@
   nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
 
   programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+  targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
   home = {
-    username = lib.mkDefault "swarsel";
-    homeDirectory = lib.mkDefault "/home/${config.home.username}";
+    username = lib.mkDefault mainUser;
+    homeDirectory = lib.mkDefault "/home/${mainUser}";
     stateVersion = lib.mkDefault "23.05";
     keyboard.layout = "us";
     sessionVariables = {
-      FLAKE = "${config.home.homeDirectory}/.dotfiles";
+      FLAKE = "/home/${mainUser}/.dotfiles";
     };
   };
 

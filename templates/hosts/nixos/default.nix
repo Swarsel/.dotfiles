@@ -1,4 +1,4 @@
-{ self, inputs, pkgs, lib, ... }:
+{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -21,7 +21,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users.swarsel.imports = [
+      home-manager.users."${primaryUser}".imports = [
         "${profilesPath}/home/optional/gaming.nix"
       ];
     }
@@ -50,11 +50,10 @@ in
     }
     sharedOptions;
 
-  home-manager.users.swarsel.swarselsystems = lib.recursiveUpdate
+  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
     {
       isLaptop = true;
       isNixos = true;
-      flakePath = "/home/swarsel/.dotfiles";
       cpuCount = 16;
       startup = [
         { command = "nextcloud --background"; }

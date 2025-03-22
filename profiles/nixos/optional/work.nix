@@ -1,6 +1,7 @@
 { self, lib, pkgs, config, ... }:
 let
-  owner = "swarsel";
+  inherit (config.swarselsystems) mainUser homeDir xdgDir;
+  owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
 in
 {
@@ -26,7 +27,7 @@ in
     _1password.enable = true;
     _1password-gui = {
       enable = true;
-      polkitPolicyOwners = [ "swarsel" ];
+      polkitPolicyOwners = [ "${mainUser}" ];
     };
   };
 
@@ -93,7 +94,7 @@ in
     openssh = {
       enable = true;
       extraConfig = ''
-          '';
+        '';
     };
 
     syncthing = {
@@ -103,12 +104,35 @@ in
         };
         folders = {
           "Documents" = {
-            path = "/home/swarsel/Documents";
+            path = "${homeDir}/Documents";
             devices = [ "magicant" "winters" ];
             id = "hgr3d-pfu3w";
           };
         };
       };
+    };
+
+    udev.extraRules = ''
+      SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
+    '';
+
+  };
+
+  systemd.services.swarsel-screenshare = {
+    enable = true;
+    description = "Screensharing service upon dongle plugin";
+    serviceConfig = {
+      ExecStart = "${pkgs.screenshare}/bin/screenshare";
+      User = mainUser;
+      Group = "users";
+      Environment = [
+        "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
+        "XDG_RUNTIME_DIR=${xdgDir}"
+        "WAYLAND_DISPLAY=wayland-1"
+      ];
+      Type = "oneshot";
+      StandardOutput = "journal";
+      StandardError = "journal";
     };
   };
 
