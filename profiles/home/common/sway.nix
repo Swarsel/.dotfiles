@@ -106,6 +106,7 @@ in
             # "${modifier}+Return" = "exec kitty";
             "${modifier}+Return" = "exec swarselzellij";
             "${modifier}+Print" = "exec screenshare";
+            # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
             # "XF86AudioRaiseVolume" = "exec pa 5%";
             "XF86AudioRaiseVolume" = "exec pamixer -i 5";
             # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
