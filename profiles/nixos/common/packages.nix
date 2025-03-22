@@ -22,6 +22,7 @@
     dbus
     swaylock-effects
     syncthingtray-minimal
+    wl-mirror
 
     # secure boot
     sbctl
@@ -40,6 +41,8 @@
 
     # better make for general tasks
     just
+
+    screenshare
 
     # keyboards
     qmk

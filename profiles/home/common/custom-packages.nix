@@ -14,7 +14,6 @@
     opacitytoggle
     fs-diff
     github-notifications
-    screenshare
     hm-specialisation
     t2ts
     ts2t

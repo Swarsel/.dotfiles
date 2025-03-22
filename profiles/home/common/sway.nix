@@ -193,6 +193,12 @@ in
           {
             command = "opacity 1";
             criteria = {
+              app_id = "at.yrlf.wl_mirror";
+            };
+          }
+          {
+            command = "opacity 1";
+            criteria = {
               app_id = "Gimp-2.10";
             };
           }
