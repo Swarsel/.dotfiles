@@ -47,6 +47,7 @@
     just
 
     screenshare
+    fullscreen
 
     # keyboards
     qmk

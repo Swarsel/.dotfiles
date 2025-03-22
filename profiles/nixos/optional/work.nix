@@ -122,7 +122,7 @@ in
     enable = true;
     description = "Screensharing service upon dongle plugin";
     serviceConfig = {
-      ExecStart = "${pkgs.screenshare}/bin/screenshare";
+      ExecStart = "${pkgs.screenshare}/bin/screenshare -h";
       User = mainUser;
       Group = "users";
       Environment = [

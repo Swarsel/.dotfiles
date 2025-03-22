@@ -2624,6 +2624,25 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
+**** fullscreen
+:PROPERTIES:
+:CUSTOM_ID: h:9d49531a-1d9b-4600-b200-18befb5e0f3a
+:END:
+
+This application moves the wl-mirror app to the T workspace and makes it fullscreen there.
+
+#+begin_src nix :tangle pkgs/fullscreen/default.nix
+  { name, writeShellApplication, sway, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ sway ];
+    text = ''
+      swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
+      swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+    '';
+  }
+#+end_src
 **** screenshare
 :PROPERTIES:
 :CUSTOM_ID: h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda
@@ -2631,12 +2650,30 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 #+begin_src shell :tangle scripts/screenshare.sh
+
+  headless="false"
+  while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -h)
+          headless="true"
+          ;;
+      ,*)
+          echo "Invalid option detected."
+          ;;
+      esac
+      shift
+  done
+
   SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
 
-  wl-mirror "$SHARESCREEN" &
-  sleep 0.1
-  swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
-  swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+  if [[ $headless == "true" ]]; then
+      wl-mirror "$SHARESCREEN"
+  else
+      wl-mirror "$SHARESCREEN" &
+      sleep 0.1
+      swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
+      swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+  fi
 #+end_src
 
 
@@ -4843,6 +4880,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       just
 
       screenshare
+      fullscreen
 
       # keyboards
       qmk
@@ -8391,7 +8429,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       enable = true;
       description = "Screensharing service upon dongle plugin";
       serviceConfig = {
-        ExecStart = "${pkgs.screenshare}/bin/screenshare";
+        ExecStart = "${pkgs.screenshare}/bin/screenshare -h";
         User = mainUser;
         Group = "users";
         Environment = [
