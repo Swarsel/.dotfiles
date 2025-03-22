@@ -39,6 +39,10 @@
     # proc info
     acpi
 
+    # pci info
+    pciutils
+    usbutils
+
     # better make for general tasks
     just
 
