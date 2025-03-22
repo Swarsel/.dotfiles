@@ -16,7 +16,14 @@ in
     };
   };
 
-  # boot.initrd.luks.yubikeySupport = true;
+  boot.initrd = {
+    systemd.enable = true;
+    luks = {
+      yubikeySupport = false;
+      fido2Support = false;
+    };
+  };
+
   programs = {
     zsh.shellInit = ''
       export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
