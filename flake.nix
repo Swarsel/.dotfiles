@@ -153,6 +153,8 @@
         import ./checks { inherit self inputs system pkgs; }
       );
 
+      diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
+
 
       nixosConfigurations =
         lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
