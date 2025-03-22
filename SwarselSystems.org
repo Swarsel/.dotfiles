@@ -3136,6 +3136,7 @@ This program builds a configuration locally.
       rm profiles/home/common/gammastep.nix
       rm profiles/home/common/git.nix
       rm profiles/home/common/mail.nix
+      rm profiles/home/common/yubikey.nix
       rm profiles/nixos/common/home-manager-extra.nix
       nix flake update vbc-nix
       git add .
@@ -3270,6 +3271,7 @@ This program sets up a new NixOS host locally.
       rm profiles/home/common/gammastep.nix
       rm profiles/home/common/git.nix
       rm profiles/home/common/mail.nix
+      rm profiles/home/common/yubikey.nix
       rm profiles/nixos/common/home-manager-extra.nix
       nix flake update vbc-nix
       git add .
@@ -8916,6 +8918,25 @@ I use sops-nix to handle secrets that I want to have available on my machines at
         github_notif = { path = "${xdgDir}/secrets/github_notif"; };
         u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
       };
+    };
+  }
+#+end_src
+
+**** Yubikey
+
+#+begin_src nix :tangle profiles/home/common/yubikey.nix
+  { lib, nix-secrets, ... }:
+  let
+    secretsDirectory = builtins.toString nix-secrets;
+    yubikey1 = lib.swarselsystems.getSecret "${secretsDirectory}/yubikey/yubikey1";
+    yubikey2 = lib.swarselsystems.getSecret "${secretsDirectory}/yubikey/yubikey2";
+  in
+  {
+    pam.yubico.authorizedYubiKeys = {
+      ids = [
+        "${yubikey1}"
+        "${yubikey2}"
+      ];
     };
   }
 #+end_src
