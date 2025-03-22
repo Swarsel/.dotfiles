@@ -13,7 +13,6 @@
     waybarupdate
     opacitytoggle
     fs-diff
-    update-checker
     github-notifications
     screenshare
     hm-specialisation

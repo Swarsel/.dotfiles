@@ -47,19 +47,6 @@
           on-click = "xdg-open https://github.com/notifications";
         };
 
-        # "custom/nix-updates" = {
-        #   exec = "update-checker";
-        #   on-click = "update-checker && notify-send 'The system has been updated'";
-        #   interval = "once";
-        #   tooltip = true;
-        #   return-type = "json";
-        #   format = "{} {icon}";
-        #   format-icon = {
-        #     "has-updates" = "";
-        #     "updated" = " ";
-        #   };
-        # };
-
         idle_inhibitor = {
           format = "{icon}";
           format-icons = {

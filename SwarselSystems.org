@@ -2600,39 +2600,6 @@ This utility is used to compare the current state of the root directory with the
   }
 #+end_src
 
-**** update-checker
-:PROPERTIES:
-:CUSTOM_ID: h:4d864147-f9ef-46da-9b4f-4e7996a65157
-:END:
-
-This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
-
-#+begin_src shell :tangle scripts/update-checker.sh
-  updates="$({ cd /home/swarsel/.dotfiles && nix flake lock --update-input nixpkgs && nix build .#nixosConfigurations."$(eval hostname)".config.system.build.toplevel && nvd diff /run/current-system ./result | grep -c '\[U'; } || true)"
-
-  alt="has-updates"
-  if [[ $updates -eq 0 ]]; then
-      alt="updated"
-  fi
-
-  tooltip="System updated"
-  if [[ $updates != 0 ]]; then
-      tooltip=$(cd ~/.dotfiles && nvd diff /run/current-system ./result | grep -e '\[U' | awk '{ for (i=3; i<NF; i++) printf $i " "; if (NF >= 3) print $NF; }' ORS='\\n')
-      echo "{ \"text\":\"$updates\", \"alt\":\"$alt\", \"tooltip\":\"$tooltip\" }"
-  else
-      echo "{ \"text\":\"\", \"alt\":\"$alt\", \"tooltip\":\"\" }"
-  fi
-#+end_src
-
-#+begin_src nix :tangle pkgs/update-checker/default.nix
-  { self, name, writeShellApplication, nvd }:
-  writeShellApplication {
-    inherit name;
-    runtimeInputs = [ nvd ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
-  }
-#+end_src
-
 **** github-notifications
 :PROPERTIES:
 :CUSTOM_ID: h:a9398c4e-4d3b-4942-b03c-192f9c0517e5
@@ -6258,56 +6225,40 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 This turns off the display when the lid is closed.
 
 #+begin_src nix :tangle profiles/nixos/common/lid.nix
-_:
-{
-  services.logind = {
-    lidSwitch = "suspend";
-    lidSwitchDocked = "ignore";
-  };
-  services.acpid = {
-    enable = true;
-    handlers.lidClosed = {
-      event = "button/lid \\w+ close";
-      action = ''
-        cat /sys/class/backlight/amdgpu_bl1/device/enabled
-        if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
-        then
-          echo "Lid closed. Disabling fprintd."
-          systemctl stop fprintd
-          ln -s /dev/null /run/systemd/transient/fprintd.service
-          systemctl daemon-reload
-        fi
-      '';
+  _:
+  {
+    services.logind = {
+      lidSwitch = "suspend";
+      lidSwitchDocked = "ignore";
     };
-    handlers.lidOpen = {
-      event = "button/lid \\w+ open";
-      action = ''
-        if ! $(systemctl is-active --quiet fprintd); then
-          echo "Lid open. Enabling fprintd."
-          rm -f /run/systemd/transient/fprintd.service
-          systemctl daemon-reload
-          systemctl start fprintd
-        fi
-      '';
+    services.acpid = {
+      enable = true;
+      handlers.lidClosed = {
+        event = "button/lid \\w+ close";
+        action = ''
+          cat /sys/class/backlight/amdgpu_bl1/device/enabled
+          if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
+          then
+            echo "Lid closed. Disabling fprintd."
+            systemctl stop fprintd
+            ln -s /dev/null /run/systemd/transient/fprintd.service
+            systemctl daemon-reload
+          fi
+        '';
+      };
+      handlers.lidOpen = {
+        event = "button/lid \\w+ open";
+        action = ''
+          if ! $(systemctl is-active --quiet fprintd); then
+            echo "Lid open. Enabling fprintd."
+            rm -f /run/systemd/transient/fprintd.service
+            systemctl daemon-reload
+            systemctl start fprintd
+          fi
+        '';
+      };
     };
-    lidEventCommands =
-      ''
-        export PATH=$PATH:/run/current-system/sw/bin
-        export WAYLAND_DISPLAY=wayland-1
-        export XDG_RUNTIME_DIR=/run/user/1000
-        export SWAYSOCK=$(ls /run/user/1000/sway-ipc.* | head -n 1)
-
-        LID_STATE=$(cat /proc/acpi/button/lid/*/state | grep -q closed && echo "closed" || echo "open")
-        DOCKED=$(swaymsg -t get_outputs | grep -q 'HDMI\|DP' && echo "docked" || echo "undocked")
-
-        if [ "$LID_STATE" == "closed" ] && [ "$DOCKED" == "docked" ]; then
-            swaymsg output eDP-2 disable
-        else
-            swaymsg output eDP-2 enable
-        fi
-      '';
-  };
-}
+  }
 #+end_src
 
 **** Low battery notification
@@ -8846,7 +8797,6 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
       waybarupdate
       opacitytoggle
       fs-diff
-      update-checker
       github-notifications
       screenshare
       hm-specialisation
@@ -10067,19 +10017,6 @@ The rest of the related configuration is found here:
             exec = "github-notifications";
             on-click = "xdg-open https://github.com/notifications";
           };
-
-          # "custom/nix-updates" = {
-          #   exec = "update-checker";
-          #   on-click = "update-checker && notify-send 'The system has been updated'";
-          #   interval = "once";
-          #   tooltip = true;
-          #   return-type = "json";
-          #   format = "{} {icon}";
-          #   format-icon = {
-          #     "has-updates" = "";
-          #     "updated" = " ";
-          #   };
-          # };
 
           idle_inhibitor = {
             format = "{icon}";
