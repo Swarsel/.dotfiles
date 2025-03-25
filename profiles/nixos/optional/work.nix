@@ -17,8 +17,11 @@ in
   };
 
   boot.initrd = {
-    systemd.enable = true;
+    systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
     luks = {
+      # disable "support" since we use systemd-cryptenroll
+      # make sure yubikeys are enrolled using
+      # sudo systemd-cryptenroll --fido2-device=auto --fido2-with-user-verification=no --fido2-with-user-presence=true --fido2-with-client-pin=no /dev/nvme0n1p2
       yubikeySupport = false;
       fido2Support = false;
     };
@@ -101,7 +104,7 @@ in
     openssh = {
       enable = true;
       extraConfig = ''
-        '';
+                '';
     };
 
     syncthing = {
