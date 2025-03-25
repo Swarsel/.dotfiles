@@ -3,6 +3,25 @@ let
   inherit (config.swarselsystems) mainUser homeDir xdgDir;
   owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
+  swarselService = name: description: execStart: {
+    "${name}" = {
+      enable = true;
+      inherit description;
+      serviceConfig = {
+        ExecStart = execStart;
+        User = mainUser;
+        Group = "users";
+        Environment = [
+          "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
+          "XDG_RUNTIME_DIR=${xdgDir}"
+          "WAYLAND_DISPLAY=wayland-1"
+        ];
+        Type = "oneshot";
+        StandardOutput = "journal";
+        StandardError = "journal";
+      };
+    };
+  };
 in
 {
   sops = {
@@ -123,6 +142,7 @@ in
     };
 
     udev.extraRules = ''
+      # share screen when dongle detected
       SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
     '';
 
@@ -145,6 +165,9 @@ in
       StandardError = "journal";
     };
   };
+  systemd.services = lib.mkMerge [
+    (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
+  ];
 
   # cgroups v1 is required for centos7 dockers
   specialisation = {
