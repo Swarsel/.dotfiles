@@ -5855,27 +5855,73 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
 :PROPERTIES:
 :CUSTOM_ID: h:7a89b5e3-b700-4167-8b14-2b8172f33936
 :END:
+***** Yubikey
+:PROPERTIES:
+:CUSTOM_ID: h:49aa792d-edfb-4eac-ae31-ecf23c4dca00
+:END:
 
-It makes sense to house these settings in their own section, since they are all needed really. Note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
+This takes care of the main Yubikey related configuration on the NixOS side - note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
 
-=pcscd= is needed to use the smartcard mode (CCID) of the Yubikey.
+I want to use the ssh-agent from gpg-agent's ssh compatibility, which is why we disable ssh-agent. Also, we load some extra udev rules using =hardware.gpgSmartcards.enable=.
 
-The exception is the system packages, since that cannot be defined twice in the same file (common.nix). The comment is left in as a remider for that.
+Many guides state that it is needed to enable =pcscd=  to use the smartcard mode (CCID) of the Yubikey. However, enabling it causes some problems when locking the screen and unplugging the Yubikey, after which the Yubikey only becomes available again as a smart card after about one minute. I found that is is sufficient to enable =services.gpg-agent.enableScDaemon= in home-manager instead.
 
-Also, this is a good place to setup the udev rules.
+Also, since I use a GPG key in sops, it seems that scdaemon creates an instance at boot which sometimes hogs the Yubikey, which leads to significant delays after e.g. locking the screen and unplugging the Yubikey. Since I do not need the GPG key for the actual sops secrets (I use machine age keys instead), I kill that process.
 
-#+begin_src nix :tangle profiles/nixos/common/hardwarecompatibility.nix
+#+begin_src nix :tangle profiles/nixos/common/hardwarecompatibility-yubikey.nix
   { pkgs, ... }:
   {
     programs.ssh.startAgent = false;
 
-    services.pcscd.enable = true;
+    services.pcscd.enable = false;
 
-    hardware.ledger.enable = true;
+    hardware.gpgSmartcards.enable = true;
 
     services.udev.packages = with pkgs; [
       yubikey-personalization
+    ];
+
+    # systemd.services.shutdownSopsGpg = {
+    #   path = [ pkgs.gnupg ];
+    #   script = ''
+    #     gpgconf --homedir /var/lib/sops --kill gpg-agent
+    #   '';
+    #   wantedBy = [ "multi-user.target" ];
+    # };
+
+  }
+#+end_src
+
+***** Ledger
+:PROPERTIES:
+:CUSTOM_ID: h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4
+:END:
+
+This performs the necessary configuration to support this hardware.
+
+#+begin_src nix :tangle profiles/nixos/common/hardwarecompatibility-ledger.nix
+  { pkgs, ... }:
+  {
+    hardware.ledger.enable = true;
+
+    services.udev.packages = with pkgs; [
       ledger-udev-rules
+    ];
+
+  }
+#+end_src
+
+***** Keyboards
+:PROPERTIES:
+:CUSTOM_ID: h:103b68b6-33a1-4369-a534-5f36dfa95e03
+:END:
+
+This loads some udev rules that I need for my split keyboards.
+
+#+begin_src nix :tangle profiles/nixos/common/hardwarecompatibility-keyboards.nix
+  { pkgs, ... }:
+  {
+    services.udev.packages = with pkgs; [
       qmk-udev-rules
       vial
       via
