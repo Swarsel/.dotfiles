@@ -808,7 +808,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, inputs, pkgs, lib, primaryUser, ... }:
+  { self, inputs, lib, primaryUser, ... }:
   let
     secretsDirectory = builtins.toString inputs.nix-secrets;
     profilesPath = "${self}/profiles";
@@ -849,7 +849,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
     boot = {
       supportedFilesystems = [ "btrfs" ];
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+      # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       kernelParams = [
         "resume_offset=533760"
       ];

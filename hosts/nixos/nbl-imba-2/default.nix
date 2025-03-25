@@ -1,4 +1,4 @@
-{ self, inputs, pkgs, lib, primaryUser, ... }:
+{ self, inputs, lib, primaryUser, ... }:
 let
   secretsDirectory = builtins.toString inputs.nix-secrets;
   profilesPath = "${self}/profiles";
@@ -39,7 +39,7 @@ in
 
   boot = {
     supportedFilesystems = [ "btrfs" ];
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     kernelParams = [
       "resume_offset=533760"
     ];
