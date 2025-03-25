@@ -1047,7 +1047,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :END:
 
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
-  { config, pkgs, lib, modulesPath, ... }:
+  { config, lib, modulesPath, ... }:
   {
     imports =
       [
@@ -1055,20 +1055,20 @@ My work machine. Built for more security, this is the gold standard of my config
       ];
 
     # Fix Wlan after suspend or Hibernate
-    environment.etc."systemd/system-sleep/fix-wifi.sh".source =
-      pkgs.writeShellScript "fix-wifi.sh" ''
-        case $1/$2 in
-          pre/*)
-            ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
-            echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
-            ;;
+    # environment.etc."systemd/system-sleep/fix-wifi.sh".source =
+    #   pkgs.writeShellScript "fix-wifi.sh" ''
+    #     case $1/$2 in
+    #       pre/*)
+    #         ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
+    #         echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
+    #         ;;
 
-          post/*)
-            ${pkgs.kmod}/bin/modprobe mt7921e
-            echo 1 > /sys/bus/pci/rescan
-            ;;
-        esac
-      '';
+    #       post/*)
+    #         ${pkgs.kmod}/bin/modprobe mt7921e
+    #         echo 1 > /sys/bus/pci/rescan
+    #         ;;
+    #     esac
+    #   '';
 
     boot = {
       initrd = {
@@ -3663,8 +3663,8 @@ This script allows for quick git branch switching.
 A crude script to power on all displays that might be attached. Needed because sometimes displays do not awake from sleep.
 
 #+begin_src shell :tangle scripts/swarsel-displaypower.sh
-  swaymsg output eDP-1 power on > /dev/null 2>&1 || true
-  swaymsg output eDP-2 power on > /dev/null 2>&1 || true
+  swaymsg "output * power on" > /dev/null 2>&1 || true
+  swaymsg "output * dpms on" > /dev/null 2>&1 || true
 #+end_src
 
 #+begin_src nix :tangle pkgs/swarsel-displaypower/default.nix
@@ -8344,6 +8344,25 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     inherit (config.swarselsystems) mainUser homeDir xdgDir;
     owner = mainUser;
     sopsFile = self + /secrets/work/secrets.yaml;
+    swarselService = name: description: execStart: {
+      "${name}" = {
+        enable = true;
+        inherit description;
+        serviceConfig = {
+          ExecStart = execStart;
+          User = mainUser;
+          Group = "users";
+          Environment = [
+            "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
+            "XDG_RUNTIME_DIR=${xdgDir}"
+            "WAYLAND_DISPLAY=wayland-1"
+          ];
+          Type = "oneshot";
+          StandardOutput = "journal";
+          StandardError = "journal";
+        };
+      };
+    };
   in
   {
     sops = {
@@ -8445,7 +8464,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       openssh = {
         enable = true;
         extraConfig = ''
-          '';
+                  '';
       };
 
       syncthing = {
@@ -8464,28 +8483,19 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       };
 
       udev.extraRules = ''
+        # share screen when dongle detected
         SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
+
+        # lock screen when yubikey removed
+        SUBSYSTEM=="usb", ACTION=="remove", ENV{PRODUCT}=="1050/407/543", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-lock.service"
       '';
 
     };
 
-    systemd.services.swarsel-screenshare = {
-      enable = true;
-      description = "Screensharing service upon dongle plugin";
-      serviceConfig = {
-        ExecStart = "${pkgs.screenshare}/bin/screenshare -h";
-        User = mainUser;
-        Group = "users";
-        Environment = [
-          "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
-          "XDG_RUNTIME_DIR=${xdgDir}"
-          "WAYLAND_DISPLAY=wayland-1"
-        ];
-        Type = "oneshot";
-        StandardOutput = "journal";
-        StandardError = "journal";
-      };
-    };
+    systemd.services = lib.mkMerge [
+      (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
+      (swarselService "swarsel-lock" "Lock screen upon Yubikey removel" "${pkgs.swaylock-effects}/bin/swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2")
+    ];
 
     # cgroups v1 is required for centos7 dockers
     specialisation = {
@@ -8965,6 +8975,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 #+end_src
 
 **** Yubikey
+:PROPERTIES:
+:CUSTOM_ID: h:4c850b80-56e0-437b-b564-2dd897027b2f
+:END:
 
 #+begin_src nix :tangle profiles/home/common/yubikey.nix
   { lib, nix-secrets, ... }:
@@ -11085,7 +11098,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 mode $exit {
                   bindsym --to-code {
                     s exec \"systemctl suspend\", mode \"default\"
-                    l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\"
+                    l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
                     p exec \"systemctl poweroff\"
                     r exec \"systemctl reboot\"
                     u exec \"swaymsg exit\"
@@ -11210,6 +11223,8 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
   {
     services.gpg-agent = {
       enable = true;
+      enableZshIntegration = true;
+      enableScDaemon = true;
       enableSshSupport = true;
       enableExtraSocket = true;
       pinentryPackage = pkgs.pinentry.gtk2;

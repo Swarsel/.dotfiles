@@ -1,4 +1,4 @@
-{ config, pkgs, lib, modulesPath, ... }:
+{ config, lib, modulesPath, ... }:
 {
   imports =
     [
@@ -6,20 +6,20 @@
     ];
 
   # Fix Wlan after suspend or Hibernate
-  environment.etc."systemd/system-sleep/fix-wifi.sh".source =
-    pkgs.writeShellScript "fix-wifi.sh" ''
-      case $1/$2 in
-        pre/*)
-          ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
-          echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
-          ;;
+  # environment.etc."systemd/system-sleep/fix-wifi.sh".source =
+  #   pkgs.writeShellScript "fix-wifi.sh" ''
+  #     case $1/$2 in
+  #       pre/*)
+  #         ${pkgs.kmod}/bin/modprobe -r mt7921e mt792x_lib mt76
+  #         echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove
+  #         ;;
 
-        post/*)
-          ${pkgs.kmod}/bin/modprobe mt7921e
-          echo 1 > /sys/bus/pci/rescan
-          ;;
-      esac
-    '';
+  #       post/*)
+  #         ${pkgs.kmod}/bin/modprobe mt7921e
+  #         echo 1 > /sys/bus/pci/rescan
+  #         ;;
+  #     esac
+  #   '';
 
   boot = {
     initrd = {
