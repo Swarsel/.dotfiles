@@ -2,7 +2,7 @@
 {
   systemd.user.services."battery-low" = {
     enable = true;
-    description = "Notify user if battery is below 10%";
+    description = "Timer for battery check that alerts at 10% or less";
     partOf = [ "graphical-session.target" ];
     wantedBy = [ "graphical-session.target" ];
     serviceConfig = {
