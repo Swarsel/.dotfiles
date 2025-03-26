@@ -123,7 +123,7 @@ in
     openssh = {
       enable = true;
       extraConfig = ''
-                '';
+                  '';
     };
 
     syncthing = {
@@ -144,27 +144,13 @@ in
     udev.extraRules = ''
       # share screen when dongle detected
       SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
+
+      # lock screen when yubikey removed
+      ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
     '';
 
   };
 
-  systemd.services.swarsel-screenshare = {
-    enable = true;
-    description = "Screensharing service upon dongle plugin";
-    serviceConfig = {
-      ExecStart = "${pkgs.screenshare}/bin/screenshare -h";
-      User = mainUser;
-      Group = "users";
-      Environment = [
-        "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
-        "XDG_RUNTIME_DIR=${xdgDir}"
-        "WAYLAND_DISPLAY=wayland-1"
-      ];
-      Type = "oneshot";
-      StandardOutput = "journal";
-      StandardError = "journal";
-    };
-  };
   systemd.services = lib.mkMerge [
     (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
   ];

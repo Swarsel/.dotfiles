@@ -8487,7 +8487,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       openssh = {
         enable = true;
         extraConfig = ''
-                  '';
+                    '';
       };
 
       syncthing = {
@@ -8510,14 +8510,13 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
 
         # lock screen when yubikey removed
-        SUBSYSTEM=="usb", ACTION=="remove", ENV{PRODUCT}=="1050/407/543", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-lock.service"
+        ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
       '';
 
     };
 
     systemd.services = lib.mkMerge [
       (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
-      (swarselService "swarsel-lock" "Lock screen upon Yubikey removel" "${pkgs.swaylock-effects}/bin/swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2")
     ];
 
     # cgroups v1 is required for centos7 dockers
