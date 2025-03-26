@@ -889,14 +889,12 @@ My work machine. Built for more security, this is the gold standard of my config
         extraRemotes = [ "lvfs" ];
       };
       udev.extraRules = ''
-        # Make Framework 16 Ethernet Module work reliably
-        ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
-
-        # disable Wakup on Framework Laptop 16 Keyboard
-        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0018", ATTR{power/wakeup}="disabled"
-
-        # disable Wakup on Framework Laptop 16 Numpad Module
+        # disable Wakeup on Framework Laptop 16 Keyboard (ANSI)
+        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0012", ATTR{power/wakeup}="disabled"
+        # disable Wakeup on Framework Laptop 16 Numpad Module
         ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0014", ATTR{power/wakeup}="disabled"
+        # disable Wakeup on Framework Laptop 16 Trackpad
+        ACTION=="add", SUBSYSTEM=="i2c", DRIVERS=="i2c_hid_acpi", ATTRS{name}=="PIXA3854:00", ATTR{power/wakeup}="disabled"
       '';
     };
 
@@ -1088,7 +1086,10 @@ My work machine. Built for more security, this is the gold standard of my config
       kernelModules = [ "kvm-amd" ];
       kernelParams = [
         "mem_sleep_default=deep"
-        "amd_pstate=passive"
+        # supposedly, this helps save power on laptops
+        # in reality (at least on this model), this just generate excessive heat on the CPUs
+        # "amd_pstate=passive"
+
         # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
         # TODO: figure out if this is worth it
         # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
@@ -11122,6 +11123,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 mode $exit {
                   bindsym --to-code {
                     s exec \"systemctl suspend\", mode \"default\"
+                    h exec \"systemctl hibernate\", mode \"default\"
                     l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
                     p exec \"systemctl poweroff\"
                     r exec \"systemctl reboot\"

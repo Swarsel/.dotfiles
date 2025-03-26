@@ -292,6 +292,7 @@ in
               mode $exit {
                 bindsym --to-code {
                   s exec \"systemctl suspend\", mode \"default\"
+                  h exec \"systemctl hibernate\", mode \"default\"
                   l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
                   p exec \"systemctl poweroff\"
                   r exec \"systemctl reboot\"

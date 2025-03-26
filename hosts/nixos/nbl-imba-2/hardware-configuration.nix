@@ -35,7 +35,10 @@
     kernelModules = [ "kvm-amd" ];
     kernelParams = [
       "mem_sleep_default=deep"
-      "amd_pstate=passive"
+      # supposedly, this helps save power on laptops
+      # in reality (at least on this model), this just generate excessive heat on the CPUs
+      # "amd_pstate=passive"
+
       # Fix screen flickering issue at the cost of battery life (disable PSR and PSR-SU, keep PR enabled)
       # TODO: figure out if this is worth it
       # test PSR/PR state with 'sudo grep '' /sys/kernel/debug/dri/0000*/eDP-2/*_capability'
