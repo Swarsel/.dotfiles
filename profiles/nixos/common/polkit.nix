@@ -12,6 +12,8 @@ _:
 
     sudo.extraConfig = ''
       Defaults    env_keep+=SSH_AUTH_SOCK
+      Defaults    env_keep+=XDG_RUNTIME_DIR
+      Defaults    env_keep+=WAYLAND_DISPLAY
     '';
   };
 
