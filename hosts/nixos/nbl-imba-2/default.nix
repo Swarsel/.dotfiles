@@ -73,7 +73,11 @@ in
 
 
   services = {
-    fwupd.enable = true;
+    fwupd = {
+      enable = true;
+      # framework also uses lvfs-testing, but I do not want to use it
+      extraRemotes = [ "lvfs" ];
+    };
     udev.extraRules = ''
       # Make Framework 16 Ethernet Module work reliably
       ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="8156", ATTR{power/autosuspend}="20"
