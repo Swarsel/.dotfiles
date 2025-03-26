@@ -85,8 +85,10 @@ in
           };
 
         search = {
-          default = "Kagi";
-          privateDefault = "Kagi";
+          # default = "Kagi";
+          default = "Google";
+          # privateDefault = "Kagi";
+          privateDefault = "Google";
           engines = {
             "Kagi" = {
               urls = [{
