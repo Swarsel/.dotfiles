@@ -104,25 +104,36 @@ in
     };
 
     firefox = {
-      profiles = {
-        dc = lib.recursiveUpdate
-          {
-            id = 1;
-            settings = {
-              "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
-            };
-          }
-          config.swarselsystems.firefox;
-        cl = lib.recursiveUpdate
-          {
-            id = 2;
-            settings = {
-              "browser.startup.homepage" = "https://portal.azure.com";
-            };
-          }
-          config.swarselsystems.firefox;
-        ws = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
-      };
+      profiles =
+        let
+          isDefault = false;
+        in
+        {
+          dc = lib.recursiveUpdate
+            {
+              inherit isDefault;
+              id = 1;
+              settings = {
+                "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
+              };
+            }
+            config.swarselsystems.firefox;
+          cl = lib.recursiveUpdate
+            {
+              inherit isDefault;
+              id = 2;
+              settings = {
+                "browser.startup.homepage" = "https://portal.azure.com";
+              };
+            }
+            config.swarselsystems.firefox;
+          ws = lib.recursiveUpdate
+            {
+              inherit isDefault;
+              id = 3;
+            }
+            config.swarselsystems.firefox;
+        };
     };
 
     chromium = {

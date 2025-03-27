@@ -1,9 +1,12 @@
-{ lib, ... }:
+{ self, lib, ... }:
 let
   importNames = lib.swarselsystems.readNix "profiles/nixos/common";
+  profilesPath = "${self}/profiles";
 in
 {
-  imports = lib.swarselsystems.mkImports importNames "profiles/nixos/common";
+  imports = lib.swarselsystems.mkImports importNames "profiles/nixos/common" ++ [
+    "${profilesPath}/home/common/sharedsetup.nix"
+  ];
 
   nixpkgs.config.permittedInsecurePackages = [
     "jitsi-meet-1.0.8043"

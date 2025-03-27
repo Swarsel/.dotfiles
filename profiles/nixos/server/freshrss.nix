@@ -1,5 +1,6 @@
 { lib, config, ... }:
 {
+  options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
   config = lib.mkIf config.swarselsystems.server.freshrss {
 
     users.users.freshrss = {

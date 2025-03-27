@@ -11,7 +11,7 @@ let
   '';
 in
 {
-
+  options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
   config = lib.mkIf config.swarselsystems.server.matrix {
     environment.systemPackages = with pkgs; [
       matrix-synapse

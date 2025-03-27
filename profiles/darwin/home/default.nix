@@ -5,5 +5,6 @@ in
 {
   imports = [
     "${profilesPath}/home/common/settings.nix"
+    "${profilesPath}/home/common/sharedsetup.nix"
   ];
 }

@@ -340,8 +340,8 @@ In this section I am creating some attributes that define general concepts of my
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
   inherit lib;
 
-  nixosModules = import ./modules/nixos { inherit lib; };
-  homeModules = import ./modules/home { inherit lib; };
+  # nixosModules = import ./modules/nixos { inherit lib; };
+  # homeModules = import ./modules/home { inherit lib; };
   packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
   formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
   overlays = import ./overlays { inherit self lib inputs; };
@@ -645,15 +645,6 @@ This is the template that I use for new deployments of personal machines. Server
         isLaptop = true;
         isNixos = true;
         cpuCount = 16;
-        startup = [
-          { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "ANKI_WAYLAND=1 anki"; }
-          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-          { command = "nm-applet"; }
-          { command = "feishin"; }
-        ];
       }
       sharedOptions;
   }
@@ -1010,13 +1001,13 @@ My work machine. Built for more security, this is the gold standard of my config
             xkb_layout = "us";
             xkb_variant = "altgr-intl";
           };
-          "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-            dwt = "enabled";
-            tap = "enabled";
-            natural_scroll = "enabled";
-            middle_emulation = "enabled";
-            drag_lock = "disabled";
-          };
+          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+          #   dwt = "enabled";
+          #   tap = "enabled";
+          #   natural_scroll = "enabled";
+          #   middle_emulation = "enabled";
+          #   drag_lock = "disabled";
+          # };
           "1133:50504:Logitech_USB_Receiver" = {
             xkb_layout = "us";
             xkb_variant = "altgr-intl";
@@ -1248,13 +1239,10 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselsystems = {
-      hasBluetooth = false;
-      hasFingerprint = false;
       isImpermanence = false;
       isBtrfs = false;
       isLinux = true;
       server = {
-        enable = true;
         kavita = true;
         navidrome = true;
         jellyfin = true;
@@ -1449,12 +1437,15 @@ This machine mainly acts as an external sync helper. It manages the following th
     imports = [
 
       "${profilesPath}/nixos/server"
+      "${profilesPath}/nixos/common/sharedsetup.nix"
+      "${profilesPath}/home/common/sharedsetup.nix"
       ./hardware-configuration.nix
 
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users."${primaryUser}".imports = [
           "${profilesPath}/home/server"
+          "${profilesPath}/home/common/sharedsetup.nix"
         ];
       }
     ];
@@ -1522,14 +1513,11 @@ This machine mainly acts as an external sync helper. It manages the following th
 
 
     swarselsystems = {
-      hasBluetooth = false;
-      hasFingerprint = false;
       isImpermanence = false;
       isLinux = true;
       isBtrfs = false;
       flakePath = "/root/.dotfiles";
       server = {
-        enable = true;
         forgejo = true;
         ankisync = true;
       };
@@ -1554,7 +1542,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix :tangle hosts/nixos/toto/default.nix
-  { self, inputs, outputs, pkgs, lib, primaryUser, ... }:
+  { self, inputs, pkgs, lib, primaryUser, ... }:
   let
     profilesPath = "${self}/profiles";
     sharedOptions = {
@@ -1570,6 +1558,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
       "${profilesPath}/nixos/optional/autologin.nix"
       "${profilesPath}/nixos/common/settings.nix"
+      "${profilesPath}/nixos/common/sharedsetup.nix"
       "${profilesPath}/nixos/common/home-manager.nix"
       "${profilesPath}/nixos/common/home-manager-extra.nix"
       "${profilesPath}/nixos/common/xserver.nix"
@@ -1578,6 +1567,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
       "${profilesPath}/nixos/common/lanzaboote.nix"
       "${profilesPath}/nixos/common/sops.nix"
       "${profilesPath}/nixos/server/ssh.nix"
+      "${profilesPath}/home/common/sharedsetup.nix"
 
       inputs.home-manager.nixosModules.home-manager
       {
@@ -1586,9 +1576,10 @@ This is a slim setup for developing base configuration. I do not track the hardw
           "${profilesPath}/home/common/settings.nix"
           "${profilesPath}/home/common/sops.nix"
           "${profilesPath}/home/common/ssh.nix"
-        ] ++ (builtins.attrValues outputs.homeModules);
+          "${profilesPath}/home/common/sharedsetup.nix"
+        ];
       }
-    ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules);
+    ];
 
 
     environment.systemPackages = with pkgs; [
@@ -1804,7 +1795,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, pkgs, inputs, outputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+  { self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
   in
@@ -1815,12 +1806,15 @@ Also, an initial bash history is provided to allow for a very quick local deploy
       "${modulesPath}/installer/cd-dvd/channel.nix"
 
       "${self}/profiles/iso/minimal.nix"
+      "${self}/profiles/nixos/common/sharedsetup.nix"
+      "${self}/profiles/home/common/sharedsetup.nix"
 
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users."${primaryUser}".imports = [
           "${self}/profiles/home/common/settings.nix"
-        ] ++ (builtins.attrValues outputs.homeModules);
+          "${self}/profiles/home/common/sharedsetup.nix"
+        ];
       }
     ];
 
@@ -1933,7 +1927,8 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
       inputs.sops-nix.homeManagerModules.sops
       inputs.nix-index-database.hmModules.nix-index
       ./profiles/home/common
-    ] ++ (builtins.attrValues outputs.homeModules);
+      "${self}/profiles/home/common/sharedsetup.nix"
+    ];
 
     nixpkgs = {
       overlays = [ outputs.overlays.default ];
@@ -3806,110 +3801,13 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
 #+begin_src nix :tangle modules/nixos/default.nix
-{ lib, ... }:
-let
-  moduleNames = lib.swarselsystems.readNix "modules/nixos";
-in
-lib.swarselsystems.mkModules moduleNames "nixos"
-
-#+end_src
-
-
-***** Hardware
-:PROPERTIES:
-:CUSTOM_ID: h:c6a138ff-f07f-4cae-95b9-b6daa2b11463
-:END:
-
-This lets me set some basic flags about the hardware of the configured systems.
-
-#+begin_src nix :tangle modules/nixos/hardware.nix
   { lib, ... }:
+  let
+    moduleNames = lib.swarselsystems.readNix "modules/nixos";
+  in
+  lib.swarselsystems.mkModules moduleNames "nixos"
 
-  {
-    options.swarselsystems = {
-      hasBluetooth = lib.mkEnableOption "bluetooth availability";
-      hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
-      trackpoint = {
-        isAvailable = lib.mkEnableOption "trackpoint availability";
-        trackpoint.device = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-        };
-      };
-    };
-  }
 #+end_src
-
-***** Setup
-:PROPERTIES:
-:CUSTOM_ID: h:f4f22166-e345-43e6-b15f-b7f5bb886554
-:END:
-
-I usually use =mutableUsers = false= in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
-
-#+begin_src nix :tangle modules/nixos/setup.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      withHomeManager = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      isSwap = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      swapSize = lib.mkOption {
-        type = lib.types.str;
-        default = "8G";
-      };
-      rootDisk = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      isCrypted = lib.mkEnableOption "uses full disk encryption";
-      initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
-
-      isImpermanence = lib.mkEnableOption "use impermanence on this system";
-      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-    };
-  }
-#+end_src
-
-***** Server
-:PROPERTIES:
-:CUSTOM_ID: h:d10f8aaf-2f71-4e80-ba05-37bfc98c99b6
-:END:
-
-#+begin_src nix :tangle modules/nixos/server.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      server = {
-        enable = lib.mkEnableOption "is a server machine";
-        kavita = lib.mkEnableOption "enable kavita on server";
-        jellyfin = lib.mkEnableOption "enable jellyfin on server";
-        navidrome = lib.mkEnableOption "enable navidrome on server";
-        spotifyd = lib.mkEnableOption "enable spotifyd on server";
-        mpd = lib.mkEnableOption "enable mpd on server";
-        matrix = lib.mkEnableOption "enable matrix on server";
-        nextcloud = lib.mkEnableOption "enable nextcloud on server";
-        immich = lib.mkEnableOption "enable immich on server";
-        paperless = lib.mkEnableOption "enable paperless on server";
-        transmission = lib.mkEnableOption "enable transmission and friends on server";
-        syncthing = lib.mkEnableOption "enable syncthing on server";
-        restic = lib.mkEnableOption "enable restic backups on server";
-        monitoring = lib.mkEnableOption "enable monitoring on server";
-        jenkins = lib.mkEnableOption "enable jenkins on server";
-        emacs = lib.mkEnableOption "enable emacs server on server";
-        forgejo = lib.mkEnableOption "enable forgejo on server";
-        ankisync = lib.mkEnableOption "enable ankisync on server";
-        freshrss = lib.mkEnableOption "enable freshrss on server";
-      };
-    };
-  }
-#+end_src
-
 
 **** home-manager
 :PROPERTIES:
@@ -3924,601 +3822,6 @@ This holds modules that are to be used on most hosts. These are also the most im
     moduleNames = lib.swarselsystems.readNix "modules/home";
   in
   lib.swarselsystems.mkModules moduleNames "home"
-#+end_src
-
-***** Laptop
-:PROPERTIES:
-:CUSTOM_ID: h:ec08cd7e-4a9a-419f-a0a7-6cc4576302a1
-:END:
-
-Laptops are not always plugged in, so they should show a battery icon in Waybar. Also, most laptops have a touchpad which usually needs to be configured:
-  - Tapping should be enabled.
-  - The touchpad should be disabled while typing (=dwt= option).
-  - Natural scrolling should be enabled.
-  - Tag-and-drag lock should be disbled - it gets in my way too much.
-
-#+begin_src nix :tangle modules/home/laptop.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems = {
-      isLaptop = lib.mkEnableOption "laptop host";
-    };
-
-    config.swarselsystems = {
-      touchpad = lib.mkIf config.swarselsystems.isLaptop {
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-          drag_lock = "disabled";
-        };
-      };
-      waybarModules = lib.mkIf config.swarselsystems.isLaptop [
-        "custom/outer-left-arrow-dark"
-        "mpris"
-        "custom/left-arrow-light"
-        "network"
-        "custom/vpn"
-        "custom/left-arrow-dark"
-        "pulseaudio"
-        "custom/left-arrow-light"
-        "battery"
-        "custom/left-arrow-dark"
-        "group/hardware"
-        "custom/left-arrow-light"
-        "clock#2"
-        "custom/left-arrow-dark"
-        "clock#1"
-      ];
-    };
-  }
-#+end_src
-
-***** Hardware
-:PROPERTIES:
-:CUSTOM_ID: h:5f0bf0e2-a096-4b07-affb-6beba7786fab
-:END:
-
-This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
-
-to get the info for the secondary gpu, use `lspci -nn | grep VGA`
-It can be set to either:
-  - a number, selecting the n-th non-default GPU
-  - a PCI bus id in the form =pci-XXX_YY_ZZ_U=
-  - a PCI id in the form =vendor_id:device_id=
-
-#+begin_src nix :tangle modules/home/hardware.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      cpuCount = lib.mkOption {
-        type = lib.types.int;
-        default = 8;
-      };
-      isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
-      SecondaryGpuCard = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      temperatureHwmon = {
-        isAbsolutePath = lib.mkEnableOption "absolute temperature path";
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-        };
-        input-filename = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-        };
-      };
-    };
-  }
-#+end_src
-
-***** Waybar
-:PROPERTIES:
-:CUSTOM_ID: h:a9530c81-1976-442b-b597-0b4bed6baf25
-:END:
-
-These are explicit waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
-
-The most part of this configuration is done here: [[#h:0bf51f63-01c0-4053-a591-7f0c5697c690][Waybar]]
-
-#+begin_src nix :tangle modules/home/waybar.nix
-  { lib, config, ... }:
-  let
-    generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
-  in
-  {
-    options.swarselsystems = {
-      cpuString = lib.mkOption {
-        type = lib.types.str;
-        default = generateIcons config.swarselsystems.cpuCount;
-        description = "The generated icons string for use by Waybar.";
-        internal = true;
-      };
-      waybarModules = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [
-          "custom/outer-left-arrow-dark"
-          "mpris"
-          "custom/left-arrow-light"
-          "network"
-          "custom/vpn"
-          "custom/left-arrow-dark"
-          "pulseaudio"
-          "custom/left-arrow-light"
-          "custom/pseudobat"
-          "battery"
-          "custom/left-arrow-dark"
-          "group/hardware"
-          "custom/left-arrow-light"
-          "clock#2"
-          "custom/left-arrow-dark"
-          "clock#1"
-        ];
-      };
-    };
-  }
-#+end_src
-
-***** Monitors
-:PROPERTIES:
-:CUSTOM_ID: h:dfd5c190-f213-45e1-b17c-e650b7b94b38
-:END:
-
-This allows me to define my monitors in the machine's =default.nix=.
-
-#+begin_src nix :tangle modules/home/monitors.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      monitors = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-        default = { };
-      };
-      sharescreen = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      lowResolution = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      highResolution = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-    };
-  }
-#+end_src
-
-***** Input
-:PROPERTIES:
-:CUSTOM_ID: h:880df388-4050-4955-9663-9c1c197f5ae9
-:END:
-
-This allows me to configure input options. Here, I am globally defining my split keyboards. Then, I am joining some attribute sets so that they can be easier used in the rest of the configurations.
-
-#+begin_src nix :tangle modules/home/input.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems = {
-      inputs = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-        default = { };
-      };
-      kyria = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-        default = {
-          "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "7504:24926:Kyria_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-        };
-      };
-      touchpad = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-        default = { };
-      };
-      standardinputs = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-        default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
-        internal = true;
-      };
-      keybindings = lib.mkOption {
-        type = lib.types.attrsOf lib.types.str;
-        default = { };
-      };
-      shellAliases = lib.mkOption {
-        type = lib.types.attrsOf lib.types.str;
-        default = { };
-      };
-    };
-  }
-#+end_src
-
-***** Nixos
-:PROPERTIES:
-:CUSTOM_ID: h:e4a9e96f-ff9f-4fc2-8fc0-9913e03bd568
-:END:
-
-These are some extra options that will be used if the machine also runs NixOS. For example, non-NixOS hosts need =nixGL= prepended to most graphic commands, and =swayfx= works less nicely on these machines.
-
-#+begin_src nix :noweb yes :tangle modules/home/nixos.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems = {
-      isNixos = lib.mkEnableOption "nixos host";
-      isPublic = lib.mkEnableOption "is a public machine (no secrets)";
-      swayfxConfig = lib.mkOption {
-        type = lib.types.str;
-        default = "
-                blur enable
-                blur_xray disable
-                blur_passes 1
-                blur_radius 1
-                shadows enable
-                corner_radius 2
-                titlebar_separator disable
-                default_dim_inactive 0.02
-            ";
-        internal = true;
-      };
-    };
-
-    config.swarselsystems = {
-      startup = lib.mkIf (!config.swarselsystems.isNixos) [
-        { command = "sleep 60 && nixGL nextcloud --background"; }
-        { command = "sleep 60 && nixGL vesktop --start-minimized -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
-        { command = "sleep 60 && nixGL syncthingtray --wait"; }
-        { command = "sleep 60 && ANKI_WAYLAND=1 nixGL anki"; }
-        { command = "nm-applet --indicator"; }
-        { command = "sleep 60 && OBSIDIAN_USE_WAYLAND=1 nixGL obsidian -enable-features=UseOzonePlatform -ozone-platform=wayland"; }
-        { command = "sleep 60 && element-desktop --hidden  -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-      ];
-      swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
-    };
-  }
-#+end_src
-
-***** setup
-:PROPERTIES:
-:CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
-:END:
-
-Provides settings related to nix-darwin systems. At the moment, I am only making use of a =isDarwin= flag.
-
-#+begin_src nix :noweb yes :tangle modules/home/setup.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      isDarwin = lib.mkEnableOption "darwin host";
-      isLinux = lib.mkEnableOption "whether this is a linux machine";
-      mainUser = lib.mkOption {
-        type = lib.types.str;
-        default = "swarsel";
-      };
-      homeDir = lib.mkOption {
-        type = lib.types.str;
-        default = "/home/swarsel";
-      };
-      xdgDir = lib.mkOption {
-        type = lib.types.str;
-        default = "/run/user/1000";
-      };
-      flakePath = lib.mkOption {
-        type = lib.types.str;
-        default = "/home/swarsel/.dotfiles";
-      };
-    };
-  }
-#+end_src
-
-***** System startup
-:PROPERTIES:
-:CUSTOM_ID: h:0809445e-9a24-4700-8675-03fb8f4beab8
-:END:
-
-This defines programs I want to have starting when I start the system
-
-Part of the startup is also defined in [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]]. The distinction is as follows. As this configuration also needs to work on systems that are running only home manager, I probably need to run nixGL or something similar on those systems to get these graphic apps to display properly. In this section we only define such graphical programs, in the other location we only put shell applications and such.
-
-These other apps currently include:
-- spotifytui
-- kitty
-
-Do not that =syncthingtray= is also not mentioned here. It is installed as a home manager package that automatically starts at system start.
-
-#+begin_src nix :tangle modules/home/startup.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      startup = lib.mkOption {
-        type = lib.types.listOf (lib.types.attrsOf lib.types.str);
-        default = [
-          { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "ANKI_WAYLAND=1 anki"; }
-          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-          { command = "nm-applet"; }
-          { command = "feishin"; }
-        ];
-      };
-    };
-  }
-#+end_src
-
-***** Wallpaper
-:PROPERTIES:
-:CUSTOM_ID: h:21e344a8-8212-463f-9c01-7dbca28515b6
-:END:
-
-Again, I set the wallpaper here for =stylix=.
-
-#+begin_src nix :tangle modules/home/wallpaper.nix
-  { self, lib, ... }:
-  {
-    options.swarselsystems = {
-      wallpaper = lib.mkOption {
-        type = lib.types.path;
-        default = self + /wallpaper/lenovowp.png;
-      };
-    };
-  }
-
-#+end_src
-
-***** Filesystem
-:PROPERTIES:
-:CUSTOM_ID: h:c4982d06-1962-439c-9eed-cdec52491dee
-:END:
-
-Another duplicated option for the filesystem.
-
-#+begin_src nix :tangle modules/home/filesystem.nix
-  { lib, ... }:
-  {
-    options.swarselsystems = {
-      isBtrfs = lib.mkEnableOption "use btrfs filesystem";
-    };
-  }
-#+end_src
-
-***** firefox
-:PROPERTIES:
-:CUSTOM_ID: h:e7f98ad8-74a6-4860-a368-cce154285ff0
-:END:
-
-
-At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
-
-#+begin_src nix :noweb yes :tangle modules/home/firefox.nix
-  { self, lib, pkgs, ... }:
-  let
-    lock-false = {
-      Value = false;
-      Status = "locked";
-    };
-    lock-true = {
-      Value = true;
-      Status = "locked";
-    };
-  in
-  {
-    options.swarselsystems = {
-      firefox = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          isDefault = false;
-          userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
-          extensions = {
-            packages = with pkgs.nur.repos.rycee.firefox-addons; [
-              tridactyl
-              tampermonkey
-              sidebery
-              browserpass
-              clearurls
-              darkreader
-              enhancer-for-youtube
-              istilldontcareaboutcookies
-              translate-web-pages
-              ublock-origin
-              reddit-enhancement-suite
-              sponsorblock
-              web-archives
-              onepassword-password-manager
-              single-file
-              widegithub
-              enhanced-github
-              unpaywall
-              don-t-fuck-with-paste
-              plasma-integration
-              (buildFirefoxXpiAddon {
-                pname = "shortkeys";
-                version = "4.0.2";
-                addonId = "Shortkeys@Shortkeys.com";
-                url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-                sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-                meta = with lib;
-                  {
-                    description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                    mozPermissions = [
-                      "tabs"
-                      "downloads"
-                      "clipboardWrite"
-                      "browsingData"
-                      "storage"
-                      "bookmarks"
-                      "sessions"
-                      "<all_urls>"
-                    ];
-                    platforms = platforms.all;
-                  };
-              })
-            ];
-          };
-
-          settings =
-            {
-              "extensions.autoDisableScopes" = 0;
-              "browser.bookmarks.showMobileBookmarks" = lock-true;
-              "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-              "browser.search.suggest.enabled" = lock-false;
-              "browser.search.suggest.enabled.private" = lock-false;
-              "browser.urlbar.suggest.searches" = lock-false;
-              "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-              "browser.topsites.contile.enabled" = lock-false;
-              "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-              "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-              "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-              "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-              "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
-            };
-
-          search = {
-            # default = "Kagi";
-            default = "Google";
-            # privateDefault = "Kagi";
-            privateDefault = "Google";
-            engines = {
-              "Kagi" = {
-                urls = [{
-                  template = "https://kagi.com/search";
-                  params = [
-                    { name = "q"; value = "{searchTerms}"; }
-                  ];
-                }];
-                iconUpdateURL = "https://kagi.com/favicon.ico";
-                updateInterval = 24 * 60 * 60 * 1000; # every day
-                definedAliases = [ "@k" ];
-              };
-
-              "Nix Packages" = {
-                urls = [{
-                  template = "https://search.nixos.org/packages";
-                  params = [
-                    { name = "type"; value = "packages"; }
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@np" ];
-              };
-
-              "NixOS Wiki" = {
-                urls = [{
-                  template = "https://nixos.wiki/index.php?search={searchTerms}";
-                }];
-                iconUpdateURL = "https://nixos.wiki/favicon.png";
-                updateInterval = 24 * 60 * 60 * 1000; # every day
-                definedAliases = [ "@nw" ];
-              };
-
-              "NixOS Options" = {
-                urls = [{
-                  template = "https://search.nixos.org/options";
-                  params = [
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@no" ];
-              };
-
-              "Home Manager Options" = {
-                urls = [{
-                  template = "https://home-manager-options.extranix.com/";
-                  params = [
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@hm" "@ho" "@hmo" ];
-              };
-
-              "Google".metaData.alias = "@g";
-            };
-            force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-          };
-        };
-      };
-    };
-
-  }
-#+end_src
-
-***** stylix
-:PROPERTIES:
-:CUSTOM_ID: h:1c4b1619-40a1-4120-8868-d213abf6a29e
-:END:
-
-#+begin_src nix :noweb yes :tangle modules/home/stylix.nix
-  { self, lib, pkgs, ... }:
-  {
-    options.swarselsystems = {
-      stylix = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          enable = true;
-          base16Scheme = "${self}/programs/stylix/swarsel.yaml";
-          polarity = "dark";
-          opacity.popups = 0.5;
-          cursor = {
-            package = pkgs.banana-cursor;
-            # package = pkgs.capitaine-cursors;
-            name = "Banana";
-            # name = "capitaine-cursors";
-            size = 16;
-          };
-          fonts = {
-            sizes = {
-              terminal = 10;
-              applications = 11;
-            };
-            serif = {
-              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-              package = pkgs.cantarell-fonts;
-              # package = pkgs.montserrat;
-              name = "Cantarell";
-              # name = "FiraCode Nerd Font Propo";
-              # name = "Montserrat";
-            };
-            sansSerif = {
-              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-              package = pkgs.cantarell-fonts;
-              # package = pkgs.montserrat;
-              name = "Cantarell";
-              # name = "FiraCode Nerd Font Propo";
-              # name = "Montserrat";
-            };
-            monospace = {
-              package = pkgs.nerd-fonts.fira-mono; # has overrides
-              name = "FiraCode Nerd Font Mono";
-            };
-            emoji = {
-              package = pkgs.noto-fonts-emoji;
-              name = "Noto Color Emoji";
-            };
-          };
-        };
-      };
-    };
-
-  }
 #+end_src
 
 *** Library functions
@@ -4613,7 +3916,7 @@ TODO
                 # put home-manager imports here that are for all servers and normal hosts
                 inputs.sops-nix.homeManagerModules.sops
                 inputs.nix-index-database.hmModules.nix-index
-              ] ++ (builtins.attrValues outputs.homeModules);
+              ];
             }
           ] else [
             # put nixos imports here that are for darwin hosts
@@ -4623,9 +3926,9 @@ TODO
               home-manager.users."${macUser}".imports = [
                 # put home-manager imports here that are for darwin hosts
                 "${self}/profiles/darwin/home"
-              ] ++ (builtins.attrValues outputs.homeModules);
+              ];
             }
-          ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
+          ])
           ));
         };
     };
@@ -4721,12 +4024,15 @@ These are system-level settings specific to NixOS machines. All settings that ar
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
 #+begin_src nix :tangle profiles/nixos/common/default.nix
-  { lib, ... }:
+  { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "profiles/nixos/common";
+    profilesPath = "${self}/profiles";
   in
   {
-    imports = lib.swarselsystems.mkImports importNames "profiles/nixos/common";
+    imports = lib.swarselsystems.mkImports importNames "profiles/nixos/common" ++ [
+      "${profilesPath}/home/common/sharedsetup.nix"
+    ];
 
     nixpkgs.config.permittedInsecurePackages = [
       "jitsi-meet-1.0.8043"
@@ -4736,6 +4042,42 @@ This section is for setting things that should be used on hosts that are using t
 
   }
 
+#+end_src
+
+**** Shared Configuration Options
+:PROPERTIES:
+:CUSTOM_ID: h:f4f22166-e345-43e6-b15f-b7f5bb886554
+:END:
+
+I usually use =mutableUsers = false= in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
+
+#+begin_src nix :tangle profiles/nixos/common/sharedsetup.nix
+  { lib, ... }:
+  {
+    options.swarselsystems = {
+      withHomeManager = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      isSwap = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      swapSize = lib.mkOption {
+        type = lib.types.str;
+        default = "8G";
+      };
+      rootDisk = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      isCrypted = lib.mkEnableOption "uses full disk encryption";
+      initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+
+      isImpermanence = lib.mkEnableOption "use impermanence on this system";
+      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+    };
+  }
 #+end_src
 
 **** General NixOS settings (stateVersion)
@@ -5155,36 +4497,49 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   { pkgs, config, lib, ... }:
   {
 
-    hardware = {
-      # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
-      graphics = {
-        enable = true;
-        enable32Bit = true;
-      };
-
-
-      trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
-        enable = true;
-        inherit (config.swarselsystems.trackpoint) device;
-      };
-
-      keyboard.qmk.enable = true;
-
-      enableAllFirmware = true;
-
-      bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
-        enable = true;
-        package = pkgs.stable.bluez;
-        powerOnBoot = true;
-        settings = {
-          General = {
-            Enable = "Source,Sink,Media,Socket";
-          };
+    options.swarselsystems = {
+      hasBluetooth = lib.mkEnableOption "bluetooth availability";
+      hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
+      trackpoint = {
+        isAvailable = lib.mkEnableOption "trackpoint availability";
+        trackpoint.device = lib.mkOption {
+          type = lib.types.str;
+          default = "";
         };
       };
     };
+    config = {
+      hardware = {
+        # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
+        graphics = {
+          enable = true;
+          enable32Bit = true;
+        };
 
-    services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
+
+        trackpoint = lib.mkIf config.swarselsystems.trackpoint.isAvailable {
+          enable = true;
+          inherit (config.swarselsystems.trackpoint) device;
+        };
+
+        keyboard.qmk.enable = true;
+
+        enableAllFirmware = true;
+
+        bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
+          enable = true;
+          package = pkgs.stable.bluez;
+          powerOnBoot = true;
+          settings = {
+            General = {
+              Enable = "Source,Sink,Media,Socket";
+            };
+          };
+        };
+      };
+
+      services.fprintd.enable = lib.mkIf config.swarselsystems.hasFingerprint true;
+    };
   }
 #+end_src
 
@@ -5602,12 +4957,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
       config.swarselsystems.stylix;
     home-manager.users."${config.swarselsystems.mainUser}" = {
       stylix = {
-        targets = {
-          emacs.enable = false;
-          waybar.enable = false;
-          sway.useWallpaper = false;
-          firefox.profileNames = [ "default" ];
-        };
+        targets = config.swarselsystems.stylixHomeTargets;
       };
     };
   }
@@ -6459,6 +5809,8 @@ Also, the system state version is set here. No need to touch it.
       "${profilesPath}/nixos/common/time.nix"
       "${profilesPath}/nixos/common/users.nix"
       "${profilesPath}/nixos/common/nix-ld.nix"
+      "${profilesPath}/nixos/common/sharedsetup.nix"
+      "${profilesPath}/home/common/sharedsetup.nix"
     ];
   }
 #+end_src
@@ -6476,28 +5828,35 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     inherit (config.swarselsystems) flakePath;
   in
   {
-    environment.shellAliases = lib.recursiveUpdate
-      {
-        npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-        nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch;";
-        npiswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-        nipswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-        niswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch --impure;";
-      }
-      config.swarselsystems.shellAliases;
+    options.swarselsystems = {
+      shellAliases = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+      };
+    };
+    config = {
+      environment.shellAliases = lib.recursiveUpdate
+        {
+          npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
+          nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch;";
+          npiswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+          nipswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
+          niswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch --impure;";
+        }
+        config.swarselsystems.shellAliases;
 
-    nixpkgs.config.permittedInsecurePackages = [
-      # matrix
-      "olm-3.2.16"
-      # sonarr
-      "aspnetcore-runtime-wrapped-6.0.36"
-      "aspnetcore-runtime-6.0.36"
-      "dotnet-sdk-wrapped-6.0.428"
-      "dotnet-sdk-6.0.428"
-      #
-      "SDL_ttf-2.0.11"
-    ];
-
+      nixpkgs.config.permittedInsecurePackages = [
+        # matrix
+        "olm-3.2.16"
+        # sonarr
+        "aspnetcore-runtime-wrapped-6.0.36"
+        "aspnetcore-runtime-6.0.36"
+        "dotnet-sdk-wrapped-6.0.428"
+        "dotnet-sdk-6.0.428"
+        #
+        "SDL_ttf-2.0.11"
+      ];
+    };
   }
 #+end_src
 
@@ -6673,6 +6032,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/kavita.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
     config = lib.mkIf config.swarselsystems.server.kavita {
       environment.systemPackages = with pkgs; [
         calibre
@@ -6723,6 +6083,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/jellyfin.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
     config = lib.mkIf config.swarselsystems.server.jellyfin {
       users.users.jellyfin = {
         extraGroups = [ "video" "render" "users" ];
@@ -6778,6 +6139,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     secretsDirectory = builtins.toString inputs.nix-secrets;
   in
   {
+    options.swarselsystems.server.navidrome = lib.mkEnableOption "enable navidrome on server";
     config = lib.mkIf config.swarselsystems.server.navidrome {
       environment.systemPackages = with pkgs; [
         pciutils
@@ -6880,6 +6242,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/spotifyd.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
     config = lib.mkIf config.swarselsystems.server.spotifyd {
       users.groups.spotifyd = {
         gid = 65136;
@@ -6922,6 +6285,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/mpd.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
     config = lib.mkIf config.swarselsystems.server.mpd {
       users = {
         groups = {
@@ -6981,7 +6345,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/pipewire.nix
   { lib, config, ... }:
   {
-    config = lib.mkIf (config.swarselsystems.server.mpd || config.swarselsystems.server.navidrome) {
+    config = lib.mkIf (config?swarselsystems.server.mpd || config?swarselsystems.server.navidrome) {
 
       security.rtkit.enable = true; # this is required for pipewire real-time access
 
@@ -7020,7 +6384,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     '';
   in
   {
-
+    options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
     config = lib.mkIf config.swarselsystems.server.matrix {
       environment.systemPackages = with pkgs; [
         matrix-synapse
@@ -7342,6 +6706,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
     config = lib.mkIf config.swarselsystems.server.nextcloud {
 
       sops.secrets.nextcloudadminpass = {
@@ -7395,6 +6760,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/immich.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
     config = lib.mkIf config.swarselsystems.server.immich {
 
       users.users.immich = {
@@ -7452,6 +6818,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/paperless.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
     config = lib.mkIf config.swarselsystems.server.paperless {
 
       users.users.paperless = {
@@ -7510,6 +6877,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle profiles/nixos/server/transmission.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
     config = lib.mkIf config.swarselsystems.server.transmission {
 
       # this user/group section is probably unneeded
@@ -7655,6 +7023,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
   in
   {
+    options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
     config = lib.mkIf config.swarselsystems.server.syncthing {
 
       users.users.syncthing = {
@@ -7775,6 +7144,7 @@ Once this is finished, it will house a restic client that manages automatic back
 #+begin_src nix :tangle profiles/nixos/server/restic.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
     config = lib.mkIf config.swarselsystems.server.restic {
 
       # TODO
@@ -7793,6 +7163,7 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix :tangle profiles/nixos/server/monitoring.nix
   { self, lib, config, ... }:
   {
+    options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
     config = lib.mkIf config.swarselsystems.server.monitoring {
 
       sops.secrets = {
@@ -7969,6 +7340,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix :tangle profiles/nixos/server/jenkins.nix
   { pkgs, lib, config, ... }:
   {
+    options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
     config = lib.mkIf config.swarselsystems.server.jenkins {
 
       services.jenkins = {
@@ -8014,6 +7386,7 @@ This was an approach of hosting an RSS server from within emacs. That would have
 #+begin_src nix :tangle profiles/nixos/server/emacs.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
     config = lib.mkIf config.swarselsystems.server.emacs {
 
       networking.firewall.allowedTCPPorts = [ 9812 ];
@@ -8041,6 +7414,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle profiles/nixos/server/freshrss.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
     config = lib.mkIf config.swarselsystems.server.freshrss {
 
       users.users.freshrss = {
@@ -8085,6 +7459,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle profiles/nixos/server/forgejo.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
     config = lib.mkIf config.swarselsystems.server.forgejo {
 
       networking.firewall.allowedTCPPorts = [ 3000 ];
@@ -8139,6 +7514,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle profiles/nixos/server/ankisync.nix
   { lib, config, ... }:
   {
+    options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
     config = lib.mkIf config.swarselsystems.server.ankisync {
 
       networking.firewall.allowedTCPPorts = [ 22701 ];
@@ -8642,6 +8018,274 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
+**** Shared Configuration Options
+:PROPERTIES:
+:CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
+:END:
+
+Provides settings related to nix-darwin systems. At the moment, I am only making use of a =isDarwin= flag.
+
+At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
+Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
+
+#+begin_src nix :noweb yes :tangle profiles/home/common/sharedsetup.nix
+  { self, lib, pkgs, ... }:
+  let
+    lock-false = {
+      Value = false;
+      Status = "locked";
+    };
+    lock-true = {
+      Value = true;
+      Status = "locked";
+    };
+  in
+  {
+    options.swarselsystems = {
+      isLaptop = lib.mkEnableOption "laptop host";
+      isNixos = lib.mkEnableOption "nixos host";
+      isPublic = lib.mkEnableOption "is a public machine (no secrets)";
+      isDarwin = lib.mkEnableOption "darwin host";
+      isLinux = lib.mkEnableOption "whether this is a linux machine";
+      isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+      mainUser = lib.mkOption {
+        type = lib.types.str;
+        default = "swarsel";
+      };
+      homeDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel";
+      };
+      xdgDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/run/user/1000";
+      };
+      flakePath = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel/.dotfiles";
+      };
+      wallpaper = lib.mkOption {
+        type = lib.types.path;
+        default = "${self}/wallpaper/lenovowp.png";
+      };
+      sharescreen = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      lowResolution = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      highResolution = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+
+      stylix = lib.mkOption {
+        type = lib.types.attrs;
+        default = {
+          enable = true;
+          base16Scheme = "${self}/programs/stylix/swarsel.yaml";
+          polarity = "dark";
+          opacity.popups = 0.5;
+          cursor = {
+            package = pkgs.banana-cursor;
+            # package = pkgs.capitaine-cursors;
+            name = "Banana";
+            # name = "capitaine-cursors";
+            size = 16;
+          };
+          fonts = {
+            sizes = {
+              terminal = 10;
+              applications = 11;
+            };
+            serif = {
+              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+              package = pkgs.cantarell-fonts;
+              # package = pkgs.montserrat;
+              name = "Cantarell";
+              # name = "FiraCode Nerd Font Propo";
+              # name = "Montserrat";
+            };
+            sansSerif = {
+              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+              package = pkgs.cantarell-fonts;
+              # package = pkgs.montserrat;
+              name = "Cantarell";
+              # name = "FiraCode Nerd Font Propo";
+              # name = "Montserrat";
+            };
+            monospace = {
+              package = pkgs.nerd-fonts.fira-mono; # has overrides
+              name = "FiraCode Nerd Font Mono";
+            };
+            emoji = {
+              package = pkgs.noto-fonts-emoji;
+              name = "Noto Color Emoji";
+            };
+          };
+        };
+      };
+      stylixHomeTargets = lib.mkOption {
+        type = lib.types.attrs;
+        default = {
+          emacs.enable = false;
+          waybar.enable = false;
+          sway.useWallpaper = false;
+          firefox.profileNames = [ "default" ];
+        };
+      };
+
+      firefox = lib.mkOption {
+        type = lib.types.attrs;
+        default = {
+          userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
+          extensions = {
+            packages = with pkgs.nur.repos.rycee.firefox-addons; [
+              tridactyl
+              tampermonkey
+              sidebery
+              browserpass
+              clearurls
+              darkreader
+              enhancer-for-youtube
+              istilldontcareaboutcookies
+              translate-web-pages
+              ublock-origin
+              reddit-enhancement-suite
+              sponsorblock
+              web-archives
+              onepassword-password-manager
+              single-file
+              widegithub
+              enhanced-github
+              unpaywall
+              don-t-fuck-with-paste
+              plasma-integration
+              noscript
+
+              # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
+              (buildFirefoxXpiAddon {
+                pname = "shortkeys";
+                version = "4.0.2";
+                addonId = "Shortkeys@Shortkeys.com";
+                url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+                sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+                meta = with lib;
+                  {
+                    description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+                    mozPermissions = [
+                      "tabs"
+                      "downloads"
+                      "clipboardWrite"
+                      "browsingData"
+                      "storage"
+                      "bookmarks"
+                      "sessions"
+                      "<all_urls>"
+                    ];
+                    platforms = platforms.all;
+                  };
+              })
+            ];
+          };
+
+          settings =
+            {
+              "extensions.autoDisableScopes" = 0;
+              "browser.bookmarks.showMobileBookmarks" = lock-true;
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
+              "browser.search.suggest.enabled" = lock-false;
+              "browser.search.suggest.enabled.private" = lock-false;
+              "browser.urlbar.suggest.searches" = lock-false;
+              "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
+              "browser.topsites.contile.enabled" = lock-false;
+              "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
+              "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
+              "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
+              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
+              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
+              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
+              "browser.newtabpage.activity-stream.showSponsored" = lock-false;
+              "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
+              "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
+            };
+
+          search = {
+            # default = "Kagi";
+            default = "Google";
+            # privateDefault = "Kagi";
+            privateDefault = "Google";
+            engines = {
+              "Kagi" = {
+                urls = [{
+                  template = "https://kagi.com/search";
+                  params = [
+                    { name = "q"; value = "{searchTerms}"; }
+                  ];
+                }];
+                iconUpdateURL = "https://kagi.com/favicon.ico";
+                updateInterval = 24 * 60 * 60 * 1000; # every day
+                definedAliases = [ "@k" ];
+              };
+
+              "Nix Packages" = {
+                urls = [{
+                  template = "https://search.nixos.org/packages";
+                  params = [
+                    { name = "type"; value = "packages"; }
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@np" ];
+              };
+
+              "NixOS Wiki" = {
+                urls = [{
+                  template = "https://nixos.wiki/index.php?search={searchTerms}";
+                }];
+                iconUpdateURL = "https://nixos.wiki/favicon.png";
+                updateInterval = 24 * 60 * 60 * 1000; # every day
+                definedAliases = [ "@nw" ];
+              };
+
+              "NixOS Options" = {
+                urls = [{
+                  template = "https://search.nixos.org/options";
+                  params = [
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@no" ];
+              };
+
+              "Home Manager Options" = {
+                urls = [{
+                  template = "https://home-manager-options.extranix.com/";
+                  params = [
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@hm" "@ho" "@hmo" ];
+              };
+
+              "Google".metaData.alias = "@g";
+            };
+            force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+          };
+        };
+      };
+
+    };
+  }
+#+end_src
+
 **** General home-manager-settings
 :PROPERTIES:
 :CUSTOM_ID: h:4af4f67f-7c48-4754-b4bd-6800e3a66664
@@ -8703,22 +8347,37 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
 
 This integrates nixGL into home-manager. NixGL provies OpenGL and Vulkan APIs to nix installed utilities. This is needed for graphical applications on non-NixOS systems.
 
+to get the info for the secondary gpu, use `lspci -nn | grep VGA`
+It can be set to either:
+  - a number, selecting the n-th non-default GPU
+  - a PCI bus id in the form =pci-XXX_YY_ZZ_U=
+  - a PCI id in the form =vendor_id:device_id=
+
 #+begin_src nix :tangle profiles/home/common/nixgl.nix
   { lib, config, nixgl, ... }:
   {
-    nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
-      inherit (nixgl) packages;
-      defaultWrapper = lib.mkDefault "mesa";
-      vulkan.enable = lib.mkDefault false;
-      prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
-        card = config.swarselsystem.secondaryGpuCard;
-        installScript = "mesa";
+    options.swarselsystems = {
+      isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
+      SecondaryGpuCard = lib.mkOption {
+        type = lib.types.str;
+        default = "";
       };
-      offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
-      installScripts = [
-        "mesa"
-        "mesaPrime"
-      ];
+    };
+    config = {
+      nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
+        inherit (nixgl) packages;
+        defaultWrapper = lib.mkDefault "mesa";
+        vulkan.enable = lib.mkDefault false;
+        prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
+          card = config.swarselsystem.secondaryGpuCard;
+          installScript = "mesa";
+        };
+        offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
+        installScripts = [
+          "mesa"
+          "mesaPrime"
+        ];
+      };
     };
   }
 #+end_src
@@ -9086,12 +8745,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
     stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
       {
         image = config.swarselsystems.wallpaper;
-        targets = {
-          emacs.enable = false;
-          waybar.enable = false;
-          sway.useWallpaper = false;
-          firefox.profileNames = [ "default" ];
-        };
+        targets = config.swarselsystems.stylixHomeTargets;
       }
       config.swarselsystems.stylix);
   }
@@ -9652,103 +9306,111 @@ Here we set some aliases (some of them should be shellApplications instead) as w
     inherit (config.swarselsystems) flakePath;
   in
   {
-    programs.zsh = {
-      enable = true;
-      shellAliases = lib.recursiveUpdate
-        {
-          hg = "history | grep";
-          hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
-          nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-          nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
-          magit = "emacsclient -nc -e \"(magit-status)\"";
-          config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
-          g = "git";
-          c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
-          passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
-          passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-          hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-          cd = "z";
-          youtube-dl = "yt-dlp";
-          cd-orig = "cd";
-          cat-orig = "cat";
-          cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
-          nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
-          nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
-          nix-ldd-locate = "nix-locate --minimal --top-level -w ";
-          nix-store-search = "ls /nix/store | grep";
-          fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-          lt = "eza -las modified --total-size";
-          boot-diff = "nix store diff-closures /run/*-system";
-          gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
-          cc = "wl-copy";
-        }
-        config.swarselsystems.shellAliases;
-      autosuggestion.enable = true;
-      enableCompletion = true;
-      syntaxHighlighting.enable = true;
-      autocd = false;
-      cdpath = [
-        "~/.dotfiles"
-        # "~/Documents/GitHub"
-      ];
-      defaultKeymap = "emacs";
-      dirHashes = {
-        dl = "$HOME/Downloads";
-        gh = "$HOME/Documents/GitHub";
+    options.swarselsystems = {
+      shellAliases = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
       };
-      history = {
-        expireDuplicatesFirst = true;
-        path = "$HOME/.histfile";
-        save = 10000;
-        size = 10000;
-      };
-      historySubstringSearch = {
+    };
+    config = {
+      programs.zsh = {
         enable = true;
-        searchDownKey = "^[OB";
-        searchUpKey = "^[OA";
+        shellAliases = lib.recursiveUpdate
+          {
+            hg = "history | grep";
+            hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
+            nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
+            nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+            magit = "emacsclient -nc -e \"(magit-status)\"";
+            config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+            g = "git";
+            c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
+            passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+            passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+            hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
+            cd = "z";
+            youtube-dl = "yt-dlp";
+            cd-orig = "cd";
+            cat-orig = "cat";
+            cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+            nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+            nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+            nix-ldd-locate = "nix-locate --minimal --top-level -w ";
+            nix-store-search = "ls /nix/store | grep";
+            fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
+            lt = "eza -las modified --total-size";
+            boot-diff = "nix store diff-closures /run/*-system";
+            gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
+            cc = "wl-copy";
+          }
+          config.swarselsystems.shellAliases;
+        autosuggestion.enable = true;
+        enableCompletion = true;
+        syntaxHighlighting.enable = true;
+        autocd = false;
+        cdpath = [
+          "~/.dotfiles"
+          # "~/Documents/GitHub"
+        ];
+        defaultKeymap = "emacs";
+        dirHashes = {
+          dl = "$HOME/Downloads";
+          gh = "$HOME/Documents/GitHub";
+        };
+        history = {
+          expireDuplicatesFirst = true;
+          path = "$HOME/.histfile";
+          save = 10000;
+          size = 10000;
+        };
+        historySubstringSearch = {
+          enable = true;
+          searchDownKey = "^[OB";
+          searchUpKey = "^[OA";
+        };
+        plugins = [
+          {
+            name = "fzf-tab";
+            src = pkgs.zsh-fzf-tab;
+          }
+        ];
+        initExtra = ''
+          bindkey "^[[1;5D" backward-word
+          bindkey "^[[1;5C" forward-word
+
+          my-backward-delete-word() {
+              # Copy the global WORDCHARS variable to a local variable. That way any
+              # modifications are scoped to this function only
+              local WORDCHARS=$WORDCHARS
+              # Use bash string manipulation to remove `:` so our delete will stop at it
+              WORDCHARS="''${WORDCHARS//:}"
+              # Use bash string manipulation to remove `/` so our delete will stop at it
+              WORDCHARS="''${WORDCHARS//\/}"
+              # Use bash string manipulation to remove `.` so our delete will stop at it
+              WORDCHARS="''${WORDCHARS//.}"
+              # zle <widget-name> will run an existing widget.
+              zle backward-delete-word
+          }
+          zle -N my-backward-delete-word
+          bindkey '^H' my-backward-delete-word
+
+          # This will be our `ctrl+alt+w` command
+          my-backward-delete-whole-word() {
+              # Copy the global WORDCHARS variable to a local variable. That way any
+              # modifications are scoped to this function only
+              local WORDCHARS=$WORDCHARS
+              # Use bash string manipulation to add `:` to WORDCHARS if it's not present
+              # already.
+              [[ ! $WORDCHARS == *":"* ]] && WORDCHARS="$WORDCHARS"":"
+              # zle <widget-name> will run that widget.
+              zle backward-delete-word
+          }
+          # `zle -N` will create a new widget that we can use on the command line
+          zle -N my-backward-delete-whole-word
+          # bind this new widget to `ctrl+alt+w`
+          bindkey '^W' my-backward-delete-whole-word
+        '';
       };
-      plugins = [
-        {
-          name = "fzf-tab";
-          src = pkgs.zsh-fzf-tab;
-        }
-      ];
-      initExtra = ''
-        bindkey "^[[1;5D" backward-word
-        bindkey "^[[1;5C" forward-word
-
-        my-backward-delete-word() {
-            # Copy the global WORDCHARS variable to a local variable. That way any
-            # modifications are scoped to this function only
-            local WORDCHARS=$WORDCHARS
-            # Use bash string manipulation to remove `:` so our delete will stop at it
-            WORDCHARS="''${WORDCHARS//:}"
-            # Use bash string manipulation to remove `/` so our delete will stop at it
-            WORDCHARS="''${WORDCHARS//\/}"
-            # Use bash string manipulation to remove `.` so our delete will stop at it
-            WORDCHARS="''${WORDCHARS//.}"
-            # zle <widget-name> will run an existing widget.
-            zle backward-delete-word
-        }
-        zle -N my-backward-delete-word
-        bindkey '^H' my-backward-delete-word
-
-        # This will be our `ctrl+alt+w` command
-        my-backward-delete-whole-word() {
-            # Copy the global WORDCHARS variable to a local variable. That way any
-            # modifications are scoped to this function only
-            local WORDCHARS=$WORDCHARS
-            # Use bash string manipulation to add `:` to WORDCHARS if it's not present
-            # already.
-            [[ ! $WORDCHARS == *":"* ]] && WORDCHARS="$WORDCHARS"":"
-            # zle <widget-name> will run that widget.
-            zle backward-delete-word
-        }
-        # `zle -N` will create a new widget that we can use on the command line
-        zle -N my-backward-delete-whole-word
-        # bind this new widget to `ctrl+alt+w`
-        bindkey '^W' my-backward-delete-whole-word
-      '';
     };
   }
 #+end_src
@@ -10134,262 +9796,322 @@ Lastly, I am defining some more packages here that the parser has problems findi
 
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
 
+This section is mostly used to deliver the correct information to Waybar. AMD systems have changing hwmon paths that can be specifically set here. Also the cpu count can be set here for Waybars cpu module, but 8 is usually a good setting to show
+
+These are explicit waybar options. Laptops do not need the battery module. However, this leads to a slight problem with theming: my waybar modules alternate their background-color between black and grey. The battery module is usually on grey background. If I were to simply delete that, I would now have two modules on black background. To avoid this, I define a pseudo-module =custom/pseudobat= that simply shows a static image and calls =wlogout= on right click. This wastes a little bit of screen space, but that is a price I am willing to pay for consistency.
+
 The rest of the related configuration is found here:
 - [[#h:a9530c81-1976-442b-b597-0b4bed6baf25][Waybar]]
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix :tangle profiles/home/common/waybar.nix
   { self, config, lib, ... }:
+  let
+    generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
+    modulesLeft = [
+      "custom/outer-left-arrow-dark"
+      "mpris"
+      "custom/left-arrow-light"
+      "network"
+      "custom/vpn"
+      "custom/left-arrow-dark"
+      "pulseaudio"
+      "custom/left-arrow-light"
+    ];
+    modulesRight = [
+      "custom/left-arrow-dark"
+      "group/hardware"
+      "custom/left-arrow-light"
+      "clock#2"
+      "custom/left-arrow-dark"
+      "clock#1"
+    ];
+  in
   {
-    programs.waybar = {
-
-      enable = true;
-      systemd = {
-        enable = true;
-        target = "sway-sessions.target";
+    options.swarselsystems = {
+      cpuCount = lib.mkOption {
+        type = lib.types.int;
+        default = 8;
       };
-      settings = {
-        mainBar = {
-          ipc = true;
-          id = "bar-0";
-          layer = "top";
-          position = "top";
-          modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
-          modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
-          "sway/mode" = {
-            format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
-          };
-
-          modules-right = config.swarselsystems.waybarModules;
-
-          "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
-            format = "";
-            on-click-right = "wlogout -p layer-shell";
-          };
-
-          "custom/configwarn" = {
-            exec = "waybarupdate";
-            interval = 60;
-          };
-
-          "custom/scratchpad-indicator" = {
-            interval = 3;
-            exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
-            format = "{} ";
-            on-click = "swaymsg 'scratchpad show'";
-            on-click-right = "swaymsg 'move scratchpad'";
-          };
-
-          "custom/github" = {
-            format = "{}  ";
-            return-type = "json";
-            interval = 60;
-            exec = "github-notifications";
-            on-click = "xdg-open https://github.com/notifications";
-          };
-
-          idle_inhibitor = {
-            format = "{icon}";
-            format-icons = {
-              activated = "";
-              deactivated = "";
-            };
-          };
-
-          "group/hardware" = {
-            orientation = "inherit";
-            drawer = {
-              "transition-left-to-right" = false;
-            };
-            modules = [
-              "tray"
-              "temperature"
-              "power-profiles-daemon"
-              "custom/left-arrow-light"
-              "custom/left-arrow-dark"
-              "custom/scratchpad-indicator"
-              "custom/left-arrow-light"
-              "disk"
-              "custom/left-arrow-dark"
-              "memory"
-              "custom/left-arrow-light"
-              "cpu"
-              "custom/left-arrow-dark"
-              "backlight/slider"
-              "idle_inhibitor"
-            ];
-          };
-
-          "backlight/slider" = {
-            min = 0;
-            max = 100;
-            orientation = "horizontal";
-            device = "intel_backlight";
-          };
-
-          power-profiles-daemon = {
-            format = "{icon}";
-            tooltip-format = "Power profile: {profile}\nDriver: {driver}";
-            tooltip = true;
-            format-icons = {
-              "default" = "";
-              "performance" = "";
-              "balanced" = "";
-              "power-saver" = "";
-            };
-          };
-
-          temperature = {
-            hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
-            hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
-            input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
-            critical-threshold = 80;
-            format-critical = " {temperatureC}°C";
-            format = " {temperatureC}°C";
-
-          };
-
-          mpris = {
-            format = "{player_icon} {title} <small>[{position}/{length}]</small>";
-            format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
-            player-icons = {
-              "default" = "▶ ";
-              "mpv" = "🎵 ";
-              "spotify" = " ";
-            };
-            status-icons = {
-              "paused" = " ";
-            };
-            interval = 1;
-            title-len = 20;
-            artist-len = 20;
-            album-len = 10;
-          };
-          "custom/left-arrow-dark" = {
-            format = "";
-            tooltip = false;
-          };
-          "custom/outer-left-arrow-dark" = {
-            format = "";
-            tooltip = false;
-          };
-          "custom/left-arrow-light" = {
-            format = "";
-            tooltip = false;
-          };
-          "custom/right-arrow-dark" = {
-            format = "";
-            tooltip = false;
-          };
-          "custom/outer-right-arrow-dark" = {
-            format = "";
-            tooltip = false;
-          };
-          "custom/right-arrow-light" = {
-            format = "";
-            tooltip = false;
-          };
-          "sway/workspaces" = {
-            disable-scroll = true;
-            format = "{name}";
-          };
-
-          "clock#1" = {
-            min-length = 8;
-            interval = 1;
-            format = "{:%H:%M:%S}";
-            # on-click-right= "gnome-clocks";
-            tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-          };
-
-          "clock#2" = {
-            format = "{:%d. %B %Y}";
-            # on-click-right= "gnome-clocks";
-            tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-          };
-
-          pulseaudio = {
-            format = "{icon} {volume:2}%";
-            format-bluetooth = "{icon} {volume}%";
-            format-muted = "MUTE";
-            format-icons = {
-              headphones = "";
-              default = [
-                ""
-                ""
-              ];
-            };
-            scroll-step = 1;
-            on-click = "pamixer -t";
-            on-click-right = "pavucontrol";
-          };
-
-          memory = {
-            interval = 5;
-            format = " {}%";
-            tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
-          };
-          cpu = {
-            format = config.swarselsystems.cpuString;
-            min-length = 6;
-            interval = 5;
-            format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
-            # on-click-right= "com.github.stsdc.monitor";
-            on-click-right = "kitty -o confirm_os_window_close=0 btm";
-
-          };
-          "custom/vpn" = {
-            format = "()";
-            exec = "echo '{\"class\": \"connected\"}'";
-            exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
-            return-type = "json";
-            interval = 5;
-          };
-          battery = {
-            states = {
-              "warning" = 60;
-              "error" = 30;
-              "critical" = 15;
-            };
-            interval = 5;
-            format = "{icon} {capacity}%";
-            format-charging = "{capacity}% ";
-            format-plugged = "{capacity}% ";
-            format-icons = [
-              ""
-              ""
-              ""
-              ""
-              ""
-            ];
-            on-click-right = "wlogout -p layer-shell";
-          };
-          disk = {
-            interval = 30;
-            format = "Disk {percentage_used:2}%";
-            path = "/";
-            states = {
-              "warning" = 80;
-              "critical" = 90;
-            };
-            tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
-          };
-          tray = {
-            icon-size = 20;
-          };
-          network = {
-            interval = 5;
-            format-wifi = "{signalStrength}% ";
-            format-ethernet = "";
-            format-linked = "{ifname} (No IP) ";
-            format-disconnected = "Disconnected ⚠";
-            format-alt = "{ifname}: {ipaddr}/{cidr}";
-            tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-            tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
-          };
+      temperatureHwmon = {
+        isAbsolutePath = lib.mkEnableOption "absolute temperature path";
+        path = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+        };
+        input-filename = lib.mkOption {
+          type = lib.types.str;
+          default = "";
         };
       };
-      style = builtins.readFile (self + /programs/waybar/style.css);
+      waybarModules = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = modulesLeft ++ [
+          "custom/pseudobat"
+        ] ++ modulesRight;
+      };
+      cpuString = lib.mkOption {
+        type = lib.types.str;
+        default = generateIcons config.swarselsystems.cpuCount;
+        description = "The generated icons string for use by Waybar.";
+        internal = true;
+      };
+    };
+    config = {
+      swarselsystems = {
+        waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
+          "battery"
+        ] ++ modulesRight);
+      };
+      programs.waybar = {
+        enable = true;
+        systemd = {
+          enable = true;
+          target = "sway-sessions.target";
+        };
+        settings = {
+          mainBar = {
+            ipc = true;
+            id = "bar-0";
+            layer = "top";
+            position = "top";
+            modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
+            modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
+            "sway/mode" = {
+              format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+            };
+
+            modules-right = config.swarselsystems.waybarModules;
+
+            "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
+              format = "";
+              on-click-right = "wlogout -p layer-shell";
+            };
+
+            "custom/configwarn" = {
+              exec = "waybarupdate";
+              interval = 60;
+            };
+
+            "custom/scratchpad-indicator" = {
+              interval = 3;
+              exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
+              format = "{} ";
+              on-click = "swaymsg 'scratchpad show'";
+              on-click-right = "swaymsg 'move scratchpad'";
+            };
+
+            "custom/github" = {
+              format = "{}  ";
+              return-type = "json";
+              interval = 60;
+              exec = "github-notifications";
+              on-click = "xdg-open https://github.com/notifications";
+            };
+
+            idle_inhibitor = {
+              format = "{icon}";
+              format-icons = {
+                activated = "";
+                deactivated = "";
+              };
+            };
+
+            "group/hardware" = {
+              orientation = "inherit";
+              drawer = {
+                "transition-left-to-right" = false;
+              };
+              modules = [
+                "tray"
+                "temperature"
+                "power-profiles-daemon"
+                "custom/left-arrow-light"
+                "custom/left-arrow-dark"
+                "custom/scratchpad-indicator"
+                "custom/left-arrow-light"
+                "disk"
+                "custom/left-arrow-dark"
+                "memory"
+                "custom/left-arrow-light"
+                "cpu"
+                "custom/left-arrow-dark"
+                "backlight/slider"
+                "idle_inhibitor"
+              ];
+            };
+
+            "backlight/slider" = {
+              min = 0;
+              max = 100;
+              orientation = "horizontal";
+              device = "intel_backlight";
+            };
+
+            power-profiles-daemon = {
+              format = "{icon}";
+              tooltip-format = "Power profile: {profile}\nDriver: {driver}";
+              tooltip = true;
+              format-icons = {
+                "default" = "";
+                "performance" = "";
+                "balanced" = "";
+                "power-saver" = "";
+              };
+            };
+
+            temperature = {
+              hwmon-path = lib.mkIf (!config.swarselsystems.temperatureHwmon.isAbsolutePath) config.swarselsystems.temperatureHwmon.path;
+              hwmon-path-abs = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.path;
+              input-filename = lib.mkIf config.swarselsystems.temperatureHwmon.isAbsolutePath config.swarselsystems.temperatureHwmon.input-filename;
+              critical-threshold = 80;
+              format-critical = " {temperatureC}°C";
+              format = " {temperatureC}°C";
+
+            };
+
+            mpris = {
+              format = "{player_icon} {title} <small>[{position}/{length}]</small>";
+              format-paused = "{player_icon}  <i>{title} <small>[{position}/{length}]</small></i>";
+              player-icons = {
+                "default" = "▶ ";
+                "mpv" = "🎵 ";
+                "spotify" = " ";
+              };
+              status-icons = {
+                "paused" = " ";
+              };
+              interval = 1;
+              title-len = 20;
+              artist-len = 20;
+              album-len = 10;
+            };
+            "custom/left-arrow-dark" = {
+              format = "";
+              tooltip = false;
+            };
+            "custom/outer-left-arrow-dark" = {
+              format = "";
+              tooltip = false;
+            };
+            "custom/left-arrow-light" = {
+              format = "";
+              tooltip = false;
+            };
+            "custom/right-arrow-dark" = {
+              format = "";
+              tooltip = false;
+            };
+            "custom/outer-right-arrow-dark" = {
+              format = "";
+              tooltip = false;
+            };
+            "custom/right-arrow-light" = {
+              format = "";
+              tooltip = false;
+            };
+            "sway/workspaces" = {
+              disable-scroll = true;
+              format = "{name}";
+            };
+
+            "clock#1" = {
+              min-length = 8;
+              interval = 1;
+              format = "{:%H:%M:%S}";
+              # on-click-right= "gnome-clocks";
+              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+            };
+
+            "clock#2" = {
+              format = "{:%d. %B %Y}";
+              # on-click-right= "gnome-clocks";
+              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+            };
+
+            pulseaudio = {
+              format = "{icon} {volume:2}%";
+              format-bluetooth = "{icon} {volume}%";
+              format-muted = "MUTE";
+              format-icons = {
+                headphones = "";
+                default = [
+                  ""
+                  ""
+                ];
+              };
+              scroll-step = 1;
+              on-click = "pamixer -t";
+              on-click-right = "pavucontrol";
+            };
+
+            memory = {
+              interval = 5;
+              format = " {}%";
+              tooltip-format = "Memory: {used:0.1f}G/{total:0.1f}G\nSwap: {swapUsed}G/{swapTotal}G";
+            };
+            cpu = {
+              format = config.swarselsystems.cpuString;
+              min-length = 6;
+              interval = 5;
+              format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
+              # on-click-right= "com.github.stsdc.monitor";
+              on-click-right = "kitty -o confirm_os_window_close=0 btm";
+
+            };
+            "custom/vpn" = {
+              format = "()";
+              exec = "echo '{\"class\": \"connected\"}'";
+              exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+              return-type = "json";
+              interval = 5;
+            };
+            battery = {
+              states = {
+                "warning" = 60;
+                "error" = 30;
+                "critical" = 15;
+              };
+              interval = 5;
+              format = "{icon} {capacity}%";
+              format-charging = "{capacity}% ";
+              format-plugged = "{capacity}% ";
+              format-icons = [
+                ""
+                ""
+                ""
+                ""
+                ""
+              ];
+              on-click-right = "wlogout -p layer-shell";
+            };
+            disk = {
+              interval = 30;
+              format = "Disk {percentage_used:2}%";
+              path = "/";
+              states = {
+                "warning" = 80;
+                "critical" = 90;
+              };
+              tooltip-format = "{used} used out of {total} on {path} ({percentage_used}%)\n{free} free on {path} ({percentage_free}%)";
+            };
+            tray = {
+              icon-size = 20;
+            };
+            network = {
+              interval = 5;
+              format-wifi = "{signalStrength}% ";
+              format-ethernet = "";
+              format-linked = "{ifname} (No IP) ";
+              format-disconnected = "Disconnected ⚠";
+              format-alt = "{ifname}: {ipaddr}/{cidr}";
+              tooltip-format-ethernet = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr}\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+              tooltip-format-wifi = "{ifname} via {gwaddr}: {essid} {ipaddr}/{cidr} \n{signaldBm}dBm @ {frequency}MHz\n\n⇡{bandwidthUpBytes} ⇣{bandwidthDownBytes}";
+            };
+          };
+        };
+        style = builtins.readFile (self + /programs/waybar/style.css);
+      };
     };
   }
 #+end_src
@@ -10408,17 +10130,7 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
 #+begin_src nix :tangle profiles/home/common/firefox.nix
-  { self, pkgs, lib, ... }:
-  let
-    lock-false = {
-      Value = false;
-      Status = "locked";
-    };
-    lock-true = {
-      Value = true;
-      Status = "locked";
-    };
-  in
+  { config, pkgs, lib, ... }:
   {
     programs.firefox = {
       enable = true;
@@ -10552,150 +10264,16 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
 
       };
 
-      profiles.default = {
-        id = 0;
-        isDefault = true;
-        userChrome = builtins.readFile (self + /programs/firefox/chrome/userChrome.css);
-        extensions = {
-          packages = with pkgs.nur.repos.rycee.firefox-addons; [
-            tridactyl
-            tampermonkey
-            sidebery
-            browserpass
-            clearurls
-            darkreader
-            enhancer-for-youtube
-            istilldontcareaboutcookies
-            translate-web-pages
-            ublock-origin
-            reddit-enhancement-suite
-            sponsorblock
-            web-archives
-            single-file
-            widegithub
-            enhanced-github
-            unpaywall
-            don-t-fuck-with-paste
-            plasma-integration
-
-            # configure the default the same as trusted in order not to be annoyed
-            noscript
-
-            # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
-            (buildFirefoxXpiAddon {
-              pname = "shortkeys";
-              version = "4.0.2";
-              addonId = "Shortkeys@Shortkeys.com";
-              url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-              sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-              meta = with lib;
-                {
-                  description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                  mozPermissions = [
-                    "tabs"
-                    "downloads"
-                    "clipboardWrite"
-                    "browsingData"
-                    "storage"
-                    "bookmarks"
-                    "sessions"
-                    "<all_urls>"
-                  ];
-                  platforms = platforms.all;
-                };
-            })
-
-          ];
-        };
-
-        settings = {
-          "extensions.autoDisableScopes" = 0;
-          "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
-          "browser.bookmarks.showMobileBookmarks" = lock-true;
-          "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-          "browser.search.suggest.enabled" = lock-false;
-          "browser.search.suggest.enabled.private" = lock-false;
-          "browser.urlbar.suggest.searches" = lock-false;
-          "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-          "browser.topsites.contile.enabled" = lock-false;
-          "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-          "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-          "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-          "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-          "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-          "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-          "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-          "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-          "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
-        };
-
-        search = {
-          # default = "Kagi";
-          default = "Google";
-          # privateDefault = "Kagi";
-          privateDefault = "Google";
-          engines = {
-            "Kagi" = {
-              urls = [{
-                template = "https://kagi.com/search";
-                params = [
-                  { name = "q"; value = "{searchTerms}"; }
-                ];
-              }];
-              iconUpdateURL = "https://kagi.com/favicon.ico";
-              updateInterval = 24 * 60 * 60 * 1000; # every day
-              definedAliases = [ "@k" ];
+      profiles = {
+        default = lib.recursiveUpdate
+          {
+            id = 0;
+            isDefault = true;
+            settings = {
+              "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
             };
-
-            "Nix Packages" = {
-              urls = [{
-                template = "https://search.nixos.org/packages";
-                params = [
-                  { name = "type"; value = "packages"; }
-                  { name = "query"; value = "{searchTerms}"; }
-                ];
-              }];
-              icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-              definedAliases = [ "@np" ];
-            };
-
-            "NixOS Wiki" = {
-              urls = [{
-                template = "https://nixos.wiki/index.php?search={searchTerms}";
-              }];
-              iconUpdateURL = "https://nixos.wiki/favicon.png";
-              updateInterval = 24 * 60 * 60 * 1000; # every day
-              definedAliases = [ "@nw" ];
-            };
-
-            "NixOS Options" = {
-              urls = [{
-                template = "https://search.nixos.org/options";
-                params = [
-                  { name = "query"; value = "{searchTerms}"; }
-                ];
-              }];
-
-              icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-              definedAliases = [ "@no" ];
-            };
-
-            "Home Manager Options" = {
-              urls = [{
-                template = "https://home-manager-options.extranix.com/";
-                params = [
-                  { name = "query"; value = "{searchTerms}"; }
-                ];
-              }];
-
-              icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-              definedAliases = [ "@hm" "@ho" "@hmo" ];
-            };
-
-            "Google".metaData.alias = "@g";
-          };
-          force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-        };
+          }
+          config.swarselsystems.firefox;
       };
     };
   }
@@ -10833,324 +10411,402 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
 #+begin_src nix :tangle profiles/home/common/sway.nix
   { self, config, lib, ... }:
-  let
-    inherit (config.swarselsystems) monitors;
-    workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput monitors;
-    workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
-  in
   {
-    wayland.windowManager.sway = {
-      enable = true;
-      checkConfig = false; # delete this line once SwayFX is fixed upstream
-      package = lib.mkIf config.swarselsystems.isNixos null;
-      systemd = {
-        enable = true;
-        xdgAutostart = true;
+    options.swarselsystems = {
+      inputs = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = { };
       };
-      wrapperFeatures.gtk = true;
-      config = rec {
-        modifier = "Mod4";
-        # terminal = "kitty";
-        menu = "fuzzel";
-        bars = [{
-          command = "waybar";
-          mode = "hide";
-          hiddenState = "hide";
-          position = "top";
-          extraConfig = "modifier Mod4";
-        }];
-        keybindings =
+      monitors = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = { };
+      };
+      keybindings = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = { };
+      };
+      startup = lib.mkOption {
+        type = lib.types.listOf (lib.types.attrsOf lib.types.str);
+        default = [
+          { command = "nextcloud --background"; }
+          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          { command = "ANKI_WAYLAND=1 anki"; }
+          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+          { command = "nm-applet"; }
+          { command = "feishin"; }
+        ];
+      };
+      kyria = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = {
+          "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          "7504:24926:Kyria_Keyboard" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+        internal = true;
+      };
+      standardinputs = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+        internal = true;
+      };
+      touchpad = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+        default = { };
+        internal = true;
+      };
+      swayfxConfig = lib.mkOption {
+        type = lib.types.str;
+        default = "
+                    blur enable
+                    blur_xray disable
+                    blur_passes 1
+                    blur_radius 1
+                    shadows enable
+                    corner_radius 2
+                    titlebar_separator disable
+                    default_dim_inactive 0.02
+                ";
+        internal = true;
+      };
+    };
+    config = {
+      swarselsystems = {
+        touchpad = lib.mkIf config.swarselsystems.isLaptop {
+          "type:touchpad" = {
+            dwt = "enabled";
+            tap = "enabled";
+            natural_scroll = "enabled";
+            middle_emulation = "enabled";
+            drag_lock = "disabled";
+          };
+        };
+        swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
+      };
+      wayland.windowManager.sway = {
+        enable = true;
+        checkConfig = false; # delete this line once SwayFX is fixed upstream
+        package = lib.mkIf config.swarselsystems.isNixos null;
+        systemd = {
+          enable = true;
+          xdgAutostart = true;
+        };
+        wrapperFeatures.gtk = true;
+        config = rec {
+          modifier = "Mod4";
+          # terminal = "kitty";
+          menu = "fuzzel";
+          bars = [{
+            command = "waybar";
+            mode = "hide";
+            hiddenState = "hide";
+            position = "top";
+            extraConfig = "modifier Mod4";
+          }];
+          keybindings =
+            let
+              inherit (config.wayland.windowManager.sway.config) modifier;
+            in
+            lib.recursiveUpdate
+              {
+                "${modifier}+q" = "kill";
+                "${modifier}+f" = "exec firefox";
+                "${modifier}+Shift+f" = "exec swaymsg fullscreen";
+                "${modifier}+Space" = "exec fuzzel";
+                "${modifier}+Shift+Space" = "floating toggle";
+                "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+                "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
+                "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
+                "${modifier}+m" = "exec swaymsg workspace back_and_forth";
+                "${modifier}+a" = "exec swarselcheck -s";
+                "${modifier}+x" = "exec swarselcheck -k";
+                "${modifier}+d" = "exec swarselcheck -d";
+                "${modifier}+w" = "exec swarselcheck -e";
+                "${modifier}+Shift+t" = "exec opacitytoggle";
+                "${modifier}+Shift+F12" = "move scratchpad";
+                "${modifier}+F12" = "scratchpad show";
+                "${modifier}+c" = "exec qalculate-gtk";
+                "${modifier}+p" = "exec pass-fuzzel";
+                "${modifier}+o" = "exec pass-fuzzel --otp";
+                "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+                "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
+                "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
+                "${modifier}+Escape" = "mode $exit";
+                "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+                "${modifier}+h" = "exec hyprpicker | wl-copy";
+                "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+                "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+                "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
+                "${modifier}+1" = "workspace 1:一";
+                "${modifier}+Shift+1" = "move container to workspace 1:一";
+                "${modifier}+2" = "workspace 2:二";
+                "${modifier}+Shift+2" = "move container to workspace 2:二";
+                "${modifier}+3" = "workspace 3:三";
+                "${modifier}+Shift+3" = "move container to workspace 3:三";
+                "${modifier}+4" = "workspace 4:四";
+                "${modifier}+Shift+4" = "move container to workspace 4:四";
+                "${modifier}+5" = "workspace 5:五";
+                "${modifier}+Shift+5" = "move container to workspace 5:五";
+                "${modifier}+6" = "workspace 6:六";
+                "${modifier}+Shift+6" = "move container to workspace 6:六";
+                "${modifier}+7" = "workspace 7:七";
+                "${modifier}+Shift+7" = "move container to workspace 7:七";
+                "${modifier}+8" = "workspace 8:八";
+                "${modifier}+Shift+8" = "move container to workspace 8:八";
+                "${modifier}+9" = "workspace 9:九";
+                "${modifier}+Shift+9" = "move container to workspace 9:九";
+                "${modifier}+0" = "workspace 10:十";
+                "${modifier}+Shift+0" = "move container to workspace 10:十";
+                "${modifier}+Ctrl+m" = "workspace 11:M";
+                "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
+                "${modifier}+Ctrl+s" = "workspace 12:S";
+                "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
+                "${modifier}+Ctrl+e" = "workspace 13:E";
+                "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
+                "${modifier}+Ctrl+t" = "workspace 14:T";
+                "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
+                "${modifier}+Ctrl+l" = "workspace 15:L";
+                "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
+                "${modifier}+Ctrl+f" = "workspace 16:F";
+                "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
+                "${modifier}+Left" = "focus left";
+                "${modifier}+Right" = "focus right";
+                "${modifier}+Down" = "focus down";
+                "${modifier}+Up" = "focus up";
+                "${modifier}+Shift+Left" = "move left 40px";
+                "${modifier}+Shift+Right" = "move right 40px";
+                "${modifier}+Shift+Down" = "move down 40px";
+                "${modifier}+Shift+Up" = "move up 40px";
+                "${modifier}+Ctrl+Shift+c" = "reload";
+                "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
+                "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+                "${modifier}+r" = "mode resize";
+                # "${modifier}+Return" = "exec kitty";
+                "${modifier}+Return" = "exec swarselzellij";
+                "${modifier}+Print" = "exec screenshare";
+                # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
+                # "XF86AudioRaiseVolume" = "exec pa 5%";
+                "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+                # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
+                "XF86AudioLowerVolume" = "exec pamixer -d 5";
+                # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
+                "XF86AudioMute" = "exec pamixer -t";
+                "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+                "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+                "XF86Display" = "exec wl-mirror eDP-1";
+              }
+              config.swarselsystems.keybindings;
+          modes = {
+            resize = {
+              Down = "resize grow height 10 px or 10 ppt";
+              Escape = "mode default";
+              Left = "resize shrink width 10 px or 10 ppt";
+              Return = "mode default";
+              Right = "resize grow width 10 px or 10 ppt";
+              Up = "resize shrink height 10 px or 10 ppt";
+              Tab = "move position center, resize set width 50 ppt height 50 ppt";
+            };
+          };
+          defaultWorkspace = "workspace 1:一";
+          # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
+          output = {
+            "${config.swarselsystems.sharescreen}" = {
+              bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+            };
+            "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
+              bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+            };
+          };
+          input = config.swarselsystems.standardinputs;
+          workspaceOutputAssign =
+            let
+              workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput config.swarselsystems.monitors;
+              workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
+            in
+            workplaceOutputs;
+          startup = config.swarselsystems.startup ++ [
+            { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
+            { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+          ];
+          seat = {
+            "*" = {
+              hide_cursor = "when-typing enable";
+            };
+          };
+          window = {
+            border = 1;
+            titlebar = false;
+          };
+          assigns = {
+            "15:L" = [{ app_id = "teams-for-linux"; }];
+          };
+          floating = {
+            border = 1;
+            criteria = [
+              { app_id = "qalculate-gtk"; }
+              { app_id = "blueman"; }
+              { app_id = "pavucontrol"; }
+              { app_id = "syncthingtray"; }
+              { app_id = "Element"; }
+              { class = "1Password"; }
+              { app_id = "com.nextcloud.desktopclient.nextcloud"; }
+              { title = "(?:Open|Save) (?:File|Folder|As)"; }
+              { title = "^Add$"; }
+              { title = "^Picture-in-Picture$"; }
+              { title = "Syncthing Tray"; }
+              { title = "^spotifytui$"; }
+              { title = "^kittyterm$"; }
+              { app_id = "vesktop"; }
+              { window_role = "pop-up"; }
+              { window_role = "bubble"; }
+              { window_role = "dialog"; }
+              { window_role = "task_dialog"; }
+              { window_role = "menu"; }
+              { window_role = "Preferences"; }
+            ];
+            titlebar = false;
+          };
+          window = {
+            commands = [
+              {
+                command = "opacity 0.95";
+                criteria = {
+                  class = ".*";
+                };
+              }
+              {
+                command = "opacity 1";
+                criteria = {
+                  app_id = "at.yrlf.wl_mirror";
+                };
+              }
+              {
+                command = "opacity 1";
+                criteria = {
+                  app_id = "Gimp-2.10";
+                };
+              }
+              {
+                command = "opacity 0.99";
+                criteria = {
+                  app_id = "firefox";
+                };
+              }
+              {
+                command = "opacity 0.99";
+                criteria = {
+                  app_id = "chromium-browser";
+                };
+              }
+              {
+                command = "sticky enable, shadows enable";
+                criteria = {
+                  title = "^Picture-in-Picture$";
+                };
+              }
+              {
+                command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
+                criteria = {
+                  title = "^kittyterm$";
+                };
+              }
+              {
+                command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
+                criteria = {
+                  title = "^spotifytui$";
+                };
+              }
+              {
+
+                command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+                criteria = {
+                  class = "Spotify";
+                };
+              }
+              {
+                command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                criteria = {
+                  app_id = "vesktop";
+                };
+              }
+              {
+                command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                criteria = {
+                  class = "Element";
+                };
+              }
+              # {
+              #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+              #   criteria = {
+              #     app_id="^$";
+              #     class="^$";
+              # };
+              # }
+            ];
+          };
+          gaps = {
+            inner = 5;
+          };
+        };
+        extraSessionCommands = ''
+          export SDL_VIDEODRIVER=wayland
+          export QT_QPA_PLATFORM=wayland
+          export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
+          export _JAVA_AWT_WM_NONREPARENTING=1
+          export XDG_CURRENT_DESKTOP=sway
+          export XDG_SESSION_DESKTOP=sway
+          export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
+          export ANKI_WAYLAND=1;
+          export OBSIDIAN_USE_WAYLAND=1;
+        '';
+        # extraConfigEarly = "
+        # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+        # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+        # ";
+        extraConfig =
           let
             inherit (config.wayland.windowManager.sway.config) modifier;
+            swayfxSettings = config.swarselsystems.swayfxConfig;
           in
-          lib.recursiveUpdate
-            {
-              "${modifier}+q" = "kill";
-              "${modifier}+f" = "exec firefox";
-              "${modifier}+Shift+f" = "exec swaymsg fullscreen";
-              "${modifier}+Space" = "exec fuzzel";
-              "${modifier}+Shift+Space" = "floating toggle";
-              "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-              "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
-              "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
-              "${modifier}+m" = "exec swaymsg workspace back_and_forth";
-              "${modifier}+a" = "exec swarselcheck -s";
-              "${modifier}+x" = "exec swarselcheck -k";
-              "${modifier}+d" = "exec swarselcheck -d";
-              "${modifier}+w" = "exec swarselcheck -e";
-              "${modifier}+Shift+t" = "exec opacitytoggle";
-              "${modifier}+Shift+F12" = "move scratchpad";
-              "${modifier}+F12" = "scratchpad show";
-              "${modifier}+c" = "exec qalculate-gtk";
-              "${modifier}+p" = "exec pass-fuzzel";
-              "${modifier}+o" = "exec pass-fuzzel --otp";
-              "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-              "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
-              "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
-              "${modifier}+Escape" = "mode $exit";
-              "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-              "${modifier}+h" = "exec hyprpicker | wl-copy";
-              "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-              "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-              "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
-              "${modifier}+1" = "workspace 1:一";
-              "${modifier}+Shift+1" = "move container to workspace 1:一";
-              "${modifier}+2" = "workspace 2:二";
-              "${modifier}+Shift+2" = "move container to workspace 2:二";
-              "${modifier}+3" = "workspace 3:三";
-              "${modifier}+Shift+3" = "move container to workspace 3:三";
-              "${modifier}+4" = "workspace 4:四";
-              "${modifier}+Shift+4" = "move container to workspace 4:四";
-              "${modifier}+5" = "workspace 5:五";
-              "${modifier}+Shift+5" = "move container to workspace 5:五";
-              "${modifier}+6" = "workspace 6:六";
-              "${modifier}+Shift+6" = "move container to workspace 6:六";
-              "${modifier}+7" = "workspace 7:七";
-              "${modifier}+Shift+7" = "move container to workspace 7:七";
-              "${modifier}+8" = "workspace 8:八";
-              "${modifier}+Shift+8" = "move container to workspace 8:八";
-              "${modifier}+9" = "workspace 9:九";
-              "${modifier}+Shift+9" = "move container to workspace 9:九";
-              "${modifier}+0" = "workspace 10:十";
-              "${modifier}+Shift+0" = "move container to workspace 10:十";
-              "${modifier}+Ctrl+m" = "workspace 11:M";
-              "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
-              "${modifier}+Ctrl+s" = "workspace 12:S";
-              "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
-              "${modifier}+Ctrl+e" = "workspace 13:E";
-              "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
-              "${modifier}+Ctrl+t" = "workspace 14:T";
-              "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
-              "${modifier}+Ctrl+l" = "workspace 15:L";
-              "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
-              "${modifier}+Ctrl+f" = "workspace 16:F";
-              "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
-              "${modifier}+Left" = "focus left";
-              "${modifier}+Right" = "focus right";
-              "${modifier}+Down" = "focus down";
-              "${modifier}+Up" = "focus up";
-              "${modifier}+Shift+Left" = "move left 40px";
-              "${modifier}+Shift+Right" = "move right 40px";
-              "${modifier}+Shift+Down" = "move down 40px";
-              "${modifier}+Shift+Up" = "move up 40px";
-              "${modifier}+Ctrl+Shift+c" = "reload";
-              "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
-              "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-              "${modifier}+r" = "mode resize";
-              # "${modifier}+Return" = "exec kitty";
-              "${modifier}+Return" = "exec swarselzellij";
-              "${modifier}+Print" = "exec screenshare";
-              # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
-              # "XF86AudioRaiseVolume" = "exec pa 5%";
-              "XF86AudioRaiseVolume" = "exec pamixer -i 5";
-              # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-              "XF86AudioLowerVolume" = "exec pamixer -d 5";
-              # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
-              "XF86AudioMute" = "exec pamixer -t";
-              "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-              "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-              "XF86Display" = "exec wl-mirror eDP-1";
-            }
-            config.swarselsystems.keybindings;
-        modes = {
-          resize = {
-            Down = "resize grow height 10 px or 10 ppt";
-            Escape = "mode default";
-            Left = "resize shrink width 10 px or 10 ppt";
-            Return = "mode default";
-            Right = "resize grow width 10 px or 10 ppt";
-            Up = "resize shrink height 10 px or 10 ppt";
-            Tab = "move position center, resize set width 50 ppt height 50 ppt";
-          };
-        };
-        defaultWorkspace = "workspace 1:一";
-        # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
-        output = {
-          "${config.swarselsystems.sharescreen}" = {
-            bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
-          };
-          "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-            bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
-          };
-        };
-        input = config.swarselsystems.standardinputs;
-        workspaceOutputAssign = workplaceOutputs;
-        startup = config.swarselsystems.startup ++ [
-          { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
-          { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
-        ];
-        seat = {
-          "*" = {
-            hide_cursor = "when-typing enable";
-          };
-        };
-        window = {
-          border = 1;
-          titlebar = false;
-        };
-        assigns = {
-          "15:L" = [{ app_id = "teams-for-linux"; }];
-        };
-        floating = {
-          border = 1;
-          criteria = [
-            { app_id = "qalculate-gtk"; }
-            { app_id = "blueman"; }
-            { app_id = "pavucontrol"; }
-            { app_id = "syncthingtray"; }
-            { app_id = "Element"; }
-            { class = "1Password"; }
-            { app_id = "com.nextcloud.desktopclient.nextcloud"; }
-            { title = "(?:Open|Save) (?:File|Folder|As)"; }
-            { title = "^Add$"; }
-            { title = "^Picture-in-Picture$"; }
-            { title = "Syncthing Tray"; }
-            { title = "^spotifytui$"; }
-            { title = "^kittyterm$"; }
-            { app_id = "vesktop"; }
-            { window_role = "pop-up"; }
-            { window_role = "bubble"; }
-            { window_role = "dialog"; }
-            { window_role = "task_dialog"; }
-            { window_role = "menu"; }
-            { window_role = "Preferences"; }
-          ];
-          titlebar = false;
-        };
-        window = {
-          commands = [
-            {
-              command = "opacity 0.95";
-              criteria = {
-                class = ".*";
-              };
-            }
-            {
-              command = "opacity 1";
-              criteria = {
-                app_id = "at.yrlf.wl_mirror";
-              };
-            }
-            {
-              command = "opacity 1";
-              criteria = {
-                app_id = "Gimp-2.10";
-              };
-            }
-            {
-              command = "opacity 0.99";
-              criteria = {
-                app_id = "firefox";
-              };
-            }
-            {
-              command = "opacity 0.99";
-              criteria = {
-                app_id = "chromium-browser";
-              };
-            }
-            {
-              command = "sticky enable, shadows enable";
-              criteria = {
-                title = "^Picture-in-Picture$";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
-              criteria = {
-                title = "^kittyterm$";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
-              criteria = {
-                title = "^spotifytui$";
-              };
-            }
-            {
+          "
+                            exec_always autotiling
+                            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-              command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-              criteria = {
-                class = "Spotify";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, sticky enable";
-              criteria = {
-                app_id = "vesktop";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, sticky enable";
-              criteria = {
-                class = "Element";
-              };
-            }
-            # {
-            #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-            #   criteria = {
-            #     app_id="^$";
-            #     class="^$";
-            # };
-            # }
-          ];
-        };
-        gaps = {
-          inner = 5;
-        };
+                            mode $exit {
+                              bindsym --to-code {
+                                s exec \"systemctl suspend\", mode \"default\"
+                                h exec \"systemctl hibernate\", mode \"default\"
+                                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+                                p exec \"systemctl poweroff\"
+                                r exec \"systemctl reboot\"
+                                u exec \"swaymsg exit\"
+
+                                Return mode \"default\"
+                                Escape mode \"default\"
+                                ${modifier}+Escape mode \"default\"
+                              }
+                            }
+
+                            exec systemctl --user import-environment
+                            exec swayidle -w
+
+                            seat * hide_cursor 2000
+
+                            exec kanshi
+                            exec_always kill -1 $(pidof kanshi)
+
+                            bindswitch --locked lid:on exec kanshictl switch lidclosed
+                            bindswitch --locked lid:off exec kanshictl switch lidopen
+
+                            ${swayfxSettings}
+                            ";
       };
-      extraSessionCommands = ''
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
-        export _JAVA_AWT_WM_NONREPARENTING=1
-        export XDG_CURRENT_DESKTOP=sway
-        export XDG_SESSION_DESKTOP=sway
-        export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
-        export ANKI_WAYLAND=1;
-        export OBSIDIAN_USE_WAYLAND=1;
-      '';
-      # extraConfigEarly = "
-      # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
-      # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
-      # ";
-      extraConfig =
-        let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-          swayfxSettings = config.swarselsystems.swayfxConfig;
-        in
-        "
-                exec_always autotiling
-                set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
-
-                mode $exit {
-                  bindsym --to-code {
-                    s exec \"systemctl suspend\", mode \"default\"
-                    h exec \"systemctl hibernate\", mode \"default\"
-                    l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-                    p exec \"systemctl poweroff\"
-                    r exec \"systemctl reboot\"
-                    u exec \"swaymsg exit\"
-
-                    Return mode \"default\"
-                    Escape mode \"default\"
-                    ${modifier}+Escape mode \"default\"
-                  }
-                }
-
-                exec systemctl --user import-environment
-                exec swayidle -w
-
-                seat * hide_cursor 2000
-
-                exec kanshi
-                exec_always kill -1 $(pidof kanshi)
-
-                bindswitch --locked lid:on exec kanshictl switch lidclosed
-                bindswitch --locked lid:off exec kanshictl switch lidopen
-
-                ${swayfxSettings}
-                ";
     };
   }
 #+end_src
@@ -11329,6 +10985,7 @@ This section sets up all the imports that are used in the home-manager section.
   {
     imports = lib.swarselsystems.mkImports importNames "profiles/home/server" ++ [
       "${profilesPath}/home/common/settings.nix"
+      "${profilesPath}/home/common/sharedsetup.nix"
     ];
   }
 #+end_src
@@ -11374,6 +11031,7 @@ This section sets up all the imports that are used in the home-manager section.
   {
     imports = [
       "${profilesPath}/home/common/settings.nix"
+      "${profilesPath}/home/common/sharedsetup.nix"
     ];
   }
 #+end_src
@@ -11545,25 +11203,36 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
 
       firefox = {
-        profiles = {
-          dc = lib.recursiveUpdate
-            {
-              id = 1;
-              settings = {
-                "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
-              };
-            }
-            config.swarselsystems.firefox;
-          cl = lib.recursiveUpdate
-            {
-              id = 2;
-              settings = {
-                "browser.startup.homepage" = "https://portal.azure.com";
-              };
-            }
-            config.swarselsystems.firefox;
-          ws = lib.recursiveUpdate { id = 3; } config.swarselsystems.firefox;
-        };
+        profiles =
+          let
+            isDefault = false;
+          in
+          {
+            dc = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 1;
+                settings = {
+                  "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
+                };
+              }
+              config.swarselsystems.firefox;
+            cl = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 2;
+                settings = {
+                  "browser.startup.homepage" = "https://portal.azure.com";
+                };
+              }
+              config.swarselsystems.firefox;
+            ws = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 3;
+              }
+              config.swarselsystems.firefox;
+          };
       };
 
       chromium = {

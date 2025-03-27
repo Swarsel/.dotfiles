@@ -200,13 +200,13 @@ in
           xkb_layout = "us";
           xkb_variant = "altgr-intl";
         };
-        "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-          drag_lock = "disabled";
-        };
+        # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+        #   dwt = "enabled";
+        #   tap = "enabled";
+        #   natural_scroll = "enabled";
+        #   middle_emulation = "enabled";
+        #   drag_lock = "disabled";
+        # };
         "1133:50504:Logitech_USB_Receiver" = {
           xkb_layout = "us";
           xkb_variant = "altgr-intl";

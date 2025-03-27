@@ -11,10 +11,104 @@ let
 in
 {
   options.swarselsystems = {
+    isLaptop = lib.mkEnableOption "laptop host";
+    isNixos = lib.mkEnableOption "nixos host";
+    isPublic = lib.mkEnableOption "is a public machine (no secrets)";
+    isDarwin = lib.mkEnableOption "darwin host";
+    isLinux = lib.mkEnableOption "whether this is a linux machine";
+    isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+    mainUser = lib.mkOption {
+      type = lib.types.str;
+      default = "swarsel";
+    };
+    homeDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/home/swarsel";
+    };
+    xdgDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/run/user/1000";
+    };
+    flakePath = lib.mkOption {
+      type = lib.types.str;
+      default = "/home/swarsel/.dotfiles";
+    };
+    wallpaper = lib.mkOption {
+      type = lib.types.path;
+      default = "${self}/wallpaper/lenovowp.png";
+    };
+    sharescreen = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    lowResolution = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    highResolution = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+
+    stylix = lib.mkOption {
+      type = lib.types.attrs;
+      default = {
+        enable = true;
+        base16Scheme = "${self}/programs/stylix/swarsel.yaml";
+        polarity = "dark";
+        opacity.popups = 0.5;
+        cursor = {
+          package = pkgs.banana-cursor;
+          # package = pkgs.capitaine-cursors;
+          name = "Banana";
+          # name = "capitaine-cursors";
+          size = 16;
+        };
+        fonts = {
+          sizes = {
+            terminal = 10;
+            applications = 11;
+          };
+          serif = {
+            # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+            package = pkgs.cantarell-fonts;
+            # package = pkgs.montserrat;
+            name = "Cantarell";
+            # name = "FiraCode Nerd Font Propo";
+            # name = "Montserrat";
+          };
+          sansSerif = {
+            # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+            package = pkgs.cantarell-fonts;
+            # package = pkgs.montserrat;
+            name = "Cantarell";
+            # name = "FiraCode Nerd Font Propo";
+            # name = "Montserrat";
+          };
+          monospace = {
+            package = pkgs.nerd-fonts.fira-mono; # has overrides
+            name = "FiraCode Nerd Font Mono";
+          };
+          emoji = {
+            package = pkgs.noto-fonts-emoji;
+            name = "Noto Color Emoji";
+          };
+        };
+      };
+    };
+    stylixHomeTargets = lib.mkOption {
+      type = lib.types.attrs;
+      default = {
+        emacs.enable = false;
+        waybar.enable = false;
+        sway.useWallpaper = false;
+        firefox.profileNames = [ "default" ];
+      };
+    };
+
     firefox = lib.mkOption {
       type = lib.types.attrs;
       default = {
-        isDefault = false;
         userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
         extensions = {
           packages = with pkgs.nur.repos.rycee.firefox-addons; [
@@ -38,6 +132,9 @@ in
             unpaywall
             don-t-fuck-with-paste
             plasma-integration
+            noscript
+
+            # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
             (buildFirefoxXpiAddon {
               pname = "shortkeys";
               version = "4.0.2";
@@ -153,6 +250,6 @@ in
         };
       };
     };
-  };
 
+  };
 }

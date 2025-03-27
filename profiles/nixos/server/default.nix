@@ -14,5 +14,7 @@ in
     "${profilesPath}/nixos/common/time.nix"
     "${profilesPath}/nixos/common/users.nix"
     "${profilesPath}/nixos/common/nix-ld.nix"
+    "${profilesPath}/nixos/common/sharedsetup.nix"
+    "${profilesPath}/home/common/sharedsetup.nix"
   ];
 }

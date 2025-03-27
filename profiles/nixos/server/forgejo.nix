@@ -1,5 +1,6 @@
 { lib, config, ... }:
 {
+  options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
   config = lib.mkIf config.swarselsystems.server.forgejo {
 
     networking.firewall.allowedTCPPorts = [ 3000 ];

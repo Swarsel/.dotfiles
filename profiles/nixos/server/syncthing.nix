@@ -4,6 +4,7 @@ let
   workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
 in
 {
+  options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
   config = lib.mkIf config.swarselsystems.server.syncthing {
 
     users.users.syncthing = {

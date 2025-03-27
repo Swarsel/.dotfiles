@@ -1,5 +1,6 @@
 { lib, config, ... }:
 {
+  options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
   config = lib.mkIf config.swarselsystems.server.immich {
 
     users.users.immich = {

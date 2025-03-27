@@ -1,5 +1,6 @@
 { pkgs, lib, config, ... }:
 {
+  options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
   config = lib.mkIf config.swarselsystems.server.mpd {
     users = {
       groups = {

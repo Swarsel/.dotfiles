@@ -1,5 +1,6 @@
 { pkgs, lib, config, ... }:
 {
+  options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
   config = lib.mkIf config.swarselsystems.server.nextcloud {
 
     sops.secrets.nextcloudadminpass = {

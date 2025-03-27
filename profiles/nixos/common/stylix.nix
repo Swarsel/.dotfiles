@@ -8,12 +8,7 @@
     config.swarselsystems.stylix;
   home-manager.users."${config.swarselsystems.mainUser}" = {
     stylix = {
-      targets = {
-        emacs.enable = false;
-        waybar.enable = false;
-        sway.useWallpaper = false;
-        firefox.profileNames = [ "default" ];
-      };
+      targets = config.swarselsystems.stylixHomeTargets;
     };
   };
 }

@@ -1,5 +1,6 @@
 { self, lib, config, ... }:
 {
+  options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
   config = lib.mkIf config.swarselsystems.server.monitoring {
 
     sops.secrets = {

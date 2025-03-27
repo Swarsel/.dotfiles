@@ -70,7 +70,7 @@ in
               # put home-manager imports here that are for all servers and normal hosts
               inputs.sops-nix.homeManagerModules.sops
               inputs.nix-index-database.hmModules.nix-index
-            ] ++ (builtins.attrValues outputs.homeModules);
+            ];
           }
         ] else [
           # put nixos imports here that are for darwin hosts
@@ -80,9 +80,9 @@ in
             home-manager.users."${macUser}".imports = [
               # put home-manager imports here that are for darwin hosts
               "${self}/profiles/darwin/home"
-            ] ++ (builtins.attrValues outputs.homeModules);
+            ];
           }
-        ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
+        ])
         ));
       };
   };

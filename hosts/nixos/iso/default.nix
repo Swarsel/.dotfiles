@@ -1,4 +1,4 @@
-{ self, pkgs, inputs, outputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+{ self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -9,12 +9,15 @@ in
     "${modulesPath}/installer/cd-dvd/channel.nix"
 
     "${self}/profiles/iso/minimal.nix"
+    "${self}/profiles/nixos/common/sharedsetup.nix"
+    "${self}/profiles/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         "${self}/profiles/home/common/settings.nix"
-      ] ++ (builtins.attrValues outputs.homeModules);
+        "${self}/profiles/home/common/sharedsetup.nix"
+      ];
     }
   ];
 

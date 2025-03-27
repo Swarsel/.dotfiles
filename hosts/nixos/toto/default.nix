@@ -1,4 +1,4 @@
-{ self, inputs, outputs, pkgs, lib, primaryUser, ... }:
+{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
   profilesPath = "${self}/profiles";
   sharedOptions = {
@@ -14,6 +14,7 @@ in
 
     "${profilesPath}/nixos/optional/autologin.nix"
     "${profilesPath}/nixos/common/settings.nix"
+    "${profilesPath}/nixos/common/sharedsetup.nix"
     "${profilesPath}/nixos/common/home-manager.nix"
     "${profilesPath}/nixos/common/home-manager-extra.nix"
     "${profilesPath}/nixos/common/xserver.nix"
@@ -22,6 +23,7 @@ in
     "${profilesPath}/nixos/common/lanzaboote.nix"
     "${profilesPath}/nixos/common/sops.nix"
     "${profilesPath}/nixos/server/ssh.nix"
+    "${profilesPath}/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
@@ -30,9 +32,10 @@ in
         "${profilesPath}/home/common/settings.nix"
         "${profilesPath}/home/common/sops.nix"
         "${profilesPath}/home/common/ssh.nix"
-      ] ++ (builtins.attrValues outputs.homeModules);
+        "${profilesPath}/home/common/sharedsetup.nix"
+      ];
     }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules);
+  ];
 
 
   environment.systemPackages = with pkgs; [

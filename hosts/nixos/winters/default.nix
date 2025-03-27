@@ -32,13 +32,10 @@ in
   };
 
   swarselsystems = {
-    hasBluetooth = false;
-    hasFingerprint = false;
     isImpermanence = false;
     isBtrfs = false;
     isLinux = true;
     server = {
-      enable = true;
       kavita = true;
       navidrome = true;
       jellyfin = true;

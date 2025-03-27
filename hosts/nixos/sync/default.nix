@@ -6,12 +6,15 @@ in
   imports = [
 
     "${profilesPath}/nixos/server"
+    "${profilesPath}/nixos/common/sharedsetup.nix"
+    "${profilesPath}/home/common/sharedsetup.nix"
     ./hardware-configuration.nix
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         "${profilesPath}/home/server"
+        "${profilesPath}/home/common/sharedsetup.nix"
       ];
     }
   ];
@@ -79,14 +82,11 @@ in
 
 
   swarselsystems = {
-    hasBluetooth = false;
-    hasFingerprint = false;
     isImpermanence = false;
     isLinux = true;
     isBtrfs = false;
     flakePath = "/root/.dotfiles";
     server = {
-      enable = true;
       forgejo = true;
       ankisync = true;
     };

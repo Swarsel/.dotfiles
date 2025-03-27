@@ -1,5 +1,6 @@
 { lib, config, ... }:
 {
+  options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
   config = lib.mkIf config.swarselsystems.server.paperless {
 
     users.users.paperless = {

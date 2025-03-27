@@ -6,7 +6,8 @@
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
     ./profiles/home/common
-  ] ++ (builtins.attrValues outputs.homeModules);
+    "${self}/profiles/home/common/sharedsetup.nix"
+  ];
 
   nixpkgs = {
     overlays = [ outputs.overlays.default ];
