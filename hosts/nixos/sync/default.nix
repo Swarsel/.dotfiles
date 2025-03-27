@@ -1,20 +1,20 @@
 { self, inputs, lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
 in
 {
   imports = [
 
-    "${profilesPath}/nixos/server"
-    "${profilesPath}/nixos/common/sharedsetup.nix"
-    "${profilesPath}/home/common/sharedsetup.nix"
+    "${modulesPath}/nixos/server"
+    "${modulesPath}/nixos/common/sharedsetup.nix"
+    "${modulesPath}/home/common/sharedsetup.nix"
     ./hardware-configuration.nix
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
-        "${profilesPath}/home/server"
-        "${profilesPath}/home/common/sharedsetup.nix"
+        "${modulesPath}/home/server"
+        "${modulesPath}/home/common/sharedsetup.nix"
       ];
     }
   ];

@@ -8,15 +8,15 @@ in
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    "${self}/profiles/iso/minimal.nix"
-    "${self}/profiles/nixos/common/sharedsetup.nix"
-    "${self}/profiles/home/common/sharedsetup.nix"
+    "${self}/modules/iso/minimal.nix"
+    "${self}/modules/nixos/common/sharedsetup.nix"
+    "${self}/modules/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
-        "${self}/profiles/home/common/settings.nix"
-        "${self}/profiles/home/common/sharedsetup.nix"
+        "${self}/modules/home/common/settings.nix"
+        "${self}/modules/home/common/sharedsetup.nix"
       ];
     }
   ];

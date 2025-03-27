@@ -1,6 +1,6 @@
 { self, config, pkgs, lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
 in
 {
 
@@ -10,7 +10,7 @@ in
     {
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
-    "${profilesPath}/nixos/optional/autologin.nix"
+    "${modulesPath}/nixos/optional/autologin.nix"
   ];
 
   environment.variables = {

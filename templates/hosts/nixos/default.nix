@@ -1,6 +1,6 @@
 { self, inputs, pkgs, lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
   };
@@ -13,16 +13,16 @@ in
     ./hardware-configuration.nix
     ./disk-config.nix
 
-    "${profilesPath}/nixos/optional/virtualbox.nix"
-    # "${profilesPath}/nixos/optional/vmware.nix"
-    "${profilesPath}/nixos/optional/autologin.nix"
-    "${profilesPath}/nixos/optional/nswitch-rcm.nix"
-    "${profilesPath}/nixos/optional/gaming.nix"
+    "${modulesPath}/nixos/optional/virtualbox.nix"
+    # "${modulesPath}/nixos/optional/vmware.nix"
+    "${modulesPath}/nixos/optional/autologin.nix"
+    "${modulesPath}/nixos/optional/nswitch-rcm.nix"
+    "${modulesPath}/nixos/optional/gaming.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
-        "${profilesPath}/home/optional/gaming.nix"
+        "${modulesPath}/home/optional/gaming.nix"
       ];
     }
   ];

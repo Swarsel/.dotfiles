@@ -1,6 +1,6 @@
 { self, inputs, pkgs, lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
@@ -12,27 +12,27 @@ in
     "${self}/hosts/nixos/toto/disk-config.nix"
     ./hardware-configuration.nix
 
-    "${profilesPath}/nixos/optional/autologin.nix"
-    "${profilesPath}/nixos/common/settings.nix"
-    "${profilesPath}/nixos/common/sharedsetup.nix"
-    "${profilesPath}/nixos/common/home-manager.nix"
-    "${profilesPath}/nixos/common/home-manager-extra.nix"
-    "${profilesPath}/nixos/common/xserver.nix"
-    "${profilesPath}/nixos/common/users.nix"
-    "${profilesPath}/nixos/common/impermanence.nix"
-    "${profilesPath}/nixos/common/lanzaboote.nix"
-    "${profilesPath}/nixos/common/sops.nix"
-    "${profilesPath}/nixos/server/ssh.nix"
-    "${profilesPath}/home/common/sharedsetup.nix"
+    "${modulesPath}/nixos/optional/autologin.nix"
+    "${modulesPath}/nixos/common/settings.nix"
+    "${modulesPath}/nixos/common/sharedsetup.nix"
+    "${modulesPath}/nixos/common/home-manager.nix"
+    "${modulesPath}/nixos/common/home-manager-extra.nix"
+    "${modulesPath}/nixos/common/xserver.nix"
+    "${modulesPath}/nixos/common/users.nix"
+    "${modulesPath}/nixos/common/impermanence.nix"
+    "${modulesPath}/nixos/common/lanzaboote.nix"
+    "${modulesPath}/nixos/common/sops.nix"
+    "${modulesPath}/nixos/server/ssh.nix"
+    "${modulesPath}/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         inputs.sops-nix.homeManagerModules.sops
-        "${profilesPath}/home/common/settings.nix"
-        "${profilesPath}/home/common/sops.nix"
-        "${profilesPath}/home/common/ssh.nix"
-        "${profilesPath}/home/common/sharedsetup.nix"
+        "${modulesPath}/home/common/settings.nix"
+        "${modulesPath}/home/common/sops.nix"
+        "${modulesPath}/home/common/ssh.nix"
+        "${modulesPath}/home/common/sharedsetup.nix"
       ];
     }
   ];

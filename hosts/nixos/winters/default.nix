@@ -1,19 +1,19 @@
 { self, inputs, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
 in
 {
 
   imports = [
     ./hardware-configuration.nix
 
-    "${profilesPath}/nixos/optional/autologin.nix"
-    "${profilesPath}/nixos/server"
+    "${modulesPath}/nixos/optional/autologin.nix"
+    "${modulesPath}/nixos/server"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
-        "${profilesPath}/home/server"
+        "${modulesPath}/home/server"
       ];
     }
   ];

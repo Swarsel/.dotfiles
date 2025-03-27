@@ -55,7 +55,7 @@ in
         ] ++
         (if (host == "winters" || host == "sync") then [ ] else [
           # put nixos imports here that are for all normal hosts
-          "${self}/profiles/${type}/common"
+          "${self}/modules/${type}/common"
           inputs.stylix.nixosModules.stylix
           inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
         ]) ++ (if (type == "nixos") then [
@@ -64,7 +64,7 @@ in
             home-manager.users."${linuxUser}".imports = (
               if (host == "winters" || host == "sync") then [ ] else [
                 # put home-manager imports here that are for all normal hosts
-                "${self}/profiles/home/common"
+                "${self}/modules/home/common"
               ]
             ) ++ [
               # put home-manager imports here that are for all servers and normal hosts
@@ -74,12 +74,12 @@ in
           }
         ] else [
           # put nixos imports here that are for darwin hosts
-          "${self}/profiles/darwin/nixos/common"
+          "${self}/modules/darwin/nixos/common"
           inputs.home-manager.darwinModules.home-manager
           {
             home-manager.users."${macUser}".imports = [
               # put home-manager imports here that are for darwin hosts
-              "${self}/profiles/darwin/home"
+              "${self}/modules/darwin/home"
             ];
           }
         ])
