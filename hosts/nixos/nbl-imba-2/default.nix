@@ -23,6 +23,7 @@ in
     "${modulesPath}/nixos/optional/nswitch-rcm.nix"
     "${modulesPath}/nixos/optional/gaming.nix"
     "${modulesPath}/nixos/optional/work.nix"
+    "${self}/profiles/nixos"
 
     inputs.home-manager.nixosModules.home-manager
     {
@@ -90,6 +91,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      profiles.personal = true;
       wallpaper = self + /wallpaper/lenovowp.png;
       hasBluetooth = true;
       hasFingerprint = true;

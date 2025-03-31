@@ -2,6 +2,7 @@
 {
 
   options.swarselsystems = {
+    modules.hardware = lib.mkEnableOption "hardware config";
     hasBluetooth = lib.mkEnableOption "bluetooth availability";
     hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
     trackpoint = {
@@ -12,7 +13,7 @@
       };
     };
   };
-  config = {
+  config = lib.mkIf config.swarselsystems.modules.hardware {
     hardware = {
       # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
       graphics = {

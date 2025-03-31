@@ -1,21 +1,16 @@
-{ pkgs, ... }:
+{ lib, config, pkgs, ... }:
 {
-  programs.ssh.startAgent = false;
+  options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
+  config = lib.mkIf config.swarselsystems.modules.yubikey {
+    programs.ssh.startAgent = false;
 
-  services.pcscd.enable = false;
+    services.pcscd.enable = false;
 
-  hardware.gpgSmartcards.enable = true;
+    hardware.gpgSmartcards.enable = true;
 
-  services.udev.packages = with pkgs; [
-    yubikey-personalization
-  ];
+    services.udev.packages = with pkgs; [
+      yubikey-personalization
+    ];
 
-  # systemd.services.shutdownSopsGpg = {
-  #   path = [ pkgs.gnupg ];
-  #   script = ''
-  #     gpgconf --homedir /var/lib/sops --kill gpg-agent
-  #   '';
-  #   wantedBy = [ "multi-user.target" ];
-  # };
-
+  };
 }

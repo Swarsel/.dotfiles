@@ -26,6 +26,11 @@ in
     }
   );
 
+  mkTrueOption = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+  };
+
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
@@ -129,6 +134,13 @@ in
     (name: {
       inherit name;
       value = import "${self}/modules/${type}/${name}";
+    })
+    names);
+
+  mkProfiles = names: type: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = import "${self}/profiles/${type}/${name}";
     })
     names);
 

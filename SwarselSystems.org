@@ -824,6 +824,7 @@ My work machine. Built for more security, this is the gold standard of my config
       "${modulesPath}/nixos/optional/nswitch-rcm.nix"
       "${modulesPath}/nixos/optional/gaming.nix"
       "${modulesPath}/nixos/optional/work.nix"
+      "${self}/profiles/nixos"
 
       inputs.home-manager.nixosModules.home-manager
       {
@@ -891,6 +892,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
     swarselsystems = lib.recursiveUpdate
       {
+        profiles.personal = true;
         wallpaper = self + /wallpaper/lenovowp.png;
         hasBluetooth = true;
         hasFingerprint = true;
@@ -3805,7 +3807,64 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   let
     moduleNames = lib.swarselsystems.readNix "profiles/nixos";
   in
-  lib.swarselsystems.mkModules moduleNames "nixos"
+  lib.swarselsystems.mkProfiles moduleNames "nixos"
+
+#+end_src
+
+***** Personal
+
+#+begin_src nix :tangle profiles/nixos/personal/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.personalz = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselsystems.profiles.personalz {
+      config.swarselsystems.modules = {
+        packages = lib.mkDefault true;
+        general = lib.mkDefault true;
+        home-manager = lib.mkDefault true;
+        home-managerExtra = lib.mkDefault true;
+        xserver = lib.mkDefault true;
+        users = lib.mkDefault true;
+        env = lib.mkDefault true;
+        security = lib.mkDefault true;
+        gc = lib.mkDefault true;
+        storeOptimize = lib.mkDefault true;
+        systemdTimeout = lib.mkDefault true;
+        hardware = lib.mkDefault true;
+        pulseaudio = lib.mkDefault true;
+        pipewire = lib.mkDefault true;
+        network = lib.mkDefault true;
+        time = lib.mkDefault true;
+        commonSops = lib.mkDefault true;
+        stylix = lib.mkDefault true;
+        programs = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+        syncthing = lib.mkDefault true;
+        blueman = lib.mkDefault true;
+        networkDevices = lib.mkDefault true;
+        gvfs = lib.mkDefault true;
+        interceptionTools = lib.mkDefault true;
+        ppd = lib.mkDefault true;
+        yubikey = lib.mkDefault true;
+        ledger = lib.mkDefault true;
+        keyboards = lib.mkDefault true;
+        login = lib.mkDefault true;
+        nix-ld = lib.mkDefault true;
+        impermanence = lib.mkDefault true;
+        nvd = lib.mkDefault true;
+        gnome-keyring = lib.mkDefault true;
+        sway = lib.mkDefault true;
+        xdg-portal = lib.mkDefault true;
+        distrobox = lib.mkDefault true;
+        appimage = lib.mkDefault true;
+        lid = lib.mkDefault true;
+        lowBattery = lib.mkDefault true;
+        lanzaboote = lib.mkDefault true;
+      };
+
+    };
+
+  }
 
 #+end_src
 
@@ -3821,7 +3880,7 @@ This holds modules that are to be used on most hosts. These are also the most im
   let
     moduleNames = lib.swarselsystems.readNix "profiles/home";
   in
-  lib.swarselsystems.mkModules moduleNames "home"
+  lib.swarselsystems.mkProfiles moduleNames "home"
 #+end_src
 
 *** Library functions
@@ -3871,6 +3930,11 @@ TODO
         config.allowUnfree = true;
       }
     );
+
+    mkTrueOption = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
 
     getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
@@ -3978,6 +4042,13 @@ TODO
       })
       names);
 
+    mkProfiles = names: type: builtins.listToAttrs (map
+      (name: {
+        inherit name;
+        value = import "${self}/profiles/${type}/${name}";
+      })
+      names);
+
     mkTemplates = names: builtins.listToAttrs (map
       (name: {
         inherit name;
@@ -4034,11 +4105,6 @@ This section is for setting things that should be used on hosts that are using t
       "${modulesPath}/home/common/sharedsetup.nix"
     ];
 
-    nixpkgs.config.permittedInsecurePackages = [
-      "jitsi-meet-1.0.8043"
-      "electron-29.4.6"
-      "SDL_ttf-2.0.11"
-    ];
 
   }
 
@@ -4115,48 +4181,48 @@ A breakdown of the flags being set:
 #+begin_src nix :tangle modules/nixos/common/settings.nix
   { lib, config, outputs, inputs, ... }:
   {
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    nix =
-      let
-        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-      in
-      {
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-            "ca-derivations"
-            "cgroups"
-            "pipe-operators"
-          ];
-          trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
-          connect-timeout = 5;
-          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
-          fallback = true;
-          min-free = 128000000;
-          max-free = 1000000000;
-          flake-registry = "";
-          auto-optimise-store = true;
-          warn-dirty = false;
-          max-jobs = 1;
-          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselsystems.modules.general {
+      nixpkgs = {
+        overlays = [ outputs.overlays.default ];
+        config = {
+          allowUnfree = true;
         };
-        channel.enable = false;
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };
 
+      nix =
+        let
+          flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+        in
+        {
+          settings = {
+            experimental-features = [
+              "nix-command"
+              "flakes"
+              "ca-derivations"
+              "cgroups"
+              "pipe-operators"
+            ];
+            trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+            connect-timeout = 5;
+            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+            fallback = true;
+            min-free = 128000000;
+            max-free = 1000000000;
+            flake-registry = "";
+            auto-optimise-store = true;
+            warn-dirty = false;
+            max-jobs = 1;
+            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+          };
+          channel.enable = false;
+          registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+        };
 
-    system.stateVersion = lib.mkDefault "23.05";
-
+      system.stateVersion = lib.mkDefault "23.05";
+    };
   }
 #+end_src
 
@@ -4168,128 +4234,88 @@ A breakdown of the flags being set:
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
 #+begin_src nix :tangle modules/nixos/common/packages.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    environment.systemPackages = with pkgs; [
-      # yubikey packages
-      gnupg
-      yubikey-personalization
-      yubikey-personalization-gui
-      yubico-pam
-      yubioath-flutter
-      yubikey-manager
-      yubikey-manager-qt
-      yubikey-touch-detector
-      yubico-piv-tool
-      cfssl
-      pcsctools
-      pcscliteWithPolkit.out
+    options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
+    config = lib.mkIf config.swarselsystems.modules.packages {
+      environment.systemPackages = with pkgs; [
+        # yubikey packages
+        gnupg
+        yubikey-personalization
+        yubikey-personalization-gui
+        yubico-pam
+        yubioath-flutter
+        yubikey-manager
+        yubikey-manager-qt
+        yubikey-touch-detector
+        yubico-piv-tool
+        cfssl
+        pcsctools
+        pcscliteWithPolkit.out
 
-      # ledger packages
-      ledger-live-desktop
+        # ledger packages
+        ledger-live-desktop
 
-      # pinentry
-      dbus
-      swaylock-effects
-      syncthingtray-minimal
-      wl-mirror
+        # pinentry
+        dbus
+        swaylock-effects
+        syncthingtray-minimal
+        wl-mirror
 
-      # secure boot
-      sbctl
+        # secure boot
+        sbctl
 
-      libsForQt5.qt5.qtwayland
+        libsForQt5.qt5.qtwayland
 
-      # nix package database
-      nix-index
-      nixos-generators
+        # nix package database
+        nix-index
+        nixos-generators
 
-      # commit hooks
-      pre-commit
+        # commit hooks
+        pre-commit
 
-      # proc info
-      acpi
+        # proc info
+        acpi
 
-      # pci info
-      pciutils
-      usbutils
+        # pci info
+        pciutils
+        usbutils
 
-      # better make for general tasks
-      just
+        # better make for general tasks
+        just
 
-      screenshare
-      fullscreen
+        screenshare
+        fullscreen
 
-      # keyboards
-      qmk
-      vial
-      via
+        # keyboards
+        qmk
+        vial
+        via
 
-      # theme related
-      adwaita-icon-theme
+        # theme related
+        adwaita-icon-theme
 
-      # kde-connect
-      xdg-desktop-portal
-      xdg-desktop-portal-wlr
+        # kde-connect
+        xdg-desktop-portal
+        xdg-desktop-portal-wlr
 
-      # bluetooth
-      bluez
+        # bluetooth
+        bluez
+        ghostscript_headless
+        wireguard-tools
+        nixd
+        zig
+        zls
+        ansible-language-server
 
-      # lsp-related -------------------------------
-      # nix
-      # latex
-      # texlab
-      ghostscript_headless
-      # wireguard
-      wireguard-tools
-      # rust
-      # rust-analyzer
-      # clippy
-      # rustfmt
-      # go
-      # go
-      # gopls
-      # nix
-      nixd
-      # zig
-      zig
-      zls
-      # cpp
-      # clang-tools
-      # + cuda
-      # cudatoolkit
-      # ansible
-      # ansible-lint
-      ansible-language-server
-      # molecule
-      #lsp-bridge / python
-      # gcc
-      # gdb
-      # (python3.withPackages (ps: with ps; [ jupyter ipython pyqt5 epc orjson sexpdata six setuptools paramiko numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server ]))
-      # (python3.withPackages(ps: with ps; [ jupyter ipython pyqt5 numpy pandas scipy matplotlib requests debugpy flake8 gnureadline python-lsp-server]))
-      # --------------------------------------------
+      ];
 
-      # (stdenv.mkDerivation {
-      #   name = "oama";
-
-      #   src = pkgs.fetchurl {
-      #     name = "oama";
-      #     url = "https://github.com/pdobsan/oama/releases/download/0.13.1/oama-0.13.1-Linux-x86_64-static.tgz";
-      #     sha256 = "sha256-OTdCObVfnMPhgZxVtZqehgUXtKT1iyqozdkPIV+i3Gc=";
-      #   };
-
-      #   phases = [
-      #     "unpackPhase"
-      #   ];
-
-      #   unpackPhase = ''
-      #     mkdir -p $out/bin
-      #     tar xvf $src -C $out/
-      #     mv $out/oama-0.13.1-Linux-x86_64-static/oama $out/bin/
-      #   '';
-
-      # })
-
-    ];
+      nixpkgs.config.permittedInsecurePackages = [
+        "jitsi-meet-1.0.8043"
+        "electron-29.4.6"
+        "SDL_ttf-2.0.11"
+      ];
+    };
   }
 #+end_src
 
@@ -4303,10 +4329,14 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
 #+begin_src nix :tangle modules/nixos/common/home-manager.nix
   { inputs, config, lib, ... }:
   {
-    home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-      useGlobalPkgs = true;
-      useUserPackages = true;
-      extraSpecialArgs = { inherit (inputs) self; };
+
+    options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
+    config = lib.mkIf config.swarselsystems.modules.home-manager {
+      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        extraSpecialArgs = { inherit (inputs) self; };
+      };
     };
   }
 #+end_src
@@ -4321,8 +4351,11 @@ This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on th
 #+begin_src nix :tangle modules/nixos/common/home-manager-extra.nix
   { inputs, config, lib, ... }:
   {
-    home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-      extraSpecialArgs = { inherit (inputs) nix-secrets nixgl; };
+    options.swarselsystems.modules.home-managerExtra = lib.mkEnableOption "home-manager extras for non-chaostheatre";
+    config = lib.mkIf config.swarselsystems.modules.home-managerExtra {
+      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+        extraSpecialArgs = { inherit (inputs) nix-secrets nixgl; };
+      };
     };
   }
 #+end_src
@@ -4335,12 +4368,15 @@ This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on th
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
 
 #+begin_src nix :tangle modules/nixos/common/xserver.nix
-  _:
+  { lib, config, ... }:
   {
-    services.xserver = {
-      xkb = {
-        layout = "us";
-        variant = "altgr-intl";
+    options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
+    config = lib.mkIf config.swarselsystems.modules.packages {
+      services.xserver = {
+        xkb = {
+          layout = "us";
+          variant = "altgr-intl";
+        };
       };
     };
   }
@@ -4359,17 +4395,20 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 #+begin_src nix :tangle modules/nixos/common/users.nix
   { pkgs, config, lib, ... }:
   {
-    sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
+    options.swarselsystems.modules.users = lib.mkEnableOption "user config";
+    config = lib.mkIf config.swarselsystems.modules.users {
+      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
-    users = {
-      mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
-      users."${config.swarselsystems.mainUser}" = {
-        isNormalUser = true;
-        description = "Leon S";
-        password = lib.mkIf config.swarselsystems.initialSetup "setup";
-        hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-        extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
-        packages = with pkgs; [ ];
+      users = {
+        mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
+        users."${config.swarselsystems.mainUser}" = {
+          isNormalUser = true;
+          description = "Leon S";
+          password = lib.mkIf config.swarselsystems.initialSetup "setup";
+          hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
+          extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+          packages = with pkgs; [ ];
+        };
       };
     };
   }
@@ -4383,21 +4422,23 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 
 #+begin_src nix :tangle modules/nixos/common/env.nix
-  { lib, pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    environment = {
-      wordlist.enable = true;
-      sessionVariables = {
-        NIXOS_OZONE_WL = "1";
-        GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
-          gst-plugins-good
-          gst-plugins-bad
-          gst-plugins-ugly
-          gst-libav
-        ]);
+    options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
+    config = lib.mkIf config.swarselsystems.modules.env {
+      environment = {
+        wordlist.enable = true;
+        sessionVariables = {
+          NIXOS_OZONE_WL = "1";
+          GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
+            gst-plugins-good
+            gst-plugins-bad
+            gst-plugins-ugly
+            gst-libav
+          ]);
+        };
       };
     };
-    # gstreamer plugins for nautilus (used for file metadata)
   }
 #+end_src
 
@@ -4409,25 +4450,27 @@ Next, we will setup some environment variables that need to be set on the system
 Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
 
 #+begin_src nix :tangle modules/nixos/common/polkit.nix
-  _:
+  { lib, config, ... }:
   {
+    options.swarselsystems.modules.security = lib.mkEnableOption "security config";
+    config = lib.mkIf config.swarselsystems.modules.security {
 
-    security = {
-      pam.services = {
-        login.u2fAuth = true;
-        sudo.u2fAuth = true;
-        swaylock.u2fAuth = true;
-        swaylock.fprintAuth = false;
+      security = {
+        pam.services = {
+          login.u2fAuth = true;
+          sudo.u2fAuth = true;
+          swaylock.u2fAuth = true;
+          swaylock.fprintAuth = false;
+        };
+        polkit.enable = true;
+
+        sudo.extraConfig = ''
+          Defaults    env_keep+=SSH_AUTH_SOCK
+          Defaults    env_keep+=XDG_RUNTIME_DIR
+          Defaults    env_keep+=WAYLAND_DISPLAY
+        '';
       };
-      polkit.enable = true;
-
-      sudo.extraConfig = ''
-        Defaults    env_keep+=SSH_AUTH_SOCK
-        Defaults    env_keep+=XDG_RUNTIME_DIR
-        Defaults    env_keep+=WAYLAND_DISPLAY
-      '';
     };
-
   }
 #+end_src
 
@@ -4439,13 +4482,16 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
 
 #+begin_src nix :tangle modules/nixos/common/gc.nix
-  _:
+  { lib, config, ... }:
   {
-    nix.gc = {
-      automatic = true;
-      randomizedDelaySec = "14m";
-      dates = "weekly";
-      options = "--delete-older-than 10d";
+    options.swarselsystems.modules.gc = lib.mkEnableOption "garbage collection config";
+    config = lib.mkIf config.swarselsystems.modules.gc {
+      nix.gc = {
+        automatic = true;
+        randomizedDelaySec = "14m";
+        dates = "weekly";
+        options = "--delete-older-than 10d";
+      };
     };
   }
 #+end_src
@@ -4458,11 +4504,14 @@ The nix store fills up over time, until =/boot/efi= is filled. This snippet clea
 This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
 
 #+begin_src nix :tangle modules/nixos/common/store.nix
-  _:
+  { lib, config, ... }:
   {
-    nix.optimise = {
-      automatic = true;
-      dates = [ "weekly" ];
+    options.swarselsystems.modules.storeOptimize = lib.mkEnableOption "store optimization config";
+    config = lib.mkIf config.swarselsystems.modules.storeOptimize {
+      nix.optimise = {
+        automatic = true;
+        dates = [ "weekly" ];
+      };
     };
   }
 
@@ -4476,13 +4525,16 @@ This enables hardlinking identical files in the nix store, to save on disk space
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
 #+begin_src nix :tangle modules/nixos/common/systemd.nix
-  _:
+  { lib, config, ... }:
   {
-    # systemd
-    systemd.extraConfig = ''
-      DefaultTimeoutStartSec=60s
-      DefaultTimeoutStopSec=15s
-    '';
+    options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
+    config = lib.mkIf config.swarselsystems.modules.systemdTimeout {
+      # systemd
+      systemd.extraConfig = ''
+        DefaultTimeoutStartSec=60s
+        DefaultTimeoutStopSec=15s
+      '';
+    };
   }
 #+end_src
 
@@ -4498,6 +4550,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   {
 
     options.swarselsystems = {
+      modules.hardware = lib.mkEnableOption "hardware config";
       hasBluetooth = lib.mkEnableOption "bluetooth availability";
       hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
       trackpoint = {
@@ -4508,7 +4561,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
         };
       };
     };
-    config = {
+    config = lib.mkIf config.swarselsystems.modules.hardware {
       hardware = {
         # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
         graphics = {
@@ -4554,9 +4607,12 @@ This is only used on systems not running Pipewire.
 #+begin_src nix :tangle modules/nixos/common/pulseaudio.nix
   { config, pkgs, lib, ... }: {
 
-    services.pulseaudio = {
-      enable = lib.mkIf (!config.services.pipewire.enable) true;
-      package = pkgs.pulseaudioFull;
+    options.swarselsystems.modules.pulseaudio = lib.mkEnableOption "pulseaudio config";
+    config = lib.mkIf config.swarselsystems.modules.pulseaudio {
+      services.pulseaudio = {
+        enable = lib.mkIf (!config.services.pipewire.enable) true;
+        package = pkgs.pulseaudioFull;
+      };
     };
 
   }
@@ -4569,18 +4625,22 @@ This is only used on systems not running Pipewire.
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
 
 #+begin_src nix :tangle modules/nixos/common/pipewire.nix
-  _: {
-    security.rtkit.enable = true; # this is required for pipewire real-time access
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
+    config = lib.mkIf config.swarselsystems.modules.pipewire {
+      security.rtkit.enable = true; # this is required for pipewire real-time access
 
-    services.pipewire = {
-      enable = true;
-      pulse.enable = true;
-      jack.enable = true;
-      audio.enable = true;
-      wireplumber.enable = true;
-      alsa = {
+      services.pipewire = {
         enable = true;
-        support32Bit = true;
+        pulse.enable = true;
+        jack.enable = true;
+        audio.enable = true;
+        wireplumber.enable = true;
+        alsa = {
+          enable = true;
+          support32Bit = true;
+        };
       };
     };
   }
@@ -4595,248 +4655,251 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 #+begin_src nix :tangle modules/nixos/common/network.nix
   { lib, config, ... }:
   {
-    networking = {
-      nftables.enable = lib.mkDefault true;
-      enableIPv6 = lib.mkDefault true;
-      firewall = {
-        checkReversePath = lib.mkDefault false;
-        enable = lib.mkDefault true;
-        allowedUDPPorts = [ 51820 ]; # 51820: wireguard
-        allowedTCPPortRanges = [
-          { from = 1714; to = 1764; } # kde-connect
-        ];
-        allowedUDPPortRanges = [
-          { from = 1714; to = 1764; } # kde-connect
-        ];
-      };
-
-      networkmanager = {
-        enable = true;
-        ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
-          environmentFiles = [
-            "${config.sops.templates."network-manager.env".path}"
+    options.swarselsystems.modules.network = lib.mkEnableOption "network config";
+    config = lib.mkIf config.swarselsystems.modules.network {
+      networking = {
+        nftables.enable = lib.mkDefault true;
+        enableIPv6 = lib.mkDefault true;
+        firewall = {
+          checkReversePath = lib.mkDefault false;
+          enable = lib.mkDefault true;
+          allowedUDPPorts = [ 51820 ]; # 51820: wireguard
+          allowedTCPPortRanges = [
+            { from = 1714; to = 1764; } # kde-connect
           ];
-          profiles = {
-            "Ernest Routerford" = {
-              connection = {
-                id = "Ernest Routerford";
-                permissions = "";
-                type = "wifi";
-              };
-              ipv4 = {
-                dns-search = "";
-                method = "auto";
-              };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                dns-search = "";
-                method = "auto";
-              };
-              wifi = {
-                mac-address-blacklist = "";
-                mode = "infrastructure";
-                ssid = "Ernest Routerford";
-              };
-              wifi-security = {
-                auth-alg = "open";
-                key-mgmt = "wpa-psk";
-                psk = "$ERNEST";
-              };
-            };
+          allowedUDPPortRanges = [
+            { from = 1714; to = 1764; } # kde-connect
+          ];
+        };
 
-            LAN-Party = {
-              connection = {
-                autoconnect = "false";
-                id = "LAN-Party";
-                type = "ethernet";
+        networkmanager = {
+          enable = true;
+          ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
+            environmentFiles = [
+              "${config.sops.templates."network-manager.env".path}"
+            ];
+            profiles = {
+              "Ernest Routerford" = {
+                connection = {
+                  id = "Ernest Routerford";
+                  permissions = "";
+                  type = "wifi";
+                };
+                ipv4 = {
+                  dns-search = "";
+                  method = "auto";
+                };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  dns-search = "";
+                  method = "auto";
+                };
+                wifi = {
+                  mac-address-blacklist = "";
+                  mode = "infrastructure";
+                  ssid = "Ernest Routerford";
+                };
+                wifi-security = {
+                  auth-alg = "open";
+                  key-mgmt = "wpa-psk";
+                  psk = "$ERNEST";
+                };
               };
-              ethernet = {
-                auto-negotiate = "true";
-                cloned-mac-address = "preserve";
-                mac-address = "90:2E:16:D0:A1:87";
-              };
-              ipv4 = { method = "shared"; };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                method = "auto";
-              };
-              proxy = { };
-            };
 
-            eduroam = {
-              "802-1x" = {
-                eap = "ttls;";
-                identity = "$EDUID";
-                password = "$EDUPASS";
-                phase2-auth = "mschapv2";
+              LAN-Party = {
+                connection = {
+                  autoconnect = "false";
+                  id = "LAN-Party";
+                  type = "ethernet";
+                };
+                ethernet = {
+                  auto-negotiate = "true";
+                  cloned-mac-address = "preserve";
+                  mac-address = "90:2E:16:D0:A1:87";
+                };
+                ipv4 = { method = "shared"; };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  method = "auto";
+                };
+                proxy = { };
               };
-              connection = {
-                id = "eduroam";
-                type = "wifi";
-              };
-              ipv4 = { method = "auto"; };
-              ipv6 = {
-                addr-gen-mode = "default";
-                method = "auto";
-              };
-              proxy = { };
-              wifi = {
-                mode = "infrastructure";
-                ssid = "eduroam";
-              };
-              wifi-security = {
-                auth-alg = "open";
-                key-mgmt = "wpa-eap";
-              };
-            };
 
-            local = {
-              connection = {
-                autoconnect = "false";
-                id = "local";
-                type = "ethernet";
+              eduroam = {
+                "802-1x" = {
+                  eap = "ttls;";
+                  identity = "$EDUID";
+                  password = "$EDUPASS";
+                  phase2-auth = "mschapv2";
+                };
+                connection = {
+                  id = "eduroam";
+                  type = "wifi";
+                };
+                ipv4 = { method = "auto"; };
+                ipv6 = {
+                  addr-gen-mode = "default";
+                  method = "auto";
+                };
+                proxy = { };
+                wifi = {
+                  mode = "infrastructure";
+                  ssid = "eduroam";
+                };
+                wifi-security = {
+                  auth-alg = "open";
+                  key-mgmt = "wpa-eap";
+                };
               };
-              ethernet = { };
-              ipv4 = {
-                address1 = "10.42.1.1/24";
-                method = "shared";
-              };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                method = "auto";
-              };
-              proxy = { };
-            };
 
-            HH40V_39F5 = {
-              connection = {
-                id = "HH40V_39F5";
-                type = "wifi";
+              local = {
+                connection = {
+                  autoconnect = "false";
+                  id = "local";
+                  type = "ethernet";
+                };
+                ethernet = { };
+                ipv4 = {
+                  address1 = "10.42.1.1/24";
+                  method = "shared";
+                };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  method = "auto";
+                };
+                proxy = { };
               };
-              ipv4 = { method = "auto"; };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                method = "auto";
-              };
-              proxy = { };
-              wifi = {
-                band = "bg";
-                mode = "infrastructure";
-                ssid = "HH40V_39F5";
-              };
-              wifi-security = {
-                key-mgmt = "wpa-psk";
-                psk = "$FRAUNS";
-              };
-            };
 
-            magicant = {
-              connection = {
-                id = "magicant";
-                type = "wifi";
+              HH40V_39F5 = {
+                connection = {
+                  id = "HH40V_39F5";
+                  type = "wifi";
+                };
+                ipv4 = { method = "auto"; };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  method = "auto";
+                };
+                proxy = { };
+                wifi = {
+                  band = "bg";
+                  mode = "infrastructure";
+                  ssid = "HH40V_39F5";
+                };
+                wifi-security = {
+                  key-mgmt = "wpa-psk";
+                  psk = "$FRAUNS";
+                };
               };
-              ipv4 = { method = "auto"; };
-              ipv6 = {
-                addr-gen-mode = "default";
-                method = "auto";
-              };
-              proxy = { };
-              wifi = {
-                mode = "infrastructure";
-                ssid = "magicant";
-              };
-              wifi-security = {
-                auth-alg = "open";
-                key-mgmt = "wpa-psk";
-                psk = "$HANDYHOTSPOT";
-              };
-            };
 
-            wireguardvpn = {
-              connection = {
-                id = "HomeVPN";
-                type = "wireguard";
-                autoconnect = "false";
-                interface-name = "wg1";
+              magicant = {
+                connection = {
+                  id = "magicant";
+                  type = "wifi";
+                };
+                ipv4 = { method = "auto"; };
+                ipv6 = {
+                  addr-gen-mode = "default";
+                  method = "auto";
+                };
+                proxy = { };
+                wifi = {
+                  mode = "infrastructure";
+                  ssid = "magicant";
+                };
+                wifi-security = {
+                  auth-alg = "open";
+                  key-mgmt = "wpa-psk";
+                  psk = "$HANDYHOTSPOT";
+                };
               };
-              wireguard = { private-key = "$WIREGUARDPRIV"; };
-              "wireguard-peer.$WIREGUARDPUB" = {
-                endpoint = "$WIREGUARDENDPOINT";
-                allowed-ips = "0.0.0.0/0";
-              };
-              ipv4 = {
-                method = "ignore";
-                address1 = "192.168.3.3/32";
-              };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                method = "ignore";
-              };
-              proxy = { };
-            };
 
-            "sweden-aes-128-cbc-udp-dns" = {
-              connection = {
-                autoconnect = "false";
-                id = "PIA Sweden";
-                type = "vpn";
+              wireguardvpn = {
+                connection = {
+                  id = "HomeVPN";
+                  type = "wireguard";
+                  autoconnect = "false";
+                  interface-name = "wg1";
+                };
+                wireguard = { private-key = "$WIREGUARDPRIV"; };
+                "wireguard-peer.$WIREGUARDPUB" = {
+                  endpoint = "$WIREGUARDENDPOINT";
+                  allowed-ips = "0.0.0.0/0";
+                };
+                ipv4 = {
+                  method = "ignore";
+                  address1 = "192.168.3.3/32";
+                };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  method = "ignore";
+                };
+                proxy = { };
               };
-              ipv4 = { method = "auto"; };
-              ipv6 = {
-                addr-gen-mode = "stable-privacy";
-                method = "auto";
-              };
-              proxy = { };
-              vpn = {
-                auth = "sha1";
-                ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
-                challenge-response-flags = "2";
-                cipher = "aes-128-cbc";
-                compress = "yes";
-                connection-type = "password";
-                crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
-                dev = "tun";
-                password-flags = "0";
-                remote = "sweden.privacy.network:1198";
-                remote-cert-tls = "server";
-                reneg-seconds = "0";
-                service-type = "org.freedesktop.NetworkManager.openvpn";
-                username = "$VPNUSER";
-              };
-              vpn-secrets = { password = "$VPNPASS"; };
-            };
 
-            Hotspot = {
-              connection = {
-                autoconnect = "false";
-                id = "Hotspot";
-                type = "wifi";
+              "sweden-aes-128-cbc-udp-dns" = {
+                connection = {
+                  autoconnect = "false";
+                  id = "PIA Sweden";
+                  type = "vpn";
+                };
+                ipv4 = { method = "auto"; };
+                ipv6 = {
+                  addr-gen-mode = "stable-privacy";
+                  method = "auto";
+                };
+                proxy = { };
+                vpn = {
+                  auth = "sha1";
+                  ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
+                  challenge-response-flags = "2";
+                  cipher = "aes-128-cbc";
+                  compress = "yes";
+                  connection-type = "password";
+                  crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
+                  dev = "tun";
+                  password-flags = "0";
+                  remote = "sweden.privacy.network:1198";
+                  remote-cert-tls = "server";
+                  reneg-seconds = "0";
+                  service-type = "org.freedesktop.NetworkManager.openvpn";
+                  username = "$VPNUSER";
+                };
+                vpn-secrets = { password = "$VPNPASS"; };
               };
-              ipv4 = { method = "shared"; };
-              ipv6 = {
-                addr-gen-mode = "default";
-                method = "ignore";
-              };
-              proxy = { };
-              wifi = {
-                mode = "ap";
-                ssid = "Hotspot-${config.swarselsystems.mainUser}";
-              };
-              wifi-security = {
-                group = "ccmp;";
-                key-mgmt = "wpa-psk";
-                pairwise = "ccmp;";
-                proto = "rsn;";
-                psk = "$HOTSPOT";
-              };
-            };
 
+              Hotspot = {
+                connection = {
+                  autoconnect = "false";
+                  id = "Hotspot";
+                  type = "wifi";
+                };
+                ipv4 = { method = "shared"; };
+                ipv6 = {
+                  addr-gen-mode = "default";
+                  method = "ignore";
+                };
+                proxy = { };
+                wifi = {
+                  mode = "ap";
+                  ssid = "Hotspot-${config.swarselsystems.mainUser}";
+                };
+                wifi-security = {
+                  group = "ccmp;";
+                  key-mgmt = "wpa-psk";
+                  pairwise = "ccmp;";
+                  proto = "rsn;";
+                  psk = "$HOTSPOT";
+                };
+              };
+
+            };
           };
         };
       };
-    };
 
-    systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
+      systemd.services.NetworkManager-ensure-profiles.after = [ "NetworkManager.service" ];
+    };
   }
 #+end_src
 
@@ -4848,25 +4911,28 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 
 #+begin_src nix :tangle modules/nixos/common/time.nix
-  _:
+  { lib, config, ... }:
   {
-    time = {
-      timeZone = "Europe/Vienna";
-      # hardwareClockInLocalTime = true;
-    };
+    options.swarselsystems.modules.time = lib.mkEnableOption "time config";
+    config = lib.mkIf config.swarselsystems.modules.time {
+      time = {
+        timeZone = "Europe/Vienna";
+        # hardwareClockInLocalTime = true;
+      };
 
-    i18n = {
-      defaultLocale = "en_US.UTF-8";
-      extraLocaleSettings = {
-        LC_ADDRESS = "de_AT.UTF-8";
-        LC_IDENTIFICATION = "de_AT.UTF-8";
-        LC_MEASUREMENT = "de_AT.UTF-8";
-        LC_MONETARY = "de_AT.UTF-8";
-        LC_NAME = "de_AT.UTF-8";
-        LC_NUMERIC = "de_AT.UTF-8";
-        LC_PAPER = "de_AT.UTF-8";
-        LC_TELEPHONE = "de_AT.UTF-8";
-        LC_TIME = "de_AT.UTF-8";
+      i18n = {
+        defaultLocale = "en_US.UTF-8";
+        extraLocaleSettings = {
+          LC_ADDRESS = "de_AT.UTF-8";
+          LC_IDENTIFICATION = "de_AT.UTF-8";
+          LC_MEASUREMENT = "de_AT.UTF-8";
+          LC_MONETARY = "de_AT.UTF-8";
+          LC_NAME = "de_AT.UTF-8";
+          LC_NUMERIC = "de_AT.UTF-8";
+          LC_PAPER = "de_AT.UTF-8";
+          LC_TELEPHONE = "de_AT.UTF-8";
+          LC_TIME = "de_AT.UTF-8";
+        };
       };
     };
   }
@@ -4891,48 +4957,51 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     inherit (config.swarselsystems) mainUser homeDir;
   in
   {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    options.swarselsystems.modules.commonSops = lib.mkEnableOption "sops config";
+    config = lib.mkIf config.swarselsystems.modules.commonSops {
+      sops = lib.mkIf (!config.swarselsystems.isPublic) {
 
-      age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+        age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+        defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
-      validateSopsFiles = false;
+        validateSopsFiles = false;
 
-      secrets = {
-        ernest = { };
-        frauns = { };
-        hotspot = { };
-        eduid = { };
-        edupass = { };
-        handyhotspot = { };
-        vpnuser = { };
-        vpnpass = { };
-        wireguardpriv = { };
-        wireguardpub = { };
-        wireguardendpoint = { };
-        stashuser = { };
-        stashpass = { };
-        githubforgeuser = { };
-        githubforgepass = { };
-        gitlabforgeuser = { };
-        gitlabforgepass = { };
-        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-      };
-      templates = {
-        "network-manager.env".content = ''
-          ERNEST=${config.sops.placeholder.ernest}
-          FRAUNS=${config.sops.placeholder.frauns}
-          HOTSPOT=${config.sops.placeholder.hotspot}
-          EDUID=${config.sops.placeholder.eduid}
-          EDUPASS=${config.sops.placeholder.edupass}
-          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-          VPNUSER=${config.sops.placeholder.vpnuser}
-          VPNPASS=${config.sops.placeholder.vpnpass}
-          WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
-          WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
-          WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
-        '';
+        secrets = {
+          ernest = { };
+          frauns = { };
+          hotspot = { };
+          eduid = { };
+          edupass = { };
+          handyhotspot = { };
+          vpnuser = { };
+          vpnpass = { };
+          wireguardpriv = { };
+          wireguardpub = { };
+          wireguardendpoint = { };
+          stashuser = { };
+          stashpass = { };
+          githubforgeuser = { };
+          githubforgepass = { };
+          gitlabforgeuser = { };
+          gitlabforgepass = { };
+          "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+          "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+        };
+        templates = {
+          "network-manager.env".content = ''
+            ERNEST=${config.sops.placeholder.ernest}
+            FRAUNS=${config.sops.placeholder.frauns}
+            HOTSPOT=${config.sops.placeholder.hotspot}
+            EDUID=${config.sops.placeholder.eduid}
+            EDUPASS=${config.sops.placeholder.edupass}
+            HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+            VPNUSER=${config.sops.placeholder.vpnuser}
+            VPNPASS=${config.sops.placeholder.vpnpass}
+            WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
+            WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
+            WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
+          '';
+        };
       };
     };
   }
@@ -4949,15 +5018,18 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 #+begin_src nix :noweb yes :tangle modules/nixos/common/stylix.nix
   { lib, config, ... }:
   {
-    stylix = lib.recursiveUpdate
-      {
-        targets.grub.enable = false; # the styling makes grub more ugly
-        image = config.swarselsystems.wallpaper;
-      }
-      config.swarselsystems.stylix;
-    home-manager.users."${config.swarselsystems.mainUser}" = {
-      stylix = {
-        targets = config.swarselsystems.stylixHomeTargets;
+    options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
+    config = lib.mkIf config.swarselsystems.modules.stylix {
+      stylix = lib.recursiveUpdate
+        {
+          targets.grub.enable = false; # the styling makes grub more ugly
+          image = config.swarselsystems.wallpaper;
+        }
+        config.swarselsystems.stylix;
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        stylix = {
+          targets = config.swarselsystems.stylixHomeTargets;
+        };
       };
     };
   }
@@ -4971,12 +5043,15 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 
 #+begin_src nix :tangle modules/nixos/common/programs.nix
-  _:
+  { lib, config, ... }:
   {
-    programs = {
-      dconf.enable = true;
-      evince.enable = true;
-      kdeconnect.enable = true;
+    options.swarselsystems.modules.programs = lib.mkEnableOption "small program modules config";
+    config = lib.mkIf config.swarselsystems.modules.programs {
+      programs = {
+        dconf.enable = true;
+        evince.enable = true;
+        kdeconnect.enable = true;
+      };
     };
   }
 #+end_src
@@ -4988,12 +5063,15 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 Do not touch this.
 
 #+begin_src nix :tangle modules/nixos/common/zsh.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    programs.zsh.enable = true;
-    users.defaultUserShell = pkgs.zsh;
-    environment.shells = with pkgs; [ zsh ];
-    environment.pathsToLink = [ "/share/zsh" ];
+    options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
+    config = lib.mkIf config.swarselsystems.modules.zsh {
+      programs.zsh.enable = true;
+      users.defaultUserShell = pkgs.zsh;
+      environment.shells = with pkgs; [ zsh ];
+      environment.pathsToLink = [ "/share/zsh" ];
+    };
   }
 #+end_src
 ***** syncthing
@@ -5007,49 +5085,52 @@ Do not touch this.
     inherit (config.swarselsystems) mainUser homeDir;
   in
   {
-    services.syncthing = {
-      enable = true;
-      user = mainUser;
-      dataDir = homeDir;
-      configDir = "${homeDir}/.config/syncthing";
-      openDefaultPorts = true;
-      settings = {
-        devices = {
-          "magicant" = {
-            id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+    options.swarselsystems.modules.syncthing = lib.mkEnableOption "syncthing config";
+    config = lib.mkIf config.swarselsystems.modules.syncthing {
+      services.syncthing = {
+        enable = true;
+        user = mainUser;
+        dataDir = homeDir;
+        configDir = "${homeDir}/.config/syncthing";
+        openDefaultPorts = true;
+        settings = {
+          devices = {
+            "magicant" = {
+              id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+            };
+            "sync (@oracle)" = {
+              id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
+            };
+            "winters" = {
+              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+            };
           };
-          "sync (@oracle)" = {
-            id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
-          };
-          "winters" = {
-            id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-          };
-        };
-        folders = {
-          "Default Folder" = lib.mkDefault {
-            path = "${homeDir}/Sync";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
-            id = "default";
-          };
-          "Obsidian" = {
-            path = "${homeDir}/Nextcloud/Obsidian";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
-            id = "yjvni-9eaa7";
-          };
-          "Org" = {
-            path = "${homeDir}/Nextcloud/Org";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
-            id = "a7xnl-zjj3d";
-          };
-          "Vpn" = {
-            path = "${homeDir}/Vpn";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
-            id = "hgp9s-fyq3p";
-          };
-          ".elfeed" = {
-            path = "${homeDir}/.elfeed";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
-            id = "h7xbs-fs9v1";
+          folders = {
+            "Default Folder" = lib.mkDefault {
+              path = "${homeDir}/Sync";
+              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              id = "default";
+            };
+            "Obsidian" = {
+              path = "${homeDir}/Nextcloud/Obsidian";
+              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              id = "yjvni-9eaa7";
+            };
+            "Org" = {
+              path = "${homeDir}/Nextcloud/Org";
+              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              id = "a7xnl-zjj3d";
+            };
+            "Vpn" = {
+              path = "${homeDir}/Vpn";
+              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              id = "hgp9s-fyq3p";
+            };
+            ".elfeed" = {
+              path = "${homeDir}/.elfeed";
+              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              id = "h7xbs-fs9v1";
+            };
           };
         };
       };
@@ -5072,10 +5153,13 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 Enables the blueman service including the nice system tray icon.
 
 #+begin_src nix :tangle modules/nixos/common/blueman.nix
-  _:
+  { lib, config, ... }:
   {
-    services.blueman.enable = true;
-    services.hardware.bolt.enable = true;
+    options.swarselsystems.modules.blueman = lib.mkEnableOption "blueman config";
+    config = lib.mkIf config.swarselsystems.modules.blueman {
+      services.blueman.enable = true;
+      services.hardware.bolt.enable = true;
+    };
   }
 #+end_src
 
@@ -5091,34 +5175,37 @@ This also allows me to use my big scanner/printer's printing function over the n
 Avahi is the service used for the network discovery.
 
 #+begin_src nix :tangle modules/nixos/common/networkdevices.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    # enable scanners over network
-    hardware.sane = {
-      enable = true;
-      extraBackends = [ pkgs.sane-airscan ];
-    };
+    options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
+    config = lib.mkIf config.swarselsystems.modules.networkDevices {
+      # enable scanners over network
+      hardware.sane = {
+        enable = true;
+        extraBackends = [ pkgs.sane-airscan ];
+      };
 
-    # enable discovery and usage of network devices (esp. printers)
-    services.printing = {
-      enable = true;
-      drivers = [
-        pkgs.gutenprint
-        pkgs.gutenprintBin
-      ];
-      browsedConf = ''
-        BrowseDNSSDSubTypes _cups,_print
-        BrowseLocalProtocols all
-        BrowseRemoteProtocols all
-        CreateIPPPrinterQueues All
-        BrowseProtocols all
-      '';
-    };
+      # enable discovery and usage of network devices (esp. printers)
+      services.printing = {
+        enable = true;
+        drivers = [
+          pkgs.gutenprint
+          pkgs.gutenprintBin
+        ];
+        browsedConf = ''
+          BrowseDNSSDSubTypes _cups,_print
+          BrowseLocalProtocols all
+          BrowseRemoteProtocols all
+          CreateIPPPrinterQueues All
+          BrowseProtocols all
+        '';
+      };
 
-    services.avahi = {
-      enable = true;
-      nssmdns4 = true;
-      openFirewall = true;
+      services.avahi = {
+        enable = true;
+        nssmdns4 = true;
+        openFirewall = true;
+      };
     };
   }
 #+end_src
@@ -5131,9 +5218,12 @@ Avahi is the service used for the network discovery.
 This is being set to allow myself to use all functions of nautilus in NixOS
 
 #+begin_src nix :tangle modules/nixos/common/gvfs.nix
-  _:
+  { lib, config, ... }:
   {
-    services.gvfs.enable = true;
+    options.swarselsystems.modules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
+    config = lib.mkIf config.swarselsystems.modules.gvfs {
+      services.gvfs.enable = true;
+    };
   }
 #+end_src
 
@@ -5145,33 +5235,36 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held.
 
 #+begin_src nix :tangle modules/nixos/common/interceptiontools.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    # Make CAPS work as a dual function ESC/CTRL key
-    services.interception-tools = {
-      enable = true;
-      udevmonConfig =
-        let
-          dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
-            TIMING:
-              TAP_MILLISEC: 200
-              DOUBLE_TAP_MILLISEC: 0
+    options.swarselsystems.modules.interceptionTools = lib.mkEnableOption "interception tools config";
+    config = lib.mkIf config.swarselsystems.modules.interceptionTools {
+      # Make CAPS work as a dual function ESC/CTRL key
+      services.interception-tools = {
+        enable = true;
+        udevmonConfig =
+          let
+            dualFunctionKeysConfig = builtins.toFile "dual-function-keys.yaml" ''
+              TIMING:
+                TAP_MILLISEC: 200
+                DOUBLE_TAP_MILLISEC: 0
 
-            MAPPINGS:
-              - KEY: KEY_CAPSLOCK
-                TAP: KEY_ESC
-                HOLD: KEY_LEFTCTRL
+              MAPPINGS:
+                - KEY: KEY_CAPSLOCK
+                  TAP: KEY_ESC
+                  HOLD: KEY_LEFTCTRL
+            '';
+          in
+          ''
+            - JOB: |
+                ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
+                  | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
+                  | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
+              DEVICE:
+                EVENTS:
+                  EV_KEY: [KEY_CAPSLOCK]
           '';
-        in
-        ''
-          - JOB: |
-              ${pkgs.interception-tools}/bin/intercept -g $DEVNODE \
-                | ${pkgs.interception-tools-plugins.dual-function-keys}/bin/dual-function-keys -c ${dualFunctionKeysConfig} \
-                | ${pkgs.interception-tools}/bin/uinput -d $DEVNODE
-            DEVICE:
-              EVENTS:
-                EV_KEY: [KEY_CAPSLOCK]
-        '';
+      };
     };
   }
 #+end_src
@@ -5190,9 +5283,12 @@ This enables power profile management. The available modes are:
 Most of the time I am using =power-saver=, however, it is good to be able to choose.
 
 #+begin_src nix :tangle modules/nixos/common/power-profiles-daemon.nix
-  _:
+  { lib, config, ... }:
   {
-    services.power-profiles-daemon.enable = true;
+    options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
+    config = lib.mkIf config.swarselsystems.modules.ppd {
+      services.power-profiles-daemon.enable = true;
+    };
   }
 #+end_src
 
@@ -5214,26 +5310,21 @@ Many guides state that it is needed to enable =pcscd=  to use the smartcard mode
 Also, since I use a GPG key in sops, it seems that scdaemon creates an instance at boot which sometimes hogs the Yubikey, which leads to significant delays after e.g. locking the screen and unplugging the Yubikey. Since I do not need the GPG key for the actual sops secrets (I use machine age keys instead), I kill that process.
 
 #+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-yubikey.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    programs.ssh.startAgent = false;
+    options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
+    config = lib.mkIf config.swarselsystems.modules.yubikey {
+      programs.ssh.startAgent = false;
 
-    services.pcscd.enable = false;
+      services.pcscd.enable = false;
 
-    hardware.gpgSmartcards.enable = true;
+      hardware.gpgSmartcards.enable = true;
 
-    services.udev.packages = with pkgs; [
-      yubikey-personalization
-    ];
+      services.udev.packages = with pkgs; [
+        yubikey-personalization
+      ];
 
-    # systemd.services.shutdownSopsGpg = {
-    #   path = [ pkgs.gnupg ];
-    #   script = ''
-    #     gpgconf --homedir /var/lib/sops --kill gpg-agent
-    #   '';
-    #   wantedBy = [ "multi-user.target" ];
-    # };
-
+    };
   }
 #+end_src
 
@@ -5245,13 +5336,16 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
 This performs the necessary configuration to support this hardware.
 
 #+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-ledger.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    hardware.ledger.enable = true;
+    options.swarselsystems.modules.ledger = lib.mkEnableOption "ledger config";
+    config = lib.mkIf config.swarselsystems.modules.ledger {
+      hardware.ledger.enable = true;
 
-    services.udev.packages = with pkgs; [
-      ledger-udev-rules
-    ];
+      services.udev.packages = with pkgs; [
+        ledger-udev-rules
+      ];
+    };
 
   }
 #+end_src
@@ -5264,13 +5358,16 @@ This performs the necessary configuration to support this hardware.
 This loads some udev rules that I need for my split keyboards.
 
 #+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-keyboards.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    services.udev.packages = with pkgs; [
-      qmk-udev-rules
-      vial
-      via
-    ];
+    options.swarselsystems.modules.keyboards = lib.mkEnableOption "keyboards config";
+    config = lib.mkIf config.swarselsystems.modules.keyboards {
+      services.udev.packages = with pkgs; [
+        qmk-udev-rules
+        vial
+        via
+      ];
+    };
   }
 #+end_src
 
@@ -5282,25 +5379,28 @@ This loads some udev rules that I need for my split keyboards.
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
 
 #+begin_src nix :tangle modules/nixos/common/login.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    services.greetd = {
-      enable = true;
-      settings = {
-        initial_session.command = "sway";
-        default_session.command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet \
-            --time \
-            --asterisks \
-            --user-menu \
-            --cmd sway
-        '';
+    options.swarselsystems.modules.login = lib.mkEnableOption "login config";
+    config = lib.mkIf config.swarselsystems.modules.login {
+      services.greetd = {
+        enable = true;
+        settings = {
+          initial_session.command = "sway";
+          default_session.command = ''
+            ${pkgs.greetd.tuigreet}/bin/tuigreet \
+              --time \
+              --asterisks \
+              --user-menu \
+              --cmd sway
+          '';
+        };
       };
-    };
 
-    environment.etc."greetd/environments".text = ''
-      sway
-    '';
+      environment.etc."greetd/environments".text = ''
+        sway
+      '';
+    };
   }
 #+end_src
 
@@ -5316,114 +5416,117 @@ Only some binaries that touch system settings might still not work, apart from t
 When a program does not work, start with =nix-ldd <program>=. This will tell you which library is missing. Afterwards, continue with =nix-locate <program>= to find which packages provide that library. Add it to libraries below and rebuild. After a reboot, it will be visible using =nix-ldd=. It can also be useful to take a look at =ldd= to see which libraries are needed in general.
 
 #+begin_src nix :tangle modules/nixos/common/nix-ld.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    programs.nix-ld = {
-      enable = true;
-      libraries = with pkgs; [
-        SDL
-        SDL2
-        SDL2_image
-        SDL2_mixer
-        SDL2_ttf
-        SDL_image
-        SDL_mixer
-        SDL_ttf
-        alsa-lib
-        at-spi2-atk
-        at-spi2-core
-        atk
-        bzip2
-        cairo
-        cups
-        curl
-        dbus
-        dbus-glib
-        expat
-        ffmpeg
-        flac
-        fontconfig
-        freeglut
-        freetype
-        fuse3
-        gdk-pixbuf
-        glew110
-        glib
-        stable.gnome2.GConf
-        pango
-        gtk2
-        gtk3
-        icu
-        libGL
-        libappindicator-gtk2
-        libappindicator-gtk3
-        libcaca
-        libcanberra
-        libcap
-        libdbusmenu-gtk2
-        libdrm
-        libelf
-        libgcrypt
-        libglvnd
-        libidn
-        libindicator-gtk2
-        libjpeg
-        libmikmod
-        libnotify
-        libogg
-        libpng
-        libpng12
-        libpulseaudio
-        librsvg
-        libsamplerate
-        libtheora
-        libtiff
-        libudev0-shim
-        libunwind
-        libusb1
-        libuuid
-        libva
-        libvdpau
-        libvorbis
-        libvpx
-        libxkbcommon
-        libxml2
-        libz
-        mesa
-        nspr
-        nss
-        openssl
-        pango
-        pipewire
-        pixman
-        speex
-        stdenv.cc.cc
-        steam-fhsenv-without-steam
-        systemd
-        tbb
-        vulkan-loader
-        xorg.libICE
-        xorg.libSM
-        xorg.libX11
-        xorg.libXScrnSaver
-        xorg.libXcomposite
-        xorg.libXcursor
-        xorg.libXdamage
-        xorg.libXext
-        xorg.libXfixes
-        xorg.libXft
-        xorg.libXi
-        xorg.libXinerama
-        xorg.libXmu
-        xorg.libXrandr
-        xorg.libXrender
-        xorg.libXt
-        xorg.libXtst
-        xorg.libXxf86vm
-        xorg.libxcb
-        xorg.libxshmfence
-        zlib
-      ];
+    options.swarselsystems.modules.nix-ld = lib.mkEnableOption "nix-ld config";
+    config = lib.mkIf config.swarselsystems.modules.nix-ld {
+      programs.nix-ld = {
+        enable = true;
+        libraries = with pkgs; [
+          SDL
+          SDL2
+          SDL2_image
+          SDL2_mixer
+          SDL2_ttf
+          SDL_image
+          SDL_mixer
+          SDL_ttf
+          alsa-lib
+          at-spi2-atk
+          at-spi2-core
+          atk
+          bzip2
+          cairo
+          cups
+          curl
+          dbus
+          dbus-glib
+          expat
+          ffmpeg
+          flac
+          fontconfig
+          freeglut
+          freetype
+          fuse3
+          gdk-pixbuf
+          glew110
+          glib
+          stable.gnome2.GConf
+          pango
+          gtk2
+          gtk3
+          icu
+          libGL
+          libappindicator-gtk2
+          libappindicator-gtk3
+          libcaca
+          libcanberra
+          libcap
+          libdbusmenu-gtk2
+          libdrm
+          libelf
+          libgcrypt
+          libglvnd
+          libidn
+          libindicator-gtk2
+          libjpeg
+          libmikmod
+          libnotify
+          libogg
+          libpng
+          libpng12
+          libpulseaudio
+          librsvg
+          libsamplerate
+          libtheora
+          libtiff
+          libudev0-shim
+          libunwind
+          libusb1
+          libuuid
+          libva
+          libvdpau
+          libvorbis
+          libvpx
+          libxkbcommon
+          libxml2
+          libz
+          mesa
+          nspr
+          nss
+          openssl
+          pango
+          pipewire
+          pixman
+          speex
+          stdenv.cc.cc
+          steam-fhsenv-without-steam
+          systemd
+          tbb
+          vulkan-loader
+          xorg.libICE
+          xorg.libSM
+          xorg.libX11
+          xorg.libXScrnSaver
+          xorg.libXcomposite
+          xorg.libXcursor
+          xorg.libXdamage
+          xorg.libXext
+          xorg.libXfixes
+          xorg.libXft
+          xorg.libXi
+          xorg.libXinerama
+          xorg.libXmu
+          xorg.libXrandr
+          xorg.libXrender
+          xorg.libXt
+          xorg.libXtst
+          xorg.libXxf86vm
+          xorg.libxcb
+          xorg.libxshmfence
+          zlib
+        ];
+      };
     };
   }
 #+end_src
@@ -5444,88 +5547,91 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     inherit (config.swarselsystems) homeDir isImpermanence isCrypted;
   in
   {
+    options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
+    config = lib.mkIf config.swarselsystems.modules.impermanence {
 
-    security.sudo.extraConfig = lib.mkIf isImpermanence ''
-      # rollback results in sudo lectures after each reboot
-      Defaults lecture = never
-    '';
-
-    # This script does the actual wipe of the system
-    # So if it doesn't run, the btrfs system effectively acts like a normal system
-    # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
-
-    boot.initrd.systemd.enable = lib.mkIf isImpermanence true;
-
-    boot.initrd.systemd.services.rollback = lib.mkIf isImpermanence {
-      description = "Rollback BTRFS root subvolume to a pristine state";
-      wantedBy = [ "initrd.target" ];
-      # make sure it's done after encryption
-      # i.e. LUKS/TPM process
-      after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
-      requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
-      # mount the root fs before clearing
-      before = [ "sysroot.mount" ];
-      unitConfig.DefaultDependencies = "no";
-      serviceConfig.Type = "oneshot";
-      script = ''
-        mkdir -p /mnt
-
-        # We first mount the btrfs root to /mnt
-        # so we can manipulate btrfs subvolumes.
-        mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
-        btrfs subvolume list -o /mnt/root
-
-        # While we're tempted to just delete /root and create
-        # a new snapshot from /root-blank, /root is already
-        # populated at this point with a number of subvolumes,
-        # which makes `btrfs subvolume delete` fail.
-        # So, we remove them first.
-        #
-        # /root contains subvolumes:
-        # - /root/var/lib/portables
-        # - /root/var/lib/machines
-
-        btrfs subvolume list -o /mnt/root |
-        cut -f9 -d' ' |
-        while read subvolume; do
-          echo "deleting /$subvolume subvolume..."
-          btrfs subvolume delete "/mnt/$subvolume"
-        done &&
-        echo "deleting /root subvolume..." &&
-        btrfs subvolume delete /mnt/root
-
-        echo "restoring blank /root subvolume..."
-        btrfs subvolume snapshot /mnt/root-blank /mnt/root
-
-        # Once we're done rolling back to a blank snapshot,
-        # we can unmount /mnt and continue on the boot process.
-        umount /mnt
+      security.sudo.extraConfig = lib.mkIf isImpermanence ''
+        # rollback results in sudo lectures after each reboot
+        Defaults lecture = never
       '';
-    };
+
+      # This script does the actual wipe of the system
+      # So if it doesn't run, the btrfs system effectively acts like a normal system
+      # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
+
+      boot.initrd.systemd.enable = lib.mkIf isImpermanence true;
+
+      boot.initrd.systemd.services.rollback = lib.mkIf isImpermanence {
+        description = "Rollback BTRFS root subvolume to a pristine state";
+        wantedBy = [ "initrd.target" ];
+        # make sure it's done after encryption
+        # i.e. LUKS/TPM process
+        after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+        requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+        # mount the root fs before clearing
+        before = [ "sysroot.mount" ];
+        unitConfig.DefaultDependencies = "no";
+        serviceConfig.Type = "oneshot";
+        script = ''
+          mkdir -p /mnt
+
+          # We first mount the btrfs root to /mnt
+          # so we can manipulate btrfs subvolumes.
+          mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
+          btrfs subvolume list -o /mnt/root
+
+          # While we're tempted to just delete /root and create
+          # a new snapshot from /root-blank, /root is already
+          # populated at this point with a number of subvolumes,
+          # which makes `btrfs subvolume delete` fail.
+          # So, we remove them first.
+          #
+          # /root contains subvolumes:
+          # - /root/var/lib/portables
+          # - /root/var/lib/machines
+
+          btrfs subvolume list -o /mnt/root |
+          cut -f9 -d' ' |
+          while read subvolume; do
+            echo "deleting /$subvolume subvolume..."
+            btrfs subvolume delete "/mnt/$subvolume"
+          done &&
+          echo "deleting /root subvolume..." &&
+          btrfs subvolume delete /mnt/root
+
+          echo "restoring blank /root subvolume..."
+          btrfs subvolume snapshot /mnt/root-blank /mnt/root
+
+          # Once we're done rolling back to a blank snapshot,
+          # we can unmount /mnt and continue on the boot process.
+          umount /mnt
+        '';
+      };
 
 
-    environment.persistence."/persist" = lib.mkIf isImpermanence {
-      hideMounts = true;
-      directories =
-        [
-          "/.cache/nix"
-          "/srv"
-          "/etc/nixos"
-          "/etc/nix"
-          "/etc/NetworkManager/system-connections"
-          # "/etc/secureboot"
-          "${homeDir}/.dotfiles"
-          "/var/db/sudo"
-          "/var/cache"
-          "/var/lib"
+      environment.persistence."/persist" = lib.mkIf isImpermanence {
+        hideMounts = true;
+        directories =
+          [
+            "/.cache/nix"
+            "/srv"
+            "/etc/nixos"
+            "/etc/nix"
+            "/etc/NetworkManager/system-connections"
+            # "/etc/secureboot"
+            "${homeDir}/.dotfiles"
+            "/var/db/sudo"
+            "/var/cache"
+            "/var/lib"
+          ];
+
+        files = [
+          "/etc/ssh/ssh_host_ed25519_key"
+          "/etc/ssh/ssh_host_ed25519_key.pub"
+          "/etc/ssh/ssh_host_rsa_key"
+          "/etc/ssh/ssh_host_rsa_key.pub"
         ];
-
-      files = [
-        "/etc/ssh/ssh_host_ed25519_key"
-        "/etc/ssh/ssh_host_ed25519_key.pub"
-        "/etc/ssh/ssh_host_rsa_key"
-        "/etc/ssh/ssh_host_rsa_key.pub"
-      ];
+      };
     };
 
   }
@@ -5539,14 +5645,17 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
 
 #+begin_src nix :tangle modules/nixos/common/nvd-rebuild.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    system.activationScripts.diff = {
-      supportsDryActivation = true;
-      text = ''
-        ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
-             /run/current-system "$systemConfig"
-      '';
+    options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
+    config = lib.mkIf config.swarselsystems.modules.nvd {
+      system.activationScripts.diff = {
+        supportsDryActivation = true;
+        text = ''
+          ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
+               /run/current-system "$systemConfig"
+        '';
+      };
     };
   }
 #+end_src
@@ -5559,13 +5668,16 @@ This snipped is added to the activation script that is run after every rebuild a
 Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
 
 #+begin_src nix :tangle modules/nixos/common/gnome-keyring.nix
-  _:
+  { lib, config, ... }:
   {
-    services.gnome.gnome-keyring = {
-      enable = true;
-    };
+    options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
+    config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
+      services.gnome.gnome-keyring = {
+        enable = true;
+      };
 
-    programs.seahorse.enable = true;
+      programs.seahorse.enable = true;
+    };
   }
 #+end_src
 
@@ -5577,28 +5689,29 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
 #+begin_src nix :tangle modules/nixos/common/sway.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
+    options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
+    config = lib.mkIf config.swarselsystems.modules.sway {
+      programs.sway = {
+        enable = true;
+        package = pkgs.swayfx;
+        wrapperFeatures = {
+          base = true;
+          gtk = true;
+        };
 
-    programs.sway = {
-      enable = true;
-      package = pkgs.swayfx;
-      wrapperFeatures = {
-        base = true;
-        gtk = true;
+        extraSessionCommands = ''
+          export XDG_SESSION_DESKTOP=sway
+          export SDL_VIDEODRIVER=wayland
+          export QT_QPA_PLATFORM=wayland-egl
+          export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+          export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+          export MOZ_ENABLE_WAYLAND=1
+          export MOZ_DISABLE_RDD_SANDBOX=1
+        '';
       };
-
-      extraSessionCommands = ''
-        export XDG_SESSION_DESKTOP=sway
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland-egl
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-        export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
-        export MOZ_ENABLE_WAYLAND=1
-        export MOZ_DISABLE_RDD_SANDBOX=1
-      '';
     };
-
   }
 #+end_src
 
@@ -5610,24 +5723,25 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
 
 #+begin_src nix :tangle modules/nixos/common/xdg-portal.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-
-    xdg.portal = {
-      enable = true;
-      config = {
-        common = {
-          default = "wlr";
+    options.swarselsystems.modules.xdg-portal = lib.mkEnableOption "xdg portal config";
+    config = lib.mkIf config.swarselsystems.modules.xdg-portal {
+      xdg.portal = {
+        enable = true;
+        config = {
+          common = {
+            default = "wlr";
+          };
+        };
+        wlr.enable = true;
+        wlr.settings.screencast = {
+          output_name = "eDP-1";
+          chooser_type = "simple";
+          chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
         };
       };
-      wlr.enable = true;
-      wlr.settings.screencast = {
-        output_name = "eDP-1";
-        chooser_type = "simple";
-        chooser_cmd = "${pkgs.slurp}/bin/slurp -f %o -or";
-      };
     };
-
   }
 #+end_src
 
@@ -5639,19 +5753,21 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 
 #+begin_src nix :tangle modules/nixos/common/distrobox.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    environment.systemPackages = with pkgs; [
-      distrobox
-      boxbuddy
-    ];
+    options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
+    config = lib.mkIf config.swarselsystems.modules.distrobox {
+      environment.systemPackages = with pkgs; [
+        distrobox
+        boxbuddy
+      ];
 
-    virtualisation.podman = {
-      enable = true;
-      dockerCompat = true;
-      package = pkgs.stable.podman;
+      virtualisation.podman = {
+        enable = true;
+        dockerCompat = true;
+        package = pkgs.stable.podman;
+      };
     };
-
   }
 #+end_src
 
@@ -5662,12 +5778,14 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 Adds the necessary tools to allow .appimage programs easily.
 
 #+begin_src nix :tangle modules/nixos/common/appimage.nix
-  _:
+  { lib, config, ... }:
   {
-
-    programs.appimage = {
-      enable = true;
-      binfmt = true;
+    options.swarselsystems.modules.appimage = lib.mkEnableOption "appimage config";
+    config = lib.mkIf config.swarselsystems.modules.appimage {
+      programs.appimage = {
+        enable = true;
+        binfmt = true;
+      };
     };
 
   }
@@ -5681,37 +5799,40 @@ Adds the necessary tools to allow .appimage programs easily.
 This turns off the display when the lid is closed.
 
 #+begin_src nix :tangle modules/nixos/common/lid.nix
-  _:
+  { lib, config, ... }:
   {
-    services.logind = {
-      lidSwitch = "suspend";
-      lidSwitchDocked = "ignore";
-    };
-    services.acpid = {
-      enable = true;
-      handlers.lidClosed = {
-        event = "button/lid \\w+ close";
-        action = ''
-          cat /sys/class/backlight/amdgpu_bl1/device/enabled
-          if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
-          then
-            echo "Lid closed. Disabling fprintd."
-            systemctl stop fprintd
-            ln -s /dev/null /run/systemd/transient/fprintd.service
-            systemctl daemon-reload
-          fi
-        '';
+    options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
+    config = lib.mkIf config.swarselsystems.modules.lid {
+      services.logind = {
+        lidSwitch = "suspend";
+        lidSwitchDocked = "ignore";
       };
-      handlers.lidOpen = {
-        event = "button/lid \\w+ open";
-        action = ''
-          if ! $(systemctl is-active --quiet fprintd); then
-            echo "Lid open. Enabling fprintd."
-            rm -f /run/systemd/transient/fprintd.service
-            systemctl daemon-reload
-            systemctl start fprintd
-          fi
-        '';
+      services.acpid = {
+        enable = true;
+        handlers.lidClosed = {
+          event = "button/lid \\w+ close";
+          action = ''
+            cat /sys/class/backlight/amdgpu_bl1/device/enabled
+            if grep -Fxq disabled /sys/class/backlight/amdgpu_bl1/device/enabled
+            then
+              echo "Lid closed. Disabling fprintd."
+              systemctl stop fprintd
+              ln -s /dev/null /run/systemd/transient/fprintd.service
+              systemctl daemon-reload
+            fi
+          '';
+        };
+        handlers.lidOpen = {
+          event = "button/lid \\w+ open";
+          action = ''
+            if ! $(systemctl is-active --quiet fprintd); then
+              echo "Lid open. Enabling fprintd."
+              rm -f /run/systemd/transient/fprintd.service
+              systemctl daemon-reload
+              systemctl start fprintd
+            fi
+          '';
+        };
       };
     };
   }
@@ -5725,29 +5846,32 @@ This turns off the display when the lid is closed.
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
 #+begin_src nix :tangle modules/nixos/common/lowbattery.nix
-  { pkgs, lib, ... }:
+  { pkgs, lib, config, ... }:
   {
-    systemd.user.services."battery-low" = {
-      enable = true;
-      description = "Timer for battery check that alerts at 10% or less";
-      partOf = [ "graphical-session.target" ];
-      wantedBy = [ "graphical-session.target" ];
-      serviceConfig = {
-        Type = "simple";
-        ExecStart = pkgs.writeShellScript "battery-low-notification"
-          ''
-            if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
-            then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
-            fi;
-          '';
+    options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
+    config = lib.mkIf config.swarselsystems.modules.lowBattery {
+      systemd.user.services."battery-low" = {
+        enable = true;
+        description = "Timer for battery check that alerts at 10% or less";
+        partOf = [ "graphical-session.target" ];
+        wantedBy = [ "graphical-session.target" ];
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = pkgs.writeShellScript "battery-low-notification"
+            ''
+              if (( 10 >= $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") && $(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%" | ${lib.getExe pkgs.ripgrep} -o "\d+") > 0 ));
+              then ${lib.getExe pkgs.libnotify} --urgency=critical "low battery" "$(${lib.getExe pkgs.acpi} -b | head -n 1 | ${lib.getExe pkgs.ripgrep} -o "\d+%")";
+              fi;
+            '';
+        };
       };
-    };
-    systemd.user.timers."battery-low" = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        # Every Minute
-        OnCalendar = "*-*-* *:*:00";
-        Unit = "battery-low.service";
+      systemd.user.timers."battery-low" = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          # Every Minute
+          OnCalendar = "*-*-* *:*:00";
+          Unit = "battery-low.service";
+        };
       };
     };
   }
@@ -5763,15 +5887,18 @@ This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsys
 #+begin_src nix :tangle modules/nixos/common/lanzaboote.nix
   { lib, config, ... }:
   {
-    boot = {
-      loader = {
-        efi.canTouchEfiVariables = true;
-        systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
-      };
-      lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
-        enable = true;
-        pkiBundle = "/var/lib/sbctl";
-        configurationLimit = 3;
+    options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
+    config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+      boot = {
+        loader = {
+          efi.canTouchEfiVariables = true;
+          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+        };
+        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+          enable = true;
+          pkiBundle = "/var/lib/sbctl";
+          configurationLimit = 3;
+        };
       };
     };
   }
@@ -8894,6 +9021,7 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
     xdg.configFile = {
       "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
       "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
+      "tridactyl/themes/swarsel.css".source = self + /programs/firefox/tridactyl/themes/swarsel.css;
       "swayidle/config".source = self + /programs/swayidle/config;
     };
   }
@@ -14699,7 +14827,7 @@ The =command= command can be supplied with a =-p= flag that will take a single a
 
 sanitise tridactyllocal tridactylsync
 
-colourscheme base16-codeschool
+colourscheme swarsel
 
 " General Settings
 set update.lastchecktime 1720629386560
@@ -14819,6 +14947,172 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 
 " For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
 " vim: set filetype=tridactyl
+
+#+end_src
+** tridactyl theme
+#+begin_src :tangle programs/firefox/tridactyl/themes/swarsel.css :mkdirp yes
+
+:root {
+
+    --base00: #1D252C;
+    --base01: #171D23;
+    --base02: #5EC4FF;
+    --base03: #566C7D;
+    --base04: #5EC4FF;
+    --base05: #A0B3C5;
+    --base06: #C06ECE;
+    --base07: #A0B3C5;
+    --base08: #D95468;
+    --base09: #FFA880;
+    --base0A: #5EC4FF;
+    --base0B: #8BD49C;
+    --base0C: #008B94;
+    --base0D: #5EC4FF;
+    --base0E: #C06ECE;
+    --base0F: #5EC4FF;
+
+    --tridactyl-def-fg: var(--base02);
+    --tridactyl-cmdl-bg: var(--base00);
+    --tridactyl-cmdl-fg: var(--base0C);
+
+    --tridactyl-font-family: "San Francisco", sans-serif;
+
+    --tridactyl-cmdl-font-size: 1.5rem;
+    --tridactyl-cmdl-line-height: 1.5;
+
+    --tridactyl-cmplt-option-height: 1.4em;
+    --tridactyl-cmplt-font-size: var(--tridactyl-small-font-size);
+    --tridactyl-cmplt-border-top: unset;
+
+    --tridactyl-status-font-size: 9px;
+    --tridactyl-status-font-family: "Fira Code", monospace;
+    --tridactyl-status-border: 1px var(--tridactyl-fg) solid;
+
+    --tridactyl-header-font-size: var(--tridactyl-small-font-size);
+    --tridactyl-header-font-weight: 200;
+    --tridactyl-header-border-bottom: unset;
+
+    --tridactyl-hintspan-font-size: var(--tridactyl-font-size);
+    --tridactyl-hint-active-fg: none;
+
+}
+
+:root #command-line-holder {
+    order: 1;
+    border: 2px solid var(--tridactyl-cmdl-fg);
+    color: var(--tridactyl-cmdl-bg);
+}
+
+:root #tridactyl-input {
+    width: 90%;
+    padding: 1rem;
+    color: var(--tridactyl-def-fg);
+}
+
+:root #completions table {
+    font-size: 0.8rem;
+    font-weight: 200;
+    border-spacing: 0;
+    table-layout: fixed;
+    padding: 1rem;
+    padding-top: 0;
+}
+
+:root #completions > div {
+    max-height: calc(20 * var(--tridactyl-cmplt-option-height));
+    min-height: calc(10 * var(--tridactyl-cmplt-option-height));
+}
+
+/* COMPLETIONS */
+
+:root #completions {
+    font-weight: 200;
+    order: 2;
+    color: var(--tridactyl-def-fg);
+    background: var(--tridactyl-cmdl-bg);
+
+}
+
+/* Olie doesn't know how CSS inheritance works */
+:root #completions .HistoryCompletionSource {
+    max-height: unset;
+    min-height: unset;
+}
+
+:root #completions .HistoryCompletionSource table {
+    width: 100%;
+    font-size: 9pt;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+/* redundancy 2: redundancy 2: more redundancy */
+:root #completions .BmarkCompletionSource {
+    max-height: unset;
+    min-height: unset;
+}
+
+:root #completions table tr {    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+:root #completions .url {
+    background: var(--tridactyl-cmdl-bg);
+}
+
+:root #completions .focused {
+    background: #44391F;
+}
+:root #completions .focused .url {
+    background: #44391F;
+}
+
+:root #completions .BufferCompletionSource table {
+    width: unset;
+    font-size: unset;
+    border-spacing: unset;
+    table-layout: unset;
+}
+
+:root #completions table tr {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+:root #completions .sectionHeader {
+    background: unset;
+    padding: 1rem !important;
+    padding-left: unset;
+    padding-bottom: 0.2rem;
+}
+
+:root #cmdline_iframe {
+    position: fixed !important;
+    bottom: unset;
+    top: 25% !important;
+    left: 10% !important;
+    z-index: 2147483647 !important;
+    width: 80% !important;
+    box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 15px !important;
+}
+
+:root .TridactylStatusIndicator {
+    position: fixed !important;
+    bottom: 0 !important;
+    font-weight: 200 !important;
+    padding: 0.8ex !important;
+}
+
+/* #Shydactyl-normal { */
+/*  border-color: green !important; */
+/* } */
+
+/* #Shydactyl-insert { */
+/*  border-color: yellow !important; */
+/* } */
+
 
 #+end_src
 ** Waybar style.css
