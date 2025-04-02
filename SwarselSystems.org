@@ -10488,6 +10488,12 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
         group-by=category
       '';
     };
+
+    services.swayosd = {
+      enable = true;
+      topMargin = 0.5;
+    };
+
   }
 #+end_src
 
@@ -10592,15 +10598,15 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       swayfxConfig = lib.mkOption {
         type = lib.types.str;
         default = "
-                    blur enable
-                    blur_xray disable
-                    blur_passes 1
-                    blur_radius 1
-                    shadows enable
-                    corner_radius 2
-                    titlebar_separator disable
-                    default_dim_inactive 0.02
-                ";
+                        blur enable
+                        blur_xray disable
+                        blur_passes 1
+                        blur_radius 1
+                        shadows enable
+                        corner_radius 2
+                        titlebar_separator disable
+                        default_dim_inactive 0.02
+                    ";
         internal = true;
       };
     };
@@ -10720,13 +10726,18 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 "${modifier}+Print" = "exec screenshare";
                 # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
                 # "XF86AudioRaiseVolume" = "exec pa 5%";
-                "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+                # "XF86AudioRaiseVolume" = "exec pamixer -i 5";
+                "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
                 # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-                "XF86AudioLowerVolume" = "exec pamixer -d 5";
+                # "XF86AudioLowerVolume" = "exec pamixer -d 5";
+                "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
                 # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
-                "XF86AudioMute" = "exec pamixer -t";
-                "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-                "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+                # "XF86AudioMute" = "exec pamixer -t";
+                "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
+                # "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
+                "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
+                # "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
+                "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
                 "XF86Display" = "exec wl-mirror eDP-1";
               }
               config.swarselsystems.keybindings;
@@ -10903,37 +10914,38 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             swayfxSettings = config.swarselsystems.swayfxConfig;
           in
           "
-                            exec_always autotiling
-                            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+          exec_always autotiling
+          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-                            mode $exit {
-                              bindsym --to-code {
-                                s exec \"systemctl suspend\", mode \"default\"
-                                h exec \"systemctl hibernate\", mode \"default\"
-                                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-                                p exec \"systemctl poweroff\"
-                                r exec \"systemctl reboot\"
-                                u exec \"swaymsg exit\"
+          mode $exit {
+            bindsym --to-code {
+              s exec \"systemctl suspend\", mode \"default\"
+              h exec \"systemctl hibernate\", mode \"default\"
+              l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+              p exec \"systemctl poweroff\"
+              r exec \"systemctl reboot\"
+              u exec \"swaymsg exit\"
 
-                                Return mode \"default\"
-                                Escape mode \"default\"
-                                ${modifier}+Escape mode \"default\"
-                              }
-                            }
+              Return mode \"default\"
+              Escape mode \"default\"
+              ${modifier}+Escape mode \"default\"
+            }
+          }
 
-                            exec systemctl --user import-environment
-                            exec swayidle -w
+          exec systemctl --user import-environment
+          exec swayidle -w
 
-                            seat * hide_cursor 2000
+          seat * hide_cursor 2000
 
-                            exec kanshi
-                            exec_always kill -1 $(pidof kanshi)
+          exec kanshi
+          exec_always kill -1 $(pidof kanshi)
+          exec swayosd-server
 
-                            bindswitch --locked lid:on exec kanshictl switch lidclosed
-                            bindswitch --locked lid:off exec kanshictl switch lidopen
+          bindswitch --locked lid:on exec kanshictl switch lidclosed
+          bindswitch --locked lid:off exec kanshictl switch lidopen
 
-                            ${swayfxSettings}
-                            ";
+          ${swayfxSettings}
+          ";
       };
     };
   }

@@ -28,4 +28,10 @@ _:
       group-by=category
     '';
   };
+
+  services.swayosd = {
+    enable = true;
+    topMargin = 0.5;
+  };
+
 }
