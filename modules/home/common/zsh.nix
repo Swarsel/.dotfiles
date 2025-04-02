@@ -4,12 +4,13 @@ let
 in
 {
   options.swarselsystems = {
+    modules.zsh = lib.mkEnableOption "zsh settings";
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = {
+  config = lib.mkIf config.swarselsystems.modules.zsh {
     programs.zsh = {
       enable = true;
       shellAliases = lib.recursiveUpdate

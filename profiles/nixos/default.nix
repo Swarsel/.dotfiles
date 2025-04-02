@@ -1,5 +1,7 @@
 { lib, ... }:
 let
-  moduleNames = lib.swarselsystems.readNix "profiles/nixos";
+  profileNames = lib.swarselsystems.readNix "profiles/nixos";
 in
-lib.swarselsystems.mkProfiles moduleNames "nixos"
+{
+  imports = lib.swarselsystems.mkImports profileNames "profiles/nixos";
+}

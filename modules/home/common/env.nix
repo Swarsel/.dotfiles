@@ -9,18 +9,21 @@ let
   allMailAddresses = lib.swarselsystems.getSecret "${secretsDirectory}/mail/list";
 in
 {
-  home.sessionVariables = {
-    EDITOR = "e -w";
-    DISPLAY = ":0";
-    SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-    SWARSEL_HI_RES = config.swarselsystems.highResolution;
-  };
-  systemd.user.sessionVariables = {
-    SWARSEL_LEON_MAIL = leonMail;
-    SWARSEL_NAUTILUS_MAIL = nautilusMail;
-    SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
-    SWARSEL_SWARSEL_MAIL = swarselMail;
-    SWARSEL_FULLNAME = fullName;
-    SWARSEL_MAIL_ALL = allMailAddresses;
+  options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
+  config = lib.mkIf config.swarselsystems.modules.env {
+    home.sessionVariables = {
+      EDITOR = "e -w";
+      DISPLAY = ":0";
+      SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+      SWARSEL_HI_RES = config.swarselsystems.highResolution;
+    };
+    systemd.user.sessionVariables = {
+      SWARSEL_LEON_MAIL = leonMail;
+      SWARSEL_NAUTILUS_MAIL = nautilusMail;
+      SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
+      SWARSEL_SWARSEL_MAIL = swarselMail;
+      SWARSEL_FULLNAME = fullName;
+      SWARSEL_MAIL_ALL = allMailAddresses;
+    };
   };
 }

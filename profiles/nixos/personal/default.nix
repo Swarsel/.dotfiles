@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.personalz = lib.mkEnableOption "is this a personal host";
-  config = lib.mkIf config.swarselsystems.profiles.personalz {
-    config.swarselsystems.modules = {
+  options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
+  config = lib.mkIf config.swarselsystems.profiles.personal {
+    swarselsystems.modules = {
       packages = lib.mkDefault true;
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;

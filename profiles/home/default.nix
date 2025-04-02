@@ -1,5 +1,7 @@
 { lib, ... }:
 let
-  moduleNames = lib.swarselsystems.readNix "profiles/home";
+  profileNames = lib.swarselsystems.readNix "profiles/home";
 in
-lib.swarselsystems.mkProfiles moduleNames "home"
+{
+  imports = lib.swarselsystems.mkImports profileNames "profiles/home";
+}

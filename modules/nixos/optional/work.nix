@@ -143,7 +143,7 @@ in
 
     udev.extraRules = ''
       # share screen when dongle detected
-      SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
+      SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="343c", ATTRS{idProduct}=="0000", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
 
       # lock screen when yubikey removed
       ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"

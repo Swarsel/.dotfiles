@@ -807,6 +807,7 @@ My work machine. Built for more security, this is the gold standard of my config
       isBtrfs = true;
       isLinux = true;
       sharescreen = "eDP-2";
+      profiles.personal = true;
     };
   in
   {
@@ -829,6 +830,7 @@ My work machine. Built for more security, this is the gold standard of my config
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.users."${primaryUser}".imports = [
+          "${self}/profiles/home"
           "${modulesPath}/home/optional/gaming.nix"
           "${modulesPath}/home/optional/work.nix"
         ];
@@ -892,7 +894,6 @@ My work machine. Built for more security, this is the gold standard of my config
 
     swarselsystems = lib.recursiveUpdate
       {
-        profiles.personal = true;
         wallpaper = self + /wallpaper/lenovowp.png;
         hasBluetooth = true;
         hasFingerprint = true;
@@ -902,134 +903,137 @@ My work machine. Built for more security, this is the gold standard of my config
       }
       sharedOptions;
 
-    home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
-      {
-        isLaptop = true;
-        isNixos = true;
-        isSecondaryGpu = true;
-        SecondaryGpuCard = "pci-0000_03_00_0";
-        cpuCount = 16;
-        temperatureHwmon = {
-          isAbsolutePath = true;
-          path = "/sys/devices/virtual/thermal/thermal_zone0/";
-          input-filename = "temp4_input";
-        };
-        startup = [
-          { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "ANKI_WAYLAND=1 anki"; }
-          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-          { command = "nm-applet"; }
-          { command = "teams-for-linux"; }
-          { command = "1password"; }
-          { command = "feishin"; }
-        ];
-        lowResolution = "1280x800";
-        highResolution = "2560x1600";
-        monitors = {
-          main = {
-            name = "BOE 0x0BC9 Unknown";
-            mode = "2560x1600"; # TEMPLATE
-            scale = "1";
-            position = "2560,0";
-            workspace = "15:L";
-            output = "eDP-2";
+    home-manager.users."${primaryUser}" = {
+      home.stateVersion = lib.mkForce "23.05";
+      swarselsystems = lib.recursiveUpdate
+        {
+          isLaptop = true;
+          isNixos = true;
+          isSecondaryGpu = true;
+          SecondaryGpuCard = "pci-0000_03_00_0";
+          cpuCount = 16;
+          temperatureHwmon = {
+            isAbsolutePath = true;
+            path = "/sys/devices/virtual/thermal/thermal_zone0/";
+            input-filename = "temp4_input";
           };
-          homedesktop = {
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-            mode = "2560x1440";
-            scale = "1";
-            position = "0,0";
-            workspace = "1:一";
-            output = "DP-11";
+          startup = [
+            { command = "nextcloud --background"; }
+            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            { command = "ANKI_WAYLAND=1 anki"; }
+            { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+            { command = "nm-applet"; }
+            { command = "teams-for-linux"; }
+            { command = "1password"; }
+            { command = "feishin"; }
+          ];
+          lowResolution = "1280x800";
+          highResolution = "2560x1600";
+          monitors = {
+            main = {
+              name = "BOE 0x0BC9 Unknown";
+              mode = "2560x1600"; # TEMPLATE
+              scale = "1";
+              position = "2560,0";
+              workspace = "15:L";
+              output = "eDP-2";
+            };
+            homedesktop = {
+              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+              mode = "2560x1440";
+              scale = "1";
+              position = "0,0";
+              workspace = "1:一";
+              output = "DP-11";
+            };
+            work_back_middle = {
+              name = "LG Electronics LG Ultra HD 0x000305A6";
+              mode = "2560x1440";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              output = "DP-10";
+            };
+            work_front_left = {
+              name = "LG Electronics LG Ultra HD 0x0007AB45";
+              mode = "3840x2160";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              output = "DP-7";
+            };
+            work_back_right = {
+              name = "HP Inc. HP Z32 CN41212T55";
+              mode = "3840x2160";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              output = "DP-3";
+            };
+            work_middle_middle_main = {
+              name = "HP Inc. HP 732pk CNC4080YL5";
+              mode = "3840x2160";
+              scale = "1";
+              position = "-1280,0";
+              workspace = "11:M";
+              output = "DP-8";
+            };
+            work_middle_middle_side = {
+              name = "Hewlett Packard HP Z24i CN44250RDT";
+              mode = "1920x1200";
+              transform = "270";
+              scale = "1";
+              position = "-2480,0";
+              workspace = "12:S";
+              output = "DP-9";
+            };
+            work_seminary = {
+              name = "Applied Creative Technology Transmitter QUATTRO201811";
+              mode = "1280x720";
+              scale = "1";
+              position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+              workspace = "14:T";
+              output = "DP-4";
+            };
           };
-          work_back_middle = {
-            name = "LG Electronics LG Ultra HD 0x000305A6";
-            mode = "2560x1440";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-10";
+          inputs = {
+            "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            "1133:45081:MX_Master_2S_Keyboard" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+            #   dwt = "enabled";
+            #   tap = "enabled";
+            #   natural_scroll = "enabled";
+            #   middle_emulation = "enabled";
+            #   drag_lock = "disabled";
+            # };
+            "1133:50504:Logitech_USB_Receiver" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            "1133:45944:MX_KEYS_S" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
           };
-          work_front_left = {
-            name = "LG Electronics LG Ultra HD 0x0007AB45";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-7";
+          keybindings = {
+            "Mod4+Ctrl+Shift+p" = "exec screenshare";
           };
-          work_back_right = {
-            name = "HP Inc. HP Z32 CN41212T55";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-3";
+          shellAliases = {
+            ans2-15_3-9 = ". ~/.venvs/ansible39_2_15_0/bin/activate";
+            ans3-9 = ". ~/.venvs/ansible39/bin/activate";
+            ans = ". ~/.venvs/ansible/bin/activate";
+            ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
           };
-          work_middle_middle_main = {
-            name = "HP Inc. HP 732pk CNC4080YL5";
-            mode = "3840x2160";
-            scale = "1";
-            position = "-1280,0";
-            workspace = "11:M";
-            output = "DP-8";
-          };
-          work_middle_middle_side = {
-            name = "Hewlett Packard HP Z24i CN44250RDT";
-            mode = "1920x1200";
-            transform = "270";
-            scale = "1";
-            position = "-2480,0";
-            workspace = "12:S";
-            output = "DP-9";
-          };
-          work_seminary = {
-            name = "Applied Creative Technology Transmitter QUATTRO201811";
-            mode = "1280x720";
-            scale = "1";
-            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-            workspace = "14:T";
-            output = "DP-4";
-          };
-        };
-        inputs = {
-          "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1133:45081:MX_Master_2S_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-          #   dwt = "enabled";
-          #   tap = "enabled";
-          #   natural_scroll = "enabled";
-          #   middle_emulation = "enabled";
-          #   drag_lock = "disabled";
-          # };
-          "1133:50504:Logitech_USB_Receiver" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1133:45944:MX_KEYS_S" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-        };
-        keybindings = {
-          "Mod4+Ctrl+Shift+p" = "exec screenshare";
-        };
-        shellAliases = {
-          ans2-15_3-9 = ". ~/.venvs/ansible39_2_15_0/bin/activate";
-          ans3-9 = ". ~/.venvs/ansible39/bin/activate";
-          ans = ". ~/.venvs/ansible/bin/activate";
-          ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
-        };
-      }
-      sharedOptions;
+        }
+        sharedOptions;
+    };
   }
 
 
@@ -3805,10 +3809,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix :tangle profiles/nixos/default.nix
   { lib, ... }:
   let
-    moduleNames = lib.swarselsystems.readNix "profiles/nixos";
+    profileNames = lib.swarselsystems.readNix "profiles/nixos";
   in
-  lib.swarselsystems.mkProfiles moduleNames "nixos"
-
+  {
+    imports = lib.swarselsystems.mkImports profileNames "profiles/nixos";
+  }
 #+end_src
 
 ***** Personal
@@ -3816,9 +3821,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix :tangle profiles/nixos/personal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.personalz = lib.mkEnableOption "is this a personal host";
-    config = lib.mkIf config.swarselsystems.profiles.personalz {
-      config.swarselsystems.modules = {
+    options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselsystems.profiles.personal {
+      swarselsystems.modules = {
         packages = lib.mkDefault true;
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
@@ -3868,6 +3873,78 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+end_src
 
+***** Local Server
+
+#+begin_src nix :tangle profiles/nixos/localserver/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
+    config = lib.mkIf config.swarselsystems.profiles.server.local {
+      swarselsystems = {
+        # common modules
+        modules = {
+          nix-ld = lib.mkDefault true;
+          home-manager = lib.mkDefault true;
+          home-managerExtra = lib.mkDefault true;
+          xserver = lib.mkDefault true;
+          gc = lib.mkDefault true;
+          storeOptimize = lib.mkDefault true;
+          time = lib.mkDefault true;
+          users = lib.mkDefault true;
+        };
+        # server modules
+        # server = {
+        #   kavita = lib.mkDefault true;
+        #   jellyfin = lib.mkDefault true;
+        #   navidrome = lib.mkDefault true;
+        #   spotifyd = lib.mkDefault true;
+        #   mpd = lib.mkDefault true;
+        #   matrix = lib.mkDefault true;
+        #   nextcloud = lib.mkDefault true;
+        #   immich = lib.mkDefault true;
+        #   paperless = lib.mkDefault true;
+        #   transmission = lib.mkDefault true;
+        #   syncthing = lib.mkDefault true;
+        #   monitoring = lib.mkDefault true;
+        #   emacs = lib.mkDefault true;
+        #   freshrss = lib.mkDefault true;
+        # };
+      };
+    };
+
+  }
+
+#+end_src
+***** OCI Sync Server
+
+#+begin_src nix :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
+    config = lib.mkIf config.swarselsystems.profiles.server.sync {
+      swarselsystems = {
+        # common modules
+        modules = {
+          nix-ld = lib.mkDefault true;
+          home-manager = lib.mkDefault true;
+          home-managerExtra = lib.mkDefault true;
+          xserver = lib.mkDefault true;
+          gc = lib.mkDefault true;
+          storeOptimize = lib.mkDefault true;
+          time = lib.mkDefault true;
+          users = lib.mkDefault true;
+        };
+        # server modules
+        # server = {
+        #   forgejo = lib.mkDefault true;
+        #   ankisync = lib.mkDefault true;
+        # };
+      };
+    };
+
+  }
+
+#+end_src
 **** home-manager
 :PROPERTIES:
 :CUSTOM_ID: h:ced5841f-c088-4d88-b3a1-7d62aad8837b
@@ -3878,9 +3955,53 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+BEGIN_src nix :tangle profiles/home/default.nix
   { lib, ... }:
   let
-    moduleNames = lib.swarselsystems.readNix "profiles/home";
+    profileNames = lib.swarselsystems.readNix "profiles/home";
   in
-  lib.swarselsystems.mkProfiles moduleNames "home"
+  {
+    imports = lib.swarselsystems.mkImports profileNames "profiles/home";
+  }
+#+end_src
+
+***** Personal
+
+#+begin_src nix :tangle profiles/home/personal/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselsystems.profiles.personal {
+      swarselsystems.modules = {
+        packages = lib.mkDefault true;
+        ownpackages = lib.mkDefault true;
+        general = lib.mkDefault true;
+        nixgl = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        yubikey = lib.mkDefault true;
+        ssh = lib.mkDefault true;
+        stylix = lib.mkDefault true;
+        desktop = lib.mkDefault true;
+        symlink = lib.mkDefault true;
+        env = lib.mkDefault true;
+        programs = lib.mkDefault true;
+        nix-index = lib.mkDefault true;
+        direnv = lib.mkDefault true;
+        eza = lib.mkDefault true;
+        git = lib.mkDefault true;
+        fuzzel = lib.mkDefault true;
+        starship = lib.mkDefault true;
+        kitty = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+        zellij = lib.mkDefault true;
+        tmux = lib.mkDefault true;
+        mail = lib.mkDefault true;
+        emacs = lib.mkDefault true;
+        waybar = lib.mkDefault true;
+        firefox = lib.mkDefault true;
+        gnome-keyring = lib.mkDefault true;
+      };
+    };
+
+  }
+
 #+end_src
 
 *** Library functions
@@ -8014,7 +8135,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
       udev.extraRules = ''
         # share screen when dongle detected
-        SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="04e8", ATTRS{idProduct}=="6860", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
+        SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="343c", ATTRS{idProduct}=="0000", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
 
         # lock screen when yubikey removed
         ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
@@ -8426,41 +8547,44 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
     inherit (config.swarselsystems) mainUser;
   in
   {
-    nix = lib.mkIf (!config.swarselsystems.isNixos) {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "ca-derivations"
-          "cgroups"
-          "pipe-operators"
-        ];
-        trusted-users = [ "@wheel" "${mainUser}" ];
-        connect-timeout = 5;
-        bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
-        fallback = true;
-        min-free = 128000000;
-        max-free = 1000000000;
-        auto-optimise-store = true;
-        warn-dirty = false;
-        max-jobs = 1;
-        use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselsystems.modules.general {
+      nix = lib.mkIf (!config.swarselsystems.isNixos) {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+            "ca-derivations"
+            "cgroups"
+            "pipe-operators"
+          ];
+          trusted-users = [ "@wheel" "${mainUser}" ];
+          connect-timeout = 5;
+          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+          fallback = true;
+          min-free = 128000000;
+          max-free = 1000000000;
+          auto-optimise-store = true;
+          warn-dirty = false;
+          max-jobs = 1;
+          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+        };
       };
-    };
 
-    nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+      nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
 
-    programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
-    targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+      programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+      targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
-    home = {
-      username = lib.mkDefault mainUser;
-      homeDirectory = lib.mkDefault "/home/${mainUser}";
-      stateVersion = lib.mkDefault "23.05";
-      keyboard.layout = "us";
-      sessionVariables = {
-        FLAKE = "/home/${mainUser}/.dotfiles";
+      home = {
+        username = lib.mkDefault mainUser;
+        homeDirectory = lib.mkDefault "/home/${mainUser}";
+        stateVersion = lib.mkDefault "23.05";
+        keyboard.layout = "us";
+        sessionVariables = {
+          FLAKE = "/home/${mainUser}/.dotfiles";
+        };
       };
     };
 
@@ -8481,32 +8605,33 @@ It can be set to either:
   - a PCI id in the form =vendor_id:device_id=
 
 #+begin_src nix :tangle modules/home/common/nixgl.nix
-  { lib, config, nixgl, ... }:
-  {
-    options.swarselsystems = {
-      isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
-      SecondaryGpuCard = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
+{ lib, config, nixgl, ... }:
+{
+  options.swarselsystems = {
+    modules.nixgl = lib.mkEnableOption "nixgl settings";
+    isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
+    SecondaryGpuCard = lib.mkOption {
+      type = lib.types.str;
+      default = "";
     };
-    config = {
-      nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
-        inherit (nixgl) packages;
-        defaultWrapper = lib.mkDefault "mesa";
-        vulkan.enable = lib.mkDefault false;
-        prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
-          card = config.swarselsystem.secondaryGpuCard;
-          installScript = "mesa";
-        };
-        offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
-        installScripts = [
-          "mesa"
-          "mesaPrime"
-        ];
+  };
+  config = lib.mkIf config.swarselsystems.modules.nixgl {
+    nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
+      inherit (nixgl) packages;
+      defaultWrapper = lib.mkDefault "mesa";
+      vulkan.enable = lib.mkDefault false;
+      prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
+        card = config.swarselsystem.secondaryGpuCard;
+        installScript = "mesa";
       };
+      offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
+      installScripts = [
+        "mesa"
+        "mesaPrime"
+      ];
     };
-  }
+  };
+}
 #+end_src
 
 **** Installed packages
@@ -8528,9 +8653,11 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 This holds packages that I can use as provided, or with small modifications (as in the =texlive= package that needs special configuration).
 
 #+begin_src nix :tangle modules/home/common/packages.nix
-  { pkgs, ... }:
+{ lib, config, pkgs, ... }:
 
-  {
+{
+  options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
+  config = lib.mkIf config.swarselsystems.modules.packages {
     home.packages = with pkgs; [
 
       # audio stuff
@@ -8706,7 +8833,8 @@ This holds packages that I can use as provided, or with small modifications (as 
       noto-fonts
       noto-fonts-cjk-sans
     ];
-  }
+  };
+}
 #+end_src
 
 ***** Self-defined
@@ -8717,35 +8845,38 @@ This holds packages that I can use as provided, or with small modifications (as 
 This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. This is a good idea so that I do not lose track of package names I have defined myself, as this was once a problem in the past already.
 
 #+begin_src nix :tangle modules/home/common/custom-packages.nix
-  { config, pkgs, ... }:
+  { lib, config, pkgs, ... }:
 
   {
-    home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
-      pass-fuzzel
-      cura5
-      cdw
-      cdb
-      bak
-      timer
-      e
-      swarselcheck
-      waybarupdate
-      opacitytoggle
-      fs-diff
-      github-notifications
-      hm-specialisation
-      t2ts
-      ts2t
-      vershell
-      eontimer
-      project
-      fhs
-      swarsel-bootstrap
-      swarsel-displaypower
-      swarselzellij
+    options.swarselsystems.modules.ownpackages = lib.mkEnableOption "own packages settings";
+    config = lib.mkIf config.swarselsystems.modules.ownpackages {
+      home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
+        pass-fuzzel
+        cura5
+        cdw
+        cdb
+        bak
+        timer
+        e
+        swarselcheck
+        waybarupdate
+        opacitytoggle
+        fs-diff
+        github-notifications
+        hm-specialisation
+        t2ts
+        ts2t
+        vershell
+        eontimer
+        project
+        fhs
+        swarsel-bootstrap
+        swarsel-displaypower
+        swarselzellij
 
-      rustdesk-vbc
-    ];
+        rustdesk-vbc
+      ];
+    };
   }
 #+end_src
 
@@ -8769,18 +8900,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     inherit (config.swarselsystems) homeDir xdgDir;
   in
   {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
-      age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+    options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
+    config = lib.mkIf config.swarselsystems.modules.sops {
+      sops = lib.mkIf (!config.swarselsystems.isPublic) {
+        age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
+        defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
-      validateSopsFiles = false;
-      secrets = {
-        mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
-        nautilus = { path = "${xdgDir}/secrets/nautilus"; };
-        leon = { path = "${xdgDir}/secrets/leon"; };
-        swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
-        github_notif = { path = "${xdgDir}/secrets/github_notif"; };
-        u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+        validateSopsFiles = false;
+        secrets = {
+          mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
+          nautilus = { path = "${xdgDir}/secrets/nautilus"; };
+          leon = { path = "${xdgDir}/secrets/leon"; };
+          swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+          github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+          u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+        };
       };
     };
   }
@@ -8792,18 +8926,21 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix :tangle modules/home/common/yubikey.nix
-  { lib, nix-secrets, ... }:
+  { lib, config, nix-secrets, ... }:
   let
     secretsDirectory = builtins.toString nix-secrets;
     yubikey1 = lib.swarselsystems.getSecret "${secretsDirectory}/yubikey/yubikey1";
     yubikey2 = lib.swarselsystems.getSecret "${secretsDirectory}/yubikey/yubikey2";
   in
   {
-    pam.yubico.authorizedYubiKeys = {
-      ids = [
-        "${yubikey1}"
-        "${yubikey2}"
-      ];
+    options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
+    config = lib.mkIf config.swarselsystems.modules.yubikey {
+      pam.yubico.authorizedYubiKeys = {
+        ids = [
+          "${yubikey1}"
+          "${yubikey2}"
+        ];
+      };
     };
   }
 #+end_src
@@ -8816,39 +8953,42 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
 #+begin_src nix :tangle modules/home/common/ssh.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.ssh = {
-      enable = true;
-      forwardAgent = true;
-      extraConfig = ''
-        SetEnv TERM=xterm-256color
-        ServerAliveInterval 20
-      '';
-      matchBlocks = {
-        "pfsense" = {
-          hostname = "192.168.1.1";
-          user = "root";
-        };
-        "winters" = {
-          hostname = "192.168.1.2";
-          user = "swarsel";
-        };
-        "minecraft" = {
-          hostname = "130.61.119.129";
-          user = "opc";
-        };
-        "sync" = {
-          hostname = "193.122.53.173";
-          user = "root";
-        };
-        "songdiver" = {
-          hostname = "89.168.100.65";
-          user = "ubuntu";
-        };
-        "pkv" = {
-          hostname = "46.232.248.161";
-          user = "root";
+    options.swarselsystems.modules.ssh = lib.mkEnableOption "ssh settings";
+    config = lib.mkIf config.swarselsystems.modules.ssh {
+      programs.ssh = {
+        enable = true;
+        forwardAgent = true;
+        extraConfig = ''
+          SetEnv TERM=xterm-256color
+          ServerAliveInterval 20
+        '';
+        matchBlocks = {
+          "pfsense" = {
+            hostname = "192.168.1.1";
+            user = "root";
+          };
+          "winters" = {
+            hostname = "192.168.1.2";
+            user = "swarsel";
+          };
+          "minecraft" = {
+            hostname = "130.61.119.129";
+            user = "opc";
+          };
+          "sync" = {
+            hostname = "193.122.53.173";
+            user = "root";
+          };
+          "songdiver" = {
+            hostname = "89.168.100.65";
+            user = "ubuntu";
+          };
+          "pkv" = {
+            hostname = "46.232.248.161";
+            user = "root";
+          };
         };
       };
     };
@@ -8869,12 +9009,15 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 #+begin_src nix :noweb yes :tangle modules/home/common/stylix.nix
   { lib, config, ... }:
   {
-    stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
-      {
-        image = config.swarselsystems.wallpaper;
-        targets = config.swarselsystems.stylixHomeTargets;
-      }
-      config.swarselsystems.stylix);
+    options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix settings";
+    config = lib.mkIf config.swarselsystems.modules.stylix {
+      stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
+        {
+          image = config.swarselsystems.wallpaper;
+          targets = config.swarselsystems.stylixHomeTargets;
+        }
+        config.swarselsystems.stylix);
+    };
   }
 #+end_src
 
@@ -8888,95 +9031,97 @@ Some programs lack a dmenu launcher - I define them myself here.
 TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
 #+begin_src nix :tangle modules/home/common/desktop.nix
-
-  _:
+  { lib, config, ... }:
   {
-    xdg.desktopEntries = {
+    options.swarselsystems.modules.desktop = lib.mkEnableOption "desktop settings";
+    config = lib.mkIf config.swarselsystems.modules.desktop {
+      xdg.desktopEntries = {
 
-      cura = {
-        name = "Ultimaker Cura";
-        genericName = "Cura";
-        exec = "cura";
-        terminal = false;
-        categories = [ "Application" ];
+        cura = {
+          name = "Ultimaker Cura";
+          genericName = "Cura";
+          exec = "cura";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        rustdesk-vbc = {
+          name = "Rustdesk VBC";
+          genericName = "rustdesk-vbc";
+          exec = "rustdesk-vbc";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        anki = {
+          name = "Anki Flashcards";
+          genericName = "Anki";
+          exec = "anki";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        element = {
+          name = "Element Matrix Client";
+          genericName = "Element";
+          exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
+        emacsclient-newframe = {
+          name = "Emacs (Client, New Frame)";
+          genericName = "Emacs (Client, New Frame)";
+          exec = "emacsclient -r %u";
+          icon = "emacs";
+          terminal = false;
+          categories = [ "Development" "TextEditor" ];
+        };
+
       };
 
-      rustdesk-vbc = {
-        name = "Rustdesk VBC";
-        genericName = "rustdesk-vbc";
-        exec = "rustdesk-vbc";
-        terminal = false;
-        categories = [ "Application" ];
-      };
+      xdg.mimeApps = {
 
-      anki = {
-        name = "Anki Flashcards";
-        genericName = "Anki";
-        exec = "anki";
-        terminal = false;
-        categories = [ "Application" ];
-      };
-
-      element = {
-        name = "Element Matrix Client";
-        genericName = "Element";
-        exec = "element-desktop -enable-features=UseOzonePlatform -ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
-        terminal = false;
-        categories = [ "Application" ];
-      };
-
-      emacsclient-newframe = {
-        name = "Emacs (Client, New Frame)";
-        genericName = "Emacs (Client, New Frame)";
-        exec = "emacsclient -r %u";
-        icon = "emacs";
-        terminal = false;
-        categories = [ "Development" "TextEditor" ];
-      };
-
-    };
-
-    xdg.mimeApps = {
-
-      enable = true;
-      defaultApplications = {
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
-        "text/plain" = [ "emacsclient.desktop" ];
-        "text/csv" = [ "emacsclient.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
-        "application/x-extension-htm" = [ "firefox.desktop" ];
-        "application/x-extension-html" = [ "firefox.desktop" ];
-        "application/x-extension-shtml" = [ "firefox.desktop" ];
-        "application/xhtml+xml" = [ "firefox.desktop" ];
-        "application/x-extension-xhtml" = [ "firefox.desktop" ];
-        "application/x-extension-xht" = [ "firefox.desktop" ];
-        "image/png" = [ "imv.desktop" ];
-        "image/jpeg" = [ "imv.desktop" ];
-        "image/gif" = [ "imv.desktop" ];
-        "image/svg" = [ "imv.desktop" ];
-        "image/webp" = [ "firefox.desktop" ];
-        "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
-        "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
-        "audio/flac" = [ "mpv.desktop" ];
-        "audio/mp3" = [ "mpv.desktop" ];
-        "audio/ogg" = [ "mpv.desktop" ];
-        "audio/wav" = [ "mpv.desktop" ];
-        "video/mp4" = [ "umpv.desktop" ];
-        "video/mkv" = [ "umpv.desktop" ];
-        "video/flv" = [ "umpv.desktop" ];
-        "video/3gp" = [ "umpv.desktop" ];
-        "application/pdf" = [ "org.gnome.Evince.desktop" ];
-        "application/metalink+xml" = [ "emacsclient.desktop" ];
-        "application/sql" = [ "emacsclient.desktop" ];
-        "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
-        "application/msword" = [ "writer.desktop" ];
-        "application/vnd.ms-excel" = [ "calc.desktop" ];
-      };
-      associations = {
-        added = {
-          "application/x-zerosize" = [ "emacsclient.desktop" ];
+        enable = true;
+        defaultApplications = {
+          "x-scheme-handler/http" = [ "firefox.desktop" ];
+          "x-scheme-handler/https" = [ "firefox.desktop" ];
+          "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+          "text/plain" = [ "emacsclient.desktop" ];
+          "text/csv" = [ "emacsclient.desktop" ];
+          "text/html" = [ "firefox.desktop" ];
+          "application/x-extension-htm" = [ "firefox.desktop" ];
+          "application/x-extension-html" = [ "firefox.desktop" ];
+          "application/x-extension-shtml" = [ "firefox.desktop" ];
+          "application/xhtml+xml" = [ "firefox.desktop" ];
+          "application/x-extension-xhtml" = [ "firefox.desktop" ];
+          "application/x-extension-xht" = [ "firefox.desktop" ];
+          "image/png" = [ "imv.desktop" ];
+          "image/jpeg" = [ "imv.desktop" ];
+          "image/gif" = [ "imv.desktop" ];
+          "image/svg" = [ "imv.desktop" ];
+          "image/webp" = [ "firefox.desktop" ];
+          "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
+          "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
+          "audio/flac" = [ "mpv.desktop" ];
+          "audio/mp3" = [ "mpv.desktop" ];
+          "audio/ogg" = [ "mpv.desktop" ];
+          "audio/wav" = [ "mpv.desktop" ];
+          "video/mp4" = [ "umpv.desktop" ];
+          "video/mkv" = [ "umpv.desktop" ];
+          "video/flv" = [ "umpv.desktop" ];
+          "video/3gp" = [ "umpv.desktop" ];
+          "application/pdf" = [ "org.gnome.Evince.desktop" ];
+          "application/metalink+xml" = [ "emacsclient.desktop" ];
+          "application/sql" = [ "emacsclient.desktop" ];
+          "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
+          "application/msword" = [ "writer.desktop" ];
+          "application/vnd.ms-excel" = [ "calc.desktop" ];
+        };
+        associations = {
+          added = {
+            "application/x-zerosize" = [ "emacsclient.desktop" ];
+          };
         };
       };
     };
@@ -8996,33 +9141,36 @@ Also, we link some files to the users XDG configuration home:
 Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
 #+begin_src nix :tangle modules/home/common/symlink.nix
-  { self, lib, ... }:
+  { self, lib, config, ... }:
   {
-    home.file = {
-      "init.el" = lib.mkDefault {
-        source = self + /programs/emacs/init.el;
-        target = ".emacs.d/init.el";
+    options.swarselsystems.modules.symlink = lib.mkEnableOption "symlink settings";
+    config = lib.mkIf config.swarselsystems.modules.symlink {
+      home.file = {
+        "init.el" = lib.mkDefault {
+          source = self + /programs/emacs/init.el;
+          target = ".emacs.d/init.el";
+        };
+        "early-init.el" = {
+          source = self + /programs/emacs/early-init.el;
+          target = ".emacs.d/early-init.el";
+        };
+        # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
+        ".aspell.conf" = {
+          source = self + /programs/config/.aspell.conf;
+          target = ".aspell.conf";
+        };
+        ".gitmessage" = {
+          source = self + /programs/git/.gitmessage;
+          target = ".gitmessage";
+        };
       };
-      "early-init.el" = {
-        source = self + /programs/emacs/early-init.el;
-        target = ".emacs.d/early-init.el";
-      };
-      # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
-      ".aspell.conf" = {
-        source = self + /programs/config/.aspell.conf;
-        target = ".aspell.conf";
-      };
-      ".gitmessage" = {
-        source = self + /programs/git/.gitmessage;
-        target = ".gitmessage";
-      };
-    };
 
-    xdg.configFile = {
-      "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
-      "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
-      "tridactyl/themes/swarsel.css".source = self + /programs/firefox/tridactyl/themes/swarsel.css;
-      "swayidle/config".source = self + /programs/swayidle/config;
+      xdg.configFile = {
+        "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
+        "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
+        "tridactyl/themes/swarsel.css".source = self + /programs/firefox/tridactyl/themes/swarsel.css;
+        "swayidle/config".source = self + /programs/swayidle/config;
+      };
     };
   }
 #+end_src
@@ -9046,19 +9194,22 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
     allMailAddresses = lib.swarselsystems.getSecret "${secretsDirectory}/mail/list";
   in
   {
-    home.sessionVariables = {
-      EDITOR = "e -w";
-      DISPLAY = ":0";
-      SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-      SWARSEL_HI_RES = config.swarselsystems.highResolution;
-    };
-    systemd.user.sessionVariables = {
-      SWARSEL_LEON_MAIL = leonMail;
-      SWARSEL_NAUTILUS_MAIL = nautilusMail;
-      SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
-      SWARSEL_SWARSEL_MAIL = swarselMail;
-      SWARSEL_FULLNAME = fullName;
-      SWARSEL_MAIL_ALL = allMailAddresses;
+    options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
+    config = lib.mkIf config.swarselsystems.modules.env {
+      home.sessionVariables = {
+        EDITOR = "e -w";
+        DISPLAY = ":0";
+        SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+        SWARSEL_HI_RES = config.swarselsystems.highResolution;
+      };
+      systemd.user.sessionVariables = {
+        SWARSEL_LEON_MAIL = leonMail;
+        SWARSEL_NAUTILUS_MAIL = nautilusMail;
+        SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
+        SWARSEL_SWARSEL_MAIL = swarselMail;
+        SWARSEL_FULLNAME = fullName;
+        SWARSEL_MAIL_ALL = allMailAddresses;
+      };
     };
   }
 #+end_src
@@ -9071,26 +9222,29 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
 #+begin_src nix :tangle modules/home/common/programs.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    programs = {
-      bottom.enable = true;
-      imv.enable = true;
-      sioyek.enable = true;
-      bat = {
-        enable = true;
-        extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+    options.swarselsystems.modules.programs = lib.mkEnableOption "programs settings";
+    config = lib.mkIf config.swarselsystems.modules.programs {
+      programs = {
+        bottom.enable = true;
+        imv.enable = true;
+        sioyek.enable = true;
+        bat = {
+          enable = true;
+          extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+        };
+        carapace.enable = true;
+        wlogout.enable = true;
+        swayr.enable = true;
+        yt-dlp.enable = true;
+        mpv.enable = true;
+        jq.enable = true;
+        ripgrep.enable = true;
+        pandoc.enable = true;
+        fzf.enable = true;
+        zoxide.enable = true;
       };
-      carapace.enable = true;
-      wlogout.enable = true;
-      swayr.enable = true;
-      yt-dlp.enable = true;
-      mpv.enable = true;
-      jq.enable = true;
-      ripgrep.enable = true;
-      pandoc.enable = true;
-      fzf.enable = true;
-      zoxide.enable = true;
     };
   }
 #+end_src
@@ -9103,26 +9257,29 @@ This section is for programs that require no further configuration. zsh Integrat
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
 #+begin_src nix :tangle modules/home/common/nix-index.nix
-  { self, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   {
-    programs.nix-index =
-      let
-        commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
-          mkdir -p $out/etc/profile.d
-          substitute ${self + /scripts/command-not-found.sh}        \
-            $out/etc/profile.d/command-not-found.sh                 \
-            --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
-            --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
-        '';
-      in
+    options.swarselsystems.modules.nix-index = lib.mkEnableOption "nix-index settings";
+    config = lib.mkIf config.swarselsystems.modules.nix-index {
+      programs.nix-index =
+        let
+          commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
+            mkdir -p $out/etc/profile.d
+            substitute ${self + /scripts/command-not-found.sh}        \
+              $out/etc/profile.d/command-not-found.sh                 \
+              --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
+              --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
+          '';
+        in
 
-      {
-        enable = true;
-        package = pkgs.symlinkJoin {
-          name = "nix-index";
-          paths = [ commandNotFound ];
+        {
+          enable = true;
+          package = pkgs.symlinkJoin {
+            name = "nix-index";
+            paths = [ commandNotFound ];
+          };
         };
-      };
+    };
   }
 #+end_src
 
@@ -9134,14 +9291,17 @@ nix-index provides a way to find out which packages are provided by which deriva
 Enables password store with the =pass-otp= extension which allows me to store and generate one-time-passwords.
 
 #+begin_src nix :tangle modules/home/common/password-store.nix
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   {
-    programs.password-store = {
-      enable = true;
-      settings = {
-        PASSWORD_STORE_DIR = "$HOME/.local/share/password-store";
+    options.swarselsystems.modules.passwordstore = lib.mkEnableOption "passwordstore settings";
+    config = lib.mkIf config.swarselsystems.modules.passwordstore {
+      programs.password-store = {
+        enable = true;
+        settings = {
+          PASSWORD_STORE_DIR = "$HOME/.local/share/password-store";
+        };
+        package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
       };
-      package = pkgs.pass.withExtensions (exts: [ exts.pass-otp ]);
     };
   }
 #+end_src
@@ -9154,12 +9314,15 @@ Enables password store with the =pass-otp= extension which allows me to store an
 Enables direnv, which I use for nearly all of my nix dev flakes.
 
 #+begin_src nix :tangle modules/home/common/direnv.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.direnv = {
-      enable = true;
-      silent = true;
-      nix-direnv.enable = true;
+    options.swarselsystems.modules.direnv = lib.mkEnableOption "direnv settings";
+    config = lib.mkIf config.swarselsystems.modules.direnv {
+      programs.direnv = {
+        enable = true;
+        silent = true;
+        nix-direnv.enable = true;
+      };
     };
   }
 #+end_src
@@ -9172,16 +9335,19 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 Eza provides me with a better =ls= command and some other useful aliases.
 
 #+begin_src nix :tangle modules/home/common/eza.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.eza = {
-      enable = true;
-      icons = "auto";
-      git = true;
-      extraOptions = [
-        "-l"
-        "--group-directories-first"
-      ];
+    options.swarselsystems.modules.eza = lib.mkEnableOption "eza settings";
+    config = lib.mkIf config.swarselsystems.modules.eza {
+      programs.eza = {
+        enable = true;
+        icons = "auto";
+        git = true;
+        extraOptions = [
+          "-l"
+          "--group-directories-first"
+        ];
+      };
     };
   }
 #+end_src
@@ -9194,48 +9360,51 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix :tangle modules/home/common/git.nix
-  { lib, nix-secrets, ... }:
+  { lib, config, nix-secrets, ... }:
   let
     secretsDirectory = builtins.toString nix-secrets;
     leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
     fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
   in
   {
-    programs.git = {
-      enable = true;
-      aliases = {
-        a = "add";
-        c = "commit";
-        cl = "clone";
-        co = "checkout";
-        b = "branch";
-        i = "init";
-        m = "merge";
-        s = "status";
-        r = "restore";
-        p = "pull";
-        pp = "push";
-      };
-      signing = {
-        key = "0x76FD3810215AE097";
-        signByDefault = true;
-      };
-      userEmail = lib.mkDefault leonMail;
-      userName = fullName;
-      difftastic.enable = true;
-      lfs.enable = true;
-      includes = [
-        {
-          contents = {
-            github = {
-              user = "Swarsel";
+    options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
+    config = lib.mkIf config.swarselsystems.modules.git {
+      programs.git = {
+        enable = true;
+        aliases = {
+          a = "add";
+          c = "commit";
+          cl = "clone";
+          co = "checkout";
+          b = "branch";
+          i = "init";
+          m = "merge";
+          s = "status";
+          r = "restore";
+          p = "pull";
+          pp = "push";
+        };
+        signing = {
+          key = "0x76FD3810215AE097";
+          signByDefault = true;
+        };
+        userEmail = lib.mkDefault leonMail;
+        userName = fullName;
+        difftastic.enable = true;
+        lfs.enable = true;
+        includes = [
+          {
+            contents = {
+              github = {
+                user = "Swarsel";
+              };
+              commit = {
+                template = "~/.gitmessage";
+              };
             };
-            commit = {
-              template = "~/.gitmessage";
-            };
-          };
-        }
-      ];
+          }
+        ];
+      };
     };
   }
 #+end_src
@@ -9248,17 +9417,20 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 Here I only need to set basic layout options - the rest is being managed by stylix.
 
 #+begin_src nix :tangle modules/home/common/fuzzel.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.fuzzel = {
-      enable = true;
-      settings = {
-        main = {
-          layer = "overlay";
-          lines = "10";
-          width = "40";
+    options.swarselsystems.modules.fuzzel = lib.mkEnableOption "fuzzel settings";
+    config = lib.mkIf config.swarselsystems.modules.fuzzel {
+      programs.fuzzel = {
+        enable = true;
+        settings = {
+          main = {
+            layer = "overlay";
+            lines = "10";
+            width = "40";
+          };
+          border.radius = "0";
         };
-        border.radius = "0";
       };
     };
   }
@@ -9272,124 +9444,127 @@ Here I only need to set basic layout options - the rest is being managed by styl
 Starship makes my =zsh= look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
 
 #+begin_src nix :tangle modules/home/common/starship.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.starship = {
-      enable = true;
-      enableZshIntegration = true;
-      settings = {
-        add_newline = false;
-        format = "$shlvl$character";
-        right_format = "$all";
-        command_timeout = 3000;
+    options.swarselsystems.modules.starship = lib.mkEnableOption "starship settings";
+    config = lib.mkIf config.swarselsystems.modules.starship {
+      programs.starship = {
+        enable = true;
+        enableZshIntegration = true;
+        settings = {
+          add_newline = false;
+          format = "$shlvl$character";
+          right_format = "$all";
+          command_timeout = 3000;
 
-        directory.substitutions = {
-          "Documents" = "󰈙 ";
-          "Downloads" = " ";
-          "Music" = " ";
-          "Pictures" = " ";
+          directory.substitutions = {
+            "Documents" = "󰈙 ";
+            "Downloads" = " ";
+            "Music" = " ";
+            "Pictures" = " ";
+          };
+
+          git_status = {
+            style = "bg:#394260";
+            format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
+          };
+
+          character = {
+            success_symbol = "[λ](bold green)";
+            error_symbol = "[λ](bold red)";
+          };
+
+          shlvl = {
+            disabled = false;
+            symbol = "↳";
+            format = "[$symbol]($style) ";
+            repeat = true;
+            repeat_offset = 1;
+            style = "blue";
+          };
+
+          nix_shell = {
+            disabled = false;
+            heuristic = true;
+            format = "[$symbol$name]($style)";
+            symbol = " ";
+          };
+
+          aws.symbol = " ";
+          buf.symbol = " ";
+          c.symbol = " ";
+          conda.symbol = " ";
+          dart.symbol = " ";
+          directory.read_only = " 󰌾";
+          docker_context.symbol = " ";
+          elixir.symbol = " ";
+          elm.symbol = " ";
+          fossil_branch.symbol = " ";
+          git_branch.symbol = " ";
+          golang.symbol = " ";
+          guix_shell.symbol = " ";
+          haskell.symbol = " ";
+          haxe.symbol = " ";
+          hg_branch.symbol = " ";
+          hostname.ssh_symbol = " ";
+          java.symbol = " ";
+          julia.symbol = " ";
+          lua.symbol = " ";
+          memory_usage.symbol = "󰍛 ";
+          meson.symbol = "󰔷 ";
+          nim.symbol = "󰆥 ";
+          nodejs.symbol = " ";
+
+          os.symbols = {
+            Alpaquita = " ";
+            Alpine = " ";
+            Amazon = " ";
+            Android = " ";
+            Arch = " ";
+            Artix = " ";
+            CentOS = " ";
+            Debian = " ";
+            DragonFly = " ";
+            Emscripten = " ";
+            EndeavourOS = " ";
+            Fedora = " ";
+            FreeBSD = " ";
+            Garuda = "󰛓 ";
+            Gentoo = " ";
+            HardenedBSD = "󰞌 ";
+            Illumos = "󰈸 ";
+            Linux = " ";
+            Mabox = " ";
+            Macos = " ";
+            Manjaro = " ";
+            Mariner = " ";
+            MidnightBSD = " ";
+            Mint = " ";
+            NetBSD = " ";
+            NixOS = " ";
+            OpenBSD = "󰈺 ";
+            openSUSE = " ";
+            OracleLinux = "󰌷 ";
+            Pop = " ";
+            Raspbian = " ";
+            Redhat = " ";
+            RedHatEnterprise = " ";
+            Redox = "󰀘 ";
+            Solus = "󰠳 ";
+            SUSE = " ";
+            Ubuntu = " ";
+            Unknown = " ";
+            Windows = "󰍲 ";
+          };
+
+          package.symbol = "󰏗 ";
+          pijul_channel.symbol = " ";
+          python.symbol = " ";
+          rlang.symbol = "󰟔 ";
+          ruby.symbol = " ";
+          rust.symbol = " ";
+          scala.symbol = " ";
         };
-
-        git_status = {
-          style = "bg:#394260";
-          format = "[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style) ";
-        };
-
-        character = {
-          success_symbol = "[λ](bold green)";
-          error_symbol = "[λ](bold red)";
-        };
-
-        shlvl = {
-          disabled = false;
-          symbol = "↳";
-          format = "[$symbol]($style) ";
-          repeat = true;
-          repeat_offset = 1;
-          style = "blue";
-        };
-
-        nix_shell = {
-          disabled = false;
-          heuristic = true;
-          format = "[$symbol$name]($style)";
-          symbol = " ";
-        };
-
-        aws.symbol = " ";
-        buf.symbol = " ";
-        c.symbol = " ";
-        conda.symbol = " ";
-        dart.symbol = " ";
-        directory.read_only = " 󰌾";
-        docker_context.symbol = " ";
-        elixir.symbol = " ";
-        elm.symbol = " ";
-        fossil_branch.symbol = " ";
-        git_branch.symbol = " ";
-        golang.symbol = " ";
-        guix_shell.symbol = " ";
-        haskell.symbol = " ";
-        haxe.symbol = " ";
-        hg_branch.symbol = " ";
-        hostname.ssh_symbol = " ";
-        java.symbol = " ";
-        julia.symbol = " ";
-        lua.symbol = " ";
-        memory_usage.symbol = "󰍛 ";
-        meson.symbol = "󰔷 ";
-        nim.symbol = "󰆥 ";
-        nodejs.symbol = " ";
-
-        os.symbols = {
-          Alpaquita = " ";
-          Alpine = " ";
-          Amazon = " ";
-          Android = " ";
-          Arch = " ";
-          Artix = " ";
-          CentOS = " ";
-          Debian = " ";
-          DragonFly = " ";
-          Emscripten = " ";
-          EndeavourOS = " ";
-          Fedora = " ";
-          FreeBSD = " ";
-          Garuda = "󰛓 ";
-          Gentoo = " ";
-          HardenedBSD = "󰞌 ";
-          Illumos = "󰈸 ";
-          Linux = " ";
-          Mabox = " ";
-          Macos = " ";
-          Manjaro = " ";
-          Mariner = " ";
-          MidnightBSD = " ";
-          Mint = " ";
-          NetBSD = " ";
-          NixOS = " ";
-          OpenBSD = "󰈺 ";
-          openSUSE = " ";
-          OracleLinux = "󰌷 ";
-          Pop = " ";
-          Raspbian = " ";
-          Redhat = " ";
-          RedHatEnterprise = " ";
-          Redox = "󰀘 ";
-          Solus = "󰠳 ";
-          SUSE = " ";
-          Ubuntu = " ";
-          Unknown = " ";
-          Windows = "󰍲 ";
-        };
-
-        package.symbol = "󰏗 ";
-        pijul_channel.symbol = " ";
-        python.symbol = " ";
-        rlang.symbol = "󰟔 ";
-        ruby.symbol = " ";
-        rust.symbol = " ";
-        scala.symbol = " ";
       };
     };
   }
@@ -9405,15 +9580,18 @@ Kitty is the terminal emulator of choice for me, it is nice to configure using n
 The theme is handled by stylix.
 
 #+begin_src nix :tangle modules/home/common/kitty.nix
-  _:
+  { lib, config, ... }:
   {
-    programs.kitty = {
-      enable = true;
-      keybindings = { };
-      settings = {
-        scrollback_lines = 10000;
-        enable_audio_bell = false;
-        notify_on_cmd_finish = "always 20";
+    options.swarselsystems.modules.kitty = lib.mkEnableOption "kitty settings";
+    config = lib.mkIf config.swarselsystems.modules.kitty {
+      programs.kitty = {
+        enable = true;
+        keybindings = { };
+        settings = {
+          scrollback_lines = 10000;
+          enable_audio_bell = false;
+          notify_on_cmd_finish = "always 20";
+        };
       };
     };
   }
@@ -9435,12 +9613,13 @@ Here we set some aliases (some of them should be shellApplications instead) as w
   in
   {
     options.swarselsystems = {
+      modules.zsh = lib.mkEnableOption "zsh settings";
       shellAliases = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = { };
       };
     };
-    config = {
+    config = lib.mkIf config.swarselsystems.modules.zsh {
       programs.zsh = {
         enable = true;
         shellAliases = lib.recursiveUpdate
@@ -9548,21 +9727,23 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 :CUSTOM_ID: h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7
 :END:
 #+begin_src nix :tangle modules/home/common/zellij.nix
-  { self, config, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   {
+    options.swarselsystems.modules.zellij = lib.mkEnableOption "zellij settings";
+    config = lib.mkIf config.swarselsystems.modules.zellij {
+      programs.zellij = {
+        enable = true;
+        enableZshIntegration = true;
+      };
 
-    programs.zellij = {
-      enable = true;
-      enableZshIntegration = true;
-    };
+      home.packages = with pkgs; [
+        zjstatus
+      ];
 
-    home.packages = with pkgs; [
-      zjstatus
-    ];
-
-    xdg.configFile = {
-      "zellij/config.kdl".text = import "${self}/programs/zellij/config.kdl.nix" { inherit config; };
-      "zellij/layouts/default.kdl".text = import "${self}/programs/zellij/layouts/default.kdl.nix" { inherit config pkgs; };
+      xdg.configFile = {
+        "zellij/config.kdl".text = import "${self}/programs/zellij/config.kdl.nix" { inherit config; };
+        "zellij/layouts/default.kdl".text = import "${self}/programs/zellij/layouts/default.kdl.nix" { inherit config pkgs; };
+      };
     };
 
   }
@@ -9572,8 +9753,7 @@ Here we set some aliases (some of them should be shellApplications instead) as w
 :CUSTOM_ID: h:45de9430-f925-4df6-9db6-bffb5b8f1604
 :END:
 #+begin_src nix :tangle modules/home/common/tmux.nix
-
-  { pkgs, ... }:
+  { lib, config, pkgs, ... }:
   let
     tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin
       {
@@ -9588,86 +9768,88 @@ Here we set some aliases (some of them should be shellApplications instead) as w
       };
   in
   {
+    options.swarselsystems.modules.tmux = lib.mkEnableOption "tmux settings";
+    config = lib.mkIf config.swarselsystems.modules.tmux {
+      home.packages = with pkgs; [
+        lsof
+        sesh
+      ];
 
-    home.packages = with pkgs; [
-      lsof
-      sesh
-    ];
+      programs.tmux = {
+        enable = true;
+        shell = "${pkgs.zsh}/bin/zsh";
+        terminal = "tmux-256color";
+        historyLimit = 100000;
+        plugins = with pkgs;
+          [
+            tmuxPlugins.tmux-thumbs
+            {
+              plugin = tmux-super-fingers;
+              extraConfig = "set -g @super-fingers-key f";
+            }
 
-    programs.tmux = {
-      enable = true;
-      shell = "${pkgs.zsh}/bin/zsh";
-      terminal = "tmux-256color";
-      historyLimit = 100000;
-      plugins = with pkgs;
-        [
-          tmuxPlugins.tmux-thumbs
-          {
-            plugin = tmux-super-fingers;
-            extraConfig = "set -g @super-fingers-key f";
-          }
+            tmuxPlugins.sensible
+            # must be before continuum edits right status bar
+            {
+              plugin = tmuxPlugins.catppuccin;
+              extraConfig = ''
+                set -g @catppuccin_flavour 'frappe'
+                set -g @catppuccin_window_tabs_enabled on
+                set -g @catppuccin_date_time "%H:%M"
+              '';
+            }
+            {
+              plugin = tmuxPlugins.resurrect;
+              extraConfig = ''
+                set -g @resurrect-strategy-vim 'session'
+                set -g @resurrect-strategy-nvim 'session'
+                set -g @resurrect-capture-pane-contents 'on'
+              '';
+            }
+            {
+              plugin = tmuxPlugins.continuum;
+              extraConfig = ''
+                set -g @continuum-restore 'on'
+                set -g @continuum-boot 'on'
+                set -g @continuum-save-interval '10'
+              '';
+            }
+            tmuxPlugins.better-mouse-mode
+            tmuxPlugins.yank
+          ];
+        extraConfig = ''
+          set -g default-terminal "tmux-256color"
+          set -ag terminal-overrides ",xterm-256color:RGB"
 
-          tmuxPlugins.sensible
-          # must be before continuum edits right status bar
-          {
-            plugin = tmuxPlugins.catppuccin;
-            extraConfig = ''
-              set -g @catppuccin_flavour 'frappe'
-              set -g @catppuccin_window_tabs_enabled on
-              set -g @catppuccin_date_time "%H:%M"
-            '';
-          }
-          {
-            plugin = tmuxPlugins.resurrect;
-            extraConfig = ''
-              set -g @resurrect-strategy-vim 'session'
-              set -g @resurrect-strategy-nvim 'session'
-              set -g @resurrect-capture-pane-contents 'on'
-            '';
-          }
-          {
-            plugin = tmuxPlugins.continuum;
-            extraConfig = ''
-              set -g @continuum-restore 'on'
-              set -g @continuum-boot 'on'
-              set -g @continuum-save-interval '10'
-            '';
-          }
-          tmuxPlugins.better-mouse-mode
-          tmuxPlugins.yank
-        ];
-      extraConfig = ''
-        set -g default-terminal "tmux-256color"
-        set -ag terminal-overrides ",xterm-256color:RGB"
+          set-option -g prefix C-a
+          unbind-key C-b
+          bind-key C-a send-prefix
 
-        set-option -g prefix C-a
-        unbind-key C-b
-        bind-key C-a send-prefix
+          set -g mouse on
 
-        set -g mouse on
+          # Open new split at cwd of current split
+          bind | split-window -h -c "#{pane_current_path}"
+          bind - split-window -v -c "#{pane_current_path}"
 
-        # Open new split at cwd of current split
-        bind | split-window -h -c "#{pane_current_path}"
-        bind - split-window -v -c "#{pane_current_path}"
+          # Use vim keybindings in copy mode
+          set-window-option -g mode-keys vi
 
-        # Use vim keybindings in copy mode
-        set-window-option -g mode-keys vi
+          # v in copy mode starts making selection
+          bind-key -T copy-mode-vi v send-keys -X begin-selection
+          bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+          bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
 
-        # v in copy mode starts making selection
-        bind-key -T copy-mode-vi v send-keys -X begin-selection
-        bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
-        bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+          # Escape turns on copy mode
+          bind Escape copy-mode
 
-        # Escape turns on copy mode
-        bind Escape copy-mode
+          set-option -g status-position top
 
-        set-option -g status-position top
+          # make Prefix p paste the buffer.
+          unbind p
+          bind p paste-buffer
 
-        # make Prefix p paste the buffer.
-        unbind p
-        bind p paste-buffer
-
-      '';
+        '';
+      };
     };
   }
 
@@ -9691,137 +9873,140 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
     fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
   in
   {
-    programs = {
-      mbsync = {
-        enable = true;
+    options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
+    config = lib.mkIf config.swarselsystems.modules.mail {
+      programs = {
+        mbsync = {
+          enable = true;
+        };
+        msmtp = {
+          enable = true;
+        };
+        mu = {
+          enable = true;
+        };
       };
-      msmtp = {
-        enable = true;
-      };
-      mu = {
-        enable = true;
-      };
-    };
 
-    services.mbsync = {
-      enable = true;
-    };
-    # this is needed so that mbsync can use the passwords from sops
-    systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
+      services.mbsync = {
+        enable = true;
+      };
+      # this is needed so that mbsync can use the passwords from sops
+      systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-    accounts = lib.mkIf (!config.swarselsystems.isPublic) {
-      email = {
-        maildirBasePath = "Mail";
-        accounts = {
-          leon = {
-            primary = true;
-            address = leonMail;
-            userName = leonMail;
-            realName = fullName;
-            passwordCommand = "cat ${config.sops.secrets.leon.path}";
-            gpg = {
-              key = "0x76FD3810215AE097";
-              signByDefault = true;
-            };
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            mu.enable = true;
-            msmtp = {
-              enable = true;
-            };
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
-                };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
-                };
+      accounts = lib.mkIf (!config.swarselsystems.isPublic) {
+        email = {
+          maildirBasePath = "Mail";
+          accounts = {
+            leon = {
+              primary = true;
+              address = leonMail;
+              userName = leonMail;
+              realName = fullName;
+              passwordCommand = "cat ${config.sops.secrets.leon.path}";
+              gpg = {
+                key = "0x76FD3810215AE097";
+                signByDefault = true;
               };
-            };
-          };
-
-          swarsel = {
-            address = swarselMail;
-            userName = "8227dc594dd515ce232eda1471cb9a19";
-            realName = fullName;
-            passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
-            smtp = {
-              host = "in-v3.mailjet.com";
-              port = 587;
-              tls = {
+              imap.host = "imap.gmail.com";
+              smtp.host = "smtp.gmail.com";
+              mu.enable = true;
+              msmtp = {
                 enable = true;
-                useStartTls = true;
               };
-            };
-            mu.enable = false;
-            msmtp = {
-              enable = true;
-            };
-            mbsync = {
-              enable = false;
-            };
-          };
-
-          nautilus = {
-            primary = false;
-            address = nautilusMail;
-            userName = nautilusMail;
-            realName = "Nautilus";
-            passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            msmtp.enable = true;
-            mu.enable = true;
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
-                };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
+              mbsync = {
+                enable = true;
+                create = "maildir";
+                expunge = "both";
+                patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+                extraConfig = {
+                  channel = {
+                    Sync = "All";
+                  };
+                  account = {
+                    Timeout = 120;
+                    PipelineDepth = 1;
+                  };
                 };
               };
             };
-          };
 
-          mrswarsel = {
-            primary = false;
-            address = mrswarselMail;
-            userName = mrswarselMail;
-            realName = "Swarsel";
-            passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            msmtp.enable = true;
-            mu.enable = true;
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
+            swarsel = {
+              address = swarselMail;
+              userName = "8227dc594dd515ce232eda1471cb9a19";
+              realName = fullName;
+              passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+              smtp = {
+                host = "in-v3.mailjet.com";
+                port = 587;
+                tls = {
+                  enable = true;
+                  useStartTls = true;
                 };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
+              };
+              mu.enable = false;
+              msmtp = {
+                enable = true;
+              };
+              mbsync = {
+                enable = false;
+              };
+            };
+
+            nautilus = {
+              primary = false;
+              address = nautilusMail;
+              userName = nautilusMail;
+              realName = "Nautilus";
+              passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
+              imap.host = "imap.gmail.com";
+              smtp.host = "smtp.gmail.com";
+              msmtp.enable = true;
+              mu.enable = true;
+              mbsync = {
+                enable = true;
+                create = "maildir";
+                expunge = "both";
+                patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+                extraConfig = {
+                  channel = {
+                    Sync = "All";
+                  };
+                  account = {
+                    Timeout = 120;
+                    PipelineDepth = 1;
+                  };
                 };
               };
             };
-          };
 
+            mrswarsel = {
+              primary = false;
+              address = mrswarselMail;
+              userName = mrswarselMail;
+              realName = "Swarsel";
+              passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
+              imap.host = "imap.gmail.com";
+              smtp.host = "smtp.gmail.com";
+              msmtp.enable = true;
+              mu.enable = true;
+              mbsync = {
+                enable = true;
+                create = "maildir";
+                expunge = "both";
+                patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+                extraConfig = {
+                  channel = {
+                    Sync = "All";
+                  };
+                  account = {
+                    Timeout = 120;
+                    PipelineDepth = 1;
+                  };
+                };
+              };
+            };
+
+          };
         };
       };
     };
@@ -9843,76 +10028,78 @@ Lastly, I am defining some more packages here that the parser has problems findi
     inherit (config.swarselsystems) homeDir isPublic;
   in
   {
+    options.swarselsystems.modules.emacs = lib.mkEnableOption "emacs settings";
+    config = lib.mkIf config.swarselsystems.modules.emacs {
+      # needed for elfeed
+      sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
-    # needed for elfeed
-    sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
+      # enable emacs overlay for bleeding edge features
+      # also read init.el file and install use-package packages
+      programs.emacs = {
+        enable = true;
+        package = pkgs.emacsWithPackagesFromUsePackage {
+          config = self + /programs/emacs/init.el;
+          package = pkgs.emacs-git-pgtk;
+          alwaysEnsure = true;
+          alwaysTangle = true;
+          extraEmacsPackages = epkgs: [
+            epkgs.mu4e
+            epkgs.use-package
+            epkgs.lsp-bridge
+            epkgs.doom-themes
+            epkgs.vterm
+            epkgs.treesit-grammars.with-all-grammars
 
-    # enable emacs overlay for bleeding edge features
-    # also read init.el file and install use-package packages
-    programs.emacs = {
-      enable = true;
-      package = pkgs.emacsWithPackagesFromUsePackage {
-        config = self + /programs/emacs/init.el;
-        package = pkgs.emacs-git-pgtk;
-        alwaysEnsure = true;
-        alwaysTangle = true;
-        extraEmacsPackages = epkgs: [
-          epkgs.mu4e
-          epkgs.use-package
-          epkgs.lsp-bridge
-          epkgs.doom-themes
-          epkgs.vterm
-          epkgs.treesit-grammars.with-all-grammars
+            # build the rest of the packages myself
+            # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
+            # build the package from the haji-ali fork, which is well-maintained
 
-          # build the rest of the packages myself
-          # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
-          # build the package from the haji-ali fork, which is well-maintained
+            (epkgs.trivialBuild rec {
+              pname = "eglot-booster";
+              version = "main-29-10-2024";
 
-          (epkgs.trivialBuild rec {
-            pname = "eglot-booster";
-            version = "main-29-10-2024";
+              src = pkgs.fetchFromGitHub {
+                owner = "jdtsmith";
+                repo = "eglot-booster";
+                rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
+                hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
+              };
 
-            src = pkgs.fetchFromGitHub {
-              owner = "jdtsmith";
-              repo = "eglot-booster";
-              rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
-              hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
-            };
+              packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
+            })
+            (epkgs.trivialBuild rec {
+              pname = "calfw";
+              version = "1.0.0-20231002";
+              src = pkgs.fetchFromGitHub {
+                owner = "haji-ali";
+                repo = "emacs-calfw";
+                rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+                hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+              };
+              packageRequires = [ epkgs.howm ];
+            })
 
-            packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
-          })
-          (epkgs.trivialBuild rec {
-            pname = "calfw";
-            version = "1.0.0-20231002";
-            src = pkgs.fetchFromGitHub {
-              owner = "haji-ali";
-              repo = "emacs-calfw";
-              rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-              hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-            };
-            packageRequires = [ epkgs.howm ];
-          })
+            (epkgs.trivialBuild rec {
+              pname = "fast-scroll";
+              version = "1.0.0-20191016";
+              src = pkgs.fetchFromGitHub {
+                owner = "ahungry";
+                repo = "fast-scroll";
+                rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
+                hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
+              };
+              packageRequires = [ ];
+            })
 
-          (epkgs.trivialBuild rec {
-            pname = "fast-scroll";
-            version = "1.0.0-20191016";
-            src = pkgs.fetchFromGitHub {
-              owner = "ahungry";
-              repo = "fast-scroll";
-              rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
-              hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
-            };
-            packageRequires = [ ];
-          })
-
-        ];
+          ];
+        };
       };
-    };
 
-    services.emacs = {
-      enable = true;
-      socketActivation.enable = false;
-      startWithUserSession = "graphical";
+      services.emacs = {
+        enable = true;
+        socketActivation.enable = false;
+        startWithUserSession = "graphical";
+      };
     };
   }
 #+end_src
@@ -9957,6 +10144,7 @@ The rest of the related configuration is found here:
   in
   {
     options.swarselsystems = {
+      modules.waybar = lib.mkEnableOption "waybar settings";
       cpuCount = lib.mkOption {
         type = lib.types.int;
         default = 8;
@@ -9985,7 +10173,7 @@ The rest of the related configuration is found here:
         internal = true;
       };
     };
-    config = {
+    config = lib.mkIf config.swarselsystems.modules.waybar {
       swarselsystems = {
         waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
           "battery"
@@ -10260,148 +10448,151 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
 #+begin_src nix :tangle modules/home/common/firefox.nix
   { config, pkgs, lib, ... }:
   {
-    programs.firefox = {
-      enable = true;
-      package = pkgs.firefox; # uses overrides
-      policies = {
-        # CaptivePortal = false;
-        AppAutoUpdate = false;
-        BackgroundAppUpdate = false;
-        DisableBuiltinPDFViewer = true;
-        DisableFirefoxStudies = true;
-        DisablePocket = true;
-        DisableFirefoxScreenshots = true;
-        DisableTelemetry = true;
-        DisableFirefoxAccounts = false;
-        DisableProfileImport = true;
-        DisableProfileRefresh = true;
-        DisplayBookmarksToolbar = "always";
-        DontCheckDefaultBrowser = true;
-        NoDefaultBookmarks = true;
-        OfferToSaveLogins = false;
-        OfferToSaveLoginsDefault = false;
-        PasswordManagerEnabled = false;
-        DisableMasterPasswordCreation = true;
-        ExtensionUpdate = false;
-        EnableTrackingProtection = {
-          Value = true;
-          Locked = true;
-          Cryptomining = true;
-          Fingerprinting = true;
-          EmailTracking = true;
-          # Exceptions = ["https://example.com"]
-        };
-        PDFjs = {
-          Enabled = false;
-          EnablePermissions = false;
-        };
-        Handlers = {
-          mimeTypes."application/pdf".action = "saveToDisk";
-        };
-        extensions = {
-          pdf = {
-            action = "useHelperApp";
-            ask = true;
-            handlers = [
-              {
-                name = "GNOME Document Viewer";
-                path = "${pkgs.evince}/bin/evince";
-              }
-            ];
+    options.swarselsystems.modules.firefox = lib.mkEnableOption "firefox settings";
+    config = lib.mkIf config.swarselsystems.modules.firefox {
+      programs.firefox = {
+        enable = true;
+        package = pkgs.firefox; # uses overrides
+        policies = {
+          # CaptivePortal = false;
+          AppAutoUpdate = false;
+          BackgroundAppUpdate = false;
+          DisableBuiltinPDFViewer = true;
+          DisableFirefoxStudies = true;
+          DisablePocket = true;
+          DisableFirefoxScreenshots = true;
+          DisableTelemetry = true;
+          DisableFirefoxAccounts = false;
+          DisableProfileImport = true;
+          DisableProfileRefresh = true;
+          DisplayBookmarksToolbar = "always";
+          DontCheckDefaultBrowser = true;
+          NoDefaultBookmarks = true;
+          OfferToSaveLogins = false;
+          OfferToSaveLoginsDefault = false;
+          PasswordManagerEnabled = false;
+          DisableMasterPasswordCreation = true;
+          ExtensionUpdate = false;
+          EnableTrackingProtection = {
+            Value = true;
+            Locked = true;
+            Cryptomining = true;
+            Fingerprinting = true;
+            EmailTracking = true;
+            # Exceptions = ["https://example.com"]
           };
-        };
-        FirefoxHome = {
-          Search = true;
-          TopSites = true;
-          SponsoredTopSites = false;
-          Highlights = true;
-          Pocket = false;
-          SponsoredPocket = false;
-          Snippets = false;
-          Locked = true;
-        };
-        FirefoxSuggest = {
-          WebSuggestions = false;
-          SponsoredSuggestions = false;
-          ImproveSuggest = false;
-          Locked = true;
-        };
-        SanitizeOnShutdown = {
-          Cache = true;
-          Cookies = false;
-          Downloads = true;
-          FormData = true;
-          History = false;
-          Sessions = false;
-          SiteSettings = false;
-          OfflineApps = true;
-          Locked = true;
-        };
-        SearchEngines = {
-          PreventInstalls = true;
-          Remove = [
-            "Bing" # Fuck you
-          ];
-        };
-        UserMessaging = {
-          ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
-          FeatureRecommendations = false; # Don’t recommend browser features
-          Locked = true; # Prevent the user from changing user messaging preferences
-          MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
-          SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
-          UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
-          WhatsNew = false; # Remove the “What’s New” icon and menuitem
-        };
-        ExtensionSettings = {
-          "3rdparty".Extensions = {
-            # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
-            "uBlock0@raymondhill.net".adminSettings = {
-              userSettings = rec {
-                uiTheme = "dark";
-                uiAccentCustom = true;
-                uiAccentCustom0 = "#0C8084";
-                cloudStorageEnabled = lib.mkForce false;
-                importedLists = [
-                  "https://filters.adtidy.org/extension/ublock/filters/3.txt"
-                  "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
-                ];
-                externalLists = lib.concatStringsSep "\n" importedLists;
-              };
-              selectedFilterLists = [
-                "CZE-0"
-                "adguard-generic"
-                "adguard-annoyance"
-                "adguard-social"
-                "adguard-spyware-url"
-                "easylist"
-                "easyprivacy"
-                "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
-                "plowe-0"
-                "ublock-abuse"
-                "ublock-badware"
-                "ublock-filters"
-                "ublock-privacy"
-                "ublock-quick-fixes"
-                "ublock-unbreak"
-                "urlhaus-1"
+          PDFjs = {
+            Enabled = false;
+            EnablePermissions = false;
+          };
+          Handlers = {
+            mimeTypes."application/pdf".action = "saveToDisk";
+          };
+          extensions = {
+            pdf = {
+              action = "useHelperApp";
+              ask = true;
+              handlers = [
+                {
+                  name = "GNOME Document Viewer";
+                  path = "${pkgs.evince}/bin/evince";
+                }
               ];
             };
           };
+          FirefoxHome = {
+            Search = true;
+            TopSites = true;
+            SponsoredTopSites = false;
+            Highlights = true;
+            Pocket = false;
+            SponsoredPocket = false;
+            Snippets = false;
+            Locked = true;
+          };
+          FirefoxSuggest = {
+            WebSuggestions = false;
+            SponsoredSuggestions = false;
+            ImproveSuggest = false;
+            Locked = true;
+          };
+          SanitizeOnShutdown = {
+            Cache = true;
+            Cookies = false;
+            Downloads = true;
+            FormData = true;
+            History = false;
+            Sessions = false;
+            SiteSettings = false;
+            OfflineApps = true;
+            Locked = true;
+          };
+          SearchEngines = {
+            PreventInstalls = true;
+            Remove = [
+              "Bing" # Fuck you
+            ];
+          };
+          UserMessaging = {
+            ExtensionRecommendations = false; # Don’t recommend extensions while the user is visiting web pages
+            FeatureRecommendations = false; # Don’t recommend browser features
+            Locked = true; # Prevent the user from changing user messaging preferences
+            MoreFromMozilla = false; # Don’t show the “More from Mozilla” section in Preferences
+            SkipOnboarding = true; # Don’t show onboarding messages on the new tab page
+            UrlbarInterventions = false; # Don’t offer suggestions in the URL bar
+            WhatsNew = false; # Remove the “What’s New” icon and menuitem
+          };
+          ExtensionSettings = {
+            "3rdparty".Extensions = {
+              # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
+              "uBlock0@raymondhill.net".adminSettings = {
+                userSettings = rec {
+                  uiTheme = "dark";
+                  uiAccentCustom = true;
+                  uiAccentCustom0 = "#0C8084";
+                  cloudStorageEnabled = lib.mkForce false;
+                  importedLists = [
+                    "https://filters.adtidy.org/extension/ublock/filters/3.txt"
+                    "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                  ];
+                  externalLists = lib.concatStringsSep "\n" importedLists;
+                };
+                selectedFilterLists = [
+                  "CZE-0"
+                  "adguard-generic"
+                  "adguard-annoyance"
+                  "adguard-social"
+                  "adguard-spyware-url"
+                  "easylist"
+                  "easyprivacy"
+                  "https://github.com/DandelionSprout/adfilt/raw/master/LegitimateURLShortener.txt"
+                  "plowe-0"
+                  "ublock-abuse"
+                  "ublock-badware"
+                  "ublock-filters"
+                  "ublock-privacy"
+                  "ublock-quick-fixes"
+                  "ublock-unbreak"
+                  "urlhaus-1"
+                ];
+              };
+            };
+
+          };
 
         };
 
-      };
-
-      profiles = {
-        default = lib.recursiveUpdate
-          {
-            id = 0;
-            isDefault = true;
-            settings = {
-              "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
-            };
-          }
-          config.swarselsystems.firefox;
+        profiles = {
+          default = lib.recursiveUpdate
+            {
+              id = 0;
+              isDefault = true;
+              settings = {
+                "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+              };
+            }
+            config.swarselsystems.firefox;
+        };
       };
     };
   }
@@ -10424,8 +10615,11 @@ Used for storing sessions in e.g. Nextcloud
 #+begin_src nix :tangle modules/home/common/gnome-keyring.nix
   { lib, config, ... }:
   {
-    services.gnome-keyring = lib.mkIf (!config.swarselsystems.isNixos) {
-      enable = true;
+    options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome keyring settings";
+    config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
+      services.gnome-keyring = lib.mkIf (!config.swarselsystems.isNixos) {
+        enable = true;
+      };
     };
   }
 #+end_src

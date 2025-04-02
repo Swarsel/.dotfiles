@@ -22,6 +22,7 @@ let
 in
 {
   options.swarselsystems = {
+    modules.waybar = lib.mkEnableOption "waybar settings";
     cpuCount = lib.mkOption {
       type = lib.types.int;
       default = 8;
@@ -50,7 +51,7 @@ in
       internal = true;
     };
   };
-  config = {
+  config = lib.mkIf config.swarselsystems.modules.waybar {
     swarselsystems = {
       waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
         "battery"
