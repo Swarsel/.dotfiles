@@ -8016,16 +8016,31 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     };
   in
   {
-    sops = {
-      secrets = {
-        vcuser = {
-          inherit owner sopsFile;
-        };
-        vcpw = {
-          inherit owner sopsFile;
-        };
+    sops =
+      let
+        secretNames = [
+          "vcuser"
+          "vcpw"
+          "govcuser"
+          "govcpw"
+          "govcurl"
+          "govcdc"
+          "govcds"
+          "govchost"
+          "govcnetwork"
+          "govcpool"
+        ];
+      in
+      {
+        secrets = builtins.listToAttrs (
+          map
+            (name: {
+              inherit name;
+              value = { inherit owner sopsFile; };
+            })
+            secretNames
+        );
       };
-    };
 
     boot.initrd = {
       systemd.enable = lib.mkForce true; # make sure we are using initrd systemd even when not using Impermanence
@@ -8042,6 +8057,14 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       zsh.shellInit = ''
         export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
         export VSPHERE_PW="$(cat ${config.sops.secrets.vcpw.path})"
+        export GOVC_USERNAME="$(cat ${config.sops.secrets.govcuser.path})"
+        export GOVC_PASSWORD="$(cat ${config.sops.secrets.govcpw.path})"
+        export GOVC_URL="$(cat ${config.sops.secrets.govcurl.path})"
+        export GOVC_DATACENTER="$(cat ${config.sops.secrets.govcdc.path})"
+        export GOVC_DATASTORE="$(cat ${config.sops.secrets.govcds.path})"
+        export GOVC_HOST="$(cat ${config.sops.secrets.govchost.path})"
+        export GOVC_RESOURCE_POOL="$(cat ${config.sops.secrets.govcpool.path})"
+        export GOVC_NETWORK="$(cat ${config.sops.secrets.govcnetwork.path})"
       '';
 
       browserpass.enable = true;
@@ -8115,7 +8138,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       openssh = {
         enable = true;
         extraConfig = ''
-                    '';
+                          '';
       };
 
       syncthing = {
