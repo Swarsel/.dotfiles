@@ -4,12 +4,13 @@ let
 in
 {
   options.swarselsystems = {
+    server.general = lib.mkEnableOption "general setting on server";
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = {
+  config = lib.mkIf config.swarselsystems.server.general {
     environment.shellAliases = lib.recursiveUpdate
       {
         npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";

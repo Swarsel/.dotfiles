@@ -1,10 +1,13 @@
-{ config, ... }:
+{ lib, config, ... }:
 let
   inherit (config.swarselsystems) mainUser;
 in
 {
-  services = {
-    getty.autologinUser = mainUser;
-    greetd.settings.initial_session.user = mainUser;
+  options.swarselsystems.modules.optional.autologin = lib.mkEnableOption "optional autologin settings";
+  config = lib.mkIf config.swarselsystems.modules.optional.autologin {
+    services = {
+      getty.autologinUser = mainUser;
+      greetd.settings.initial_session.user = mainUser;
+    };
   };
 }

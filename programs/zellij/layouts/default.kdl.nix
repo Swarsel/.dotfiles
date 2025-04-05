@@ -103,8 +103,8 @@ in
                      format_center ""
                      format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"
                      format_space  ""
-                     format_hide_on_overlength "true"
-                     format_precedence "crl"
+                     format_hide_on_overlength "false"
+                     format_precedence "lcr"
 
                      border_enabled  "false"
                      border_char     "─"

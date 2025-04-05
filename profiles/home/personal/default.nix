@@ -30,6 +30,18 @@
       waybar = lib.mkDefault true;
       firefox = lib.mkDefault true;
       gnome-keyring = lib.mkDefault true;
+      kdeconnect = lib.mkDefault true;
+      mako = lib.mkDefault true;
+      swayosd = lib.mkDefault true;
+      yubikeytouch = lib.mkDefault true;
+      sway = lib.mkDefault true;
+      kanshi = lib.mkDefault true;
+      gpgagent = lib.mkDefault true;
+      gammastep = lib.mkDefault true;
+
+      optional = {
+        gaming = lib.mkDefault true;
+      };
     };
   };
 

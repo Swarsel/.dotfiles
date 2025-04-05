@@ -3,7 +3,6 @@
   options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
   config = lib.mkIf config.swarselsystems.profiles.server.sync {
     swarselsystems = {
-      # common modules
       modules = {
         nix-ld = lib.mkDefault true;
         home-manager = lib.mkDefault true;
@@ -14,11 +13,16 @@
         time = lib.mkDefault true;
         users = lib.mkDefault true;
       };
-      # server modules
-      # server = {
-      #   forgejo = lib.mkDefault true;
-      #   ankisync = lib.mkDefault true;
-      # };
+      server = {
+        general = lib.mkDefault true;
+        packages = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        nfs = lib.mkDefault true;
+        nginx = lib.mkDefault true;
+        ssh = lib.mkDefault true;
+        forgejo = lib.mkDefault true;
+        ankisync = lib.mkDefault true;
+      };
     };
   };
 

@@ -6,7 +6,10 @@ let
     isBtrfs = true;
     isLinux = true;
     sharescreen = "eDP-2";
-    profiles.personal = true;
+    profiles = {
+      personal = true;
+      work = true;
+    };
   };
 in
 {
@@ -25,11 +28,13 @@ in
     "${modulesPath}/nixos/optional/gaming.nix"
     "${modulesPath}/nixos/optional/work.nix"
     "${self}/profiles/nixos"
+    "${modulesPath}/nixos/server"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         "${self}/profiles/home"
+        "${modulesPath}/home/server"
         "${modulesPath}/home/optional/gaming.nix"
         "${modulesPath}/home/optional/work.nix"
       ];

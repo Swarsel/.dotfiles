@@ -44,6 +44,13 @@
       lid = lib.mkDefault true;
       lowBattery = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
+
+      optional = {
+        gaming = lib.mkDefault true;
+        virtualbox = lib.mkDefault true;
+        autologin = lib.mkDefault true;
+        nswitch-rcm = lib.mkDefault true;
+      };
     };
 
   };

@@ -1,6 +1,7 @@
 { self, config, lib, ... }:
 {
   options.swarselsystems = {
+    modules.sway = lib.mkEnableOption "sway settings";
     inputs = lib.mkOption {
       type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       default = { };
@@ -64,7 +65,7 @@
       internal = true;
     };
   };
-  config = {
+  config = lib.mkIf config.swarselsystems.modules.sway {
     swarselsystems = {
       touchpad = lib.mkIf config.swarselsystems.isLaptop {
         "type:touchpad" = {
