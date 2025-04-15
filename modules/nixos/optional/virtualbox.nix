@@ -15,7 +15,12 @@
           };
         };
         # run an older kernel to provide compatibility with windows vm
-        boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
+        boot = {
+          kernelPackages = lib.mkForce pkgs.stable24_05.linuxPackages;
+          # kernelParams = [
+          #   "amd_iommu=on"
+          # ];
+        };
       };
     };
   };

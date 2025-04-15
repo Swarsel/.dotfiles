@@ -46,6 +46,7 @@ in
       "dc"
       "cl"
       "ws"
+      "work"
     ];
 
     programs = {
@@ -133,6 +134,15 @@ in
               {
                 inherit isDefault;
                 id = 3;
+              }
+              config.swarselsystems.firefox;
+            work = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 4;
+                settings = {
+                  "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                };
               }
               config.swarselsystems.firefox;
           };
@@ -288,6 +298,12 @@ in
           icon = "firefox";
         in
         {
+          firefox_work = {
+            name = "Firefox (work)";
+            genericName = "Firefox work";
+            exec = "firefox -p work";
+            inherit terminal categories icon;
+          };
           firefox_dc = {
             name = "Firefox (dc)";
             genericName = "Firefox dc";

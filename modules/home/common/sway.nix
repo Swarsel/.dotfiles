@@ -392,9 +392,7 @@
 
         seat * hide_cursor 2000
 
-        exec kanshi
         exec_always kill -1 $(pidof kanshi)
-        exec swayosd-server
 
         bindswitch --locked lid:on exec kanshictl switch lidclosed
         bindswitch --locked lid:off exec kanshictl switch lidopen

@@ -86,7 +86,7 @@ in
     isLinux = true;
     isBtrfs = false;
     flakePath = "/root/.dotfiles";
-    server = {
+    modules.server = {
       forgejo = true;
       ankisync = true;
     };

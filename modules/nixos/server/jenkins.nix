@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
-  config = lib.mkIf config.swarselsystems.server.jenkins {
+  options.swarselsystems.modules.server.jenkins = lib.mkEnableOption "enable jenkins on server";
+  config = lib.mkIf config.swarselsystems.modules.server.jenkins {
 
     services.jenkins = {
       enable = true;

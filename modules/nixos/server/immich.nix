@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
-  config = lib.mkIf config.swarselsystems.server.immich {
+  options.swarselsystems.modules.server.immich = lib.mkEnableOption "enable immich on server";
+  config = lib.mkIf config.swarselsystems.modules.server.immich {
 
     users.users.immich = {
       extraGroups = [ "video" "render" "users" ];

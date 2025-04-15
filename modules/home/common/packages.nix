@@ -42,6 +42,7 @@
       fuse
       ventoy
       poppler_utils
+      vdhcoapp
 
       # nix
       alejandra
@@ -98,7 +99,7 @@
 
       # general utilities
       unrar
-      samba
+      # samba
       cifs-utils
       zbar # qr codes
       readline

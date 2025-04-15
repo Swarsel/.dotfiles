@@ -2,6 +2,13 @@
 {
   options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
   config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+    programs.steam = {
+      enable = true;
+      package = pkgs.steam;
+      extraCompatPackages = [
+        pkgs.proton-ge-bin
+      ];
+    };
     specialisation = {
       gaming.configuration = {
         networking = {
@@ -20,13 +27,6 @@
           };
         };
 
-        programs.steam = {
-          enable = true;
-          package = pkgs.steam;
-          extraCompatPackages = [
-            pkgs.proton-ge-bin
-          ];
-        };
 
         hardware.xone.enable = true;
 

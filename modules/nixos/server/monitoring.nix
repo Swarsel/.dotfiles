@@ -1,7 +1,7 @@
 { self, lib, config, ... }:
 {
-  options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
-  config = lib.mkIf config.swarselsystems.server.monitoring {
+  options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
+  config = lib.mkIf config.swarselsystems.modules.server.monitoring {
 
     sops.secrets = {
       grafanaadminpass = {
@@ -127,7 +127,7 @@
             sslVerify = false;
             scrapeUri = "http://localhost/nginx_status";
           };
-          nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
+          nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
             enable = true;
             port = 9205;
             url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";

@@ -11,8 +11,8 @@ let
   '';
 in
 {
-  options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
-  config = lib.mkIf config.swarselsystems.server.matrix {
+  options.swarselsystems.modules.server.matrix = lib.mkEnableOption "enable matrix on server";
+  config = lib.mkIf config.swarselsystems.modules.server.matrix {
     environment.systemPackages = with pkgs; [
       matrix-synapse
       lottieconverter

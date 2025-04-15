@@ -236,6 +236,7 @@ When setting this option normally, the password would normally be written world-
 
   nixpkgs.url = "github:nixos/nixpkgs?rev=5f385baff93c728400d2c4ec8c9b0745b8f9e5b6";
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+  nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
   systems.url = "github:nix-systems/default-linux";
   home-manager = {
     url = "github:nix-community/home-manager";
@@ -1528,7 +1529,7 @@ This machine mainly acts as an external sync helper. It manages the following th
       isLinux = true;
       isBtrfs = false;
       flakePath = "/root/.dotfiles";
-      server = {
+      modules.server = {
         forgejo = true;
         ankisync = true;
       };
@@ -3047,8 +3048,6 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
 
-This program builds a configuration locally.
-
 #+begin_src shell :tangle scripts/swarsel-rebuild.sh
   set -eo pipefail
 
@@ -3163,8 +3162,6 @@ This program builds a configuration locally.
 :PROPERTIES:
 :CUSTOM_ID: h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435
 :END:
-
-This program sets up a new NixOS host locally.
 
 #+begin_src shell :tangle scripts/swarsel-install.sh
   set -eo pipefail
@@ -3367,8 +3364,6 @@ This program sets up a new NixOS host locally.
 :CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
 :END:
 
-This program sets up a new NixOS host locally.
-
 #+begin_src shell :tangle scripts/swarsel-postinstall.sh
   set -eo pipefail
 
@@ -3462,8 +3457,6 @@ This program sets up a new NixOS host locally.
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
-This script allows for quick git branch switching.
-
 #+begin_src nix :tangle pkgs/t2ts/default.nix
   { name, writeShellApplication, ... }:
 
@@ -3481,8 +3474,6 @@ This script allows for quick git branch switching.
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
-
-This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/ts2t/default.nix
   { name, writeShellApplication, ... }:
@@ -3502,8 +3493,6 @@ This script allows for quick git branch switching.
 :CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
 :END:
 
-This script allows for quick git branch switching.
-
 #+begin_src nix :tangle pkgs/vershell/default.nix
   { name, writeShellApplication, ... }:
 
@@ -3521,8 +3510,6 @@ This script allows for quick git branch switching.
 :PROPERTIES:
 :CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
 :END:
-
-This script allows for quick git branch switching.
 
 #+begin_src nix :tangle pkgs/eontimer/default.nix
   { lib
@@ -3720,6 +3707,33 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
+**** sshrm
+
+This programs simply runs ssh-keygen on the last host that I tried to ssh into. I need this frequently when working with cloud-init usually.
+
+#+begin_src shell :tangle scripts/sshrm.sh
+  HISTFILE="$HOME"/.histfile
+
+  last_ssh_cmd=$(grep -E "ssh " "$HISTFILE" | sed -E 's/^: [0-9]+:[0-9]+;//' | grep "^ssh " | tail -1)
+  host=$(echo "$last_ssh_cmd" | sed -E 's/.*ssh ([^@ ]+@)?([^ ]+).*/\2/')
+
+  if [[ -n $host ]]; then
+      echo "Removing SSH host key for: $host"
+      ssh-keygen -R "$host"
+  else
+      echo "No valid SSH command found in history."
+  fi
+#+end_src
+
+#+begin_src nix :tangle pkgs/sshrm/default.nix
+  { self, name, writeShellApplication, openssh }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ openssh ];
+    text = builtins.readFile "${self}/scripts/${name}.sh";
+  }
+#+end_src
+
 *** Overlays (additions, overrides, nixpkgs-stable)
 :PROPERTIES:
 :CUSTOM_ID: h:5e3e21e0-57af-4dad-b32f-6400af9b7aab
@@ -3772,6 +3786,13 @@ When adding a new entry here, do not forget to add it in the default output of t
       };
     };
 
+    nixpkgs-stable24_05 = final: _: {
+      stable24_05 = import inputs.nixpkgs-stable {
+        inherit (final) system;
+        config.allowUnfree = true;
+      };
+    };
+
     zjstatus = _: prev: {
       zjstatus = inputs.zjstatus.packages.${prev.system}.default;
     };
@@ -3784,6 +3805,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       (additions final prev)
       // (modifications final prev)
       // (nixpkgs-stable final prev)
+      // (nixpkgs-stable24_05 final prev)
       // (zjstatus final prev)
       // (inputs.vbc-nix.overlays.default final prev)
       // (inputs.nur.overlays.default final prev)
@@ -3921,29 +3943,28 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           storeOptimize = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
-        };
-        server = {
-          general = lib.mkDefault true;
-          packages = lib.mkDefault true;
-          sops = lib.mkDefault true;
-          nfs = lib.mkDefault true;
-          nginx = lib.mkDefault true;
-          ssh = lib.mkDefault true;
-          kavita = lib.mkDefault true;
-          jellyfin = lib.mkDefault true;
-          navidrome = lib.mkDefault true;
-          spotifyd = lib.mkDefault true;
-          mpd = lib.mkDefault true;
-          matrix = lib.mkDefault true;
-          nextcloud = lib.mkDefault true;
-          immich = lib.mkDefault true;
-          paperless = lib.mkDefault true;
-          transmission = lib.mkDefault true;
-          syncthing = lib.mkDefault true;
-          monitoring = lib.mkDefault true;
-          emacs = lib.mkDefault true;
-          freshrss = lib.mkDefault true;
-
+          server = {
+            general = lib.mkDefault true;
+            packages = lib.mkDefault true;
+            sops = lib.mkDefault true;
+            nfs = lib.mkDefault true;
+            nginx = lib.mkDefault true;
+            ssh = lib.mkDefault true;
+            kavita = lib.mkDefault true;
+            jellyfin = lib.mkDefault true;
+            navidrome = lib.mkDefault true;
+            spotifyd = lib.mkDefault true;
+            mpd = lib.mkDefault true;
+            matrix = lib.mkDefault true;
+            nextcloud = lib.mkDefault true;
+            immich = lib.mkDefault true;
+            paperless = lib.mkDefault true;
+            transmission = lib.mkDefault true;
+            syncthing = lib.mkDefault true;
+            monitoring = lib.mkDefault true;
+            emacs = lib.mkDefault true;
+            freshrss = lib.mkDefault true;
+          };
         };
       };
     };
@@ -3968,16 +3989,16 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           storeOptimize = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
-        };
-        server = {
-          general = lib.mkDefault true;
-          packages = lib.mkDefault true;
-          sops = lib.mkDefault true;
-          nfs = lib.mkDefault true;
-          nginx = lib.mkDefault true;
-          ssh = lib.mkDefault true;
-          forgejo = lib.mkDefault true;
-          ankisync = lib.mkDefault true;
+          server = {
+            general = lib.mkDefault true;
+            packages = lib.mkDefault true;
+            sops = lib.mkDefault true;
+            nfs = lib.mkDefault true;
+            nginx = lib.mkDefault true;
+            ssh = lib.mkDefault true;
+            forgejo = lib.mkDefault true;
+            ankisync = lib.mkDefault true;
+          };
         };
       };
     };
@@ -6182,13 +6203,13 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   in
   {
     options.swarselsystems = {
-      server.general = lib.mkEnableOption "general setting on server";
+      modules.server.general = lib.mkEnableOption "general setting on server";
       shellAliases = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = { };
       };
     };
-    config = lib.mkIf config.swarselsystems.server.general {
+    config = lib.mkIf config.swarselsystems.modules.server.general {
       environment.shellAliases = lib.recursiveUpdate
         {
           npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
@@ -6222,8 +6243,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/packages.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.server.packages = lib.mkEnableOption "enable packages on server";
-    config = lib.mkIf config.swarselsystems.server.packages {
+    options.swarselsystems.modules.server.packages = lib.mkEnableOption "enable packages on server";
+    config = lib.mkIf config.swarselsystems.modules.server.packages {
       environment.systemPackages = with pkgs; [
         gnupg
         nix-index
@@ -6244,8 +6265,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/sops.nix
   { config, lib, ... }:
   {
-    options.swarselsystems.server.sops = lib.mkEnableOption "enable sops on server";
-    config = lib.mkIf config.swarselsystems.server.sops {
+    options.swarselsystems.modules.server.sops = lib.mkEnableOption "enable sops on server";
+    config = lib.mkIf config.swarselsystems.modules.server.sops {
       sops = {
         age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/sops" ];
         defaultSopsFile = lib.mkDefault "${config.swarselsystems.flakePath}/secrets/winters/secrets.yaml";
@@ -6263,8 +6284,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/nfs.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.server.nfs = lib.mkEnableOption "enable nfs on server";
-    config = lib.mkIf config.swarselsystems.server.nfs {
+    options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
+    config = lib.mkIf config.swarselsystems.modules.server.nfs {
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
@@ -6323,8 +6344,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/nginx.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.nginx = lib.mkEnableOption "enable nginx on server";
-    config = lib.mkIf config.swarselsystems.server.nginx {
+    options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
+    config = lib.mkIf config.swarselsystems.modules.server.nginx {
       environment.systemPackages = with pkgs; [
         lego
       ];
@@ -6370,8 +6391,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/ssh.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.server.ssh = lib.mkEnableOption "enable ssh on server";
-    config = lib.mkIf config.swarselsystems.server.ssh {
+    options.swarselsystems.modules.server.ssh = lib.mkEnableOption "enable ssh on server";
+    config = lib.mkIf config.swarselsystems.modules.server.ssh {
       services.openssh = {
         enable = true;
       };
@@ -6398,8 +6419,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/kavita.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
-    config = lib.mkIf config.swarselsystems.server.kavita {
+    options.swarselsystems.modules.server.kavita = lib.mkEnableOption "enable kavita on server";
+    config = lib.mkIf config.swarselsystems.modules.server.kavita {
       environment.systemPackages = with pkgs; [
         calibre
       ];
@@ -6449,8 +6470,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
-    config = lib.mkIf config.swarselsystems.server.jellyfin {
+    options.swarselsystems.modules.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
+    config = lib.mkIf config.swarselsystems.modules.server.jellyfin {
       users.users.jellyfin = {
         extraGroups = [ "video" "render" "users" ];
       };
@@ -6505,8 +6526,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     secretsDirectory = builtins.toString inputs.nix-secrets;
   in
   {
-    options.swarselsystems.server.navidrome = lib.mkEnableOption "enable navidrome on server";
-    config = lib.mkIf config.swarselsystems.server.navidrome {
+    options.swarselsystems.modules.server.navidrome = lib.mkEnableOption "enable navidrome on server";
+    config = lib.mkIf config.swarselsystems.modules.server.navidrome {
       environment.systemPackages = with pkgs; [
         pciutils
         alsa-utils
@@ -6608,8 +6629,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/spotifyd.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
-    config = lib.mkIf config.swarselsystems.server.spotifyd {
+    options.swarselsystems.modules.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
+    config = lib.mkIf config.swarselsystems.modules.server.spotifyd {
       users.groups.spotifyd = {
         gid = 65136;
       };
@@ -6651,8 +6672,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/mpd.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.mpd = lib.mkEnableOption "enable mpd on server";
-    config = lib.mkIf config.swarselsystems.server.mpd {
+    options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
+    config = lib.mkIf config.swarselsystems.modules.server.mpd {
       users = {
         groups = {
           mpd = { };
@@ -6711,7 +6732,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/pipewire.nix
   { lib, config, ... }:
   {
-    config = lib.mkIf (config?swarselsystems.server.mpd || config?swarselsystems.server.navidrome) {
+    config = lib.mkIf (config?swarselsystems.modules.server.mpd || config?swarselsystems.modules.server.navidrome) {
 
       security.rtkit.enable = true; # this is required for pipewire real-time access
 
@@ -6750,8 +6771,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     '';
   in
   {
-    options.swarselsystems.server.matrix = lib.mkEnableOption "enable matrix on server";
-    config = lib.mkIf config.swarselsystems.server.matrix {
+    options.swarselsystems.modules.server.matrix = lib.mkEnableOption "enable matrix on server";
+    config = lib.mkIf config.swarselsystems.modules.server.matrix {
       environment.systemPackages = with pkgs; [
         matrix-synapse
         lottieconverter
@@ -7072,8 +7093,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
-    config = lib.mkIf config.swarselsystems.server.nextcloud {
+    options.swarselsystems.modules.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
+    config = lib.mkIf config.swarselsystems.modules.server.nextcloud {
 
       sops.secrets.nextcloudadminpass = {
         owner = "nextcloud";
@@ -7126,8 +7147,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/immich.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.immich = lib.mkEnableOption "enable immich on server";
-    config = lib.mkIf config.swarselsystems.server.immich {
+    options.swarselsystems.modules.server.immich = lib.mkEnableOption "enable immich on server";
+    config = lib.mkIf config.swarselsystems.modules.server.immich {
 
       users.users.immich = {
         extraGroups = [ "video" "render" "users" ];
@@ -7184,8 +7205,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/paperless.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.paperless = lib.mkEnableOption "enable paperless on server";
-    config = lib.mkIf config.swarselsystems.server.paperless {
+    options.swarselsystems.modules.server.paperless = lib.mkEnableOption "enable paperless on server";
+    config = lib.mkIf config.swarselsystems.modules.server.paperless {
 
       users.users.paperless = {
         extraGroups = [ "users" ];
@@ -7243,8 +7264,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix :tangle modules/nixos/server/transmission.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
-    config = lib.mkIf config.swarselsystems.server.transmission {
+    options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
+    config = lib.mkIf config.swarselsystems.modules.server.transmission {
 
       # this user/group section is probably unneeded
       users = {
@@ -7389,8 +7410,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
   in
   {
-    options.swarselsystems.server.syncthing = lib.mkEnableOption "enable syncthing on server";
-    config = lib.mkIf config.swarselsystems.server.syncthing {
+    options.swarselsystems.modules.server.syncthing = lib.mkEnableOption "enable syncthing on server";
+    config = lib.mkIf config.swarselsystems.modules.server.syncthing {
 
       users.users.syncthing = {
         extraGroups = [ "users" ];
@@ -7510,8 +7531,8 @@ Once this is finished, it will house a restic client that manages automatic back
 #+begin_src nix :tangle modules/nixos/server/restic.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.restic = lib.mkEnableOption "enable restic backups on server";
-    config = lib.mkIf config.swarselsystems.server.restic {
+    options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
+    config = lib.mkIf config.swarselsystems.modules.server.restic {
 
       # TODO
 
@@ -7529,8 +7550,8 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix :tangle modules/nixos/server/monitoring.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.server.monitoring = lib.mkEnableOption "enable monitoring on server";
-    config = lib.mkIf config.swarselsystems.server.monitoring {
+    options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
+    config = lib.mkIf config.swarselsystems.modules.server.monitoring {
 
       sops.secrets = {
         grafanaadminpass = {
@@ -7656,7 +7677,7 @@ This section exposes several metrics that I use to check the health of my server
               sslVerify = false;
               scrapeUri = "http://localhost/nginx_status";
             };
-            nextcloud = lib.mkIf config.swarselsystems.server.nextcloud {
+            nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
               enable = true;
               port = 9205;
               url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
@@ -7706,8 +7727,8 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.server.jenkins = lib.mkEnableOption "enable jenkins on server";
-    config = lib.mkIf config.swarselsystems.server.jenkins {
+    options.swarselsystems.modules.server.jenkins = lib.mkEnableOption "enable jenkins on server";
+    config = lib.mkIf config.swarselsystems.modules.server.jenkins {
 
       services.jenkins = {
         enable = true;
@@ -7752,8 +7773,8 @@ This was an approach of hosting an RSS server from within emacs. That would have
 #+begin_src nix :tangle modules/nixos/server/emacs.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.emacs = lib.mkEnableOption "enable emacs server on server";
-    config = lib.mkIf config.swarselsystems.server.emacs {
+    options.swarselsystems.modules.server.emacs = lib.mkEnableOption "enable emacs server on server";
+    config = lib.mkIf config.swarselsystems.modules.server.emacs {
 
       networking.firewall.allowedTCPPorts = [ 9812 ];
 
@@ -7780,8 +7801,8 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle modules/nixos/server/freshrss.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
-    config = lib.mkIf config.swarselsystems.server.freshrss {
+    options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
+    config = lib.mkIf config.swarselsystems.modules.server.freshrss {
 
       users.users.freshrss = {
         extraGroups = [ "users" ];
@@ -7825,8 +7846,8 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle modules/nixos/server/forgejo.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.forgejo = lib.mkEnableOption "enable forgejo on server";
-    config = lib.mkIf config.swarselsystems.server.forgejo {
+    options.swarselsystems.modules.server.forgejo = lib.mkEnableOption "enable forgejo on server";
+    config = lib.mkIf config.swarselsystems.modules.server.forgejo {
 
       networking.firewall.allowedTCPPorts = [ 3000 ];
 
@@ -7880,8 +7901,8 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 #+begin_src nix :tangle modules/nixos/server/ankisync.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
-    config = lib.mkIf config.swarselsystems.server.ankisync {
+    options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
+    config = lib.mkIf config.swarselsystems.modules.server.ankisync {
 
       networking.firewall.allowedTCPPorts = [ 22701 ];
 
@@ -7975,6 +7996,13 @@ This opens a few gaming ports and installs the steam configuration suite for gam
   {
     options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
     config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+      programs.steam = {
+        enable = true;
+        package = pkgs.steam;
+        extraCompatPackages = [
+          pkgs.proton-ge-bin
+        ];
+      };
       specialisation = {
         gaming.configuration = {
           networking = {
@@ -7993,13 +8021,6 @@ This opens a few gaming ports and installs the steam configuration suite for gam
             };
           };
 
-          programs.steam = {
-            enable = true;
-            package = pkgs.steam;
-            extraCompatPackages = [
-              pkgs.proton-ge-bin
-            ];
-          };
 
           hardware.xone.enable = true;
 
@@ -8023,29 +8044,34 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialisation.
 
 #+begin_src nix :tangle modules/nixos/optional/virtualbox.nix
-{ lib, config, pkgs, ... }:
-{
-  options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.virtualbox {
-    specialisation = {
-      VBox.configuration = {
-        virtualisation.virtualbox = {
-          host = {
-            enable = true;
-            enableExtensionPack = true;
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.virtualbox {
+      specialisation = {
+        VBox.configuration = {
+          virtualisation.virtualbox = {
+            host = {
+              enable = true;
+              enableExtensionPack = true;
+            };
+            # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+            guest = {
+              enable = false;
+            };
           };
-          # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-          guest = {
-            enable = false;
+          # run an older kernel to provide compatibility with windows vm
+          boot = {
+            kernelPackages = lib.mkForce pkgs.stable24_05.linuxPackages;
+            # kernelParams = [
+            #   "amd_iommu=on"
+            # ];
           };
         };
-        # run an older kernel to provide compatibility with windows vm
-        boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
       };
     };
-  };
 
-}
+  }
 #+end_src
 
 **** VmWare
@@ -8811,188 +8837,189 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 This holds packages that I can use as provided, or with small modifications (as in the =texlive= package that needs special configuration).
 
 #+begin_src nix :tangle modules/home/common/packages.nix
-{ lib, config, pkgs, ... }:
+  { lib, config, pkgs, ... }:
 
-{
-  options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
-  config = lib.mkIf config.swarselsystems.modules.packages {
-    home.packages = with pkgs; [
+  {
+    options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
+    config = lib.mkIf config.swarselsystems.modules.packages {
+      home.packages = with pkgs; [
 
-      # audio stuff
-      spek # spectrum analyzer
-      losslessaudiochecker
-      ffmpeg_7-full
-      flac
-      mediainfo
-      picard-tools
-      audacity
-      sox
-      stable.feishin
-      calibre
+        # audio stuff
+        spek # spectrum analyzer
+        losslessaudiochecker
+        ffmpeg_7-full
+        flac
+        mediainfo
+        picard-tools
+        audacity
+        sox
+        stable.feishin
+        calibre
 
-      # printing
-      cups
-      simple-scan
+        # printing
+        cups
+        simple-scan
 
-      # dict
-      (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
+        # dict
+        (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
-      # browser
-      vieb
-      mgba
+        # browser
+        vieb
+        mgba
 
-      # utilities
-      util-linux
-      nmap
-      lsof
-      nvd
-      nix-output-monitor
-      hyprpicker # color picker
-      findutils
-      units
-      vim
-      sshfs
-      fuse
-      ventoy
-      poppler_utils
+        # utilities
+        util-linux
+        nmap
+        lsof
+        nvd
+        nix-output-monitor
+        hyprpicker # color picker
+        findutils
+        units
+        vim
+        sshfs
+        fuse
+        ventoy
+        poppler_utils
+        vdhcoapp
 
-      # nix
-      alejandra
-      nixpkgs-fmt
-      deadnix
-      statix
-      nix-tree
-      nix-diff
-      nix-visualize
-      nix-init
-      nix-inspect
-      nixpkgs-review
-      manix
-      comma
+        # nix
+        alejandra
+        nixpkgs-fmt
+        deadnix
+        statix
+        nix-tree
+        nix-diff
+        nix-visualize
+        nix-init
+        nix-inspect
+        nixpkgs-review
+        manix
+        comma
 
-      # shellscripts
-      shfmt
+        # shellscripts
+        shfmt
 
-      # local file sharing
-      wormhole-rs
+        # local file sharing
+        wormhole-rs
 
-      # b2 backup @backblaze
-      restic
+        # b2 backup @backblaze
+        restic
 
-      # "big" programs
-      gimp
-      inkscape
-      zoom-us
-      # nomacs
-      libreoffice-qt
-      xournalpp
-      obsidian
-      spotify
-      vesktop # discord client
-      nextcloud-client
-      spotify-player
-      element-desktop
-      nicotine-plus
-      stable.transmission_3
-      mktorrent
-      hexchat
-      hugo
+        # "big" programs
+        gimp
+        inkscape
+        zoom-us
+        # nomacs
+        libreoffice-qt
+        xournalpp
+        obsidian
+        spotify
+        vesktop # discord client
+        nextcloud-client
+        spotify-player
+        element-desktop
+        nicotine-plus
+        stable.transmission_3
+        mktorrent
+        hexchat
+        hugo
 
-      # kyria
-      qmk
-      qmk-udev-rules
+        # kyria
+        qmk
+        qmk-udev-rules
 
-      # firefox related
-      tridactyl-native
+        # firefox related
+        tridactyl-native
 
-      # mako related
-      mako
-      libnotify
+        # mako related
+        mako
+        libnotify
 
-      # general utilities
-      unrar
-      samba
-      cifs-utils
-      zbar # qr codes
-      readline
-      autotiling
-      brightnessctl
-      libappindicator-gtk3
-      sqlite
-      speechd
-      networkmanagerapplet
-      psmisc # kill etc
-      lm_sensors
-      # jq # used for searching the i3 tree in check<xxx>.sh files
+        # general utilities
+        unrar
+        # samba
+        cifs-utils
+        zbar # qr codes
+        readline
+        autotiling
+        brightnessctl
+        libappindicator-gtk3
+        sqlite
+        speechd
+        networkmanagerapplet
+        psmisc # kill etc
+        lm_sensors
+        # jq # used for searching the i3 tree in check<xxx>.sh files
 
-      # specifically needed for anki
-      # mpv
-      anki-bin
+        # specifically needed for anki
+        # mpv
+        anki-bin
 
-      # dirvish file previews
-      fd
-      imagemagick
-      # poppler
-      ffmpegthumbnailer
-      mediainfo
-      gnutar
-      unzip
+        # dirvish file previews
+        fd
+        imagemagick
+        # poppler
+        ffmpegthumbnailer
+        mediainfo
+        gnutar
+        unzip
 
-      #nautilus
-      stable.nautilus
-      xfce.tumbler
-      libgsf
+        #nautilus
+        stable.nautilus
+        xfce.tumbler
+        libgsf
 
-      # wayland stuff
-      wtype
-      wl-clipboard
-      stable.wl-mirror
-      wf-recorder
-      kanshi
+        # wayland stuff
+        wtype
+        wl-clipboard
+        stable.wl-mirror
+        wf-recorder
+        kanshi
 
-      # screenshotting tools
-      grim
-      slurp
+        # screenshotting tools
+        grim
+        slurp
 
-      # the following packages are used (in some way) by waybar
-      playerctl
-      pavucontrol
-      stable.pamixer
-      # gnome.gnome-clocks
-      # wlogout
-      # jdiskreport
-      # monitor
+        # the following packages are used (in some way) by waybar
+        playerctl
+        pavucontrol
+        stable.pamixer
+        # gnome.gnome-clocks
+        # wlogout
+        # jdiskreport
+        # monitor
 
-      #keychain
-      qalculate-gtk
-      gcr # needed for gnome-secrets to work
-      seahorse
+        #keychain
+        qalculate-gtk
+        gcr # needed for gnome-secrets to work
+        seahorse
 
-      # sops-related
-      sops
-      ssh-to-age
+        # sops-related
+        sops
+        ssh-to-age
 
-      # mail related packages
-      mu
+        # mail related packages
+        mu
 
-      # latex and related packages
-      (texlive.combine {
-        inherit (pkgs.texlive) scheme-full
-          dvisvgm dvipng# for preview and export as html
-          wrapfig amsmath ulem hyperref capt-of;
-      })
+        # latex and related packages
+        (texlive.combine {
+          inherit (pkgs.texlive) scheme-full
+            dvisvgm dvipng# for preview and export as html
+            wrapfig amsmath ulem hyperref capt-of;
+        })
 
-      # font stuff
-      nerd-fonts.fira-mono
-      nerd-fonts.fira-code
-      nerd-fonts.symbols-only
-      noto-fonts-emoji
-      font-awesome_5
-      noto-fonts
-      noto-fonts-cjk-sans
-    ];
-  };
-}
+        # font stuff
+        nerd-fonts.fira-mono
+        nerd-fonts.fira-code
+        nerd-fonts.symbols-only
+        noto-fonts-emoji
+        font-awesome_5
+        noto-fonts
+        noto-fonts-cjk-sans
+      ];
+    };
+  }
 #+end_src
 
 ***** Self-defined
@@ -9031,6 +9058,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         swarsel-bootstrap
         swarsel-displaypower
         swarselzellij
+        sshrm
 
         rustdesk-vbc
       ];
@@ -9763,6 +9791,7 @@ The theme is handled by stylix.
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
 
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
+Concerning the shell extensions, =zle <widget-name>= will run an existing widget and =zle -N <function_name>= will make a function available for use. The =my-= functions all remove =.= =/= and =:= from the =WORDCHARS= so that functions will stop there.
 
 #+begin_src nix :tangle modules/home/common/zsh.nix
   { config, pkgs, lib, ... }:
@@ -9840,40 +9869,48 @@ Here we set some aliases (some of them should be shellApplications instead) as w
           }
         ];
         initExtra = ''
-          bindkey "^[[1;5D" backward-word
-          bindkey "^[[1;5C" forward-word
+          my-forward-word() {
+              local WORDCHARS=$WORDCHARS
+              WORDCHARS="''${WORDCHARS//:}"
+              WORDCHARS="''${WORDCHARS//\/}"
+              WORDCHARS="''${WORDCHARS//.}"
+              zle backward-word
+          }
+          zle -N my-forward-word
+          # ctrl + right
+          bindkey "^[[1;5C" my-forward-word
+
+          # shift + right
+          bindkey "^[[1;2D" forward-word
+
+          my-backward-word() {
+              local WORDCHARS=$WORDCHARS
+              WORDCHARS="''${WORDCHARS//:}"
+              WORDCHARS="''${WORDCHARS//\/}"
+              WORDCHARS="''${WORDCHARS//.}"
+              zle forward-word
+          }
+          zle -N my-backward-word
+          # ctrl + left
+          bindkey "^[[1;5D" -mybackward-word
+
+          # shift + left
+          bindkey "^[[1;2C" backward-word
 
           my-backward-delete-word() {
-              # Copy the global WORDCHARS variable to a local variable. That way any
-              # modifications are scoped to this function only
               local WORDCHARS=$WORDCHARS
-              # Use bash string manipulation to remove `:` so our delete will stop at it
               WORDCHARS="''${WORDCHARS//:}"
-              # Use bash string manipulation to remove `/` so our delete will stop at it
               WORDCHARS="''${WORDCHARS//\/}"
-              # Use bash string manipulation to remove `.` so our delete will stop at it
               WORDCHARS="''${WORDCHARS//.}"
-              # zle <widget-name> will run an existing widget.
               zle backward-delete-word
           }
           zle -N my-backward-delete-word
+          # ctrl + del
           bindkey '^H' my-backward-delete-word
 
-          # This will be our `ctrl+alt+w` command
-          my-backward-delete-whole-word() {
-              # Copy the global WORDCHARS variable to a local variable. That way any
-              # modifications are scoped to this function only
-              local WORDCHARS=$WORDCHARS
-              # Use bash string manipulation to add `:` to WORDCHARS if it's not present
-              # already.
-              [[ ! $WORDCHARS == *":"* ]] && WORDCHARS="$WORDCHARS"":"
-              # zle <widget-name> will run that widget.
-              zle backward-delete-word
-          }
-          # `zle -N` will create a new widget that we can use on the command line
-          zle -N my-backward-delete-whole-word
-          # bind this new widget to `ctrl+alt+w`
-          bindkey '^W' my-backward-delete-whole-word
+          # shift + del
+          bindkey '^?' backward-delete-word
+
         '';
       };
     };
@@ -10746,7 +10783,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
               id = 0;
               isDefault = true;
               settings = {
-                "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                "browser.startup.homepage" = "https://lobste.rs";
               };
             }
             config.swarselsystems.firefox;
@@ -11309,9 +11346,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
           seat * hide_cursor 2000
 
-          exec kanshi
           exec_always kill -1 $(pidof kanshi)
-          exec swayosd-server
 
           bindswitch --locked lid:on exec kanshictl switch lidclosed
           bindswitch --locked lid:off exec kanshictl switch lidopen
@@ -11584,6 +11619,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
       home.packages = with pkgs; [
         lutris
         wine
+        protonplus
         winetricks
         libudev-zero
         dwarfs
@@ -11672,6 +11708,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         "dc"
         "cl"
         "ws"
+        "work"
       ];
 
       programs = {
@@ -11759,6 +11796,15 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                 {
                   inherit isDefault;
                   id = 3;
+                }
+                config.swarselsystems.firefox;
+              work = lib.recursiveUpdate
+                {
+                  inherit isDefault;
+                  id = 4;
+                  settings = {
+                    "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                  };
                 }
                 config.swarselsystems.firefox;
             };
@@ -11914,6 +11960,12 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
             icon = "firefox";
           in
           {
+            firefox_work = {
+              name = "Firefox (work)";
+              genericName = "Firefox work";
+              exec = "firefox -p work";
+              inherit terminal categories icon;
+            };
             firefox_dc = {
               name = "Firefox (dc)";
               genericName = "Firefox dc";
@@ -15259,30 +15311,49 @@ bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
 
 " Work
-command tab_or_tabopen jsb -p (async () => { let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
+command tab_or_tabopen jsb -p (async () => {
+  let tabs = await browser.tabs.query({});
+  let tab = tabs.find(t => t.url.includes(JS_ARG));
+  if (tab) {
+    browser.tabs.update(tab.id, { active: true });
+  } else {
+    tri.excmds.tabopen(JS_ARG);
+  }
+})()
 
-bind gwa tab_or_tabopen apic-impimba-1.m.imp.ac.at
-bind gwA tab_or_tabopen artifactory.imp.ac.at
-bind gwb tab_or_tabopen bitbucket.vbc.ac.at
-bind gwc tab_or_tabopen vbc.atlassian.net/wiki
-bind gwd tab_or_tabopen datadomain-impimba-2.imp.ac.at
-bind gwe tab_or_tabopen exivity.vbc.ac.at
-bind gwg tab_or_tabopen github.com
-bind gwG tab_or_tabopen goc.egi.eu
-bind gwh tab_or_tabopen jupyterhub.vbc.ac.at
-bind gwH tab_or_tabopen test-jupyterhub.vbc.ac.at
-bind gwj tab_or_tabopen jenkins.vbc.ac.at
-bind gwJ tab_or_tabopen test-jenkins.vbc.ac.at
-bind gwl tab_or_tabopen lucid.app
-bind gwm tab_or_tabopen monitoring.vbc.ac.at/grafana
-bind gwM tab_or_tabopen monitoring.vbc.ac.at/prometheus
-bind gwn tab_or_tabopen netbox.vbc.ac.at
-bind gwN tab_or_tabopen nap.imp.ac.at
-bind gwo tab_or_tabopen outlook.office.com
-bind gws tab_or_tabopen satellite.vbc.ac.at
-bind gwt tab_or_tabopen tower.vbc.ac.at
-bind gwv tab_or_tabopen vc-impimba-1.m.imp.ac.at/ui
-bind gwx tab_or_tabopen xclarity.vbc.ac.at
+command tab_or_tabopen_local jsb -p (async () => {
+    const currentWindow = await browser.windows.getCurrent();
+    const tabs = await browser.tabs.query({ windowId: currentWindow.id });
+    const tab = tabs.find(t => t.url.includes(JS_ARG));
+    if (tab) {
+        browser.tabs.update(tab.id, { active: true });
+    } else {
+        tri.excmds.tabopen(JS_ARG);
+    }
+})()
+
+bind gwa tab_or_tabopen_local apic-impimba-1.m.imp.ac.at
+bind gwA tab_or_tabopen_local artifactory.imp.ac.at
+bind gwb tab_or_tabopen_local bitbucket.vbc.ac.at
+bind gwc tab_or_tabopen_local vbc.atlassian.net/wiki
+bind gwd tab_or_tabopen_local datadomain-impimba-2.imp.ac.at
+bind gwe tab_or_tabopen_local exivity.vbc.ac.at
+bind gwg tab_or_tabopen_local github.com
+bind gwG tab_or_tabopen_local goc.egi.eu
+bind gwh tab_or_tabopen_local jupyterhub.vbc.ac.at
+bind gwH tab_or_tabopen_local test-jupyterhub.vbc.ac.at
+bind gwj tab_or_tabopen_local jenkins.vbc.ac.at
+bind gwJ tab_or_tabopen_local test-jenkins.vbc.ac.at
+bind gwl tab_or_tabopen_local lucid.app
+bind gwm tab_or_tabopen_local monitoring.vbc.ac.at/grafana
+bind gwM tab_or_tabopen_local monitoring.vbc.ac.at/prometheus
+bind gwn tab_or_tabopen_local netbox.vbc.ac.at
+bind gwN tab_or_tabopen_local nap.imp.ac.at
+bind gwo tab_or_tabopen_local outlook.office.com
+bind gws tab_or_tabopen_local satellite.vbc.ac.at
+bind gwt tab_or_tabopen_local tower.vbc.ac.at
+bind gwv tab_or_tabopen_local vc-impimba-1.m.imp.ac.at/ui
+bind gwx tab_or_tabopen_local xclarity.vbc.ac.at
 
 " Search in page
 set findcase smart

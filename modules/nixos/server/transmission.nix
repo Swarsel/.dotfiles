@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
-  config = lib.mkIf config.swarselsystems.server.transmission {
+  options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
+  config = lib.mkIf config.swarselsystems.modules.server.transmission {
 
     # this user/group section is probably unneeded
     users = {

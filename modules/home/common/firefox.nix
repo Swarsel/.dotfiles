@@ -140,7 +140,7 @@
             id = 0;
             isDefault = true;
             settings = {
-              "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+              "browser.startup.homepage" = "https://lobste.rs";
             };
           }
           config.swarselsystems.firefox;

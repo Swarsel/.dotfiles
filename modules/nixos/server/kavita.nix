@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.server.kavita = lib.mkEnableOption "enable kavita on server";
-  config = lib.mkIf config.swarselsystems.server.kavita {
+  options.swarselsystems.modules.server.kavita = lib.mkEnableOption "enable kavita on server";
+  config = lib.mkIf config.swarselsystems.modules.server.kavita {
     environment.systemPackages = with pkgs; [
       calibre
     ];

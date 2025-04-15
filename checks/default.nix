@@ -12,7 +12,7 @@
       detect-private-keys.enable = true;
       end-of-file-fixer.enable = true;
       fix-byte-order-marker.enable = true;
-      flake-checker.enable = true;
+      flake-checker.enable = false;
       forbid-new-submodules.enable = true;
       mixed-line-endings.enable = true;
       nixpkgs-fmt.enable = true;

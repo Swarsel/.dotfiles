@@ -26,6 +26,7 @@
       swarsel-bootstrap
       swarsel-displaypower
       swarselzellij
+      sshrm
 
       rustdesk-vbc
     ];

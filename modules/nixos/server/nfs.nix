@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.server.nfs = lib.mkEnableOption "enable nfs on server";
-  config = lib.mkIf config.swarselsystems.server.nfs {
+  options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
+  config = lib.mkIf config.swarselsystems.modules.server.nfs {
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {

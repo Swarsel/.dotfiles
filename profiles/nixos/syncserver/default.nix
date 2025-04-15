@@ -12,16 +12,16 @@
         storeOptimize = lib.mkDefault true;
         time = lib.mkDefault true;
         users = lib.mkDefault true;
-      };
-      server = {
-        general = lib.mkDefault true;
-        packages = lib.mkDefault true;
-        sops = lib.mkDefault true;
-        nfs = lib.mkDefault true;
-        nginx = lib.mkDefault true;
-        ssh = lib.mkDefault true;
-        forgejo = lib.mkDefault true;
-        ankisync = lib.mkDefault true;
+        server = {
+          general = lib.mkDefault true;
+          packages = lib.mkDefault true;
+          sops = lib.mkDefault true;
+          nfs = lib.mkDefault true;
+          nginx = lib.mkDefault true;
+          ssh = lib.mkDefault true;
+          forgejo = lib.mkDefault true;
+          ankisync = lib.mkDefault true;
+        };
       };
     };
   };

@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
-  config = lib.mkIf config.swarselsystems.server.spotifyd {
+  options.swarselsystems.modules.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
+  config = lib.mkIf config.swarselsystems.modules.server.spotifyd {
     users.groups.spotifyd = {
       gid = 65136;
     };

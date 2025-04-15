@@ -3,8 +3,8 @@ let
   secretsDirectory = builtins.toString inputs.nix-secrets;
 in
 {
-  options.swarselsystems.server.navidrome = lib.mkEnableOption "enable navidrome on server";
-  config = lib.mkIf config.swarselsystems.server.navidrome {
+  options.swarselsystems.modules.server.navidrome = lib.mkEnableOption "enable navidrome on server";
+  config = lib.mkIf config.swarselsystems.modules.server.navidrome {
     environment.systemPackages = with pkgs; [
       pciutils
       alsa-utils

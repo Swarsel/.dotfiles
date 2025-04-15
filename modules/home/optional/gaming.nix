@@ -7,6 +7,7 @@
     home.packages = with pkgs; [
       lutris
       wine
+      protonplus
       winetricks
       libudev-zero
       dwarfs

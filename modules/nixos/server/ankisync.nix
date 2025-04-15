@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.server.ankisync = lib.mkEnableOption "enable ankisync on server";
-  config = lib.mkIf config.swarselsystems.server.ankisync {
+  options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
+  config = lib.mkIf config.swarselsystems.modules.server.ankisync {
 
     networking.firewall.allowedTCPPorts = [ 22701 ];
 

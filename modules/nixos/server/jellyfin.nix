@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
-  config = lib.mkIf config.swarselsystems.server.jellyfin {
+  options.swarselsystems.modules.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
+  config = lib.mkIf config.swarselsystems.modules.server.jellyfin {
     users.users.jellyfin = {
       extraGroups = [ "video" "render" "users" ];
     };

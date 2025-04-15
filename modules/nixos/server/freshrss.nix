@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.server.freshrss = lib.mkEnableOption "enable freshrss on server";
-  config = lib.mkIf config.swarselsystems.server.freshrss {
+  options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
+  config = lib.mkIf config.swarselsystems.modules.server.freshrss {
 
     users.users.freshrss = {
       extraGroups = [ "users" ];

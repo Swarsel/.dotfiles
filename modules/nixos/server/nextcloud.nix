@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
-  config = lib.mkIf config.swarselsystems.server.nextcloud {
+  options.swarselsystems.modules.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
+  config = lib.mkIf config.swarselsystems.modules.server.nextcloud {
 
     sops.secrets.nextcloudadminpass = {
       owner = "nextcloud";
