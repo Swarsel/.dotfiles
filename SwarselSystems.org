@@ -9791,7 +9791,7 @@ The theme is handled by stylix.
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
 
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
-Concerning the shell extensions, =zle <widget-name>= will run an existing widget and =zle -N <function_name>= will make a function available for use. The =my-= functions all remove =.= =/= and =:= from the =WORDCHARS= so that functions will stop there.
+Concerning the shell extensions, =zle <widget-name>= will run an existing widget and =zle -N <function_name>= will make a function available for use. The =my-= functions all remove =.= =/= and =:= from the =WORDCHARS= so that functions will stop there. The keycodes can be found using =showkeys -a=
 
 #+begin_src nix :tangle modules/home/common/zsh.nix
   { config, pkgs, lib, ... }:
@@ -9854,8 +9854,8 @@ Concerning the shell extensions, =zle <widget-name>= will run an existing widget
         history = {
           expireDuplicatesFirst = true;
           path = "$HOME/.histfile";
-          save = 10000;
-          size = 10000;
+          save = 100000;
+          size = 100000;
         };
         historySubstringSearch = {
           enable = true;
@@ -9870,46 +9870,43 @@ Concerning the shell extensions, =zle <widget-name>= will run an existing widget
         ];
         initExtra = ''
           my-forward-word() {
-              local WORDCHARS=$WORDCHARS
-              WORDCHARS="''${WORDCHARS//:}"
-              WORDCHARS="''${WORDCHARS//\/}"
-              WORDCHARS="''${WORDCHARS//.}"
-              zle backward-word
+            local WORDCHARS=$WORDCHARS
+            WORDCHARS="''${WORDCHARS//:}"
+            WORDCHARS="''${WORDCHARS//\/}"
+            WORDCHARS="''${WORDCHARS//.}"
+            zle forward-word
           }
           zle -N my-forward-word
           # ctrl + right
           bindkey "^[[1;5C" my-forward-word
 
           # shift + right
-          bindkey "^[[1;2D" forward-word
+          bindkey "^[[1;2C" forward-word
 
           my-backward-word() {
-              local WORDCHARS=$WORDCHARS
-              WORDCHARS="''${WORDCHARS//:}"
-              WORDCHARS="''${WORDCHARS//\/}"
-              WORDCHARS="''${WORDCHARS//.}"
-              zle forward-word
+            local WORDCHARS=$WORDCHARS
+            WORDCHARS="''${WORDCHARS//:}"
+            WORDCHARS="''${WORDCHARS//\/}"
+            WORDCHARS="''${WORDCHARS//.}"
+            zle backward-word
           }
           zle -N my-backward-word
           # ctrl + left
-          bindkey "^[[1;5D" -mybackward-word
+          bindkey "^[[1;5D" my-backward-word
 
           # shift + left
-          bindkey "^[[1;2C" backward-word
+          bindkey "^[[1;2D" backward-word
 
           my-backward-delete-word() {
-              local WORDCHARS=$WORDCHARS
-              WORDCHARS="''${WORDCHARS//:}"
-              WORDCHARS="''${WORDCHARS//\/}"
-              WORDCHARS="''${WORDCHARS//.}"
-              zle backward-delete-word
+            local WORDCHARS=$WORDCHARS
+            WORDCHARS="''${WORDCHARS//:}"
+            WORDCHARS="''${WORDCHARS//\/}"
+            WORDCHARS="''${WORDCHARS//.}"
+            zle backward-delete-word
           }
           zle -N my-backward-delete-word
           # ctrl + del
           bindkey '^H' my-backward-delete-word
-
-          # shift + del
-          bindkey '^?' backward-delete-word
 
         '';
       };

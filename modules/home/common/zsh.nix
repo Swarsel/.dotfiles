@@ -58,8 +58,8 @@ in
       history = {
         expireDuplicatesFirst = true;
         path = "$HOME/.histfile";
-        save = 10000;
-        size = 10000;
+        save = 100000;
+        size = 100000;
       };
       historySubstringSearch = {
         enable = true;
@@ -74,46 +74,43 @@ in
       ];
       initExtra = ''
         my-forward-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle backward-word
+          local WORDCHARS=$WORDCHARS
+          WORDCHARS="''${WORDCHARS//:}"
+          WORDCHARS="''${WORDCHARS//\/}"
+          WORDCHARS="''${WORDCHARS//.}"
+          zle forward-word
         }
         zle -N my-forward-word
         # ctrl + right
         bindkey "^[[1;5C" my-forward-word
 
         # shift + right
-        bindkey "^[[1;2D" forward-word
+        bindkey "^[[1;2C" forward-word
 
         my-backward-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle forward-word
+          local WORDCHARS=$WORDCHARS
+          WORDCHARS="''${WORDCHARS//:}"
+          WORDCHARS="''${WORDCHARS//\/}"
+          WORDCHARS="''${WORDCHARS//.}"
+          zle backward-word
         }
         zle -N my-backward-word
         # ctrl + left
-        bindkey "^[[1;5D" -mybackward-word
+        bindkey "^[[1;5D" my-backward-word
 
         # shift + left
-        bindkey "^[[1;2C" backward-word
+        bindkey "^[[1;2D" backward-word
 
         my-backward-delete-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle backward-delete-word
+          local WORDCHARS=$WORDCHARS
+          WORDCHARS="''${WORDCHARS//:}"
+          WORDCHARS="''${WORDCHARS//\/}"
+          WORDCHARS="''${WORDCHARS//.}"
+          zle backward-delete-word
         }
         zle -N my-backward-delete-word
         # ctrl + del
         bindkey '^H' my-backward-delete-word
-
-        # shift + del
-        bindkey '^?' backward-delete-word
 
       '';
     };
