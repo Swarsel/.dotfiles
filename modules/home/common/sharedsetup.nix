@@ -183,9 +183,9 @@ in
 
         search = {
           # default = "Kagi";
-          default = "Google";
+          default = "google";
           # privateDefault = "Kagi";
-          privateDefault = "Google";
+          privateDefault = "google";
           engines = {
             "Kagi" = {
               urls = [{
@@ -194,7 +194,7 @@ in
                   { name = "q"; value = "{searchTerms}"; }
                 ];
               }];
-              iconUpdateURL = "https://kagi.com/favicon.ico";
+              icon = "https://kagi.com/favicon.ico";
               updateInterval = 24 * 60 * 60 * 1000; # every day
               definedAliases = [ "@k" ];
             };
@@ -215,7 +215,7 @@ in
               urls = [{
                 template = "https://nixos.wiki/index.php?search={searchTerms}";
               }];
-              iconUpdateURL = "https://nixos.wiki/favicon.png";
+              icon = "https://nixos.wiki/favicon.png";
               updateInterval = 24 * 60 * 60 * 1000; # every day
               definedAliases = [ "@nw" ];
             };
@@ -244,7 +244,7 @@ in
               definedAliases = [ "@hm" "@ho" "@hmo" ];
             };
 
-            "Google".metaData.alias = "@g";
+            "google".metaData.alias = "@g";
           };
           force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
         };

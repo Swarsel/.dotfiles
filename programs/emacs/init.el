@@ -159,7 +159,9 @@ create a new one."
 (defun swarsel/org-mode-setup ()
   (variable-pitch-mode 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
-  (visual-line-mode 1))
+  (org-indent-mode)
+  (visual-line-mode 1)
+  (org-mode))
 
 (defun swarsel/org-mode-visual-fill ()
   (setq visual-fill-column-width 150
@@ -802,6 +804,7 @@ create a new one."
 (use-package org
   ;;:diminish (org-indent-mode)
   :hook (org-mode . swarsel/org-mode-setup)
+  ;; :mode "\\.nix\\'"
   :bind
   (("C-<tab>" . org-fold-outer)
    ("C-c s" . org-store-link))
@@ -1401,12 +1404,12 @@ create a new one."
   :config
   (dirvish-peek-mode)
   (dirvish-side-follow-mode)
-  (setq dirvish-open-with-programs
-        (append dirvish-open-with-programs '(
-                                             (("xlsx" "docx" "doc" "odt" "ods") "libreoffice" "%f")
-                                             (("jpg" "jpeg" "png")              "imv" "%f")
-                                             (("pdf")                           "sioyek" "%f")
-                                             (("xopp")                          "xournalpp" "%f"))))
+  ;; (setq dirvish-open-with-programs
+  ;;       (append dirvish-open-with-programs '(
+  ;;                                            (("xlsx" "docx" "doc" "odt" "ods") "libreoffice" "%f")
+  ;;                                            (("jpg" "jpeg" "png")              "imv" "%f")
+  ;;                                            (("pdf")                           "sioyek" "%f")
+  ;;                                            (("xopp")                          "xournalpp" "%f"))))
   :custom
   (delete-by-moving-to-trash t)
   (dired-listing-switches

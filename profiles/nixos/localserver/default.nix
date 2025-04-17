@@ -4,6 +4,7 @@
   config = lib.mkIf config.swarselsystems.profiles.server.local {
     swarselsystems = {
       modules = {
+        general = lib.mkDefault true;
         nix-ld = lib.mkDefault true;
         home-manager = lib.mkDefault true;
         home-managerExtra = lib.mkDefault true;

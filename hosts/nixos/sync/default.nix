@@ -1,22 +1,13 @@
-{ self, inputs, lib, primaryUser, ... }:
+{ lib, primaryUser, ... }:
 let
-  modulesPath = "${self}/modules";
+  sharedOptions = {
+    isBtrfs = false;
+    isLinux = true;
+  };
 in
 {
   imports = [
-
-    "${modulesPath}/nixos/server"
-    "${modulesPath}/nixos/common/sharedsetup.nix"
-    "${modulesPath}/home/common/sharedsetup.nix"
     ./hardware-configuration.nix
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${primaryUser}".imports = [
-        "${modulesPath}/home/server"
-        "${modulesPath}/home/common/sharedsetup.nix"
-      ];
-    }
   ];
 
   sops = {
@@ -51,7 +42,7 @@ in
     };
   };
 
-  # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
+  system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
   services = {
     nginx = {
@@ -80,16 +71,23 @@ in
     };
   };
 
+  swarselsystems = lib.recursiveUpdate
+    {
+      flakePath = "/root/.dotfiles";
+      isImpermanence = false;
+      isSecureBoot = false;
+      isCrypted = false;
+      profiles = {
+        server.sync = true;
+      };
+    }
+    sharedOptions;
 
-  swarselsystems = {
-    isImpermanence = false;
-    isLinux = true;
-    isBtrfs = false;
-    flakePath = "/root/.dotfiles";
-    modules.server = {
-      forgejo = true;
-      ankisync = true;
-    };
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      { }
+      sharedOptions;
   };
 
 }

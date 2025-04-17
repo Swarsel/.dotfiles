@@ -11,6 +11,7 @@ in
     };
   };
   config = lib.mkIf config.swarselsystems.modules.server.general {
+
     environment.shellAliases = lib.recursiveUpdate
       {
         npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";

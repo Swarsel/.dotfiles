@@ -53,38 +53,41 @@ in
             _module.args.primaryUser = linuxUser;
           }
         ] ++
-        (if (host == "toto" || host == "iso") then [ ] else
+        (if (host == "iso") then [ ] else
         ([
           # put nixos imports here that are for all servers and normal hosts
           inputs.nix-topology.nixosModules.default
-        ] ++
-        (if (host == "winters" || host == "sync") then [ ] else [
-          # put nixos imports here that are for all normal hosts
           "${self}/modules/${type}/common"
           inputs.stylix.nixosModules.stylix
           inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ]) ++ (if (type == "nixos") then [
+        ] ++ (if (type == "nixos") then [
           inputs.home-manager.nixosModules.home-manager
+          "${self}/profiles/nixos"
+          "${self}/modules/nixos/server"
+          "${self}/modules/nixos/optional"
           {
-            home-manager.users."${linuxUser}".imports = (
-              if (host == "winters" || host == "sync") then [ ] else [
-                # put home-manager imports here that are for all normal hosts
-                "${self}/modules/home/common"
-              ]
-            ) ++ [
-              # put home-manager imports here that are for all servers and normal hosts
+            home-manager.users."${linuxUser}".imports = [
+              # put home-manager imports here that are for all normal hosts
               inputs.sops-nix.homeManagerModules.sops
               inputs.nix-index-database.hmModules.nix-index
+              "${self}/modules/home/common"
+              "${self}/modules/home/server"
+              "${self}/modules/home/optional"
+              "${self}/profiles/home"
             ];
           }
         ] else [
           # put nixos imports here that are for darwin hosts
           "${self}/modules/darwin/nixos/common"
+          "${self}/profiles/darwin"
           inputs.home-manager.darwinModules.home-manager
           {
             home-manager.users."${macUser}".imports = [
               # put home-manager imports here that are for darwin hosts
               "${self}/modules/darwin/home"
+              "${self}/modules/home/server"
+              "${self}/modules/home/optional"
+              "${self}/profiles/home"
             ];
           }
         ])

@@ -1,6 +1,13 @@
-{ self, config, pkgs, lib, primaryUser, ... }:
+{ self, inputs, config, pkgs, lib, primaryUser, ... }:
 let
-  modulesPath = "${self}/modules";
+  sharedOptions = {
+    isBtrfs = false;
+    isLinux = true;
+    isPublic = true;
+    profiles = {
+      chaostheatre = true;
+    };
+  };
 in
 {
 
@@ -10,7 +17,15 @@ in
     {
       _module.args.diskDevice = config.swarselsystems.rootDisk;
     }
-    "${modulesPath}/nixos/optional/autologin.nix"
+    "${self}/hosts/nixos/chaostheatre/options.nix"
+    inputs.home-manager.nixosModules.home-manager
+    {
+      home-manager.users."${primaryUser}".imports = [
+        "${self}/modules/home/common/settings.nix"
+        "${self}/hosts/nixos/chaostheatre/options-home.nix"
+        "${self}/modules/home/common/sharedsetup.nix"
+      ];
+    }
   ];
 
   environment.variables = {
@@ -31,21 +46,25 @@ in
   };
 
 
-  swarselsystems = {
-    wallpaper = self + /wallpaper/lenovowp.png;
-    initialSetup = true;
-    isPublic = true;
-    isLinux = true;
-    isImpermanence = true;
-    isCrypted = true;
-    isSecureBoot = false;
-    isSwap = true;
-    swapSize = "4G";
-    rootDisk = "/dev/vda";
-  };
+  swarselsystems = lib.recursiveUpdate
+    {
+      wallpaper = self + /wallpaper/lenovowp.png;
+      initialSetup = true;
+      isImpermanence = true;
+      isCrypted = true;
+      isSecureBoot = false;
+      isSwap = true;
+      swapSize = "4G";
+      rootDisk = "/dev/vda";
+    }
+    sharedOptions;
 
-  home-manager.users."${primaryUser}".swarselsystems = {
-    isNixos = true;
-    isPublic = true;
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      {
+        isNixos = true;
+      }
+      sharedOptions;
   };
 }

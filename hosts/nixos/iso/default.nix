@@ -21,12 +21,16 @@ in
     }
   ];
 
-  home-manager.users."${primaryUser}".home = {
-    file = {
-      ".bash_history" = {
-        source = self + /programs/bash/.bash_history;
+  home-manager.users."${primaryUser}" = {
+    home = {
+      stateVersion = "23.05";
+      file = {
+        ".bash_history" = {
+          source = self + /programs/bash/.bash_history;
+        };
       };
     };
+    swarselsystems.modules.general = lib.mkForce true;
   };
   home-manager.users.root.home = {
     stateVersion = "23.05";

@@ -4,35 +4,27 @@ let
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
+    profiles = {
+      toto = true;
+    };
   };
 in
 {
 
   imports = [
-    "${self}/hosts/nixos/toto/disk-config.nix"
+    ./disk-config.nix
     ./hardware-configuration.nix
 
-    "${modulesPath}/nixos/optional/autologin.nix"
-    "${modulesPath}/nixos/common/settings.nix"
     "${modulesPath}/nixos/common/sharedsetup.nix"
-    "${modulesPath}/nixos/common/home-manager.nix"
-    "${modulesPath}/nixos/common/home-manager-extra.nix"
-    "${modulesPath}/nixos/common/xserver.nix"
-    "${modulesPath}/nixos/common/users.nix"
-    "${modulesPath}/nixos/common/impermanence.nix"
-    "${modulesPath}/nixos/common/lanzaboote.nix"
-    "${modulesPath}/nixos/common/sops.nix"
-    "${modulesPath}/nixos/server/ssh.nix"
     "${modulesPath}/home/common/sharedsetup.nix"
+    "${self}/profiles/nixos"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         inputs.sops-nix.homeManagerModules.sops
-        "${modulesPath}/home/common/settings.nix"
-        "${modulesPath}/home/common/sops.nix"
-        "${modulesPath}/home/common/ssh.nix"
         "${modulesPath}/home/common/sharedsetup.nix"
+        "${self}/profiles/home"
       ];
     }
   ];
@@ -76,11 +68,13 @@ in
     }
     sharedOptions;
 
-  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
-    {
-      isLaptop = false;
-      isNixos = true;
-    }
-    sharedOptions;
-
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      {
+        isLaptop = false;
+        isNixos = true;
+      }
+      sharedOptions;
+  };
 }

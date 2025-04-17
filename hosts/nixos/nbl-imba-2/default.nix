@@ -1,7 +1,6 @@
 { self, inputs, lib, primaryUser, ... }:
 let
   secretsDirectory = builtins.toString inputs.nix-secrets;
-  modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
@@ -21,24 +20,6 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
-    "${modulesPath}/nixos/optional/virtualbox.nix"
-    # "${modulesPath}/nixos/optional/vmware.nix"
-    "${modulesPath}/nixos/optional/autologin.nix"
-    "${modulesPath}/nixos/optional/nswitch-rcm.nix"
-    "${modulesPath}/nixos/optional/gaming.nix"
-    "${modulesPath}/nixos/optional/work.nix"
-    "${self}/profiles/nixos"
-    "${modulesPath}/nixos/server"
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${primaryUser}".imports = [
-        "${self}/profiles/home"
-        "${modulesPath}/home/server"
-        "${modulesPath}/home/optional/gaming.nix"
-        "${modulesPath}/home/optional/work.nix"
-      ];
-    }
   ];
 
 
