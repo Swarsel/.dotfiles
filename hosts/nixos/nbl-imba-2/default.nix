@@ -59,17 +59,6 @@ in
           path = "/sys/devices/virtual/thermal/thermal_zone0/";
           input-filename = "temp4_input";
         };
-        # startup = [
-        #   { command = "nextcloud --background"; }
-        #   { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-        #   { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        #   { command = "ANKI_WAYLAND=1 anki"; }
-        #   { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        #   { command = "nm-applet"; }
-        #   { command = "teams-for-linux"; }
-        #   { command = "1password"; }
-        #   { command = "feishin"; }
-        # ];
         lowResolution = "1280x800";
         highResolution = "2560x1600";
         monitors = {
