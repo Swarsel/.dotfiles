@@ -234,7 +234,7 @@ When setting this option normally, the password would normally be written world-
 
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
-  nixpkgs.url = "github:nixos/nixpkgs?rev=5f385baff93c728400d2c4ec8c9b0745b8f9e5b6";
+  nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
   nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
   systems.url = "github:nix-systems/default-linux";
@@ -357,10 +357,11 @@ In this section I am creating some attributes that define general concepts of my
       ];
       appSet = lib.swarselsystems.mkApps system appNames self;
     in
-    {
-      inherit appSet;
-      default = appSet.bootstrap;
-    });
+
+    appSet // {
+      default = appSet.swarsel-bootstrap;
+    }
+  );
 
   devShells = lib.swarselsystems.forAllSystems (system:
     let
@@ -398,7 +399,6 @@ In this section I am creating some attributes that define general concepts of my
   );
 
   diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
-
 #+end_src
 
 ** Pre-commit-hooks (Checks)
@@ -810,6 +810,7 @@ My work machine. Built for more security, this is the gold standard of my config
       profiles = {
         personal = true;
         work = true;
+        framework = true;
       };
     };
   in
@@ -817,7 +818,6 @@ My work machine. Built for more security, this is the gold standard of my config
 
     imports = [
       inputs.nixos-hardware.nixosModules.framework-16-7040-amd
-      inputs.fw-fanctrl.nixosModules.default
 
       ./disk-config.nix
       ./hardware-configuration.nix
@@ -826,67 +826,24 @@ My work machine. Built for more security, this is the gold standard of my config
 
 
 
-    networking.networkmanager.wifi.scanRandMacAddress = false;
-
-    boot = {
-      supportedFilesystems = [ "btrfs" ];
-      # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-      kernelParams = [
-        "resume_offset=533760"
-      ];
-      resumeDevice = "/dev/disk/by-label/nixos";
-    };
-
-    hardware = {
-      enableAllFirmware = true;
-      cpu.amd.updateMicrocode = true;
-      amdgpu = {
-        opencl.enable = true;
-        amdvlk = {
-          enable = true;
-          support32Bit.enable = true;
-        };
-      };
-    };
-
-    programs.fw-fanctrl = {
-      enable = true;
-      config = {
-        defaultStrategy = "lazy";
-      };
-    };
-
-    networking = {
-      hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
-      fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
-      firewall.enable = true;
-    };
-
-
-    services = {
-      fwupd = {
-        enable = true;
-        # framework also uses lvfs-testing, but I do not want to use it
-        extraRemotes = [ "lvfs" ];
-      };
-      udev.extraRules = ''
-        # disable Wakeup on Framework Laptop 16 Keyboard (ANSI)
-        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0012", ATTR{power/wakeup}="disabled"
-        # disable Wakeup on Framework Laptop 16 Numpad Module
-        ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0014", ATTR{power/wakeup}="disabled"
-        # disable Wakeup on Framework Laptop 16 Trackpad
-        ACTION=="add", SUBSYSTEM=="i2c", DRIVERS=="i2c_hid_acpi", ATTRS{name}=="PIXA3854:00", ATTR{power/wakeup}="disabled"
-      '';
-    };
-
     swarselsystems = lib.recursiveUpdate
       {
+        firewall = lib.mkForce true;
         wallpaper = self + /wallpaper/lenovowp.png;
         hasBluetooth = true;
         hasFingerprint = true;
         isImpermanence = false;
         isSecureBoot = true;
         isCrypted = true;
+        hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+        fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
+        hibernation.offset = 533760;
+        profiles = {
+          amdcpu = true;
+          amdgpu = true;
+          hibernation = true;
+          btrfs = true;
+        };
       }
       sharedOptions;
 
@@ -904,17 +861,17 @@ My work machine. Built for more security, this is the gold standard of my config
             path = "/sys/devices/virtual/thermal/thermal_zone0/";
             input-filename = "temp4_input";
           };
-          startup = [
-            { command = "nextcloud --background"; }
-            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-            { command = "ANKI_WAYLAND=1 anki"; }
-            { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-            { command = "nm-applet"; }
-            { command = "teams-for-linux"; }
-            { command = "1password"; }
-            { command = "feishin"; }
-          ];
+          # startup = [
+          #   { command = "nextcloud --background"; }
+          #   { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          #   { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          #   { command = "ANKI_WAYLAND=1 anki"; }
+          #   { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+          #   { command = "nm-applet"; }
+          #   { command = "teams-for-linux"; }
+          #   { command = "1password"; }
+          #   { command = "feishin"; }
+          # ];
           lowResolution = "1280x800";
           highResolution = "2560x1600";
           monitors = {
@@ -926,97 +883,6 @@ My work machine. Built for more security, this is the gold standard of my config
               workspace = "15:L";
               output = "eDP-2";
             };
-            homedesktop = {
-              name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-              mode = "2560x1440";
-              scale = "1";
-              position = "0,0";
-              workspace = "1:一";
-              output = "DP-11";
-            };
-            work_back_middle = {
-              name = "LG Electronics LG Ultra HD 0x000305A6";
-              mode = "2560x1440";
-              scale = "1";
-              position = "5120,0";
-              workspace = "1:一";
-              output = "DP-10";
-            };
-            work_front_left = {
-              name = "LG Electronics LG Ultra HD 0x0007AB45";
-              mode = "3840x2160";
-              scale = "1";
-              position = "5120,0";
-              workspace = "1:一";
-              output = "DP-7";
-            };
-            work_back_right = {
-              name = "HP Inc. HP Z32 CN41212T55";
-              mode = "3840x2160";
-              scale = "1";
-              position = "5120,0";
-              workspace = "1:一";
-              output = "DP-3";
-            };
-            work_middle_middle_main = {
-              name = "HP Inc. HP 732pk CNC4080YL5";
-              mode = "3840x2160";
-              scale = "1";
-              position = "-1280,0";
-              workspace = "11:M";
-              output = "DP-8";
-            };
-            work_middle_middle_side = {
-              name = "Hewlett Packard HP Z24i CN44250RDT";
-              mode = "1920x1200";
-              transform = "270";
-              scale = "1";
-              position = "-2480,0";
-              workspace = "12:S";
-              output = "DP-9";
-            };
-            work_seminary = {
-              name = "Applied Creative Technology Transmitter QUATTRO201811";
-              mode = "1280x720";
-              scale = "1";
-              position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-              workspace = "14:T";
-              output = "DP-4";
-            };
-          };
-          inputs = {
-            "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
-              xkb_layout = "us";
-              xkb_variant = "altgr-intl";
-            };
-            "1133:45081:MX_Master_2S_Keyboard" = {
-              xkb_layout = "us";
-              xkb_variant = "altgr-intl";
-            };
-            # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-            #   dwt = "enabled";
-            #   tap = "enabled";
-            #   natural_scroll = "enabled";
-            #   middle_emulation = "enabled";
-            #   drag_lock = "disabled";
-            # };
-            "1133:50504:Logitech_USB_Receiver" = {
-              xkb_layout = "us";
-              xkb_variant = "altgr-intl";
-            };
-            "1133:45944:MX_KEYS_S" = {
-              xkb_layout = "us";
-              xkb_variant = "altgr-intl";
-            };
-          };
-          keybindings = {
-            "Mod4+Ctrl+Shift+p" = "exec screenshare";
-          };
-          shellAliases = {
-            ans2-15_3-9 = ". ~/.venvs/ansible39_2_15_0/bin/activate";
-            ans3-9 = ". ~/.venvs/ansible39/bin/activate";
-            ans = ". ~/.venvs/ansible/bin/activate";
-            ans2-15 = ". ~/.venvs/ansible2.15.0/bin/activate";
           };
         }
         sharedOptions;
@@ -2029,8 +1895,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/options.nix
   _:
-  {
-  }
+  { }
 
 #+end_src
 
@@ -2038,8 +1903,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+begin_src nix :tangle hosts/nixos/chaostheatre/options-home.nix
   _:
-  {
-  }
+  { }
 
 #+end_src
 
@@ -3912,6 +3776,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         networkDevices = lib.mkDefault true;
         gvfs = lib.mkDefault true;
         interceptionTools = lib.mkDefault true;
+        swayosd = lib.mkDefault true;
         ppd = lib.mkDefault true;
         yubikey = lib.mkDefault true;
         ledger = lib.mkDefault true;
@@ -3976,6 +3841,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         networkDevices = lib.mkDefault true;
         gvfs = lib.mkDefault true;
         interceptionTools = lib.mkDefault true;
+        swayosd = lib.mkDefault true;
         ppd = lib.mkDefault true;
         yubikey = lib.mkDefault true;
         ledger = lib.mkDefault true;
@@ -4044,6 +3910,101 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       swarselsystems.modules = {
         optional = {
           work = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
+***** Framework
+
+#+begin_src nix :tangle profiles/nixos/framework/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
+    config = lib.mkIf config.swarselsystems.profiles.framework {
+      swarselsystems.modules = {
+        optional = {
+          framework = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
+***** AMD CPU
+
+#+begin_src nix :tangle profiles/nixos/amdcpu/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
+    config = lib.mkIf config.swarselsystems.profiles.amdcpu {
+      swarselsystems.modules = {
+        optional = {
+          amdcpu = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
+***** AMD GPU
+
+#+begin_src nix :tangle profiles/nixos/amdgpu/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.amdgpu = lib.mkEnableOption "is this a host with amd gpu";
+    config = lib.mkIf config.swarselsystems.profiles.amdgpu {
+      swarselsystems.modules = {
+        optional = {
+          amdgpu = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
+***** Hibernation
+
+#+begin_src nix :tangle profiles/nixos/hibernation/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.hibernation = lib.mkEnableOption "is this a host using hibernation";
+    config = lib.mkIf config.swarselsystems.profiles.hibernation {
+      swarselsystems.modules = {
+        optional = {
+          hibernation = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
+***** BTRFS
+
+#+begin_src nix :tangle profiles/nixos/btrfs/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.btrfs = lib.mkEnableOption "is this a host using btrfs";
+    config = lib.mkIf config.swarselsystems.profiles.btrfs {
+      swarselsystems.modules = {
+        optional = {
+          btrfs = lib.mkDefault true;
         };
       };
 
@@ -4173,6 +4134,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         env = lib.mkDefault true;
         programs = lib.mkDefault true;
         nix-index = lib.mkDefault true;
+        passwordstore = lib.mkDefault true;
         direnv = lib.mkDefault true;
         eza = lib.mkDefault true;
         git = lib.mkDefault true;
@@ -4292,6 +4254,25 @@ This holds modules that are to be used on most hosts. These are also the most im
 
 #+end_src
 
+***** Framework
+
+#+begin_src nix :tangle profiles/home/framework/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
+    config = lib.mkIf config.swarselsystems.profiles.framework {
+      swarselsystems.modules = {
+        optional = {
+          framework = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
 ***** Darwin
 
 #+begin_src nix :tangle profiles/home/darwin/default.nix :mkdirp yes
@@ -4380,6 +4361,8 @@ TODO
       default = true;
     };
 
+    mkStrong = lib.mkOverride 60;
+
     getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
     forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
@@ -4397,6 +4380,7 @@ TODO
             inputs.sops-nix.nixosModules.sops
             inputs.impermanence.nixosModules.impermanence
             inputs.lanzaboote.nixosModules.lanzaboote
+            inputs.fw-fanctrl.nixosModules.default
             "${self}/hosts/${type}/${host}"
             {
               _module.args.primaryUser = linuxUser;
@@ -4470,6 +4454,9 @@ TODO
         value = {
           type = "app";
           program = "${self.packages.${system}.${name}}/bin/${name}";
+          meta = {
+            description = "Custom app ${name}.";
+          };
         };
       })
       names);
@@ -4693,7 +4680,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         yubico-pam
         yubioath-flutter
         yubikey-manager
-        yubikey-manager-qt
         yubikey-touch-detector
         yubico-piv-tool
         cfssl
@@ -4708,6 +4694,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         swaylock-effects
         syncthingtray-minimal
         wl-mirror
+        swayosd
 
         # secure boot
         sbctl
@@ -5102,14 +5089,17 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 #+begin_src nix :tangle modules/nixos/common/network.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.network = lib.mkEnableOption "network config";
+    options.swarselsystems = {
+      modules.network = lib.mkEnableOption "network config";
+      firewall = lib.swarselsystems.mkTrueOption;
+    };
     config = lib.mkIf config.swarselsystems.modules.network {
       networking = {
         nftables.enable = lib.mkDefault true;
         enableIPv6 = lib.mkDefault true;
         firewall = {
+          enable = lib.swarselsystems.mkStrong config.swarselsystems.firewall;
           checkReversePath = lib.mkDefault false;
-          enable = lib.mkDefault true;
           allowedUDPPorts = [ 51820 ]; # 51820: wireguard
           allowedTCPPortRanges = [
             { from = 1714; to = 1764; } # kde-connect
@@ -5735,6 +5725,33 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
     options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
     config = lib.mkIf config.swarselsystems.modules.ppd {
       services.power-profiles-daemon.enable = true;
+    };
+  }
+#+end_src
+
+***** SwayOSD
+
+#+begin_src nix :tangle modules/nixos/common/swayosd.nix
+  { lib, pkgs, config, ... }:
+  {
+    options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
+    config = lib.mkIf config.swarselsystems.modules.swayosd {
+      environment.systemPackages = [ pkgs.swayosd ];
+      services.udev.packages = [ pkgs.swayosd ];
+      systemd.services.swayosd-libinput-backend = {
+        description = "SwayOSD LibInput backend for listening to certain keys like CapsLock, ScrollLock, VolumeUp, etc.";
+        documentation = [ "https://github.com/ErikReider/SwayOSD" ];
+        wantedBy = [ "graphical.target" ];
+        partOf = [ "graphical.target" ];
+        after = [ "graphical.target" ];
+
+        serviceConfig = {
+          Type = "dbus";
+          BusName = "org.erikreider.swayosd";
+          ExecStart = "${pkgs.swayosd}/bin/swayosd-libinput-backend";
+          Restart = "on-failure";
+        };
+      };
     };
   }
 #+end_src
@@ -8341,6 +8358,118 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
   }
 #+end_src
 
+**** Framework
+
+This holds configuration that is specific to framework laptops.
+
+#+begin_src nix :tangle modules/nixos/optional/framework.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.framework {
+      services = {
+        fwupd = {
+          enable = true;
+          # framework also uses lvfs-testing, but I do not want to use it
+          extraRemotes = [ "lvfs" ];
+        };
+        udev.extraRules = ''
+          # disable Wakeup on Framework Laptop 16 Keyboard (ANSI)
+          ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0012", ATTR{power/wakeup}="disabled"
+          # disable Wakeup on Framework Laptop 16 Numpad Module
+          ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="32ac", ATTRS{idProduct}=="0014", ATTR{power/wakeup}="disabled"
+          # disable Wakeup on Framework Laptop 16 Trackpad
+          ACTION=="add", SUBSYSTEM=="i2c", DRIVERS=="i2c_hid_acpi", ATTRS{name}=="PIXA3854:00", ATTR{power/wakeup}="disabled"
+        '';
+      };
+      programs.fw-fanctrl = {
+        enable = true;
+        config = {
+          defaultStrategy = "lazy";
+        };
+      };
+    };
+  }
+#+end_src
+
+**** AMD CPU
+
+#+begin_src nix :tangle modules/nixos/optional/amdcpu.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.amdcpu {
+      hardware = {
+        cpu.amd.updateMicrocode = true;
+      };
+    };
+  }
+#+end_src
+
+**** AMD GPU
+
+
+#+begin_src nix :tangle modules/nixos/optional/amdgpu.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.amdgpu {
+      hardware = {
+        amdgpu = {
+          opencl.enable = true;
+          amdvlk = {
+            enable = true;
+            support32Bit.enable = true;
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Hibernation
+
+#+begin_src nix :tangle modules/nixos/optional/hibernation.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems = {
+      modules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
+      hibernation = {
+        offset = lib.mkOption {
+          type = lib.types.int;
+          default = 0;
+        };
+        resumeDevice = lib.mkOption {
+          type = lib.types.str;
+          default = "/dev/disk/by-label/nixos";
+        };
+      };
+    };
+    config = lib.mkIf config.swarselsystems.modules.optional.hibernation {
+      boot = {
+        kernelParams = [
+          "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"
+        ];
+        inherit (config.swarselsystems.hibernation) resumeDevice;
+      };
+    };
+  }
+#+end_src
+
+**** BTRFS
+
+#+begin_src nix :tangle modules/nixos/optional/btrfs.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.btrfs {
+      boot = {
+        supportedFilesystems = [ "btrfs" ];
+      };
+    };
+  }
+#+end_src
+
 **** work
 :PROPERTIES:
 :CUSTOM_ID: h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf
@@ -8375,7 +8504,17 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     };
   in
   {
-    options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
+    options.swarselsystems = {
+      modules.optional.work = lib.mkEnableOption "optional work settings";
+      hostName = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      fqdn = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+    };
     config = lib.mkIf config.swarselsystems.modules.optional.work {
       sops =
         let
@@ -8437,7 +8576,12 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       };
 
       networking = {
-        firewall.trustedInterfaces = [ "virbr0" ];
+        inherit (config.swarselsystems) hostName fqdn;
+        networkmanager.wifi.scanRandMacAddress = false;
+        firewall = {
+          enable = lib.mkDefault true;
+          trustedInterfaces = [ "virbr0" ];
+        };
         search = [
           "vbc.ac.at"
           "clip.vbc.ac.at"
@@ -8473,7 +8617,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         # cryptography
         # ]))
         #   docker
-        python39
+        stable.python39
         qemu
         packer
         gnumake
@@ -8906,6 +9050,28 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
 
                 icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
                 definedAliases = [ "@hm" "@ho" "@hmo" ];
+              };
+
+              "Confluence search" = {
+                urls = [{
+                  template = "https://vbc.atlassian.net/wiki/search";
+                  params = [
+                    { name = "text"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                definedAliases = [ "@c" "@cf" "@confluence" ];
+              };
+
+              "Jira search" = {
+                urls = [{
+                  template = "https://vbc.atlassian.net/issues/";
+                  params = [
+                    { name = "jql"; value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true"; }
+                  ];
+                }];
+
+                definedAliases = [ "@j" "@jire" ];
               };
 
               "google".metaData.alias = "@g";
@@ -11166,6 +11332,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         type = lib.types.attrsOf lib.types.str;
         default = { };
       };
+
       startup = lib.mkOption {
         type = lib.types.listOf (lib.types.attrsOf lib.types.str);
         default = [
@@ -11567,6 +11734,18 @@ Currently, I am too lazy to explain every option here, but most of it is very se
   {
     options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
     config = lib.mkIf config.swarselsystems.modules.kanshi {
+      swarselsystems = {
+        monitors = {
+          homedesktop = {
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            mode = "2560x1440";
+            scale = "1";
+            position = "0,0";
+            workspace = "1:一";
+            output = "DP-11";
+          };
+        };
+      };
       services.kanshi = {
         enable = true;
         settings = [
@@ -12187,10 +12366,129 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
           };
       };
+      swarselsystems = {
+        startup = [
+          { command = "teams-for-linux"; }
+          { command = "1password"; }
+        ];
+        monitors = {
+          main = {
+            name = "BOE 0x0BC9 Unknown";
+            mode = "2560x1600"; # TEMPLATE
+            scale = "1";
+            position = "2560,0";
+            workspace = "15:L";
+            output = "eDP-2";
+          };
+          homedesktop = {
+            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            mode = "2560x1440";
+            scale = "1";
+            position = "0,0";
+            workspace = "1:一";
+            output = "DP-11";
+          };
+          work_back_middle = {
+            name = "LG Electronics LG Ultra HD 0x000305A6";
+            mode = "2560x1440";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            output = "DP-10";
+          };
+          work_front_left = {
+            name = "LG Electronics LG Ultra HD 0x0007AB45";
+            mode = "3840x2160";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            output = "DP-7";
+          };
+          work_back_right = {
+            name = "HP Inc. HP Z32 CN41212T55";
+            mode = "3840x2160";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            output = "DP-3";
+          };
+          work_middle_middle_main = {
+            name = "HP Inc. HP 732pk CNC4080YL5";
+            mode = "3840x2160";
+            scale = "1";
+            position = "-1280,0";
+            workspace = "11:M";
+            output = "DP-8";
+          };
+          work_middle_middle_side = {
+            name = "Hewlett Packard HP Z24i CN44250RDT";
+            mode = "1920x1200";
+            transform = "270";
+            scale = "1";
+            position = "-2480,0";
+            workspace = "12:S";
+            output = "DP-9";
+          };
+          work_seminary = {
+            name = "Applied Creative Technology Transmitter QUATTRO201811";
+            mode = "1280x720";
+            scale = "1";
+            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+            workspace = "14:T";
+            output = "DP-4";
+          };
+        };
+        inputs = {
+          "1133:45081:MX_Master_2S_Keyboard" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+          #   dwt = "enabled";
+          #   tap = "enabled";
+          #   natural_scroll = "enabled";
+          #   middle_emulation = "enabled";
+          #   drag_lock = "disabled";
+          # };
+          "1133:50504:Logitech_USB_Receiver" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          "1133:45944:MX_KEYS_S" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+        keybindings = {
+          "Mod4+Ctrl+Shift+p" = "exec screenshare";
+        };
+
+      };
     };
 
   }
 
+#+end_src
+
+**** Framework
+
+This holds configuration that is specific to framework laptops.
+
+#+begin_src nix :tangle modules/home/optional/framework.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
+    config = lib.mkIf config.swarselsystems.modules.optional.framework {
+      swarselsystems = {
+        inputs = {
+          "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+      };
+    };
+  }
 #+end_src
 
 * Emacs
@@ -12616,9 +12914,7 @@ Used here: [[#h:877c9401-a354-4e44-a235-db1a90d19e00][General org-mode]]
     (defun swarsel/org-mode-setup ()
       (variable-pitch-mode 1)
       (add-hook 'org-tab-first-hook 'org-end-of-line)
-      (org-indent-mode)
-      (visual-line-mode 1)
-      (org-mode))
+      (visual-line-mode 1))
 
 #+end_src
 **** org-mode: Visual-fill column
@@ -15494,6 +15790,8 @@ set configversion 2.0
 set searchurls.no https://search.nixos.org/options?query=
 set searchurls.np https://search.nixos.org/packages?query=
 set searchurls.hm https://home-manager-options.extranix.com/?query=
+set searchurls.@c https://vbc.atlassian.net/wiki/search?text=
+set searchurls.@j https://vbc.atlassian.net/issues/?jql=textfields%20~%20%22%s*%22&wildcardFlag=true
 set completions.Tab.statusstylepretty true
 set hintfiltermode vimperator-reflow
 set hintnames numeric
@@ -15512,26 +15810,9 @@ bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
 
 " Work
-command tab_or_tabopen jsb -p (async () => {
-  let tabs = await browser.tabs.query({});
-  let tab = tabs.find(t => t.url.includes(JS_ARG));
-  if (tab) {
-    browser.tabs.update(tab.id, { active: true });
-  } else {
-    tri.excmds.tabopen(JS_ARG);
-  }
-})()
+command tab_or_tabopen jsb -p (async () => {let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
 
-command tab_or_tabopen_local jsb -p (async () => {
-    const currentWindow = await browser.windows.getCurrent();
-    const tabs = await browser.tabs.query({ windowId: currentWindow.id });
-    const tab = tabs.find(t => t.url.includes(JS_ARG));
-    if (tab) {
-        browser.tabs.update(tab.id, { active: true });
-    } else {
-        tri.excmds.tabopen(JS_ARG);
-    }
-})()
+command tab_or_tabopen_local jsb -p (async () => {const currentWindow = await browser.windows.getCurrent(); const tabs = await browser.tabs.query({ windowId: currentWindow.id }); const tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
 
 bind gwa tab_or_tabopen_local apic-impimba-1.m.imp.ac.at
 bind gwA tab_or_tabopen_local artifactory.imp.ac.at

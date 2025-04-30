@@ -244,6 +244,28 @@ in
               definedAliases = [ "@hm" "@ho" "@hmo" ];
             };
 
+            "Confluence search" = {
+              urls = [{
+                template = "https://vbc.atlassian.net/wiki/search";
+                params = [
+                  { name = "text"; value = "{searchTerms}"; }
+                ];
+              }];
+
+              definedAliases = [ "@c" "@cf" "@confluence" ];
+            };
+
+            "Jira search" = {
+              urls = [{
+                template = "https://vbc.atlassian.net/issues/";
+                params = [
+                  { name = "jql"; value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true"; }
+                ];
+              }];
+
+              definedAliases = [ "@j" "@jire" ];
+            };
+
             "google".metaData.alias = "@g";
           };
           force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart

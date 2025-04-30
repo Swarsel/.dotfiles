@@ -24,7 +24,17 @@ let
   };
 in
 {
-  options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
+  options.swarselsystems = {
+    modules.optional.work = lib.mkEnableOption "optional work settings";
+    hostName = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    fqdn = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+  };
   config = lib.mkIf config.swarselsystems.modules.optional.work {
     sops =
       let
@@ -86,7 +96,12 @@ in
     };
 
     networking = {
-      firewall.trustedInterfaces = [ "virbr0" ];
+      inherit (config.swarselsystems) hostName fqdn;
+      networkmanager.wifi.scanRandMacAddress = false;
+      firewall = {
+        enable = lib.mkDefault true;
+        trustedInterfaces = [ "virbr0" ];
+      };
       search = [
         "vbc.ac.at"
         "clip.vbc.ac.at"
@@ -122,7 +137,7 @@ in
       # cryptography
       # ]))
       #   docker
-      python39
+      stable.python39
       qemu
       packer
       gnumake

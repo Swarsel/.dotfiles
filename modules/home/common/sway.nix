@@ -14,6 +14,7 @@
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
+
     startup = lib.mkOption {
       type = lib.types.listOf (lib.types.attrsOf lib.types.str);
       default = [

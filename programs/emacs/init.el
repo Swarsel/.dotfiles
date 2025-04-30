@@ -159,9 +159,7 @@ create a new one."
 (defun swarsel/org-mode-setup ()
   (variable-pitch-mode 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
-  (org-indent-mode)
-  (visual-line-mode 1)
-  (org-mode))
+  (visual-line-mode 1))
 
 (defun swarsel/org-mode-visual-fill ()
   (setq visual-fill-column-width 150

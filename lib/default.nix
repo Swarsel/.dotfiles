@@ -31,6 +31,8 @@ in
     default = true;
   };
 
+  mkStrong = lib.mkOverride 60;
+
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
@@ -48,6 +50,7 @@ in
           inputs.sops-nix.nixosModules.sops
           inputs.impermanence.nixosModules.impermanence
           inputs.lanzaboote.nixosModules.lanzaboote
+          inputs.fw-fanctrl.nixosModules.default
           "${self}/hosts/${type}/${host}"
           {
             _module.args.primaryUser = linuxUser;
@@ -121,6 +124,9 @@ in
       value = {
         type = "app";
         program = "${self.packages.${system}.${name}}/bin/${name}";
+        meta = {
+          description = "Custom app ${name}.";
+        };
       };
     })
     names);

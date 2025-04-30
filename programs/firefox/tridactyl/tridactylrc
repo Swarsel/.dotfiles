@@ -12,6 +12,8 @@ set configversion 2.0
 set searchurls.no https://search.nixos.org/options?query=
 set searchurls.np https://search.nixos.org/packages?query=
 set searchurls.hm https://home-manager-options.extranix.com/?query=
+set searchurls.@c https://vbc.atlassian.net/wiki/search?text=
+set searchurls.@j https://vbc.atlassian.net/issues/?jql=textfields%20~%20%22%s*%22&wildcardFlag=true
 set completions.Tab.statusstylepretty true
 set hintfiltermode vimperator-reflow
 set hintnames numeric
@@ -30,26 +32,9 @@ bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
 
 " Work
-command tab_or_tabopen jsb -p (async () => {
-  let tabs = await browser.tabs.query({});
-  let tab = tabs.find(t => t.url.includes(JS_ARG));
-  if (tab) {
-    browser.tabs.update(tab.id, { active: true });
-  } else {
-    tri.excmds.tabopen(JS_ARG);
-  }
-})()
+command tab_or_tabopen jsb -p (async () => {let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
 
-command tab_or_tabopen_local jsb -p (async () => {
-    const currentWindow = await browser.windows.getCurrent();
-    const tabs = await browser.tabs.query({ windowId: currentWindow.id });
-    const tab = tabs.find(t => t.url.includes(JS_ARG));
-    if (tab) {
-        browser.tabs.update(tab.id, { active: true });
-    } else {
-        tri.excmds.tabopen(JS_ARG);
-    }
-})()
+command tab_or_tabopen_local jsb -p (async () => {const currentWindow = await browser.windows.getCurrent(); const tabs = await browser.tabs.query({ windowId: currentWindow.id }); const tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
 
 bind gwa tab_or_tabopen_local apic-impimba-1.m.imp.ac.at
 bind gwA tab_or_tabopen_local artifactory.imp.ac.at

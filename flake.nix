@@ -13,7 +13,7 @@
   };
   inputs = {
 
-    nixpkgs.url = "github:nixos/nixpkgs?rev=5f385baff93c728400d2c4ec8c9b0745b8f9e5b6";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     systems.url = "github:nix-systems/default-linux";
@@ -114,10 +114,11 @@
           ];
           appSet = lib.swarselsystems.mkApps system appNames self;
         in
-        {
-          inherit appSet;
-          default = appSet.bootstrap;
-        });
+
+        appSet // {
+          default = appSet.swarsel-bootstrap;
+        }
+      );
 
       devShells = lib.swarselsystems.forAllSystems (system:
         let
@@ -155,7 +156,6 @@
       );
 
       diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
-
 
       nixosConfigurations =
         lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";

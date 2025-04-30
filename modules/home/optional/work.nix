@@ -327,6 +327,104 @@ in
 
         };
     };
+    swarselsystems = {
+      startup = [
+        { command = "teams-for-linux"; }
+        { command = "1password"; }
+      ];
+      monitors = {
+        main = {
+          name = "BOE 0x0BC9 Unknown";
+          mode = "2560x1600"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "15:L";
+          output = "eDP-2";
+        };
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-11";
+        };
+        work_back_middle = {
+          name = "LG Electronics LG Ultra HD 0x000305A6";
+          mode = "2560x1440";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-10";
+        };
+        work_front_left = {
+          name = "LG Electronics LG Ultra HD 0x0007AB45";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-7";
+        };
+        work_back_right = {
+          name = "HP Inc. HP Z32 CN41212T55";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-3";
+        };
+        work_middle_middle_main = {
+          name = "HP Inc. HP 732pk CNC4080YL5";
+          mode = "3840x2160";
+          scale = "1";
+          position = "-1280,0";
+          workspace = "11:M";
+          output = "DP-8";
+        };
+        work_middle_middle_side = {
+          name = "Hewlett Packard HP Z24i CN44250RDT";
+          mode = "1920x1200";
+          transform = "270";
+          scale = "1";
+          position = "-2480,0";
+          workspace = "12:S";
+          output = "DP-9";
+        };
+        work_seminary = {
+          name = "Applied Creative Technology Transmitter QUATTRO201811";
+          mode = "1280x720";
+          scale = "1";
+          position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+          workspace = "14:T";
+          output = "DP-4";
+        };
+      };
+      inputs = {
+        "1133:45081:MX_Master_2S_Keyboard" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+        #   dwt = "enabled";
+        #   tap = "enabled";
+        #   natural_scroll = "enabled";
+        #   middle_emulation = "enabled";
+        #   drag_lock = "disabled";
+        # };
+        "1133:50504:Logitech_USB_Receiver" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        "1133:45944:MX_KEYS_S" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+      };
+      keybindings = {
+        "Mod4+Ctrl+Shift+p" = "exec screenshare";
+      };
+
+    };
   };
 
 }

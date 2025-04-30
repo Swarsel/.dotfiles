@@ -10,7 +10,6 @@
       yubico-pam
       yubioath-flutter
       yubikey-manager
-      yubikey-manager-qt
       yubikey-touch-detector
       yubico-piv-tool
       cfssl
@@ -25,6 +24,7 @@
       swaylock-effects
       syncthingtray-minimal
       wl-mirror
+      swayosd
 
       # secure boot
       sbctl

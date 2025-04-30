@@ -28,6 +28,7 @@
       networkDevices = lib.mkDefault true;
       gvfs = lib.mkDefault true;
       interceptionTools = lib.mkDefault true;
+      swayosd = lib.mkDefault true;
       ppd = lib.mkDefault true;
       yubikey = lib.mkDefault true;
       ledger = lib.mkDefault true;

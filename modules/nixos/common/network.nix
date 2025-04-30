@@ -1,13 +1,16 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.network = lib.mkEnableOption "network config";
+  options.swarselsystems = {
+    modules.network = lib.mkEnableOption "network config";
+    firewall = lib.swarselsystems.mkTrueOption;
+  };
   config = lib.mkIf config.swarselsystems.modules.network {
     networking = {
       nftables.enable = lib.mkDefault true;
       enableIPv6 = lib.mkDefault true;
       firewall = {
+        enable = lib.swarselsystems.mkStrong config.swarselsystems.firewall;
         checkReversePath = lib.mkDefault false;
-        enable = lib.mkDefault true;
         allowedUDPPorts = [ 51820 ]; # 51820: wireguard
         allowedTCPPortRanges = [
           { from = 1714; to = 1764; } # kde-connect

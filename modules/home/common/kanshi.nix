@@ -2,6 +2,18 @@
 {
   options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
   config = lib.mkIf config.swarselsystems.modules.kanshi {
+    swarselsystems = {
+      monitors = {
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-11";
+        };
+      };
+    };
     services.kanshi = {
       enable = true;
       settings = [

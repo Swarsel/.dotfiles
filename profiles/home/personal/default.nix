@@ -16,6 +16,7 @@
       env = lib.mkDefault true;
       programs = lib.mkDefault true;
       nix-index = lib.mkDefault true;
+      passwordstore = lib.mkDefault true;
       direnv = lib.mkDefault true;
       eza = lib.mkDefault true;
       git = lib.mkDefault true;
