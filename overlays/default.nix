@@ -3,7 +3,7 @@
 let
   additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
 
-  modifications = _: prev: {
+  modifications = final: prev: {
     vesktop = prev.vesktop.override {
       withSystemVencord = true;
     };
@@ -16,7 +16,7 @@ let
       ];
     };
 
-    # mgba = final.swarsel-mgba;
+    mgba = final.swarsel-mgba;
 
     retroarch = prev.retroarch.withCores (cores: with cores; [
       snes9x # snes

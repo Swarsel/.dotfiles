@@ -3638,7 +3638,7 @@ When adding a new entry here, do not forget to add it in the default output of t
   let
     additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
 
-    modifications = _: prev: {
+    modifications = final: prev: {
       vesktop = prev.vesktop.override {
         withSystemVencord = true;
       };
@@ -3651,7 +3651,7 @@ When adding a new entry here, do not forget to add it in the default output of t
         ];
       };
 
-      # mgba = final.swarsel-mgba;
+      mgba = final.swarsel-mgba;
 
       retroarch = prev.retroarch.withCores (cores: with cores; [
         snes9x # snes
@@ -7687,16 +7687,16 @@ Here we just define some aliases for rebuilding the system, and we allow some in
               devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "hgp9s-fyq3p";
             };
-            "Documents" = {
-              path = "/Vault/data/syncthing/Documents";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "magicant" "${workHostName}" ];
-              id = "hgr3d-pfu3w";
-            };
+            # "Documents" = {
+            #   path = "/Vault/data/syncthing/Documents";
+            #   type = "receiveonly";
+            #   versioning = {
+            #     type = "simple";
+            #     params.keep = "5";
+            #   };
+            #   devices = [ "magicant" "${workHostName}" ];
+            #   id = "hgr3d-pfu3w";
+            # };
             # ".elfeed" = {
             #   path = "/Vault/data/syncthing/.elfeed";
             #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
@@ -8469,7 +8469,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 #+begin_src nix :tangle modules/nixos/optional/work.nix
   { self, lib, pkgs, config, ... }:
   let
-    inherit (config.swarselsystems) mainUser homeDir xdgDir;
+    inherit (config.swarselsystems) mainUser xdgDir;
     owner = mainUser;
     sopsFile = self + /secrets/work/secrets.yaml;
     swarselService = name: description: execStart: {
@@ -8613,6 +8613,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         libisoburn
         govc
         terraform
+        opentofu
+        terragrunt
         graphviz
 
         # vm
@@ -8635,20 +8637,20 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
                             '';
         };
 
-        syncthing = {
-          settings = {
-            "winters" = {
-              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-            };
-            folders = {
-              "Documents" = {
-                path = "${homeDir}/Documents";
-                devices = [ "magicant" "winters" ];
-                id = "hgr3d-pfu3w";
-              };
-            };
-          };
-        };
+        # syncthing = {
+        #   settings = {
+        #     "winters" = {
+        #       id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+        #     };
+        #     folders = {
+        #       "Documents" = {
+        #         path = "${homeDir}/Documents";
+        #         devices = [ "magicant" "winters" ];
+        #         id = "hgr3d-pfu3w";
+        #       };
+        #     };
+        #   };
+        # };
 
         udev.extraRules = ''
           # share screen when dongle detected
@@ -12357,6 +12359,13 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
       swarselsystems = {
         startup = [
+          { command = "nextcloud --background"; }
+          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          { command = "ANKI_WAYLAND=1 anki"; }
+          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+          { command = "nm-applet"; }
+          { command = "feishin"; }
           { command = "teams-for-linux"; }
           { command = "1password"; }
         ];
