@@ -41,7 +41,14 @@ let
   };
 
   nixpkgs-stable24_05 = final: _: {
-    stable24_05 = import inputs.nixpkgs-stable {
+    stable24_05 = import inputs.nixpkgs-stable24_05 {
+      inherit (final) system;
+      config.allowUnfree = true;
+    };
+  };
+
+  nixpkgs-stable24_11 = final: _: {
+    stable24_11 = import inputs.nixpkgs-stable24_11 {
       inherit (final) system;
       config.allowUnfree = true;
     };
@@ -60,6 +67,7 @@ in
     // (modifications final prev)
     // (nixpkgs-stable final prev)
     // (nixpkgs-stable24_05 final prev)
+    // (nixpkgs-stable24_11 final prev)
     // (zjstatus final prev)
     // (inputs.vbc-nix.overlays.default final prev)
     // (inputs.nur.overlays.default final prev)

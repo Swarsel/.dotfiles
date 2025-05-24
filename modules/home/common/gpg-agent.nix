@@ -11,7 +11,7 @@ in
       enableScDaemon = true;
       enableSshSupport = true;
       enableExtraSocket = true;
-      pinentryPackage = pkgs.pinentry.gtk2;
+      pinentry.package = pkgs.pinentry.gtk2;
       defaultCacheTtl = 600;
       maxCacheTtl = 7200;
       extraConfig = ''

@@ -143,6 +143,7 @@ in
       mautrix-telegram = {
         enable = true;
         environmentFile = config.sops.templates.mautrixtelegram.path;
+        registerToSynapse = false;
         settings = {
           homeserver = {
             address = "http://localhost:8008";

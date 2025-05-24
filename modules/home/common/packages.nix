@@ -40,7 +40,7 @@
       vim
       sshfs
       fuse
-      ventoy
+      # ventoy
       poppler_utils
       vdhcoapp
 

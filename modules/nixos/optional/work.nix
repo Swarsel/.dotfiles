@@ -1,6 +1,6 @@
 { self, lib, pkgs, config, ... }:
 let
-  inherit (config.swarselsystems) mainUser xdgDir;
+  inherit (config.swarselsystems) mainUser homeDir xdgDir;
   owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
   swarselService = name: description: execStart: {
@@ -137,7 +137,7 @@ in
       # cryptography
       # ]))
       #   docker
-      stable.python39
+      stable24_11.python39
       qemu
       packer
       gnumake
@@ -168,20 +168,20 @@ in
                           '';
       };
 
-      # syncthing = {
-      #   settings = {
-      #     "winters" = {
-      #       id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-      #     };
-      #     folders = {
-      #       "Documents" = {
-      #         path = "${homeDir}/Documents";
-      #         devices = [ "magicant" "winters" ];
-      #         id = "hgr3d-pfu3w";
-      #       };
-      #     };
-      #   };
-      # };
+      syncthing = {
+        settings = {
+          "winters" = {
+            id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+          };
+          folders = {
+            "Documents" = {
+              path = "${homeDir}/Documents";
+              devices = [ "magicant" "winters" ];
+              id = "hgr3d-pfu3w";
+            };
+          };
+        };
+      };
 
       udev.extraRules = ''
         # share screen when dongle detected

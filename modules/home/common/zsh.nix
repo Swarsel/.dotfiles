@@ -72,7 +72,7 @@ in
           src = pkgs.zsh-fzf-tab;
         }
       ];
-      initExtra = ''
+      initContent = ''
         my-forward-word() {
           local WORDCHARS=$WORDCHARS
           WORDCHARS="''${WORDCHARS//:}"

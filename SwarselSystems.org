@@ -235,7 +235,8 @@ When setting this option normally, the password would normally be written world-
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
   nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-  nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+  nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
+  nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
   nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
   systems.url = "github:nix-systems/default-linux";
   home-manager = {
@@ -1778,7 +1779,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
       };
     };
 
-    programs.zsh.initExtra = "
+    programs.zsh.initContent = "
     export GPG_TTY=\"$(tty)\"
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
     gpgconf --launch gpg-agent
@@ -3678,7 +3679,14 @@ When adding a new entry here, do not forget to add it in the default output of t
     };
 
     nixpkgs-stable24_05 = final: _: {
-      stable24_05 = import inputs.nixpkgs-stable {
+      stable24_05 = import inputs.nixpkgs-stable24_05 {
+        inherit (final) system;
+        config.allowUnfree = true;
+      };
+    };
+
+    nixpkgs-stable24_11 = final: _: {
+      stable24_11 = import inputs.nixpkgs-stable24_11 {
         inherit (final) system;
         config.allowUnfree = true;
       };
@@ -3697,6 +3705,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       // (modifications final prev)
       // (nixpkgs-stable final prev)
       // (nixpkgs-stable24_05 final prev)
+      // (nixpkgs-stable24_11 final prev)
       // (zjstatus final prev)
       // (inputs.vbc-nix.overlays.default final prev)
       // (inputs.nur.overlays.default final prev)
@@ -7113,6 +7122,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         mautrix-telegram = {
           enable = true;
           environmentFile = config.sops.templates.mautrixtelegram.path;
+          registerToSynapse = false;
           settings = {
             homeserver = {
               address = "http://localhost:8008";
@@ -7690,16 +7700,16 @@ Here we just define some aliases for rebuilding the system, and we allow some in
               devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
               id = "hgp9s-fyq3p";
             };
-            # "Documents" = {
-            #   path = "/Vault/data/syncthing/Documents";
-            #   type = "receiveonly";
-            #   versioning = {
-            #     type = "simple";
-            #     params.keep = "5";
-            #   };
-            #   devices = [ "magicant" "${workHostName}" ];
-            #   id = "hgr3d-pfu3w";
-            # };
+            "Documents" = {
+              path = "/Vault/data/syncthing/Documents";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "magicant" "${workHostName}" ];
+              id = "hgr3d-pfu3w";
+            };
             # ".elfeed" = {
             #   path = "/Vault/data/syncthing/.elfeed";
             #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
@@ -7757,7 +7767,7 @@ Once this is finished, it will house a restic client that manages automatic back
         templates = {
           "restic-env".content = ''
             AWS_ACCESS_KEY_ID=${config.sops.placeholder.resticaccesskey}
-            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resicsecretaccesskey}
+            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resticsecretaccesskey}
           '';
         };
       };
@@ -8510,7 +8520,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 #+begin_src nix :tangle modules/nixos/optional/work.nix
   { self, lib, pkgs, config, ... }:
   let
-    inherit (config.swarselsystems) mainUser xdgDir;
+    inherit (config.swarselsystems) mainUser homeDir xdgDir;
     owner = mainUser;
     sopsFile = self + /secrets/work/secrets.yaml;
     swarselService = name: description: execStart: {
@@ -8647,7 +8657,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         # cryptography
         # ]))
         #   docker
-        stable.python39
+        stable24_11.python39
         qemu
         packer
         gnumake
@@ -8678,20 +8688,20 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
                             '';
         };
 
-        # syncthing = {
-        #   settings = {
-        #     "winters" = {
-        #       id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-        #     };
-        #     folders = {
-        #       "Documents" = {
-        #         path = "${homeDir}/Documents";
-        #         devices = [ "magicant" "winters" ];
-        #         id = "hgr3d-pfu3w";
-        #       };
-        #     };
-        #   };
-        # };
+        syncthing = {
+          settings = {
+            "winters" = {
+              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+            };
+            folders = {
+              "Documents" = {
+                path = "${homeDir}/Documents";
+                devices = [ "magicant" "winters" ];
+                id = "hgr3d-pfu3w";
+              };
+            };
+          };
+        };
 
         udev.extraRules = ''
           # share screen when dongle detected
@@ -9278,7 +9288,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         vim
         sshfs
         fuse
-        ventoy
+        # ventoy
         poppler_utils
         vdhcoapp
 
@@ -10192,6 +10202,27 @@ zsh is the most convenient shell for me and it happens to be super neat to confi
 Here we set some aliases (some of them should be shellApplications instead) as well as some zsh plugins like =fzf-tab=.
 Concerning the shell extensions, =zle <widget-name>= will run an existing widget and =zle -N <function_name>= will make a function available for use. The =my-= functions all remove =.= =/= and =:= from the =WORDCHARS= so that functions will stop there. The keycodes can be found using =showkeys -a=
 
+Regarding =initContent=:
+To specify the order, use lib.mkOrder.
+
+Common order values:
+- 500 (mkBefore: Early initialization (replaces initExtraFirst
+- 550: Before completion initialization (replaces initExtraBeforeCompInit
+- 1000 (default: General configuration (replaces initExtra
+- 1500 (mkAfter: Last to run configuration
+
+To specify both content in Early initialization and General configuration, use lib.mkMerge:
+
+#+begin_src nix
+initContent = let
+zshConfigEarlyInit = lib.mkOrder 500 "do something";
+zshConfig = lib.mkOrder 1000 "do something";
+in
+lib.mkMerge [ zshConfigEarlyInit zshConfig ];
+#+end_src
+
+Currently I only use it as before with =initExtra= though.
+
 #+begin_src nix :tangle modules/home/common/zsh.nix
   { config, pkgs, lib, ... }:
   let
@@ -10267,7 +10298,7 @@ Concerning the shell extensions, =zle <widget-name>= will run an existing widget
             src = pkgs.zsh-fzf-tab;
           }
         ];
-        initExtra = ''
+        initContent = ''
           my-forward-word() {
             local WORDCHARS=$WORDCHARS
             WORDCHARS="''${WORDCHARS//:}"
@@ -11252,31 +11283,31 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
     config = lib.mkIf config.swarselsystems.modules.mako {
       services.mako = {
         enable = true;
-        # backgroundColor = "#2e3440";
-        # borderColor = "#88c0d0";
-        borderRadius = 15;
-        borderSize = 1;
-        defaultTimeout = 5000;
-        height = 150;
-        icons = true;
-        ignoreTimeout = true;
-        layer = "overlay";
-        maxIconSize = 64;
-        sort = "-time";
-        width = 300;
-        # font = "monospace 10";
-        extraConfig = ''
-          [urgency=low]
-          border-color=#cccccc
-          [urgency=normal]
-          border-color=#d08770
-          [urgency=high]
-          border-color=#bf616a
-          default-timeout=3000
-          [category=mpd]
-          default-timeout=2000
-          group-by=category
-        '';
+        settings = {
+          border-radius = 15;
+          border-size = 1;
+          default-timeout = 5000;
+          ignore-timeout = 1;
+          icons = 1;
+          layer = "overlay";
+          sort = "-time";
+          height = 150;
+          width = 300;
+          "urgency=low" = {
+            border-color = lib.mkForce "#cccccc";
+          };
+          "urgency=normal" = {
+            border-color = lib.mkForce "#d08770";
+          };
+          "urgency=high" = {
+            border-color = lib.mkForce "#bf616a";
+            default-timeout = 3000;
+          };
+          "category=mpd" = {
+            default-timeout = 2000;
+            group-by = "category";
+          };
+        };
       };
     };
 
@@ -11873,7 +11904,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
         enableScDaemon = true;
         enableSshSupport = true;
         enableExtraSocket = true;
-        pinentryPackage = pkgs.pinentry.gtk2;
+        pinentry.package = pkgs.pinentry.gtk2;
         defaultCacheTtl = 600;
         maxCacheTtl = 7200;
         extraConfig = ''

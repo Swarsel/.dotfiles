@@ -4,31 +4,31 @@
   config = lib.mkIf config.swarselsystems.modules.mako {
     services.mako = {
       enable = true;
-      # backgroundColor = "#2e3440";
-      # borderColor = "#88c0d0";
-      borderRadius = 15;
-      borderSize = 1;
-      defaultTimeout = 5000;
-      height = 150;
-      icons = true;
-      ignoreTimeout = true;
-      layer = "overlay";
-      maxIconSize = 64;
-      sort = "-time";
-      width = 300;
-      # font = "monospace 10";
-      extraConfig = ''
-        [urgency=low]
-        border-color=#cccccc
-        [urgency=normal]
-        border-color=#d08770
-        [urgency=high]
-        border-color=#bf616a
-        default-timeout=3000
-        [category=mpd]
-        default-timeout=2000
-        group-by=category
-      '';
+      settings = {
+        border-radius = 15;
+        border-size = 1;
+        default-timeout = 5000;
+        ignore-timeout = 1;
+        icons = 1;
+        layer = "overlay";
+        sort = "-time";
+        height = 150;
+        width = 300;
+        "urgency=low" = {
+          border-color = lib.mkForce "#cccccc";
+        };
+        "urgency=normal" = {
+          border-color = lib.mkForce "#d08770";
+        };
+        "urgency=high" = {
+          border-color = lib.mkForce "#bf616a";
+          default-timeout = 3000;
+        };
+        "category=mpd" = {
+          default-timeout = 2000;
+          group-by = "category";
+        };
+      };
     };
   };
 

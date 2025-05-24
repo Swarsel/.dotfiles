@@ -74,16 +74,16 @@ in
             devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
             id = "hgp9s-fyq3p";
           };
-          # "Documents" = {
-          #   path = "/Vault/data/syncthing/Documents";
-          #   type = "receiveonly";
-          #   versioning = {
-          #     type = "simple";
-          #     params.keep = "5";
-          #   };
-          #   devices = [ "magicant" "${workHostName}" ];
-          #   id = "hgr3d-pfu3w";
-          # };
+          "Documents" = {
+            path = "/Vault/data/syncthing/Documents";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
+            devices = [ "magicant" "${workHostName}" ];
+            id = "hgr3d-pfu3w";
+          };
           # ".elfeed" = {
           #   path = "/Vault/data/syncthing/.elfeed";
           #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];

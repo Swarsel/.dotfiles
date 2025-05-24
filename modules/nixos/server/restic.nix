@@ -16,7 +16,7 @@ in
       templates = {
         "restic-env".content = ''
           AWS_ACCESS_KEY_ID=${config.sops.placeholder.resticaccesskey}
-          AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resicsecretaccesskey}
+          AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resticsecretaccesskey}
         '';
       };
     };
