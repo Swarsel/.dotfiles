@@ -21,6 +21,7 @@
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
           kavita = lib.mkDefault true;
+          restic = lib.mkDefault true;
           jellyfin = lib.mkDefault true;
           navidrome = lib.mkDefault true;
           spotifyd = lib.mkDefault true;

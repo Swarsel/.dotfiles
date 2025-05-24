@@ -82,6 +82,7 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     rm modules/home/common/git.nix
     rm modules/home/common/mail.nix
     rm modules/home/common/yubikey.nix
+    rm modules/nixos/server/restic.nix
     rm modules/nixos/common/home-manager-extra.nix
     nix flake update vbc-nix
     git add .

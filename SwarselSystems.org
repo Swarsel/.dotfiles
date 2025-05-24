@@ -2990,6 +2990,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       rm modules/home/common/git.nix
       rm modules/home/common/mail.nix
       rm modules/home/common/yubikey.nix
+      rm modules/nixos/server/restic.nix
       rm modules/nixos/common/home-manager-extra.nix
       nix flake update vbc-nix
       git add .
@@ -3125,6 +3126,7 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     rm modules/home/common/git.nix
     rm modules/home/common/mail.nix
     rm modules/home/common/yubikey.nix
+    rm modules/nixos/server/restic.nix
     rm modules/nixos/common/home-manager-extra.nix
     rm -rf modules/nixos/server
     rm -rf modules/home/server
@@ -4029,6 +4031,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
             kavita = lib.mkDefault true;
+            restic = lib.mkDefault true;
             jellyfin = lib.mkDefault true;
             navidrome = lib.mkDefault true;
             spotifyd = lib.mkDefault true;
@@ -7736,12 +7739,50 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 Once this is finished, it will house a restic client that manages automatic backups of my image library. Before I get to this however, I first need to organice my pictures in the first place.
 
 #+begin_src nix :tangle modules/nixos/server/restic.nix
-  { lib, config, ... }:
+  { lib, config, inputs, ... }:
+  let
+    secretsDirectory = builtins.toString inputs.nix-secrets;
+    resticRepo = lib.swarselsystems.getSecret "${secretsDirectory}/restic/wintersRepo";
+  in
   {
     options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
     config = lib.mkIf config.swarselsystems.modules.server.restic {
 
-      # TODO
+      sops = {
+        secrets = {
+          resticpw = { };
+          resticaccesskey = { };
+          resticsecretaccesskey = { };
+        };
+        templates = {
+          "restic-env".content = ''
+            AWS_ACCESS_KEY_ID=${config.sops.placeholder.resticaccesskey}
+            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.resicsecretaccesskey}
+          '';
+        };
+      };
+
+      services.restic = {
+        backups = {
+          SwarselWinters = {
+            environmentFile = config.sops.templates."restic-env".path;
+            passwordFile = config.sops.secrets.resticpw.path;
+            paths = [
+              "/Vault/data/paperless"
+              "/Vault/Eternor/Paperless"
+              "/Vault/data/paperless"
+              "/Vault/Eternor/Bilder"
+              "/Vault/Eternor/Immich"
+            ];
+            repository = "${resticRepo}";
+            initialize = true;
+            timerConfig = {
+              OnCalendar = "19:00";
+            };
+          };
+
+        };
+      };
 
     };
   }
