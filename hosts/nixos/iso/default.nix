@@ -1,4 +1,4 @@
-{ self, pkgs, inputs, outputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+{ self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -8,22 +8,29 @@ in
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/channel.nix"
 
-    "${self}/profiles/iso/minimal.nix"
+    "${self}/modules/iso/minimal.nix"
+    "${self}/modules/nixos/common/sharedsetup.nix"
+    "${self}/modules/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
-        "${self}/profiles/home/common/settings.nix"
-      ] ++ (builtins.attrValues outputs.homeModules);
+        "${self}/modules/home/common/settings.nix"
+        "${self}/modules/home/common/sharedsetup.nix"
+      ];
     }
   ];
 
-  home-manager.users."${primaryUser}".home = {
-    file = {
-      ".bash_history" = {
-        source = self + /programs/bash/.bash_history;
+  home-manager.users."${primaryUser}" = {
+    home = {
+      stateVersion = "23.05";
+      file = {
+        ".bash_history" = {
+          source = self + /programs/bash/.bash_history;
+        };
       };
     };
+    swarselsystems.modules.general = lib.mkForce true;
   };
   home-manager.users.root.home = {
     stateVersion = "23.05";

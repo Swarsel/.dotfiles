@@ -5,8 +5,9 @@
     inputs.stylix.homeManagerModules.stylix
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
-    ./profiles/home/common
-  ] ++ (builtins.attrValues outputs.homeModules);
+    ./modules/home/common
+    "${self}/modules/home/common/sharedsetup.nix"
+  ];
 
   nixpkgs = {
     overlays = [ outputs.overlays.default ];

@@ -40,6 +40,13 @@ let
     };
   };
 
+  nixpkgs-stable24_05 = final: _: {
+    stable24_05 = import inputs.nixpkgs-stable {
+      inherit (final) system;
+      config.allowUnfree = true;
+    };
+  };
+
   zjstatus = _: prev: {
     zjstatus = inputs.zjstatus.packages.${prev.system}.default;
   };
@@ -52,6 +59,7 @@ in
     (additions final prev)
     // (modifications final prev)
     // (nixpkgs-stable final prev)
+    // (nixpkgs-stable24_05 final prev)
     // (zjstatus final prev)
     // (inputs.vbc-nix.overlays.default final prev)
     // (inputs.nur.overlays.default final prev)

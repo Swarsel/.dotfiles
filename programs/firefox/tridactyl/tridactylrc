@@ -1,6 +1,6 @@
 sanitise tridactyllocal tridactylsync
 
-colourscheme base16-codeschool
+colourscheme swarsel
 
 " General Settings
 set update.lastchecktime 1720629386560
@@ -12,9 +12,12 @@ set configversion 2.0
 set searchurls.no https://search.nixos.org/options?query=
 set searchurls.np https://search.nixos.org/packages?query=
 set searchurls.hm https://home-manager-options.extranix.com/?query=
+set searchurls.@c https://vbc.atlassian.net/wiki/search?text=
+set searchurls.@j https://vbc.atlassian.net/issues/?jql=textfields%20~%20%22%s*%22&wildcardFlag=true
 set completions.Tab.statusstylepretty true
 set hintfiltermode vimperator-reflow
 set hintnames numeric
+unbind --mode=hint <Space>
 
 " Binds
 bind <C-m> buffer #
@@ -29,29 +32,32 @@ bindurl ^http(s)?://lobste\.rs c hint -Jc [class="u-url"],[class="comments_label
 bindurl ^http(s)?://www\.google\.com gi composite focusinput -l ; text.end_of_line
 
 " Work
-command tab_or_tabopen jsb -p (async () => { let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
+command tab_or_tabopen jsb -p (async () => {let tabs = await browser.tabs.query({}); let tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
 
-bind gwa tab_or_tabopen apic-impimba-1.m.imp.ac.at
-bind gwA tab_or_tabopen artifactory.imp.ac.at
-bind gwb tab_or_tabopen bitbucket.vbc.ac.at
-bind gwc tab_or_tabopen vbc.atlassian.net/wiki
-bind gwd tab_or_tabopen datadomain-impimba-2.imp.ac.at
-bind gwe tab_or_tabopen exivity.vbc.ac.at
-bind gwg tab_or_tabopen github.com
-bind gwh tab_or_tabopen jupyterhub.vbc.ac.at
-bind gwH tab_or_tabopen test-jupyterhub.vbc.ac.at
-bind gwj tab_or_tabopen jenkins.vbc.ac.at
-bind gwJ tab_or_tabopen test-jenkins.vbc.ac.at
-bind gwl tab_or_tabopen lucid.app
-bind gwm tab_or_tabopen monitoring.vbc.ac.at/grafana
-bind gwM tab_or_tabopen monitoring.vbc.ac.at/prometheus
-bind gwn tab_or_tabopen netbox.vbc.ac.at
-bind gwN tab_or_tabopen nap.imp.ac.at
-bind gwo tab_or_tabopen outlook.office.com
-bind gws tab_or_tabopen satellite.vbc.ac.at
-bind gwt tab_or_tabopen tower.vbc.ac.at
-bind gwv tab_or_tabopen vc-impimba-1.m.imp.ac.at/ui
-bind gwx tab_or_tabopen xclarity.vbc.ac.at
+command tab_or_tabopen_local jsb -p (async () => {const currentWindow = await browser.windows.getCurrent(); const tabs = await browser.tabs.query({ windowId: currentWindow.id }); const tab = tabs.find(t => t.url.includes(JS_ARG)); if (tab) {browser.tabs.update(tab.id, { active: true });} else {tri.excmds.tabopen(JS_ARG);}})()
+
+bind gwa tab_or_tabopen_local apic-impimba-1.m.imp.ac.at
+bind gwA tab_or_tabopen_local artifactory.imp.ac.at
+bind gwb tab_or_tabopen_local bitbucket.vbc.ac.at
+bind gwc tab_or_tabopen_local vbc.atlassian.net/wiki
+bind gwd tab_or_tabopen_local datadomain-impimba-2.imp.ac.at
+bind gwe tab_or_tabopen_local exivity.vbc.ac.at
+bind gwg tab_or_tabopen_local github.com
+bind gwG tab_or_tabopen_local goc.egi.eu
+bind gwh tab_or_tabopen_local jupyterhub.vbc.ac.at
+bind gwH tab_or_tabopen_local test-jupyterhub.vbc.ac.at
+bind gwj tab_or_tabopen_local jenkins.vbc.ac.at
+bind gwJ tab_or_tabopen_local test-jenkins.vbc.ac.at
+bind gwl tab_or_tabopen_local lucid.app
+bind gwm tab_or_tabopen_local monitoring.vbc.ac.at/grafana
+bind gwM tab_or_tabopen_local monitoring.vbc.ac.at/prometheus
+bind gwn tab_or_tabopen_local netbox.vbc.ac.at
+bind gwN tab_or_tabopen_local nap.imp.ac.at
+bind gwo tab_or_tabopen_local outlook.office.com
+bind gws tab_or_tabopen_local satellite.vbc.ac.at
+bind gwt tab_or_tabopen_local tower.vbc.ac.at
+bind gwv tab_or_tabopen_local vc-impimba-1.m.imp.ac.at/ui
+bind gwx tab_or_tabopen_local xclarity.vbc.ac.at
 
 " Search in page
 set findcase smart

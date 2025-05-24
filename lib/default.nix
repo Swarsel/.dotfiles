@@ -26,6 +26,13 @@ in
     }
   );
 
+  mkTrueOption = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+  };
+
+  mkStrong = lib.mkOverride 60;
+
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
@@ -43,46 +50,50 @@ in
           inputs.sops-nix.nixosModules.sops
           inputs.impermanence.nixosModules.impermanence
           inputs.lanzaboote.nixosModules.lanzaboote
+          inputs.fw-fanctrl.nixosModules.default
           "${self}/hosts/${type}/${host}"
           {
             _module.args.primaryUser = linuxUser;
           }
         ] ++
-        (if (host == "toto" || host == "iso") then [ ] else
+        (if (host == "iso") then [ ] else
         ([
           # put nixos imports here that are for all servers and normal hosts
           inputs.nix-topology.nixosModules.default
-        ] ++
-        (if (host == "winters" || host == "sync") then [ ] else [
-          # put nixos imports here that are for all normal hosts
-          "${self}/profiles/${type}/common"
+          "${self}/modules/${type}/common"
           inputs.stylix.nixosModules.stylix
           inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ]) ++ (if (type == "nixos") then [
+        ] ++ (if (type == "nixos") then [
           inputs.home-manager.nixosModules.home-manager
+          "${self}/profiles/nixos"
+          "${self}/modules/nixos/server"
+          "${self}/modules/nixos/optional"
           {
-            home-manager.users."${linuxUser}".imports = (
-              if (host == "winters" || host == "sync") then [ ] else [
-                # put home-manager imports here that are for all normal hosts
-                "${self}/profiles/home/common"
-              ]
-            ) ++ [
-              # put home-manager imports here that are for all servers and normal hosts
+            home-manager.users."${linuxUser}".imports = [
+              # put home-manager imports here that are for all normal hosts
               inputs.sops-nix.homeManagerModules.sops
               inputs.nix-index-database.hmModules.nix-index
-            ] ++ (builtins.attrValues outputs.homeModules);
+              "${self}/modules/home/common"
+              "${self}/modules/home/server"
+              "${self}/modules/home/optional"
+              "${self}/profiles/home"
+            ];
           }
         ] else [
           # put nixos imports here that are for darwin hosts
-          "${self}/profiles/darwin/nixos/common"
+          "${self}/modules/darwin/nixos/common"
+          "${self}/profiles/darwin"
           inputs.home-manager.darwinModules.home-manager
           {
             home-manager.users."${macUser}".imports = [
               # put home-manager imports here that are for darwin hosts
-              "${self}/profiles/darwin/home"
-            ] ++ (builtins.attrValues outputs.homeModules);
+              "${self}/modules/darwin/home"
+              "${self}/modules/home/server"
+              "${self}/modules/home/optional"
+              "${self}/profiles/home"
+            ];
           }
-        ]) ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules)
+        ])
         ));
       };
   };
@@ -113,6 +124,9 @@ in
       value = {
         type = "app";
         program = "${self.packages.${system}.${name}}/bin/${name}";
+        meta = {
+          description = "Custom app ${name}.";
+        };
       };
     })
     names);
@@ -129,6 +143,13 @@ in
     (name: {
       inherit name;
       value = import "${self}/modules/${type}/${name}";
+    })
+    names);
+
+  mkProfiles = names: type: builtins.listToAttrs (map
+    (name: {
+      inherit name;
+      value = import "${self}/profiles/${type}/${name}";
     })
     names);
 

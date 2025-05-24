@@ -1,21 +1,17 @@
-{ self, inputs, primaryUser, ... }:
+{ lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  sharedOptions = {
+    isBtrfs = false;
+    isLinux = true;
+    profiles = {
+      server.local = true;
+    };
+  };
 in
 {
 
   imports = [
     ./hardware-configuration.nix
-
-    "${profilesPath}/nixos/optional/autologin.nix"
-    "${profilesPath}/nixos/server"
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${primaryUser}".imports = [
-        "${profilesPath}/home/server"
-      ];
-    }
   ];
 
   boot = {
@@ -31,28 +27,19 @@ in
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 
-  swarselsystems = {
-    hasBluetooth = false;
-    hasFingerprint = false;
-    isImpermanence = false;
-    isBtrfs = false;
-    isLinux = true;
-    server = {
-      enable = true;
-      kavita = true;
-      navidrome = true;
-      jellyfin = true;
-      spotifyd = true;
-      mpd = false;
-      matrix = true;
-      nextcloud = true;
-      immich = true;
-      paperless = true;
-      transmission = true;
-      syncthing = true;
-      monitoring = true;
-      freshrss = true;
-    };
-  };
 
+  swarselsystems = lib.recursiveUpdate
+    {
+      isImpermanence = false;
+      isSecureBoot = true;
+      isCrypted = true;
+    }
+    sharedOptions;
+
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      { }
+      sharedOptions;
+  };
 }

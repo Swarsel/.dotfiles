@@ -1,19 +1,13 @@
-{ self, inputs, lib, primaryUser, ... }:
+{ lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  sharedOptions = {
+    isBtrfs = false;
+    isLinux = true;
+  };
 in
 {
   imports = [
-
-    "${profilesPath}/nixos/server"
     ./hardware-configuration.nix
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${primaryUser}".imports = [
-        "${profilesPath}/home/server"
-      ];
-    }
   ];
 
   sops = {
@@ -48,7 +42,7 @@ in
     };
   };
 
-  # system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
+  system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
 
   services = {
     nginx = {
@@ -77,19 +71,23 @@ in
     };
   };
 
+  swarselsystems = lib.recursiveUpdate
+    {
+      flakePath = "/root/.dotfiles";
+      isImpermanence = false;
+      isSecureBoot = false;
+      isCrypted = false;
+      profiles = {
+        server.sync = true;
+      };
+    }
+    sharedOptions;
 
-  swarselsystems = {
-    hasBluetooth = false;
-    hasFingerprint = false;
-    isImpermanence = false;
-    isLinux = true;
-    isBtrfs = false;
-    flakePath = "/root/.dotfiles";
-    server = {
-      enable = true;
-      forgejo = true;
-      ankisync = true;
-    };
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      { }
+      sharedOptions;
   };
 
 }

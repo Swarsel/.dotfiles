@@ -1,38 +1,33 @@
-{ self, inputs, outputs, pkgs, lib, primaryUser, ... }:
+{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
-  profilesPath = "${self}/profiles";
+  modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
+    profiles = {
+      toto = true;
+    };
   };
 in
 {
 
   imports = [
-    "${self}/hosts/nixos/toto/disk-config.nix"
+    ./disk-config.nix
     ./hardware-configuration.nix
 
-    "${profilesPath}/nixos/optional/autologin.nix"
-    "${profilesPath}/nixos/common/settings.nix"
-    "${profilesPath}/nixos/common/home-manager.nix"
-    "${profilesPath}/nixos/common/home-manager-extra.nix"
-    "${profilesPath}/nixos/common/xserver.nix"
-    "${profilesPath}/nixos/common/users.nix"
-    "${profilesPath}/nixos/common/impermanence.nix"
-    "${profilesPath}/nixos/common/lanzaboote.nix"
-    "${profilesPath}/nixos/common/sops.nix"
-    "${profilesPath}/nixos/server/ssh.nix"
+    "${modulesPath}/nixos/common/sharedsetup.nix"
+    "${modulesPath}/home/common/sharedsetup.nix"
+    "${self}/profiles/nixos"
 
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [
         inputs.sops-nix.homeManagerModules.sops
-        "${profilesPath}/home/common/settings.nix"
-        "${profilesPath}/home/common/sops.nix"
-        "${profilesPath}/home/common/ssh.nix"
-      ] ++ (builtins.attrValues outputs.homeModules);
+        "${modulesPath}/home/common/sharedsetup.nix"
+        "${self}/profiles/home"
+      ];
     }
-  ] ++ (builtins.attrValues outputs.nixosModules) ++ (builtins.attrValues outputs.homeModules);
+  ];
 
 
   environment.systemPackages = with pkgs; [
@@ -73,11 +68,13 @@ in
     }
     sharedOptions;
 
-  home-manager.users."${primaryUser}".swarselsystems = lib.recursiveUpdate
-    {
-      isLaptop = false;
-      isNixos = true;
-    }
-    sharedOptions;
-
+  home-manager.users."${primaryUser}" = {
+    home.stateVersion = lib.mkForce "23.05";
+    swarselsystems = lib.recursiveUpdate
+      {
+        isLaptop = false;
+        isNixos = true;
+      }
+      sharedOptions;
+  };
 }

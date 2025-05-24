@@ -77,12 +77,12 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-    rm profiles/home/common/env.nix
-    rm profiles/home/common/gammastep.nix
-    rm profiles/home/common/git.nix
-    rm profiles/home/common/mail.nix
-    rm profiles/home/common/yubikey.nix
-    rm profiles/nixos/common/home-manager-extra.nix
+    rm modules/home/common/env.nix
+    rm modules/home/common/gammastep.nix
+    rm modules/home/common/git.nix
+    rm modules/home/common/mail.nix
+    rm modules/home/common/yubikey.nix
+    rm modules/nixos/common/home-manager-extra.nix
     nix flake update vbc-nix
     git add .
 else

@@ -1,0 +1,430 @@
+{ self, config, pkgs, lib, nix-secrets, ... }:
+let
+  inherit (config.swarselsystems) homeDir;
+  secretsDirectory = builtins.toString nix-secrets;
+  dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
+  clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
+  wsUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/ws-user";
+in
+{
+  options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
+  config = lib.mkIf config.swarselsystems.modules.optional.work {
+    home.packages = with pkgs; [
+      stable.teams-for-linux
+      shellcheck
+      dig
+      docker
+      postman
+      rclone
+      stable.awscli2
+      libguestfs-with-appliance
+      stable.prometheus.cli
+      tigervnc
+      openstackclient
+    ];
+
+    home.sessionVariables = {
+      DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+      DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+    };
+
+    wayland.windowManager.sway.config = {
+      output = {
+        "Applied Creative Technology Transmitter QUATTRO201811" = {
+          bg = "${self}/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+        };
+        "Hewlett Packard HP Z24i CN44250RDT" = {
+          bg = "${self}/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+        };
+        "HP Inc. HP 732pk CNC4080YL5" = {
+          bg = "${self}/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+        };
+      };
+    };
+
+    stylix.targets.firefox.profileNames = [
+      "dc"
+      "cl"
+      "ws"
+      "work"
+    ];
+
+    programs = {
+      git.userEmail = lib.swarselsystems.getSecret "${secretsDirectory}/work/git-email";
+
+      zsh = {
+        shellAliases = {
+          dssh = "ssh -l ${dcUser}";
+          cssh = "ssh -l ${clUser}";
+          wssh = "ssh -l ${wsUser}";
+        };
+        cdpath = [
+          "~/Documents/Work"
+        ];
+        dirHashes = {
+          d = "$HOME/.dotfiles";
+          w = "$HOME/Documents/Work";
+          s = "$HOME/.dotfiles/secrets";
+          pr = "$HOME/Documents/Private";
+          ac = "$HOME/.ansible/collections/ansible_collections/vbc/linux/roles";
+        };
+      };
+
+      ssh = {
+        matchBlocks = {
+          "uc" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-prod";
+            user = "stack";
+          };
+          "uc.stg" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
+            user = "stack";
+          };
+          "uc.staging" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
+            user = "stack";
+          };
+          "uc.dev" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-dev";
+            user = "stack";
+          };
+          "cbe" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-prod";
+            user = dcUser;
+          };
+          "cbe.stg" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
+            user = dcUser;
+          };
+          "cbe.staging" = {
+            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
+            user = dcUser;
+          };
+          "*.vbc.ac.at" = {
+            user = dcUser;
+          };
+        };
+      };
+
+      firefox = {
+        profiles =
+          let
+            isDefault = false;
+          in
+          {
+            dc = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 1;
+                settings = {
+                  "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
+                };
+              }
+              config.swarselsystems.firefox;
+            cl = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 2;
+                settings = {
+                  "browser.startup.homepage" = "https://portal.azure.com";
+                };
+              }
+              config.swarselsystems.firefox;
+            ws = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 3;
+              }
+              config.swarselsystems.firefox;
+            work = lib.recursiveUpdate
+              {
+                inherit isDefault;
+                id = 4;
+                settings = {
+                  "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                };
+              }
+              config.swarselsystems.firefox;
+          };
+      };
+
+      chromium = {
+        enable = true;
+        package = pkgs.chromium;
+
+        extensions = [
+          # 1password
+          "gejiddohjgogedgjnonbofjigllpkmbf"
+          # dark reader
+          "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+          # ublock origin
+          "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+          # i still dont care about cookies
+          "edibdbjcniadpccecjdfdjjppcpchdlm"
+          # browserpass
+          "naepdomgkenhinolocfifgehidddafch"
+        ];
+      };
+    };
+
+    services = {
+      kanshi = {
+        settings = [
+          {
+            # seminary room
+            output = {
+              criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+              scale = 1.0;
+              mode = "1280x720";
+            };
+          }
+          {
+            # work main screen
+            output = {
+              criteria = "HP Inc. HP 732pk CNC4080YL5";
+              scale = 1.0;
+              mode = "3840x2160";
+            };
+          }
+          {
+            # work side screen
+            output = {
+              criteria = "Hewlett Packard HP Z24i CN44250RDT";
+              scale = 1.0;
+              mode = "1920x1200";
+              transform = "270";
+            };
+          }
+          {
+            profile = {
+              name = "lidopen";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.5;
+                  position = "1462,0";
+                }
+                {
+                  criteria = "HP Inc. HP 732pk CNC4080YL5";
+                  scale = 1.4;
+                  mode = "3840x2160";
+                  position = "-1280,0";
+                }
+                {
+                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  scale = 1.0;
+                  mode = "1920x1200";
+                  transform = "90";
+                  position = "-2480,0";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidopen";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.7;
+                  position = "2560,0";
+                }
+                {
+                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                  scale = 1.0;
+                  mode = "1280x720";
+                  position = "10000,10000";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidclosed";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                }
+                {
+                  criteria = "HP Inc. HP 732pk CNC4080YL5";
+                  scale = 1.4;
+                  mode = "3840x2160";
+                  position = "-1280,0";
+                }
+                {
+                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  scale = 1.0;
+                  mode = "1920x1200";
+                  transform = "270";
+                  position = "-2480,0";
+                }
+              ];
+            };
+          }
+          {
+            profile = {
+              name = "lidclosed";
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                }
+                {
+                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                  scale = 1.0;
+                  mode = "1280x720";
+                  position = "10000,10000";
+                }
+              ];
+            };
+          }
+        ];
+      };
+    };
+
+    xdg = {
+      mimeApps = {
+        defaultApplications = {
+          "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+        };
+      };
+      desktopEntries =
+        let
+          terminal = false;
+          categories = [ "Application" ];
+          icon = "firefox";
+        in
+        {
+          firefox_work = {
+            name = "Firefox (work)";
+            genericName = "Firefox work";
+            exec = "firefox -p work";
+            inherit terminal categories icon;
+          };
+          firefox_dc = {
+            name = "Firefox (dc)";
+            genericName = "Firefox dc";
+            exec = "firefox -p dc";
+            inherit terminal categories icon;
+          };
+
+          firefox_ws = {
+            name = "Firefox (ws)";
+            genericName = "Firefox ws";
+            exec = "firefox -p ws";
+            inherit terminal categories icon;
+          };
+
+          firefox_cl = {
+            name = "Firefox (cl)";
+            genericName = "Firefox cl";
+            exec = "firefox -p cl";
+            inherit terminal categories icon;
+          };
+
+        };
+    };
+    swarselsystems = {
+      startup = [
+        { command = "teams-for-linux"; }
+        { command = "1password"; }
+      ];
+      monitors = {
+        main = {
+          name = "BOE 0x0BC9 Unknown";
+          mode = "2560x1600"; # TEMPLATE
+          scale = "1";
+          position = "2560,0";
+          workspace = "15:L";
+          output = "eDP-2";
+        };
+        homedesktop = {
+          name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+          mode = "2560x1440";
+          scale = "1";
+          position = "0,0";
+          workspace = "1:一";
+          output = "DP-11";
+        };
+        work_back_middle = {
+          name = "LG Electronics LG Ultra HD 0x000305A6";
+          mode = "2560x1440";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-10";
+        };
+        work_front_left = {
+          name = "LG Electronics LG Ultra HD 0x0007AB45";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-7";
+        };
+        work_back_right = {
+          name = "HP Inc. HP Z32 CN41212T55";
+          mode = "3840x2160";
+          scale = "1";
+          position = "5120,0";
+          workspace = "1:一";
+          output = "DP-3";
+        };
+        work_middle_middle_main = {
+          name = "HP Inc. HP 732pk CNC4080YL5";
+          mode = "3840x2160";
+          scale = "1";
+          position = "-1280,0";
+          workspace = "11:M";
+          output = "DP-8";
+        };
+        work_middle_middle_side = {
+          name = "Hewlett Packard HP Z24i CN44250RDT";
+          mode = "1920x1200";
+          transform = "270";
+          scale = "1";
+          position = "-2480,0";
+          workspace = "12:S";
+          output = "DP-9";
+        };
+        work_seminary = {
+          name = "Applied Creative Technology Transmitter QUATTRO201811";
+          mode = "1280x720";
+          scale = "1";
+          position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+          workspace = "14:T";
+          output = "DP-4";
+        };
+      };
+      inputs = {
+        "1133:45081:MX_Master_2S_Keyboard" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+        #   dwt = "enabled";
+        #   tap = "enabled";
+        #   natural_scroll = "enabled";
+        #   middle_emulation = "enabled";
+        #   drag_lock = "disabled";
+        # };
+        "1133:50504:Logitech_USB_Receiver" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+        "1133:45944:MX_KEYS_S" = {
+          xkb_layout = "us";
+          xkb_variant = "altgr-intl";
+        };
+      };
+      keybindings = {
+        "Mod4+Ctrl+Shift+p" = "exec screenshare";
+      };
+
+    };
+  };
+
+}

@@ -95,12 +95,42 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-    rm profiles/home/common/env.nix
-    rm profiles/home/common/gammastep.nix
-    rm profiles/home/common/git.nix
-    rm profiles/home/common/mail.nix
-    rm profiles/home/common/yubikey.nix
-    rm profiles/nixos/common/home-manager-extra.nix
+    rm modules/home/common/env.nix
+    rm modules/home/common/gammastep.nix
+    rm modules/home/common/git.nix
+    rm modules/home/common/mail.nix
+    rm modules/home/common/yubikey.nix
+    rm modules/nixos/common/home-manager-extra.nix
+    rm -rf modules/nixos/server
+    rm -rf modules/home/server
+    cat > hosts/nixos/chaostheatre/options.nix << EOF
+      { self, lib, ... }:
+      {
+        options = {
+          swarselsystems = {
+            modules = {
+              home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
+            };
+          };
+        };
+      }
+EOF
+    cat > hosts/nixos/chaostheatre/options-home.nix << EOF
+      { self, lib, ... }:
+      {
+      options = {
+        swarselsystems = {
+          modules = {
+            yubikey = lib.mkEnableOption "dummy option for chaostheatre";
+            env = lib.mkEnableOption "dummy option for chaostheatre";
+            git = lib.mkEnableOption "dummy option for chaostheatre";
+            mail = lib.mkEnableOption "dummy option for chaostheatre";
+            gammastep = lib.mkEnableOption "dummy option for chaostheatre";
+          };
+        };
+      };
+      }
+EOF
     nix flake update vbc-nix
     git add .
 else
