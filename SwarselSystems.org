@@ -1268,12 +1268,18 @@ This machine mainly acts as an external sync helper. It manages the following th
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
-  { lib, primaryUser, ... }:
+  { lib, primaryUser, inputs, ... }:
   let
     sharedOptions = {
       isBtrfs = false;
       isLinux = true;
     };
+    secretsDirectory = builtins.toString inputs.nix-secrets;
+    workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+    dev1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev1";
+    dev2 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev2";
+    dev3 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev3";
+    loc1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/loc1";
   in
   {
     imports = [
@@ -1296,7 +1302,7 @@ This machine mainly acts as an external sync helper. It manages the following th
       enableIPv6 = false;
       domain = "subnet03112148.vcn03112148.oraclevcn.com";
       firewall = {
-        allowedTCPPorts = [ 8384 22000 ];
+        allowedTCPPorts = [ 80 443 8384 9812 22000 27701 ];
         allowedUDPPorts = [ 21027 22000 ];
         extraCommands = ''
           iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
@@ -1312,7 +1318,7 @@ This machine mainly acts as an external sync helper. It manages the following th
       };
     };
 
-    system.stateVersion = "23.11"; # TEMPLATE - but probably no need to change
+    system.stateVersion = "23.11";
 
     services = {
       nginx = {
@@ -1333,11 +1339,83 @@ This machine mainly acts as an external sync helper. It manages the following th
         };
       };
 
-      # do not manage OCI syncthing through nix config
       syncthing = {
         enable = true;
         guiAddress = "0.0.0.0:8384";
         openDefaultPorts = true;
+        relay.enable = false;
+        settings = {
+          urAccepted = -1;
+          devices = {
+            "magicant" = {
+              id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+            };
+            "winters" = {
+              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+            };
+            "${workHostName}" = {
+              id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
+            };
+            "${dev1}" = {
+              id = "OCCDGDF-IPZ6HHQ-5SSLQ3L-MSSL5ZW-IX5JTAM-PW4PYEK-BRNMJ7E-Q7YDMA7";
+            };
+            "${dev2}" = {
+              id = "LPCFIIB-ENUM2V6-F2BWVZ6-F2HXCL2-BSBZXUF-TIMNKYB-7CATP7H-YU5D3AH";
+            };
+            "${dev3}" = {
+              id = "LAUT2ZP-KEZY35H-AHR3ARD-URAREJI-2B22P5T-PIMUNWW-PQRDETU-7KIGNQR";
+            };
+          };
+          folders = {
+            "Default Folder" = lib.mkForce {
+              path = "/var/lib/syncthing/Sync";
+              type = "receiveonly";
+              versioning = null;
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "default";
+            };
+            "Obsidian" = {
+              path = "/var/lib/syncthing/Obsidian";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+               params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "yjvni-9eaa7";
+            };
+            "Org" = {
+              path = "/var/lib/syncthing/Org";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "a7xnl-zjj3d";
+            };
+            "Vpn" = {
+              path = "/var/lib/syncthing/Vpn";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "hgp9s-fyq3p";
+            };
+            "${loc1}" = {
+              path = "/var/lib/syncthing/${loc1}";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "3";
+              };
+              devices = [ dev1 dev2 dev3 ];
+              id = "5gsxv-rzzst";
+            };
+          };
+        };
       };
     };
 
@@ -2993,6 +3071,9 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       rm modules/home/common/yubikey.nix
       rm modules/nixos/server/restic.nix
       rm modules/nixos/common/home-manager-extra.nix
+      rm hosts/nixos/sync/default.nix
+      rm -rf modules/nixos/server
+      rm -rf modules/home/server
       nix flake update vbc-nix
       git add .
   else
@@ -3025,219 +3106,220 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 Autoformatting always puts the =EOF= with indentation, which makes shfmt check fail. When editing this block, unindent them manually.
 
 #+begin_src shell :tangle scripts/swarsel-install.sh
-set -eo pipefail
+  set -eo pipefail
 
-target_config="chaostheatre"
-target_hostname="chaostheatre"
-target_user="swarsel"
-persist_dir=""
-target_disk="/dev/vda"
-disk_encryption=0
+  target_config="chaostheatre"
+  target_hostname="chaostheatre"
+  target_user="swarsel"
+  persist_dir=""
+  target_disk="/dev/vda"
+  disk_encryption=0
 
-function help_and_exit() {
-    echo
-    echo "Locally installs SwarselSystem on this machine."
-    echo
-    echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
-    echo
-    echo "ARGS:"
-    echo "  -n <target_config>                      specify the nixos config to deploy."
-    echo "                                          Default: chaostheatre"
-    echo "  -d <target_disk>                        specify disk to install on."
-    echo "                                          Default: /dev/vda"
-    echo "  -u <target_user>                        specify user to deploy for."
-    echo "                                          Default: swarsel"
-    echo "  -h | --help                             Print this help."
-    exit 0
-}
+  function help_and_exit() {
+      echo
+      echo "Locally installs SwarselSystem on this machine."
+      echo
+      echo "USAGE: $0 -n <target_config> -d <target_disk> [OPTIONS]"
+      echo
+      echo "ARGS:"
+      echo "  -n <target_config>                      specify the nixos config to deploy."
+      echo "                                          Default: chaostheatre"
+      echo "  -d <target_disk>                        specify disk to install on."
+      echo "                                          Default: /dev/vda"
+      echo "  -u <target_user>                        specify user to deploy for."
+      echo "                                          Default: swarsel"
+      echo "  -h | --help                             Print this help."
+      exit 0
+  }
 
-function red() {
-    echo -e "\x1B[31m[!] $1 \x1B[0m"
-    if [ -n "${2-}" ]; then
-        echo -e "\x1B[31m[!] $($2) \x1B[0m"
-    fi
-}
-function green() {
-    echo -e "\x1B[32m[+] $1 \x1B[0m"
-    if [ -n "${2-}" ]; then
-        echo -e "\x1B[32m[+] $($2) \x1B[0m"
-    fi
-}
-function yellow() {
-    echo -e "\x1B[33m[*] $1 \x1B[0m"
-    if [ -n "${2-}" ]; then
-        echo -e "\x1B[33m[*] $($2) \x1B[0m"
-    fi
-}
+  function red() {
+      echo -e "\x1B[31m[!] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[31m[!] $($2) \x1B[0m"
+      fi
+  }
+  function green() {
+      echo -e "\x1B[32m[+] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[32m[+] $($2) \x1B[0m"
+      fi
+  }
+  function yellow() {
+      echo -e "\x1B[33m[*] $1 \x1B[0m"
+      if [ -n "${2-}" ]; then
+          echo -e "\x1B[33m[*] $($2) \x1B[0m"
+      fi
+  }
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -n)
-        shift
-        target_config=$1
-        target_hostname=$1
-        ;;
-    -u)
-        shift
-        target_user=$1
-        ;;
-    -d)
-        shift
-        target_disk=$1
-        ;;
-    -h | --help) help_and_exit ;;
-    ,*)
-        echo "Invalid option detected."
-        help_and_exit
-        ;;
-    esac
-    shift
-done
+  while [[ $# -gt 0 ]]; do
+      case "$1" in
+      -n)
+          shift
+          target_config=$1
+          target_hostname=$1
+          ;;
+      -u)
+          shift
+          target_user=$1
+          ;;
+      -d)
+          shift
+          target_disk=$1
+          ;;
+      -h | --help) help_and_exit ;;
+      ,*)
+          echo "Invalid option detected."
+          help_and_exit
+          ;;
+      esac
+      shift
+  done
 
-function cleanup() {
-    sudo rm -rf .cache/nix
-    sudo rm -rf /root/.cache/nix
-}
-trap cleanup exit
+  function cleanup() {
+      sudo rm -rf .cache/nix
+      sudo rm -rf /root/.cache/nix
+  }
+  trap cleanup exit
 
-green "~SwarselSystems~ local installer"
+  green "~SwarselSystems~ local installer"
 
-cd /home/"$target_user"
+  cd /home/"$target_user"
 
-sudo rm -rf /root/.cache/nix
-sudo rm -rf .cache/nix
-sudo rm -rf .dotfiles
+  sudo rm -rf /root/.cache/nix
+  sudo rm -rf .cache/nix
+  sudo rm -rf .dotfiles
 
-green "Cloning repository from GitHub"
-git clone https://github.com/Swarsel/.dotfiles.git
+  green "Cloning repository from GitHub"
+  git clone https://github.com/Swarsel/.dotfiles.git
 
-local_keys=$(ssh-add -L || true)
-pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
-read -ra pub_arr <<< "$pub_key"
+  local_keys=$(ssh-add -L || true)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+  read -ra pub_arr <<< "$pub_key"
 
-cd .dotfiles
-if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
-    yellow "The ssh key for this configuration is not available."
-    green "Adjusting flake.nix so that the configuration is buildable ..."
-    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
-    sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
-    sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-    rm modules/home/common/env.nix
-    rm modules/home/common/gammastep.nix
-    rm modules/home/common/git.nix
-    rm modules/home/common/mail.nix
-    rm modules/home/common/yubikey.nix
-    rm modules/nixos/server/restic.nix
-    rm modules/nixos/common/home-manager-extra.nix
-    rm -rf modules/nixos/server
-    rm -rf modules/home/server
-    cat > hosts/nixos/chaostheatre/options.nix << EOF
-      { self, lib, ... }:
-      {
-        options = {
-          swarselsystems = {
-            modules = {
-              home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
+  cd .dotfiles
+  if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
+      yellow "The ssh key for this configuration is not available."
+      green "Adjusting flake.nix so that the configuration is buildable ..."
+      sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
+      sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
+      sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
+      rm modules/home/common/env.nix
+      rm modules/home/common/gammastep.nix
+      rm modules/home/common/git.nix
+      rm modules/home/common/mail.nix
+      rm modules/home/common/yubikey.nix
+      rm modules/nixos/server/restic.nix
+      rm modules/nixos/common/home-manager-extra.nix
+      rm hosts/nixos/sync/default.nix
+      rm -rf modules/nixos/server
+      rm -rf modules/home/server
+      cat > hosts/nixos/chaostheatre/options.nix << EOF
+          { self, lib, ... }:
+          {
+            options = {
+              swarselsystems = {
+                modules = {
+                  home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
+                };
+              };
+            };
+          }
+  EOF
+      cat > hosts/nixos/chaostheatre/options-home.nix << EOF
+          { self, lib, ... }:
+          {
+          options = {
+            swarselsystems = {
+              modules = {
+                yubikey = lib.mkEnableOption "dummy option for chaostheatre";
+                env = lib.mkEnableOption "dummy option for chaostheatre";
+                git = lib.mkEnableOption "dummy option for chaostheatre";
+                mail = lib.mkEnableOption "dummy option for chaostheatre";
+                gammastep = lib.mkEnableOption "dummy option for chaostheatre";
+              };
             };
           };
-        };
-      }
-EOF
-    cat > hosts/nixos/chaostheatre/options-home.nix << EOF
-      { self, lib, ... }:
-      {
-      options = {
-        swarselsystems = {
-          modules = {
-            yubikey = lib.mkEnableOption "dummy option for chaostheatre";
-            env = lib.mkEnableOption "dummy option for chaostheatre";
-            git = lib.mkEnableOption "dummy option for chaostheatre";
-            mail = lib.mkEnableOption "dummy option for chaostheatre";
-            gammastep = lib.mkEnableOption "dummy option for chaostheatre";
-          };
-        };
-      };
-      }
-EOF
-    nix flake update vbc-nix
-    git add .
-else
-    green "Valid SSH key found! Continuing with installation"
-fi
+          }
+  EOF
+      nix flake update vbc-nix
+      git add .
+  else
+      green "Valid SSH key found! Continuing with installation"
+  fi
 
-green "Reading system information for $target_config ..."
-DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
-green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
+  green "Reading system information for $target_config ..."
+  DISK="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.rootDisk)"
+  green "Root Disk in config: $DISK - Root Disk passed in cli: $target_disk"
 
-CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
-if [[ $CRYPTED == "true" ]]; then
-    green "Encryption: ✓"
-    disk_encryption=1
-else
-    red "Encryption: X"
-    disk_encryption=0
-fi
+  CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isCrypted)"
+  if [[ $CRYPTED == "true" ]]; then
+      green "Encryption: ✓"
+      disk_encryption=1
+  else
+      red "Encryption: X"
+      disk_encryption=0
+  fi
 
-IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
-if [[ $IMPERMANENCE == "true" ]]; then
-    green "Impermanence: ✓"
-    persist_dir="/persist"
-else
-    red "Impermanence: X"
-    persist_dir=""
-fi
+  IMPERMANENCE="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isImpermanence)"
+  if [[ $IMPERMANENCE == "true" ]]; then
+      green "Impermanence: ✓"
+      persist_dir="/persist"
+  else
+      red "Impermanence: X"
+      persist_dir=""
+  fi
 
-SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
-if [[ $SWAP == "true" ]]; then
-    green "Swap: ✓"
-else
-    red "Swap: X"
-fi
+  SWAP="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSwap)"
+  if [[ $SWAP == "true" ]]; then
+      green "Swap: ✓"
+  else
+      red "Swap: X"
+  fi
 
-SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
-if [[ $SECUREBOOT == "true" ]]; then
-    green "Secure Boot: ✓"
-else
-    red "Secure Boot: X"
-fi
+  SECUREBOOT="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.swarselsystems.isSecureBoot)"
+  if [[ $SECUREBOOT == "true" ]]; then
+      green "Secure Boot: ✓"
+  else
+      red "Secure Boot: X"
+  fi
 
-if [ "$disk_encryption" -eq 1 ]; then
-    while true; do
-        green "Set disk encryption passphrase:"
-        read -rs luks_passphrase
-        green "Please confirm passphrase:"
-        read -rs luks_passphrase_confirm
-        if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-            echo "$luks_passphrase" > /tmp/disko-password
-            break
-        else
-            red "Passwords do not match"
-        fi
-    done
-fi
+  if [ "$disk_encryption" -eq 1 ]; then
+      while true; do
+          green "Set disk encryption passphrase:"
+          read -rs luks_passphrase
+          green "Please confirm passphrase:"
+          read -rs luks_passphrase_confirm
+          if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+              echo "$luks_passphrase" > /tmp/disko-password
+              break
+          else
+              red "Passwords do not match"
+          fi
+      done
+  fi
 
-green "Setting up disk ..."
-if [[ $target_config == "chaostheatre" ]]; then
-    sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
-else
-    sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
-fi
-sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
-sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
-sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
+  green "Setting up disk ..."
+  if [[ $target_config == "chaostheatre" ]]; then
+      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
+  else
+      sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
+  fi
+  sudo mkdir -p /mnt/"$persist_dir"/home/"$target_user"/
+  sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user"/
+  sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
-green "Generating hardware configuration ..."
-sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+  green "Generating hardware configuration ..."
+  sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-green "Injecting initialSetup ..."
-sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+  green "Injecting initialSetup ..."
+  sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
-sudo mkdir -p /root/.local/share/nix/
-printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
-green "Installing flake $target_config"
-sudo nixos-install --flake .#"$target_config"
-green "Installation finished! Reboot to see changes"
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+  sudo mkdir -p /root/.local/share/nix/
+  printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
+  green "Installing flake $target_config"
+  sudo nixos-install --flake .#"$target_config"
+  green "Installation finished! Reboot to see changes"
 #+end_src
 
 
@@ -8177,15 +8259,36 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/forgejo.nix
-  { lib, config, ... }:
+  { lib, config, pkgs, ... }:
+  let
+    forgejoDomain = "swagit.swarsel.win";
+  in
   {
     options.swarselsystems.modules.server.forgejo = lib.mkEnableOption "enable forgejo on server";
     config = lib.mkIf config.swarselsystems.modules.server.forgejo {
 
       networking.firewall.allowedTCPPorts = [ 3000 ];
 
+      users.users.forgejo = {
+        group = "forgejo";
+        isSystemUser = true;
+      };
+
+      users.groups.forgejo = { };
+
+      sops.secrets = {
+        kanidm-forgejo-client = {
+          owner = "forgejo";
+          group = "forgejo";
+          mode = "440";
+        };
+      };
+
       services.forgejo = {
         enable = true;
+        user = "forgejo";
+        group = "forgejo";
+        lfs.enable = lib.mkDefault true;
         settings = {
           DEFAULT = {
             APP_NAME = "~SwaGit~";
@@ -8194,14 +8297,89 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
             PROTOCOL = "http";
             HTTP_PORT = 3000;
             HTTP_ADDR = "0.0.0.0";
-            DOMAIN = "swagit.swarsel.win";
-            ROOT_URL = "https://swagit.swarsel.win";
+            DOMAIN = forgejoDomain;
+            ROOT_URL = "https://${forgejoDomain}";
           };
+          # federation.ENABLED = true;
           service = {
-            DISABLE_REGISTRATION = true;
+            DISABLE_REGISTRATION = false;
+            ALLOW_ONLY_INTERNAL_REGISTRATION = false;
+            ALLOW_ONLY_EXTERNAL_REGISTRATION = true;
             SHOW_REGISTRATION_BUTTON = false;
           };
+          session.COOKIE_SECURE = true;
+          oauth2_client = {
+            # Never use auto account linking with this, otherwise users cannot change
+            # their new user name and they could potentially overtake other users accounts
+            # by setting their email address to an existing account.
+            # With "login" linking the user must choose a non-existing username first or login
+            # with the existing account to link.
+            ACCOUNT_LINKING = "login";
+            USERNAME = "nickname";
+            # This does not mean that you cannot register via oauth, but just that there should
+            # be a confirmation dialog shown to the user before the account is actually created.
+            # This dialog allows changing user name and email address before creating the account.
+            ENABLE_AUTO_REGISTRATION = false;
+            REGISTER_EMAIL_CONFIRM = false;
+            UPDATE_AVATAR = true;
+          };
         };
+      };
+
+      systemd.services.forgejo = {
+        serviceConfig.RestartSec = "60"; # Retry every minute
+        preStart =
+          let
+            exe = lib.getExe config.services.forgejo.package;
+            providerName = "kanidm";
+            clientId = "forgejo";
+            args = lib.escapeShellArgs (
+              lib.concatLists [
+                [
+                  "--name"
+                  providerName
+                ]
+                [
+                  "--provider"
+                  "openidConnect"
+                ]
+                [
+                  "--key"
+                  clientId
+                ]
+                [
+                  "--auto-discover-url"
+                  "https://sso.swarsel.win/oauth2/openid/${clientId}/.well-known/openid-configuration"
+                ]
+                [
+                  "--scopes"
+                  "email"
+                ]
+                [
+                  "--scopes"
+                  "profile"
+                ]
+                [
+                  "--group-claim-name"
+                  "groups"
+                ]
+                [
+                  "--admin-group"
+                  "admin"
+                ]
+                [ "--skip-local-2fa" ]
+              ]
+            );
+          in
+          lib.mkAfter ''
+            provider_id=$(${exe} admin auth list | ${pkgs.gnugrep}/bin/grep -w '${providerName}' | cut -f1)
+            SECRET="$(< ${config.sops.secrets.kanidm-forgejo-client.path})"
+            if [[ -z "$provider_id" ]]; then
+              ${exe} admin auth add-oauth ${args} --secret "$SECRET"
+            else
+              ${exe} admin auth update-oauth --id "$provider_id" ${args} --secret "$SECRET"
+            fi
+          '';
       };
 
       services.nginx = {

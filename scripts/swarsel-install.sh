@@ -102,35 +102,36 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     rm modules/home/common/yubikey.nix
     rm modules/nixos/server/restic.nix
     rm modules/nixos/common/home-manager-extra.nix
+    rm hosts/nixos/sync/default.nix
     rm -rf modules/nixos/server
     rm -rf modules/home/server
     cat > hosts/nixos/chaostheatre/options.nix << EOF
-      { self, lib, ... }:
-      {
+        { self, lib, ... }:
+        {
+          options = {
+            swarselsystems = {
+              modules = {
+                home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
+              };
+            };
+          };
+        }
+EOF
+    cat > hosts/nixos/chaostheatre/options-home.nix << EOF
+        { self, lib, ... }:
+        {
         options = {
           swarselsystems = {
             modules = {
-              home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
+              yubikey = lib.mkEnableOption "dummy option for chaostheatre";
+              env = lib.mkEnableOption "dummy option for chaostheatre";
+              git = lib.mkEnableOption "dummy option for chaostheatre";
+              mail = lib.mkEnableOption "dummy option for chaostheatre";
+              gammastep = lib.mkEnableOption "dummy option for chaostheatre";
             };
           };
         };
-      }
-EOF
-    cat > hosts/nixos/chaostheatre/options-home.nix << EOF
-      { self, lib, ... }:
-      {
-      options = {
-        swarselsystems = {
-          modules = {
-            yubikey = lib.mkEnableOption "dummy option for chaostheatre";
-            env = lib.mkEnableOption "dummy option for chaostheatre";
-            git = lib.mkEnableOption "dummy option for chaostheatre";
-            mail = lib.mkEnableOption "dummy option for chaostheatre";
-            gammastep = lib.mkEnableOption "dummy option for chaostheatre";
-          };
-        };
-      };
-      }
+        }
 EOF
     nix flake update vbc-nix
     git add .
