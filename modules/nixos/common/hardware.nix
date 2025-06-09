@@ -29,7 +29,7 @@
 
       keyboard.qmk.enable = true;
 
-      enableAllFirmware = true;
+      enableAllFirmware = lib.mkDefault true;
 
       bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
         enable = true;

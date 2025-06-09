@@ -16,14 +16,15 @@ in
     users.groups.kanidm = { };
 
     sops.secrets = {
-      "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-      "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+      "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
     };
 
     services.kanidm = {
@@ -56,6 +57,8 @@ in
           "grafana.editors" = { };
           "grafana.admins" = { };
           "grafana.server-admins" = { };
+          "nextcloud.access" = { };
+          "nextcloud.admins" = { };
         };
         persons = {
           swarsel = {
@@ -67,6 +70,7 @@ in
               "paperless.access"
               "grafana.access"
               "forgejo.access"
+              "nextcloud.access"
             ];
             displayName = "Swarsel";
           };
@@ -142,6 +146,25 @@ in
                 };
               };
             };
+            nextcloud = {
+              displayName = "Nextcloud";
+              originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
+              originLanding = "https://stash.swarsel.win/";
+              basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
+              allowInsecureClientDisablePkce = true;
+              scopeMaps."nextcloud.access" = [
+                "openid"
+                "email"
+                "profile"
+              ];
+              preferShortUsername = true;
+              claimMaps.groups = {
+                joinType = "array";
+                valuesByGroup = {
+                  "nextcloud.admins" = [ "admin" ];
+                };
+              };
+            };
           };
         };
       };
@@ -151,7 +174,7 @@ in
 
     services.nginx = {
       virtualHosts = {
-        "sso.swarsel.win" = {
+        "${kanidmDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;

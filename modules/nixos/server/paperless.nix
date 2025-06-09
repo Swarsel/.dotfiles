@@ -12,7 +12,7 @@
       kanidm-paperless-client = {
         owner = "paperless";
         group = "paperless";
-        mode = "440";
+        mode = "0440";
       };
     };
 
@@ -35,7 +35,7 @@
           };
           PAPERLESS_TIKA_ENABLED = "true";
           PAPERLESS_TIKA_ENDPOINT = "http://localhost:9998";
-          PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:3001";
+          PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:3002";
           PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
           PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
             openid_connect = {
@@ -45,7 +45,7 @@
                   provider_id = "kanidm";
                   name = "Kanidm";
                   client_id = "paperless";
-                  # secret will be added dynamically
+                  # secret will be added by paperless-web.service (see below)
                   #secret = "";
                   settings.server_url = "https://sso.swarsel.win/oauth2/openid/${client_id}/.well-known/openid-configuration";
                 }
@@ -65,7 +65,7 @@
 
       gotenberg = {
         enable = true;
-        port = 3001;
+        port = 3002;
         bindIP = "127.0.0.1";
       };
     };
@@ -91,6 +91,10 @@
               proxyPass = "http://localhost:28981";
               extraConfig = ''
                 client_max_body_size    0;
+                proxy_connect_timeout   300;
+                proxy_send_timeout      300;
+                proxy_read_timeout      300;
+                send_timeout            300;
               '';
             };
           };

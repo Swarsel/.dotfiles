@@ -48,6 +48,10 @@ in
     };
   };
 
+  hardware = {
+    enableAllFirmware = lib.mkForce false;
+  };
+
   system.stateVersion = "23.11";
 
   services = {

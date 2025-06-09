@@ -1318,6 +1318,10 @@ This machine mainly acts as an external sync helper. It manages the following th
       };
     };
 
+    hardware = {
+      enableAllFirmware = lib.mkForce false;
+    };
+
     system.stateVersion = "23.11";
 
     services = {
@@ -5096,7 +5100,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 
         keyboard.qmk.enable = true;
 
-        enableAllFirmware = true;
+        enableAllFirmware = lib.mkDefault true;
 
         bluetooth = lib.mkIf config.swarselsystems.hasBluetooth {
           enable = true;
@@ -6856,8 +6860,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
 
       hardware = {
-        # opengl.enable = true;
-        enableAllFirmware = true;
+        enableAllFirmware = lib.mkForce true;
       };
 
       networking.firewall.allowedTCPPorts = [ 4040 ];
@@ -7397,29 +7400,40 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
 #+begin_src nix :tangle modules/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
+  let
+    nextcloudDomain = "stash.swarsel.win";
+  in
   {
     options.swarselsystems.modules.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
     config = lib.mkIf config.swarselsystems.modules.server.nextcloud {
 
-      sops.secrets.nextcloudadminpass = {
-        owner = "nextcloud";
-        group = "nextcloud";
-        mode = "0440";
+      sops.secrets = {
+        nextcloudadminpass = {
+          owner = "nextcloud";
+          group = "nextcloud";
+          mode = "0440";
+        };
+        kanidm-nextcloud-client = {
+          owner = "nextcloud";
+          group = "nextcloud";
+          mode = "0440";
+        };
       };
 
       services = {
         nextcloud = {
           enable = true;
           package = pkgs.nextcloud31;
-          hostName = "stash.swarsel.win";
+          hostName = nextcloudDomain;
           home = "/Vault/apps/nextcloud";
           datadir = "/Vault/data/nextcloud";
           https = true;
           configureRedis = true;
           maxUploadSize = "4G";
           extraApps = {
-            inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks;
+            inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
           };
+          extraAppsEnable = true;
           config = {
             adminuser = "admin";
             adminpassFile = config.sops.secrets.nextcloudadminpass.path;
@@ -7429,7 +7443,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
         nginx = {
           virtualHosts = {
-            "stash.swarsel.win" = {
+            "${nextcloudDomain}" = {
               enableACME = true;
               forceSSL = true;
               acmeRoot = null;
@@ -7509,6 +7523,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:89638fb5-0593-4420-9567-f85f0223e341
 :END:
 
+This is my personal document management system. It automatically pulls documents from several sources, the only manual step for physical documents is to put them in my scanner and use email delivery.
+
+Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
+
 #+begin_src nix :tangle modules/nixos/server/paperless.nix
   { lib, pkgs, config, ... }:
   {
@@ -7524,7 +7542,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         kanidm-paperless-client = {
           owner = "paperless";
           group = "paperless";
-          mode = "440";
+          mode = "0440";
         };
       };
 
@@ -7547,7 +7565,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             };
             PAPERLESS_TIKA_ENABLED = "true";
             PAPERLESS_TIKA_ENDPOINT = "http://localhost:9998";
-            PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:3001";
+            PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:3002";
             PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
             PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
               openid_connect = {
@@ -7557,7 +7575,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                     provider_id = "kanidm";
                     name = "Kanidm";
                     client_id = "paperless";
-                    # secret will be added dynamically
+                    # secret will be added by paperless-web.service (see below)
                     #secret = "";
                     settings.server_url = "https://sso.swarsel.win/oauth2/openid/${client_id}/.well-known/openid-configuration";
                   }
@@ -7577,7 +7595,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
         gotenberg = {
           enable = true;
-          port = 3001;
+          port = 3002;
           bindIP = "127.0.0.1";
         };
       };
@@ -7603,6 +7621,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
                 proxyPass = "http://localhost:28981";
                 extraConfig = ''
                   client_max_body_size    0;
+                  proxy_connect_timeout   300;
+                  proxy_send_timeout      300;
+                  proxy_read_timeout      300;
+                  send_timeout            300;
                 '';
               };
             };
@@ -7971,7 +7993,7 @@ This section exposes several metrics that I use to check the health of my server
         kanidm-grafana-client = {
           owner = "grafana";
           group = "grafana";
-          mode = "440";
+          mode = "0440";
         };
       };
 
@@ -8123,7 +8145,7 @@ This section exposes several metrics that I use to check the health of my server
 
         nginx = {
           virtualHosts = {
-            "status.swarsel.win" = {
+            "${grafanaDomain}" = {
               enableACME = true;
               forceSSL = true;
               acmeRoot = null;
@@ -8299,7 +8321,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
         kanidm-forgejo-client = {
           owner = "forgejo";
           group = "forgejo";
-          mode = "440";
+          mode = "0440";
         };
       };
 
@@ -8475,6 +8497,13 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 
 **** kanidm
 
+The forgejo configuration is a little broken and will show a 500 error when signing in through kanidm. However, when pressing back and refreshing the page, I am logged in. Currently I cannot be bothered to fix this.
+
+A stupid (but simple) way to get the =originUrl= is to simply set any URL there and try to auth using kanidm. Then check the logs (=journalctl -eu kanidm=) and check for the line that says something along the lines of
+  `🚧 [warn]: Invalid OAuth2 redirect_uri (must be an exact match to a redirect-url) - got <your =originURL=>`
+
+To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://sso.swarsel.win/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
+
 #+begin_src nix :tangle modules/nixos/server/kanidm.nix
   { self, lib, pkgs, config, ... }:
   let
@@ -8494,14 +8523,15 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
       users.groups.kanidm = { };
 
       sops.secrets = {
-        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
-        "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+        "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
       };
 
       services.kanidm = {
@@ -8534,6 +8564,8 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
             "grafana.editors" = { };
             "grafana.admins" = { };
             "grafana.server-admins" = { };
+            "nextcloud.access" = { };
+            "nextcloud.admins" = { };
           };
           persons = {
             swarsel = {
@@ -8545,6 +8577,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
                 "paperless.access"
                 "grafana.access"
                 "forgejo.access"
+                "nextcloud.access"
               ];
               displayName = "Swarsel";
             };
@@ -8620,6 +8653,25 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
                   };
                 };
               };
+              nextcloud = {
+                displayName = "Nextcloud";
+                originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
+                originLanding = "https://stash.swarsel.win/";
+                basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
+                allowInsecureClientDisablePkce = true;
+                scopeMaps."nextcloud.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                preferShortUsername = true;
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup = {
+                    "nextcloud.admins" = [ "admin" ];
+                  };
+                };
+              };
             };
           };
         };
@@ -8629,7 +8681,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 
       services.nginx = {
         virtualHosts = {
-          "sso.swarsel.win" = {
+          "${kanidmDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;

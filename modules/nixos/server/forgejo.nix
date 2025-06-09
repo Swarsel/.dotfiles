@@ -19,7 +19,7 @@ in
       kanidm-forgejo-client = {
         owner = "forgejo";
         group = "forgejo";
-        mode = "440";
+        mode = "0440";
       };
     };
 

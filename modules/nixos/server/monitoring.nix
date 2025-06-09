@@ -16,7 +16,7 @@ in
       kanidm-grafana-client = {
         owner = "grafana";
         group = "grafana";
-        mode = "440";
+        mode = "0440";
       };
     };
 
@@ -168,7 +168,7 @@ in
 
       nginx = {
         virtualHosts = {
-          "status.swarsel.win" = {
+          "${grafanaDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;

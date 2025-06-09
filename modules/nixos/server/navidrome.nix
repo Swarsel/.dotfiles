@@ -30,8 +30,7 @@ in
 
 
     hardware = {
-      # opengl.enable = true;
-      enableAllFirmware = true;
+      enableAllFirmware = lib.mkForce true;
     };
 
     networking.firewall.allowedTCPPorts = [ 4040 ];
