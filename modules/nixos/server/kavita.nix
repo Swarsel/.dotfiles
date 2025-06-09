@@ -7,7 +7,7 @@
     ];
 
 
-    users.users.jellyfin = {
+    users.users.kavita = {
       extraGroups = [ "users" ];
     };
 

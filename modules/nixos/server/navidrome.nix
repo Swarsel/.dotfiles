@@ -43,7 +43,7 @@ in
         LogLevel = "debug";
         Address = "127.0.0.1";
         Port = 4040;
-        MusicFolder = "/Vault/Eternor/Musik";
+        MusicFolder = "/Vault/Eternor/Music";
         EnableSharing = true;
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
