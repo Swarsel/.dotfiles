@@ -1,4 +1,4 @@
-{ lib, config, inputs, ... }:
+{ lib, pkgs, config, inputs, ... }:
 let
   secretsDirectory = builtins.toString inputs.nix-secrets;
   resticRepo = lib.swarselsystems.getSecret "${secretsDirectory}/restic/wintersRepo";
@@ -40,6 +40,9 @@ in
             "--keep-monthly 3"
             "--keep-yearly 100"
           ];
+          backupPrepareCommand = ''
+            ${pkgs.restic}/bin/restic prune
+          '';
           repository = "${resticRepo}";
           initialize = true;
           timerConfig = {

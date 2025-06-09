@@ -7750,7 +7750,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 This manages backups for my pictures and obsidian files.
 
 #+begin_src nix :tangle modules/nixos/server/restic.nix
-  { lib, config, inputs, ... }:
+  { lib, pkgs, config, inputs, ... }:
   let
     secretsDirectory = builtins.toString inputs.nix-secrets;
     resticRepo = lib.swarselsystems.getSecret "${secretsDirectory}/restic/wintersRepo";
@@ -7792,6 +7792,9 @@ This manages backups for my pictures and obsidian files.
               "--keep-monthly 3"
               "--keep-yearly 100"
             ];
+            backupPrepareCommand = ''
+              ${pkgs.restic}/bin/restic prune
+            '';
             repository = "${resticRepo}";
             initialize = true;
             timerConfig = {
