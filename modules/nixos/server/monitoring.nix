@@ -1,4 +1,7 @@
 { self, lib, config, ... }:
+let
+  grafanaDomain = "status.swarsel.win";
+in
 {
   options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
   config = lib.mkIf config.swarselsystems.modules.server.monitoring {
@@ -9,6 +12,11 @@
       };
       prometheusadminpass = {
         owner = "grafana";
+      };
+      kanidm-grafana-client = {
+        owner = "grafana";
+        group = "grafana";
+        mode = "440";
       };
     };
 
@@ -35,7 +43,7 @@
               {
                 name = "prometheus";
                 type = "prometheus";
-                url = "https://status.swarsel.win/prometheus";
+                url = "https://${grafanaDomain}/prometheus";
                 editable = false;
                 access = "proxy";
                 basicAuth = true;
@@ -60,10 +68,30 @@
         settings = {
           security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
           server = {
+            domain = grafanaDomain;
+            root_url = "https://${grafanaDomain}";
             http_port = 3000;
-            http_addr = "127.0.0.1";
+            http_addr = "0.0.0.0";
             protocol = "http";
-            domain = "status.swarsel.win";
+          };
+          "auth.generic_oauth" = {
+            enabled = true;
+            name = "Kanidm";
+            icon = "signin";
+            allow_sign_up = true;
+            #auto_login = true;
+            client_id = "grafana";
+            client_secret = "$__file{${config.sops.secrets.kanidm-grafana-client.path}}";
+            scopes = "openid email profile";
+            login_attribute_path = "preferred_username";
+            auth_url = "https://sso.swarsel.win/ui/oauth2";
+            token_url = "https://sso.swarsel.win/oauth2/token";
+            api_url = "https://sso.swarsel.win/oauth2/openid/grafana/userinfo";
+            use_pkce = true;
+            use_refresh_token = true;
+            # Allow mapping oauth2 roles to server admin
+            allow_assign_grafana_admin = true;
+            role_attribute_path = "contains(groups[*], 'server_admin') && 'GrafanaAdmin' || contains(groups[*], 'admin') && 'Admin' || contains(groups[*], 'editor') && 'Editor' || 'Viewer'";
           };
         };
       };
@@ -147,6 +175,7 @@
             locations = {
               "/" = {
                 proxyPass = "http://localhost:3000";
+                proxyWebsockets = true;
                 extraConfig = ''
                   client_max_body_size 0;
                 '';

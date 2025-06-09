@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, pkgs, config, ... }:
 {
   options.swarselsystems.modules.server.paperless = lib.mkEnableOption "enable paperless on server";
   config = lib.mkIf config.swarselsystems.modules.server.paperless {
@@ -7,8 +7,14 @@
       extraGroups = [ "users" ];
     };
 
-
-    sops.secrets.paperless_admin = { owner = "paperless"; };
+    sops.secrets = {
+      paperless_admin = { owner = "paperless"; };
+      kanidm-paperless-client = {
+        owner = "paperless";
+        group = "paperless";
+        mode = "440";
+      };
+    };
 
     services.paperless = {
       enable = true;
@@ -26,8 +32,34 @@
           invalidate_digital_signatures = true;
           pdfa_image_compression = "lossless";
         };
+        PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+        PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
+          openid_connect = {
+            OAUTH_PKCE_ENABLED = "True";
+            APPS = [
+              rec {
+                provider_id = "kanidm";
+                name = "Kanidm";
+                client_id = "paperless";
+                # secret will be added dynamically
+                #secret = "";
+                settings.server_url = "https://sso.swarsel.win/oauth2/openid/${client_id}/.well-known/openid-configuration";
+              }
+            ];
+          };
+        };
       };
     };
+
+    # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
+    systemd.services.paperless-web.script = lib.mkBefore ''
+      oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
+      export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
+        ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
+          --compact-output \
+          --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
+                     )
+    '';
 
     services.nginx = {
       virtualHosts = {

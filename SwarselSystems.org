@@ -4055,6 +4055,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             emacs = lib.mkDefault true;
             freshrss = lib.mkDefault true;
             jenkins = lib.mkDefault false;
+            kanidm = lib.mkDefault true;
           };
         };
       };
@@ -7383,7 +7384,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         port = 3001;
         openFirewall = true;
         mediaLocation = "/Vault/Eternor/Immich";
-        environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
+        environment = {
+          IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
+        };
       };
 
 
@@ -7425,7 +7428,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/paperless.nix
-  { lib, config, ... }:
+  { lib, pkgs, config, ... }:
   {
     options.swarselsystems.modules.server.paperless = lib.mkEnableOption "enable paperless on server";
     config = lib.mkIf config.swarselsystems.modules.server.paperless {
@@ -7434,8 +7437,14 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         extraGroups = [ "users" ];
       };
 
-
-      sops.secrets.paperless_admin = { owner = "paperless"; };
+      sops.secrets = {
+        paperless_admin = { owner = "paperless"; };
+        kanidm-paperless-client = {
+          owner = "paperless";
+          group = "paperless";
+          mode = "440";
+        };
+      };
 
       services.paperless = {
         enable = true;
@@ -7453,8 +7462,34 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             invalidate_digital_signatures = true;
             pdfa_image_compression = "lossless";
           };
+          PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+          PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
+            openid_connect = {
+              OAUTH_PKCE_ENABLED = "True";
+              APPS = [
+                rec {
+                  provider_id = "kanidm";
+                  name = "Kanidm";
+                  client_id = "paperless";
+                  # secret will be added dynamically
+                  #secret = "";
+                  settings.server_url = "https://sso.swarsel.win/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                }
+              ];
+            };
+          };
         };
       };
+
+      # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
+      systemd.services.paperless-web.script = lib.mkBefore ''
+        oidcSecret=$(< ${config.sops.secrets.kanidm-paperless-client.path})
+        export PAPERLESS_SOCIALACCOUNT_PROVIDERS=$(
+          ${pkgs.jq}/bin/jq <<< "$PAPERLESS_SOCIALACCOUNT_PROVIDERS" \
+            --compact-output \
+            --arg oidcSecret "$oidcSecret" '.openid_connect.APPS.[0].secret = $oidcSecret'
+                       )
+      '';
 
       services.nginx = {
         virtualHosts = {
@@ -7809,7 +7844,7 @@ This manages backups for my pictures and obsidian files.
   }
 #+end_src
 
-**** monitoring
+**** monitoring (Grafana)
 :PROPERTIES:
 :CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
 :END:
@@ -7818,6 +7853,9 @@ This section exposes several metrics that I use to check the health of my server
 
 #+begin_src nix :tangle modules/nixos/server/monitoring.nix
   { self, lib, config, ... }:
+  let
+    grafanaDomain = "status.swarsel.win";
+  in
   {
     options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
     config = lib.mkIf config.swarselsystems.modules.server.monitoring {
@@ -7828,6 +7866,11 @@ This section exposes several metrics that I use to check the health of my server
         };
         prometheusadminpass = {
           owner = "grafana";
+        };
+        kanidm-grafana-client = {
+          owner = "grafana";
+          group = "grafana";
+          mode = "440";
         };
       };
 
@@ -7854,7 +7897,7 @@ This section exposes several metrics that I use to check the health of my server
                 {
                   name = "prometheus";
                   type = "prometheus";
-                  url = "https://status.swarsel.win/prometheus";
+                  url = "https://${grafanaDomain}/prometheus";
                   editable = false;
                   access = "proxy";
                   basicAuth = true;
@@ -7879,10 +7922,30 @@ This section exposes several metrics that I use to check the health of my server
           settings = {
             security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
             server = {
+              domain = grafanaDomain;
+              root_url = "https://${grafanaDomain}";
               http_port = 3000;
-              http_addr = "127.0.0.1";
+              http_addr = "0.0.0.0";
               protocol = "http";
-              domain = "status.swarsel.win";
+            };
+            "auth.generic_oauth" = {
+              enabled = true;
+              name = "Kanidm";
+              icon = "signin";
+              allow_sign_up = true;
+              #auto_login = true;
+              client_id = "grafana";
+              client_secret = "$__file{${config.sops.secrets.kanidm-grafana-client.path}}";
+              scopes = "openid email profile";
+              login_attribute_path = "preferred_username";
+              auth_url = "https://sso.swarsel.win/ui/oauth2";
+              token_url = "https://sso.swarsel.win/oauth2/token";
+              api_url = "https://sso.swarsel.win/oauth2/openid/grafana/userinfo";
+              use_pkce = true;
+              use_refresh_token = true;
+              # Allow mapping oauth2 roles to server admin
+              allow_assign_grafana_admin = true;
+              role_attribute_path = "contains(groups[*], 'server_admin') && 'GrafanaAdmin' || contains(groups[*], 'admin') && 'Admin' || contains(groups[*], 'editor') && 'Editor' || 'Viewer'";
             };
           };
         };
@@ -7966,6 +8029,7 @@ This section exposes several metrics that I use to check the health of my server
               locations = {
                 "/" = {
                   proxyPass = "http://localhost:3000";
+                  proxyWebsockets = true;
                   extraConfig = ''
                     client_max_body_size 0;
                   '';
@@ -8209,6 +8273,181 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
       };
     };
 
+  }
+#+end_src
+
+**** kanidm
+
+#+begin_src nix :tangle modules/nixos/server/kanidm.nix
+  { self, lib, pkgs, config, ... }:
+  let
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    kanidmDomain = "sso.swarsel.win";
+    kanidmPort = 8300;
+  in
+  {
+    options.swarselsystems.modules.server.kanidm = lib.mkEnableOption "enable kanidm on server";
+    config = lib.mkIf config.swarselsystems.modules.server.kanidm {
+
+      users.users.kanidm = {
+        group = "kanidm";
+        isSystemUser = true;
+      };
+
+      users.groups.kanidm = { };
+
+      sops.secrets = {
+        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+        "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "440"; };
+      };
+
+      services.kanidm = {
+        package = pkgs.kanidmWithSecretProvisioning;
+        enableServer = true;
+        serverSettings = {
+          domain = kanidmDomain;
+          origin = "https://${kanidmDomain}";
+          tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
+          tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+          bindaddress = "0.0.0.0:${toString kanidmPort}";
+          trust_x_forward_for = true;
+        };
+        enableClient = true;
+        clientSettings = {
+          uri = config.services.kanidm.serverSettings.origin;
+          verify_ca = true;
+          verify_hostnames = true;
+        };
+        provision = {
+          enable = true;
+          adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
+          idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
+          groups = {
+            "immich.access" = { };
+            "paperless.access" = { };
+            "forgejo.access" = { };
+            "forgejo.admins" = { };
+            "grafana.access" = { };
+            "grafana.editors" = { };
+            "grafana.admins" = { };
+            "grafana.server-admins" = { };
+          };
+          persons = {
+            swarsel = {
+              present = true;
+              mailAddresses = [ "leon@swarsel.win" ];
+              legalName = "Leon Schwarzäugl";
+              groups = [
+                "immich.access"
+                "paperless.access"
+                "grafana.access"
+                "forgejo.access"
+              ];
+              displayName = "Swarsel";
+            };
+          };
+          systems = {
+            oauth2 = {
+              immich = {
+                displayName = "Immich";
+                originUrl = [
+                  "https://shots.swarsel.win/auth/login"
+                  "https://shots.swarsel.win/user-settings"
+                  "app.immich:///oauth-callback"
+                  "https://shots.swarsel.win/api/oauth/mobile-redirect"
+                ];
+                originLanding = "https://shots.swarsel.win/";
+                basicSecretFile = config.sops.secrets.kanidm-immich.path;
+                preferShortUsername = true;
+                enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
+                scopeMaps."immich.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              paperless = {
+                displayName = "Paperless";
+                originUrl = "https://scan.swarsel.win/accounts/oidc/kanidm/login/callback/";
+                originLanding = "https://scan.swarsel.win/";
+                basicSecretFile = config.sops.secrets.kanidm-paperless.path;
+                preferShortUsername = true;
+                scopeMaps."paperless.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+              };
+              forgejo = {
+                displayName = "Forgejo";
+                originUrl = "https://swagit.swarsel.win/user/oauth2/kanidm/callback";
+                originLanding = "https://swagit.swarsel.win/";
+                basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
+                scopeMaps."forgejo.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                # XXX: PKCE is currently not supported by gitea/forgejo,
+                # see https://github.com/go-gitea/gitea/issues/21376.
+                allowInsecureClientDisablePkce = true;
+                preferShortUsername = true;
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup."forgejo.admins" = [ "admin" ];
+                };
+              };
+              grafana = {
+                displayName = "Grafana";
+                originUrl = "https://status.swarsel.win/login/generic_oauth";
+                originLanding = "https://status.swarsel.win/";
+                basicSecretFile = config.sops.secrets.kanidm-grafana.path;
+                preferShortUsername = true;
+                scopeMaps."grafana.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
+                claimMaps.groups = {
+                  joinType = "array";
+                  valuesByGroup = {
+                    "grafana.editors" = [ "editor" ];
+                    "grafana.admins" = [ "admin" ];
+                    "grafana.server-admins" = [ "server_admin" ];
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+
+      systemd.services.kanidm.serviceConfig.RestartSec = "30";
+
+      services.nginx = {
+        virtualHosts = {
+          "sso.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://localhost:${toString kanidmPort}";
+              };
+            };
+            extraConfig = ''
+              proxy_ssl_verify off;
+            '';
+          };
+        };
+      };
+    };
   }
 #+end_src
 

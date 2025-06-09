@@ -36,6 +36,7 @@
           emacs = lib.mkDefault true;
           freshrss = lib.mkDefault true;
           jenkins = lib.mkDefault false;
+          kanidm = lib.mkDefault true;
         };
       };
     };
