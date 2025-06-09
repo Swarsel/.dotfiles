@@ -7518,7 +7518,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   }
 #+end_src
 
-**** paperless
+**** paperless (tika, gotenberg)
 :PROPERTIES:
 :CUSTOM_ID: h:89638fb5-0593-4420-9567-f85f0223e341
 :END:
@@ -8254,6 +8254,8 @@ FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct
 
 It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as well as a Fever API at     https://signpost.swarsel.win/api/fever.php.
 
+I am using this with CapyReader on my phone, set it up as a FreshRSS account with Server URL =https://signpost.swarsel.win/api/greader.php
+
 #+begin_src nix :tangle modules/nixos/server/freshrss.nix
   { lib, config, ... }:
   {
@@ -8268,17 +8270,46 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
 
       users.groups.freshrss = { };
 
-      sops.secrets.fresh = { owner = "freshrss"; };
+      sops = {
+        secrets = {
+          fresh = { owner = "freshrss"; };
+          "kanidm-freshrss-client" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
+          "oidc-crypto-key" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
+        };
+
+        #   templates = {
+        #     "freshrss-env" = {
+        #       content = ''
+        #         DATA_PATH=${config.services.freshrss.dataDir}
+        #         OIDC_ENABLED=1
+        #         OIDC_PROVIDER_METADATA_URL=https://sso.swarsel.win/.well-known/openid-configuration
+        #         OIDC_CLIENT_ID=freshrss
+        #         OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-freshrss-client}
+        #         OIDC_CLIENT_CRYPTO_KEY=${config.sops.placeholder.oidc-crypto-key}
+        #         OIDC_REMOTE_USER_CLAIM=preferred_username
+        #         OIDC_SCOPES=openid groups email profile
+        #         OIDC_X_FORWARDED_HEADERS=X-Forwarded-Host X-Forwarded-Port X-Forwarded-Proto
+        #       '';
+        #       owner = "freshrss";
+        #       group = "freshrss";
+        #       mode = "0440";
+        #     };
+        #   };
+      };
 
       services.freshrss = {
         enable = true;
         virtualHost = "signpost.swarsel.win";
         baseUrl = "https://signpost.swarsel.win";
-        # authType = "none";
+        authType = "none";
         dataDir = "/Vault/data/tt-rss";
         defaultUser = "Swarsel";
         passwordFile = config.sops.secrets.fresh.path;
       };
+
+      # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
+      #   config.sops.templates.freshrss-env.path
+      # ];
 
       services.nginx = {
         virtualHosts = {
@@ -8286,6 +8317,44 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
+            locations = {
+              "/" = {
+                extraConfig = ''
+                  auth_request /oauth2/auth;
+                  error_page 401 = /oauth2/sign_in;
+
+                  # pass information via X-User and X-Email headers to backend,
+                  # requires running with --set-xauthrequest flag (done by NixOS)
+                  auth_request_set $user   $upstream_http_x_auth_request_preferred_username;
+                  # Set the email to our own domain in case user change their mail
+                  auth_request_set $email  "''${upstream_http_x_auth_request_preferred_username}@swarsel.win";
+                  proxy_set_header X-User  $user;
+                  proxy_set_header X-Email $email;
+
+                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                  auth_request_set $auth_cookie $upstream_http_set_cookie;
+                  add_header Set-Cookie $auth_cookie;
+                '';
+              };
+              "/oauth2/" = {
+                proxyPass = "http://oauth2-proxy";
+                extraConfig = ''
+                  proxy_set_header X-Scheme                $scheme;
+                  proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                '';
+              };
+              "= /oauth2/auth" = {
+                proxyPass = "http://oauth2-proxy/oauth2/auth";
+                extraConfig = ''
+                  internal;
+
+                  proxy_set_header X-Scheme         $scheme;
+                  # nginx auth_request includes headers but not body
+                  proxy_set_header Content-Length   "";
+                  proxy_pass_request_body           off;
+                '';
+              };
+            };
           };
         };
       };
@@ -8495,7 +8564,7 @@ It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as
   }
 #+end_src
 
-**** kanidm
+**** IDM (kanidm + oauth2-proxy)
 
 The forgejo configuration is a little broken and will show a 500 error when signing in through kanidm. However, when pressing back and refreshing the page, I am logged in. Currently I cannot be bothered to fix this.
 
@@ -8509,7 +8578,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
     kanidmDomain = "sso.swarsel.win";
+    oauth2ProxyDomain = "soauth.swarsel.win";
     kanidmPort = 8300;
+    oauth2ProxyPort = 3004;
   in
   {
     options.swarselsystems.modules.server.kanidm = lib.mkEnableOption "enable kanidm on server";
@@ -8522,164 +8593,280 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       users.groups.kanidm = { };
 
-      sops.secrets = {
-        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+      sops = {
+        secrets = {
+          "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+          "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-freshrss" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-oauth2-proxy" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
+          "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+        };
+
+        templates = {
+          "kanidm-oauth2-proxy-client-env" = {
+            content = ''
+              OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
+              OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
+            '';
+            owner = "oauth2-proxy";
+            group = "oauth2-proxy";
+            mode = "0440";
+          };
+        };
       };
 
-      services.kanidm = {
-        package = pkgs.kanidmWithSecretProvisioning;
-        enableServer = true;
-        serverSettings = {
-          domain = kanidmDomain;
-          origin = "https://${kanidmDomain}";
-          tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-          tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-          bindaddress = "0.0.0.0:${toString kanidmPort}";
-          trust_x_forward_for = true;
+      services = {
+        kanidm = {
+          package = pkgs.kanidmWithSecretProvisioning;
+          enableServer = true;
+          serverSettings = {
+            domain = kanidmDomain;
+            origin = "https://${kanidmDomain}";
+            tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
+            tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+            bindaddress = "0.0.0.0:${toString kanidmPort}";
+            trust_x_forward_for = true;
+          };
+          enableClient = true;
+          clientSettings = {
+            uri = config.services.kanidm.serverSettings.origin;
+            verify_ca = true;
+            verify_hostnames = true;
+          };
+          provision = {
+            enable = true;
+            adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
+            idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
+            groups = {
+              "immich.access" = { };
+              "paperless.access" = { };
+              "forgejo.access" = { };
+              "forgejo.admins" = { };
+              "grafana.access" = { };
+              "grafana.editors" = { };
+              "grafana.admins" = { };
+              "grafana.server-admins" = { };
+              "nextcloud.access" = { };
+              "nextcloud.admins" = { };
+              "navidrome.access" = { };
+              "freshrss.access" = { };
+            };
+            persons = {
+              swarsel = {
+                present = true;
+                mailAddresses = [ "leon@swarsel.win" ];
+                legalName = "Leon Schwarzäugl";
+                groups = [
+                  "immich.access"
+                  "paperless.access"
+                  "grafana.access"
+                  "forgejo.access"
+                  "nextcloud.access"
+                  "freshrss.access"
+                  "navidrome.access"
+                ];
+                displayName = "Swarsel";
+              };
+            };
+            systems = {
+              oauth2 = {
+                immich = {
+                  displayName = "Immich";
+                  originUrl = [
+                    "https://shots.swarsel.win/auth/login"
+                    "https://shots.swarsel.win/user-settings"
+                    "app.immich:///oauth-callback"
+                    "https://shots.swarsel.win/api/oauth/mobile-redirect"
+                  ];
+                  originLanding = "https://shots.swarsel.win/";
+                  basicSecretFile = config.sops.secrets.kanidm-immich.path;
+                  preferShortUsername = true;
+                  enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
+                  scopeMaps."immich.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                paperless = {
+                  displayName = "Paperless";
+                  originUrl = "https://scan.swarsel.win/accounts/oidc/kanidm/login/callback/";
+                  originLanding = "https://scan.swarsel.win/";
+                  basicSecretFile = config.sops.secrets.kanidm-paperless.path;
+                  preferShortUsername = true;
+                  scopeMaps."paperless.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                forgejo = {
+                  displayName = "Forgejo";
+                  originUrl = "https://swagit.swarsel.win/user/oauth2/kanidm/callback";
+                  originLanding = "https://swagit.swarsel.win/";
+                  basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
+                  scopeMaps."forgejo.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  # XXX: PKCE is currently not supported by gitea/forgejo,
+                  # see https://github.com/go-gitea/gitea/issues/21376.
+                  allowInsecureClientDisablePkce = true;
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup."forgejo.admins" = [ "admin" ];
+                  };
+                };
+                grafana = {
+                  displayName = "Grafana";
+                  originUrl = "https://status.swarsel.win/login/generic_oauth";
+                  originLanding = "https://status.swarsel.win/";
+                  basicSecretFile = config.sops.secrets.kanidm-grafana.path;
+                  preferShortUsername = true;
+                  scopeMaps."grafana.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "grafana.editors" = [ "editor" ];
+                      "grafana.admins" = [ "admin" ];
+                      "grafana.server-admins" = [ "server_admin" ];
+                    };
+                  };
+                };
+                nextcloud = {
+                  displayName = "Nextcloud";
+                  originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
+                  originLanding = "https://stash.swarsel.win/";
+                  basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
+                  allowInsecureClientDisablePkce = true;
+                  scopeMaps."nextcloud.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "nextcloud.admins" = [ "admin" ];
+                    };
+                  };
+                };
+                # freshrss = {
+                #   displayName = "FreshRSS";
+                #   originUrl = "https://signpost.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
+                #   originLanding = "https://signpost.swarsel.win/";
+                #   basicSecretFile = config.sops.secrets.kanidm-freshrss.path;
+                #   allowInsecureClientDisablePkce = true;
+                #   scopeMaps."freshrss.access" = [
+                #     "openid"
+                #     "email"
+                #     "profile"
+                #   ];
+                #   preferShortUsername = true;
+                # };
+                oauth2-proxy = {
+                  displayName = "Oauth2-Proxy";
+                  originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
+                  originLanding = "https://${oauth2ProxyDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
+                  scopeMaps."freshrss.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  scopeMaps."navidrome.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup."freshrss.access" = [ "ttrss_access" ];
+                    valuesByGroup."navidrome.access" = [ "navidrome_access" ];
+                  };
+                };
+              };
+            };
+          };
         };
-        enableClient = true;
-        clientSettings = {
-          uri = config.services.kanidm.serverSettings.origin;
-          verify_ca = true;
-          verify_hostnames = true;
-        };
-        provision = {
+        oauth2-proxy = {
           enable = true;
-          adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
-          idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
-          groups = {
-            "immich.access" = { };
-            "paperless.access" = { };
-            "forgejo.access" = { };
-            "forgejo.admins" = { };
-            "grafana.access" = { };
-            "grafana.editors" = { };
-            "grafana.admins" = { };
-            "grafana.server-admins" = { };
-            "nextcloud.access" = { };
-            "nextcloud.admins" = { };
+          cookie = {
+            domain = ".swarsel.win";
+            secure = true;
+            expire = "900m";
+            secret = null; # set by service EnvironmentFile
           };
-          persons = {
-            swarsel = {
-              present = true;
-              mailAddresses = [ "leon@swarsel.win" ];
-              legalName = "Leon Schwarzäugl";
-              groups = [
-                "immich.access"
-                "paperless.access"
-                "grafana.access"
-                "forgejo.access"
-                "nextcloud.access"
-              ];
-              displayName = "Swarsel";
-            };
+          clientSecret = null; # set by service EnvironmentFile
+          reverseProxy = true;
+          httpAddress = "0.0.0.0:${builtins.toString oauth2ProxyPort}";
+          redirectURL = "https://${oauth2ProxyDomain}/oauth2/callback";
+          setXauthrequest = true;
+          extraConfig = {
+            code-challenge-method = "S256";
+            whitelist-domain = ".swarsel.win";
+            set-authorization-header = true;
+            pass-access-token = true;
+            skip-jwt-bearer-tokens = true;
+            upstream = "static://202";
+            oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
+            provider-display-name = "Kanidm";
           };
-          systems = {
-            oauth2 = {
-              immich = {
-                displayName = "Immich";
-                originUrl = [
-                  "https://shots.swarsel.win/auth/login"
-                  "https://shots.swarsel.win/user-settings"
-                  "app.immich:///oauth-callback"
-                  "https://shots.swarsel.win/api/oauth/mobile-redirect"
-                ];
-                originLanding = "https://shots.swarsel.win/";
-                basicSecretFile = config.sops.secrets.kanidm-immich.path;
-                preferShortUsername = true;
-                enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
-                scopeMaps."immich.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              paperless = {
-                displayName = "Paperless";
-                originUrl = "https://scan.swarsel.win/accounts/oidc/kanidm/login/callback/";
-                originLanding = "https://scan.swarsel.win/";
-                basicSecretFile = config.sops.secrets.kanidm-paperless.path;
-                preferShortUsername = true;
-                scopeMaps."paperless.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              forgejo = {
-                displayName = "Forgejo";
-                originUrl = "https://swagit.swarsel.win/user/oauth2/kanidm/callback";
-                originLanding = "https://swagit.swarsel.win/";
-                basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
-                scopeMaps."forgejo.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                # XXX: PKCE is currently not supported by gitea/forgejo,
-                # see https://github.com/go-gitea/gitea/issues/21376.
-                allowInsecureClientDisablePkce = true;
-                preferShortUsername = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup."forgejo.admins" = [ "admin" ];
-                };
-              };
-              grafana = {
-                displayName = "Grafana";
-                originUrl = "https://status.swarsel.win/login/generic_oauth";
-                originLanding = "https://status.swarsel.win/";
-                basicSecretFile = config.sops.secrets.kanidm-grafana.path;
-                preferShortUsername = true;
-                scopeMaps."grafana.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "grafana.editors" = [ "editor" ];
-                    "grafana.admins" = [ "admin" ];
-                    "grafana.server-admins" = [ "server_admin" ];
-                  };
-                };
-              };
-              nextcloud = {
-                displayName = "Nextcloud";
-                originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
-                originLanding = "https://stash.swarsel.win/";
-                basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
-                allowInsecureClientDisablePkce = true;
-                scopeMaps."nextcloud.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                preferShortUsername = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "nextcloud.admins" = [ "admin" ];
-                  };
-                };
-              };
-            };
-          };
+          provider = "oidc";
+          scope = "openid email";
+          loginURL = "https://${kanidmDomain}/ui/oauth2";
+          redeemURL = "https://${kanidmDomain}/oauth2/token";
+          validateURL = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy/userinfo";
+          clientID = "oauth2-proxy";
+          email.domains = [ "*" ];
         };
       };
 
-      systemd.services.kanidm.serviceConfig.RestartSec = "30";
+      systemd.services = {
+        kanidm.serviceConfig.RestartSec = "30";
+        oauth2-proxy = {
+          after = [ "kanidm.service" ];
+          serviceConfig = {
+            RuntimeDirectory = "oauth2-proxy";
+            RuntimeDirectoryMode = "0750";
+            UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
+            RestartSec = "60"; # Retry every minute
+            EnvironmentFile = [
+              config.sops.templates.kanidm-oauth2-proxy-client-env.path
+            ];
+          };
+        };
+      };
 
       services.nginx = {
+        upstreams = {
+          kanidm = {
+            servers = {
+              "192.168.1.2:${builtins.toString kanidmPort}" = { };
+            };
+          };
+          oauth2-proxy = {
+            servers = {
+              "192.168.1.2:${builtins.toString oauth2ProxyPort}" = { };
+            };
+          };
+        };
         virtualHosts = {
           "${kanidmDomain}" = {
             enableACME = true;
@@ -8687,11 +8874,25 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "https://localhost:${toString kanidmPort}";
+                proxyPass = "https://kanidm";
               };
             };
             extraConfig = ''
               proxy_ssl_verify off;
+            '';
+          };
+          "${oauth2ProxyDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://oauth2-proxy";
+              };
+            };
+            extraConfig = ''
+              proxy_set_header X-Scheme                $scheme;
+              proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
             '';
           };
         };
