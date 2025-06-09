@@ -29,7 +29,6 @@ in
           paths = [
             "/Vault/data/paperless"
             "/Vault/Eternor/Paperless"
-            "/Vault/data/paperless"
             "/Vault/Eternor/Bilder"
             "/Vault/Eternor/Immich"
             "/Vault/familymedia"

@@ -44,6 +44,7 @@ in
         Address = "127.0.0.1";
         Port = 4040;
         MusicFolder = "/Vault/Eternor/Music";
+        PlaylistsPath = "./Playlists";
         EnableSharing = true;
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
