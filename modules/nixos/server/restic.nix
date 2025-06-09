@@ -32,11 +32,18 @@ in
             "/Vault/data/paperless"
             "/Vault/Eternor/Bilder"
             "/Vault/Eternor/Immich"
+            "/Vault/familymedia"
+          ];
+          pruneOpts = [
+            "--keep-daily 3"
+            "--keep-weekly 2"
+            "--keep-monthly 3"
+            "--keep-yearly 100"
           ];
           repository = "${resticRepo}";
           initialize = true;
           timerConfig = {
-            OnCalendar = "19:00";
+            OnCalendar = "03:00";
           };
         };
 

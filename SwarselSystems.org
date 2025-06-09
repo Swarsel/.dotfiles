@@ -7746,7 +7746,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:b73ac8bf-b721-4563-9eff-973925c99a39
 :END:
 
-Once this is finished, it will house a restic client that manages automatic backups of my image library. Before I get to this however, I first need to organice my pictures in the first place.
+This manages backups for my pictures and obsidian files.
 
 #+begin_src nix :tangle modules/nixos/server/restic.nix
   { lib, config, inputs, ... }:
@@ -7783,11 +7783,18 @@ Once this is finished, it will house a restic client that manages automatic back
               "/Vault/data/paperless"
               "/Vault/Eternor/Bilder"
               "/Vault/Eternor/Immich"
+              "/Vault/familymedia"
+            ];
+            pruneOpts = [
+              "--keep-daily 3"
+              "--keep-weekly 2"
+              "--keep-monthly 3"
+              "--keep-yearly 100"
             ];
             repository = "${resticRepo}";
             initialize = true;
             timerConfig = {
-              OnCalendar = "19:00";
+              OnCalendar = "03:00";
             };
           };
 
