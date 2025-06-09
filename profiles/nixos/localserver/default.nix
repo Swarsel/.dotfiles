@@ -35,6 +35,7 @@
           monitoring = lib.mkDefault true;
           emacs = lib.mkDefault true;
           freshrss = lib.mkDefault true;
+          jenkins = lib.mkDefault false;
         };
       };
     };
