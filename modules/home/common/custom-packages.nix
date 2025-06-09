@@ -5,7 +5,6 @@
   config = lib.mkIf config.swarselsystems.modules.ownpackages {
     home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
       pass-fuzzel
-      cura5
       cdw
       cdb
       bak

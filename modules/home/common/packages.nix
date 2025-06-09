@@ -20,6 +20,7 @@
       # printing
       cups
       simple-scan
+      cura-appimage
 
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
