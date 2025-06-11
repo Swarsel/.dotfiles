@@ -147,6 +147,7 @@ in
       opentofu
       terragrunt
       graphviz
+      azure-cli
 
       # vm
       virt-manager
