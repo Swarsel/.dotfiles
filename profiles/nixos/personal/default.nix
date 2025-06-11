@@ -18,6 +18,7 @@
       network = lib.mkDefault true;
       time = lib.mkDefault true;
       commonSops = lib.mkDefault true;
+      pii = lib.mkDefault true;
       stylix = lib.mkDefault true;
       programs = lib.mkDefault true;
       zsh = lib.mkDefault true;

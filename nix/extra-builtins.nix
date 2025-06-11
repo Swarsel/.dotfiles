@@ -17,8 +17,8 @@ in
     nixFile:
       assert assertMsg (builtins.isPath nixFile)
         "The file to decrypt must be given as a path to prevent impurity.";
-      assert assertMsg (hasSuffix ".nix.age" nixFile)
-        "The content of the decrypted file must be a nix expression and should therefore end in .nix.age";
+      assert assertMsg (hasSuffix ".nix.enc" nixFile)
+        "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
       exec [
         ./sops-decrypt-and-cache.sh
         nixFile

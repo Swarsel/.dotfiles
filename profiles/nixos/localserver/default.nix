@@ -6,6 +6,7 @@
       modules = {
         general = lib.mkDefault true;
         nix-ld = lib.mkDefault true;
+        pii = lib.mkDefault true;
         home-manager = lib.mkDefault true;
         home-managerExtra = lib.mkDefault true;
         xserver = lib.mkDefault true;

@@ -11,7 +11,7 @@ fi
 file="$1"
 shift
 
-basename="$file"
+basename="${file%".enc"}"
 # store path prefix or ./ if applicable
 [[ $file == "/nix/store/"* ]] && basename="${basename#*"-"}"
 [[ $file == "./"* ]] && basename="${basename#"./"}"
