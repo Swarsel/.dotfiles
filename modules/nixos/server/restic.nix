@@ -1,7 +1,6 @@
-{ lib, pkgs, config, inputs, ... }:
+{ lib, pkgs, config, ... }:
 let
-  secretsDirectory = builtins.toString inputs.nix-secrets;
-  resticRepo = lib.swarselsystems.getSecret "${secretsDirectory}/restic/wintersRepo";
+  inherit (config.repo.secrets.local) resticRepo;
 in
 {
   options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";

@@ -1,6 +1,5 @@
-{ self, inputs, lib, primaryUser, ... }:
+{ self, config, inputs, lib, primaryUser, ... }:
 let
-  secretsDirectory = builtins.toString inputs.nix-secrets;
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
@@ -23,7 +22,7 @@ in
   ];
 
 
-
+  node.secretsDir = ./secrets;
   swarselsystems = lib.recursiveUpdate
     {
       firewall = lib.mkForce true;
@@ -33,8 +32,8 @@ in
       isImpermanence = false;
       isSecureBoot = true;
       isCrypted = true;
-      hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
-      fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
+      inherit (config.repo.secrets.local) hostName;
+      inherit (config.repo.secrets.local) fqdn;
       hibernation.offset = 533760;
       profiles = {
         amdcpu = true;

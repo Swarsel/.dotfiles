@@ -1502,7 +1502,7 @@ create a new one."
           (:maildir "/Drafts"     :key ?d)
           (:maildir "/All Mail"     :key ?a)))
 
-  (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+  (setq user-mail-address (getenv "SWARSEL_MAIL4")
         user-full-name (getenv "SWARSEL_FULLNAME"))
 
   ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))

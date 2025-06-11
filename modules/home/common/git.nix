@@ -1,8 +1,7 @@
-{ lib, config, nix-secrets, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  secretsDirectory = builtins.toString nix-secrets;
-  leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-  fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+  inherit (nixosConfig.repo.secrets.common.mail) address1;
+  inherit (nixosConfig.repo.secrets.common) fullName;
 in
 {
   options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
@@ -26,7 +25,7 @@ in
         key = "0x76FD3810215AE097";
         signByDefault = true;
       };
-      userEmail = lib.mkDefault leonMail;
+      userEmail = lib.mkDefault address1;
       userName = fullName;
       difftastic.enable = true;
       lfs.enable = true;

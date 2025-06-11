@@ -1,4 +1,4 @@
-{ lib, primaryUser, ... }:
+{ lib, config, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
@@ -20,14 +20,15 @@ in
   };
 
   networking = {
+    inherit (config.repo.secrets.local) hostId;
     hostName = "winters";
-    hostId = "b7778a4a";
     firewall.enable = true;
     enableIPv6 = false;
     firewall.allowedTCPPorts = [ 80 443 ];
   };
 
 
+  node.secretsDir = ./secrets;
   swarselsystems = lib.recursiveUpdate
     {
       isImpermanence = false;

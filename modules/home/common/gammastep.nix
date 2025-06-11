@@ -1,6 +1,6 @@
-{ lib, config, nix-secrets, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  secretsDirectory = builtins.toString nix-secrets;
+  inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
 in
 {
   options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
@@ -8,8 +8,7 @@ in
     services.gammastep = {
       enable = true;
       provider = "manual";
-      latitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-latitude";
-      longitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-longitude";
+      inherit longitude latitude;
     };
   };
 }

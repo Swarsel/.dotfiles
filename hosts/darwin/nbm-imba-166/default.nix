@@ -1,7 +1,6 @@
-{ lib, inputs, ... }:
+{ lib, ... }:
 let
-  secretsDirectory = builtins.toString inputs.nix-secrets;
-  workUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/work-user";
+  inherit (config.repo.secrets.local) workUser;
 in
 {
 

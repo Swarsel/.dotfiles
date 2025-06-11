@@ -1,15 +1,11 @@
-{ lib, primaryUser, inputs, ... }:
+{ lib, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
     isLinux = true;
   };
-  secretsDirectory = builtins.toString inputs.nix-secrets;
-  workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
-  dev1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev1";
-  dev2 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev2";
-  dev3 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev3";
-  loc1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/loc1";
+  inherit (config.repo.secrets.common) workHostName;
+  inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
 in
 {
   imports = [

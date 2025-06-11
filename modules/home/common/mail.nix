@@ -1,11 +1,7 @@
-{ lib, config, nix-secrets, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  secretsDirectory = builtins.toString nix-secrets;
-  leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-  nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
-  mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
-  swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
-  fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
+  inherit (nixosConfig.repo.secrets.common) fullName;
 in
 {
   options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
@@ -34,8 +30,8 @@ in
         accounts = {
           leon = {
             primary = true;
-            address = leonMail;
-            userName = leonMail;
+            address = address1;
+            userName = address1;
             realName = fullName;
             passwordCommand = "cat ${config.sops.secrets.leon.path}";
             gpg = {
@@ -66,7 +62,7 @@ in
           };
 
           swarsel = {
-            address = swarselMail;
+            address = address4;
             userName = "8227dc594dd515ce232eda1471cb9a19";
             realName = fullName;
             passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
@@ -89,9 +85,9 @@ in
 
           nautilus = {
             primary = false;
-            address = nautilusMail;
-            userName = nautilusMail;
-            realName = "Nautilus";
+            address = address2;
+            userName = address2;
+            realName = add2Name;
             passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
             imap.host = "imap.gmail.com";
             smtp.host = "smtp.gmail.com";
@@ -116,9 +112,9 @@ in
 
           mrswarsel = {
             primary = false;
-            address = mrswarselMail;
-            userName = mrswarselMail;
-            realName = "Swarsel";
+            address = address3;
+            userName = address3;
+            realName = add3Name;
             passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
             imap.host = "imap.gmail.com";
             smtp.host = "smtp.gmail.com";

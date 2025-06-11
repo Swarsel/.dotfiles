@@ -1,7 +1,6 @@
-{ lib, config, inputs, ... }:
+{ lib, config, ... }:
 let
-  secretsDirectory = builtins.toString inputs.nix-secrets;
-  workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+  inherit (config.repo.secrets.common) workHostName;
 in
 {
   options.swarselsystems.modules.server.syncthing = lib.mkEnableOption "enable syncthing on server";

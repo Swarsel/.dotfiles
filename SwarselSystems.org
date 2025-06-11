@@ -809,9 +809,8 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, inputs, lib, primaryUser, ... }:
+  { self, config, inputs, lib, primaryUser, ... }:
   let
-    secretsDirectory = builtins.toString inputs.nix-secrets;
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
@@ -834,7 +833,7 @@ My work machine. Built for more security, this is the gold standard of my config
     ];
 
 
-
+    node.secretsDir = ./secrets;
     swarselsystems = lib.recursiveUpdate
       {
         firewall = lib.mkForce true;
@@ -844,8 +843,8 @@ My work machine. Built for more security, this is the gold standard of my config
         isImpermanence = false;
         isSecureBoot = true;
         isCrypted = true;
-        hostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
-        fqdn = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-fqdn";
+        inherit (config.repo.secrets.local) hostName;
+        inherit (config.repo.secrets.local) fqdn;
         hibernation.offset = 533760;
         profiles = {
           amdcpu = true;
@@ -1062,7 +1061,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix :tangle hosts/nixos/winters/default.nix
-  { lib, primaryUser, ... }:
+  { lib, config, primaryUser, ... }:
   let
     sharedOptions = {
       isBtrfs = false;
@@ -1084,14 +1083,15 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     networking = {
+      inherit (config.repo.secrets.local) hostId;
       hostName = "winters";
-      hostId = "b7778a4a";
       firewall.enable = true;
       enableIPv6 = false;
       firewall.allowedTCPPorts = [ 80 443 ];
     };
 
 
+    node.secretsDir = ./secrets;
     swarselsystems = lib.recursiveUpdate
       {
         isImpermanence = false;
@@ -1170,10 +1170,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
 #+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
-  { lib, inputs, ... }:
+  { lib, ... }:
   let
-    secretsDirectory = builtins.toString inputs.nix-secrets;
-    workUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/work-user";
+    inherit (config.repo.secrets.local) workUser;
   in
   {
 
@@ -1276,18 +1275,14 @@ This machine mainly acts as an external sync helper. It manages the following th
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
-  { lib, primaryUser, inputs, ... }:
+  { lib, primaryUser, ... }:
   let
     sharedOptions = {
       isBtrfs = false;
       isLinux = true;
     };
-    secretsDirectory = builtins.toString inputs.nix-secrets;
-    workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
-    dev1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev1";
-    dev2 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev2";
-    dev3 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/dev3";
-    loc1 = lib.swarselsystems.getSecret "${secretsDirectory}/oci/sync/syncthing/loc1";
+    inherit (config.repo.secrets.common) workHostName;
+    inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
   in
   {
     imports = [
@@ -7159,10 +7154,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/navidrome.nix
-  { pkgs, lib, inputs, config, ... }:
-  let
-    secretsDirectory = builtins.toString inputs.nix-secrets;
-  in
+  { pkgs, config, lib, ... }:
   {
     options.swarselsystems.modules.server.navidrome = lib.mkEnableOption "enable navidrome on server";
     config = lib.mkIf config.swarselsystems.modules.server.navidrome {
@@ -7221,10 +7213,12 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
           # Switch using --impure as these credential files are not stored within the flake
           # sops-nix is not supported for these which is why we need to resort to these
-          LastFM.ApiKey = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-secret";
-          LastFM.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/lastfm-key";
-          Spotify.ID = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-id";
-          Spotify.Secret = lib.swarselsystems.getSecret "${secretsDirectory}/navidrome/spotify-secret";
+          LastFM = {
+            inherit (config.repo.secrets.local.LastFM) ApiKey Secret;
+          };
+          Spotify = {
+            inherit (config.repo.secrets.local.Spotify) ID Secret;
+          };
           UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
           UIWelcomeMessage = "~SwarselSound~";
         };
@@ -8115,10 +8109,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/syncthing.nix
-  { lib, config, inputs, ... }:
+  { lib, config, ... }:
   let
-    secretsDirectory = builtins.toString inputs.nix-secrets;
-    workHostName = lib.swarselsystems.getSecret "${secretsDirectory}/work/worklaptop-hostname";
+    inherit (config.repo.secrets.common) workHostName;
   in
   {
     options.swarselsystems.modules.server.syncthing = lib.mkEnableOption "enable syncthing on server";
@@ -8240,10 +8233,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 This manages backups for my pictures and obsidian files.
 
 #+begin_src nix :tangle modules/nixos/server/restic.nix
-  { lib, pkgs, config, inputs, ... }:
+  { lib, pkgs, config, ... }:
   let
-    secretsDirectory = builtins.toString inputs.nix-secrets;
-    resticRepo = lib.swarselsystems.getSecret "${secretsDirectory}/restic/wintersRepo";
+    inherit (config.repo.secrets.local) resticRepo;
   in
   {
     options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
@@ -10807,15 +10799,10 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix :tangle modules/home/common/env.nix
-  { lib, config, nix-secrets, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    secretsDirectory = builtins.toString nix-secrets;
-    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-    nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
-    mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
-    swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
-    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
-    allMailAddresses = lib.swarselsystems.getSecret "${secretsDirectory}/mail/list";
+    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+    inherit (nixosConfig.repo.secrets.common) fullName;
   in
   {
     options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
@@ -10827,10 +10814,10 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
         SWARSEL_HI_RES = config.swarselsystems.highResolution;
       };
       systemd.user.sessionVariables = {
-        SWARSEL_LEON_MAIL = leonMail;
-        SWARSEL_NAUTILUS_MAIL = nautilusMail;
-        SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
-        SWARSEL_SWARSEL_MAIL = swarselMail;
+        SWARSEL_MAIL1 = address1;
+        SWARSEL_MAIL2 = address2;
+        SWARSEL_MAIL3 = address3;
+        SWARSEL_MAIL4 = address4;
         SWARSEL_FULLNAME = fullName;
         SWARSEL_MAIL_ALL = allMailAddresses;
       };
@@ -10984,11 +10971,10 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix :tangle modules/home/common/git.nix
-  { lib, config, nix-secrets, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    secretsDirectory = builtins.toString nix-secrets;
-    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+    inherit (nixosConfig.repo.secrets.common.mail) address1;
+    inherit (nixosConfig.repo.secrets.common) fullName;
   in
   {
     options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
@@ -11012,7 +10998,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
           key = "0x76FD3810215AE097";
           signByDefault = true;
         };
-        userEmail = lib.mkDefault leonMail;
+        userEmail = lib.mkDefault address1;
         userName = fullName;
         difftastic.enable = true;
         lfs.enable = true;
@@ -11516,14 +11502,10 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix :tangle modules/home/common/mail.nix
-  { lib, config, nix-secrets, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    secretsDirectory = builtins.toString nix-secrets;
-    leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-    nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
-    mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
-    swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
-    fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
+    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
+    inherit (nixosConfig.repo.secrets.common) fullName;
   in
   {
     options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
@@ -11552,8 +11534,8 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
           accounts = {
             leon = {
               primary = true;
-              address = leonMail;
-              userName = leonMail;
+              address = address1;
+              userName = address1;
               realName = fullName;
               passwordCommand = "cat ${config.sops.secrets.leon.path}";
               gpg = {
@@ -11584,7 +11566,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
             };
 
             swarsel = {
-              address = swarselMail;
+              address = address4;
               userName = "8227dc594dd515ce232eda1471cb9a19";
               realName = fullName;
               passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
@@ -11607,9 +11589,9 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 
             nautilus = {
               primary = false;
-              address = nautilusMail;
-              userName = nautilusMail;
-              realName = "Nautilus";
+              address = address2;
+              userName = address2;
+              realName = add2Name;
               passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
@@ -11634,9 +11616,9 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 
             mrswarsel = {
               primary = false;
-              address = mrswarselMail;
-              userName = mrswarselMail;
-              realName = "Swarsel";
+              address = address3;
+              userName = address3;
+              realName = add3Name;
               passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
@@ -12974,9 +12956,9 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix :tangle modules/home/common/gammastep.nix
-  { lib, config, nix-secrets, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    secretsDirectory = builtins.toString nix-secrets;
+    inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
   in
   {
     options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
@@ -12984,8 +12966,7 @@ This service changes the screen hue at night. I am not sure if that really does 
       services.gammastep = {
         enable = true;
         provider = "manual";
-        latitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-latitude";
-        longitude = lib.swarselsystems.getSecret "${secretsDirectory}/home/gammastep-longitude";
+        inherit longitude latitude;
       };
     };
   }
@@ -13131,13 +13112,10 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, nix-secrets, ... }:
+  { self, config, pkgs, lib, nixosConfig, ... }:
   let
     inherit (config.swarselsystems) homeDir;
-    secretsDirectory = builtins.toString nix-secrets;
-    dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
-    clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
-    wsUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/ws-user";
+    inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
   in
   {
     options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
@@ -13176,20 +13154,20 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       };
 
       stylix.targets.firefox.profileNames = [
-        "dc"
-        "cl"
-        "ws"
+        "${user1}"
+        "${user2}"
+        "${user3}"
         "work"
       ];
 
       programs = {
-        git.userEmail = lib.swarselsystems.getSecret "${secretsDirectory}/work/git-email";
+        git.userEmail = lib.mkForce gitMail;
 
         zsh = {
           shellAliases = {
-            dssh = "ssh -l ${dcUser}";
-            cssh = "ssh -l ${clUser}";
-            wssh = "ssh -l ${wsUser}";
+            dssh = "ssh -l ${user1Long}";
+            cssh = "ssh -l ${user2Long}";
+            wssh = "ssh -l ${user3Long}";
           };
           cdpath = [
             "~/Documents/Work"
@@ -13199,42 +13177,42 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
             w = "$HOME/Documents/Work";
             s = "$HOME/.dotfiles/secrets";
             pr = "$HOME/Documents/Private";
-            ac = "$HOME/.ansible/collections/ansible_collections/vbc/linux/roles";
+            ac = path1;
           };
         };
 
         ssh = {
           matchBlocks = {
-            "uc" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-prod";
-              user = "stack";
+            "${loc1}" = {
+              hostname = "${loc1}.${domain2}";
+              user = user4;
             };
-            "uc.stg" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
-              user = "stack";
+            "${loc1}.stg" = {
+              hostname = "${loc1}.${lifecycle1}.${domain2}";
+              user = user4;
             };
-            "uc.staging" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
-              user = "stack";
+            "${loc1}.staging" = {
+              hostname = "${loc1}.${lifecycle1}.${domain2}";
+              user = user4;
             };
-            "uc.dev" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-dev";
-              user = "stack";
+            "${loc1}.dev" = {
+              hostname = "${loc1}.${lifecycle2}.${domain2}";
+              user = user4;
             };
-            "cbe" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-prod";
-              user = dcUser;
+            "${loc2}" = {
+              hostname = "${loc2}.${domain1}";
+              user = user1Long;
             };
-            "cbe.stg" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
-              user = dcUser;
+            "${loc2}.stg" = {
+              hostname = "${loc2}.${lifecycle1}.${domain2}";
+              user = user1Long;
             };
-            "cbe.staging" = {
-              hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
-              user = dcUser;
+            "${loc2}.staging" = {
+              hostname = "${loc2}.${lifecycle1}.${domain2}";
+              user = user1Long;
             };
-            "*.vbc.ac.at" = {
-              user = dcUser;
+            "*.${domain1}" = {
+              user = user1Long;
             };
           };
         };
@@ -13245,25 +13223,25 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
               isDefault = false;
             in
             {
-              dc = lib.recursiveUpdate
+              "${user1}" = lib.recursiveUpdate
                 {
                   inherit isDefault;
                   id = 1;
                   settings = {
-                    "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
+                    "browser.startup.homepage" = "${site1}|${site2}";
                   };
                 }
                 config.swarselsystems.firefox;
-              cl = lib.recursiveUpdate
+              "${user2}" = lib.recursiveUpdate
                 {
                   inherit isDefault;
                   id = 2;
                   settings = {
-                    "browser.startup.homepage" = "https://portal.azure.com";
+                    "browser.startup.homepage" = "${site3}";
                   };
                 }
                 config.swarselsystems.firefox;
-              ws = lib.recursiveUpdate
+              "${user3}" = lib.recursiveUpdate
                 {
                   inherit isDefault;
                   id = 3;
@@ -13274,7 +13252,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                   inherit isDefault;
                   id = 4;
                   settings = {
-                    "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                    "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
                   };
                 }
                 config.swarselsystems.firefox;
@@ -13437,26 +13415,27 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
               exec = "firefox -p work";
               inherit terminal categories icon;
             };
-            firefox_dc = {
-              name = "Firefox (dc)";
-              genericName = "Firefox dc";
-              exec = "firefox -p dc";
+            "firefox_${user1}" = {
+              name = "Firefox (${user1})";
+              genericName = "Firefox ${user1}";
+              exec = "firefox -p ${user4}";
               inherit terminal categories icon;
             };
 
-            firefox_ws = {
-              name = "Firefox (ws)";
-              genericName = "Firefox ws";
-              exec = "firefox -p ws";
+            "firefox_${user2}" = {
+              name = "Firefox (${user2})";
+              genericName = "Firefox ${user2}";
+              exec = "firefox -p ${user2}";
               inherit terminal categories icon;
             };
 
-            firefox_cl = {
-              name = "Firefox (cl)";
-              genericName = "Firefox cl";
-              exec = "firefox -p cl";
+            "firefox_${user3}" = {
+              name = "Firefox (${user3})";
+              genericName = "Firefox ${user3}";
+              exec = "firefox -p ${user3}";
               inherit terminal categories icon;
             };
+
 
           };
       };
@@ -16506,7 +16485,7 @@ The hook functions are defined here: [[#h:34506761-06b9-43b5-a818-506d9b3faf28][
             (:maildir "/Drafts"     :key ?d)
             (:maildir "/All Mail"     :key ?a)))
 
-    (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+    (setq user-mail-address (getenv "SWARSEL_MAIL4")
           user-full-name (getenv "SWARSEL_FULLNAME"))
 
     ;; this does the equivalent of (setq mu4e-user-mail-address-list '(address1@about.com address2@about.com [...])))

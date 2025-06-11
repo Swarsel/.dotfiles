@@ -1,12 +1,7 @@
-{ lib, config, nix-secrets, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  secretsDirectory = builtins.toString nix-secrets;
-  leonMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/leon";
-  nautilusMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/nautilus";
-  mrswarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/mrswarsel";
-  swarselMail = lib.swarselsystems.getSecret "${secretsDirectory}/mail/swarsel";
-  fullName = lib.swarselsystems.getSecret "${secretsDirectory}/info/fullname";
-  allMailAddresses = lib.swarselsystems.getSecret "${secretsDirectory}/mail/list";
+  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+  inherit (nixosConfig.repo.secrets.common) fullName;
 in
 {
   options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
@@ -18,10 +13,10 @@ in
       SWARSEL_HI_RES = config.swarselsystems.highResolution;
     };
     systemd.user.sessionVariables = {
-      SWARSEL_LEON_MAIL = leonMail;
-      SWARSEL_NAUTILUS_MAIL = nautilusMail;
-      SWARSEL_MRSWARSEL_MAIL = mrswarselMail;
-      SWARSEL_SWARSEL_MAIL = swarselMail;
+      SWARSEL_MAIL1 = address1;
+      SWARSEL_MAIL2 = address2;
+      SWARSEL_MAIL3 = address3;
+      SWARSEL_MAIL4 = address4;
       SWARSEL_FULLNAME = fullName;
       SWARSEL_MAIL_ALL = allMailAddresses;
     };

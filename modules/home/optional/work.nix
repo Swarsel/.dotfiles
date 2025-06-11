@@ -1,10 +1,7 @@
-{ self, config, pkgs, lib, nix-secrets, ... }:
+{ self, config, pkgs, lib, nixosConfig, ... }:
 let
   inherit (config.swarselsystems) homeDir;
-  secretsDirectory = builtins.toString nix-secrets;
-  dcUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/dc-user";
-  clUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/cl-user";
-  wsUser = lib.swarselsystems.getSecret "${secretsDirectory}/work/ws-user";
+  inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
 in
 {
   options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
@@ -43,20 +40,20 @@ in
     };
 
     stylix.targets.firefox.profileNames = [
-      "dc"
-      "cl"
-      "ws"
+      "${user1}"
+      "${user2}"
+      "${user3}"
       "work"
     ];
 
     programs = {
-      git.userEmail = lib.swarselsystems.getSecret "${secretsDirectory}/work/git-email";
+      git.userEmail = lib.mkForce gitMail;
 
       zsh = {
         shellAliases = {
-          dssh = "ssh -l ${dcUser}";
-          cssh = "ssh -l ${clUser}";
-          wssh = "ssh -l ${wsUser}";
+          dssh = "ssh -l ${user1Long}";
+          cssh = "ssh -l ${user2Long}";
+          wssh = "ssh -l ${user3Long}";
         };
         cdpath = [
           "~/Documents/Work"
@@ -66,42 +63,42 @@ in
           w = "$HOME/Documents/Work";
           s = "$HOME/.dotfiles/secrets";
           pr = "$HOME/Documents/Private";
-          ac = "$HOME/.ansible/collections/ansible_collections/vbc/linux/roles";
+          ac = path1;
         };
       };
 
       ssh = {
         matchBlocks = {
-          "uc" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-prod";
-            user = "stack";
+          "${loc1}" = {
+            hostname = "${loc1}.${domain2}";
+            user = user4;
           };
-          "uc.stg" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
-            user = "stack";
+          "${loc1}.stg" = {
+            hostname = "${loc1}.${lifecycle1}.${domain2}";
+            user = user4;
           };
-          "uc.staging" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-stg";
-            user = "stack";
+          "${loc1}.staging" = {
+            hostname = "${loc1}.${lifecycle1}.${domain2}";
+            user = user4;
           };
-          "uc.dev" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/uc-dev";
-            user = "stack";
+          "${loc1}.dev" = {
+            hostname = "${loc1}.${lifecycle2}.${domain2}";
+            user = user4;
           };
-          "cbe" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-prod";
-            user = dcUser;
+          "${loc2}" = {
+            hostname = "${loc2}.${domain1}";
+            user = user1Long;
           };
-          "cbe.stg" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
-            user = dcUser;
+          "${loc2}.stg" = {
+            hostname = "${loc2}.${lifecycle1}.${domain2}";
+            user = user1Long;
           };
-          "cbe.staging" = {
-            hostname = lib.swarselsystems.getSecret "${secretsDirectory}/work/cbe-stg";
-            user = dcUser;
+          "${loc2}.staging" = {
+            hostname = "${loc2}.${lifecycle1}.${domain2}";
+            user = user1Long;
           };
-          "*.vbc.ac.at" = {
-            user = dcUser;
+          "*.${domain1}" = {
+            user = user1Long;
           };
         };
       };
@@ -112,25 +109,25 @@ in
             isDefault = false;
           in
           {
-            dc = lib.recursiveUpdate
+            "${user1}" = lib.recursiveUpdate
               {
                 inherit isDefault;
                 id = 1;
                 settings = {
-                  "browser.startup.homepage" = "https://tower.vbc.ac.at|https://artifactory.vbc.ac.at";
+                  "browser.startup.homepage" = "${site1}|${site2}";
                 };
               }
               config.swarselsystems.firefox;
-            cl = lib.recursiveUpdate
+            "${user2}" = lib.recursiveUpdate
               {
                 inherit isDefault;
                 id = 2;
                 settings = {
-                  "browser.startup.homepage" = "https://portal.azure.com";
+                  "browser.startup.homepage" = "${site3}";
                 };
               }
               config.swarselsystems.firefox;
-            ws = lib.recursiveUpdate
+            "${user3}" = lib.recursiveUpdate
               {
                 inherit isDefault;
                 id = 3;
@@ -141,7 +138,7 @@ in
                 inherit isDefault;
                 id = 4;
                 settings = {
-                  "browser.startup.homepage" = "https://outlook.office.com|https://satellite.vbc.ac.at|https://bitbucket.vbc.ac.at|https://github.com";
+                  "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
                 };
               }
               config.swarselsystems.firefox;
@@ -304,26 +301,27 @@ in
             exec = "firefox -p work";
             inherit terminal categories icon;
           };
-          firefox_dc = {
-            name = "Firefox (dc)";
-            genericName = "Firefox dc";
-            exec = "firefox -p dc";
+          "firefox_${user1}" = {
+            name = "Firefox (${user1})";
+            genericName = "Firefox ${user1}";
+            exec = "firefox -p ${user4}";
             inherit terminal categories icon;
           };
 
-          firefox_ws = {
-            name = "Firefox (ws)";
-            genericName = "Firefox ws";
-            exec = "firefox -p ws";
+          "firefox_${user2}" = {
+            name = "Firefox (${user2})";
+            genericName = "Firefox ${user2}";
+            exec = "firefox -p ${user2}";
             inherit terminal categories icon;
           };
 
-          firefox_cl = {
-            name = "Firefox (cl)";
-            genericName = "Firefox cl";
-            exec = "firefox -p cl";
+          "firefox_${user3}" = {
+            name = "Firefox (${user3})";
+            genericName = "Firefox ${user3}";
+            exec = "firefox -p ${user3}";
             inherit terminal categories icon;
           };
+
 
         };
     };
