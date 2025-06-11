@@ -5778,14 +5778,17 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 :PROPERTIES:
 :CUSTOM_ID: h:7daa06ff-d3b0-4491-97ce-770b749c52f9
 :END:
-Do not touch this.
+Here I disable global completion to prevent redundant compinit calls and cache invalidation that slow down shell startup (enabled on the home-manager side).
 
 #+begin_src nix :tangle modules/nixos/common/zsh.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
     config = lib.mkIf config.swarselsystems.modules.zsh {
-      programs.zsh.enable = true;
+      programs.zsh = {
+        enable = true;
+        enableCompletion = false;
+      };
       users.defaultUserShell = pkgs.zsh;
       environment.shells = with pkgs; [ zsh ];
       environment.pathsToLink = [ "/share/zsh" ];
