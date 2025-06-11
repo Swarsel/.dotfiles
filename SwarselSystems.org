@@ -3727,7 +3727,6 @@ AppImage version of mgba in which the lua scripting works.
           T_START="$T_END"
       }
 
-      cd ~/.dotfiles
       USER_FLAKE_DIR=$(git rev-parse --show-toplevel 2> /dev/null || pwd) ||
           die "Could not determine current working directory. Something went very wrong."
       [[ -e "$USER_FLAKE_DIR/flake.nix" ]] ||
@@ -3774,7 +3773,8 @@ AppImage version of mgba in which the lua scripting works.
       declare -A TOPLEVEL_STORE_PATHS
       for host in "''${HOSTS[@]}"; do
           toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
-          echo "[1;36m    Building [m📦 [34m$host[m"
+          # Make sudo call to get prompt out of the way
+          sudo echo "[1;36m    Building [m📦 [34m$host[m"
           nix build --no-link "''${OPTIONS[@]}" --show-trace --log-format internal-json -v "$toplevel" |& ${nix-output-monitor}/bin/nom --json ||
               die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
           TOPLEVEL_STORE_PATHS["$host"]=$(nix build --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel")
@@ -3812,7 +3812,6 @@ AppImage version of mgba in which the lua scripting works.
           time_next
           echo -e "\033[1;32m     Applied \033[m✅  \033[34m$host\033[m \033[90min ''${T_LAST}s\033[m"
       done
-      cd -
     '';
   }
 
