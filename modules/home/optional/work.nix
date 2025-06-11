@@ -13,7 +13,7 @@ in
       docker
       postman
       rclone
-      stable.awscli2
+      stable24_05.awscli2
       libguestfs-with-appliance
       stable.prometheus.cli
       tigervnc
