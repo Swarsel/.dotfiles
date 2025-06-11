@@ -3983,8 +3983,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         users = lib.mkDefault true;
         env = lib.mkDefault true;
         security = lib.mkDefault true;
-        gc = lib.mkDefault true;
-        storeOptimize = lib.mkDefault true;
         systemdTimeout = lib.mkDefault true;
         hardware = lib.mkDefault true;
         pulseaudio = lib.mkDefault true;
@@ -4052,8 +4050,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         users = lib.mkDefault true;
         env = lib.mkDefault true;
         security = lib.mkDefault true;
-        gc = lib.mkDefault true;
-        storeOptimize = lib.mkDefault true;
         systemdTimeout = lib.mkDefault true;
         hardware = lib.mkDefault true;
         pulseaudio = lib.mkDefault true;
@@ -4256,8 +4252,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           home-manager = lib.mkDefault true;
           home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
-          gc = lib.mkDefault true;
-          storeOptimize = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
           server = {
@@ -4306,8 +4300,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           home-manager = lib.mkDefault true;
           home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
-          gc = lib.mkDefault true;
-          storeOptimize = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
           server = {
@@ -4919,7 +4911,7 @@ A breakdown of the flags being set:
   - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix :tangle modules/nixos/common/settings.nix
-  { lib, config, outputs, inputs, ... }:
+  { lib, pkgs, config, outputs, inputs, ... }:
   {
     options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
     config = lib.mkIf config.swarselsystems.modules.general {
@@ -4929,6 +4921,11 @@ A breakdown of the flags being set:
           allowUnfree = true;
         };
       };
+
+      environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
+        assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
+        { }
+      '';
 
       nix =
         let
@@ -4956,11 +4953,24 @@ A breakdown of the flags being set:
             max-jobs = 1;
             use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
           };
+          gc = {
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 10d";
+          };
+          optimise = {
+            automatic = true;
+            dates = "weekly";
+          };
           channel.enable = false;
-          registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+          registry = rec {
+            nixpkgs.flake = inputs.nixpkgs;
+            p = nixpkgs;
+          };
           nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
         };
 
+      services.dbus.implementation = "broker";
       system.stateVersion = lib.mkDefault "23.05";
     };
   }
@@ -5220,49 +5230,6 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
       };
     };
   }
-#+end_src
-
-**** Enable automatic garbage collection
-:PROPERTIES:
-:CUSTOM_ID: h:9a3b7f1f-d0c3-417e-a262-c920fb25f3ee
-:END:
-
-The nix store fills up over time, until =/boot/efi= is filled. This snippet cleans it automatically on a weekly basis.
-
-#+begin_src nix :tangle modules/nixos/common/gc.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems.modules.gc = lib.mkEnableOption "garbage collection config";
-    config = lib.mkIf config.swarselsystems.modules.gc {
-      nix.gc = {
-        automatic = true;
-        randomizedDelaySec = "14m";
-        dates = "weekly";
-        options = "--delete-older-than 10d";
-      };
-    };
-  }
-#+end_src
-
-**** Enable automatic store optimisation
-:PROPERTIES:
-:CUSTOM_ID: h:97a2b9f7-c835-4db8-a0e9-e923bab69ee8
-:END:
-
-This enables hardlinking identical files in the nix store, to save on disk space. I have read this incurs a significant I/O overhead, I need to keep an eye on this.
-
-#+begin_src nix :tangle modules/nixos/common/store.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems.modules.storeOptimize = lib.mkEnableOption "store optimization config";
-    config = lib.mkIf config.swarselsystems.modules.storeOptimize {
-      nix.optimise = {
-        automatic = true;
-        dates = [ "weekly" ];
-      };
-    };
-  }
-
 #+end_src
 
 **** Reduce systemd timeouts
@@ -6709,8 +6676,6 @@ Also, the system state version is set here. No need to touch it.
       "${modulesPath}/nixos/common/home-manager.nix"
       "${modulesPath}/nixos/common/home-manager-extra.nix"
       "${modulesPath}/nixos/common/xserver.nix"
-      "${modulesPath}/nixos/common/gc.nix"
-      "${modulesPath}/nixos/common/store.nix"
       "${modulesPath}/nixos/common/time.nix"
       "${modulesPath}/nixos/common/users.nix"
       "${modulesPath}/nixos/common/nix-ld.nix"

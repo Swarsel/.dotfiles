@@ -9,8 +9,6 @@
         home-manager = lib.mkDefault true;
         home-managerExtra = lib.mkDefault true;
         xserver = lib.mkDefault true;
-        gc = lib.mkDefault true;
-        storeOptimize = lib.mkDefault true;
         time = lib.mkDefault true;
         users = lib.mkDefault true;
         server = {

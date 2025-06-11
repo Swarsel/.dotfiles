@@ -9,8 +9,6 @@ in
     "${modulesPath}/nixos/common/home-manager.nix"
     "${modulesPath}/nixos/common/home-manager-extra.nix"
     "${modulesPath}/nixos/common/xserver.nix"
-    "${modulesPath}/nixos/common/gc.nix"
-    "${modulesPath}/nixos/common/store.nix"
     "${modulesPath}/nixos/common/time.nix"
     "${modulesPath}/nixos/common/users.nix"
     "${modulesPath}/nixos/common/nix-ld.nix"

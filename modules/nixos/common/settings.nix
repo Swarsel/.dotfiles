@@ -1,4 +1,4 @@
-{ lib, config, outputs, inputs, ... }:
+{ lib, pkgs, config, outputs, inputs, ... }:
 {
   options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
   config = lib.mkIf config.swarselsystems.modules.general {
@@ -8,6 +8,11 @@
         allowUnfree = true;
       };
     };
+
+    environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
+      assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
+      { }
+    '';
 
     nix =
       let
@@ -35,11 +40,24 @@
           max-jobs = 1;
           use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
         };
+        gc = {
+          automatic = true;
+          dates = "weekly";
+          options = "--delete-older-than 10d";
+        };
+        optimise = {
+          automatic = true;
+          dates = "weekly";
+        };
         channel.enable = false;
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+        registry = rec {
+          nixpkgs.flake = inputs.nixpkgs;
+          p = nixpkgs;
+        };
         nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };
 
+    services.dbus.implementation = "broker";
     system.stateVersion = lib.mkDefault "23.05";
   };
 }

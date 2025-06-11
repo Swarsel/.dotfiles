@@ -46,7 +46,7 @@ in
     sharedOptions;
 
   home-manager.users."${primaryUser}" = {
-    home.stateVersion = lib.mkForce "23.05";
+    # home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {
         isLaptop = true;

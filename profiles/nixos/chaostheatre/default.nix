@@ -11,8 +11,6 @@
       users = lib.mkDefault true;
       env = lib.mkDefault true;
       security = lib.mkDefault true;
-      gc = lib.mkDefault true;
-      storeOptimize = lib.mkDefault true;
       systemdTimeout = lib.mkDefault true;
       hardware = lib.mkDefault true;
       pulseaudio = lib.mkDefault true;
