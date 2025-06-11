@@ -71,8 +71,6 @@ in
           {
             home-manager.users."${linuxUser}".imports = [
               # put home-manager imports here that are for all normal hosts
-              inputs.sops-nix.homeManagerModules.sops
-              inputs.nix-index-database.hmModules.nix-index
               "${self}/modules/home/common"
               "${self}/modules/home/server"
               "${self}/modules/home/optional"

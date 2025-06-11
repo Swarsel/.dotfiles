@@ -4,6 +4,18 @@
   config = lib.mkIf config.swarselsystems.modules.server.ssh {
     services.openssh = {
       enable = true;
+      startWhenNeeded = lib.mkForce false;
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        PermitRootLogin = "yes";
+      };
+      hostKeys = [
+        {
+          path = "/etc/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+      ];
     };
     users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
       (self + /secrets/keys/ssh/yubikey.pub)

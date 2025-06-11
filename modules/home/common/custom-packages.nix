@@ -24,6 +24,7 @@
       fhs
       swarsel-bootstrap
       swarsel-displaypower
+      swarsel-deploy
       swarselzellij
       sshrm
 

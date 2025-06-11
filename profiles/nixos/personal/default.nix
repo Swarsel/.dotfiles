@@ -52,6 +52,10 @@
         autologin = lib.mkDefault true;
         nswitch-rcm = lib.mkDefault true;
       };
+
+      server = {
+        ssh = lib.mkDefault true;
+      };
     };
 
   };

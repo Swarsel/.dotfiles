@@ -16,7 +16,7 @@
         };
         "winters" = {
           hostname = "192.168.1.2";
-          user = "swarsel";
+          user = "root";
         };
         "minecraft" = {
           hostname = "130.61.119.129";

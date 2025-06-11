@@ -5,6 +5,7 @@
     environment.systemPackages = with pkgs; [
       gnupg
       nix-index
+      nvd
       ssh-to-age
       git
       emacs
