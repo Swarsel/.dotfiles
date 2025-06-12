@@ -36,6 +36,7 @@
           freshrss = lib.mkDefault true;
           jenkins = lib.mkDefault false;
           kanidm = lib.mkDefault true;
+          firefly = lib.mkDefault true;
         };
       };
     };

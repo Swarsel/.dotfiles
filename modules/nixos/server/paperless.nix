@@ -65,10 +65,14 @@
 
       gotenberg = {
         enable = true;
+        package = pkgs.stable.gotenberg;
         port = 3002;
         bindIP = "127.0.0.1";
+        timeout = "600s";
+        chromium.package = pkgs.stable.chromium;
       };
     };
+
 
     # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
     systemd.services.paperless-web.script = lib.mkBefore ''

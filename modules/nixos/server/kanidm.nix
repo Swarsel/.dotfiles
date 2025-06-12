@@ -82,6 +82,7 @@ in
             "nextcloud.admins" = { };
             "navidrome.access" = { };
             "freshrss.access" = { };
+            "firefly.access" = { };
           };
           persons = {
             swarsel = {
@@ -96,6 +97,7 @@ in
                 "nextcloud.access"
                 "freshrss.access"
                 "navidrome.access"
+                "firefly.access"
               ];
               displayName = "Swarsel";
             };
@@ -208,21 +210,31 @@ in
                 originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
                 originLanding = "https://${oauth2ProxyDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
-                scopeMaps."freshrss.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                scopeMaps."navidrome.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
+                scopeMaps = {
+                  "freshrss.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  "navidrome.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  "firefly.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
                 preferShortUsername = true;
                 claimMaps.groups = {
                   joinType = "array";
-                  valuesByGroup."freshrss.access" = [ "ttrss_access" ];
-                  valuesByGroup."navidrome.access" = [ "navidrome_access" ];
+                  valuesByGroup = {
+                    "freshrss.access" = [ "ttrss_access" ];
+                    "navidrome.access" = [ "navidrome_access" ];
+                    "firefly.access" = [ "firefly_access" ];
+                  };
                 };
               };
             };

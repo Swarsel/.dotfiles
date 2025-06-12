@@ -1,4 +1,4 @@
-{ lib, primaryUser, ... }:
+{ lib, config, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
@@ -50,6 +50,8 @@ in
 
   system.stateVersion = "23.11";
 
+
+  node.secretsDir = ./secrets;
   services = {
     nginx = {
       virtualHosts = {

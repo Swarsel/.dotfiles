@@ -128,19 +128,20 @@
         in
         {
           default = pkgs.mkShell {
+            # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+            #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
+            #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
+            # })}/lib/nix/plugins
             NIX_CONFIG = ''
-              plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                buildInputs = [pkgs.nixVersions.latest pkgs.boost];
-                patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
-              })}/lib/nix/plugins
+              plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
             '';
             inherit (checks.pre-commit-check) shellHook;
 
             buildInputs = checks.pre-commit-check.enabledPackages;
             nativeBuildInputs = [
-              # (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
-              pkgs.nix
+              (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+              # pkgs.nix
               pkgs.home-manager
               pkgs.git
               pkgs.just

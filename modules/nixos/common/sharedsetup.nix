@@ -1,28 +1,29 @@
 { lib, ... }:
 {
-  options.swarselsystems = {
-    withHomeManager = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-    };
-    isSwap = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-    };
-    swapSize = lib.mkOption {
-      type = lib.types.str;
-      default = "8G";
-    };
-    rootDisk = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-    };
-    isCrypted = lib.mkEnableOption "uses full disk encryption";
-    initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+  options = {
+    swarselsystems = {
+      withHomeManager = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      isSwap = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      swapSize = lib.mkOption {
+        type = lib.types.str;
+        default = "8G";
+      };
+      rootDisk = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      isCrypted = lib.mkEnableOption "uses full disk encryption";
+      initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
 
-    isImpermanence = lib.mkEnableOption "use impermanence on this system";
-    isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-
+      isImpermanence = lib.mkEnableOption "use impermanence on this system";
+      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+    };
     globals = lib.mkOption {
       default = { };
       type = lib.types.submodule {
@@ -46,9 +47,14 @@
               description = "My main domain.";
             };
           };
-
         };
       };
     };
+    # _globalsDefs = lib.mkOption {
+    #   type = lib.types.unspecified;
+    #   default = options.globals.definitions;
+    #   readOnly = true;
+    #   internal = true;
+    # };
   };
 }

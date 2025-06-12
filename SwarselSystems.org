@@ -371,19 +371,20 @@ In this section I am creating some attributes that define general concepts of my
       in
       {
         default = pkgs.mkShell {
+            # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+            #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
+            #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
+            # })}/lib/nix/plugins
           NIX_CONFIG = ''
-            plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-              buildInputs = [pkgs.nixVersions.latest pkgs.boost];
-              patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
-            })}/lib/nix/plugins
+            plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '';
           inherit (checks.pre-commit-check) shellHook;
 
           buildInputs = checks.pre-commit-check.enabledPackages;
           nativeBuildInputs = [
-  # (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
-            pkgs.nix
+            (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+            # pkgs.nix
             pkgs.home-manager
             pkgs.git
             pkgs.just
@@ -1275,7 +1276,7 @@ This machine mainly acts as an external sync helper. It manages the following th
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 #+begin_src nix :tangle hosts/nixos/sync/default.nix
-  { lib, primaryUser, ... }:
+  { lib, config, primaryUser, ... }:
   let
     sharedOptions = {
       isBtrfs = false;
@@ -1327,6 +1328,8 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     system.stateVersion = "23.11";
 
+
+    node.secretsDir = ./secrets;
     services = {
       nginx = {
         virtualHosts = {
@@ -4274,6 +4277,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             freshrss = lib.mkDefault true;
             jenkins = lib.mkDefault false;
             kanidm = lib.mkDefault true;
+            firefly = lib.mkDefault true;
           };
         };
       };
@@ -4293,7 +4297,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         modules = {
           general = lib.mkDefault true;
           nix-ld = lib.mkDefault true;
-        pii = lib.mkDefault true;
+          pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
           home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
@@ -4576,6 +4580,15 @@ TODO
       }
     );
 
+    # mkUser = name: {
+    #   config.users.users.${name} = {
+    #     group = name;
+    #     isSystemUser = true;
+    #   };
+
+    #   config.users.groups.${name} = {};
+    # };
+
     mkTrueOption = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -4849,29 +4862,30 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
 #+begin_src nix :tangle modules/nixos/common/sharedsetup.nix
   { lib, ... }:
   {
-    options.swarselsystems = {
-      withHomeManager = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      isSwap = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      swapSize = lib.mkOption {
-        type = lib.types.str;
-        default = "8G";
-      };
-      rootDisk = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      isCrypted = lib.mkEnableOption "uses full disk encryption";
-      initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
+    options = {
+      swarselsystems = {
+        withHomeManager = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+        };
+        isSwap = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+        };
+        swapSize = lib.mkOption {
+          type = lib.types.str;
+          default = "8G";
+        };
+        rootDisk = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+        };
+        isCrypted = lib.mkEnableOption "uses full disk encryption";
+        initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
 
-      isImpermanence = lib.mkEnableOption "use impermanence on this system";
-      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-
+        isImpermanence = lib.mkEnableOption "use impermanence on this system";
+        isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+      };
       globals = lib.mkOption {
         default = { };
         type = lib.types.submodule {
@@ -4895,10 +4909,15 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
                 description = "My main domain.";
               };
             };
-
           };
         };
       };
+      # _globalsDefs = lib.mkOption {
+      #   type = lib.types.unspecified;
+      #   default = options.globals.definitions;
+      #   readOnly = true;
+      #   internal = true;
+      # };
     };
   }
 #+end_src
@@ -7919,10 +7938,14 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
         gotenberg = {
           enable = true;
+          package = pkgs.stable.gotenberg;
           port = 3002;
           bindIP = "127.0.0.1";
+          timeout = "600s";
+          chromium.package = pkgs.stable.chromium;
         };
       };
+
 
       # Add secret to PAPERLESS_SOCIALACCOUNT_PROVIDERS
       systemd.services.paperless-web.script = lib.mkBefore ''
@@ -8623,7 +8646,7 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
         enable = true;
         virtualHost = "signpost.swarsel.win";
         baseUrl = "https://signpost.swarsel.win";
-        authType = "none";
+        authType = "form";
         dataDir = "/Vault/data/tt-rss";
         defaultUser = "Swarsel";
         passwordFile = config.sops.secrets.fresh.path;
@@ -8647,11 +8670,15 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
 
                   # pass information via X-User and X-Email headers to backend,
                   # requires running with --set-xauthrequest flag (done by NixOS)
-                  auth_request_set $user   $upstream_http_x_auth_request_preferred_username;
-                  # Set the email to our own domain in case user change their mail
-                  auth_request_set $email  "''${upstream_http_x_auth_request_preferred_username}@swarsel.win";
+                  auth_request_set $user   $upstream_http_x_auth_request_user;
+                  auth_request_set $email  $upstream_http_x_auth_request_email;
                   proxy_set_header X-User  $user;
                   proxy_set_header X-Email $email;
+                  proxy_set_header Remote-User  $user;
+
+                  # if you enabled --pass-access-token, this will pass the token to the backend
+                  auth_request_set $token  $upstream_http_x_auth_request_access_token;
+                  proxy_set_header X-Access-Token $token;
 
                   # if you enabled --cookie-refresh, this is needed for it to work with auth_request
                   auth_request_set $auth_cookie $upstream_http_set_cookie;
@@ -8980,6 +9007,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
               "nextcloud.admins" = { };
               "navidrome.access" = { };
               "freshrss.access" = { };
+              "firefly.access" = { };
             };
             persons = {
               swarsel = {
@@ -8994,6 +9022,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                   "nextcloud.access"
                   "freshrss.access"
                   "navidrome.access"
+                  "firefly.access"
                 ];
                 displayName = "Swarsel";
               };
@@ -9106,21 +9135,31 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                   originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
                   originLanding = "https://${oauth2ProxyDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
-                  scopeMaps."freshrss.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  scopeMaps."navidrome.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
+                  scopeMaps = {
+                    "freshrss.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "navidrome.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "firefly.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                  };
                   preferShortUsername = true;
                   claimMaps.groups = {
                     joinType = "array";
-                    valuesByGroup."freshrss.access" = [ "ttrss_access" ];
-                    valuesByGroup."navidrome.access" = [ "navidrome_access" ];
+                    valuesByGroup = {
+                      "freshrss.access" = [ "ttrss_access" ];
+                      "navidrome.access" = [ "navidrome_access" ];
+                      "firefly.access" = [ "firefly_access" ];
+                    };
                   };
                 };
               };
@@ -9216,6 +9255,117 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
               proxy_set_header X-Scheme                $scheme;
               proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
             '';
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Firefly-III
+
+#+begin_src nix :tangle modules/nixos/server/firefly-iii.nix
+  { lib, config, ... }:
+  let
+    cfg = config.services.firefly-iii;
+    fireflyDomain = "stonks.swarsel.win";
+    fireflyUser = "firefly-iii";
+  in
+  {
+    options.swarselsystems.modules.server.firefly = lib.mkEnableOption "enable firefly-iii on server";
+    config = lib.mkIf config.swarselsystems.modules.server.firefly {
+
+      users.users.firefly-iii = {
+        group = "nginx";
+        isSystemUser = true;
+      };
+
+      sops = {
+        secrets = {
+          "firefly-iii-app-key" = { owner = fireflyUser; group = "nginx"; mode = "0440"; };
+        };
+      };
+
+      services = {
+        firefly-iii = {
+          enable = true;
+          user = fireflyUser;
+          group = if cfg.enableNginx then "nginx" else fireflyUser;
+          dataDir = "/Vault/data/firefly-iii";
+          settings = {
+            TZ = config.repo.secrets.common.location.timezone;
+            APP_URL = "https://${fireflyDomain}";
+            APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
+            APP_ENV = "local";
+            DB_CONNECTION = "sqlite";
+            # AUTHENTICATION_GUARD = "remote_user_guard";
+            # AUTHENTICATION_GUARD_HEADER = "X-User";
+            # AUTHENTICATION_GUARD_EMAIL = "X-Email";
+          };
+          enableNginx = true;
+          virtualHost = fireflyDomain;
+        };
+
+        nginx = {
+          virtualHosts = {
+            "${fireflyDomain}" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              # main config is automatically added by nixos firefly config.
+              # hence, only provide certificate
+              locations = {
+                "/" = {
+                  extraConfig = ''
+                    auth_request /oauth2/auth;
+                    error_page 401 = /oauth2/sign_in;
+
+                    # pass information via X-User and X-Email headers to backend,
+                    # requires running with --set-xauthrequest flag (done by NixOS)
+                    auth_request_set $user   $upstream_http_x_auth_request_user;
+                    auth_request_set $email  $upstream_http_x_auth_request_email;
+                    proxy_set_header X-User  $user;
+                    proxy_set_header X-Email $email;
+
+                    # if you enabled --pass-access-token, this will pass the token to the backend
+                    auth_request_set $token  $upstream_http_x_auth_request_access_token;
+                    proxy_set_header X-Access-Token $token;
+
+                    # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                    auth_request_set $auth_cookie $upstream_http_set_cookie;
+                    add_header Set-Cookie $auth_cookie;
+                  '';
+                };
+                "/oauth2/" = {
+                  proxyPass = "http://oauth2-proxy";
+                  extraConfig = ''
+
+                    proxy_set_header X-Scheme                $scheme;
+                    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                  '';
+                };
+                "= /oauth2/auth" = {
+                  proxyPass = "http://oauth2-proxy/oauth2/auth";
+                  extraConfig = ''
+                    internal;
+
+                    proxy_set_header X-Scheme         $scheme;
+                    # nginx auth_request includes headers but not body
+                    proxy_set_header Content-Length   "";
+                    proxy_pass_request_body           off;
+                  '';
+                };
+                "/api" = {
+                  extraConfig = ''
+                    index index.php;
+                    try_files $uri $uri/ /index.php?$query_string;
+                    add_header Access-Control-Allow-Methods 'GET, POST, HEAD, OPTIONS';
+                    proxy_set_header X-User  "";
+                    proxy_set_header X-Email "";
+                  '';
+                };
+              };
+            };
           };
         };
       };

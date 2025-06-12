@@ -26,6 +26,15 @@ in
     }
   );
 
+  # mkUser = name: {
+  #   config.users.users.${name} = {
+  #     group = name;
+  #     isSystemUser = true;
+  #   };
+
+  #   config.users.groups.${name} = {};
+  # };
+
   mkTrueOption = lib.mkOption {
     type = lib.types.bool;
     default = true;
