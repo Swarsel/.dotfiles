@@ -22,31 +22,34 @@ in
           "winters" = {
             id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
           };
+          "moonside (@oracle)" = {
+            id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+          };
         };
         folders = {
           "Default Folder" = lib.mkDefault {
             path = "${homeDir}/Sync";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
             id = "default";
           };
           "Obsidian" = {
             path = "${homeDir}/Nextcloud/Obsidian";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
             path = "${homeDir}/Nextcloud/Org";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
             path = "${homeDir}/Vpn";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
             id = "hgp9s-fyq3p";
           };
           ".elfeed" = {
             path = "${homeDir}/.elfeed";
-            devices = [ "sync (@oracle)" "magicant" "winters" ];
+            devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
             id = "h7xbs-fs9v1";
           };
         };

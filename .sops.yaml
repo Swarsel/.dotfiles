@@ -11,6 +11,7 @@ keys:
     - &surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
     - &nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
     - &sync age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
+    - &moonside age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -21,28 +22,6 @@ creation_rules:
       - *toto
       - *surface
       - *nbl
-  - path_regex: hosts/nixos/nbl-imba-2/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *nbl
-  - path_regex: hosts/nixos/winters/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *winters
-  - path_regex: hosts/nixos/sync/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *sync
-  - path_regex: hosts/darwin/nbm-imba-166/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
   - path_regex: secrets/repo/[^/]+$
     key_groups:
     - pgp:
@@ -53,6 +32,7 @@ creation_rules:
       - *surface
       - *nbl
       - *sync
+      - *moonside
   - path_regex: secrets/certs/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -62,6 +42,13 @@ creation_rules:
       - *toto
       - *surface
       - *winters
+      - *moonside
+  - path_regex: secrets/moonside/secrets.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *moonside
   - path_regex: secrets/winters/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -80,3 +67,31 @@ creation_rules:
       - *swarsel
       age:
       - *sync
+  - path_regex: hosts/nixos/nbl-imba-2/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *nbl
+  - path_regex: hosts/nixos/winters/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *winters
+  - path_regex: hosts/nixos/sync/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *sync
+  - path_regex: hosts/nixos/moonside/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *moonside
+  - path_regex: hosts/darwin/nbm-imba-166/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel

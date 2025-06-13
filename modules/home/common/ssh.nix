@@ -26,6 +26,10 @@
           hostname = "193.122.53.173";
           user = "root";
         };
+        "moonside" = {
+          hostname = "130.61.238.239";
+          user = "root";
+        };
         "songdiver" = {
           hostname = "89.168.100.65";
           user = "ubuntu";

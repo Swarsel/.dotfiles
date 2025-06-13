@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
-  inherit (config.swarselsystems) homeDir isImpermanence isCrypted;
+  inherit (config.swarselsystems) isImpermanence isCrypted;
 in
 {
   options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
@@ -70,23 +70,20 @@ in
       hideMounts = true;
       directories =
         [
-          "/.cache/nix"
-          "/srv"
-          "/etc/nixos"
           "/etc/nix"
           "/etc/NetworkManager/system-connections"
+          "/var/lib/nixos"
+          {
+            directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+            mode = "1777";
+          }
           # "/etc/secureboot"
-          "${homeDir}/.dotfiles"
-          "/var/db/sudo"
-          "/var/cache"
-          "/var/lib"
         ];
 
       files = [
         "/etc/ssh/ssh_host_ed25519_key"
         "/etc/ssh/ssh_host_ed25519_key.pub"
-        "/etc/ssh/ssh_host_rsa_key"
-        "/etc/ssh/ssh_host_rsa_key.pub"
+        "/etc/machine-id"
       ];
     };
   };

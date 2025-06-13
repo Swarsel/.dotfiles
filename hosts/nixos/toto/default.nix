@@ -59,12 +59,13 @@ in
     {
       wallpaper = self + /wallpaper/lenovowp.png;
       isImpermanence = true;
-      isCrypted = true;
+      isCrypted = false;
       isSecureBoot = false;
-      isSwap = true;
+      isSwap = false;
       swapSize = "8G";
       # rootDisk = "/dev/nvme0n1";
-      rootDisk = "/dev/vda";
+      rootDisk = "/dev/sda";
+      # rootDisk = "/dev/vda";
     }
     sharedOptions;
 

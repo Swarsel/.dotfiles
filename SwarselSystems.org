@@ -1451,6 +1451,385 @@ This machine mainly acts as an external sync helper. It manages the following th
   }
 
 #+end_src
+**** Moonside (OCI)
+***** Main Configuration
+
+#+begin_src nix :tangle hosts/nixos/moonside/default.nix
+  { lib, config, primaryUser, ... }:
+  let
+    inherit (config.repo.secrets.common) workHostName;
+    inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+    sharedOptions = {
+      isBtrfs = true;
+      isLinux = true;
+    };
+  in
+  {
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+    ];
+
+    sops = {
+      age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
+      defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
+      secrets = {
+        wireguard-private-key = { };
+      };
+    };
+
+    boot = {
+      loader.systemd-boot.enable = true;
+      tmp.cleanOnBoot = true;
+    };
+
+    environment.etc."issue".text = "\4";
+
+    networking = {
+      nftables.enable = lib.mkForce false;
+      hostName = "moonside";
+      enableIPv6 = false;
+      domain = "subnet03291956.vcn03291956.oraclevcn.com";
+      firewall = {
+        allowedTCPPorts = [ 80 443 8384 ];
+      };
+      wireguard = {
+        enable = true;
+        interfaces = {
+          home-vpn = {
+            privateKeyFile = config.sops.secrets.wireguard-private-key.path;
+            ips = [ "192.168.3.4/24" ];
+            peers = [
+              {
+                publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+                name = "moonside";
+                persistentKeepalive = 25;
+                endpoint = "${config.repo.secrets.common.ipv4}:51820";
+                allowedIPs = [ "192.168.3.0/24" ];
+              }
+            ];
+          };
+        };
+      };
+    };
+
+    hardware = {
+      enableAllFirmware = lib.mkForce false;
+    };
+
+    system.stateVersion = "23.11";
+
+    node.secretsDir = ./secrets;
+    services = {
+      nginx = {
+        virtualHosts = {
+          "syncthing.swarsel.win" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://localhost:8384/";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+            };
+          };
+        };
+      };
+
+      syncthing = {
+        enable = true;
+        guiAddress = "0.0.0.0:8384";
+        openDefaultPorts = true;
+        relay.enable = false;
+        settings = {
+          urAccepted = -1;
+          devices = {
+            "magicant" = {
+              id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
+            };
+            "winters" = {
+              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
+            };
+            "${workHostName}" = {
+              id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
+            };
+            "${dev1}" = {
+              id = "OCCDGDF-IPZ6HHQ-5SSLQ3L-MSSL5ZW-IX5JTAM-PW4PYEK-BRNMJ7E-Q7YDMA7";
+            };
+            "${dev2}" = {
+              id = "LPCFIIB-ENUM2V6-F2BWVZ6-F2HXCL2-BSBZXUF-TIMNKYB-7CATP7H-YU5D3AH";
+            };
+            "${dev3}" = {
+              id = "LAUT2ZP-KEZY35H-AHR3ARD-URAREJI-2B22P5T-PIMUNWW-PQRDETU-7KIGNQR";
+            };
+          };
+          folders = {
+            "Default Folder" = lib.mkForce {
+              path = "/sync/Sync";
+              type = "receiveonly";
+              versioning = null;
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "default";
+            };
+            "Obsidian" = {
+              path = "/sync/Obsidian";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "yjvni-9eaa7";
+            };
+            "Org" = {
+              path = "/sync/Org";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "a7xnl-zjj3d";
+            };
+            "Vpn" = {
+              path = "/sync/Vpn";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" "${workHostName}" ];
+              id = "hgp9s-fyq3p";
+            };
+            ".elfeed" = {
+              path = "/sync/elfeed";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" ];
+              id = "h7xbs-fs9v1";
+            };
+            "Documents" = {
+              path = "/sync/Documents";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "2";
+              };
+              devices = [ "winters" ];
+              id = "hgr3d-pfu3w";
+            };
+            "runandbun" = {
+              path = "/sync/runandbun";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "5";
+              };
+              devices = [ "winters" "magicant" ];
+              id = "kwnql-ev64v";
+            };
+            "${loc1}" = {
+              path = "/sync/${loc1}";
+              type = "receiveonly";
+              versioning = {
+                type = "simple";
+                params.keep = "3";
+              };
+              devices = [ dev1 dev2 dev3 ];
+              id = "5gsxv-rzzst";
+            };
+          };
+        };
+      };
+    };
+
+    swarselsystems = lib.recursiveUpdate
+      {
+        flakePath = "/home/swarsel/.dotfiles";
+        isImpermanence = true;
+        isSecureBoot = false;
+        isCrypted = false;
+        isSwap = false;
+        rootDisk = "/dev/sda";
+        profiles = {
+          server.moonside = true;
+        };
+      }
+      sharedOptions;
+
+    home-manager.users."${primaryUser}" = {
+      home.stateVersion = lib.mkForce "23.11";
+      swarselsystems = lib.recursiveUpdate
+        { }
+        sharedOptions;
+    };
+
+  }
+
+#+end_src
+***** hardware-configuration
+
+      loader.grub = {
+        efiSupport = true;
+        efiInstallAsRemovable = true;
+        device = "nodev";
+      };
+#+begin_src nix :tangle hosts/nixos/moonside/hardware-configuration.nix
+  { lib, modulesPath, ... }:
+  {
+    imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
+
+    boot = {
+      initrd = {
+        availableKernelModules = [ "xhci_pci" "virtio_pci" "virtio_scsi" "usbhid" ];
+        kernelModules = [  ];
+      };
+      kernelModules = [ ];
+      extraModulePackages = [ ];
+    };
+
+    nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
+  }
+#+end_src
+***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
+:END:
+
+#+begin_src nix :tangle hosts/nixos/moonside/disk-config.nix
+  # NOTE: ... is needed because dikso passes diskoFile
+  { lib
+  , config
+  , rootDisk
+  , ...
+  }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+            };
+          };
+        };
+        disk1 = {
+          type = "disk";
+          device = "/dev/sdb";
+          content = {
+            type = "gpt";
+            partitions = {
+              sync = {
+                size = "100%";
+                content = {
+                  type = "btrfs";
+                  extraArgs = [ "-L" "sync" "-f" ]; # force overwrite
+                  subvolumes = {
+                    "/sync" = {
+                      mountpoint = "/sync";
+                      mountOptions = [
+                        "subvol=root"
+                        "compress=zstd"
+                        "noatime"
+                      ];
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  }
+
+
+#+end_src
 *** Utility hosts
 :PROPERTIES:
 :CUSTOM_ID: h:89ce533d-4856-4988-b456-0951d4453db8
@@ -1528,12 +1907,13 @@ This is a slim setup for developing base configuration. I do not track the hardw
       {
         wallpaper = self + /wallpaper/lenovowp.png;
         isImpermanence = true;
-        isCrypted = true;
+        isCrypted = false;
         isSecureBoot = false;
-        isSwap = true;
+        isSwap = false;
         swapSize = "8G";
         # rootDisk = "/dev/nvme0n1";
-        rootDisk = "/dev/vda";
+        rootDisk = "/dev/sda";
+        # rootDisk = "/dev/vda";
       }
       sharedOptions;
 
@@ -2925,7 +3305,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
   $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-  $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+  $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
   # __________________________
 
   if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
@@ -4246,7 +4626,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       swarselsystems = {
         modules = {
           general = lib.mkDefault true;
-          nix-ld = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
           home-managerExtra = lib.mkDefault true;
@@ -4308,11 +4687,41 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
             sops = lib.mkDefault true;
-            nfs = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
             forgejo = lib.mkDefault true;
             ankisync = lib.mkDefault true;
+          };
+        };
+      };
+    };
+
+  }
+
+#+end_src
+***** Moonside
+
+#+begin_src nix :tangle profiles/nixos/moonside/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.server.moonside = lib.mkEnableOption "is this a moonside server";
+    config = lib.mkIf config.swarselsystems.profiles.server.moonside {
+      swarselsystems = {
+        modules = {
+          general = lib.mkDefault true;
+          pii = lib.mkDefault true;
+          home-manager = lib.mkDefault true;
+          home-managerExtra = lib.mkDefault true;
+          xserver = lib.mkDefault true;
+          time = lib.mkDefault true;
+          users = lib.mkDefault true;
+          impermanence = lib.mkDefault true;
+          server = {
+            general = lib.mkDefault true;
+            packages = lib.mkDefault true;
+            sops = lib.mkDefault true;
+            nginx = lib.mkDefault true;
+            ssh = lib.mkDefault true;
           };
         };
       };
@@ -4806,6 +5215,7 @@ in
 
   # Decrypt only if necessary
   if [[ ! -e $out ]]; then
+      echo "authenticate:"
       agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/sops || sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key)
       SOPS_AGE_KEY="$agekey" sops decrypt --output "$out" "$file"
   fi
@@ -5962,31 +6372,34 @@ Here I disable global completion to prevent redundant compinit calls and cache i
             "winters" = {
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
+            "moonside (@oracle)" = {
+              id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+            };
           };
           folders = {
             "Default Folder" = lib.mkDefault {
               path = "${homeDir}/Sync";
-              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
               id = "default";
             };
             "Obsidian" = {
               path = "${homeDir}/Nextcloud/Obsidian";
-              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
               path = "${homeDir}/Nextcloud/Org";
-              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
               path = "${homeDir}/Vpn";
-              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
               id = "hgp9s-fyq3p";
             };
             ".elfeed" = {
               path = "${homeDir}/.elfeed";
-              devices = [ "sync (@oracle)" "magicant" "winters" ];
+              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
               id = "h7xbs-fs9v1";
             };
           };
@@ -6429,7 +6842,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
   { config, lib, ... }:
   let
     mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
-    inherit (config.swarselsystems) homeDir isImpermanence isCrypted;
+    inherit (config.swarselsystems) isImpermanence isCrypted;
   in
   {
     options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
@@ -6498,23 +6911,20 @@ Normally, doing that also resets the lecture that happens on the first use of =s
         hideMounts = true;
         directories =
           [
-            "/.cache/nix"
-            "/srv"
-            "/etc/nixos"
             "/etc/nix"
             "/etc/NetworkManager/system-connections"
+            "/var/lib/nixos"
+            {
+              directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+              mode = "1777";
+            }
             # "/etc/secureboot"
-            "${homeDir}/.dotfiles"
-            "/var/db/sudo"
-            "/var/cache"
-            "/var/lib"
           ];
 
         files = [
           "/etc/ssh/ssh_host_ed25519_key"
           "/etc/ssh/ssh_host_ed25519_key.pub"
-          "/etc/ssh/ssh_host_rsa_key"
-          "/etc/ssh/ssh_host_rsa_key.pub"
+          "/etc/machine-id"
         ];
       };
     };
@@ -6886,10 +7296,13 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         gnupg
         nix-index
         nvd
+        nix-output-monitor
         ssh-to-age
         git
         emacs
         vim
+        sops
+        swarsel-deploy
       ];
     };
   }
@@ -10030,10 +10443,13 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
             "winters" = {
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
+            "moonside (@oracle)" = {
+              id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+            };
             folders = {
               "Documents" = {
                 path = "${homeDir}/Documents";
-                devices = [ "magicant" "winters" ];
+                devices = [ "magicant" "winters" "moonside (@oracle)" ];
                 id = "hgr3d-pfu3w";
               };
             };
@@ -10908,6 +11324,10 @@ It is very convenient to have SSH aliases in place for machines that I use. This
           };
           "sync" = {
             hostname = "193.122.53.173";
+            user = "root";
+          };
+          "moonside" = {
+            hostname = "130.61.238.239";
             user = "root";
           };
           "songdiver" = {

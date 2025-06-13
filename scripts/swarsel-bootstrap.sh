@@ -285,7 +285,7 @@ sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
 $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-$ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+$ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
 # __________________________
 
 if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then

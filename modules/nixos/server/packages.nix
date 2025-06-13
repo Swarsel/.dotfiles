@@ -6,10 +6,13 @@
       gnupg
       nix-index
       nvd
+      nix-output-monitor
       ssh-to-age
       git
       emacs
       vim
+      sops
+      swarsel-deploy
     ];
   };
 }
