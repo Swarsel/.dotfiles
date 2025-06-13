@@ -84,24 +84,9 @@ in
             "freshrss.access" = { };
             "firefly.access" = { };
           };
-          persons = {
-            swarsel = {
-              present = true;
-              mailAddresses = [ "leon@swarsel.win" ];
-              legalName = "Leon Schwarzäugl";
-              groups = [
-                "immich.access"
-                "paperless.access"
-                "grafana.access"
-                "forgejo.access"
-                "nextcloud.access"
-                "freshrss.access"
-                "navidrome.access"
-                "firefly.access"
-              ];
-              displayName = "Swarsel";
-            };
-          };
+
+          inherit (config.repo.secrets.local) persons;
+
           systems = {
             oauth2 = {
               immich = {
