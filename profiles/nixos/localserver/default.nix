@@ -37,6 +37,7 @@
           jenkins = lib.mkDefault false;
           kanidm = lib.mkDefault true;
           firefly = lib.mkDefault true;
+          koillection = lib.mkDefault true;
         };
       };
     };
