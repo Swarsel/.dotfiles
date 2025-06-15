@@ -39,6 +39,12 @@ in
     ];
   };
 
+  topology.self.interfaces.wg = {
+    addresses = [ "192.168.3.4" ];
+    renderer.hidePhysicalConnections = true;
+    virtual = true;
+    type = "wireguard";
+  };
 
   networking = {
     nftables.enable = lib.mkForce false;
@@ -80,26 +86,13 @@ in
   services = {
     nginx = {
       virtualHosts = {
-        # "newway.swarsel.win" = {
-        #   enableACME = true;
-        #   forceSSL = true;
-        #   acmeRoot = null;
-        #   locations = {
-        #     "/" = {
-        #       proxyPass = "http://192.168.1.2:8080";
-        #       extraConfig = ''
-        #         client_max_body_size 0;
-        #       '';
-        #     };
-        #   };
-        # };
         "syncthing.swarsel.win" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:8384/";
+              proxyPass = "http://localhost:8384";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -221,6 +214,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
       flakePath = "/home/swarsel/.dotfiles";
       isImpermanence = true;
       isSecureBoot = false;

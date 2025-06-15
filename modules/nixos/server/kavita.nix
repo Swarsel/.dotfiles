@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ self, lib, config, pkgs, ... }:
 let
   serviceName = "kavita";
   serviceUser = "kavita";
@@ -19,6 +19,12 @@ in
     sops.secrets.kavita = { owner = serviceUser; };
 
     networking.firewall.allowedTCPPorts = [ 8080 ];
+
+    topology.self.services.kavita = {
+      name = "Kavita";
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/kavita.png";
+    };
 
     services.kavita = {
       enable = true;

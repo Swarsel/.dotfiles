@@ -22,6 +22,7 @@ in
   pkgsFor = lib.genAttrs (import systems) (system:
     import inputs.nixpkgs {
       inherit system;
+      overlays = [ self.overlays.default ];
       config.allowUnfree = true;
     }
   );
@@ -69,43 +70,45 @@ in
             _module.args.primaryUser = linuxUser;
           }
         ] ++
-        (if (host == "iso") then [ ] else
-        ([
-          # put nixos imports here that are for all servers and normal hosts
+        (if (host == "iso") then [
           inputs.nix-topology.nixosModules.default
-          "${self}/modules/${type}/common"
-          inputs.stylix.nixosModules.stylix
-          inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ] ++ (if (type == "nixos") then [
-          inputs.home-manager.nixosModules.home-manager
-          "${self}/profiles/nixos"
-          "${self}/modules/nixos/server"
-          "${self}/modules/nixos/optional"
-          {
-            home-manager.users."${linuxUser}".imports = [
-              # put home-manager imports here that are for all normal hosts
-              "${self}/modules/home/common"
-              "${self}/modules/home/server"
-              "${self}/modules/home/optional"
-              "${self}/profiles/home"
-            ];
-          }
-        ] else [
-          # put nixos imports here that are for darwin hosts
-          "${self}/modules/darwin/nixos/common"
-          "${self}/profiles/darwin"
-          inputs.home-manager.darwinModules.home-manager
-          {
-            home-manager.users."${macUser}".imports = [
-              # put home-manager imports here that are for darwin hosts
-              "${self}/modules/darwin/home"
-              "${self}/modules/home/server"
-              "${self}/modules/home/optional"
-              "${self}/profiles/home"
-            ];
-          }
-        ])
-        ));
+        ] else
+          ([
+            # put nixos imports here that are for all servers and normal hosts
+            inputs.nix-topology.nixosModules.default
+            "${self}/modules/${type}/common"
+            inputs.stylix.nixosModules.stylix
+            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+          ] ++ (if (type == "nixos") then [
+            inputs.home-manager.nixosModules.home-manager
+            "${self}/profiles/nixos"
+            "${self}/modules/nixos/server"
+            "${self}/modules/nixos/optional"
+            {
+              home-manager.users."${linuxUser}".imports = [
+                # put home-manager imports here that are for all normal hosts
+                "${self}/modules/home/common"
+                "${self}/modules/home/server"
+                "${self}/modules/home/optional"
+                "${self}/profiles/home"
+              ];
+            }
+          ] else [
+            # put nixos imports here that are for darwin hosts
+            "${self}/modules/darwin/nixos/common"
+            "${self}/profiles/darwin"
+            inputs.home-manager.darwinModules.home-manager
+            {
+              home-manager.users."${macUser}".imports = [
+                # put home-manager imports here that are for darwin hosts
+                "${self}/modules/darwin/home"
+                "${self}/modules/home/server"
+                "${self}/modules/home/optional"
+                "${self}/profiles/home"
+              ];
+            }
+          ])
+          ));
       };
   };
 

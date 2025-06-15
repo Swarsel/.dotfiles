@@ -1,4 +1,7 @@
 { lib, config, ... }:
+let
+  serviceDomain = "synki.swarsel.win";
+in
 {
   options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
   config = lib.mkIf config.swarselsystems.modules.server.ankisync {
@@ -6,6 +9,11 @@
     networking.firewall.allowedTCPPorts = [ 22701 ];
 
     sops.secrets.swarsel = { owner = "root"; };
+
+    topology.self.services.anki = {
+      name = lib.mkForce "Anki Sync Server";
+      info = "https://${serviceDomain}";
+    };
 
     services.anki-sync-server = {
       enable = true;
@@ -22,7 +30,7 @@
 
     services.nginx = {
       virtualHosts = {
-        "synki.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;

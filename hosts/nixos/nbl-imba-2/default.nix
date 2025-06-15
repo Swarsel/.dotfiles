@@ -47,6 +47,7 @@ in
     # home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {
+        info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
         isLaptop = true;
         isNixos = true;
         isSecondaryGpu = true;

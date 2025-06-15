@@ -1,4 +1,7 @@
-{ pkgs, lib, config, ... }:
+{ self, pkgs, lib, config, ... }:
+let
+  serviceDomain = "store.swarsel.win";
+in
 {
   options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
   config = lib.mkIf config.swarselsystems.modules.server.transmission {
@@ -54,6 +57,18 @@
     environment.systemPackages = with pkgs; [
       docker
     ];
+
+    topology.self.services = {
+      radarr.info = "https://${serviceDomain}/radarr";
+      readarr = {
+        name = "Readarr";
+        info = "https://${serviceDomain}/readarr";
+        icon = "${self}/topology/images/readarr.png";
+      };
+      sonarr.info = "https://${serviceDomain}/sonarr";
+      lidarr.info = "https://${serviceDomain}/lidarr";
+      prowlarr.info = "https://${serviceDomain}/prowlarr";
+    };
 
     services = {
       radarr = {
