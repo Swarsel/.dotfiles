@@ -1,20 +1,23 @@
 { pkgs, lib, config, ... }:
 let
-  nextcloudDomain = "stash.swarsel.win";
+  serviceDomain = "stash.swarsel.win";
+  serviceUser = "nextcloud";
+  serviceGroup = serviceUser;
+  serviceName = "nextcloud";
 in
 {
-  options.swarselsystems.modules.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
-  config = lib.mkIf config.swarselsystems.modules.server.nextcloud {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
     sops.secrets = {
       nextcloudadminpass = {
-        owner = "nextcloud";
-        group = "nextcloud";
+        owner = serviceUser;
+        group = serviceGroup;
         mode = "0440";
       };
       kanidm-nextcloud-client = {
-        owner = "nextcloud";
-        group = "nextcloud";
+        owner = serviceUser;
+        group = serviceGroup;
         mode = "0440";
       };
     };
@@ -22,8 +25,12 @@ in
     services = {
       nextcloud = {
         enable = true;
+        settings = {
+          trusted_proxies = [ "0.0.0.0" ];
+          overwriteprotocol = "https";
+        };
         package = pkgs.nextcloud31;
-        hostName = nextcloudDomain;
+        hostName = serviceDomain;
         home = "/Vault/apps/nextcloud";
         datadir = "/Vault/data/nextcloud";
         https = true;
@@ -39,19 +46,28 @@ in
           dbtype = "sqlite";
         };
       };
+    };
 
-      nginx = {
-        virtualHosts = {
-          "${nextcloudDomain}" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            # config is automatically added by nixos nextcloud config.
-            # hence, only provide certificate
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:80" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+            };
           };
         };
       };
     };
   };
-
 }

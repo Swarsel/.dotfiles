@@ -1,17 +1,22 @@
 { lib, config, ... }:
+let
+  serviceDomain = "shots.swarsel.win";
+  servicePort = 3001;
+  serviceUser = "immich";
+  serviceName = "immich";
+in
 {
-  options.swarselsystems.modules.server.immich = lib.mkEnableOption "enable immich on server";
-  config = lib.mkIf config.swarselsystems.modules.server.immich {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    users.users.immich = {
+    users.users."${serviceUser}" = {
       extraGroups = [ "video" "render" "users" ];
     };
 
-    # sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
-
     services.immich = {
       enable = true;
-      port = 3001;
+      host = "0.0.0.0";
+      port = servicePort;
       openFirewall = true;
       mediaLocation = "/Vault/Eternor/Immich";
       environment = {
@@ -19,16 +24,24 @@
       };
     };
 
+    networking.firewall.allowedTCPPorts = [ 3001 ];
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
-        "shots.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:3001";
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size    0;
 

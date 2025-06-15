@@ -1,30 +1,39 @@
 { lib, pkgs, config, ... }:
+let
+  serviceDomain = "scan.swarsel.win";
+  servicePort = 28981;
+  serviceUser = "paperless";
+  serviceGroup = serviceUser;
+  serviceName = "paperless";
+in
 {
-  options.swarselsystems.modules.server.paperless = lib.mkEnableOption "enable paperless on server";
-  config = lib.mkIf config.swarselsystems.modules.server.paperless {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    users.users.paperless = {
+    users.users."${serviceUser}" = {
       extraGroups = [ "users" ];
     };
 
     sops.secrets = {
-      paperless_admin = { owner = "paperless"; };
+      paperless_admin = { owner = serviceUser; };
       kanidm-paperless-client = {
-        owner = "paperless";
-        group = "paperless";
+        owner = serviceUser;
+        group = serviceGroup;
         mode = "0440";
       };
     };
+
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     services = {
       paperless = {
         enable = true;
         mediaDir = "/Vault/Eternor/Paperless";
         dataDir = "/Vault/data/paperless";
-        user = "paperless";
-        port = 28981;
+        user = serviceUser;
+        port = servicePort;
         passwordFile = config.sops.secrets.paperless_admin.path;
-        address = "127.0.0.1";
+        address = "0.0.0.0";
         settings = {
           PAPERLESS_OCR_LANGUAGE = "deu+eng";
           PAPERLESS_URL = "https://scan.swarsel.win";
@@ -84,15 +93,22 @@
                      )
     '';
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
-        "scan.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:28981";
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size    0;
                 proxy_connect_timeout   300;

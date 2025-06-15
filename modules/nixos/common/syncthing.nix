@@ -23,7 +23,7 @@ in
             id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
           };
           "moonside (@oracle)" = {
-            id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+            id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
           };
         };
         folders = {

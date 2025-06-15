@@ -1,7 +1,14 @@
 { pkgs, config, lib, ... }:
+let
+  serviceDomain = "sound.swarsel.win";
+  servicePort = 4040;
+  serviceName = "navidrome";
+  serviceUser = "navidrome";
+  serviceGroup = serviceUser;
+in
 {
-  options.swarselsystems.modules.server.navidrome = lib.mkEnableOption "enable navidrome on server";
-  config = lib.mkIf config.swarselsystems.modules.server.navidrome {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
     environment.systemPackages = with pkgs; [
       pciutils
       alsa-utils
@@ -10,16 +17,16 @@
 
     users = {
       groups = {
-        navidrome = {
+        "$(serviceGroup}" = {
           gid = 61593;
         };
       };
 
       users = {
-        navidrome = {
+        "${serviceUser}" = {
           isSystemUser = true;
           uid = 61593;
-          group = "navidrome";
+          group = serviceGroup;
           extraGroups = [ "audio" "utmp" "users" "pipewire" ];
         };
       };
@@ -37,8 +44,8 @@
       openFirewall = true;
       settings = {
         LogLevel = "debug";
-        Address = "127.0.0.1";
-        Port = 4040;
+        Address = "0.0.0.0";
+        Port = servicePort;
         MusicFolder = "/Vault/Eternor/Music";
         PlaylistsPath = "./Playlists";
         EnableSharing = true;
@@ -70,15 +77,22 @@
       };
     };
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
-        "sound.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:4040";
+              proxyPass = "http://navidrome";
               proxyWebsockets = true;
               extraConfig = ''
                 auth_request /oauth2/auth;
@@ -125,7 +139,7 @@
               '';
             };
             "/share" = {
-              proxyPass = "http://localhost:4040";
+              proxyPass = "http://navidrome";
               proxyWebsockets = true;
               extraConfig = ''
                 proxy_redirect          http:// https://;
@@ -139,7 +153,7 @@
               '';
             };
             "/rest" = {
-              proxyPass = "http://localhost:4040";
+              proxyPass = "http://navidrome";
               proxyWebsockets = true;
               extraConfig = ''
                 proxy_redirect          http:// https://;

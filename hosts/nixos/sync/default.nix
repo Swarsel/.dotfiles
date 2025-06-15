@@ -51,7 +51,6 @@ in
   system.stateVersion = "23.11";
 
 
-  node.secretsDir = ./secrets;
   services = {
     nginx = {
       virtualHosts = {

@@ -54,6 +54,10 @@ in
       systemFunc {
         specialArgs = { inherit inputs outputs lib self; };
         modules = [
+          {
+            node.name = host;
+            node.secretsDir = ../hosts/${type}/${host}/secrets;
+          }
           # put inports here that are for all hosts
           inputs.disko.nixosModules.disko
           inputs.sops-nix.nixosModules.sops

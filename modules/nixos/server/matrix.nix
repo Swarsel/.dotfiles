@@ -1,6 +1,13 @@
 { config, lib, pkgs, sops, ... }:
 let
   matrixDomain = "swatrix.swarsel.win";
+  serviceName = "matrix";
+  synapsePort = 8008;
+  synapseUser = "matrix-synapse";
+  whatsappPort = 29318;
+  telegramPort = 29317;
+  signalPort = 29328;
+
   baseUrl = "https://${matrixDomain}";
   clientConfig."m.homeserver".base_url = baseUrl;
   serverConfig."m.server" = "${matrixDomain}:443";
@@ -11,8 +18,8 @@ let
   '';
 in
 {
-  options.swarselsystems.modules.server.matrix = lib.mkEnableOption "enable matrix on server";
-  config = lib.mkIf config.swarselsystems.modules.server.matrix {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
     environment.systemPackages = with pkgs; [
       matrix-synapse
       lottieconverter
@@ -21,24 +28,24 @@ in
 
     sops = {
       secrets = {
-        matrixsharedsecret = { owner = "matrix-synapse"; };
-        mautrixtelegram_as = { owner = "matrix-synapse"; };
-        mautrixtelegram_hs = { owner = "matrix-synapse"; };
-        mautrixtelegram_api_id = { owner = "matrix-synapse"; };
-        mautrixtelegram_api_hash = { owner = "matrix-synapse"; };
+        matrixsharedsecret = { owner = synapseUser; };
+        mautrixtelegram_as = { owner = synapseUser; };
+        mautrixtelegram_hs = { owner = synapseUser; };
+        mautrixtelegram_api_id = { owner = synapseUser; };
+        mautrixtelegram_api_hash = { owner = synapseUser; };
       };
       templates = {
         "matrix_user_register.sh".content = ''
-          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString synapsePort}
         '';
         matrixshared = {
-          owner = "matrix-synapse";
+          owner = synapseUser;
           content = ''
             registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
           '';
         };
         mautrixtelegram = {
-          owner = "matrix-synapse";
+          owner = synapseUser;
           content = ''
             MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
             MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
@@ -48,6 +55,8 @@ in
         };
       };
     };
+
+    networking.firewall.allowedTCPPorts = [ 8008 8448 ];
 
     systemd = {
       timers."restart-bridges" = {
@@ -118,9 +127,9 @@ in
           public_baseurl = "https://${matrixDomain}";
           listeners = [
             {
-              port = 8008;
+              port = synapsePort;
               bind_addresses = [
-                "127.0.0.1"
+                "0.0.0.0"
                 # "::1"
               ];
               type = "http";
@@ -146,13 +155,13 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:8008";
+            address = "http://localhost:${builtins.toString synapsePort}";
             domain = matrixDomain;
           };
           appservice = {
-            address = "http://localhost:29317";
-            hostname = "localhost";
-            port = "29317";
+            address = "http://localhost:${builtins.toString telegramPort}";
+            hostname = "0.0.0.0";
+            port = telegramPort;
             provisioning.enabled = true;
             id = "telegram";
             # ephemeral_events = true; # not needed due to double puppeting
@@ -192,13 +201,13 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:8008";
+            address = "http://localhost:${builtins.toString synapsePort}";
             domain = matrixDomain;
           };
           appservice = {
-            address = "http://localhost:29318";
-            hostname = "127.0.0.1";
-            port = 29318;
+            address = "http://localhost:${builtins.toString whatsappPort}";
+            hostname = "0.0.0.0";
+            port = whatsappPort;
             database = {
               type = "postgres";
               uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
@@ -239,14 +248,13 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:8008";
+            address = "http://localhost:${builtins.toString synapsePort}";
             domain = matrixDomain;
           };
           appservice = {
-
-            address = "http://localhost:29328";
-            hostname = "127.0.0.1";
-            port = 29328;
+            address = "http://localhost:${builtins.toString signalPort}";
+            hostname = "0.0.0.0";
+            port = signalPort;
             database = {
               type = "postgres";
               uri = "postgresql:///mautrix-signal?host=/run/postgresql";
@@ -265,61 +273,65 @@ in
           };
         };
       };
+    };
 
-      # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
-      # messages out after a while.
+    # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+    # messages out after a while.
 
 
-      nginx = {
-        virtualHosts = {
-          "swatrix.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            listen = [
-              {
-                addr = "0.0.0.0";
-                port = 8448;
-                ssl = true;
-                extraParameters = [
-                  "default_server"
-                ];
-              }
-              {
-                addr = "[::0]";
-                port = 8448;
-                ssl = true;
-                extraParameters = [
-                  "default_server"
-                ];
-              }
-              {
-                addr = "0.0.0.0";
-                port = 443;
-                ssl = true;
-              }
-              {
-                addr = "[::0]";
-                port = 443;
-                ssl = true;
-              }
-            ];
-            locations = {
-              "~ ^(/_matrix|/_synapse/client)" = {
-                # proxyPass = "http://localhost:8008";
-                proxyPass = "http://localhost:8008";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-              "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
-              "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString synapsePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${matrixDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          listen = [
+            {
+              addr = "0.0.0.0";
+              port = 8448;
+              ssl = true;
+              extraParameters = [
+                "default_server"
+              ];
+            }
+            {
+              addr = "[::0]";
+              port = 8448;
+              ssl = true;
+              extraParameters = [
+                "default_server"
+              ];
+            }
+            {
+              addr = "0.0.0.0";
+              port = 443;
+              ssl = true;
+            }
+            {
+              addr = "[::0]";
+              port = 443;
+              ssl = true;
+            }
+          ];
+          locations = {
+            "~ ^(/_matrix|/_synapse/client)" = {
+              proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
             };
+            "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+            "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
           };
         };
       };
     };
   };
-
-
 }

@@ -22,7 +22,6 @@ in
   ];
 
 
-  node.secretsDir = ./secrets;
   swarselsystems = lib.recursiveUpdate
     {
       firewall = lib.mkForce true;

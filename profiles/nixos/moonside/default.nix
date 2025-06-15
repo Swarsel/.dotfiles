@@ -18,6 +18,7 @@
           sops = lib.mkDefault true;
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
+          oauth2Proxy = lib.mkDefault true;
         };
       };
     };
