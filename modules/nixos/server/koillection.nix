@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
 let
   serviceDomain = "swag.swarsel.win";
   serviceUser = "koillection";
@@ -16,6 +16,12 @@ in
     sops.secrets = {
       koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
       koillection-env-file = { };
+    };
+
+    topology.self.services.koillection = {
+      name = "Koillection";
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/koillection.png";
     };
 
     virtualisation.oci-containers.containers = {

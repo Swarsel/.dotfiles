@@ -72,6 +72,8 @@
       zls
       ansible-language-server
 
+      elk-to-svg
+
     ];
 
     nixpkgs.config.permittedInsecurePackages = [

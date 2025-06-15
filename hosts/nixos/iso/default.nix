@@ -10,6 +10,7 @@ in
 
     "${self}/modules/iso/minimal.nix"
     "${self}/modules/nixos/common/sharedsetup.nix"
+    "${self}/modules/nixos/common/topology.nix"
     "${self}/modules/home/common/sharedsetup.nix"
 
     inputs.home-manager.nixosModules.home-manager
@@ -33,7 +34,10 @@ in
     };
   };
   config = {
-    node.name = "drugstore";
+    node.name = lib.mkForce "drugstore";
+    swarselsystems = {
+      info = "~SwarselSystems~ installer ISO";
+    };
     home-manager.users."${primaryUser}" = {
       home = {
         stateVersion = "23.05";
@@ -43,7 +47,9 @@ in
           };
         };
       };
-      swarselsystems.modules.general = lib.mkForce true;
+      swarselsystems = {
+        modules.general = lib.mkForce true;
+      };
     };
     home-manager.users.root.home = {
       stateVersion = "23.05";

@@ -563,8 +563,7 @@ Nix on Android also demands an own flake output, which is provided here.
   lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
     inherit pkgs;
     modules = [
-      # Your own file to define global topology. Works in principle like a nixos module but uses different options.
-      # ./topology.nix
+      "${self}/topology"
       { inherit (self) nixosConfigurations; }
     ];
   });
@@ -836,6 +835,7 @@ My work machine. Built for more security, this is the gold standard of my config
 
     swarselsystems = lib.recursiveUpdate
       {
+        info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
         firewall = lib.mkForce true;
         wallpaper = self + /wallpaper/lenovowp.png;
         hasBluetooth = true;
@@ -1093,6 +1093,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselsystems = lib.recursiveUpdate
       {
+        info = "ASRock J4105-ITX, 32GB RAM";
         isImpermanence = false;
         isSecureBoot = true;
         isCrypted = true;
@@ -1336,7 +1337,7 @@ This machine mainly acts as an external sync helper. It manages the following th
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8384/";
+                proxyPass = "http://localhost:8384";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1428,6 +1429,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     swarselsystems = lib.recursiveUpdate
       {
+        info = "VM.Standard.E2.1.Micro";
         flakePath = "/root/.dotfiles";
         isImpermanence = false;
         isSecureBoot = false;
@@ -1493,6 +1495,12 @@ This machine mainly acts as an external sync helper. It manages the following th
       ];
     };
 
+    topology.self.interfaces.wg = {
+      addresses = ["192.168.3.4"];
+      renderer.hidePhysicalConnections = true;
+      virtual = true;
+      type = "wireguard";
+    };
 
     networking = {
       nftables.enable = lib.mkForce false;
@@ -1534,26 +1542,13 @@ This machine mainly acts as an external sync helper. It manages the following th
     services = {
       nginx = {
         virtualHosts = {
-          # "newway.swarsel.win" = {
-          #   enableACME = true;
-          #   forceSSL = true;
-          #   acmeRoot = null;
-          #   locations = {
-          #     "/" = {
-          #       proxyPass = "http://192.168.1.2:8080";
-          #       extraConfig = ''
-          #         client_max_body_size 0;
-          #       '';
-          #     };
-          #   };
-          # };
           "syncthing.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8384/";
+                proxyPass = "http://localhost:8384";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -1675,6 +1670,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     swarselsystems = lib.recursiveUpdate
       {
+        info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
         flakePath = "/home/swarsel/.dotfiles";
         isImpermanence = true;
         isSecureBoot = false;
@@ -1929,6 +1925,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
     swarselsystems = lib.recursiveUpdate
       {
+        info = "~SwarselSystems~ remote install helper";
         wallpaper = self + /wallpaper/lenovowp.png;
         isImpermanence = true;
         isCrypted = false;
@@ -2130,6 +2127,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
       "${self}/modules/iso/minimal.nix"
       "${self}/modules/nixos/common/sharedsetup.nix"
+      "${self}/modules/nixos/common/topology.nix"
       "${self}/modules/home/common/sharedsetup.nix"
 
       inputs.home-manager.nixosModules.home-manager
@@ -2153,7 +2151,10 @@ Also, an initial bash history is provided to allow for a very quick local deploy
       };
     };
     config = {
-      node.name = "drugstore";
+      node.name = lib.mkForce "drugstore";
+      swarselsystems = {
+        info = "~SwarselSystems~ installer ISO";
+      };
       home-manager.users."${primaryUser}" = {
         home = {
           stateVersion = "23.05";
@@ -2163,7 +2164,9 @@ Also, an initial bash history is provided to allow for a very quick local deploy
             };
           };
         };
-        swarselsystems.modules.general = lib.mkForce true;
+        swarselsystems = {
+          modules.general = lib.mkForce true;
+        };
       };
       home-manager.users.root.home = {
         stateVersion = "23.05";
@@ -2359,9 +2362,9 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       firewall.enable = true;
     };
 
-
     swarselsystems = lib.recursiveUpdate
       {
+        info = "~SwarselSystems~ demo host";
         wallpaper = self + /wallpaper/lenovowp.png;
         initialSetup = true;
         isImpermanence = true;
@@ -5024,6 +5027,7 @@ TODO
     pkgsFor = lib.genAttrs (import systems) (system:
       import inputs.nixpkgs {
         inherit system;
+        overlays = [ self.overlays.default ];
         config.allowUnfree = true;
       }
     );
@@ -5071,7 +5075,9 @@ TODO
               _module.args.primaryUser = linuxUser;
             }
           ] ++
-          (if (host == "iso") then [ ] else
+          (if (host == "iso") then [
+            inputs.nix-topology.nixosModules.default
+          ] else
           ([
             # put nixos imports here that are for all servers and normal hosts
             inputs.nix-topology.nixosModules.default
@@ -5267,6 +5273,165 @@ in
   else
       cat "$out"
   fi
+#+end_src
+**** nix-topology
+
+#+begin_src nix :tangle topology/default.nix
+  { config, ... }:
+  let
+    inherit (config.lib.topology)
+      mkInternet
+      mkDevice
+      mkSwitch
+      mkRouter
+      mkConnection
+      ;
+  in
+  {
+    renderer = "elk";
+
+    networks = {
+      home-lan = {
+        name = "Home LAN";
+        cidrv4 = "192.168.1.0/24";
+      };
+      wg = {
+        name = "Wireguard Tunnel";
+        cidrv4 = "192.168.3.0/24";
+      };
+    };
+
+    nodes = {
+      internet = mkInternet {
+        connections = [
+          (mkConnection "moonside" "wan")
+          (mkConnection "pfsense" "wan")
+          (mkConnection "sync" "wan")
+        ];
+      };
+
+      sync.interfaces.wan = { };
+      moonside.interfaces.wan = { };
+
+      pfsense = mkRouter "pfSense" {
+        info = "HUNSN RM02";
+        image = ../topology/images/hunsn.png;
+        interfaceGroups = [
+          [
+            "eth2"
+            "eth3"
+            "eth4"
+            "eth5"
+            "eth6"
+          ]
+          [ "wan" ]
+        ];
+        interfaces.wg0 = {
+          addresses = [ "192.168.3.1" ];
+          network = "wg";
+          virtual = true;
+          type = "wireguard";
+        };
+
+        connections = {
+          eth2 = mkConnection "switch-livingroom" "eth1";
+          eth4 = mkConnection "winters" "eth1";
+          eth3 = mkConnection "switch-bedroom" "eth1";
+          eth6 = mkConnection "wifi-ap" "eth1";
+          wg = mkConnection "moonside" "wg";
+        };
+        interfaces = {
+          eth2 = {
+            addresses = [ "192.168.1.1" ];
+            network = "home-lan";
+          };
+          eth3 = {
+            addresses = [ "192.168.1.1" ];
+            network = "home-lan";
+          };
+          eth4 = {
+            addresses = [ "192.168.1.1" ];
+            network = "home-lan";
+          };
+          eth6 = {
+            addresses = [ "192.168.1.1" ];
+            network = "home-lan";
+          };
+        };
+      };
+
+      winters.interfaces."eth1" = { };
+
+      wifi-ap = mkSwitch "Wi-Fi AP" {
+        info = "Huawei";
+        image = ../topology/images/huawei.png;
+        interfaceGroups = [
+          [
+            "eth1"
+            "wifi"
+          ]
+        ];
+      };
+
+      switch-livingroom = mkSwitch "Switch Livingroom" {
+        info = "TL-SG108";
+        image = ../topology/images/TL-SG108.png;
+        interfaceGroups = [
+          [
+            "eth1"
+            "eth2"
+            "eth3"
+            "eth4"
+            "eth5"
+            "eth6"
+            "eth7"
+            "eth8"
+          ]
+        ];
+        connections = {
+          eth2 = mkConnection "nswitch" "eth1";
+          eth7 = mkConnection "pc" "eth1";
+          eth8 = mkConnection "nbl-imba-2" "eth1";
+        };
+      };
+
+      nswitch = mkDevice "Nintendo Switch" {
+        info = "Nintendo Switch";
+        image = ../topology/images/nintendo-switch.png;
+        interfaces.eth1 = { };
+      };
+
+      pc = mkDevice "Windows Gaming Server" {
+        info = "i7-4790k, GTX970, 32GB RAM";
+        image = ../topology/images/pc.png;
+        interfaces.eth1 = { };
+      };
+
+      nbl-imba-2.interfaces.eth1 = { };
+
+      switch-bedroom = mkSwitch "Switch Bedroom" {
+        info = "TL-SG1005D";
+        image = ../topology/images/TL-SG1005D.png;
+        interfaceGroups = [
+          [
+            "eth1"
+            "eth2"
+            "eth3"
+            "eth4"
+            "eth5"
+          ]
+        ];
+        connections.eth2 = mkConnection "printer" "eth1";
+      };
+
+      printer = mkDevice "Printer" {
+        info = "DELL C2665dnf";
+        image = ../topology/images/DELL-C2665dnf.png;
+        interfaces.eth1 = { };
+      };
+    };
+  }
+
 #+end_src
 ** NixOS
 :PROPERTIES:
@@ -5636,6 +5801,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         zig
         zls
         ansible-language-server
+
+        elk-to-svg
 
       ];
 
@@ -6244,14 +6411,37 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 #+begin_src nix :tangle modules/nixos/common/meta.nix
   { lib, ... }:
   {
-    options.node.secretsDir = lib.mkOption {
-      description = "Path to the secrets directory for this node.";
-      type = lib.types.path;
-      default = ./.;
+    options = {
+      node = {
+        secretsDir = lib.mkOption {
+          description = "Path to the secrets directory for this node.";
+          type = lib.types.path;
+          default = ./.;
+        };
+        name = lib.mkOption {
+          description = "Node Name.";
+          type = lib.types.str;
+        };
+      };
     };
-    options.node.name = lib.mkOption {
-      description = "Node Name.";
+  }
+#+end_src
+
+**** Topology
+
+#+begin_src nix :tangle modules/nixos/common/topology.nix
+  { self, lib, config, ... }:
+  {
+    options.swarselsystems.info = lib.mkOption {
       type = lib.types.str;
+      default = "";
+    };
+    config.topology = {
+      id = config.node.name;
+      self = {
+        hardware.info = config.swarselsystems.info;
+        icon = lib.mkIf config.swarselsystems.isLaptop "devices.laptop";
+      };
     };
   }
 #+end_src
@@ -7613,7 +7803,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/kavita.nix
-  { pkgs, lib, config, ... }:
+  { self, lib, config, pkgs, ... }:
   let
     serviceName = "kavita";
     serviceUser = "kavita";
@@ -7634,6 +7824,12 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       sops.secrets.kavita = { owner = serviceUser; };
 
       networking.firewall.allowedTCPPorts = [ 8080 ];
+
+      topology.self.services.kavita = {
+        name = "Kavita";
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/kavita.png";
+      };
 
       services.kavita = {
         enable = true;
@@ -7676,64 +7872,67 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/jellyfin.nix
-{ pkgs, lib, config, ... }:
-let
-  serviceDomain = "screen.swarsel.win";
-  servicePort = 8096;
-  serviceName = "jellyfin";
-  serviceUser = "jellyfin";
-in
-{
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
-    users.users."${serviceUser}" = {
-      extraGroups = [ "video" "render" "users" ];
-    };
-    nixpkgs.config.packageOverrides = pkgs: {
-      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-    };
-    hardware.graphics = {
-      enable = true;
-      extraPackages = with pkgs; [
-        intel-media-driver # LIBVA_DRIVER_NAME=iHD
-        vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-        vaapiVdpau
-        libvdpau-va-gl
-      ];
-    };
-    services.jellyfin = {
-      enable = true;
-      user = serviceUser;
-      openFirewall = true; # this works only for the default ports
-    };
+  { pkgs, lib, config, ... }:
+  let
+    serviceDomain = "screen.swarsel.win";
+    servicePort = 8096;
+    serviceName = "jellyfin";
+    serviceUser = "jellyfin";
+  in
+  {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+      users.users."${serviceUser}" = {
+        extraGroups = [ "video" "render" "users" ];
+      };
+      nixpkgs.config.packageOverrides = pkgs: {
+        vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+      };
+      hardware.graphics = {
+        enable = true;
+        extraPackages = with pkgs; [
+          intel-media-driver # LIBVA_DRIVER_NAME=iHD
+          vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+          vaapiVdpau
+          libvdpau-va-gl
+        ];
+      };
 
-    nodes.moonside.services.nginx = {
-      upstreams = {
-        "${serviceName}" = {
-          servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+      topology.self.services.jellyfin.info = "https://${serviceDomain}";
+
+      services.jellyfin = {
+        enable = true;
+        user = serviceUser;
+        openFirewall = true; # this works only for the default ports
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
           };
         };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                client_max_body_size 0;
-              '';
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
             };
           };
         };
       };
     };
-  };
 
-}
+  }
 #+end_src
 
 **** navidrome
@@ -7969,7 +8168,7 @@ in
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/mpd.nix
-  { pkgs, lib, config, ... }:
+  { self, lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
     config = lib.mkIf config.swarselsystems.modules.server.mpd {
@@ -7996,6 +8195,12 @@ in
         alsa-utils
         mpv
       ];
+
+      topology.self.services.mpd = {
+        name = "MPD";
+        info = "http://localhost:3254";
+        icon = "${self}/topology/images/mpd.png";
+      };
 
       services.mpd = {
         enable = true;
@@ -8498,6 +8703,8 @@ in
         extraGroups = [ "video" "render" "users" ];
       };
 
+      topology.self.services.immich.info = "https://${serviceDomain}";
+
       services.immich = {
         enable = true;
         host = "0.0.0.0";
@@ -8694,7 +8901,10 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/transmission.nix
-  { pkgs, lib, config, ... }:
+  { self, pkgs, lib, config, ... }:
+  let
+    serviceDomain = "store.swarsel.win";
+  in
   {
     options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
     config = lib.mkIf config.swarselsystems.modules.server.transmission {
@@ -8750,6 +8960,18 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       environment.systemPackages = with pkgs; [
         docker
       ];
+
+      topology.self.services = {
+        radarr.info = "https://${serviceDomain}/radarr";
+        readarr = {
+          name = "Readarr";
+          info = "https://${serviceDomain}/readarr";
+          icon = "${self}/topology/images/readarr.png";
+        };
+        sonarr.info = "https://${serviceDomain}/sonarr";
+        lidarr.info = "https://${serviceDomain}/lidarr";
+        prowlarr.info = "https://${serviceDomain}/prowlarr";
+      };
 
       services = {
         radarr = {
@@ -9073,6 +9295,8 @@ This section exposes several metrics that I use to check the health of my server
 
       networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
+      topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
+
       services = {
         grafana = {
           enable = true;
@@ -9342,9 +9566,10 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
 FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
 
 #+begin_src nix :tangle modules/nixos/server/freshrss.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   let
     serviceName = "freshrss";
+    serviceDomain = "signpost.swarsel.win";
   in
   {
     options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
@@ -9385,10 +9610,16 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         #   };
       };
 
+      topology.self.services.freshrss = {
+        name = "FreshRSS";
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/freshrss.png";
+      };
+
       services.freshrss = {
         enable = true;
-        virtualHost = "signpost.swarsel.win";
-        baseUrl = "https://signpost.swarsel.win";
+        virtualHost = serviceDomain;
+        baseUrl = "https://${serviceDomain}";
         authType = "form";
         dataDir = "/Vault/data/tt-rss";
         defaultUser = "Swarsel";
@@ -9408,7 +9639,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           };
         };
         virtualHosts = {
-          "signpost.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -9453,6 +9684,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
                   proxy_set_header Content-Length   "";
                   proxy_pass_request_body           off;
                 '';
+              };
+              "/api" = {
+                proxyPass = "http://${serviceName}";
               };
             };
           };
@@ -9621,6 +9855,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
 #+begin_src nix :tangle modules/nixos/server/ankisync.nix
   { lib, config, ... }:
+  let
+    serviceDomain = "synki.swarsel.win";
+  in
   {
     options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
     config = lib.mkIf config.swarselsystems.modules.server.ankisync {
@@ -9628,6 +9865,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       networking.firewall.allowedTCPPorts = [ 22701 ];
 
       sops.secrets.swarsel = { owner = "root"; };
+
+      topology.self.services.anki = {
+        name = lib.mkForce "Anki Sync Server";
+        info = "https://${serviceDomain}";
+      };
 
       services.anki-sync-server = {
         enable = true;
@@ -9644,7 +9886,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       services.nginx = {
         virtualHosts = {
-          "synki.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -10029,7 +10271,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 **** Firefly-III
 
 #+begin_src nix :tangle modules/nixos/server/firefly-iii.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   let
     cfg = config.services.firefly-iii;
     fireflyDomain = "stonks.swarsel.win";
@@ -10049,6 +10291,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         secrets = {
           "firefly-iii-app-key" = { owner = fireflyUser; group = "nginx"; mode = "0440"; };
         };
+      };
+
+      topology.self.services.firefly-iii = {
+        name = "Firefly-III";
+        info = "https://${fireflyDomain}";
+        icon = "${self}/topology/images/firefly-iii.png";
       };
 
       services = {
@@ -10162,7 +10410,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 **** Koillection
 
 #+begin_src nix :tangle modules/nixos/server/koillection.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   let
     serviceDomain = "swag.swarsel.win";
     serviceUser = "koillection";
@@ -10180,6 +10428,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       sops.secrets = {
         koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
         koillection-env-file = { };
+      };
+
+      topology.self.services.koillection = {
+        name = "Koillection";
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/koillection.png";
       };
 
       virtualisation.oci-containers.containers = {
