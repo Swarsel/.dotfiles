@@ -1,6 +1,7 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
 let
   serviceName = "freshrss";
+  serviceDomain = "signpost.swarsel.win";
 in
 {
   options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
@@ -41,10 +42,16 @@ in
       #   };
     };
 
+    topology.self.services.freshrss = {
+      name = "FreshRSS";
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/freshrss.png";
+    };
+
     services.freshrss = {
       enable = true;
-      virtualHost = "signpost.swarsel.win";
-      baseUrl = "https://signpost.swarsel.win";
+      virtualHost = serviceDomain;
+      baseUrl = "https://${serviceDomain}";
       authType = "form";
       dataDir = "/Vault/data/tt-rss";
       defaultUser = "Swarsel";
@@ -64,7 +71,7 @@ in
         };
       };
       virtualHosts = {
-        "signpost.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
@@ -109,6 +116,9 @@ in
                 proxy_set_header Content-Length   "";
                 proxy_pass_request_body           off;
               '';
+            };
+            "/api" = {
+              proxyPass = "http://${serviceName}";
             };
           };
         };

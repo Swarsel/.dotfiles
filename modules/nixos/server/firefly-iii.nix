@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
 let
   cfg = config.services.firefly-iii;
   fireflyDomain = "stonks.swarsel.win";
@@ -18,6 +18,12 @@ in
       secrets = {
         "firefly-iii-app-key" = { owner = fireflyUser; group = "nginx"; mode = "0440"; };
       };
+    };
+
+    topology.self.services.firefly-iii = {
+      name = "Firefly-III";
+      info = "https://${fireflyDomain}";
+      icon = "${self}/topology/images/firefly-iii.png";
     };
 
     services = {

@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ self, lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
   config = lib.mkIf config.swarselsystems.modules.server.mpd {
@@ -25,6 +25,12 @@
       alsa-utils
       mpv
     ];
+
+    topology.self.services.mpd = {
+      name = "MPD";
+      info = "http://localhost:3254";
+      icon = "${self}/topology/images/mpd.png";
+    };
 
     services.mpd = {
       enable = true;

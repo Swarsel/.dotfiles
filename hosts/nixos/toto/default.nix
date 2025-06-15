@@ -57,6 +57,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      info = "~SwarselSystems~ remote install helper";
       wallpaper = self + /wallpaper/lenovowp.png;
       isImpermanence = true;
       isCrypted = false;

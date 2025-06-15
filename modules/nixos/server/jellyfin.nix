@@ -23,6 +23,9 @@ in
         libvdpau-va-gl
       ];
     };
+
+    topology.self.services.jellyfin.info = "https://${serviceDomain}";
+
     services.jellyfin = {
       enable = true;
       user = serviceUser;

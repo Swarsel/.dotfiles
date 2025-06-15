@@ -30,6 +30,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      info = "ASRock J4105-ITX, 32GB RAM";
       isImpermanence = false;
       isSecureBoot = true;
       isCrypted = true;

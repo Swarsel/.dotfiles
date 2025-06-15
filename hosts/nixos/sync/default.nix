@@ -60,7 +60,7 @@ in
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:8384/";
+              proxyPass = "http://localhost:8384";
               extraConfig = ''
                 client_max_body_size 0;
               '';
@@ -152,6 +152,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      info = "VM.Standard.E2.1.Micro";
       flakePath = "/root/.dotfiles";
       isImpermanence = false;
       isSecureBoot = false;

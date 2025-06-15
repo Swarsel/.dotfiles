@@ -24,6 +24,7 @@ in
 
   swarselsystems = lib.recursiveUpdate
     {
+      info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
       firewall = lib.mkForce true;
       wallpaper = self + /wallpaper/lenovowp.png;
       hasBluetooth = true;

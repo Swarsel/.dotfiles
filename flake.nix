@@ -199,8 +199,7 @@
         lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
           inherit pkgs;
           modules = [
-            # Your own file to define global topology. Works in principle like a nixos module but uses different options.
-            # ./topology.nix
+            "${self}/topology"
             { inherit (self) nixosConfigurations; }
           ];
         });

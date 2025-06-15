@@ -45,9 +45,9 @@ in
     firewall.enable = true;
   };
 
-
   swarselsystems = lib.recursiveUpdate
     {
+      info = "~SwarselSystems~ demo host";
       wallpaper = self + /wallpaper/lenovowp.png;
       initialSetup = true;
       isImpermanence = true;
