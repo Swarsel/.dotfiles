@@ -1,62 +1,52 @@
 { self, lib, pkgs, config, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
-  kanidmDomain = "sso.swarsel.win";
+  serviceDomain = "sso.swarsel.win";
+  servicePort = 8300;
+  serviceUser = "kanidm";
+  serviceGroup = serviceUser;
+  serviceName = "kanidm";
   oauth2ProxyDomain = "soauth.swarsel.win";
-  kanidmPort = 8300;
-  oauth2ProxyPort = 3004;
 in
 {
-  options.swarselsystems.modules.server.kanidm = lib.mkEnableOption "enable kanidm on server";
-  config = lib.mkIf config.swarselsystems.modules.server.kanidm {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    users.users.kanidm = {
-      group = "kanidm";
+    users.users."${serviceUser}" = {
+      group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups.kanidm = { };
+    users.groups."${serviceGroup}" = { };
 
     sops = {
       secrets = {
-        "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-freshrss" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-oauth2-proxy" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-        "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-      };
-
-      templates = {
-        "kanidm-oauth2-proxy-client-env" = {
-          content = ''
-            OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
-            OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
-          '';
-          owner = "oauth2-proxy";
-          group = "oauth2-proxy";
-          mode = "0440";
-        };
+        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-idm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-immich" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-paperless" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-forgejo" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-grafana" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-nextcloud" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-oauth2-proxy" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
     };
+
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     services = {
       kanidm = {
         package = pkgs.kanidmWithSecretProvisioning;
         enableServer = true;
         serverSettings = {
-          domain = kanidmDomain;
-          origin = "https://${kanidmDomain}";
+          domain = serviceDomain;
+          origin = "https://${serviceDomain}";
           tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
           tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-          bindaddress = "0.0.0.0:${toString kanidmPort}";
+          bindaddress = "0.0.0.0:${toString servicePort}";
           trust_x_forward_for = true;
         };
         enableClient = true;
@@ -177,19 +167,6 @@ in
                   };
                 };
               };
-              # freshrss = {
-              #   displayName = "FreshRSS";
-              #   originUrl = "https://signpost.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
-              #   originLanding = "https://signpost.swarsel.win/";
-              #   basicSecretFile = config.sops.secrets.kanidm-freshrss.path;
-              #   allowInsecureClientDisablePkce = true;
-              #   scopeMaps."freshrss.access" = [
-              #     "openid"
-              #     "email"
-              #     "profile"
-              #   ];
-              #   preferShortUsername = true;
-              # };
               oauth2-proxy = {
                 displayName = "Oauth2-Proxy";
                 originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
@@ -226,94 +203,32 @@ in
           };
         };
       };
-      oauth2-proxy = {
-        enable = true;
-        cookie = {
-          domain = ".swarsel.win";
-          secure = true;
-          expire = "900m";
-          secret = null; # set by service EnvironmentFile
-        };
-        clientSecret = null; # set by service EnvironmentFile
-        reverseProxy = true;
-        httpAddress = "0.0.0.0:${builtins.toString oauth2ProxyPort}";
-        redirectURL = "https://${oauth2ProxyDomain}/oauth2/callback";
-        setXauthrequest = true;
-        extraConfig = {
-          code-challenge-method = "S256";
-          whitelist-domain = ".swarsel.win";
-          set-authorization-header = true;
-          pass-access-token = true;
-          skip-jwt-bearer-tokens = true;
-          upstream = "static://202";
-          oidc-issuer-url = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy";
-          provider-display-name = "Kanidm";
-        };
-        provider = "oidc";
-        scope = "openid email";
-        loginURL = "https://${kanidmDomain}/ui/oauth2";
-        redeemURL = "https://${kanidmDomain}/oauth2/token";
-        validateURL = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy/userinfo";
-        clientID = "oauth2-proxy";
-        email.domains = [ "*" ];
-      };
     };
 
     systemd.services = {
       kanidm.serviceConfig.RestartSec = "30";
-      oauth2-proxy = {
-        after = [ "kanidm.service" ];
-        serviceConfig = {
-          RuntimeDirectory = "oauth2-proxy";
-          RuntimeDirectoryMode = "0750";
-          UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
-          RestartSec = "60"; # Retry every minute
-          EnvironmentFile = [
-            config.sops.templates.kanidm-oauth2-proxy-client-env.path
-          ];
-        };
-      };
     };
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
       upstreams = {
-        kanidm = {
+        "${serviceName}" = {
           servers = {
-            "192.168.1.2:${builtins.toString kanidmPort}" = { };
-          };
-        };
-        oauth2-proxy = {
-          servers = {
-            "192.168.1.2:${builtins.toString oauth2ProxyPort}" = { };
+            "192.168.1.2:${builtins.toString servicePort}" = { };
           };
         };
       };
       virtualHosts = {
-        "${kanidmDomain}" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "https://kanidm";
+              proxyPass = "https://${serviceName}";
             };
           };
           extraConfig = ''
             proxy_ssl_verify off;
-          '';
-        };
-        "${oauth2ProxyDomain}" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "http://oauth2-proxy";
-            };
-          };
-          extraConfig = ''
-            proxy_set_header X-Scheme                $scheme;
-            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
           '';
         };
       };

@@ -1,8 +1,14 @@
 { pkgs, lib, config, ... }:
+let
+  serviceDomain = "screen.swarsel.win";
+  servicePort = 8096;
+  serviceName = "jellyfin";
+  serviceUser = "jellyfin";
+in
 {
-  options.swarselsystems.modules.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
-  config = lib.mkIf config.swarselsystems.modules.server.jellyfin {
-    users.users.jellyfin = {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    users.users."${serviceUser}" = {
       extraGroups = [ "video" "render" "users" ];
     };
     nixpkgs.config.packageOverrides = pkgs: {
@@ -19,19 +25,26 @@
     };
     services.jellyfin = {
       enable = true;
-      user = "jellyfin";
+      user = serviceUser;
       openFirewall = true; # this works only for the default ports
     };
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
-        "screen.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:8096";
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size 0;
               '';

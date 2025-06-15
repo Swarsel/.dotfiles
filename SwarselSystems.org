@@ -340,75 +340,75 @@ In this section I am creating some attributes that define general concepts of my
   They are defined in [[#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab][Overlays (additions, overrides, nixpkgs-stable)]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
 
 #+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
-    inherit lib;
+  inherit lib;
 
-    # nixosModules = import ./modules/nixos { inherit lib; };
-    # homeModules = import ./modules/home { inherit lib; };
-    packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
-    formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-    overlays = import ./overlays { inherit self lib inputs; };
+  # nixosModules = import ./modules/nixos { inherit lib; };
+  # homeModules = import ./modules/home { inherit lib; };
+  packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+  formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+  overlays = import ./overlays { inherit self lib inputs; };
 
-    apps = lib.swarselsystems.forAllSystems (system:
-      let
-        appNames = [
-          "swarsel-bootstrap"
-          "swarsel-install"
-          "swarsel-rebuild"
-          "swarsel-postinstall"
+  apps = lib.swarselsystems.forAllSystems (system:
+    let
+      appNames = [
+        "swarsel-bootstrap"
+        "swarsel-install"
+        "swarsel-rebuild"
+        "swarsel-postinstall"
+      ];
+      appSet = lib.swarselsystems.mkApps system appNames self;
+    in
+
+    appSet // {
+      default = appSet.swarsel-bootstrap;
+    }
+  );
+
+  devShells = lib.swarselsystems.forAllSystems (system:
+    let
+      pkgs = lib.swarselsystems.pkgsFor.${system};
+      checks = self.checks.${system};
+    in
+    {
+      default = pkgs.mkShell {
+          # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+          #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
+          #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
+          # })}/lib/nix/plugins
+        NIX_CONFIG = ''
+          plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+          extra-builtins-file = ${self + /nix/extra-builtins.nix}
+        '';
+        inherit (checks.pre-commit-check) shellHook;
+
+        buildInputs = checks.pre-commit-check.enabledPackages;
+        nativeBuildInputs = [
+          (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+          # pkgs.nix
+          pkgs.home-manager
+          pkgs.git
+          pkgs.just
+          pkgs.age
+          pkgs.ssh-to-age
+          pkgs.sops
+          pkgs.statix
+          pkgs.deadnix
+          pkgs.nixpkgs-fmt
         ];
-        appSet = lib.swarselsystems.mkApps system appNames self;
-      in
+      };
+    }
+  );
 
-      appSet // {
-        default = appSet.swarsel-bootstrap;
-      }
-    );
+  templates = import ./templates { inherit lib; };
 
-    devShells = lib.swarselsystems.forAllSystems (system:
-      let
-        pkgs = lib.swarselsystems.pkgsFor.${system};
-        checks = self.checks.${system};
-      in
-      {
-        default = pkgs.mkShell {
-            # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-            #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
-            #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
-            # })}/lib/nix/plugins
-          NIX_CONFIG = ''
-            plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
-            extra-builtins-file = ${self + /nix/extra-builtins.nix}
-          '';
-          inherit (checks.pre-commit-check) shellHook;
+  checks = lib.swarselsystems.forAllSystems (system:
+    let
+      pkgs = lib.swarselsystems.pkgsFor.${system};
+    in
+    import ./checks { inherit self inputs system pkgs; }
+  );
 
-          buildInputs = checks.pre-commit-check.enabledPackages;
-          nativeBuildInputs = [
-            (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
-            # pkgs.nix
-            pkgs.home-manager
-            pkgs.git
-            pkgs.just
-            pkgs.age
-            pkgs.ssh-to-age
-            pkgs.sops
-            pkgs.statix
-            pkgs.deadnix
-            pkgs.nixpkgs-fmt
-          ];
-        };
-      }
-    );
-
-    templates = import ./templates { inherit lib; };
-
-    checks = lib.swarselsystems.forAllSystems (system:
-      let
-        pkgs = lib.swarselsystems.pkgsFor.${system};
-      in
-      import ./checks { inherit self inputs system pkgs; }
-    );
-
-    diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
+  diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
 #+end_src
 
 ** Pre-commit-hooks (Checks)
@@ -834,7 +834,6 @@ My work machine. Built for more security, this is the gold standard of my config
     ];
 
 
-    node.secretsDir = ./secrets;
     swarselsystems = lib.recursiveUpdate
       {
         firewall = lib.mkForce true;
@@ -1092,7 +1091,6 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
 
-    node.secretsDir = ./secrets;
     swarselsystems = lib.recursiveUpdate
       {
         isImpermanence = false;
@@ -1329,7 +1327,6 @@ This machine mainly acts as an external sync helper. It manages the following th
     system.stateVersion = "23.11";
 
 
-    node.secretsDir = ./secrets;
     services = {
       nginx = {
         virtualHosts = {
@@ -1483,7 +1480,19 @@ This machine mainly acts as an external sync helper. It manages the following th
       tmp.cleanOnBoot = true;
     };
 
-    environment.etc."issue".text = "\4";
+    environment = {
+      etc."issue".text = "\4";
+
+      persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        {
+          directory = "/var/lib/syncthing";
+          user = "syncthing";
+          group = "syncthing";
+          mode = "0700";
+        }
+      ];
+    };
+
 
     networking = {
       nftables.enable = lib.mkForce false;
@@ -1498,14 +1507,17 @@ This machine mainly acts as an external sync helper. It manages the following th
         interfaces = {
           home-vpn = {
             privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-            ips = [ "192.168.3.4/24" ];
+            ips = [ "192.168.3.4/32" ];
             peers = [
               {
                 publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
                 name = "moonside";
                 persistentKeepalive = 25;
                 endpoint = "${config.repo.secrets.common.ipv4}:51820";
-                allowedIPs = [ "192.168.3.0/24" ];
+                allowedIPs = [
+                  "192.168.3.0/24"
+                  "192.168.1.0/24"
+                ];
               }
             ];
           };
@@ -1519,10 +1531,22 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     system.stateVersion = "23.11";
 
-    node.secretsDir = ./secrets;
     services = {
       nginx = {
         virtualHosts = {
+          # "newway.swarsel.win" = {
+          #   enableACME = true;
+          #   forceSSL = true;
+          #   acmeRoot = null;
+          #   locations = {
+          #     "/" = {
+          #       proxyPass = "http://192.168.1.2:8080";
+          #       extraConfig = ''
+          #         client_max_body_size 0;
+          #       '';
+          #     };
+          #   };
+          # };
           "syncthing.swarsel.win" = {
             enableACME = true;
             forceSSL = true;
@@ -2117,8 +2141,31 @@ Also, an initial bash history is provided to allow for a very quick local deploy
       }
     ];
 
-    home-manager.users."${primaryUser}" = {
-      home = {
+    options.node = {
+      name = lib.mkOption {
+        description = "Node Name.";
+        type = lib.types.str;
+      };
+      secretsDir = lib.mkOption {
+        description = "Path to the secrets directory for this node.";
+        type = lib.types.path;
+        default = ./.;
+      };
+    };
+    config = {
+      node.name = "drugstore";
+      home-manager.users."${primaryUser}" = {
+        home = {
+          stateVersion = "23.05";
+          file = {
+            ".bash_history" = {
+              source = self + /programs/bash/.bash_history;
+            };
+          };
+        };
+        swarselsystems.modules.general = lib.mkForce true;
+      };
+      home-manager.users.root.home = {
         stateVersion = "23.05";
         file = {
           ".bash_history" = {
@@ -2126,89 +2173,79 @@ Also, an initial bash history is provided to allow for a very quick local deploy
           };
         };
       };
-      swarselsystems.modules.general = lib.mkForce true;
-    };
-    home-manager.users.root.home = {
-      stateVersion = "23.05";
-      file = {
-        ".bash_history" = {
-          source = self + /programs/bash/.bash_history;
-        };
+
+      # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users & root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d <DISK> -f <flake>\x1B[0m' for a local install.\n";
+      environment.etc."issue".source = "${self}/programs/etc/issue";
+      networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+
+      isoImage = {
+        makeEfiBootable = true;
+        makeUsbBootable = true;
+        squashfsCompression = "zstd -Xcompression-level 3";
       };
-    };
 
-    # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users & root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d <DISK> -f <flake>\x1B[0m' for a local install.\n";
-    environment.etc."issue".source = "${self}/programs/etc/issue";
-    networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+      nixpkgs = {
+        hostPlatform = lib.mkDefault "x86_64-linux";
+        config.allowUnfree = true;
+      };
 
-    isoImage = {
-      makeEfiBootable = true;
-      makeUsbBootable = true;
-      squashfsCompression = "zstd -Xcompression-level 3";
-    };
+      services.getty.autologinUser = lib.mkForce primaryUser;
 
-    nixpkgs = {
-      hostPlatform = lib.mkDefault "x86_64-linux";
-      config.allowUnfree = true;
-    };
-
-    services.getty.autologinUser = lib.mkForce primaryUser;
-
-    users = {
-      allowNoPasswordLogin = true;
-      groups.swarsel = { };
       users = {
-        swarsel = {
-          name = primaryUser;
-          group = primaryUser;
-          isNormalUser = true;
-          password = "setup"; # this is overwritten after install
-          openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
-          extraGroups = [ "wheel" ];
-        };
-        root = {
-          # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-          openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
+        allowNoPasswordLogin = true;
+        groups.swarsel = { };
+        users = {
+          swarsel = {
+            name = primaryUser;
+            group = primaryUser;
+            isNormalUser = true;
+            password = "setup"; # this is overwritten after install
+            openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+            extraGroups = [ "wheel" ];
+          };
+          root = {
+            # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+            openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
+          };
         };
       };
-    };
 
-    boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
-      loader.efi.canTouchEfiVariables = true;
-    };
+      boot = {
+        loader.systemd-boot.enable = lib.mkForce true;
+        loader.efi.canTouchEfiVariables = true;
+      };
 
-    programs.bash.shellAliases = {
-      "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-    };
+      programs.bash.shellAliases = {
+        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+      };
 
-    system.activationScripts.cache = {
-      text = ''
-        mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
-        mkdir -p /root/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
-      '';
-    };
-    systemd = {
-      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-      targets = {
-        sleep.enable = false;
-        suspend.enable = false;
-        hibernate.enable = false;
-        hybrid-sleep.enable = false;
+      system.activationScripts.cache = {
+        text = ''
+          mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
+          mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
+          mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
+          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
+          mkdir -p /root/.local/share/nix/
+          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+        '';
+      };
+      systemd = {
+        services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+        targets = {
+          sleep.enable = false;
+          suspend.enable = false;
+          hibernate.enable = false;
+          hybrid-sleep.enable = false;
+        };
+      };
+
+      system.stateVersion = lib.mkForce "23.05";
+
+      networking = {
+        hostName = "drugstore";
+        wireless.enable = false;
       };
     };
-
-    system.stateVersion = lib.mkForce "23.05";
-
-    networking = {
-      hostName = "drugstore";
-      wireless.enable = false;
-    };
-
   }
 
 
@@ -4722,6 +4759,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             sops = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
+            oauth2Proxy = lib.mkDefault true;
           };
         };
       };
@@ -5018,6 +5056,10 @@ TODO
         systemFunc {
           specialArgs = { inherit inputs outputs lib self; };
           modules = [
+            {
+              node.name = host;
+              node.secretsDir = ../hosts/${type}/${host}/secrets;
+            }
             # put inports here that are for all hosts
             inputs.disko.nixosModules.disko
             inputs.sops-nix.nixosModules.sops
@@ -5215,7 +5257,6 @@ in
 
   # Decrypt only if necessary
   if [[ ! -e $out ]]; then
-      echo "authenticate:"
       agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/sops || sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key)
       SOPS_AGE_KEY="$agekey" sops decrypt --output "$out" "$file"
   fi
@@ -5431,6 +5472,89 @@ A breakdown of the flags being set:
   }
 #+end_src
 
+**** Share configuration between nodes
+
+#+begin_src nix :tangle modules/nixos/common/nodes.nix
+  { config, lib, outputs, ... }:
+  let
+    inherit (lib)
+      attrNames
+      concatMap
+      concatStringsSep
+      foldl'
+      getAttrFromPath
+      mkMerge
+      mkOption
+      mkOptionType
+      optionals
+      recursiveUpdate
+      setAttrByPath
+      types
+      ;
+
+    nodeName = config.node.name;
+    mkForwardedOption =
+      path:
+      mkOption {
+        type = mkOptionType {
+          name = "Same type that the receiving option `${concatStringsSep "." path}` normally accepts.";
+          merge =
+            _loc: defs:
+            builtins.filter (x: builtins.isAttrs x -> ((x._type or "") != "__distributed_config_empty")) (
+              map (x: x.value) defs
+            );
+        };
+        default = {
+          _type = "__distributed_config_empty";
+        };
+        description = ''
+          Anything specified here will be forwarded to `${concatStringsSep "." path}`
+          on the given node. Forwarding happens as-is to the raw values,
+          so validity can only be checked on the receiving node.
+        '';
+      };
+
+    forwardedOptions = [
+      [
+        "services"
+        "nginx"
+        "upstreams"
+      ]
+      [
+        "services"
+        "nginx"
+        "virtualHosts"
+      ]
+    ];
+
+    attrsForEachOption =
+      f: foldl' (acc: path: recursiveUpdate acc (setAttrByPath path (f path))) { } forwardedOptions;
+  in
+  {
+    options.nodes = mkOption {
+      description = "Options forwarded to the given node.";
+      default = { };
+      type = types.attrsOf (
+        types.submodule {
+          options = attrsForEachOption mkForwardedOption;
+        }
+      );
+    };
+
+    config =
+      let
+        getConfig =
+          path: otherNode:
+          let
+            cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
+          in
+          optionals (cfg != null) (getAttrFromPath path cfg);
+        mergeConfigFromOthers = path: mkMerge (concatMap (getConfig path) (attrNames outputs.nixosConfigurations));
+      in
+      attrsForEachOption mergeConfigFromOthers;
+  }
+#+end_src
+
 **** System Packages
 :PROPERTIES:
 :CUSTOM_ID: h:0e7e8bea-ec58-499c-9731-09dddfc39532
@@ -5606,11 +5730,14 @@ In case of using a fully setup system, this makes also sure that no further user
 For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
 
 #+begin_src nix :tangle modules/nixos/common/users.nix
-  { pkgs, config, lib, ... }:
+  { self, pkgs, config, lib, ... }:
+  let
+    sopsFile = self + /secrets/general/secrets.yaml;
+  in
   {
     options.swarselsystems.modules.users = lib.mkEnableOption "user config";
     config = lib.mkIf config.swarselsystems.modules.users {
-      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
+      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
       users = {
         mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
@@ -6122,6 +6249,10 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
       type = lib.types.path;
       default = ./.;
     };
+    options.node.name = lib.mkOption {
+      description = "Node Name.";
+      type = lib.types.str;
+    };
   }
 #+end_src
 
@@ -6373,7 +6504,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
             "moonside (@oracle)" = {
-              id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+              id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
             };
           };
           folders = {
@@ -7483,38 +7614,50 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
 #+begin_src nix :tangle modules/nixos/server/kavita.nix
   { pkgs, lib, config, ... }:
+  let
+    serviceName = "kavita";
+    serviceUser = "kavita";
+    serviceDomain = "scroll.swarsel.win";
+    servicePort = 8080;
+  in
   {
-    options.swarselsystems.modules.server.kavita = lib.mkEnableOption "enable kavita on server";
-    config = lib.mkIf config.swarselsystems.modules.server.kavita {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
       environment.systemPackages = with pkgs; [
         calibre
       ];
 
-
-      users.users.kavita = {
+      users.users."${serviceUser}" = {
         extraGroups = [ "users" ];
       };
 
-      sops.secrets.kavita = { owner = "kavita"; };
+      sops.secrets.kavita = { owner = serviceUser; };
 
       networking.firewall.allowedTCPPorts = [ 8080 ];
 
       services.kavita = {
         enable = true;
-        user = "kavita";
-        settings.Port = 8080;
+        user = serviceUser;
+        settings.Port = servicePort;
         tokenKeyFile = config.sops.secrets.kavita.path;
       };
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "scroll.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8080";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -7533,51 +7676,64 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/jellyfin.nix
-  { pkgs, lib, config, ... }:
-  {
-    options.swarselsystems.modules.server.jellyfin = lib.mkEnableOption "enable jellyfin on server";
-    config = lib.mkIf config.swarselsystems.modules.server.jellyfin {
-      users.users.jellyfin = {
-        extraGroups = [ "video" "render" "users" ];
-      };
-      nixpkgs.config.packageOverrides = pkgs: {
-        vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-      };
-      hardware.graphics = {
-        enable = true;
-        extraPackages = with pkgs; [
-          intel-media-driver # LIBVA_DRIVER_NAME=iHD
-          vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-          vaapiVdpau
-          libvdpau-va-gl
-        ];
-      };
-      services.jellyfin = {
-        enable = true;
-        user = "jellyfin";
-        openFirewall = true; # this works only for the default ports
-      };
+{ pkgs, lib, config, ... }:
+let
+  serviceDomain = "screen.swarsel.win";
+  servicePort = 8096;
+  serviceName = "jellyfin";
+  serviceUser = "jellyfin";
+in
+{
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    users.users."${serviceUser}" = {
+      extraGroups = [ "video" "render" "users" ];
+    };
+    nixpkgs.config.packageOverrides = pkgs: {
+      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    };
+    hardware.graphics = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver # LIBVA_DRIVER_NAME=iHD
+        vaapiIntel # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+        vaapiVdpau
+        libvdpau-va-gl
+      ];
+    };
+    services.jellyfin = {
+      enable = true;
+      user = serviceUser;
+      openFirewall = true; # this works only for the default ports
+    };
 
-      services.nginx = {
-        virtualHosts = {
-          "screen.swarsel.win" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:8096";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
             };
           };
         };
       };
     };
+  };
 
-  }
+}
 #+end_src
 
 **** navidrome
@@ -7587,9 +7743,16 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
 #+begin_src nix :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, ... }:
+  let
+    serviceDomain = "sound.swarsel.win";
+    servicePort = 4040;
+    serviceName = "navidrome";
+    serviceUser = "navidrome";
+    serviceGroup = serviceUser;
+  in
   {
-    options.swarselsystems.modules.server.navidrome = lib.mkEnableOption "enable navidrome on server";
-    config = lib.mkIf config.swarselsystems.modules.server.navidrome {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
       environment.systemPackages = with pkgs; [
         pciutils
         alsa-utils
@@ -7598,16 +7761,16 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       users = {
         groups = {
-          navidrome = {
+          "$(serviceGroup}" = {
             gid = 61593;
           };
         };
 
         users = {
-          navidrome = {
+          "${serviceUser}" = {
             isSystemUser = true;
             uid = 61593;
-            group = "navidrome";
+            group = serviceGroup;
             extraGroups = [ "audio" "utmp" "users" "pipewire" ];
           };
         };
@@ -7625,8 +7788,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         openFirewall = true;
         settings = {
           LogLevel = "debug";
-          Address = "127.0.0.1";
-          Port = 4040;
+          Address = "0.0.0.0";
+          Port = servicePort;
           MusicFolder = "/Vault/Eternor/Music";
           PlaylistsPath = "./Playlists";
           EnableSharing = true;
@@ -7658,15 +7821,22 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "sound.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:4040";
+                proxyPass = "http://navidrome";
                 proxyWebsockets = true;
                 extraConfig = ''
                   auth_request /oauth2/auth;
@@ -7713,7 +7883,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
                 '';
               };
               "/share" = {
-                proxyPass = "http://localhost:4040";
+                proxyPass = "http://navidrome";
                 proxyWebsockets = true;
                 extraConfig = ''
                   proxy_redirect          http:// https://;
@@ -7727,7 +7897,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
                 '';
               };
               "/rest" = {
-                proxyPass = "http://localhost:4040";
+                proxyPass = "http://navidrome";
                 proxyWebsockets = true;
                 extraConfig = ''
                   proxy_redirect          http:// https://;
@@ -7890,6 +8060,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
   { config, lib, pkgs, sops, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
+    serviceName = "matrix";
+    synapsePort = 8008;
+    synapseUser = "matrix-synapse";
+    whatsappPort = 29318;
+    telegramPort = 29317;
+    signalPort = 29328;
+
     baseUrl = "https://${matrixDomain}";
     clientConfig."m.homeserver".base_url = baseUrl;
     serverConfig."m.server" = "${matrixDomain}:443";
@@ -7900,8 +8077,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     '';
   in
   {
-    options.swarselsystems.modules.server.matrix = lib.mkEnableOption "enable matrix on server";
-    config = lib.mkIf config.swarselsystems.modules.server.matrix {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
       environment.systemPackages = with pkgs; [
         matrix-synapse
         lottieconverter
@@ -7910,24 +8087,24 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       sops = {
         secrets = {
-          matrixsharedsecret = { owner = "matrix-synapse"; };
-          mautrixtelegram_as = { owner = "matrix-synapse"; };
-          mautrixtelegram_hs = { owner = "matrix-synapse"; };
-          mautrixtelegram_api_id = { owner = "matrix-synapse"; };
-          mautrixtelegram_api_hash = { owner = "matrix-synapse"; };
+          matrixsharedsecret = { owner = synapseUser; };
+          mautrixtelegram_as = { owner = synapseUser; };
+          mautrixtelegram_hs = { owner = synapseUser; };
+          mautrixtelegram_api_id = { owner = synapseUser; };
+          mautrixtelegram_api_hash = { owner = synapseUser; };
         };
         templates = {
           "matrix_user_register.sh".content = ''
-            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:8008
+            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString synapsePort}
           '';
           matrixshared = {
-            owner = "matrix-synapse";
+            owner = synapseUser;
             content = ''
               registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
             '';
           };
           mautrixtelegram = {
-            owner = "matrix-synapse";
+            owner = synapseUser;
             content = ''
               MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
               MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
@@ -7937,6 +8114,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
         };
       };
+
+      networking.firewall.allowedTCPPorts = [ 8008 8448 ];
 
       systemd = {
         timers."restart-bridges" = {
@@ -8007,9 +8186,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             public_baseurl = "https://${matrixDomain}";
             listeners = [
               {
-                port = 8008;
+                port = synapsePort;
                 bind_addresses = [
-                  "127.0.0.1"
+                  "0.0.0.0"
                   # "::1"
                 ];
                 type = "http";
@@ -8035,13 +8214,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:8008";
+              address = "http://localhost:${builtins.toString synapsePort}";
               domain = matrixDomain;
             };
             appservice = {
-              address = "http://localhost:29317";
-              hostname = "localhost";
-              port = "29317";
+              address = "http://localhost:${builtins.toString telegramPort}";
+              hostname = "0.0.0.0";
+              port = telegramPort;
               provisioning.enabled = true;
               id = "telegram";
               # ephemeral_events = true; # not needed due to double puppeting
@@ -8081,13 +8260,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:8008";
+              address = "http://localhost:${builtins.toString synapsePort}";
               domain = matrixDomain;
             };
             appservice = {
-              address = "http://localhost:29318";
-              hostname = "127.0.0.1";
-              port = 29318;
+              address = "http://localhost:${builtins.toString whatsappPort}";
+              hostname = "0.0.0.0";
+              port = whatsappPort;
               database = {
                 type = "postgres";
                 uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
@@ -8128,14 +8307,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:8008";
+              address = "http://localhost:${builtins.toString synapsePort}";
               domain = matrixDomain;
             };
             appservice = {
-
-              address = "http://localhost:29328";
-              hostname = "127.0.0.1";
-              port = 29328;
+              address = "http://localhost:${builtins.toString signalPort}";
+              hostname = "0.0.0.0";
+              port = signalPort;
               database = {
                 type = "postgres";
                 uri = "postgresql:///mautrix-signal?host=/run/postgresql";
@@ -8154,65 +8332,68 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             };
           };
         };
+      };
 
-        # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
-        # messages out after a while.
+      # restart the bridges daily. this is done for the signal bridge mainly which stops carrying
+      # messages out after a while.
 
 
-        nginx = {
-          virtualHosts = {
-            "swatrix.swarsel.win" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              listen = [
-                {
-                  addr = "0.0.0.0";
-                  port = 8448;
-                  ssl = true;
-                  extraParameters = [
-                    "default_server"
-                  ];
-                }
-                {
-                  addr = "[::0]";
-                  port = 8448;
-                  ssl = true;
-                  extraParameters = [
-                    "default_server"
-                  ];
-                }
-                {
-                  addr = "0.0.0.0";
-                  port = 443;
-                  ssl = true;
-                }
-                {
-                  addr = "[::0]";
-                  port = 443;
-                  ssl = true;
-                }
-              ];
-              locations = {
-                "~ ^(/_matrix|/_synapse/client)" = {
-                  # proxyPass = "http://localhost:8008";
-                  proxyPass = "http://localhost:8008";
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
-                "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
-                "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString synapsePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${matrixDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            listen = [
+              {
+                addr = "0.0.0.0";
+                port = 8448;
+                ssl = true;
+                extraParameters = [
+                  "default_server"
+                ];
+              }
+              {
+                addr = "[::0]";
+                port = 8448;
+                ssl = true;
+                extraParameters = [
+                  "default_server"
+                ];
+              }
+              {
+                addr = "0.0.0.0";
+                port = 443;
+                ssl = true;
+              }
+              {
+                addr = "[::0]";
+                port = 443;
+                ssl = true;
+              }
+            ];
+            locations = {
+              "~ ^(/_matrix|/_synapse/client)" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
               };
+              "= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+              "= /.well-known/matrix/client".extraConfig = mkWellKnown clientConfig;
             };
           };
         };
       };
     };
-
-
   }
-
 #+end_src
 
 **** nextcloud
@@ -8223,21 +8404,24 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix :tangle modules/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
   let
-    nextcloudDomain = "stash.swarsel.win";
+    serviceDomain = "stash.swarsel.win";
+    serviceUser = "nextcloud";
+    serviceGroup = serviceUser;
+    serviceName = "nextcloud";
   in
   {
-    options.swarselsystems.modules.server.nextcloud = lib.mkEnableOption "enable nextcloud on server";
-    config = lib.mkIf config.swarselsystems.modules.server.nextcloud {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
       sops.secrets = {
         nextcloudadminpass = {
-          owner = "nextcloud";
-          group = "nextcloud";
+          owner = serviceUser;
+          group = serviceGroup;
           mode = "0440";
         };
         kanidm-nextcloud-client = {
-          owner = "nextcloud";
-          group = "nextcloud";
+          owner = serviceUser;
+          group = serviceGroup;
           mode = "0440";
         };
       };
@@ -8245,8 +8429,12 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       services = {
         nextcloud = {
           enable = true;
+          settings = {
+            trusted_proxies = [ "0.0.0.0" ];
+            overwriteprotocol = "https";
+          };
           package = pkgs.nextcloud31;
-          hostName = nextcloudDomain;
+          hostName = serviceDomain;
           home = "/Vault/apps/nextcloud";
           datadir = "/Vault/data/nextcloud";
           https = true;
@@ -8262,21 +8450,30 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             dbtype = "sqlite";
           };
         };
+      };
 
-        nginx = {
-          virtualHosts = {
-            "${nextcloudDomain}" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              # config is automatically added by nixos nextcloud config.
-              # hence, only provide certificate
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:80" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+              };
             };
           };
         };
       };
     };
-
   }
 #+end_src
 
@@ -8287,19 +8484,24 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
 #+begin_src nix :tangle modules/nixos/server/immich.nix
   { lib, config, ... }:
+  let
+    serviceDomain = "shots.swarsel.win";
+    servicePort = 3001;
+    serviceUser = "immich";
+    serviceName = "immich";
+  in
   {
-    options.swarselsystems.modules.server.immich = lib.mkEnableOption "enable immich on server";
-    config = lib.mkIf config.swarselsystems.modules.server.immich {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      users.users.immich = {
+      users.users."${serviceUser}" = {
         extraGroups = [ "video" "render" "users" ];
       };
 
-      # sops.secrets.nextcloudadminpass = { owner = "nextcloud"; };
-
       services.immich = {
         enable = true;
-        port = 3001;
+        host = "0.0.0.0";
+        port = servicePort;
         openFirewall = true;
         mediaLocation = "/Vault/Eternor/Immich";
         environment = {
@@ -8307,16 +8509,24 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
+      networking.firewall.allowedTCPPorts = [ 3001 ];
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "shots.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:3001";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size    0;
 
@@ -8351,32 +8561,41 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
 #+begin_src nix :tangle modules/nixos/server/paperless.nix
   { lib, pkgs, config, ... }:
+  let
+    serviceDomain = "scan.swarsel.win";
+    servicePort = 28981;
+    serviceUser = "paperless";
+    serviceGroup = serviceUser;
+    serviceName = "paperless";
+  in
   {
-    options.swarselsystems.modules.server.paperless = lib.mkEnableOption "enable paperless on server";
-    config = lib.mkIf config.swarselsystems.modules.server.paperless {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      users.users.paperless = {
+      users.users."${serviceUser}" = {
         extraGroups = [ "users" ];
       };
 
       sops.secrets = {
-        paperless_admin = { owner = "paperless"; };
+        paperless_admin = { owner = serviceUser; };
         kanidm-paperless-client = {
-          owner = "paperless";
-          group = "paperless";
+          owner = serviceUser;
+          group = serviceGroup;
           mode = "0440";
         };
       };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       services = {
         paperless = {
           enable = true;
           mediaDir = "/Vault/Eternor/Paperless";
           dataDir = "/Vault/data/paperless";
-          user = "paperless";
-          port = 28981;
+          user = serviceUser;
+          port = servicePort;
           passwordFile = config.sops.secrets.paperless_admin.path;
-          address = "127.0.0.1";
+          address = "0.0.0.0";
           settings = {
             PAPERLESS_OCR_LANGUAGE = "deu+eng";
             PAPERLESS_URL = "https://scan.swarsel.win";
@@ -8436,15 +8655,22 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                        )
       '';
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "scan.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:28981";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size    0;
                   proxy_connect_timeout   300;
@@ -8613,26 +8839,34 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, config, ... }:
   let
     inherit (config.repo.secrets.common) workHostName;
+    serviceDomain = "storync.swarsel.win";
+    servicePort = 8384;
+    serviceUser = "syncthing";
+    serviceGroup = serviceUser;
+    serviceName = "syncthing";
   in
   {
-    options.swarselsystems.modules.server.syncthing = lib.mkEnableOption "enable syncthing on server";
-    config = lib.mkIf config.swarselsystems.modules.server.syncthing {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      users.users.syncthing = {
+      users.users."${serviceUser}" = {
         extraGroups = [ "users" ];
-        group = "syncthing";
+        group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups.syncthing = { };
+      users.groups."${serviceGroup}" = { };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       services.syncthing = {
         enable = true;
-        user = "swarsel";
+        user = serviceUser;
+        group = serviceGroup;
         dataDir = "/Vault/data/syncthing";
         configDir = "/Vault/apps/syncthing";
-        guiAddress = "0.0.0.0:8384";
-        openDefaultPorts = true;
+        guiAddress = "0.0.0.0:${builtins.toString servicePort}";
+        openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
         relay.enable = false;
         settings = {
           urAccepted = -1;
@@ -8646,13 +8880,16 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             "${workHostName}" = {
               id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
             };
+            "moonside (@oracle)" = {
+              id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
+            };
           };
           folders = {
             "Default Folder" = lib.mkForce {
               path = "/Vault/data/syncthing/Sync";
               type = "receiveonly";
               versioning = null;
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "default";
             };
             "Obsidian" = {
@@ -8662,7 +8899,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
@@ -8672,7 +8909,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
@@ -8682,7 +8919,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
+              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "hgp9s-fyq3p";
             };
             "Documents" = {
@@ -8692,27 +8929,29 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "magicant" "${workHostName}" ];
+              devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "hgr3d-pfu3w";
             };
-            # ".elfeed" = {
-            #   path = "/Vault/data/syncthing/.elfeed";
-            #   devices = [ "sync (@oracle)" "magicant" "${workHostName}" ];
-            #   id = "h7xbs-fs9v1";
-            # };
           };
         };
       };
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "storync.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8384";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -8722,7 +8961,6 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
       };
     };
-
   }
 #+end_src
 
@@ -8801,24 +9039,24 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix :tangle modules/nixos/server/monitoring.nix
   { self, lib, config, ... }:
   let
-    grafanaDomain = "status.swarsel.win";
+    serviceDomain = "status.swarsel.win";
+    servicePort = 3000;
+    serviceUser = "grafana";
+    serviceGroup = serviceUser;
+    moduleName = "monitoring";
+    grafanaUpstream = "grafana";
+    prometheusUpstream = "prometheus";
+    prometheusPort = 9090;
+    prometheusWebRoot = "prometheus";
   in
   {
-    options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
-    config = lib.mkIf config.swarselsystems.modules.server.monitoring {
+    options.swarselsystems.modules.server."${moduleName}" = lib.mkEnableOption "enable ${moduleName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${moduleName}" {
 
       sops.secrets = {
-        grafanaadminpass = {
-          owner = "grafana";
-        };
-        prometheusadminpass = {
-          owner = "grafana";
-        };
-        kanidm-grafana-client = {
-          owner = "grafana";
-          group = "grafana";
-          mode = "0440";
-        };
+        grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       users = {
@@ -8827,11 +9065,13 @@ This section exposes several metrics that I use to check the health of my server
             extraGroups = [ "nextcloud" ];
           };
 
-          grafana = {
+          "${serviceUser}" = {
             extraGroups = [ "users" ];
           };
         };
       };
+
+      networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
       services = {
         grafana = {
@@ -8844,7 +9084,7 @@ This section exposes several metrics that I use to check the health of my server
                 {
                   name = "prometheus";
                   type = "prometheus";
-                  url = "https://${grafanaDomain}/prometheus";
+                  url = "https://${serviceDomain}/prometheus";
                   editable = false;
                   access = "proxy";
                   basicAuth = true;
@@ -8867,13 +9107,21 @@ This section exposes several metrics that I use to check the health of my server
           };
 
           settings = {
-            security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
+            analytics.reporting_enabled = false;
+            users.allow_sign_up = false;
+            security = {
+              admin_password = "$__file{/run/secrets/grafanaadminpass}";
+              cookie_secure = true;
+              disable_gravatar = true;
+            };
             server = {
-              domain = grafanaDomain;
-              root_url = "https://${grafanaDomain}";
-              http_port = 3000;
+              domain = serviceDomain;
+              root_url = "https://${serviceDomain}";
+              http_port = servicePort;
               http_addr = "0.0.0.0";
               protocol = "http";
+              enforce_domain = true;
+              enable_gzip = true;
             };
             "auth.generic_oauth" = {
               enabled = true;
@@ -8899,9 +9147,9 @@ This section exposes several metrics that I use to check the health of my server
 
         prometheus = {
           enable = true;
-          webExternalUrl = "https://status.swarsel.win/prometheus";
-          port = 9090;
-          listenAddress = "127.0.0.1";
+          webExternalUrl = "https://status.swarsel.win/${prometheusWebRoot}";
+          port = prometheusPort;
+          listenAddress = "0.0.0.0";
           globalConfig = {
             scrape_interval = "10s";
           };
@@ -8965,35 +9213,46 @@ This section exposes several metrics that I use to check the health of my server
             };
           };
         };
+      };
 
 
-        nginx = {
-          virtualHosts = {
-            "${grafanaDomain}" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://localhost:3000";
-                  proxyWebsockets = true;
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
-                "/prometheus" = {
-                  proxyPass = "http://localhost:9090";
-                  extraConfig = ''
-                    client_max_body_size 0;
-                  '';
-                };
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${grafanaUpstream}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+          "${prometheusUpstream}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString prometheusPort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${grafanaUpstream}";
+                proxyWebsockets = true;
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
+              "/${prometheusWebRoot}" = {
+                proxyPass = "http://${prometheusUpstream}";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
               };
             };
           };
         };
       };
     };
-
   }
 #+end_src
 
@@ -9084,6 +9343,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
 #+begin_src nix :tangle modules/nixos/server/freshrss.nix
   { lib, config, ... }:
+  let
+    serviceName = "freshrss";
+  in
   {
     options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
     config = lib.mkIf config.swarselsystems.modules.server.freshrss {
@@ -9137,7 +9399,14 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       #   config.sops.templates.freshrss-env.path
       # ];
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:80" = { };
+            };
+          };
+        };
         virtualHosts = {
           "signpost.swarsel.win" = {
             enableACME = true;
@@ -9145,6 +9414,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
             acmeRoot = null;
             locations = {
               "/" = {
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   auth_request /oauth2/auth;
                   error_page 401 = /oauth2/sign_in;
@@ -9394,7 +9664,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   }
 #+end_src
 
-**** IDM (kanidm + oauth2-proxy)
+**** kanidm
 
 The forgejo configuration is a little broken and will show a 500 error when signing in through kanidm. However, when pressing back and refreshing the page, I am logged in. Currently I cannot be bothered to fix this.
 
@@ -9407,62 +9677,52 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   { self, lib, pkgs, config, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
-    kanidmDomain = "sso.swarsel.win";
+    serviceDomain = "sso.swarsel.win";
+    servicePort = 8300;
+    serviceUser = "kanidm";
+    serviceGroup = serviceUser;
+    serviceName = "kanidm";
     oauth2ProxyDomain = "soauth.swarsel.win";
-    kanidmPort = 8300;
-    oauth2ProxyPort = 3004;
   in
   {
-    options.swarselsystems.modules.server.kanidm = lib.mkEnableOption "enable kanidm on server";
-    config = lib.mkIf config.swarselsystems.modules.server.kanidm {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      users.users.kanidm = {
-        group = "kanidm";
+      users.users."${serviceUser}" = {
+        group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups.kanidm = { };
+      users.groups."${serviceGroup}" = { };
 
       sops = {
         secrets = {
-          "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-          "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-idm-admin-pw" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-immich" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-paperless" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-forgejo" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-grafana" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-nextcloud" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-freshrss" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-oauth2-proxy" = { owner = "kanidm"; group = "kanidm"; mode = "0440"; };
-          "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-        };
-
-        templates = {
-          "kanidm-oauth2-proxy-client-env" = {
-            content = ''
-              OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
-              OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
-            '';
-            owner = "oauth2-proxy";
-            group = "oauth2-proxy";
-            mode = "0440";
-          };
+          "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-idm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-immich" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-paperless" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-forgejo" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-grafana" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-nextcloud" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-oauth2-proxy" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
       };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       services = {
         kanidm = {
           package = pkgs.kanidmWithSecretProvisioning;
           enableServer = true;
           serverSettings = {
-            domain = kanidmDomain;
-            origin = "https://${kanidmDomain}";
+            domain = serviceDomain;
+            origin = "https://${serviceDomain}";
             tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
             tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-            bindaddress = "0.0.0.0:${toString kanidmPort}";
+            bindaddress = "0.0.0.0:${toString servicePort}";
             trust_x_forward_for = true;
           };
           enableClient = true;
@@ -9583,19 +9843,6 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                     };
                   };
                 };
-                # freshrss = {
-                #   displayName = "FreshRSS";
-                #   originUrl = "https://signpost.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
-                #   originLanding = "https://signpost.swarsel.win/";
-                #   basicSecretFile = config.sops.secrets.kanidm-freshrss.path;
-                #   allowInsecureClientDisablePkce = true;
-                #   scopeMaps."freshrss.access" = [
-                #     "openid"
-                #     "email"
-                #     "profile"
-                #   ];
-                #   preferShortUsername = true;
-                # };
                 oauth2-proxy = {
                   displayName = "Oauth2-Proxy";
                   originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
@@ -9632,6 +9879,76 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             };
           };
         };
+      };
+
+      systemd.services = {
+        kanidm.serviceConfig.RestartSec = "30";
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://${serviceName}";
+              };
+            };
+            extraConfig = ''
+              proxy_ssl_verify off;
+            '';
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
+**** oauth2-proxy
+
+
+#+begin_src nix :tangle modules/nixos/server/oauth2-proxy.nix
+  { lib, config, ... }:
+  let
+    kanidmDomain = "sso.swarsel.win";
+    oauth2ProxyDomain = "soauth.swarsel.win";
+    oauth2ProxyPort = 3004;
+  in
+  {
+    options.swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+    config = lib.mkIf config.swarselsystems.modules.server.oauth2Proxy {
+
+      sops = {
+        secrets = {
+          "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+          "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+        };
+
+        templates = {
+          "kanidm-oauth2-proxy-client-env" = {
+            content = ''
+              OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
+              OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
+            '';
+            owner = "oauth2-proxy";
+            group = "oauth2-proxy";
+            mode = "0440";
+          };
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
+
+      services = {
         oauth2-proxy = {
           enable = true;
           cookie = {
@@ -9666,9 +9983,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       };
 
       systemd.services = {
-        kanidm.serviceConfig.RestartSec = "30";
         oauth2-proxy = {
-          after = [ "kanidm.service" ];
+          # after = [ "kanidm.service" ];
           serviceConfig = {
             RuntimeDirectory = "oauth2-proxy";
             RuntimeDirectoryMode = "0750";
@@ -9683,31 +9999,13 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services.nginx = {
         upstreams = {
-          kanidm = {
-            servers = {
-              "192.168.1.2:${builtins.toString kanidmPort}" = { };
-            };
-          };
           oauth2-proxy = {
             servers = {
-              "192.168.1.2:${builtins.toString oauth2ProxyPort}" = { };
+              "localhost:${builtins.toString oauth2ProxyPort}" = { };
             };
           };
         };
         virtualHosts = {
-          "${kanidmDomain}" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "https://kanidm";
-              };
-            };
-            extraConfig = ''
-              proxy_ssl_verify off;
-            '';
-          };
           "${oauth2ProxyDomain}" = {
             enableACME = true;
             forceSSL = true;
@@ -9736,6 +10034,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     cfg = config.services.firefly-iii;
     fireflyDomain = "stonks.swarsel.win";
     fireflyUser = "firefly-iii";
+    serviceName = "firefly";
   in
   {
     options.swarselsystems.modules.server.firefly = lib.mkEnableOption "enable firefly-iii on server";
@@ -9764,6 +10063,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
             APP_ENV = "local";
             DB_CONNECTION = "sqlite";
+            TRUSTED_PROXIES = "**";
             # AUTHENTICATION_GUARD = "remote_user_guard";
             # AUTHENTICATION_GUARD_HEADER = "X-User";
             # AUTHENTICATION_GUARD_EMAIL = "X-Email";
@@ -9775,52 +10075,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         nginx = {
           virtualHosts = {
             "${fireflyDomain}" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              # main config is automatically added by nixos firefly config.
-              # hence, only provide certificate
               locations = {
-                "/" = {
-                  extraConfig = ''
-                    auth_request /oauth2/auth;
-                    error_page 401 = /oauth2/sign_in;
-
-                    # pass information via X-User and X-Email headers to backend,
-                    # requires running with --set-xauthrequest flag (done by NixOS)
-                    auth_request_set $user   $upstream_http_x_auth_request_user;
-                    auth_request_set $email  $upstream_http_x_auth_request_email;
-                    proxy_set_header X-User  $user;
-                    proxy_set_header X-Email $email;
-
-                    # if you enabled --pass-access-token, this will pass the token to the backend
-                    auth_request_set $token  $upstream_http_x_auth_request_access_token;
-                    proxy_set_header X-Access-Token $token;
-
-                    # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                    auth_request_set $auth_cookie $upstream_http_set_cookie;
-                    add_header Set-Cookie $auth_cookie;
-                  '';
-                };
-                "/oauth2/" = {
-                  proxyPass = "http://oauth2-proxy";
-                  extraConfig = ''
-
-                    proxy_set_header X-Scheme                $scheme;
-                    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-                  '';
-                };
-                "= /oauth2/auth" = {
-                  proxyPass = "http://oauth2-proxy/oauth2/auth";
-                  extraConfig = ''
-                    internal;
-
-                    proxy_set_header X-Scheme         $scheme;
-                    # nginx auth_request includes headers but not body
-                    proxy_set_header Content-Length   "";
-                    proxy_pass_request_body           off;
-                  '';
-                };
                 "/api" = {
                   extraConfig = ''
                     index index.php;
@@ -9830,6 +10085,71 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                     proxy_set_header X-Email "";
                   '';
                 };
+              };
+            };
+          };
+        };
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:80" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${fireflyDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            # main config is automatically added by nixos firefly config.
+            # hence, only provide certificate
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  auth_request /oauth2/auth;
+                  error_page 401 = /oauth2/sign_in;
+
+                  # pass information via X-User and X-Email headers to backend,
+                  # requires running with --set-xauthrequest flag (done by NixOS)
+                  auth_request_set $user   $upstream_http_x_auth_request_user;
+                  auth_request_set $email  $upstream_http_x_auth_request_email;
+                  proxy_set_header X-User  $user;
+                  proxy_set_header X-Email $email;
+
+                  # if you enabled --pass-access-token, this will pass the token to the backend
+                  auth_request_set $token  $upstream_http_x_auth_request_access_token;
+                  proxy_set_header X-Access-Token $token;
+
+                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                  auth_request_set $auth_cookie $upstream_http_set_cookie;
+                  add_header Set-Cookie $auth_cookie;
+                '';
+              };
+              "/oauth2/" = {
+                proxyPass = "http://oauth2-proxy";
+                extraConfig = ''
+
+                            proxy_set_header X-Scheme                $scheme;
+                            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                          '';
+              };
+              "= /oauth2/auth" = {
+                proxyPass = "http://oauth2-proxy/oauth2/auth";
+                extraConfig = ''
+                  internal;
+
+                  proxy_set_header X-Scheme         $scheme;
+                  # nginx auth_request includes headers but not body
+                  proxy_set_header Content-Length   "";
+                  proxy_pass_request_body           off;
+                '';
+              };
+              "/api" = {
+                proxyPass = "http://${serviceName}";
               };
             };
           };
@@ -9899,7 +10219,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ postgresPort ];
+      networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
 
       systemd.services.postgresql.postStart =
         let
@@ -9930,17 +10250,24 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
           '';
         };
+      };
 
-        nginx = {
-          virtualHosts = {
-            "${serviceDomain}" = {
-              enableACME = true;
-              forceSSL = true;
-              acmeRoot = null;
-              locations = {
-                "/" = {
-                  proxyPass = "http://localhost:${toString servicePort}";
-                };
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
               };
             };
           };
@@ -10444,7 +10771,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
             "moonside (@oracle)" = {
-              id = "YJLYL4Z-JIYHFKX-554ZR7B-YAF3PNH-CX7JF53-NYUMVGL-4EWWASH-GDAMBQA";
+              id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
             };
             folders = {
               "Documents" = {

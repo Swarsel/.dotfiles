@@ -1,4 +1,7 @@
 { lib, config, ... }:
+let
+  serviceName = "freshrss";
+in
 {
   options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
   config = lib.mkIf config.swarselsystems.modules.server.freshrss {
@@ -52,7 +55,14 @@
     #   config.sops.templates.freshrss-env.path
     # ];
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:80" = { };
+          };
+        };
+      };
       virtualHosts = {
         "signpost.swarsel.win" = {
           enableACME = true;
@@ -60,6 +70,7 @@
           acmeRoot = null;
           locations = {
             "/" = {
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 auth_request /oauth2/auth;
                 error_page 401 = /oauth2/sign_in;

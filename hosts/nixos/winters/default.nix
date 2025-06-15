@@ -28,7 +28,6 @@ in
   };
 
 
-  node.secretsDir = ./secrets;
   swarselsystems = lib.recursiveUpdate
     {
       isImpermanence = false;

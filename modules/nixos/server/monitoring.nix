@@ -1,23 +1,23 @@
 { self, lib, config, ... }:
 let
-  grafanaDomain = "status.swarsel.win";
+  serviceDomain = "status.swarsel.win";
+  servicePort = 3000;
+  serviceUser = "grafana";
+  serviceGroup = serviceUser;
+  moduleName = "monitoring";
+  grafanaUpstream = "grafana";
+  prometheusUpstream = "prometheus";
+  prometheusPort = 9090;
+  prometheusWebRoot = "prometheus";
 in
 {
-  options.swarselsystems.modules.server.monitoring = lib.mkEnableOption "enable monitoring on server";
-  config = lib.mkIf config.swarselsystems.modules.server.monitoring {
+  options.swarselsystems.modules.server."${moduleName}" = lib.mkEnableOption "enable ${moduleName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${moduleName}" {
 
     sops.secrets = {
-      grafanaadminpass = {
-        owner = "grafana";
-      };
-      prometheusadminpass = {
-        owner = "grafana";
-      };
-      kanidm-grafana-client = {
-        owner = "grafana";
-        group = "grafana";
-        mode = "0440";
-      };
+      grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     users = {
@@ -26,11 +26,13 @@ in
           extraGroups = [ "nextcloud" ];
         };
 
-        grafana = {
+        "${serviceUser}" = {
           extraGroups = [ "users" ];
         };
       };
     };
+
+    networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
     services = {
       grafana = {
@@ -43,7 +45,7 @@ in
               {
                 name = "prometheus";
                 type = "prometheus";
-                url = "https://${grafanaDomain}/prometheus";
+                url = "https://${serviceDomain}/prometheus";
                 editable = false;
                 access = "proxy";
                 basicAuth = true;
@@ -66,13 +68,21 @@ in
         };
 
         settings = {
-          security.admin_password = "$__file{/run/secrets/grafanaadminpass}";
+          analytics.reporting_enabled = false;
+          users.allow_sign_up = false;
+          security = {
+            admin_password = "$__file{/run/secrets/grafanaadminpass}";
+            cookie_secure = true;
+            disable_gravatar = true;
+          };
           server = {
-            domain = grafanaDomain;
-            root_url = "https://${grafanaDomain}";
-            http_port = 3000;
+            domain = serviceDomain;
+            root_url = "https://${serviceDomain}";
+            http_port = servicePort;
             http_addr = "0.0.0.0";
             protocol = "http";
+            enforce_domain = true;
+            enable_gzip = true;
           };
           "auth.generic_oauth" = {
             enabled = true;
@@ -98,9 +108,9 @@ in
 
       prometheus = {
         enable = true;
-        webExternalUrl = "https://status.swarsel.win/prometheus";
-        port = 9090;
-        listenAddress = "127.0.0.1";
+        webExternalUrl = "https://status.swarsel.win/${prometheusWebRoot}";
+        port = prometheusPort;
+        listenAddress = "0.0.0.0";
         globalConfig = {
           scrape_interval = "10s";
         };
@@ -164,33 +174,44 @@ in
           };
         };
       };
+    };
 
 
-      nginx = {
-        virtualHosts = {
-          "${grafanaDomain}" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:3000";
-                proxyWebsockets = true;
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-              "/prometheus" = {
-                proxyPass = "http://localhost:9090";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${grafanaUpstream}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+        "${prometheusUpstream}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString prometheusPort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://${grafanaUpstream}";
+              proxyWebsockets = true;
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
+            "/${prometheusWebRoot}" = {
+              proxyPass = "http://${prometheusUpstream}";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
             };
           };
         };
       };
     };
   };
-
 }

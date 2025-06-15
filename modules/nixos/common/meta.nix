@@ -5,4 +5,8 @@
     type = lib.types.path;
     default = ./.;
   };
+  options.node.name = lib.mkOption {
+    description = "Node Name.";
+    type = lib.types.str;
+  };
 }

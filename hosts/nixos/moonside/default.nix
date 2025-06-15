@@ -26,7 +26,19 @@ in
     tmp.cleanOnBoot = true;
   };
 
-  environment.etc."issue".text = "\4";
+  environment = {
+    etc."issue".text = "\4";
+
+    persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      {
+        directory = "/var/lib/syncthing";
+        user = "syncthing";
+        group = "syncthing";
+        mode = "0700";
+      }
+    ];
+  };
+
 
   networking = {
     nftables.enable = lib.mkForce false;
@@ -41,14 +53,17 @@ in
       interfaces = {
         home-vpn = {
           privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-          ips = [ "192.168.3.4/24" ];
+          ips = [ "192.168.3.4/32" ];
           peers = [
             {
               publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
               name = "moonside";
               persistentKeepalive = 25;
               endpoint = "${config.repo.secrets.common.ipv4}:51820";
-              allowedIPs = [ "192.168.3.0/24" ];
+              allowedIPs = [
+                "192.168.3.0/24"
+                "192.168.1.0/24"
+              ];
             }
           ];
         };
@@ -62,10 +77,22 @@ in
 
   system.stateVersion = "23.11";
 
-  node.secretsDir = ./secrets;
   services = {
     nginx = {
       virtualHosts = {
+        # "newway.swarsel.win" = {
+        #   enableACME = true;
+        #   forceSSL = true;
+        #   acmeRoot = null;
+        #   locations = {
+        #     "/" = {
+        #       proxyPass = "http://192.168.1.2:8080";
+        #       extraConfig = ''
+        #         client_max_body_size 0;
+        #       '';
+        #     };
+        #   };
+        # };
         "syncthing.swarsel.win" = {
           enableACME = true;
           forceSSL = true;

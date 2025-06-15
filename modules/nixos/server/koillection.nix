@@ -55,7 +55,7 @@ in
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ postgresPort ];
+    networking.firewall.allowedTCPPorts = [ servicePort postgresPort ];
 
     systemd.services.postgresql.postStart =
       let
@@ -86,17 +86,24 @@ in
           host ${serviceDB} ${serviceDB} 10.88.0.0/16 scram-sha-256
         '';
       };
+    };
 
-      nginx = {
-        virtualHosts = {
-          "${serviceDomain}" = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:${toString servicePort}";
-              };
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
             };
           };
         };
