@@ -5,7 +5,113 @@ let
   oauth2ProxyPort = 3004;
 in
 {
-  options.swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+  options = {
+    swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+    services.nginx.virtualHosts = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule (
+          { config, ... }:
+          {
+            options.oauth2 = {
+              enable = lib.mkEnableOption "access protection of this virtualHost using oauth2-proxy.";
+              allowedGroups = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = ''
+                  A list of kanidm groups that are allowed to access this resource, or the
+                  empty list to allow any authenticated client.
+                '';
+              };
+              X-User = lib.mkOption {
+                type = lib.types.str;
+                default = "$upstream_http_x_auth_request_user";
+                description = "The variable to set as X-User";
+              };
+              X-Email = lib.mkOption {
+                type = lib.types.str;
+                default = "$upstream_http_x_auth_request_email";
+                description = "The variable to set as X-Email";
+              };
+              X-Access-Token = lib.mkOption {
+                type = lib.types.str;
+                default = "$upstream_http_x_auth_request_access_token";
+                description = "The variable to set as X-Access-Token";
+              };
+            };
+            options.locations = lib.mkOption {
+              type = lib.types.attrsOf (
+                lib.types.submodule (locationSubmodule: {
+                  options = {
+                    setOauth2Headers = lib.mkOption {
+                      type = lib.types.bool;
+                      default = true;
+                      description = "Whether to add oauth2 headers to this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                    };
+                    bypassAuth = lib.mkOption {
+                      type = lib.types.bool;
+                      default = false;
+                      description = "Whether to set auth_request off for this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                    };
+                  };
+                  config = lib.mkIf config.oauth2.enable {
+                    extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
+                      proxy_set_header X-User         $user;
+                      proxy_set_header Remote-User    $user;
+                      proxy_set_header X-Email        $email;
+                      proxy_set_header X-Access-Token $token;
+                      add_header Set-Cookie           $auth_cookie;
+                    '' + lib.optionalString locationSubmodule.config.bypassAuth ''
+                      auth_request off;
+                    '';
+                  };
+                })
+              );
+            };
+            config = lib.mkIf config.oauth2.enable {
+              extraConfig = ''
+                auth_request /oauth2/auth;
+                error_page 401 = /oauth2/sign_in;
+
+                # set variables that can be used in locations.<name>.extraConfig
+                # pass information via X-User and X-Email headers to backend,
+                # requires running with --set-xauthrequest flag
+                auth_request_set $user  ${config.oauth2.X-User};
+                auth_request_set $email ${config.oauth2.X-Email};
+                # if you enabled --pass-access-token, this will pass the token to the backend
+                auth_request_set $token ${config.oauth2.X-Access-Token};
+                # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                auth_request_set $auth_cookie $upstream_http_set_cookie;
+              '';
+              locations = {
+                "/oauth2/" = {
+                  proxyPass = "http://oauth2-proxy";
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                  extraConfig = ''
+                    proxy_set_header X-Scheme                $scheme;
+                    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                  '';
+                };
+                "= /oauth2/auth" = {
+                  proxyPass = "http://oauth2-proxy/oauth2/auth" + lib.optionalString (config.oauth2.allowedGroups != [ ]) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                  extraConfig = ''
+                    internal;
+
+                    proxy_set_header X-Scheme       $scheme;
+                    # nginx auth_request includes headers but not body
+                    proxy_set_header Content-Length "";
+                    proxy_pass_request_body         off;
+                  '';
+                };
+              };
+            };
+          }
+        )
+      );
+    };
+  };
   config = lib.mkIf config.swarselsystems.modules.server.oauth2Proxy {
 
     sops = {

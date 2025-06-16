@@ -2,24 +2,26 @@
 let
   serviceName = "freshrss";
   serviceDomain = "signpost.swarsel.win";
+  serviceUser = "freshrss";
+  serviceGroup = serviceName;
 in
 {
   options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
   config = lib.mkIf config.swarselsystems.modules.server.freshrss {
 
-    users.users.freshrss = {
+    users.users."${serviceUser}" = {
       extraGroups = [ "users" ];
-      group = "freshrss";
+      group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups.freshrss = { };
+    users.groups."${serviceGroup}" = { };
 
     sops = {
       secrets = {
-        fresh = { owner = "freshrss"; };
-        "kanidm-freshrss-client" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
-        "oidc-crypto-key" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
+        fresh = { owner = serviceUser; };
+        "kanidm-freshrss-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "oidc-crypto-key" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       #   templates = {
@@ -75,55 +77,20 @@ in
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
+          oauth2.enable = true;
+          oauth2.allowedGroups = [ "ttrss_access" ];
           locations = {
             "/" = {
               proxyPass = "http://${serviceName}";
-              extraConfig = ''
-                auth_request /oauth2/auth;
-                error_page 401 = /oauth2/sign_in;
-
-                # pass information via X-User and X-Email headers to backend,
-                # requires running with --set-xauthrequest flag (done by NixOS)
-                auth_request_set $user   $upstream_http_x_auth_request_user;
-                auth_request_set $email  $upstream_http_x_auth_request_email;
-                proxy_set_header X-User  $user;
-                proxy_set_header X-Email $email;
-                proxy_set_header Remote-User  $user;
-
-                # if you enabled --pass-access-token, this will pass the token to the backend
-                auth_request_set $token  $upstream_http_x_auth_request_access_token;
-                proxy_set_header X-Access-Token $token;
-
-                # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                auth_request_set $auth_cookie $upstream_http_set_cookie;
-                add_header Set-Cookie $auth_cookie;
-              '';
-            };
-            "/oauth2/" = {
-              proxyPass = "http://oauth2-proxy";
-              extraConfig = ''
-                proxy_set_header X-Scheme                $scheme;
-                proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-              '';
-            };
-            "= /oauth2/auth" = {
-              proxyPass = "http://oauth2-proxy/oauth2/auth";
-              extraConfig = ''
-                internal;
-
-                proxy_set_header X-Scheme         $scheme;
-                # nginx auth_request includes headers but not body
-                proxy_set_header Content-Length   "";
-                proxy_pass_request_body           off;
-              '';
             };
             "/api" = {
               proxyPass = "http://${serviceName}";
+              setOauth2Headers = false;
+              bypassAuth = true;
             };
           };
         };
       };
     };
   };
-
 }
