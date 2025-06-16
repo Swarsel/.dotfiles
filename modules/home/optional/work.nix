@@ -334,7 +334,7 @@ in
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
         { command = "nm-applet"; }
         { command = "feishin"; }
-        { command = "teams-for-linux"; }
+        { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
         { command = "1password"; }
       ];
       monitors = {
