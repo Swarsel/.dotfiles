@@ -1,19 +1,25 @@
 { lib, config, ... }:
+let
+  servicePort = 1025;
+  serviceName = "spotifyd";
+  serviceUser = "spotifyd";
+  serviceGroup = serviceUser;
+in
 {
-  options.swarselsystems.modules.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
-  config = lib.mkIf config.swarselsystems.modules.server.spotifyd {
-    users.groups.spotifyd = {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    users.groups."${serviceGroup}" = {
       gid = 65136;
     };
 
-    users.users.spotifyd = {
+    users.users."${serviceUser}" = {
       isSystemUser = true;
       uid = 65136;
-      group = "spotifyd";
+      group = serviceGroup;
       extraGroups = [ "audio" "utmp" "pipewire" ];
     };
 
-    networking.firewall.allowedTCPPorts = [ 1025 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     services.pipewire.systemWide = true;
 
@@ -26,7 +32,7 @@
           device = "sysdefault:CARD=PCH";
           device_name = "SwarselSpot";
           mixer = "alsa";
-          zeroconf_port = 1025;
+          zeroconf_port = servicePort;
         };
       };
     };

@@ -7975,7 +7975,6 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
-
       hardware = {
         enableAllFirmware = lib.mkForce true;
       };
@@ -8033,57 +8032,10 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://navidrome";
-                proxyWebsockets = true;
-                extraConfig = ''
-                  auth_request /oauth2/auth;
-                  error_page 401 = /oauth2/sign_in;
-
-                  # pass information via X-User and X-Email headers to backend,
-                  # requires running with --set-xauthrequest flag (done by NixOS)
-                  auth_request_set $user   $upstream_http_x_auth_request_user;
-                  auth_request_set $email  $upstream_http_x_auth_request_email;
-                  proxy_set_header X-User  $user;
-                  proxy_set_header X-Email $email;
-
-                  # if you enabled --pass-access-token, this will pass the token to the backend
-                  auth_request_set $token  $upstream_http_x_auth_request_access_token;
-                  proxy_set_header X-Access-Token $token;
-
-                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                  auth_request_set $auth_cookie $upstream_http_set_cookie;
-                  add_header Set-Cookie $auth_cookie;
-                  proxy_redirect          http:// https://;
-                  proxy_read_timeout      600s;
-                  proxy_send_timeout      600s;
-                  proxy_buffering         off;
-                  proxy_request_buffering off;
-                  client_max_body_size    0;
-                '';
-              };
-              "/oauth2/" = {
-                proxyPass = "http://oauth2-proxy";
-                extraConfig = ''
-                  proxy_set_header X-Scheme                $scheme;
-                  proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-                '';
-              };
-              "= /oauth2/auth" = {
-                proxyPass = "http://oauth2-proxy/oauth2/auth";
-                extraConfig = ''
-                  internal;
-
-                  proxy_set_header X-Scheme         $scheme;
-                  # nginx auth_request includes headers but not body
-                  proxy_set_header Content-Length   "";
-                  proxy_pass_request_body           off;
-                '';
-              };
-              "/share" = {
-                proxyPass = "http://navidrome";
-                proxyWebsockets = true;
+            oauth2.enable = true;
+            oauth2.allowedGroups = [ "navidrome_access" ];
+            locations =
+              let
                 extraConfig = ''
                   proxy_redirect          http:// https://;
                   proxy_read_timeout      600s;
@@ -8091,25 +8043,29 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
                   proxy_buffering         off;
                   proxy_request_buffering off;
                   client_max_body_size    0;
-                  proxy_set_header X-User  "";
-                  proxy_set_header X-Email "";
                 '';
+              in
+              {
+                "/" = {
+                  proxyPass = "http://navidrome";
+                  proxyWebsockets = true;
+                  inherit extraConfig;
+                };
+                "/share" = {
+                  proxyPass = "http://navidrome";
+                  proxyWebsockets = true;
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                  inherit extraConfig;
+                };
+                "/rest" = {
+                  proxyPass = "http://navidrome";
+                  proxyWebsockets = true;
+                  setOauth2Headers = false;
+                  bypassAuth = true;
+                  inherit extraConfig;
+                };
               };
-              "/rest" = {
-                proxyPass = "http://navidrome";
-                proxyWebsockets = true;
-                extraConfig = ''
-                  proxy_redirect          http:// https://;
-                  proxy_read_timeout      600s;
-                  proxy_send_timeout      600s;
-                  proxy_buffering         off;
-                  proxy_request_buffering off;
-                  client_max_body_size    0;
-                  proxy_set_header X-User  "";
-                  proxy_set_header X-Email "";
-                '';
-              };
-            };
           };
         };
       };
@@ -8126,21 +8082,27 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
 #+begin_src nix :tangle modules/nixos/server/spotifyd.nix
   { lib, config, ... }:
+  let
+    servicePort = 1025;
+    serviceName = "spotifyd";
+    serviceUser = "spotifyd";
+    serviceGroup = serviceUser;
+  in
   {
-    options.swarselsystems.modules.server.spotifyd = lib.mkEnableOption "enable spotifyd on server";
-    config = lib.mkIf config.swarselsystems.modules.server.spotifyd {
-      users.groups.spotifyd = {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+      users.groups."${serviceGroup}" = {
         gid = 65136;
       };
 
-      users.users.spotifyd = {
+      users.users."${serviceUser}" = {
         isSystemUser = true;
         uid = 65136;
-        group = "spotifyd";
+        group = serviceGroup;
         extraGroups = [ "audio" "utmp" "pipewire" ];
       };
 
-      networking.firewall.allowedTCPPorts = [ 1025 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       services.pipewire.systemWide = true;
 
@@ -8153,7 +8115,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             device = "sysdefault:CARD=PCH";
             device_name = "SwarselSpot";
             mixer = "alsa";
-            zeroconf_port = 1025;
+            zeroconf_port = servicePort;
           };
         };
       };
@@ -9489,30 +9451,40 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 
 #+begin_src nix :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, ... }:
+  let
+    serviceDomain = "servant.swarsel.win";
+    servicePort = 8088;
+    serviceName = "jenkins";
+  in
   {
-    options.swarselsystems.modules.server.jenkins = lib.mkEnableOption "enable jenkins on server";
-    config = lib.mkIf config.swarselsystems.modules.server.jenkins {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
       services.jenkins = {
         enable = true;
         withCLI = true;
         port = 8088;
         packages = [ pkgs.stdenv pkgs.git pkgs.jdk17 config.programs.ssh.package pkgs.nix ];
-        listenAddress = "127.0.0.1";
+        listenAddress = "0.0.0.0";
         home = "/Vault/apps/jenkins";
       };
 
-
-
       services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "servant.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:8088";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -9570,24 +9542,26 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   let
     serviceName = "freshrss";
     serviceDomain = "signpost.swarsel.win";
+    serviceUser = "freshrss";
+    serviceGroup = serviceName;
   in
   {
     options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
     config = lib.mkIf config.swarselsystems.modules.server.freshrss {
 
-      users.users.freshrss = {
+      users.users."${serviceUser}" = {
         extraGroups = [ "users" ];
-        group = "freshrss";
+        group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups.freshrss = { };
+      users.groups."${serviceGroup}" = { };
 
       sops = {
         secrets = {
-          fresh = { owner = "freshrss"; };
-          "kanidm-freshrss-client" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
-          "oidc-crypto-key" = { owner = "freshrss"; group = "freshrss"; mode = "0440"; };
+          fresh = { owner = serviceUser; };
+          "kanidm-freshrss-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "oidc-crypto-key" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
         #   templates = {
@@ -9643,57 +9617,22 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
+            oauth2.enable = true;
+            oauth2.allowedGroups = [ "ttrss_access" ];
             locations = {
               "/" = {
                 proxyPass = "http://${serviceName}";
-                extraConfig = ''
-                  auth_request /oauth2/auth;
-                  error_page 401 = /oauth2/sign_in;
-
-                  # pass information via X-User and X-Email headers to backend,
-                  # requires running with --set-xauthrequest flag (done by NixOS)
-                  auth_request_set $user   $upstream_http_x_auth_request_user;
-                  auth_request_set $email  $upstream_http_x_auth_request_email;
-                  proxy_set_header X-User  $user;
-                  proxy_set_header X-Email $email;
-                  proxy_set_header Remote-User  $user;
-
-                  # if you enabled --pass-access-token, this will pass the token to the backend
-                  auth_request_set $token  $upstream_http_x_auth_request_access_token;
-                  proxy_set_header X-Access-Token $token;
-
-                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                  auth_request_set $auth_cookie $upstream_http_set_cookie;
-                  add_header Set-Cookie $auth_cookie;
-                '';
-              };
-              "/oauth2/" = {
-                proxyPass = "http://oauth2-proxy";
-                extraConfig = ''
-                  proxy_set_header X-Scheme                $scheme;
-                  proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-                '';
-              };
-              "= /oauth2/auth" = {
-                proxyPass = "http://oauth2-proxy/oauth2/auth";
-                extraConfig = ''
-                  internal;
-
-                  proxy_set_header X-Scheme         $scheme;
-                  # nginx auth_request includes headers but not body
-                  proxy_set_header Content-Length   "";
-                  proxy_pass_request_body           off;
-                '';
               };
               "/api" = {
                 proxyPass = "http://${serviceName}";
+                setOauth2Headers = false;
+                bypassAuth = true;
               };
             };
           };
         };
       };
     };
-
   }
 #+end_src
 
@@ -9705,33 +9644,33 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix :tangle modules/nixos/server/forgejo.nix
   { lib, config, pkgs, ... }:
   let
-    forgejoDomain = "swagit.swarsel.win";
+    serviceDomain = "swagit.swarsel.win";
+    servicePort = 3000;
+    serviceUser = "forgejo";
+    serviceGroup = serviceUser;
+    serviceName = "forgejo";
   in
   {
-    options.swarselsystems.modules.server.forgejo = lib.mkEnableOption "enable forgejo on server";
-    config = lib.mkIf config.swarselsystems.modules.server.forgejo {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      networking.firewall.allowedTCPPorts = [ 3000 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      users.users.forgejo = {
-        group = "forgejo";
+      users.users."${serviceUser}" = {
+        group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups.forgejo = { };
+      users.groups."${serviceGroup}" = { };
 
       sops.secrets = {
-        kanidm-forgejo-client = {
-          owner = "forgejo";
-          group = "forgejo";
-          mode = "0440";
-        };
+        kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       services.forgejo = {
         enable = true;
-        user = "forgejo";
-        group = "forgejo";
+        user = serviceUser;
+        group = serviceGroup;
         lfs.enable = lib.mkDefault true;
         settings = {
           DEFAULT = {
@@ -9739,10 +9678,10 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           };
           server = {
             PROTOCOL = "http";
-            HTTP_PORT = 3000;
+            HTTP_PORT = servicePort;
             HTTP_ADDR = "0.0.0.0";
-            DOMAIN = forgejoDomain;
-            ROOT_URL = "https://${forgejoDomain}";
+            DOMAIN = serviceDomain;
+            ROOT_URL = "https://${serviceDomain}";
           };
           # federation.ENABLED = true;
           service = {
@@ -9827,14 +9766,21 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       };
 
       services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
-          "swagit.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:3000";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -9857,12 +9803,14 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
   { lib, config, ... }:
   let
     serviceDomain = "synki.swarsel.win";
+    servicePort = 27701;
+    serviceName = "ankisync";
   in
   {
-    options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
-    config = lib.mkIf config.swarselsystems.modules.server.ankisync {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      networking.firewall.allowedTCPPorts = [ 22701 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       sops.secrets.swarsel = { owner = "root"; };
 
@@ -9873,7 +9821,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       services.anki-sync-server = {
         enable = true;
-        port = 27701;
+        port = servicePort;
         address = "0.0.0.0";
         openFirewall = true;
         users = [
@@ -9885,6 +9833,13 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       };
 
       services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
         virtualHosts = {
           "${serviceDomain}" = {
             enableACME = true;
@@ -9892,7 +9847,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://localhost:27701";
+                proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
                 '';
@@ -10166,7 +10121,113 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     oauth2ProxyPort = 3004;
   in
   {
-    options.swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+    options = {
+      swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+      services.nginx.virtualHosts = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule (
+            { config, ... }:
+            {
+              options.oauth2 = {
+                enable = lib.mkEnableOption "access protection of this virtualHost using oauth2-proxy.";
+                allowedGroups = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [ ];
+                  description = ''
+                    A list of kanidm groups that are allowed to access this resource, or the
+                    empty list to allow any authenticated client.
+                  '';
+                };
+                X-User = lib.mkOption {
+                  type = lib.types.str;
+                  default = "$upstream_http_x_auth_request_user";
+                  description = "The variable to set as X-User";
+                };
+                X-Email = lib.mkOption {
+                  type = lib.types.str;
+                  default = "$upstream_http_x_auth_request_email";
+                  description = "The variable to set as X-Email";
+                };
+                X-Access-Token = lib.mkOption {
+                  type = lib.types.str;
+                  default = "$upstream_http_x_auth_request_access_token";
+                  description = "The variable to set as X-Access-Token";
+                };
+              };
+              options.locations = lib.mkOption {
+                type = lib.types.attrsOf (
+                  lib.types.submodule (locationSubmodule: {
+                    options = {
+                      setOauth2Headers = lib.mkOption {
+                        type = lib.types.bool;
+                        default = true;
+                        description = "Whether to add oauth2 headers to this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                      };
+                      bypassAuth = lib.mkOption {
+                        type = lib.types.bool;
+                        default = false;
+                        description = "Whether to set auth_request off for this location. Only takes effect is oauth2 is actually enabled on the parent vhost.";
+                      };
+                    };
+                    config = lib.mkIf config.oauth2.enable {
+                      extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
+                        proxy_set_header X-User         $user;
+                        proxy_set_header Remote-User    $user;
+                        proxy_set_header X-Email        $email;
+                        proxy_set_header X-Access-Token $token;
+                        add_header Set-Cookie           $auth_cookie;
+                      '' + lib.optionalString locationSubmodule.config.bypassAuth ''
+                        auth_request off;
+                      '';
+                    };
+                  })
+                );
+              };
+              config = lib.mkIf config.oauth2.enable {
+                extraConfig = ''
+                  auth_request /oauth2/auth;
+                  error_page 401 = /oauth2/sign_in;
+
+                  # set variables that can be used in locations.<name>.extraConfig
+                  # pass information via X-User and X-Email headers to backend,
+                  # requires running with --set-xauthrequest flag
+                  auth_request_set $user  ${config.oauth2.X-User};
+                  auth_request_set $email ${config.oauth2.X-Email};
+                  # if you enabled --pass-access-token, this will pass the token to the backend
+                  auth_request_set $token ${config.oauth2.X-Access-Token};
+                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
+                  auth_request_set $auth_cookie $upstream_http_set_cookie;
+                '';
+                locations = {
+                  "/oauth2/" = {
+                    proxyPass = "http://oauth2-proxy";
+                    setOauth2Headers = false;
+                    bypassAuth = true;
+                    extraConfig = ''
+                      proxy_set_header X-Scheme                $scheme;
+                      proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+                    '';
+                  };
+                  "= /oauth2/auth" = {
+                    proxyPass = "http://oauth2-proxy/oauth2/auth" + lib.optionalString (config.oauth2.allowedGroups != [ ]) "?allowed_groups=${lib.concatStringsSep "," config.oauth2.allowedGroups}";
+                    setOauth2Headers = false;
+                    bypassAuth = true;
+                    extraConfig = ''
+                      internal;
+
+                      proxy_set_header X-Scheme       $scheme;
+                      # nginx auth_request includes headers but not body
+                      proxy_set_header Content-Length "";
+                      proxy_pass_request_body         off;
+                    '';
+                  };
+                };
+              };
+            }
+          )
+        );
+      };
+    };
     config = lib.mkIf config.swarselsystems.modules.server.oauth2Proxy {
 
       sops = {
@@ -10325,12 +10386,11 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             "${fireflyDomain}" = {
               locations = {
                 "/api" = {
+                  setOauth2Headers = false;
                   extraConfig = ''
                     index index.php;
                     try_files $uri $uri/ /index.php?$query_string;
                     add_header Access-Control-Allow-Methods 'GET, POST, HEAD, OPTIONS';
-                    proxy_set_header X-User  "";
-                    proxy_set_header X-Email "";
                   '';
                 };
               };
@@ -10352,52 +10412,18 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
+            oauth2.enable = true;
+            oauth2.allowedGroups = [ "firefly_access" ];
             # main config is automatically added by nixos firefly config.
             # hence, only provide certificate
             locations = {
               "/" = {
                 proxyPass = "http://${serviceName}";
-                extraConfig = ''
-                  auth_request /oauth2/auth;
-                  error_page 401 = /oauth2/sign_in;
-
-                  # pass information via X-User and X-Email headers to backend,
-                  # requires running with --set-xauthrequest flag (done by NixOS)
-                  auth_request_set $user   $upstream_http_x_auth_request_user;
-                  auth_request_set $email  $upstream_http_x_auth_request_email;
-                  proxy_set_header X-User  $user;
-                  proxy_set_header X-Email $email;
-
-                  # if you enabled --pass-access-token, this will pass the token to the backend
-                  auth_request_set $token  $upstream_http_x_auth_request_access_token;
-                  proxy_set_header X-Access-Token $token;
-
-                  # if you enabled --cookie-refresh, this is needed for it to work with auth_request
-                  auth_request_set $auth_cookie $upstream_http_set_cookie;
-                  add_header Set-Cookie $auth_cookie;
-                '';
-              };
-              "/oauth2/" = {
-                proxyPass = "http://oauth2-proxy";
-                extraConfig = ''
-
-                            proxy_set_header X-Scheme                $scheme;
-                            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
-                          '';
-              };
-              "= /oauth2/auth" = {
-                proxyPass = "http://oauth2-proxy/oauth2/auth";
-                extraConfig = ''
-                  internal;
-
-                  proxy_set_header X-Scheme         $scheme;
-                  # nginx auth_request includes headers but not body
-                  proxy_set_header Content-Length   "";
-                  proxy_pass_request_body           off;
-                '';
               };
               "/api" = {
                 proxyPass = "http://${serviceName}";
+                setOauth2Headers = false;
+                bypassAuth = true;
               };
             };
           };

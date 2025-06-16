@@ -1,32 +1,32 @@
 { lib, config, pkgs, ... }:
 let
-  forgejoDomain = "swagit.swarsel.win";
+  serviceDomain = "swagit.swarsel.win";
+  servicePort = 3000;
+  serviceUser = "forgejo";
+  serviceGroup = serviceUser;
+  serviceName = "forgejo";
 in
 {
-  options.swarselsystems.modules.server.forgejo = lib.mkEnableOption "enable forgejo on server";
-  config = lib.mkIf config.swarselsystems.modules.server.forgejo {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    networking.firewall.allowedTCPPorts = [ 3000 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    users.users.forgejo = {
-      group = "forgejo";
+    users.users."${serviceUser}" = {
+      group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups.forgejo = { };
+    users.groups."${serviceGroup}" = { };
 
     sops.secrets = {
-      kanidm-forgejo-client = {
-        owner = "forgejo";
-        group = "forgejo";
-        mode = "0440";
-      };
+      kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     services.forgejo = {
       enable = true;
-      user = "forgejo";
-      group = "forgejo";
+      user = serviceUser;
+      group = serviceGroup;
       lfs.enable = lib.mkDefault true;
       settings = {
         DEFAULT = {
@@ -34,10 +34,10 @@ in
         };
         server = {
           PROTOCOL = "http";
-          HTTP_PORT = 3000;
+          HTTP_PORT = servicePort;
           HTTP_ADDR = "0.0.0.0";
-          DOMAIN = forgejoDomain;
-          ROOT_URL = "https://${forgejoDomain}";
+          DOMAIN = serviceDomain;
+          ROOT_URL = "https://${serviceDomain}";
         };
         # federation.ENABLED = true;
         service = {
@@ -122,14 +122,21 @@ in
     };
 
     services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
-        "swagit.swarsel.win" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:3000";
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size 0;
               '';

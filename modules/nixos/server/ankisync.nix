@@ -1,12 +1,14 @@
 { lib, config, ... }:
 let
   serviceDomain = "synki.swarsel.win";
+  servicePort = 27701;
+  serviceName = "ankisync";
 in
 {
-  options.swarselsystems.modules.server.ankisync = lib.mkEnableOption "enable ankisync on server";
-  config = lib.mkIf config.swarselsystems.modules.server.ankisync {
+  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    networking.firewall.allowedTCPPorts = [ 22701 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     sops.secrets.swarsel = { owner = "root"; };
 
@@ -17,7 +19,7 @@ in
 
     services.anki-sync-server = {
       enable = true;
-      port = 27701;
+      port = servicePort;
       address = "0.0.0.0";
       openFirewall = true;
       users = [
@@ -29,6 +31,13 @@ in
     };
 
     services.nginx = {
+      upstreams = {
+        "${serviceName}" = {
+          servers = {
+            "192.168.1.2:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
       virtualHosts = {
         "${serviceDomain}" = {
           enableACME = true;
@@ -36,7 +45,7 @@ in
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://localhost:27701";
+              proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size 0;
               '';
