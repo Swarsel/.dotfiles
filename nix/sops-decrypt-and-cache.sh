@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
 set -euo pipefail
 
 print_out_path=false

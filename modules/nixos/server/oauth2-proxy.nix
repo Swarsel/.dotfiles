@@ -7,6 +7,7 @@ in
 {
   options = {
     swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+    # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
     services.nginx.virtualHosts = lib.mkOption {
       type = lib.types.attrsOf (
         lib.types.submodule (
