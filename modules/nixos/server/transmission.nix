@@ -1,6 +1,21 @@
 { self, pkgs, lib, config, ... }:
 let
   serviceDomain = "store.swarsel.win";
+  lidarrUser = "lidarr";
+  lidarrGroup = lidarrUser;
+  lidarrPort = 8686;
+  radarrUser = "radarr";
+  radarrGroup = radarrUser;
+  radarrPort = 7878;
+  sonarrUser = "sonarr";
+  sonarrGroup = sonarrUser;
+  sonarrPort = 8989;
+  readarrUser = "readarr";
+  readarrGroup = readarrUser;
+  readarrPort = 8787;
+  prowlarrUser = "prowlarr";
+  prowlarrGroup = prowlarrUser;
+  prowlarrPort = 9696;
 in
 {
   options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
@@ -12,11 +27,11 @@ in
         dockeruser = {
           gid = 1155;
         };
-        radarr = { };
-        readarr = { };
-        sonarr = { };
-        lidarr = { };
-        prowlarr = { };
+        "${radarrGroup}" = { };
+        "${readarrGroup}" = { };
+        "${sonarrGroup}" = { };
+        "${lidarrGroup}" = { };
+        "${prowlarrGroup}" = { };
       };
       users = {
         dockeruser = {
@@ -25,29 +40,29 @@ in
           group = "docker";
           extraGroups = [ "users" ];
         };
-        radarr = {
+        "${radarrUser}" = {
           isSystemUser = true;
-          group = "radarr";
+          group = radarrGroup;
           extraGroups = [ "users" ];
         };
-        readarr = {
+        "${readarrGroup}" = {
           isSystemUser = true;
-          group = "readarr";
+          group = readarrGroup;
           extraGroups = [ "users" ];
         };
-        sonarr = {
+        "${sonarrGroup}" = {
           isSystemUser = true;
-          group = "sonarr";
+          group = sonarrGroup;
           extraGroups = [ "users" ];
         };
-        lidarr = {
+        "${lidarrUser}" = {
           isSystemUser = true;
-          group = "lidarr";
+          group = lidarrGroup;
           extraGroups = [ "users" ];
         };
-        prowlarr = {
+        "${prowlarrGroup}" = {
           isSystemUser = true;
-          group = "prowlarr";
+          group = prowlarrGroup;
           extraGroups = [ "users" ];
         };
       };
@@ -73,32 +88,45 @@ in
     services = {
       radarr = {
         enable = true;
+        user = radarrUser;
+        group = radarrGroup;
+        settings.server.port = radarrPort;
         openFirewall = true;
-        dataDir = "/Vault/apps/radarr";
+        dataDir = "/Vault/data/radarr";
       };
       readarr = {
         enable = true;
+        user = readarrUser;
+        group = readarrGroup;
+        settings.server.port = readarrPort;
         openFirewall = true;
-        dataDir = "/Vault/apps/readarr";
+        dataDir = "/Vault/data/readarr";
       };
       sonarr = {
         enable = true;
+        user = sonarrUser;
+        group = sonarrGroup;
+        settings.server.port = sonarrPort;
         openFirewall = true;
-        dataDir = "/Vault/apps/sonarr";
+        dataDir = "/Vault/data/sonarr";
       };
       lidarr = {
         enable = true;
+        user = lidarrUser;
+        group = lidarrGroup;
+        settings.server.port = lidarrPort;
         openFirewall = true;
-        dataDir = "/Vault/apps/lidarr";
+        dataDir = "/Vault/data/lidarr";
       };
       prowlarr = {
         enable = true;
+        settings.server.port = prowlarrPort;
         openFirewall = true;
       };
 
       nginx = {
         virtualHosts = {
-          "store.swarsel.win" = {
+          "${serviceDomain}" = {
             enableACME = false;
             forceSSL = false;
             acmeRoot = null;
@@ -110,31 +138,31 @@ in
                 '';
               };
               "/radarr" = {
-                proxyPass = "http://localhost:7878";
+                proxyPass = "http://localhost:${builtins.toString radarrPort}";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/readarr" = {
-                proxyPass = "http://localhost:8787";
+                proxyPass = "http://localhost:${builtins.toString readarrPort}";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/sonarr" = {
-                proxyPass = "http://localhost:8989";
+                proxyPass = "http://localhost:${builtins.toString sonarrPort}";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/lidarr" = {
-                proxyPass = "http://localhost:8686";
+                proxyPass = "http://localhost:${builtins.toString lidarrPort}";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';
               };
               "/prowlarr" = {
-                proxyPass = "http://localhost:9696";
+                proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
                 extraConfig = ''
                   client_max_body_size    0;
                 '';

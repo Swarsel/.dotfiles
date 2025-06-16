@@ -167,16 +167,6 @@ in
             devices = [ "winters" "magicant" "${workHostName}" ];
             id = "hgp9s-fyq3p";
           };
-          ".elfeed" = {
-            path = "/sync/elfeed";
-            type = "receiveonly";
-            versioning = {
-              type = "simple";
-              params.keep = "5";
-            };
-            devices = [ "winters" ];
-            id = "h7xbs-fs9v1";
-          };
           "Documents" = {
             path = "/sync/Documents";
             type = "receiveonly";

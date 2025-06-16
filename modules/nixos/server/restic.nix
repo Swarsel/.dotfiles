@@ -30,7 +30,6 @@ in
             "/Vault/Eternor/Paperless"
             "/Vault/Eternor/Bilder"
             "/Vault/Eternor/Immich"
-            "/Vault/familymedia"
           ];
           pruneOpts = [
             "--keep-daily 3"

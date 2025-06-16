@@ -20,7 +20,7 @@ in
       host = "0.0.0.0";
       port = servicePort;
       openFirewall = true;
-      mediaLocation = "/Vault/Eternor/Immich";
+      mediaLocation = "/Vault/Eternor/Immich"; # dataDir
       environment = {
         IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
       };

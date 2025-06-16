@@ -1623,16 +1623,6 @@ This machine mainly acts as an external sync helper. It manages the following th
               devices = [ "winters" "magicant" "${workHostName}" ];
               id = "hgp9s-fyq3p";
             };
-            ".elfeed" = {
-              path = "/sync/elfeed";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "winters" ];
-              id = "h7xbs-fs9v1";
-            };
             "Documents" = {
               path = "/sync/Documents";
               type = "receiveonly";
@@ -4685,6 +4675,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             navidrome = lib.mkDefault true;
             spotifyd = lib.mkDefault true;
             mpd = lib.mkDefault true;
+            postgresql = lib.mkDefault true;
             matrix = lib.mkDefault true;
             nextcloud = lib.mkDefault true;
             immich = lib.mkDefault true;
@@ -7722,8 +7713,6 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         lego
       ];
 
-      # users.users.acme = {};
-
       sops = {
         # secrets.dnstokenfull = { owner = "acme"; };
         secrets.dnstokenfull = { };
@@ -7836,6 +7825,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         user = serviceUser;
         settings.Port = servicePort;
         tokenKeyFile = config.sops.secrets.kavita.path;
+        dataDir = "/Vault/data/kavita";
       };
 
       nodes.moonside.services.nginx = {
@@ -7960,7 +7950,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       users = {
         groups = {
-          "$(serviceGroup}" = {
+          "${serviceGroup}" = {
             gid = 61593;
           };
         };
@@ -7990,6 +7980,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           Port = servicePort;
           MusicFolder = "/Vault/Eternor/Music";
           PlaylistsPath = "./Playlists";
+          AutoImportPlaylists = false;
           EnableSharing = true;
           EnableTranscodingConfig = true;
           Scanner.GroupAlbumReleases = true;
@@ -8016,6 +8007,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
           UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
           UIWelcomeMessage = "~SwarselSound~";
+          EnableInsightsCollector = false;
         };
       };
 
@@ -8218,13 +8210,35 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
   }
 #+end_src
 
+**** postgresql
+
+#+begin_src nix :tangle modules/nixos/server/postgresql.nix
+  { config, lib, pkgs, ... }:
+  let
+    serviceName = "postgresql";
+    postgresVersion = 14;
+  in
+  {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+      services = {
+        postgresql = {
+          enable = true;
+          package = pkgs."postgresql_${builtins.toString postgresVersion}";
+          dataDir = "/Vault/data/postgresql/${builtins.toString postgresVersion}";
+        };
+      };
+    };
+  }
+#+end_src
+
 **** matrix
 :PROPERTIES:
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/matrix.nix
-  { config, lib, pkgs, sops, ... }:
+  { lib, config, pkgs, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
     serviceName = "matrix";
@@ -8342,12 +8356,16 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
         matrix-synapse = {
           enable = true;
+          dataDir = "/Vault/data/matrix-synapse";
           settings = {
-            app_service_config_files = [
-              "/var/lib/matrix-synapse/telegram-registration.yaml"
-              "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-              "/var/lib/matrix-synapse/signal-registration.yaml"
-              "/var/lib/matrix-synapse/doublepuppet.yaml"
+            app_service_config_files = let
+              inherit (config.services.matrix-synapse) dataDir;
+            in
+              [
+              "${dataDir}/telegram-registration.yaml"
+              "${dataDir}/whatsapp-registration.yaml"
+              "${dataDir}/signal-registration.yaml"
+              "${dataDir}/doublepuppet.yaml"
             ];
             server_name = matrixDomain;
             public_baseurl = "https://${matrixDomain}";
@@ -8602,7 +8620,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
           package = pkgs.nextcloud31;
           hostName = serviceDomain;
-          home = "/Vault/apps/nextcloud";
+          home = "/Vault/data/nextcloud";
           datadir = "/Vault/data/nextcloud";
           https = true;
           configureRedis = true;
@@ -8672,7 +8690,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         host = "0.0.0.0";
         port = servicePort;
         openFirewall = true;
-        mediaLocation = "/Vault/Eternor/Immich";
+        mediaLocation = "/Vault/Eternor/Immich"; # dataDir
         environment = {
           IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://localhost:3003";
         };
@@ -8866,6 +8884,21 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { self, pkgs, lib, config, ... }:
   let
     serviceDomain = "store.swarsel.win";
+    lidarrUser = "lidarr";
+    lidarrGroup = lidarrUser;
+    lidarrPort = 8686;
+    radarrUser = "radarr";
+    radarrGroup = radarrUser;
+    radarrPort = 7878;
+    sonarrUser = "sonarr";
+    sonarrGroup = sonarrUser;
+    sonarrPort = 8989;
+    readarrUser = "readarr";
+    readarrGroup = readarrUser;
+    readarrPort = 8787;
+    prowlarrUser = "prowlarr";
+    prowlarrGroup = prowlarrUser;
+    prowlarrPort = 9696;
   in
   {
     options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
@@ -8877,11 +8910,11 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           dockeruser = {
             gid = 1155;
           };
-          radarr = { };
-          readarr = { };
-          sonarr = { };
-          lidarr = { };
-          prowlarr = { };
+          "${radarrGroup}" = { };
+          "${readarrGroup}" = { };
+          "${sonarrGroup}" = { };
+          "${lidarrGroup}" = { };
+          "${prowlarrGroup}" = { };
         };
         users = {
           dockeruser = {
@@ -8890,29 +8923,29 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             group = "docker";
             extraGroups = [ "users" ];
           };
-          radarr = {
+          "${radarrUser}" = {
             isSystemUser = true;
-            group = "radarr";
+            group = radarrGroup;
             extraGroups = [ "users" ];
           };
-          readarr = {
+          "${readarrGroup}" = {
             isSystemUser = true;
-            group = "readarr";
+            group = readarrGroup;
             extraGroups = [ "users" ];
           };
-          sonarr = {
+          "${sonarrGroup}" = {
             isSystemUser = true;
-            group = "sonarr";
+            group = sonarrGroup;
             extraGroups = [ "users" ];
           };
-          lidarr = {
+          "${lidarrUser}" = {
             isSystemUser = true;
-            group = "lidarr";
+            group = lidarrGroup;
             extraGroups = [ "users" ];
           };
-          prowlarr = {
+          "${prowlarrGroup}" = {
             isSystemUser = true;
-            group = "prowlarr";
+            group = prowlarrGroup;
             extraGroups = [ "users" ];
           };
         };
@@ -8938,32 +8971,45 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       services = {
         radarr = {
           enable = true;
+          user = radarrUser;
+          group = radarrGroup;
+          settings.server.port = radarrPort;
           openFirewall = true;
-          dataDir = "/Vault/apps/radarr";
+          dataDir = "/Vault/data/radarr";
         };
         readarr = {
           enable = true;
+          user = readarrUser;
+          group = readarrGroup;
+          settings.server.port = readarrPort;
           openFirewall = true;
-          dataDir = "/Vault/apps/readarr";
+          dataDir = "/Vault/data/readarr";
         };
         sonarr = {
           enable = true;
+          user = sonarrUser;
+          group = sonarrGroup;
+          settings.server.port = sonarrPort;
           openFirewall = true;
-          dataDir = "/Vault/apps/sonarr";
+          dataDir = "/Vault/data/sonarr";
         };
         lidarr = {
           enable = true;
+          user = lidarrUser;
+          group = lidarrGroup;
+          settings.server.port = lidarrPort;
           openFirewall = true;
-          dataDir = "/Vault/apps/lidarr";
+          dataDir = "/Vault/data/lidarr";
         };
         prowlarr = {
           enable = true;
+          settings.server.port = prowlarrPort;
           openFirewall = true;
         };
 
         nginx = {
           virtualHosts = {
-            "store.swarsel.win" = {
+            "${serviceDomain}" = {
               enableACME = false;
               forceSSL = false;
               acmeRoot = null;
@@ -8975,31 +9021,31 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                   '';
                 };
                 "/radarr" = {
-                  proxyPass = "http://localhost:7878";
+                  proxyPass = "http://localhost:${builtins.toString radarrPort}";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/readarr" = {
-                  proxyPass = "http://localhost:8787";
+                  proxyPass = "http://localhost:${builtins.toString readarrPort}";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/sonarr" = {
-                  proxyPass = "http://localhost:8989";
+                  proxyPass = "http://localhost:${builtins.toString sonarrPort}";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/lidarr" = {
-                  proxyPass = "http://localhost:8686";
+                  proxyPass = "http://localhost:${builtins.toString lidarrPort}";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
                 };
                 "/prowlarr" = {
-                  proxyPass = "http://localhost:9696";
+                  proxyPass = "http://localhost:${builtins.toString prowlarrPort}";
                   extraConfig = ''
                     client_max_body_size    0;
                   '';
@@ -9048,7 +9094,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         user = serviceUser;
         group = serviceGroup;
         dataDir = "/Vault/data/syncthing";
-        configDir = "/Vault/apps/syncthing";
+        configDir = "/Vault/data/syncthing/.config/syncthing";
         guiAddress = "0.0.0.0:${builtins.toString servicePort}";
         openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
         relay.enable = false;
@@ -9106,16 +9152,16 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
               id = "hgp9s-fyq3p";
             };
-            "Documents" = {
-              path = "/Vault/data/syncthing/Documents";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
-              id = "hgr3d-pfu3w";
-            };
+            # "Documents" = {
+            #   path = "/Vault/data/syncthing/Documents";
+            #   type = "receiveonly";
+            #   versioning = {
+            #     type = "simple";
+            #     params.keep = "5";
+            #   };
+            #   devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
+            #   id = "hgr3d-pfu3w";
+            # };
           };
         };
       };
@@ -9188,7 +9234,6 @@ This manages backups for my pictures and obsidian files.
               "/Vault/Eternor/Paperless"
               "/Vault/Eternor/Bilder"
               "/Vault/Eternor/Immich"
-              "/Vault/familymedia"
             ];
             pruneOpts = [
               "--keep-daily 3"
