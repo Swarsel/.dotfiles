@@ -1,3 +1,4 @@
+# adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
 { exec, ... }:
 let
   assertMsg = pred: msg: pred || builtins.throw msg;
@@ -16,7 +17,7 @@ in
   sopsImportEncrypted =
     nixFile:
       assert assertMsg (builtins.isPath nixFile)
-        "The file to decrypt must be given as a path to prevent impurity.";
+        "The file to decrypt must be given as a path (not a string) to prevent impurity.";
       assert assertMsg (hasSuffix ".nix.enc" nixFile)
         "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
       exec [

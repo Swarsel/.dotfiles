@@ -5192,7 +5192,7 @@ TODO
 **** extra-builtins
 
 #+begin_src nix :tangle nix/extra-builtins.nix
-
+# adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
 { exec, ... }:
 let
   assertMsg = pred: msg: pred || builtins.throw msg;
@@ -5211,7 +5211,7 @@ in
   sopsImportEncrypted =
     nixFile:
     assert assertMsg (builtins.isPath nixFile)
-      "The file to decrypt must be given as a path to prevent impurity.";
+      "The file to decrypt must be given as a path (not a string) to prevent impurity.";
     assert assertMsg (hasSuffix ".nix.enc" nixFile)
       "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
     exec [
@@ -5225,7 +5225,7 @@ in
 
 #+begin_src shell :tangle nix/sops-decrypt-and-cache.sh
   #!/usr/bin/env bash
-
+  # adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
   set -euo pipefail
 
   print_out_path=false
@@ -5631,29 +5631,15 @@ A breakdown of the flags being set:
 **** Share configuration between nodes
 
 #+begin_src nix :tangle modules/nixos/common/nodes.nix
+  # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
   { config, lib, outputs, ... }:
   let
-    inherit (lib)
-      attrNames
-      concatMap
-      concatStringsSep
-      foldl'
-      getAttrFromPath
-      mkMerge
-      mkOption
-      mkOptionType
-      optionals
-      recursiveUpdate
-      setAttrByPath
-      types
-      ;
-
     nodeName = config.node.name;
     mkForwardedOption =
       path:
-      mkOption {
-        type = mkOptionType {
-          name = "Same type that the receiving option `${concatStringsSep "." path}` normally accepts.";
+      lib.mkOption {
+        type = lib.mkOptionType {
+          name = "Same type that the receiving option `${lib.concatStringsSep "." path}` normally accepts.";
           merge =
             _loc: defs:
             builtins.filter (x: builtins.isAttrs x -> ((x._type or "") != "__distributed_config_empty")) (
@@ -5664,7 +5650,7 @@ A breakdown of the flags being set:
           _type = "__distributed_config_empty";
         };
         description = ''
-          Anything specified here will be forwarded to `${concatStringsSep "." path}`
+          Anything specified here will be forwarded to `${lib.concatStringsSep "." path}`
           on the given node. Forwarding happens as-is to the raw values,
           so validity can only be checked on the receiving node.
         '';
@@ -5684,14 +5670,14 @@ A breakdown of the flags being set:
     ];
 
     attrsForEachOption =
-      f: foldl' (acc: path: recursiveUpdate acc (setAttrByPath path (f path))) { } forwardedOptions;
+      f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
   in
   {
-    options.nodes = mkOption {
+    options.nodes = lib.mkOption {
       description = "Options forwarded to the given node.";
       default = { };
-      type = types.attrsOf (
-        types.submodule {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
           options = attrsForEachOption mkForwardedOption;
         }
       );
@@ -5704,8 +5690,8 @@ A breakdown of the flags being set:
           let
             cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
           in
-          optionals (cfg != null) (getAttrFromPath path cfg);
-        mergeConfigFromOthers = path: mkMerge (concatMap (getConfig path) (attrNames outputs.nixosConfigurations));
+          lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
+        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
       in
       attrsForEachOption mergeConfigFromOthers;
   }
@@ -6509,6 +6495,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 **** PII management
 
 #+begin_src nix :tangle modules/nixos/common/pii.nix
+  # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
   { config, inputs, lib, ... }:
   let
 
@@ -10168,6 +10155,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   {
     options = {
       swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+      # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
       services.nginx.virtualHosts = lib.mkOption {
         type = lib.types.attrsOf (
           lib.types.submodule (
