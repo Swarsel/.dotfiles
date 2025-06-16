@@ -26,7 +26,7 @@ in
       user = serviceUser;
       group = serviceGroup;
       dataDir = "/Vault/data/syncthing";
-      configDir = "/Vault/apps/syncthing";
+      configDir = "/Vault/data/syncthing/.config/syncthing";
       guiAddress = "0.0.0.0:${builtins.toString servicePort}";
       openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
       relay.enable = false;
@@ -84,16 +84,16 @@ in
             devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
             id = "hgp9s-fyq3p";
           };
-          "Documents" = {
-            path = "/Vault/data/syncthing/Documents";
-            type = "receiveonly";
-            versioning = {
-              type = "simple";
-              params.keep = "5";
-            };
-            devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
-            id = "hgr3d-pfu3w";
-          };
+          # "Documents" = {
+          #   path = "/Vault/data/syncthing/Documents";
+          #   type = "receiveonly";
+          #   versioning = {
+          #     type = "simple";
+          #     params.keep = "5";
+          #   };
+          #   devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
+          #   id = "hgr3d-pfu3w";
+          # };
         };
       };
     };

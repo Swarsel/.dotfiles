@@ -1,4 +1,4 @@
-{ config, lib, pkgs, sops, ... }:
+{ lib, config, pkgs, ... }:
 let
   matrixDomain = "swatrix.swarsel.win";
   serviceName = "matrix";
@@ -116,13 +116,18 @@ in
 
       matrix-synapse = {
         enable = true;
+        dataDir = "/Vault/data/matrix-synapse";
         settings = {
-          app_service_config_files = [
-            "/var/lib/matrix-synapse/telegram-registration.yaml"
-            "/var/lib/matrix-synapse/whatsapp-registration.yaml"
-            "/var/lib/matrix-synapse/signal-registration.yaml"
-            "/var/lib/matrix-synapse/doublepuppet.yaml"
-          ];
+          app_service_config_files =
+            let
+              inherit (config.services.matrix-synapse) dataDir;
+            in
+            [
+              "${dataDir}/telegram-registration.yaml"
+              "${dataDir}/whatsapp-registration.yaml"
+              "${dataDir}/signal-registration.yaml"
+              "${dataDir}/doublepuppet.yaml"
+            ];
           server_name = matrixDomain;
           public_baseurl = "https://${matrixDomain}";
           listeners = [

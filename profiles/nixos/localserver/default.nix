@@ -24,6 +24,7 @@
           navidrome = lib.mkDefault true;
           spotifyd = lib.mkDefault true;
           mpd = lib.mkDefault true;
+          postgresql = lib.mkDefault true;
           matrix = lib.mkDefault true;
           nextcloud = lib.mkDefault true;
           immich = lib.mkDefault true;

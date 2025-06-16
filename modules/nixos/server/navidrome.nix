@@ -17,7 +17,7 @@ in
 
     users = {
       groups = {
-        "$(serviceGroup}" = {
+        "${serviceGroup}" = {
           gid = 61593;
         };
       };
@@ -47,6 +47,7 @@ in
         Port = servicePort;
         MusicFolder = "/Vault/Eternor/Music";
         PlaylistsPath = "./Playlists";
+        AutoImportPlaylists = false;
         EnableSharing = true;
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
@@ -73,6 +74,7 @@ in
         };
         UILoginBackgroundUrl = "https://i.imgur.com/OMLxi7l.png";
         UIWelcomeMessage = "~SwarselSound~";
+        EnableInsightsCollector = false;
       };
     };
 

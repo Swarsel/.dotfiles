@@ -31,7 +31,7 @@ in
         };
         package = pkgs.nextcloud31;
         hostName = serviceDomain;
-        home = "/Vault/apps/nextcloud";
+        home = "/Vault/data/nextcloud";
         datadir = "/Vault/data/nextcloud";
         https = true;
         configureRedis = true;

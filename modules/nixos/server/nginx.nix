@@ -6,8 +6,6 @@
       lego
     ];
 
-    # users.users.acme = {};
-
     sops = {
       # secrets.dnstokenfull = { owner = "acme"; };
       secrets.dnstokenfull = { };

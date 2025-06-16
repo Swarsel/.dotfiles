@@ -31,6 +31,7 @@ in
       user = serviceUser;
       settings.Port = servicePort;
       tokenKeyFile = config.sops.secrets.kavita.path;
+      dataDir = "/Vault/data/kavita";
     };
 
     nodes.moonside.services.nginx = {
