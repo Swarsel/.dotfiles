@@ -23,6 +23,8 @@ in
       kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services.forgejo = {
       enable = true;
       user = serviceUser;

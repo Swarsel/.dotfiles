@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, globals, ... }:
 let
   serviceDomain = "shots.swarsel.win";
   servicePort = 3001;
@@ -13,7 +13,8 @@ in
       extraGroups = [ "video" "render" "users" ];
     };
 
-    topology.self.services.immich.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.immich = {
       enable = true;

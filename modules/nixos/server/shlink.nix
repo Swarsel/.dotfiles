@@ -48,6 +48,9 @@ in
       { directory = "/var/lib/containers"; }
     ];
 
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services.nginx = {
       upstreams = {
         "${serviceName}" = {

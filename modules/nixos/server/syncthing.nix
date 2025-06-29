@@ -21,6 +21,8 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services.syncthing = {
       enable = true;
       user = serviceUser;

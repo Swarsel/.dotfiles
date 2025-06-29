@@ -8,7 +8,8 @@ in
   options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    topology.self.services.atuin.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.atuin = {
       enable = true;

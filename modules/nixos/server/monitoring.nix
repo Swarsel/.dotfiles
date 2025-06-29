@@ -35,6 +35,7 @@ in
     networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
     topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
+    globals.services.${moduleName}.domain = serviceDomain;
 
     services = {
       grafana = {

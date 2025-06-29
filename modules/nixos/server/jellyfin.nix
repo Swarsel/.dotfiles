@@ -24,7 +24,8 @@ in
       ];
     };
 
-    topology.self.services.jellyfin.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.jellyfin = {
       enable = true;

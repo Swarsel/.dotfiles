@@ -24,37 +24,5 @@
       isImpermanence = lib.mkEnableOption "use impermanence on this system";
       isSecureBoot = lib.mkEnableOption "use secure boot on this system";
     };
-    globals = lib.mkOption {
-      default = { };
-      type = lib.types.submodule {
-        options = {
-
-          services = lib.mkOption {
-            type = lib.types.attrsOf (
-              lib.types.submodule {
-                options = {
-                  domain = lib.mkOption {
-                    type = lib.types.str;
-                    description = "Domain that the service runs under";
-                  };
-                };
-              }
-            );
-          };
-          domains = {
-            main = lib.mkOption {
-              type = lib.types.str;
-              description = "My main domain.";
-            };
-          };
-        };
-      };
-    };
-    # _globalsDefs = lib.mkOption {
-    #   type = lib.types.unspecified;
-    #   default = options.globals.definitions;
-    #   readOnly = true;
-    #   internal = true;
-    # };
   };
 }

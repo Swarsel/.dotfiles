@@ -13,6 +13,9 @@ in
     "${self}/modules/nixos/common/topology.nix"
     "${self}/modules/home/common/sharedsetup.nix"
 
+    "${self}/modules/nixos/common/globals.nix"
+
+
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager.users."${primaryUser}".imports = [

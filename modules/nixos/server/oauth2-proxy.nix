@@ -1,6 +1,6 @@
-{ lib, config, ... }:
+{ lib, config, globals, ... }:
 let
-  kanidmDomain = "sso.swarsel.win";
+  kanidmDomain = globals.services.kanidm.domain;
   oauth2ProxyDomain = "soauth.swarsel.win";
   oauth2ProxyPort = 3004;
 in
@@ -136,6 +136,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
+
+    globals.services.oauth2Proxy.domain = oauth2ProxyDomain;
 
     services = {
       oauth2-proxy = {

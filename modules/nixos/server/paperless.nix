@@ -25,6 +25,8 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services = {
       paperless = {
         enable = true;

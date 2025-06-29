@@ -148,28 +148,130 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
     };
     outputs =
       inputs@{ self
-      , nixpkgs
-      , home-manager
-      , systems
-      , ...
-      }:
+             , nixpkgs
+             , home-manager
+             , systems
+             , ...
+             }:
       let
         <<flakelet>>
       in
-      {
-        <<flakeoutputgeneral>>
+        inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+          imports = [
+            ./nix/globals.nix
+          ];
+          flake = { config, ... }:
+            let
+              <<flakelet>>
 
-        nixosConfigurations =
-        <<flakenixosconf>>
-        homeConfigurations =
-        <<flakehomeconf>>
-        darwinConfigurations =
-        <<flakedarwinconf>>
-        nixOnDroidConfigurations =
-        <<flakedroidconf>>
+              linuxUser = "swarsel";
+              macUser = "leon.schwarzaeugl";
 
-        topology =
-        <<topologyconf>>
+              mkFullHost = host: type: {
+                ${host} =
+                  let
+                    systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+                  in
+                    systemFunc {
+                      specialArgs = { inherit inputs outputs lib self; inherit (config) globals; };
+                      modules = [
+                        {
+                          node.name = host;
+                          node.secretsDir = ./hosts/${type}/${host}/secrets;
+                        }
+                        # put inports here that are for all hosts
+                        inputs.disko.nixosModules.disko
+                        inputs.sops-nix.nixosModules.sops
+                        inputs.impermanence.nixosModules.impermanence
+                        inputs.lanzaboote.nixosModules.lanzaboote
+                        inputs.fw-fanctrl.nixosModules.default
+                        "${self}/hosts/${type}/${host}"
+                        {
+                          _module.args.primaryUser = linuxUser;
+                        }
+                      ] ++
+                      (if (host == "iso") then [
+                        inputs.nix-topology.nixosModules.default
+                      ] else
+                        ([
+                          # put nixos imports here that are for all servers and normal hosts
+                          inputs.nix-topology.nixosModules.default
+                          "${self}/modules/${type}/common"
+                          inputs.stylix.nixosModules.stylix
+                          inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+                        ] ++ (if (type == "nixos") then [
+                          inputs.home-manager.nixosModules.home-manager
+                          "${self}/profiles/nixos"
+                          "${self}/modules/nixos/server"
+                          "${self}/modules/nixos/optional"
+                          {
+                            home-manager.users."${linuxUser}".imports = [
+                              # put home-manager imports here that are for all normal hosts
+                              "${self}/modules/home/common"
+                              "${self}/modules/home/server"
+                              "${self}/modules/home/optional"
+                              "${self}/profiles/home"
+                            ];
+                          }
+                        ] else [
+                          # put nixos imports here that are for darwin hosts
+                          "${self}/modules/darwin/nixos/common"
+                          "${self}/profiles/darwin"
+                          inputs.home-manager.darwinModules.home-manager
+                          {
+                            home-manager.users."${macUser}".imports = [
+                              # put home-manager imports here that are for darwin hosts
+                              "${self}/modules/darwin/home"
+                              "${self}/modules/home/server"
+                              "${self}/modules/home/optional"
+                              "${self}/profiles/home"
+                            ];
+                          }
+                        ])
+                        ));
+                    };
+              };
+
+              mkHalfHost = host: type: pkgs: {
+                ${host} =
+                  let
+                    systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+                  in
+                    systemFunc
+                      {
+                        inherit pkgs;
+                        extraSpecialArgs = { inherit inputs outputs lib self; };
+                        modules = [ "${self}/hosts/${type}/${host}" ];
+                      };
+              };
+
+              mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host type) hosts);
+
+              mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkHalfHost host type pkgs) hosts);
+
+            in
+              {
+                <<flakeoutputgeneral>>
+
+                nixosConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
+                homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+                darwinConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
+                nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+
+                topology = lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
+                  inherit pkgs;
+                  modules = [
+                    "${self}/topology"
+                    { inherit (self) nixosConfigurations; }
+                  ];
+                });
+
+                nodes = config.nixosConfigurations;
+              };
+          systems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
         };
   }
 #+end_src
@@ -304,6 +406,7 @@ When setting this option normally, the password would normally be written world-
     inputs.nixpkgs.follows = "nixpkgs";
   };
   nix-topology.url = "github:oddlama/nix-topology";
+  flake-parts.url = "github:hercules-ci/flake-parts";
 #+end_src
 ** let
 :PROPERTIES:
@@ -497,7 +600,6 @@ Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6
 
 
 #+begin_src nix :tangle no :noweb-ref flakenixosconf
-  lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
 #+end_src
 ** darwinConfigurations
 :PROPERTIES:
@@ -510,7 +612,6 @@ Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b
 =3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
 
 #+begin_src nix :tangle no :noweb-ref flakedarwinconf
-  lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
 #+end_src
 
 ** homeConfigurations
@@ -530,7 +631,6 @@ In contrast, this defines home-manager systems, which I only have one of, that s
   #   ];
   # };
 
-  lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
 #+end_src
 
 ** nixOnDroidConfigurations
@@ -549,7 +649,6 @@ Nix on Android also demands an own flake output, which is provided here.
   #   ];
   # };
 
-  lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
 #+end_src
 
@@ -561,13 +660,6 @@ Nix on Android also demands an own flake output, which is provided here.
 
 #+begin_src nix :tangle no :noweb-ref topologyconf
 
-  lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
-    inherit pkgs;
-    modules = [
-      "${self}/topology"
-      { inherit (self) nixosConfigurations; }
-    ];
-  });
 
 #+end_src
 
@@ -2118,48 +2210,63 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
 
 #+begin_src nix :tangle hosts/nixos/iso/default.nix
-  { self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
-  let
-    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
-  in
-  {
+    { self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+    let
+      pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+    in
+    {
 
-    imports = [
-      "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-      "${modulesPath}/installer/cd-dvd/channel.nix"
+      imports = [
+        "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+        "${modulesPath}/installer/cd-dvd/channel.nix"
 
-      "${self}/modules/iso/minimal.nix"
-      "${self}/modules/nixos/common/sharedsetup.nix"
-      "${self}/modules/nixos/common/topology.nix"
-      "${self}/modules/home/common/sharedsetup.nix"
+        "${self}/modules/iso/minimal.nix"
+        "${self}/modules/nixos/common/sharedsetup.nix"
+        "${self}/modules/nixos/common/topology.nix"
+        "${self}/modules/home/common/sharedsetup.nix"
 
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users."${primaryUser}".imports = [
-          "${self}/modules/home/common/settings.nix"
-          "${self}/modules/home/common/sharedsetup.nix"
-        ];
-      }
-    ];
+        "${self}/modules/nixos/common/globals.nix"
 
-    options.node = {
-      name = lib.mkOption {
-        description = "Node Name.";
-        type = lib.types.str;
+
+        inputs.home-manager.nixosModules.home-manager
+        {
+          home-manager.users."${primaryUser}".imports = [
+            "${self}/modules/home/common/settings.nix"
+            "${self}/modules/home/common/sharedsetup.nix"
+          ];
+        }
+      ];
+
+      options.node = {
+        name = lib.mkOption {
+          description = "Node Name.";
+          type = lib.types.str;
+        };
+        secretsDir = lib.mkOption {
+          description = "Path to the secrets directory for this node.";
+          type = lib.types.path;
+          default = ./.;
+        };
       };
-      secretsDir = lib.mkOption {
-        description = "Path to the secrets directory for this node.";
-        type = lib.types.path;
-        default = ./.;
-      };
-    };
-    config = {
-      node.name = lib.mkForce "drugstore";
-      swarselsystems = {
-        info = "~SwarselSystems~ installer ISO";
-      };
-      home-manager.users."${primaryUser}" = {
-        home = {
+      config = {
+        node.name = lib.mkForce "drugstore";
+        swarselsystems = {
+          info = "~SwarselSystems~ installer ISO";
+        };
+        home-manager.users."${primaryUser}" = {
+          home = {
+            stateVersion = "23.05";
+            file = {
+              ".bash_history" = {
+                source = self + /programs/bash/.bash_history;
+              };
+            };
+          };
+          swarselsystems = {
+            modules.general = lib.mkForce true;
+          };
+        };
+        home-manager.users.root.home = {
           stateVersion = "23.05";
           file = {
             ".bash_history" = {
@@ -2167,92 +2274,80 @@ Also, an initial bash history is provided to allow for a very quick local deploy
             };
           };
         };
-        swarselsystems = {
-          modules.general = lib.mkForce true;
+
+        # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users & root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d <DISK> -f <flake>\x1B[0m' for a local install.\n";
+        environment.etc."issue".source = "${self}/programs/etc/issue";
+        networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+
+        isoImage = {
+          makeEfiBootable = true;
+          makeUsbBootable = true;
+          squashfsCompression = "zstd -Xcompression-level 3";
         };
-      };
-      home-manager.users.root.home = {
-        stateVersion = "23.05";
-        file = {
-          ".bash_history" = {
-            source = self + /programs/bash/.bash_history;
-          };
+
+        nixpkgs = {
+          hostPlatform = lib.mkDefault "x86_64-linux";
+          config.allowUnfree = true;
         };
-      };
 
-      # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users & root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d <DISK> -f <flake>\x1B[0m' for a local install.\n";
-      environment.etc."issue".source = "${self}/programs/etc/issue";
-      networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+        services.getty.autologinUser = lib.mkForce primaryUser;
 
-      isoImage = {
-        makeEfiBootable = true;
-        makeUsbBootable = true;
-        squashfsCompression = "zstd -Xcompression-level 3";
-      };
-
-      nixpkgs = {
-        hostPlatform = lib.mkDefault "x86_64-linux";
-        config.allowUnfree = true;
-      };
-
-      services.getty.autologinUser = lib.mkForce primaryUser;
-
-      users = {
-        allowNoPasswordLogin = true;
-        groups.swarsel = { };
         users = {
-          swarsel = {
-            name = primaryUser;
-            group = primaryUser;
-            isNormalUser = true;
-            password = "setup"; # this is overwritten after install
-            openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
-            extraGroups = [ "wheel" ];
-          };
-          root = {
-            # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-            openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
+          allowNoPasswordLogin = true;
+          groups.swarsel = { };
+          users = {
+            swarsel = {
+              name = primaryUser;
+              group = primaryUser;
+              isNormalUser = true;
+              password = "setup"; # this is overwritten after install
+              openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+              extraGroups = [ "wheel" ];
+            };
+            root = {
+              # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+              openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
+            };
           };
         };
-      };
 
-      boot = {
-        loader.systemd-boot.enable = lib.mkForce true;
-        loader.efi.canTouchEfiVariables = true;
-      };
+        boot = {
+          loader.systemd-boot.enable = lib.mkForce true;
+          loader.efi.canTouchEfiVariables = true;
+        };
 
-      programs.bash.shellAliases = {
-        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-      };
+        programs.bash.shellAliases = {
+          "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+        };
 
-      system.activationScripts.cache = {
-        text = ''
-          mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
-          mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
-          mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
-          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
-          mkdir -p /root/.local/share/nix/
-          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
-        '';
-      };
-      systemd = {
-        services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-        targets = {
-          sleep.enable = false;
-          suspend.enable = false;
-          hibernate.enable = false;
-          hybrid-sleep.enable = false;
+        system.activationScripts.cache = {
+          text = ''
+            mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
+            mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
+            mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
+            printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
+            mkdir -p /root/.local/share/nix/
+            printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+          '';
+        };
+        systemd = {
+          services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+          targets = {
+            sleep.enable = false;
+            suspend.enable = false;
+            hibernate.enable = false;
+            hybrid-sleep.enable = false;
+          };
+        };
+
+        system.stateVersion = lib.mkForce "23.05";
+
+        networking = {
+          hostName = "drugstore";
+          wireless.enable = false;
         };
       };
-
-      system.stateVersion = lib.mkForce "23.05";
-
-      networking = {
-        hostName = "drugstore";
-        wireless.enable = false;
-      };
-    };
-  }
+    }
 
 
 #+end_src
@@ -5092,11 +5187,7 @@ The interesting part is in the start:
 TODO
 
 #+begin_src nix :tangle lib/default.nix
-  { self, lib, systems, inputs, outputs, ... }:
-  let
-    linuxUser = "swarsel";
-    macUser = "leon.schwarzaeugl";
-  in
+  { self, lib, systems, inputs, ... }:
   {
 
     mkIfElseList = p: yes: no: lib.mkMerge [
@@ -5140,88 +5231,6 @@ TODO
     getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
     forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
-
-    mkFullHost = host: type: {
-      ${host} =
-        let
-          systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-        in
-        systemFunc {
-          specialArgs = { inherit inputs outputs lib self; };
-          modules = [
-            {
-              node.name = host;
-              node.secretsDir = ../hosts/${type}/${host}/secrets;
-            }
-            # put inports here that are for all hosts
-            inputs.disko.nixosModules.disko
-            inputs.sops-nix.nixosModules.sops
-            inputs.impermanence.nixosModules.impermanence
-            inputs.lanzaboote.nixosModules.lanzaboote
-            inputs.fw-fanctrl.nixosModules.default
-            "${self}/hosts/${type}/${host}"
-            {
-              _module.args.primaryUser = linuxUser;
-            }
-          ] ++
-          (if (host == "iso") then [
-            inputs.nix-topology.nixosModules.default
-          ] else
-          ([
-            # put nixos imports here that are for all servers and normal hosts
-            inputs.nix-topology.nixosModules.default
-            "${self}/modules/${type}/common"
-            inputs.stylix.nixosModules.stylix
-            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-          ] ++ (if (type == "nixos") then [
-            inputs.home-manager.nixosModules.home-manager
-            "${self}/profiles/nixos"
-            "${self}/modules/nixos/server"
-            "${self}/modules/nixos/optional"
-            {
-              home-manager.users."${linuxUser}".imports = [
-                # put home-manager imports here that are for all normal hosts
-                "${self}/modules/home/common"
-                "${self}/modules/home/server"
-                "${self}/modules/home/optional"
-                "${self}/profiles/home"
-              ];
-            }
-          ] else [
-            # put nixos imports here that are for darwin hosts
-            "${self}/modules/darwin/nixos/common"
-            "${self}/profiles/darwin"
-            inputs.home-manager.darwinModules.home-manager
-            {
-              home-manager.users."${macUser}".imports = [
-                # put home-manager imports here that are for darwin hosts
-                "${self}/modules/darwin/home"
-                "${self}/modules/home/server"
-                "${self}/modules/home/optional"
-                "${self}/profiles/home"
-              ];
-            }
-          ])
-          ));
-        };
-    };
-
-    mkHalfHost = host: type: pkgs: {
-      ${host} =
-        let
-          systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-        in
-        systemFunc
-          {
-            inherit pkgs;
-            extraSpecialArgs = { inherit inputs outputs lib self; };
-            modules = [ "${self}/hosts/${type}/${host}" ];
-          };
-    };
-
-    mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
-
-    mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkHalfHost host type pkgs) hosts);
 
     readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
     readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
@@ -5534,6 +5543,60 @@ in
   }
 
 #+end_src
+**** Globals
+
+#+begin_src nix :tangle nix/globals.nix
+  { inputs, ... }:
+  {
+    flake =
+      {
+        config,
+        lib,
+        ...
+      }:
+      {
+        globals =
+          let
+            globalsSystem = lib.evalModules {
+              prefix = [ "globals" ];
+              specialArgs = {
+                inherit lib;
+                inherit inputs;
+                inherit (config) nodes;
+              };
+              modules = [
+                ../modules/nixos/common/globals.nix
+                (
+                  { lib, ... }:
+                  {
+                    globals = lib.mkMerge (
+                      lib.concatLists (
+                        lib.flip lib.mapAttrsToList config.nodes (
+                          name: cfg:
+                          builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
+                        )
+                      )
+                    );
+                  }
+                )
+              ];
+            };
+          in
+          {
+            # Make sure the keys of this attrset are trivially evaluatable to avoid infinite recursion,
+            # therefore we inherit relevant attributes from the config.
+            inherit (globalsSystem.config.globals)
+              domains
+              services
+              macs
+              myuser
+              root
+              ;
+          };
+      };
+  }
+
+#+end_src
 ** NixOS
 :PROPERTIES:
 :CUSTOM_ID: h:6da812f5-358c-49cb-aff2-0a94f20d70b3
@@ -5604,38 +5667,6 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
         isImpermanence = lib.mkEnableOption "use impermanence on this system";
         isSecureBoot = lib.mkEnableOption "use secure boot on this system";
       };
-      globals = lib.mkOption {
-        default = { };
-        type = lib.types.submodule {
-          options = {
-
-            services = lib.mkOption {
-              type = lib.types.attrsOf (
-                lib.types.submodule {
-                  options = {
-                    domain = lib.mkOption {
-                      type = lib.types.str;
-                      description = "Domain that the service runs under";
-                    };
-                  };
-                }
-              );
-            };
-            domains = {
-              main = lib.mkOption {
-                type = lib.types.str;
-                description = "My main domain.";
-              };
-            };
-          };
-        };
-      };
-      # _globalsDefs = lib.mkOption {
-      #   type = lib.types.unspecified;
-      #   default = options.globals.definitions;
-      #   readOnly = true;
-      #   internal = true;
-      # };
     };
   }
 #+end_src
@@ -5808,6 +5839,86 @@ A breakdown of the flags being set:
       in
       attrsForEachOption mergeConfigFromOthers;
   }
+#+end_src
+
+**** Global options
+
+#+begin_src nix :tangle modules/nixos/common/globals.nix
+{ lib, options, ... }:
+let
+  inherit (lib)
+    mkOption
+    types
+    ;
+
+in
+{
+  options = {
+    globals = mkOption {
+      default = { };
+      type = types.submodule {
+        options = {
+          root = {
+            hashedPassword = mkOption {
+              type = types.str;
+              description = "My root user's password hash.";
+            };
+          };
+
+          myuser = {
+            name = mkOption {
+              type = types.str;
+              description = "My unix username.";
+            };
+            hashedPassword = mkOption {
+              type = types.str;
+              description = "My unix password hash.";
+            };
+          };
+
+
+          services = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  domain = mkOption {
+                    type = types.str;
+                    description = "The domain under which this service can be reached";
+                  };
+                };
+              }
+            );
+          };
+
+          domains = {
+            me = mkOption {
+              type = types.str;
+              description = "My main domain.";
+            };
+
+            personal = mkOption {
+              type = types.str;
+              description = "My personal domain.";
+            };
+          };
+
+          macs = mkOption {
+            default = { };
+            type = types.attrsOf types.str;
+            description = "Known MAC addresses for external devices.";
+          };
+        };
+      };
+    };
+
+    _globalsDefs = mkOption {
+      type = types.unspecified;
+      default = options.globals.definitions;
+      readOnly = true;
+      internal = true;
+    };
+  };
+}
 #+end_src
 
 **** System Packages
@@ -7910,7 +8021,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
   let
     serviceName = "kavita";
     serviceUser = "kavita";
-    serviceDomain = "scroll.swarsel.win";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
     servicePort = 8080;
   in
   {
@@ -7933,6 +8044,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         info = "https://${serviceDomain}";
         icon = "${self}/topology/images/kavita.png";
       };
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.kavita = {
         enable = true;
@@ -8002,7 +8114,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         ];
       };
 
-      topology.self.services.jellyfin.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.jellyfin = {
         enable = true;
@@ -8084,6 +8197,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       };
 
       networking.firewall.allowedTCPPorts = [ 4040 ];
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.navidrome = {
         enable = true;
@@ -8444,6 +8559,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
+      globals.services.${serviceName}.domain = matrixDomain;
+
       services = {
         postgresql = {
           enable = true;
@@ -8728,6 +8845,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
+
+      globals.services.${serviceName}.domain = serviceDomain;
+
       services = {
         nextcloud = {
           enable = true;
@@ -8785,7 +8905,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/immich.nix
-  { lib, config, ... }:
+  { lib, config, globals, ... }:
   let
     serviceDomain = "shots.swarsel.win";
     servicePort = 3001;
@@ -8800,7 +8920,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         extraGroups = [ "video" "render" "users" ];
       };
 
-      topology.self.services.immich.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.immich = {
         enable = true;
@@ -8890,6 +9011,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
         paperless = {
@@ -9085,6 +9208,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         prowlarr.info = "https://${serviceDomain}/prowlarr";
       };
 
+      globals.services.transmission.domain = serviceDomain;
+
       services = {
         radarr = {
           enable = true;
@@ -9205,6 +9330,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       users.groups."${serviceGroup}" = { };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.syncthing = {
         enable = true;
@@ -9420,6 +9547,7 @@ This section exposes several metrics that I use to check the health of my server
       networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
       topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
+      globals.services.${moduleName}.domain = serviceDomain;
 
       services = {
         grafana = {
@@ -9746,11 +9874,13 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         #   };
       };
 
-      topology.self.services.freshrss = {
+      topology.self.services.${serviceName} = {
         name = "FreshRSS";
         info = "https://${serviceDomain}";
         icon = "${self}/topology/images/freshrss.png";
       };
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.freshrss = {
         enable = true;
@@ -9828,6 +9958,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       sops.secrets = {
         kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.forgejo = {
         enable = true;
@@ -9976,10 +10108,12 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       sops.secrets.swarsel = { owner = "root"; };
 
-      topology.self.services.anki = {
+      topology.self.services.${serviceName} = {
         name = lib.mkForce "Anki Sync Server";
         info = "https://${serviceDomain}";
       };
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.anki-sync-server = {
         enable = true;
@@ -10036,7 +10170,7 @@ A stupid (but simple) way to get the =originUrl= is to simply set any URL there 
 To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://sso.swarsel.win/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
 
 #+begin_src nix :tangle modules/nixos/server/kanidm.nix
-  { self, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
     serviceDomain = "sso.swarsel.win";
@@ -10044,7 +10178,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceUser = "kanidm";
     serviceGroup = serviceUser;
     serviceName = "kanidm";
-    oauth2ProxyDomain = "soauth.swarsel.win";
+    oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
   in
   {
     options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10074,6 +10208,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
         kanidm = {
@@ -10289,9 +10425,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
 
 #+begin_src nix :tangle modules/nixos/server/oauth2-proxy.nix
-  { lib, config, ... }:
+  { lib, config, globals, ... }:
   let
-    kanidmDomain = "sso.swarsel.win";
+    kanidmDomain = globals.services.kanidm.domain;
     oauth2ProxyDomain = "soauth.swarsel.win";
     oauth2ProxyPort = 3004;
   in
@@ -10428,6 +10564,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
 
+      globals.services.oauth2Proxy.domain = oauth2ProxyDomain;
+
       services = {
         oauth2-proxy = {
           enable = true;
@@ -10515,7 +10653,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   { self, lib, config, ... }:
   let
     cfg = config.services.firefly-iii;
-    fireflyDomain = "stonks.swarsel.win";
+    serviceDomain = "stonks.swarsel.win";
     fireflyUser = "firefly-iii";
     serviceName = "firefly";
   in
@@ -10536,9 +10674,10 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       topology.self.services.firefly-iii = {
         name = "Firefly-III";
-        info = "https://${fireflyDomain}";
+        info = "https://${serviceDomain}";
         icon = "${self}/topology/images/firefly-iii.png";
       };
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
         firefly-iii = {
@@ -10548,7 +10687,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
           dataDir = "/Vault/data/firefly-iii";
           settings = {
             TZ = config.repo.secrets.common.location.timezone;
-            APP_URL = "https://${fireflyDomain}";
+            APP_URL = "https://${serviceDomain}";
             APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
             APP_ENV = "local";
             DB_CONNECTION = "sqlite";
@@ -10559,12 +10698,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
             # AUTHENTICATION_GUARD_EMAIL = "X-Email";
           };
           enableNginx = true;
-          virtualHost = fireflyDomain;
+          virtualHost = serviceDomain;
         };
 
         nginx = {
           virtualHosts = {
-            "${fireflyDomain}" = {
+            "${serviceDomain}" = {
               locations = {
                 "/api" = {
                   setOauth2Headers = false;
@@ -10589,7 +10728,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
           };
         };
         virtualHosts = {
-          "${fireflyDomain}" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -10645,6 +10784,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         info = "https://${serviceDomain}";
         icon = "${self}/topology/images/koillection.png";
       };
+      globals.services.${serviceName}.domain = serviceDomain;
 
       virtualisation.oci-containers.containers = {
         koillection = {
@@ -10757,7 +10897,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-      topology.self.services.atuin.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.atuin = {
         enable = true;
@@ -10834,7 +10975,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      topology.self.services.radicale.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.radicale = {
         enable = true;
@@ -10950,7 +11092,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      topology.self.services.croc.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.croc = {
         enable = true;
@@ -11029,7 +11172,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      topology.self.services."${serviceName}".info = "https://${serviceDomain}";
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services."${serviceName}" = {
         enable = true;
@@ -11166,6 +11310,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
         { directory = "/var/lib/containers"; }
       ];
+
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services.nginx = {
         upstreams = {

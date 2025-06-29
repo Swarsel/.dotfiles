@@ -38,6 +38,8 @@ in
 
     networking.firewall.allowedTCPPorts = [ 4040 ];
 
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services.navidrome = {
       enable = true;
       openFirewall = true;

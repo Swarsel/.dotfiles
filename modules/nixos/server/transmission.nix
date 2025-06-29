@@ -85,6 +85,8 @@ in
       prowlarr.info = "https://${serviceDomain}/prowlarr";
     };
 
+    globals.services.transmission.domain = serviceDomain;
+
     services = {
       radarr = {
         enable = true;

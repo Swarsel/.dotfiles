@@ -23,6 +23,7 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/koillection.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     virtualisation.oci-containers.containers = {
       koillection = {

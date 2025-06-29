@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   serviceDomain = "sso.swarsel.win";
@@ -6,7 +6,7 @@ let
   serviceUser = "kanidm";
   serviceGroup = serviceUser;
   serviceName = "kanidm";
-  oauth2ProxyDomain = "soauth.swarsel.win";
+  oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
 in
 {
   options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
@@ -36,6 +36,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       kanidm = {

@@ -87,6 +87,8 @@ in
       };
     };
 
+    globals.services.${serviceName}.domain = matrixDomain;
+
     services = {
       postgresql = {
         enable = true;

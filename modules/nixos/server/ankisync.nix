@@ -12,10 +12,12 @@ in
 
     sops.secrets.swarsel = { owner = "root"; };
 
-    topology.self.services.anki = {
+    topology.self.services.${serviceName} = {
       name = lib.mkForce "Anki Sync Server";
       info = "https://${serviceDomain}";
     };
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.anki-sync-server = {
       enable = true;

@@ -1,7 +1,7 @@
 { self, lib, config, ... }:
 let
   cfg = config.services.firefly-iii;
-  fireflyDomain = "stonks.swarsel.win";
+  serviceDomain = "stonks.swarsel.win";
   fireflyUser = "firefly-iii";
   serviceName = "firefly";
 in
@@ -22,9 +22,10 @@ in
 
     topology.self.services.firefly-iii = {
       name = "Firefly-III";
-      info = "https://${fireflyDomain}";
+      info = "https://${serviceDomain}";
       icon = "${self}/topology/images/firefly-iii.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       firefly-iii = {
@@ -34,7 +35,7 @@ in
         dataDir = "/Vault/data/firefly-iii";
         settings = {
           TZ = config.repo.secrets.common.location.timezone;
-          APP_URL = "https://${fireflyDomain}";
+          APP_URL = "https://${serviceDomain}";
           APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
           APP_ENV = "local";
           DB_CONNECTION = "sqlite";
@@ -45,12 +46,12 @@ in
           # AUTHENTICATION_GUARD_EMAIL = "X-Email";
         };
         enableNginx = true;
-        virtualHost = fireflyDomain;
+        virtualHost = serviceDomain;
       };
 
       nginx = {
         virtualHosts = {
-          "${fireflyDomain}" = {
+          "${serviceDomain}" = {
             locations = {
               "/api" = {
                 setOauth2Headers = false;
@@ -75,7 +76,7 @@ in
         };
       };
       virtualHosts = {
-        "${fireflyDomain}" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;

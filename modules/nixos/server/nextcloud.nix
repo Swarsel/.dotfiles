@@ -22,6 +22,9 @@ in
       };
     };
 
+
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services = {
       nextcloud = {
         enable = true;

@@ -2,7 +2,7 @@
 let
   serviceName = "kavita";
   serviceUser = "kavita";
-  serviceDomain = "scroll.swarsel.win";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   servicePort = 8080;
 in
 {
@@ -25,6 +25,7 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/kavita.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.kavita = {
       enable = true;

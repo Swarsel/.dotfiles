@@ -29,7 +29,8 @@ in
       };
     };
 
-    topology.self.services.radicale.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.radicale = {
       enable = true;

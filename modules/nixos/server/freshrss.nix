@@ -44,11 +44,13 @@ in
       #   };
     };
 
-    topology.self.services.freshrss = {
+    topology.self.services.${serviceName} = {
       name = "FreshRSS";
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/freshrss.png";
     };
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.freshrss = {
       enable = true;
