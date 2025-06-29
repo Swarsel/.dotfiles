@@ -20,6 +20,7 @@
           ssh = lib.mkDefault true;
           oauth2Proxy = lib.mkDefault true;
           croc = lib.mkDefault true;
+          microbin = lib.mkDefault true;
         };
       };
     };
