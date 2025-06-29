@@ -1,14 +1,4 @@
 { self, lib, pkgs, ... }:
-let
-  lock-false = {
-    Value = false;
-    Status = "locked";
-  };
-  lock-true = {
-    Value = true;
-    Status = "locked";
-  };
-in
 {
   options.swarselsystems = {
     isLaptop = lib.mkEnableOption "laptop host";
@@ -163,22 +153,22 @@ in
         settings =
           {
             "extensions.autoDisableScopes" = 0;
-            "browser.bookmarks.showMobileBookmarks" = lock-true;
-            "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-            "browser.search.suggest.enabled" = lock-false;
-            "browser.search.suggest.enabled.private" = lock-false;
-            "browser.urlbar.suggest.searches" = lock-false;
-            "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-            "browser.topsites.contile.enabled" = lock-false;
-            "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-            "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-            "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-            "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-            "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-            "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-            "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-            "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-            "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
+            "browser.bookmarks.showMobileBookmarks" = true;
+            "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+            "browser.search.suggest.enabled" = false;
+            "browser.search.suggest.enabled.private" = false;
+            "browser.urlbar.suggest.searches" = false;
+            "browser.urlbar.showSearchSuggestionsFirst" = false;
+            "browser.topsites.contile.enabled" = false;
+            "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+            "browser.newtabpage.activity-stream.feeds.snippets" = false;
+            "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
+            "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
+            "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
+            "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
+            "browser.newtabpage.activity-stream.showSponsored" = false;
+            "browser.newtabpage.activity-stream.system.showSponsored" = false;
+            "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
           };
 
         search = {

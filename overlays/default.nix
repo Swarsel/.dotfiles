@@ -40,6 +40,13 @@ let
     };
   };
 
+  nixpkgs-kernel = final: _: {
+    kernel = import inputs.nixpkgs-kernel {
+      inherit (final) system;
+      config.allowUnfree = true;
+    };
+  };
+
   nixpkgs-stable24_05 = final: _: {
     stable24_05 = import inputs.nixpkgs-stable24_05 {
       inherit (final) system;
@@ -66,6 +73,7 @@ in
     (additions final prev)
     // (modifications final prev)
     // (nixpkgs-stable final prev)
+    // (nixpkgs-kernel final prev)
     // (nixpkgs-stable24_05 final prev)
     // (nixpkgs-stable24_11 final prev)
     // (zjstatus final prev)

@@ -6,7 +6,6 @@
       # yubikey packages
       gnupg
       yubikey-personalization
-      yubikey-personalization-gui
       yubico-pam
       yubioath-flutter
       yubikey-manager

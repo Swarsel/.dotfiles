@@ -64,6 +64,7 @@
 
       # local file sharing
       wormhole-rs
+      croc
 
       # b2 backup @backblaze
       restic
@@ -144,9 +145,9 @@
       slurp
 
       # the following packages are used (in some way) by waybar
-      playerctl
-      pavucontrol
-      stable.pamixer
+      # playerctl
+      stable.pavucontrol
+      # stable.pamixer
       # gnome.gnome-clocks
       # wlogout
       # jdiskreport

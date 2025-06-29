@@ -235,6 +235,7 @@ When setting this option normally, the password would normally be written world-
 #+begin_src nix :tangle no :noweb-ref flakeinputs
 
   nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
   nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
   nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -896,7 +897,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :END:
 
 #+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
-  { config, lib, modulesPath, ... }:
+  { config, lib, pkgs, modulesPath, ... }:
   {
     imports =
       [
@@ -920,8 +921,11 @@ My work machine. Built for more security, this is the gold standard of my config
     #   '';
 
     boot = {
+      kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+      binfmt.emulatedSystems = [ "aarch64-linux" ];
       initrd = {
         availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+        # allow to remote build on arm (needed for moonside)
         kernelModules = [ "sg" ];
         luks.devices."cryptroot" = {
           # improve performance on ssds
@@ -4309,6 +4313,13 @@ When adding a new entry here, do not forget to add it in the default output of t
       };
     };
 
+   nixpkgs-kernel = final: _: {
+      kernel = import inputs.nixpkgs-kernel {
+        inherit (final) system;
+        config.allowUnfree = true;
+      };
+    };
+
     nixpkgs-stable24_05 = final: _: {
       stable24_05 = import inputs.nixpkgs-stable24_05 {
         inherit (final) system;
@@ -4335,6 +4346,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       (additions final prev)
       // (modifications final prev)
       // (nixpkgs-stable final prev)
+      // (nixpkgs-kernel final prev)
       // (nixpkgs-stable24_05 final prev)
       // (nixpkgs-stable24_11 final prev)
       // (zjstatus final prev)
@@ -5713,7 +5725,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         # yubikey packages
         gnupg
         yubikey-personalization
-        yubikey-personalization-gui
         yubico-pam
         yubioath-flutter
         yubikey-manager
@@ -6066,7 +6077,7 @@ This is only used on systems not running Pipewire.
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
 
 #+begin_src nix :tangle modules/nixos/common/pipewire.nix
-  { lib, config, ... }:
+  { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
     config = lib.mkIf config.swarselsystems.modules.pipewire {
@@ -6074,6 +6085,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 
       services.pipewire = {
         enable = true;
+        package = pkgs.stable.pipewire;
         pulse.enable = true;
         jack.enable = true;
         audio.enable = true;
@@ -6647,7 +6659,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 :END:
 
 #+begin_src nix :tangle modules/nixos/common/syncthing.nix
-  { lib, config, ... }:
+  { lib, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
   in
@@ -6656,50 +6668,51 @@ Here I disable global completion to prevent redundant compinit calls and cache i
     config = lib.mkIf config.swarselsystems.modules.syncthing {
       services.syncthing = {
         enable = true;
+        package = pkgs.stable.syncthing;
         user = mainUser;
         dataDir = homeDir;
         configDir = "${homeDir}/.config/syncthing";
         openDefaultPorts = true;
+        overrideDevices = true;
+        overrideFolders = true;
         settings = {
+          options = {
+            urAccepted = -1;
+          };
           devices = {
             "magicant" = {
               id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
             };
-            "sync (@oracle)" = {
+            "sync@oracle" = {
               id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
             };
             "winters" = {
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
-            "moonside (@oracle)" = {
+            "moonside@oracle" = {
               id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
             };
           };
           folders = {
             "Default Folder" = lib.mkDefault {
               path = "${homeDir}/Sync";
-              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "winters" "moonside@oracle" ];
               id = "default";
             };
             "Obsidian" = {
               path = "${homeDir}/Nextcloud/Obsidian";
-              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "winters" "moonside@oracle" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
               path = "${homeDir}/Nextcloud/Org";
-              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "winters" "moonside@oracle" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
               path = "${homeDir}/Vpn";
-              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "winters" "moonside@oracle" ];
               id = "hgp9s-fyq3p";
-            };
-            ".elfeed" = {
-              path = "${homeDir}/.elfeed";
-              devices = [ "sync (@oracle)" "magicant" "winters" "moonside (@oracle)" ];
-              id = "h7xbs-fs9v1";
             };
           };
         };
@@ -9091,13 +9104,13 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             "magicant" = {
               id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
             };
-            "sync (@oracle)" = {
+            "sync@oracle" = {
               id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
             };
             "${workHostName}" = {
               id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
             };
-            "moonside (@oracle)" = {
+            "moonside@oracle" = {
               id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
             };
           };
@@ -9106,7 +9119,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               path = "/Vault/data/syncthing/Sync";
               type = "receiveonly";
               versioning = null;
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "default";
             };
             "Obsidian" = {
@@ -9116,7 +9129,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
@@ -9126,7 +9139,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
@@ -9136,7 +9149,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "hgp9s-fyq3p";
             };
             # "Documents" = {
@@ -9146,7 +9159,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             #     type = "simple";
             #     params.keep = "5";
             #   };
-            #   devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
+            #   devices = [ "magicant" "${workHostName}" "moonside@oracle" ];
             #   id = "hgr3d-pfu3w";
             # };
           };
@@ -10650,32 +10663,32 @@ This opens a few gaming ports and installs the steam configuration suite for gam
           pkgs.proton-ge-bin
         ];
       };
-      specialisation = {
-        gaming.configuration = {
-          networking = {
-            firewall.enable = lib.mkForce false;
-            firewall = {
-              allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
-              allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
-              allowedTCPPortRanges = [
-                { from = 27015; to = 27030; } # barotrauma
-                { from = 27036; to = 27037; } # barotrauma
-              ];
-              allowedUDPPortRanges = [
-                { from = 27000; to = 27031; } # barotrauma
-                { from = 58962; to = 58964; } # barotrauma
-              ];
-            };
-          };
+      # specialisation = {
+      #   gaming.configuration = {
+      #     networking = {
+      #       firewall.enable = lib.mkForce false;
+      #       firewall = {
+      #         allowedUDPPorts = [ 4380 27036 14242 34197 ]; # 34197: factorio; 4380 27036 14242: barotrauma;
+      #         allowedTCPPorts = [ ]; # 34197: factorio; 4380 27036 14242: barotrauma; 51820: wireguard
+      #         allowedTCPPortRanges = [
+      #           { from = 27015; to = 27030; } # barotrauma
+      #           { from = 27036; to = 27037; } # barotrauma
+      #         ];
+      #         allowedUDPPortRanges = [
+      #           { from = 27000; to = 27031; } # barotrauma
+      #           { from = 58962; to = 58964; } # barotrauma
+      #         ];
+      #       };
+      #     };
 
 
-          hardware.xone.enable = true;
+      #     hardware.xone.enable = true;
 
-          environment.systemPackages = [
-            pkgs.linuxKernel.packages.linux_6_12.xone
-          ];
-        };
-      };
+      #     environment.systemPackages = [
+      #       pkgs.linuxKernel.packages.linux_6_12.xone
+      #     ];
+      #   };
+      # };
     };
 
   }
@@ -11083,13 +11096,13 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
             "winters" = {
               id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
             };
-            "moonside (@oracle)" = {
+            "moonside@oracle" = {
               id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
             };
             folders = {
               "Documents" = {
                 path = "${homeDir}/Documents";
-                devices = [ "magicant" "winters" "moonside (@oracle)" ];
+                devices = [ "magicant" "winters" "moonside@oracle" ];
                 id = "hgr3d-pfu3w";
               };
             };
@@ -11111,14 +11124,14 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
       ];
 
       # cgroups v1 is required for centos7 dockers
-      specialisation = {
-        cgroup_v1.configuration = {
-          boot.kernelParams = [
-            "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
-            "systemd.unified_cgroup_hierarchy=0"
-          ];
-        };
-      };
+      # specialisation = {
+      #   cgroup_v1.configuration = {
+      #     boot.kernelParams = [
+      #       "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
+      #       "systemd.unified_cgroup_hierarchy=0"
+      #     ];
+      #   };
+      # };
     };
 
   }
@@ -11230,7 +11243,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-**** Shared Configuration Options
+**** Shared Configuration Options (hold firefox config parts)
 :PROPERTIES:
 :CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
 :END:
@@ -11242,16 +11255,6 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
 
 #+begin_src nix :noweb yes :tangle modules/home/common/sharedsetup.nix
   { self, lib, pkgs, ... }:
-  let
-    lock-false = {
-      Value = false;
-      Status = "locked";
-    };
-    lock-true = {
-      Value = true;
-      Status = "locked";
-    };
-  in
   {
     options.swarselsystems = {
       isLaptop = lib.mkEnableOption "laptop host";
@@ -11406,22 +11409,22 @@ Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.styleshee
           settings =
             {
               "extensions.autoDisableScopes" = 0;
-              "browser.bookmarks.showMobileBookmarks" = lock-true;
-              "toolkit.legacyUserProfileCustomizations.stylesheets" = lock-true;
-              "browser.search.suggest.enabled" = lock-false;
-              "browser.search.suggest.enabled.private" = lock-false;
-              "browser.urlbar.suggest.searches" = lock-false;
-              "browser.urlbar.showSearchSuggestionsFirst" = lock-false;
-              "browser.topsites.contile.enabled" = lock-false;
-              "browser.newtabpage.activity-stream.feeds.section.topstories" = lock-false;
-              "browser.newtabpage.activity-stream.feeds.snippets" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includePocket" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = lock-false;
-              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = lock-false;
-              "browser.newtabpage.activity-stream.showSponsored" = lock-false;
-              "browser.newtabpage.activity-stream.system.showSponsored" = lock-false;
-              "browser.newtabpage.activity-stream.showSponsoredTopSites" = lock-false;
+              "browser.bookmarks.showMobileBookmarks" = true;
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+              "browser.search.suggest.enabled" = false;
+              "browser.search.suggest.enabled.private" = false;
+              "browser.urlbar.suggest.searches" = false;
+              "browser.urlbar.showSearchSuggestionsFirst" = false;
+              "browser.topsites.contile.enabled" = false;
+              "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+              "browser.newtabpage.activity-stream.feeds.snippets" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
+              "browser.newtabpage.activity-stream.showSponsored" = false;
+              "browser.newtabpage.activity-stream.system.showSponsored" = false;
+              "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
             };
 
           search = {
@@ -11785,9 +11788,9 @@ This holds packages that I can use as provided, or with small modifications (as 
         slurp
 
         # the following packages are used (in some way) by waybar
-        playerctl
-        pavucontrol
-        stable.pamixer
+        # playerctl
+        stable.pavucontrol
+        # stable.pamixer
         # gnome.gnome-clocks
         # wlogout
         # jdiskreport
@@ -12034,6 +12037,14 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
           categories = [ "Application" ];
         };
 
+        teamsNoGpu = {
+          name = "Microsoft Teams (no GPU)";
+          genericName = "Teams (no GPU)";
+          exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
+          terminal = false;
+          categories = [ "Application" ];
+        };
+
         rustdesk-vbc = {
           name = "Rustdesk VBC";
           genericName = "rustdesk-vbc";
@@ -12198,7 +12209,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
   }
 #+end_src
 
-**** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf
+**** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide
 :PROPERTIES:
 :CUSTOM_ID: h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde
 :END:
@@ -14791,7 +14802,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
             "firefox_${user1}" = {
               name = "Firefox (${user1})";
               genericName = "Firefox ${user1}";
-              exec = "firefox -p ${user4}";
+              exec = "firefox -p ${user1}";
               inherit terminal categories icon;
             };
 

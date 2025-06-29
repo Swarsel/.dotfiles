@@ -174,13 +174,13 @@ in
           "winters" = {
             id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
           };
-          "moonside (@oracle)" = {
+          "moonside@oracle" = {
             id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
           };
           folders = {
             "Documents" = {
               path = "${homeDir}/Documents";
-              devices = [ "magicant" "winters" "moonside (@oracle)" ];
+              devices = [ "magicant" "winters" "moonside@oracle" ];
               id = "hgr3d-pfu3w";
             };
           };
@@ -202,14 +202,14 @@ in
     ];
 
     # cgroups v1 is required for centos7 dockers
-    specialisation = {
-      cgroup_v1.configuration = {
-        boot.kernelParams = [
-          "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
-          "systemd.unified_cgroup_hierarchy=0"
-        ];
-      };
-    };
+    # specialisation = {
+    #   cgroup_v1.configuration = {
+    #     boot.kernelParams = [
+    #       "SYSTEMD_CGROUP_ENABLE_LEGACY_FORCE=1"
+    #       "systemd.unified_cgroup_hierarchy=0"
+    #     ];
+    #   };
+    # };
   };
 
 }

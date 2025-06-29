@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
   config = lib.mkIf config.swarselsystems.modules.pipewire {
@@ -6,6 +6,7 @@
 
     services.pipewire = {
       enable = true;
+      package = pkgs.stable.pipewire;
       pulse.enable = true;
       jack.enable = true;
       audio.enable = true;

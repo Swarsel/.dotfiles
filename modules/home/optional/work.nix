@@ -304,7 +304,7 @@ in
           "firefox_${user1}" = {
             name = "Firefox (${user1})";
             genericName = "Firefox ${user1}";
-            exec = "firefox -p ${user4}";
+            exec = "firefox -p ${user1}";
             inherit terminal categories icon;
           };
 

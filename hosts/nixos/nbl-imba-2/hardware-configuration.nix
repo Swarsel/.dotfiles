@@ -1,4 +1,4 @@
-{ config, lib, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, ... }:
 {
   imports =
     [
@@ -22,8 +22,11 @@
   #   '';
 
   boot = {
+    kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
+      # allow to remote build on arm (needed for moonside)
       kernelModules = [ "sg" ];
       luks.devices."cryptroot" = {
         # improve performance on ssds

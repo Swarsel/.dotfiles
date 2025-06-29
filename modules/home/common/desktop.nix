@@ -12,6 +12,14 @@
         categories = [ "Application" ];
       };
 
+      teamsNoGpu = {
+        name = "Microsoft Teams (no GPU)";
+        genericName = "Teams (no GPU)";
+        exec = "teams-for-linux --disableGpu=true --trayIconEnabled=true";
+        terminal = false;
+        categories = [ "Application" ];
+      };
+
       rustdesk-vbc = {
         name = "Rustdesk VBC";
         genericName = "rustdesk-vbc";

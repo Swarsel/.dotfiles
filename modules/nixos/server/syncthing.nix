@@ -36,13 +36,13 @@ in
           "magicant" = {
             id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
           };
-          "sync (@oracle)" = {
+          "sync@oracle" = {
             id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
           };
           "${workHostName}" = {
             id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
           };
-          "moonside (@oracle)" = {
+          "moonside@oracle" = {
             id = "VPCDZB6-MGVGQZD-Q6DIZW3-IZJRJTO-TCC3QUQ-2BNTL7P-AKE7FBO-N55UNQE";
           };
         };
@@ -51,7 +51,7 @@ in
             path = "/Vault/data/syncthing/Sync";
             type = "receiveonly";
             versioning = null;
-            devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "default";
           };
           "Obsidian" = {
@@ -61,7 +61,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
@@ -71,7 +71,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
@@ -81,7 +81,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync (@oracle)" "magicant" "${workHostName}" "moonside (@oracle)" ];
+            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "hgp9s-fyq3p";
           };
           # "Documents" = {
@@ -91,7 +91,7 @@ in
           #     type = "simple";
           #     params.keep = "5";
           #   };
-          #   devices = [ "magicant" "${workHostName}" "moonside (@oracle)" ];
+          #   devices = [ "magicant" "${workHostName}" "moonside@oracle" ];
           #   id = "hgr3d-pfu3w";
           # };
         };
