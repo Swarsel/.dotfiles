@@ -39,6 +39,7 @@ in
           APP_ENV = "local";
           DB_CONNECTION = "sqlite";
           TRUSTED_PROXIES = "**";
+          # turning these on breaks api access using the waterfly app
           # AUTHENTICATION_GUARD = "remote_user_guard";
           # AUTHENTICATION_GUARD_HEADER = "X-User";
           # AUTHENTICATION_GUARD_EMAIL = "X-Email";

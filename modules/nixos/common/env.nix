@@ -2,6 +2,7 @@
 {
   options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
   config = lib.mkIf config.swarselsystems.modules.env {
+
     environment = {
       wordlist.enable = true;
       sessionVariables = {

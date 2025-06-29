@@ -1,3 +1,4 @@
+# largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
 { config, inputs, lib, ... }:
 let
 
