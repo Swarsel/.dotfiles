@@ -4770,6 +4770,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             oauth2Proxy = lib.mkDefault true;
             croc = lib.mkDefault true;
             microbin = lib.mkDefault true;
+            shlink = lib.mkDefault true;
           };
         };
       };
@@ -10983,6 +10984,87 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
     };
 
+  }
+#+end_src
+
+**** shlink
+:PROPERTIES:
+:CUSTOM_ID: h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c
+:END:
+
+#+begin_src nix :tangle modules/nixos/server/shlink.nix
+  { lib, config, ... }:
+  let
+    serviceDomain = "s.swarsel.win";
+    servicePort = 8081;
+    serviceName = "shlink";
+    containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
+  in
+  {
+    options = {
+      swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+
+      sops = {
+        secrets = {
+          shlink-api = {  };
+        };
+
+        templates = {
+          "shlink-env" = {
+            content = ''
+              INITIAL_API_KEY=${config.sops.placeholder.shlink-api}
+            '';
+          };
+        };
+      };
+
+      virtualisation.oci-containers.containers."shlink" = {
+        image = "shlinkio/shlink@${containerRev}";
+        environment = {
+          "DEFAULT_DOMAIN" = serviceDomain;
+          "PORT" = "${builtins.toString servicePort}";
+          "USE_HTTPS" = "false";
+          "DEFAULT_SHORT_CODES_LENGTH" = "4";
+          "WEB_WORKER_NUM" = "1";
+          "TASK_WORKER_NUM" = "1";
+        };
+        environmentFiles = [
+          config.sops.templates.shlink-env.path
+        ];
+        ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
+        volumes = [ ];
+      };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = "/var/lib/containers"; }
+      ];
+
+      services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "localhost:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+              };
+            };
+          };
+        };
+      };
+    };
   }
 #+end_src
 

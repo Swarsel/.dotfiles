@@ -21,6 +21,7 @@
           oauth2Proxy = lib.mkDefault true;
           croc = lib.mkDefault true;
           microbin = lib.mkDefault true;
+          shlink = lib.mkDefault true;
         };
       };
     };
