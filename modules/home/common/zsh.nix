@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, lib, ... }:
 let
   inherit (config.swarselsystems) flakePath;
 in
@@ -33,9 +33,7 @@ in
           passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
           passpull = "cd ~/.local/share/password-store; git pull; cd -;";
           hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-          cd = "z";
           youtube-dl = "yt-dlp";
-          cd-orig = "cd";
           cat-orig = "cat";
           cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
           nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
@@ -74,10 +72,10 @@ in
         searchUpKey = "^[OA";
       };
       plugins = [
-        {
-          name = "fzf-tab";
-          src = pkgs.zsh-fzf-tab;
-        }
+        # {
+        #   name = "fzf-tab";
+        #   src = pkgs.zsh-fzf-tab;
+        # }
       ];
       initContent = ''
         my-forward-word() {

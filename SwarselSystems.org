@@ -4702,6 +4702,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             firefly = lib.mkDefault true;
             koillection = lib.mkDefault true;
             radicale = lib.mkDefault true;
+            atuin = lib.mkDefault true;
           };
         };
       };
@@ -4817,6 +4818,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         passwordstore = lib.mkDefault true;
         direnv = lib.mkDefault true;
         eza = lib.mkDefault true;
+        atuin = lib.mkDefault true;
         git = lib.mkDefault true;
         fuzzel = lib.mkDefault true;
         starship = lib.mkDefault true;
@@ -10613,6 +10615,62 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   }
 #+end_src
 
+**** Atuin
+:PROPERTIES:
+:CUSTOM_ID: h:27eac8b9-c202-4e45-9b80-42592f1e41c8
+:END:
+
+#+begin_src nix :tangle modules/nixos/server/atuin.nix
+  { lib, config, ... }:
+  let
+    serviceDomain = "shellhistory.swarsel.win";
+    servicePort = 8888;
+    serviceName = "atuin";
+  in
+  {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+
+      topology.self.services.atuin.info = "https://${serviceDomain}";
+
+      services.atuin = {
+        enable = true;
+        host = "0.0.0.0";
+        port = servicePort;
+        openFirewall = true;
+        openRegistration = false;
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
+            };
+          };
+        };
+      };
+
+    };
+
+  }
+#+end_src
+
 **** Radicale
 :PROPERTIES:
 :CUSTOM_ID: h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6
@@ -11900,6 +11958,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         # local file sharing
         wormhole-rs
+        croc
 
         # b2 backup @backblaze
         restic
@@ -12546,6 +12605,29 @@ Eza provides me with a better =ls= command and some other useful aliases.
   }
 #+end_src
 
+**** atuin
+:PROPERTIES:
+:CUSTOM_ID: h:38f127f3-003b-418b-85ba-a3bcf44bf16c
+:END:
+
+#+begin_src nix :tangle modules/home/common/atuin.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
+    config = lib.mkIf config.swarselsystems.modules.atuin {
+      programs.atuin = {
+        enable = true;
+        enableZshIntegration = true;
+        settings = {
+          auto_sync = true;
+          sync_frequency = "5m";
+          sync_address = "https://shellhistory.swarsel.win";
+        };
+      };
+    };
+  }
+#+end_src
+
 **** git
 :PROPERTIES:
 :CUSTOM_ID: h:419675ec-3310-438e-80ae-9eaa798a319d
@@ -12822,7 +12904,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix :tangle modules/home/common/zsh.nix
-  { config, pkgs, lib, ... }:
+  { config, lib, ... }:
   let
     inherit (config.swarselsystems) flakePath;
   in
@@ -12857,9 +12939,7 @@ Currently I only use it as before with =initExtra= though.
             passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
             passpull = "cd ~/.local/share/password-store; git pull; cd -;";
             hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-            cd = "z";
             youtube-dl = "yt-dlp";
-            cd-orig = "cd";
             cat-orig = "cat";
             cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
             nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
@@ -12898,10 +12978,10 @@ Currently I only use it as before with =initExtra= though.
           searchUpKey = "^[OA";
         };
         plugins = [
-          {
-            name = "fzf-tab";
-            src = pkgs.zsh-fzf-tab;
-          }
+          # {
+          #   name = "fzf-tab";
+          #   src = pkgs.zsh-fzf-tab;
+          # }
         ];
         initContent = ''
           my-forward-word() {

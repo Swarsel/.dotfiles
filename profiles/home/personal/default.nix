@@ -19,6 +19,7 @@
       passwordstore = lib.mkDefault true;
       direnv = lib.mkDefault true;
       eza = lib.mkDefault true;
+      atuin = lib.mkDefault true;
       git = lib.mkDefault true;
       fuzzel = lib.mkDefault true;
       starship = lib.mkDefault true;

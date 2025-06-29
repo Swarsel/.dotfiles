@@ -18,8 +18,14 @@
       jq.enable = true;
       ripgrep.enable = true;
       pandoc.enable = true;
-      fzf.enable = true;
-      zoxide.enable = true;
+      # fzf.enable = true;
+      zoxide = {
+        enable = true;
+        enableZshIntegration = true;
+        options = [
+          "--cmd cd"
+        ];
+      };
     };
   };
 }

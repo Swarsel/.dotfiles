@@ -39,6 +39,7 @@
           firefly = lib.mkDefault true;
           koillection = lib.mkDefault true;
           radicale = lib.mkDefault true;
+          atuin = lib.mkDefault true;
         };
       };
     };
