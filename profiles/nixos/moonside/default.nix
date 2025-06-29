@@ -19,6 +19,7 @@
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
           oauth2Proxy = lib.mkDefault true;
+          croc = lib.mkDefault true;
         };
       };
     };

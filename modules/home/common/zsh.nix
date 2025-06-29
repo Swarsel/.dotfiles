@@ -11,6 +11,11 @@ in
     };
   };
   config = lib.mkIf config.swarselsystems.modules.zsh {
+
+    sops.secrets = {
+      croc-password = { };
+    };
+
     programs.zsh = {
       enable = true;
       shellAliases = lib.recursiveUpdate
@@ -114,6 +119,7 @@ in
         # ctrl + del
         bindkey '^H' my-backward-delete-word
 
+        export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
       '';
     };
   };

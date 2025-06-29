@@ -9,6 +9,7 @@ in
     home.sessionVariables = {
       EDITOR = "e -w";
       DISPLAY = ":0";
+      CROC_RELAY = "send.swarsel.win";
       SWARSEL_LO_RES = config.swarselsystems.lowResolution;
       SWARSEL_HI_RES = config.swarselsystems.highResolution;
     };

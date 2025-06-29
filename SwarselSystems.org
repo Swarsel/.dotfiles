@@ -4767,6 +4767,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
             oauth2Proxy = lib.mkDefault true;
+            croc = lib.mkDefault true;
           };
         };
       };
@@ -10727,6 +10728,73 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   }
 #+end_src
 
+**** croc
+:PROPERTIES:
+:CUSTOM_ID: h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0
+:END:
+
+#+begin_src nix :tangle modules/nixos/server/croc.nix
+  { lib, config, pkgs, ... }:
+  let
+    serviceDomain = "send.swarsel.win";
+    servicePorts = [
+      9009
+      9010
+      9011
+      9012
+      9013
+    ];
+    serviceName = "croc";
+
+    cfg = config.services.croc;
+  in
+  {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+
+      sops = {
+        secrets = {
+          croc-password = { };
+        };
+
+        templates = {
+          "croc-env" = {
+            content = ''
+              CROC_PASS="${config.sops.placeholder.croc-password}"
+            '';
+          };
+        };
+      };
+
+      topology.self.services.croc.info = "https://${serviceDomain}";
+
+      services.croc = {
+        enable = true;
+        ports = servicePorts;
+        pass = config.sops.secrets.croc-password.path;
+        openFirewall = true;
+      };
+
+
+      systemd.services = {
+        "${serviceName}" = {
+          serviceConfig = {
+            ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
+              lib.concatMapStringsSep "," toString cfg.ports}";
+            EnvironmentFile = [
+              config.sops.templates.croc-env.path
+            ];
+          };
+        };
+      };
+
+      # ports are opened on the firewall for croc, no nginx config
+
+    };
+
+  }
+#+end_src
+
 *** Darwin
 :PROPERTIES:
 :CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
@@ -12318,6 +12386,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
       home.sessionVariables = {
         EDITOR = "e -w";
         DISPLAY = ":0";
+        CROC_RELAY = "send.swarsel.win";
         SWARSEL_LO_RES = config.swarselsystems.lowResolution;
         SWARSEL_HI_RES = config.swarselsystems.highResolution;
       };
@@ -12361,8 +12430,14 @@ This section is for programs that require no further configuration. zsh Integrat
         jq.enable = true;
         ripgrep.enable = true;
         pandoc.enable = true;
-        fzf.enable = true;
-        zoxide.enable = true;
+        # fzf.enable = true;
+        zoxide = {
+          enable = true;
+          enableZshIntegration = true;
+          options = [
+            "--cmd cd"
+          ];
+        };
       };
     };
   }
@@ -12760,6 +12835,11 @@ Currently I only use it as before with =initExtra= though.
       };
     };
     config = lib.mkIf config.swarselsystems.modules.zsh {
+
+      sops.secrets = {
+        croc-password = { };
+      };
+
       programs.zsh = {
         enable = true;
         shellAliases = lib.recursiveUpdate
@@ -12863,6 +12943,7 @@ Currently I only use it as before with =initExtra= though.
           # ctrl + del
           bindkey '^H' my-backward-delete-word
 
+          export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
         '';
       };
     };
