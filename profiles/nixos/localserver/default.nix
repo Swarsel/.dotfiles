@@ -38,6 +38,7 @@
           kanidm = lib.mkDefault true;
           firefly = lib.mkDefault true;
           koillection = lib.mkDefault true;
+          radicale = lib.mkDefault true;
         };
       };
     };

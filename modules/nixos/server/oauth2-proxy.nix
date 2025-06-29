@@ -58,8 +58,9 @@ in
                     extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
                       proxy_set_header X-User         $user;
                       proxy_set_header Remote-User    $user;
+                      proxy_set_header X-Remote-User  $user;
                       proxy_set_header X-Email        $email;
-                      proxy_set_header X-Access-Token $token;
+                      # proxy_set_header X-Access-Token $token;
                       add_header Set-Cookie           $auth_cookie;
                     '' + lib.optionalString locationSubmodule.config.bypassAuth ''
                       auth_request off;
@@ -79,7 +80,7 @@ in
                 auth_request_set $user  ${config.oauth2.X-User};
                 auth_request_set $email ${config.oauth2.X-Email};
                 # if you enabled --pass-access-token, this will pass the token to the backend
-                auth_request_set $token ${config.oauth2.X-Access-Token};
+                # auth_request_set $token ${config.oauth2.X-Access-Token};
                 # if you enabled --cookie-refresh, this is needed for it to work with auth_request
                 auth_request_set $auth_cookie $upstream_http_set_cookie;
               '';

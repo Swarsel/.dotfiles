@@ -4701,6 +4701,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             kanidm = lib.mkDefault true;
             firefly = lib.mkDefault true;
             koillection = lib.mkDefault true;
+            radicale = lib.mkDefault true;
           };
         };
       };
@@ -9991,6 +9992,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
               "navidrome.access" = { };
               "freshrss.access" = { };
               "firefly.access" = { };
+              "radicale.access" = { };
             };
 
             inherit (config.repo.secrets.local) persons;
@@ -10106,6 +10108,11 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                       "email"
                       "profile"
                     ];
+                    "radicale.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
                   };
                   preferShortUsername = true;
                   claimMaps.groups = {
@@ -10114,6 +10121,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                       "freshrss.access" = [ "ttrss_access" ];
                       "navidrome.access" = [ "navidrome_access" ];
                       "firefly.access" = [ "firefly_access" ];
+                      "radicale.access" = [ "radicale_access" ];
                     };
                   };
                 };
@@ -10219,8 +10227,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                       extraConfig = lib.optionalString locationSubmodule.config.setOauth2Headers ''
                         proxy_set_header X-User         $user;
                         proxy_set_header Remote-User    $user;
+                        proxy_set_header X-Remote-User  $user;
                         proxy_set_header X-Email        $email;
-                        proxy_set_header X-Access-Token $token;
+                        # proxy_set_header X-Access-Token $token;
                         add_header Set-Cookie           $auth_cookie;
                       '' + lib.optionalString locationSubmodule.config.bypassAuth ''
                         auth_request off;
@@ -10240,7 +10249,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                   auth_request_set $user  ${config.oauth2.X-User};
                   auth_request_set $email ${config.oauth2.X-Email};
                   # if you enabled --pass-access-token, this will pass the token to the backend
-                  auth_request_set $token ${config.oauth2.X-Access-Token};
+                  # auth_request_set $token ${config.oauth2.X-Access-Token};
                   # if you enabled --cookie-refresh, this is needed for it to work with auth_request
                   auth_request_set $auth_cookie $upstream_http_set_cookie;
                 '';
@@ -10600,6 +10609,121 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
     };
+  }
+#+end_src
+
+**** Radicale
+:PROPERTIES:
+:CUSTOM_ID: h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6
+:END:
+
+#+begin_src nix :tangle modules/nixos/server/radicale.nix
+  { self, lib, config, ... }:
+  let
+    inherit (config.repo.secrets.local.radicale) user1;
+    sopsFile = self + /secrets/winters/secrets2.yaml;
+    serviceDomain = "schedule.swarsel.win";
+    servicePort = 8000;
+    serviceName = "radicale";
+    serviceUser = "radicale";
+    serviceGroup = serviceUser;
+
+    cfg = config.services."${serviceName}";
+  in
+  {
+    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+
+      sops = {
+        secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+
+        templates = {
+          "radicale-users" = {
+            content = ''
+              ${user1}:${config.sops.placeholder.radicale-user}
+            '';
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
+        };
+      };
+
+      topology.self.services.radicale.info = "https://${serviceDomain}";
+
+      services.radicale = {
+        enable = true;
+        settings = {
+          server = {
+            hosts = [
+              "0.0.0.0:${builtins.toString servicePort}"
+              "[::]:${builtins.toString servicePort}"
+            ];
+          };
+          auth = {
+            type = "htpasswd";
+            htpasswd_filename = config.sops.templates.radicale-users.path;
+            htpasswd_encryption = "autodetect";
+          };
+          storage = {
+            filesystem_folder = "/Vault/data/radicale/collections";
+          };
+        };
+        rights = {
+          # all: match authenticated users only
+          root = {
+            user = ".+";
+            collection = "";
+            permissions = "R";
+          };
+          principal = {
+            user = ".+";
+            collection = "{user}";
+            permissions = "RW";
+          };
+          calendars = {
+            user = ".+";
+            collection = "{user}/[^/]+";
+            permissions = "rw";
+          };
+        };
+      };
+
+      systemd.tmpfiles.rules = [
+        "d '${cfg.settings.storage.filesystem_folder}'        0750 ${serviceUser} ${serviceGroup} - -"
+      ];
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+      networking.firewall.allowedUDPPorts = [ servicePort ];
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          "${serviceName}" = {
+            servers = {
+              "192.168.1.2:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size 16M;
+                '';
+              };
+            };
+          };
+        };
+      };
+
+    };
+
   }
 #+end_src
 
