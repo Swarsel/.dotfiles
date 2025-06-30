@@ -1,4 +1,3 @@
-[![nixos-unstable](https://img.shields.io/badge/unstable-nixos?style=flat&logo=nixos&logoColor=cdd6f4&label=NixOS&labelColor=11111b&color=b4befe)](https://github.com/NixOS/nixpkgs)
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&style=flat&labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
 
 ###### Disclaimer
@@ -14,41 +13,29 @@ That being said, there is a lot of general configuration that you *probably* can
   <img src="https://i.imgur.com/0G7Be6e.png" width="49%" title="Waybar">
 </p>
 
-|               |                                 |
-|---------------|---------------------------------|
-| **Shell:**    | zsh                             |
-| **DM:**       | greetd                          |
-| **WM:**       | SwayFX                          |
-| **Bar:**      | Waybar                          |
-| **Editor:**   | Emacs                           |
-| **Terminal:** | kitty                           |
-| **Launcher:** | fuzzel                          |
-| **Alerts:**   | mako                            |
-| **Browser:**  | firefox                         |
-| **Theme:**    | city-lights (managed by stylix) |
-
 ## Overview
 
-- Literate configuration for Nix and Emacs ([SwarselSystems.org](../SwarselSystems.org))
+- [Literate configuration](https://swarsel.github.io/.dotfiles/) defining my entire infrastructure, including Emacs
 - Configuration based on flakes for personal hosts as well as servers on:
   - [NixOS](https://github.com/NixOS/nixpkgs)
   - [home-manager](https://github.com/nix-community/home-manager) only (no full NixOS) with support from [nixGL](https://github.com/nix-community/nixGL)
   - [nix-darwin](https://github.com/LnL7/nix-darwin)
   - [nix-on-droid](https://github.com/nix-community/nix-on-droid)
 - Streamlined configuration and deployment pipeline:
-  - Framework for [packages](https://github.com/Swarsel/.dotfiles/blob/main/pkgs/default.nix), [overlays](https://github.com/Swarsel/.dotfiles/blob/main/overlays/default.nix), and [modules](https://github.com/Swarsel/.dotfiles/tree/main/modules)
+  - Framework for [packages](https://github.com/Swarsel/.dotfiles/blob/main/pkgs/default.nix), [overlays](https://github.com/Swarsel/.dotfiles/blob/main/overlays/default.nix), [modules](https://github.com/Swarsel/.dotfiles/tree/main/modules), and [library functions](https://github.com/Swarsel/.dotfiles/tree/main/lib/default.nix)
   - Dynamically generated host configurations
   - Limited local installer (no secrets handling) with a supported demo build
   - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
   - Improved nix tooling
 - Support for advanced features:
   - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
-  - Management of non-file-based secrets using private repo
+  - Management of personally identifiable information using [nix-plugins](https://github.com/shlevy/nix-plugins)
   - Full Yubikey support
   - LUKS-encryption
   - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
   - BTRFS-based [Impermanence](https://github.com/nix-community/impermanence)
-
+  - Configuration shared between configurations (configuration for one nixosConfiguration can be defined in another nixosConfiguration)
+  - Global attributes shared between all configurations to reduce attribute redeclaration
 
 ## Documentation
 
@@ -66,9 +53,12 @@ Otherwise, the files that are possibly of biggest interest are found here:
 - [init.el](../programs/emacs/init.el)
 
 
-## Getting started
+### Getting started
 
-### Demo configuration
+#### Demo configuration
+
+<details>
+  <summary>Click here for instructions on how to install the demo system</summary>
 
 If you just want to see if this configuration is for you, run this command on any system that has `nix` installed:
 
@@ -78,12 +68,16 @@ nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#sw
 
 This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
 Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
+</details>
 
-## Deployment
+### Deployment
+
+<details>
+  <summary>Click here for deployment instructions</summary>
 
 The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually. You can choose between a remote deployment strategy that is also able to deploy new age keys for sops for you and a local installer that will only install the system without any secret handling.
 
-### Remote deployment (recommended if you have at least one running system)
+#### Remote deployment (recommended if you have at least one running system)
 
 0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
 1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
@@ -96,15 +90,82 @@ The deployment process for this configuration is mostly automated, there are onl
   - you will have to enter the root password once during the final system install
 5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some webservices etc.
 
-### Local deployment (recommended for setting up the first system)
+#### Local deployment (recommended for setting up the first system)
 
 1) Boot the latest install ISO from this repository on an UEFI system.
 2) Run `swarsel-install -n <CONFIGURATION_NAME>`
 3) Reboot
 
 Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n <CONFIGURATION_NAME>` at step 2.
+</details>
+
+## Infrastructure
+
+<details>
+  <summary>Click here for a summary of my infrastructure</summary>
+
+### Programs
+
+| Topic         | Program                         |
+|---------------|---------------------------------|
+|🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                            |
+|🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
+|🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
+|⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
+|✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/programs/emacs/init.el)                          |
+|🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
+|🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
+|🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |
+|🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                        |
+|🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)|
+
+### Services
+
+| Topic                 | Program                         |
+|-----------------------|---------------------------------|
+|📖 **Books**           |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                         |
+|📼 **Videos**          | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                       |
+|🎵 **Music**           | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)  |
+|🗨️ **Messaging**       | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                         |
+|📁 **Filesharing**     | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                      |
+|📷 **Photos**          | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                         |
+|📄 **Documents**       | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                      |
+|🔄 **File Sync**       | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                      |
+|💾 **Backups**         | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                         |
+|👁️ **Monitoring**      | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                        |
+|🍴 **RSS**             | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                       |
+|🌳 **Git**             | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                        |
+|⚓ **Anki Sync**       | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)               |
+|🪪 **SSO**             | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)          |
+|💸 **Finance**         | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)                    |
+|🃏 **Collections**     | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)                    |
+|🗃️ **Shell History**   | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                          |
+|📅 **CalDav/CardDav**  | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                       |
+|↔️ **P2P Filesharing** | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
+|✂️ **Paste Tool**      | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                       |
+|🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                          |
+
+### Hosts
+
+| Name               | Hardware                                            | Use                                                  |
+|--------------------|-----------------------------------------------------|------------------------------------------------------|
+|💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
+|💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
+|🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
+|🖥️ **sync**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+|🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+|📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
+|💿 **drugstore**    | -                                                   | ISO installer configuration                          |
+|❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
+|❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+|🏠 **home**         | -                                                   | Reference configuration for a home-manager only host |
+</details>
 
 ## General Nix tips & useful links
+
+<details>
+  <summary>Click here for a summary of nix tips & links</summary>
+
 - Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
 
   - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine. Alternatively, use [comma](https://github.com/nix-community/comma)
@@ -164,13 +225,16 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
 - And a few links that are not directly nix-related, but may still serve you well:
   - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
   - Waybar configuration: https://github.com/Alexays/Waybar/wiki
-
+</details>
 
 ## Attributions, Acknowledgements, Inspirations, etc.
 
 These are in random order (also known as 'the order in which I discovered them'). I would like to express my gratitude to:
 
 - All the great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete):
+<details>
+  <summary>Click here to expand...</summary>
+
   - [guibou](https://github.com/guibou/)
   - [rycee](https://github.com/rycee)
   - [adisbladis](https://github.com/adisbladis)
@@ -192,7 +256,12 @@ These are in random order (also known as 'the order in which I discovered them')
   - [zhaofengli](https://github.com/zhaofengli)
   - [Artturin](https://github.com/Artturin)
   - [oddlama](https://github.com/oddlama)
+</details>
+
 - All the people who have inspired me with their configurations (sadly also highly incomplete):
+<details>
+  <summary>Click here to expand...</summary>
+
   - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
   - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
   - [drduh](https://github.com/drduh/YubiKey-Guide) with their [YubiKey-Guide](https://github.com/drduh/YubiKey-Guide)
@@ -205,6 +274,6 @@ These are in random order (also known as 'the order in which I discovered them')
   - [librephoenix](https://github.com/librephoenix) with their [nixos-config](https://github.com/librephoenix/nixos-config)
   - [Xe](https://github.com/Xe) with their [blog](https://xeiaso.net/blog/)
   - [oddlama](https://github.com/oddlama) with their absolutely incredible [nix-config](https:/github.com/oddlama/nix-config)
-
+</details>
 
 If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)

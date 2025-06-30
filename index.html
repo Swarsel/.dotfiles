@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-06-30 Mo 23:10 -->
+<!-- 2025-07-01 Di 00:53 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -203,8 +203,11 @@
 <ul>
 <li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a>
 <ul>
-<li><a href="#org0ec9db2">1.1. Structure of this file</a></li>
-<li><a href="#org3985bb7">1.2. <span class="todo TODO">TODO</span> Structure of this flake</a></li>
+<li><a href="#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">1.1. Structure of this file</a></li>
+<li><a href="#h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64">1.2. <span class="todo TODO">TODO</span> Structure of this flake</a></li>
+<li><a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">1.3. Hosts</a></li>
+<li><a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">1.4. Programs</a></li>
+<li><a href="#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9">1.5. Services</a></li>
 </ul>
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2. flake.nix</a>
@@ -359,7 +362,7 @@
 <li><a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">3.2.5.1. extra-builtins</a></li>
 <li><a href="#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb">3.2.5.2. sops-decrypt-and-cache</a></li>
 <li><a href="#h:46458265-074e-4368-ad9a-055877754914">3.2.5.3. nix-topology</a></li>
-<li><a href="#org30c67be">3.2.5.4. Globals</a></li>
+<li><a href="#h:af83893d-c0f9-4b45-b816-4849110d41b3">3.2.5.4. Globals</a></li>
 </ul>
 </li>
 </ul>
@@ -372,7 +375,7 @@
 <li><a href="#h:f4f22166-e345-43e6-b15f-b7f5bb886554">3.3.1.2. Shared Configuration Options</a></li>
 <li><a href="#h:24c9146f-2147-4fd5-bafc-d5853e15cf12">3.3.1.3. General NixOS settings (stateVersion)</a></li>
 <li><a href="#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5">3.3.1.4. Share configuration between nodes</a></li>
-<li><a href="#org332d9a8">3.3.1.5. Global options</a></li>
+<li><a href="#h:85c9b83f-40c3-4558-bb28-a37b6f8597b9">3.3.1.5. Global options</a></li>
 <li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.1.6. System Packages</a></li>
 <li><a href="#h:7f6d6908-4d02-4907-9c70-f802f4358520">3.3.1.7. Setup home-manager base</a></li>
 <li><a href="#h:41d1b7c6-52bf-45f3-9d83-610b469dffc0">3.3.1.8. Setup home-manager specialArgs</a></li>
@@ -732,20 +735,22 @@
 </li>
 </ul>
 </li>
-<li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">5. Appendix B: Supplementary Files</a>
+<li><a href="#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c">5. Appendix A: Noweb-Ref blocks</a></li>
+<li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">6. Appendix B: Supplementary Files</a>
 <ul>
-<li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">5.1. Server Emacs config</a></li>
-<li><a href="#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">5.2. tridactylrc</a></li>
-<li><a href="#h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">5.3. tridactyl theme</a></li>
-<li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">5.4. Waybar style.css</a></li>
-<li><a href="#h:788937cf-8816-466b-8e57-1b695cb50f52">5.5. justfile</a></li>
+<li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">6.1. Server Emacs config</a></li>
+<li><a href="#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">6.2. tridactylrc</a></li>
+<li><a href="#h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">6.3. tridactyl theme</a></li>
+<li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">6.4. Waybar style.css</a></li>
+<li><a href="#h:788937cf-8816-466b-8e57-1b695cb50f52">6.5. justfile</a></li>
+<li><a href="#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec">6.6. GitHub Readme</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <p>
-<b>This file has 73111 words spanning 19692 lines and was last revised on 2025-06-30 23:10:29 +0200.</b>
+<b>This file has 76328 words spanning 20028 lines and was last revised on 2025-07-01 00:53:42 +0200.</b>
 </p>
 
 <p>
@@ -775,9 +780,9 @@ This configuration is part of a NixOS system that is (nearly) fully declarative 
 This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 </p>
 </div>
-<div id="outline-container-org0ec9db2" class="outline-3">
-<h3 id="org0ec9db2"><span class="section-number-3">1.1.</span> Structure of this file</h3>
-<div class="outline-text-3" id="text-1-1">
+<div id="outline-container-h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5" class="outline-3">
+<h3 id="h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5"><span class="section-number-3">1.1.</span> Structure of this file</h3>
+<div class="outline-text-3" id="text-h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">
 <p>
 This file is structured as follows:
 </p>
@@ -798,7 +803,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-06-30 23:10:29 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-07-01 00:53:42 +0200)
 </p></li>
 </ul>
 
@@ -921,9 +926,9 @@ not that noweb-reffed blocks will not be indented correctly. You will want to ac
 </p>
 </div>
 </div>
-<div id="outline-container-org3985bb7" class="outline-3">
-<h3 id="org3985bb7"><span class="section-number-3">1.2.</span> <span class="todo TODO">TODO</span> Structure of this flake</h3>
-<div class="outline-text-3" id="text-1-2">
+<div id="outline-container-h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64" class="outline-3">
+<h3 id="h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64"><span class="section-number-3">1.2.</span> <span class="todo TODO">TODO</span> Structure of this flake</h3>
+<div class="outline-text-3" id="text-h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64">
 <p>
 The structure of this flake as seen many revisions, however lately I have settled on a system that I have grown to like:
 </p>
@@ -1002,7 +1007,7 @@ By themselves, most of the files in the modules folder will not do anything. In 
 
 <li><code>profiles</code>: This folder splits up into <code>home</code> and <code>nixos</code> subfolders, where groupings of module enablers are stored for the respective home and nix setups. Note that <code>home</code> profiles are also used in NixOS setups (extensively even)!</li>
 
-<li><code>nix</code>: This special folder holds mostly <code>.nix</code> files that are not automatically loaded, but rather setup specific things that affect most of the flake. For example, here lies the aforementioned <a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">extra-builtins</a> as well as the setup for the <a href="#org30c67be">Globals</a> system. TODO: Move flake-parts units there and explain them here.</li>
+<li><code>nix</code>: This special folder holds mostly <code>.nix</code> files that are not automatically loaded, but rather setup specific things that affect most of the flake. For example, here lies the aforementioned <a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">extra-builtins</a> as well as the setup for the <a href="#h:af83893d-c0f9-4b45-b816-4849110d41b3">Globals</a> system. TODO: Move flake-parts units there and explain them here.</li>
 
 <li><code>lib</code>: This folder holds utility functions that I add to the nixpkgs library under the <code>swarselsystems</code> attribute set. An example would be the <code>mkIfElse</code> function.</li>
 
@@ -1022,6 +1027,81 @@ By themselves, most of the files in the modules folder will not do anything. In 
 
 <li><code>topology</code>: Holds the configuration used by <a href="https://github.com/oddlama/nix-topology">nix-topology</a>.</li>
 </ul>
+</div>
+</div>
+<div id="outline-container-h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02" class="outline-3">
+<h3 id="h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02"><span class="section-number-3">1.3.</span> Hosts</h3>
+<div class="outline-text-3" id="text-h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">
+<p>
+Here I give a brief overview over the hostmachines that I am using. This is held in markdown so that I can render it into my GitHub README.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">| Name               | Hardware                                            | Use                                                  |
+|--------------------|-----------------------------------------------------|------------------------------------------------------|
+|💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
+|💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
+|🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
+|🖥️ **sync**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+|🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+|📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
+|💿 **drugstore**    | -                                                   | ISO installer configuration                          |
+|❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
+|❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+|🏠 **home**         | -                                                   | Reference configuration for a home-manager only host |
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:3bb92528-c61c-4b8d-8214-bf2a40baaa32" class="outline-3">
+<h3 id="h:3bb92528-c61c-4b8d-8214-bf2a40baaa32"><span class="section-number-3">1.4.</span> Programs</h3>
+<div class="outline-text-3" id="text-h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">
+<div class="org-src-container">
+<pre class="src src-markdown">| Topic         | Program                         |
+|---------------|---------------------------------|
+|🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                            |
+|🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
+|🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
+|⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
+|✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/programs/emacs/init.el)                          |
+|🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
+|🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
+|🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |
+|🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                        |
+|🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)|
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9" class="outline-3">
+<h3 id="h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9"><span class="section-number-3">1.5.</span> Services</h3>
+<div class="outline-text-3" id="text-h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9">
+<div class="org-src-container">
+<pre class="src src-markdown">| Topic                 | Program                         |
+|-----------------------|---------------------------------|
+|📖 **Books**           |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                         |
+|📼 **Videos**          | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                       |
+|🎵 **Music**           | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)  |
+|🗨️ **Messaging**       | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                         |
+|📁 **Filesharing**     | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                      |
+|📷 **Photos**          | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                         |
+|📄 **Documents**       | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                      |
+|🔄 **File Sync**       | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                      |
+|💾 **Backups**         | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                         |
+|👁️ **Monitoring**      | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                        |
+|🍴 **RSS**             | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                       |
+|🌳 **Git**             | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                        |
+|⚓ **Anki Sync**       | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)               |
+|🪪 **SSO**             | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)          |
+|💸 **Finance**         | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)                    |
+|🃏 **Collections**     | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)                    |
+|🗃️ **Shell History**   | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                          |
+|📅 **CalDav/CardDav**  | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                       |
+|↔️ **P2P Filesharing** | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
+|✂️ **Paste Tool**      | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                       |
+|🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                          |
+</pre>
+</div>
 </div>
 </div>
 </div>
@@ -6815,9 +6895,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org30c67be" class="outline-5">
-<h5 id="org30c67be"><span class="section-number-5">3.2.5.4.</span> Globals</h5>
-<div class="outline-text-5" id="text-3-2-5-4">
+<div id="outline-container-h:af83893d-c0f9-4b45-b816-4849110d41b3" class="outline-5">
+<h5 id="h:af83893d-c0f9-4b45-b816-4849110d41b3"><span class="section-number-5">3.2.5.4.</span> Globals</h5>
+<div class="outline-text-5" id="text-h:af83893d-c0f9-4b45-b816-4849110d41b3">
 <div class="org-src-container">
 <pre class="src src-nix">{ inputs, ... }:
 {
@@ -7135,9 +7215,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org332d9a8" class="outline-5">
-<h5 id="org332d9a8"><span class="section-number-5">3.3.1.5.</span> Global options</h5>
-<div class="outline-text-5" id="text-3-3-1-5">
+<div id="outline-container-h:85c9b83f-40c3-4558-bb28-a37b6f8597b9" class="outline-5">
+<h5 id="h:85c9b83f-40c3-4558-bb28-a37b6f8597b9"><span class="section-number-5">3.3.1.5.</span> Global options</h5>
+<div class="outline-text-5" id="text-h:85c9b83f-40c3-4558-bb28-a37b6f8597b9">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, options, ... }:
 let
@@ -20856,15 +20936,23 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
+<div id="outline-container-h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c" class="outline-2">
+<h2 id="h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c"><span class="section-number-2">5.</span> Appendix A: Noweb-Ref blocks</h2>
+<div class="outline-text-2" id="text-h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c">
+<p>
+This sections is no longer used really. An introduction can be found in <a href="#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">Structure of this file</a> under the historical note. The little noweb-ref blocks that I still use are found in <a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">Hosts</a> and <a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">Services</a>.
+</p>
+</div>
+</div>
 <div id="outline-container-h:8fc9f66a-7412-4091-8dee-a06f897baf67" class="outline-2">
-<h2 id="h:8fc9f66a-7412-4091-8dee-a06f897baf67"><span class="section-number-2">5.</span> Appendix B: Supplementary Files</h2>
+<h2 id="h:8fc9f66a-7412-4091-8dee-a06f897baf67"><span class="section-number-2">6.</span> Appendix B: Supplementary Files</h2>
 <div class="outline-text-2" id="text-h:8fc9f66a-7412-4091-8dee-a06f897baf67">
 <p>
 This section now holds some of the configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using <code>home.file</code>.
 </p>
 </div>
 <div id="outline-container-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8" class="outline-3">
-<h3 id="h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8"><span class="section-number-3">5.1.</span> Server Emacs config</h3>
+<h3 id="h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8"><span class="section-number-3">6.1.</span> Server Emacs config</h3>
 <div class="outline-text-3" id="text-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">
 <p>
 On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using <code>bjm/elfeed-updater</code>. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change <code>(elfeed-db-load)</code> in <code>bjm/elfeed-updater</code> to <code>(elfeed-db-save)</code>.
@@ -20958,7 +21046,7 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 </div>
 </div>
 <div id="outline-container-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51" class="outline-3">
-<h3 id="h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51"><span class="section-number-3">5.2.</span> tridactylrc</h3>
+<h3 id="h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51"><span class="section-number-3">6.2.</span> tridactylrc</h3>
 <div class="outline-text-3" id="text-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">
 <p>
 This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
@@ -21103,7 +21191,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 </div>
 </div>
 <div id="outline-container-h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0" class="outline-3">
-<h3 id="h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0"><span class="section-number-3">5.3.</span> tridactyl theme</h3>
+<h3 id="h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0"><span class="section-number-3">6.3.</span> tridactyl theme</h3>
 <div class="outline-text-3" id="text-h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">
 <div class="org-src-container">
 <pre class="src src-config">
@@ -21274,7 +21362,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 </div>
 </div>
 <div id="outline-container-h:77b1c523-5074-4610-b320-90af95e6134d" class="outline-3">
-<h3 id="h:77b1c523-5074-4610-b320-90af95e6134d"><span class="section-number-3">5.4.</span> Waybar style.css</h3>
+<h3 id="h:77b1c523-5074-4610-b320-90af95e6134d"><span class="section-number-3">6.4.</span> Waybar style.css</h3>
 <div class="outline-text-3" id="text-h:77b1c523-5074-4610-b320-90af95e6134d">
 <p>
 This is the stylesheet used by waybar.
@@ -21552,7 +21640,7 @@ window#waybar.hidden {
 </div>
 </div>
 <div id="outline-container-h:788937cf-8816-466b-8e57-1b695cb50f52" class="outline-3">
-<h3 id="h:788937cf-8816-466b-8e57-1b695cb50f52"><span class="section-number-3">5.5.</span> justfile</h3>
+<h3 id="h:788937cf-8816-466b-8e57-1b695cb50f52"><span class="section-number-3">6.5.</span> justfile</h3>
 <div class="outline-text-3" id="text-h:788937cf-8816-466b-8e57-1b695cb50f52">
 <p>
 This file defines a few workflows that I often need to run when working on my configuration. This works similar to <code>make</code>, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or <code>.PHONY</code> recipes.
@@ -21596,11 +21684,304 @@ sync USER HOST:
 </div>
 </div>
 </div>
+<div id="outline-container-h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec" class="outline-3">
+<h3 id="h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec"><span class="section-number-3">6.6.</span> GitHub Readme</h3>
+<div class="outline-text-3" id="text-h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec">
+<p>
+Here lies defined the readme for GitHub and Forgejo:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&amp;style=flat&amp;labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
+
+###### Disclaimer
+
+You probably do not want to use this setup verbatim. This is made to fit my specific use cases, and I do not guarantee best practises everywhere. Changes are made on a daily basis.
+
+That being said, there is a lot of general configuration that you *probably* can use without changes; if you only want to use this repository as a starting point for your own configuration, you should be fine. See below for more information. Also, if you see something that can be done more efficiently or better in general, please let me know! :)
+
+# \~SwarselSystems\~
+
+&lt;p align="center"&gt;
+  &lt;img src="https://i.imgur.com/bmgLNcu.png" width="49%" title="Tiling"&gt;
+  &lt;img src="https://i.imgur.com/0G7Be6e.png" width="49%" title="Waybar"&gt;
+&lt;/p&gt;
+
+## Overview
+
+- [Literate configuration](https://swarsel.github.io/.dotfiles/) defining my entire infrastructure, including Emacs
+- Configuration based on flakes for personal hosts as well as servers on:
+  - [NixOS](https://github.com/NixOS/nixpkgs)
+  - [home-manager](https://github.com/nix-community/home-manager) only (no full NixOS) with support from [nixGL](https://github.com/nix-community/nixGL)
+  - [nix-darwin](https://github.com/LnL7/nix-darwin)
+  - [nix-on-droid](https://github.com/nix-community/nix-on-droid)
+- Streamlined configuration and deployment pipeline:
+  - Framework for [packages](https://github.com/Swarsel/.dotfiles/blob/main/pkgs/default.nix), [overlays](https://github.com/Swarsel/.dotfiles/blob/main/overlays/default.nix), [modules](https://github.com/Swarsel/.dotfiles/tree/main/modules), and [library functions](https://github.com/Swarsel/.dotfiles/tree/main/lib/default.nix)
+  - Dynamically generated host configurations
+  - Limited local installer (no secrets handling) with a supported demo build
+  - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
+  - Improved nix tooling
+- Support for advanced features:
+  - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
+  - Management of personally identifiable information using [nix-plugins](https://github.com/shlevy/nix-plugins)
+  - Full Yubikey support
+  - LUKS-encryption
+  - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
+  - BTRFS-based [Impermanence](https://github.com/nix-community/impermanence)
+  - Configuration shared between configurations (configuration for one nixosConfiguration can be defined in another nixosConfiguration)
+  - Global attributes shared between all configurations to reduce attribute redeclaration
+
+## Documentation
+
+If you are mainly interested in how I configured this system, check out this page:
+
+[SwarselSystems literate configuration](https://swarsel.github.io/.dotfiles/)
+
+This file will take you through my design process, in varying amounts of detail.
+
+Otherwise, the files that are possibly of biggest interest are found here:
+
+- [SwarselSystems.org](../SwarselSystems.org)
+- [flake.nix](../flake.nix)
+- [early-init.el](../programs/emacs/early-init.el)
+- [init.el](../programs/emacs/init.el)
+
+
+### Getting started
+
+#### Demo configuration
+
+&lt;details&gt;
+  &lt;summary&gt;Click here for instructions on how to install the demo system&lt;/summary&gt;
+
+If you just want to see if this configuration is for you, run this command on any system that has `nix` installed:
+
+``` shell
+nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-rebuild -- -u &lt;YOUR_USERNAME&gt;
+```
+
+This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
+Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
+&lt;/details&gt;
+
+### Deployment
+
+&lt;details&gt;
+  &lt;summary&gt;Click here for deployment instructions&lt;/summary&gt;
+
+The deployment process for this configuration is mostly automated, there are only a few steps that are needed to be done manually. You can choose between a remote deployment strategy that is also able to deploy new age keys for sops for you and a local installer that will only install the system without any secret handling.
+
+#### Remote deployment (recommended if you have at least one running system)
+
+0) Fork this repo, and write your own host config at `hosts/nixos/&lt;YOUR_CONFIG_NAME&gt;/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
+1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
+2) Make sure that your Yubikey is plugged in or that you have your SSH key available (and configured)
+3) Run `swarsel-bootstrap -n &lt;CONFIGURATION_NAME&gt; -d &lt;TARGET_IP&gt;` on your existing system.
+  - Alternatively (if you run this on a system that is not yet running this configuration), you can also run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n &lt;CONFIGURATION_NAME&gt; -d &lt;TARGET_IP&gt;` (this runs the same program as the command above).
+4) Follow the installers instructions:
+  - you will have to choose a disk encryption password (if you want that feature)
+  - you will have to confirm once that the target system has rebooted
+  - you will have to enter the root password once during the final system install
+5) That should be it! The installer will take care of setting up disks, secrets, and the rest of the hardware configuration! You will still have to sign in manually to some webservices etc.
+
+#### Local deployment (recommended for setting up the first system)
+
+1) Boot the latest install ISO from this repository on an UEFI system.
+2) Run `swarsel-install -n &lt;CONFIGURATION_NAME&gt;`
+3) Reboot
+
+Alternatively, to install this from any NixOS live ISO, run `nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#install -- -n &lt;CONFIGURATION_NAME&gt;` at step 2.
+&lt;/details&gt;
+
+## Infrastructure
+
+&lt;details&gt;
+  &lt;summary&gt;Click here for a summary of my infrastructure&lt;/summary&gt;
+
+### Programs
+
+| Topic         | Program                         |
+|---------------|---------------------------------|
+|🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                            |
+|🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
+|🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
+|⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
+|✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/programs/emacs/init.el)                          |
+|🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
+|🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
+|🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |
+|🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                        |
+|🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)|
+
+### Services
+
+| Topic                 | Program                         |
+|-----------------------|---------------------------------|
+|📖 **Books**           |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                         |
+|📼 **Videos**          | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                       |
+|🎵 **Music**           | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)  |
+|🗨️ **Messaging**       | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                         |
+|📁 **Filesharing**     | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                      |
+|📷 **Photos**          | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                         |
+|📄 **Documents**       | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                      |
+|🔄 **File Sync**       | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                      |
+|💾 **Backups**         | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                         |
+|👁️ **Monitoring**      | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                        |
+|🍴 **RSS**             | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                       |
+|🌳 **Git**             | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                        |
+|⚓ **Anki Sync**       | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)               |
+|🪪 **SSO**             | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)          |
+|💸 **Finance**         | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)                    |
+|🃏 **Collections**     | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)                    |
+|🗃️ **Shell History**   | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                          |
+|📅 **CalDav/CardDav**  | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                       |
+|↔️ **P2P Filesharing** | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
+|✂️ **Paste Tool**      | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                       |
+|🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                          |
+
+### Hosts
+
+| Name               | Hardware                                            | Use                                                  |
+|--------------------|-----------------------------------------------------|------------------------------------------------------|
+|💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
+|💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
+|🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
+|🖥️ **sync**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+|🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+|📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
+|💿 **drugstore**    | -                                                   | ISO installer configuration                          |
+|❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
+|❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+|🏠 **home**         | -                                                   | Reference configuration for a home-manager only host |
+&lt;/details&gt;
+
+## General Nix tips &amp; useful links
+
+&lt;details&gt;
+  &lt;summary&gt;Click here for a summary of nix tips &amp; links&lt;/summary&gt;
+
+- Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
+
+  - Temporarily install any package using `nix shell nixpkgs#&lt;PACKAGE_NAME&gt;` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine. Alternatively, use [comma](https://github.com/nix-community/comma)
+    - More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+  - When you are trying to setup a new configuration part, [GitHub code search](https://github.com/search?q=language%3ANix&amp;type=code) can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
+  - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
+  - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell &lt;NIXPKGS_REVISION&gt; &lt;PACKAGE&gt;`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
+
+- These links are your best friends:
+  - The nix documentation: https://nix.dev/
+  - The nixpkgs reference manual: https://nixos.org/manual/nixpkgs/unstable/#buildpythonapplication-function
+    - the [nixpkgs repository](https://github.com/NixOS/nixpkgs) - especially useful to look at the various READMEs that are in various places in the repository (find using GitHub code search) as well as the [issues](https://github.com/Swarsel/.dotfiles/issues) and [PRs](https://github.com/Swarsel/.dotfiles/pulls) pages
+    - and the [nixpkgs Pull Request Tracker](https://nixpk.gs/pr-tracker.html)
+  - The NixOS manual: https://nixos.org/manual/nixos/stable/
+  - The NixOS package search: https://search.nixos.org/packages
+    - and the nix package version search: https://lazamar.co.uk/nix-versions/
+  - The NixOS option search https://search.nixos.org/options
+  - [mipmip](https://github.com/mipmip)'s home-manager option search: https://mipmip.github.io/home-manager-option-search/
+  - [Alan Pearce](https://alanpearce.eu/)'s nix-darwin search: https://searchix.alanpearce.eu/options/darwin/search (which supports all of the other versions as well :o)
+  - For the above, you can use the CLI tool [manix](https://github.com/mlvzk/manix)
+  - Nix function search: https://noogle.dev/
+  - Search for nix-community options: https://search.nüschtos.de/
+- But that is not all:
+  - Some nix resources
+    - A tour of Nix: https://nixcloud.io/tour/
+    - The Nix One Pager: https://github.com/tazjin/nix-1p
+    - another one page introduction: https://learnxinyminutes.com/nix/
+    - a very short introduction to Nix features: https://zaynetro.com/explainix
+    - introductory nix article: https://medium.com/@MrJamesFisher/nix-by-example-a0063a1a4c55
+    - and another one: https://web.archive.org/web/20210121042658/https://ebzzry.io/en/nix/#nix
+    - How to learn nix: https://ianthehenry.com/posts/how-to-learn-nix/
+    - the Nix Cookbook: https://github.com/functionalops/nix-cookbook?tab=readme-ov-file
+    - and the Nix Pills: https://nixos.org/guides/nix-pills/
+  - Some resources on flakes
+    - Why to use flakes and introduction to flakes: https://www.tweag.io/blog/2020-05-25-flakes/
+    - The [NixOS &amp; Flakes Book](https://nixos-and-flakes.thiscute.world/)
+    - and [Wombat's book](https://mhwombat.codeberg.page/nix-book/)
+    - or the [Zero to Nix series](https://zero-to-nix.com/)
+    - Practical nix flakes article: https://serokell.io/blog/practical-nix-flakes
+  - A bit on Overlays:
+    - Overview on overlays: [Mastering Nixpkgs overlays article](https://nixcademy.com/posts/mastering-nixpkgs-overlays-techniques-and-best-practice/)
+    - Some examples on best practises: [Do's and Don'ts of overlays](https://flyingcircus.io/news/detailsansicht/nixos-the-dos-and-donts-of-nixpkgs-overlays)
+    - Blog article about overrides: https://bobvanderlinden.me/customizing-packages-in-nix/#using-modified-packages
+  - Also useful is the [official NixOS Wiki](https://wiki.nixos.org/wiki/NixOS_Wiki)
+    - there is also the [unofficial NixOS Wiki](https://nixos.wiki/) that tends to be a bit outdated, use with care
+- Some resources for specific nix tools:
+  - Flake output reference: https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/outputs
+  - You can find public repositories with modules at https://nur.nix-community.org/ (you should check what you are installing however):
+    - I like to use this for rycee's firefox extensions: https://nur.nix-community.org/repos/rycee/
+  - List of nerdfonts: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+  - Stylix configuration options: https://danth.github.io/stylix/
+  - nix-on-droid options: https://nix-community.github.io/nix-on-droid/nix-on-droid-options.html#sec-options
+- Very useful tools that are mostly not directly used in configuration but instead called on need:
+  - Convert non-NixOS machines to NixOS using [nixos-infect](https://github.com/elitak/nixos-infect)
+  - Create various installation media with [nixos-generators](https://github.com/nix-community/nixos-generators)
+  - Remotely deploy NixOS using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+- And a few links that are not directly nix-related, but may still serve you well:
+  - List of pre-commit-hooks: https://devenv.sh/reference/options/#pre-commithooks
+  - Waybar configuration: https://github.com/Alexays/Waybar/wiki
+&lt;/details&gt;
+
+## Attributions, Acknowledgements, Inspirations, etc.
+
+These are in random order (also known as 'the order in which I discovered them'). I would like to express my gratitude to:
+
+- All the great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete):
+&lt;details&gt;
+  &lt;summary&gt;Click here to expand...&lt;/summary&gt;
+
+  - [guibou](https://github.com/guibou/)
+  - [rycee](https://github.com/rycee)
+  - [adisbladis](https://github.com/adisbladis)
+  - [Mic92](https://github.com/Mic92/sops-nix)
+  - [lassulus](https://github.com/lassulus)
+  - [danth](https://github.com/danth/)
+  - [LnL7](https://github.com/LnL7)
+  - [t184256](https://github.com/t184256)
+  - [bennofs](https://github.com/bennofs)
+  - [Pandapip1](https://github.com/Pandapip1)
+  - [zowoq](https://github.com/zowoq)
+  - [numtide](https://github.com/numtide)
+  - [hsjobeki](https://github.com/hsjobeki)
+  - [blitz](https://github.com/blitz)
+  - [RaitoBezarius](https://github.com/RaitoBezarius)
+  - [nikstur](https://github.com/nikstur)
+  - [talyz](https://github.com/talyz)
+  - [infinisil](https://github.com/infinisil)
+  - [zhaofengli](https://github.com/zhaofengli)
+  - [Artturin](https://github.com/Artturin)
+  - [oddlama](https://github.com/oddlama)
+&lt;/details&gt;
+
+- All the people who have inspired me with their configurations (sadly also highly incomplete):
+&lt;details&gt;
+  &lt;summary&gt;Click here to expand...&lt;/summary&gt;
+
+  - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
+  - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
+  - [drduh](https://github.com/drduh/YubiKey-Guide) with their [YubiKey-Guide](https://github.com/drduh/YubiKey-Guide)
+  - [AntonHakansson](https://github.com/AntonHakansson) with their [nixos-config](https://github.com/AntonHakansson/nixos-config?tab=readme-ov-file)
+  - [Guekka](https://github.com/Guekka/) with their [blog](https://guekka.github.io/)
+  - [NotAShelf](https://github.com/NotAShelf) with their [nyx](https://github.com/NotAShelf/nyx)
+  - [Misterio77](https://github.com/Misterio77) with their [nix-config](https://github.com/Misterio77/nix-config)
+  - [0xdade](https://github.com/0xdade) with their [blog](https://0xda.de/blog/)
+  - [EmergentMind](https://github.com/EmergentMind) with their [nix-config](https://github.com/EmergentMind/nix-config)
+  - [librephoenix](https://github.com/librephoenix) with their [nixos-config](https://github.com/librephoenix/nixos-config)
+  - [Xe](https://github.com/Xe) with their [blog](https://xeiaso.net/blog/)
+  - [oddlama](https://github.com/oddlama) with their absolutely incredible [nix-config](https:/github.com/oddlama/nix-config)
+&lt;/details&gt;
+
+If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
+
+
+</pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-06-30 Mo 23:10</p>
+<p class="date">Created: 2025-07-01 Di 00:53</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
