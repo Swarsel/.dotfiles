@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-06-29 So 15:39 -->
+<!-- 2025-06-30 Mo 23:10 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -201,7 +201,12 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a></li>
+<li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a>
+<ul>
+<li><a href="#org0ec9db2">1.1. Structure of this file</a></li>
+<li><a href="#org3985bb7">1.2. <span class="todo TODO">TODO</span> Structure of this flake</a></li>
+</ul>
+</li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2. flake.nix</a>
 <ul>
 <li><a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">2.1. flake.nix skeleton</a></li>
@@ -354,6 +359,7 @@
 <li><a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">3.2.5.1. extra-builtins</a></li>
 <li><a href="#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb">3.2.5.2. sops-decrypt-and-cache</a></li>
 <li><a href="#h:46458265-074e-4368-ad9a-055877754914">3.2.5.3. nix-topology</a></li>
+<li><a href="#org30c67be">3.2.5.4. Globals</a></li>
 </ul>
 </li>
 </ul>
@@ -366,59 +372,60 @@
 <li><a href="#h:f4f22166-e345-43e6-b15f-b7f5bb886554">3.3.1.2. Shared Configuration Options</a></li>
 <li><a href="#h:24c9146f-2147-4fd5-bafc-d5853e15cf12">3.3.1.3. General NixOS settings (stateVersion)</a></li>
 <li><a href="#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5">3.3.1.4. Share configuration between nodes</a></li>
-<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.1.5. System Packages</a></li>
-<li><a href="#h:7f6d6908-4d02-4907-9c70-f802f4358520">3.3.1.6. Setup home-manager base</a></li>
-<li><a href="#h:41d1b7c6-52bf-45f3-9d83-610b469dffc0">3.3.1.7. Setup home-manager specialArgs</a></li>
-<li><a href="#h:7248f338-8cad-4443-9060-deae7955b26f">3.3.1.8. Setup login keymap</a></li>
-<li><a href="#h:48959890-fbc7-4d28-b33c-f33e028ab473">3.3.1.9. User setup, Make users non-mutable</a></li>
-<li><a href="#h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">3.3.1.10. Environment setup</a></li>
-<li><a href="#h:e2d40df9-0026-4caa-8476-9dc2353055a1">3.3.1.11. Security</a></li>
-<li><a href="#h:12858442-c129-4aa1-9c9c-a0916e36b302">3.3.1.12. Reduce systemd timeouts</a></li>
-<li><a href="#h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">3.3.1.13. Hardware settings</a></li>
-<li><a href="#h:63f6773e-b321-4b1d-a206-3913658cf62d">3.3.1.14. Pulseaudio</a></li>
-<li><a href="#h:aa433f5e-a455-4414-b76b-0a2692fa06aa">3.3.1.15. Pipewire</a></li>
-<li><a href="#h:7d696b64-debe-4a95-80b5-1e510156a6c6">3.3.1.16. Common network settings</a></li>
-<li><a href="#h:852d59ab-63c3-4831-993d-b5e23b877796">3.3.1.17. Time, locale settings</a></li>
-<li><a href="#h:30b81bf9-1e69-4ce8-88af-5592896bcee4">3.3.1.18. Meta options</a></li>
-<li><a href="#h:e2e7444b-cb85-4719-b154-e5f37274d02d">3.3.1.19. Topology</a></li>
-<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.1.20. sops</a></li>
-<li><a href="#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">3.3.1.21. PII management</a></li>
-<li><a href="#h:e6e44705-94af-49fe-9ca0-0629d0f7d932">3.3.1.22. Theme (stylix)</a></li>
-<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.1.23. Programs (including zsh setup)</a>
+<li><a href="#org332d9a8">3.3.1.5. Global options</a></li>
+<li><a href="#h:0e7e8bea-ec58-499c-9731-09dddfc39532">3.3.1.6. System Packages</a></li>
+<li><a href="#h:7f6d6908-4d02-4907-9c70-f802f4358520">3.3.1.7. Setup home-manager base</a></li>
+<li><a href="#h:41d1b7c6-52bf-45f3-9d83-610b469dffc0">3.3.1.8. Setup home-manager specialArgs</a></li>
+<li><a href="#h:7248f338-8cad-4443-9060-deae7955b26f">3.3.1.9. Setup login keymap</a></li>
+<li><a href="#h:48959890-fbc7-4d28-b33c-f33e028ab473">3.3.1.10. User setup, Make users non-mutable</a></li>
+<li><a href="#h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">3.3.1.11. Environment setup</a></li>
+<li><a href="#h:e2d40df9-0026-4caa-8476-9dc2353055a1">3.3.1.12. Security</a></li>
+<li><a href="#h:12858442-c129-4aa1-9c9c-a0916e36b302">3.3.1.13. Reduce systemd timeouts</a></li>
+<li><a href="#h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">3.3.1.14. Hardware settings</a></li>
+<li><a href="#h:63f6773e-b321-4b1d-a206-3913658cf62d">3.3.1.15. Pulseaudio</a></li>
+<li><a href="#h:aa433f5e-a455-4414-b76b-0a2692fa06aa">3.3.1.16. Pipewire</a></li>
+<li><a href="#h:7d696b64-debe-4a95-80b5-1e510156a6c6">3.3.1.17. Common network settings</a></li>
+<li><a href="#h:852d59ab-63c3-4831-993d-b5e23b877796">3.3.1.18. Time, locale settings</a></li>
+<li><a href="#h:30b81bf9-1e69-4ce8-88af-5592896bcee4">3.3.1.19. Meta options</a></li>
+<li><a href="#h:e2e7444b-cb85-4719-b154-e5f37274d02d">3.3.1.20. Topology</a></li>
+<li><a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">3.3.1.21. sops</a></li>
+<li><a href="#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">3.3.1.22. PII management</a></li>
+<li><a href="#h:e6e44705-94af-49fe-9ca0-0629d0f7d932">3.3.1.23. Theme (stylix)</a></li>
+<li><a href="#h:2bbf5f31-246d-4738-925f-eca40681f7b6">3.3.1.24. Programs (including zsh setup)</a>
 <ul>
-<li><a href="#h:7daa06ff-d3b0-4491-97ce-770b749c52f9">3.3.1.23.1. zsh</a></li>
-<li><a href="#h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">3.3.1.23.2. syncthing</a></li>
+<li><a href="#h:7daa06ff-d3b0-4491-97ce-770b749c52f9">3.3.1.24.1. zsh</a></li>
+<li><a href="#h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">3.3.1.24.2. syncthing</a></li>
 </ul>
 </li>
-<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.1.24. Services</a>
+<li><a href="#h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">3.3.1.25. Services</a>
 <ul>
-<li><a href="#h:b91df05b-113d-4d09-93d1-b271e5b76810">3.3.1.24.1. blueman</a></li>
-<li><a href="#h:73ed28cb-2f82-47b2-8bc5-208278b55788">3.3.1.24.2. Network devices</a></li>
-<li><a href="#h:f101daa2-604d-4553-99e2-f64b9c207f51">3.3.1.24.3. enable GVfs</a></li>
-<li><a href="#h:08d213d5-a9f4-4309-8635-ba557b01dc7d">3.3.1.24.4. interception-tools: Make CAPS work as ESC/CTRL</a></li>
-<li><a href="#h:82fbba41-3a46-4db7-aade-49e4c23fc475">3.3.1.24.5. power-profiles-daemon</a></li>
-<li><a href="#h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">3.3.1.24.6. SwayOSD</a></li>
+<li><a href="#h:b91df05b-113d-4d09-93d1-b271e5b76810">3.3.1.25.1. blueman</a></li>
+<li><a href="#h:73ed28cb-2f82-47b2-8bc5-208278b55788">3.3.1.25.2. Network devices</a></li>
+<li><a href="#h:f101daa2-604d-4553-99e2-f64b9c207f51">3.3.1.25.3. enable GVfs</a></li>
+<li><a href="#h:08d213d5-a9f4-4309-8635-ba557b01dc7d">3.3.1.25.4. interception-tools: Make CAPS work as ESC/CTRL</a></li>
+<li><a href="#h:82fbba41-3a46-4db7-aade-49e4c23fc475">3.3.1.25.5. power-profiles-daemon</a></li>
+<li><a href="#h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">3.3.1.25.6. SwayOSD</a></li>
 </ul>
 </li>
-<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.1.25. Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</a>
+<li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.3.1.26. Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</a>
 <ul>
-<li><a href="#h:49aa792d-edfb-4eac-ae31-ecf23c4dca00">3.3.1.25.1. Yubikey</a></li>
-<li><a href="#h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4">3.3.1.25.2. Ledger</a></li>
-<li><a href="#h:103b68b6-33a1-4369-a534-5f36dfa95e03">3.3.1.25.3. Keyboards</a></li>
+<li><a href="#h:49aa792d-edfb-4eac-ae31-ecf23c4dca00">3.3.1.26.1. Yubikey</a></li>
+<li><a href="#h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4">3.3.1.26.2. Ledger</a></li>
+<li><a href="#h:103b68b6-33a1-4369-a534-5f36dfa95e03">3.3.1.26.3. Keyboards</a></li>
 </ul>
 </li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.1.26. System Login</a></li>
-<li><a href="#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">3.3.1.27. nix-ld</a></li>
-<li><a href="#h:e7668594-fa8b-4d36-a695-a58222478988">3.3.1.28. Impermanence</a></li>
-<li><a href="#h:b751d77d-246c-4bd6-b689-3467d82bf9c3">3.3.1.29. Summary of nixos-rebuild diff</a></li>
-<li><a href="#h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">3.3.1.30. gnome-keyring</a></li>
-<li><a href="#h:f78ffdd3-232b-4313-bd89-d6fb331fef22">3.3.1.31. Sway</a></li>
-<li><a href="#h:872d5f46-2ffd-4076-9a2c-98783dd29434">3.3.1.32. xdg-portal</a></li>
-<li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">3.3.1.33. Podmam (distrobox)</a></li>
-<li><a href="#h:cfc22f8d-251e-4636-98d6-a43cdb112b68">3.3.1.34. Appimage</a></li>
-<li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">3.3.1.35. Handle lid switch correctly</a></li>
-<li><a href="#h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">3.3.1.36. Low battery notification</a></li>
-<li><a href="#h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377">3.3.1.37. Lanzaboote</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.3.1.27. System Login</a></li>
+<li><a href="#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">3.3.1.28. nix-ld</a></li>
+<li><a href="#h:e7668594-fa8b-4d36-a695-a58222478988">3.3.1.29. Impermanence</a></li>
+<li><a href="#h:b751d77d-246c-4bd6-b689-3467d82bf9c3">3.3.1.30. Summary of nixos-rebuild diff</a></li>
+<li><a href="#h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">3.3.1.31. gnome-keyring</a></li>
+<li><a href="#h:f78ffdd3-232b-4313-bd89-d6fb331fef22">3.3.1.32. Sway</a></li>
+<li><a href="#h:872d5f46-2ffd-4076-9a2c-98783dd29434">3.3.1.33. xdg-portal</a></li>
+<li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">3.3.1.34. Podmam (distrobox)</a></li>
+<li><a href="#h:cfc22f8d-251e-4636-98d6-a43cdb112b68">3.3.1.35. Appimage</a></li>
+<li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">3.3.1.36. Handle lid switch correctly</a></li>
+<li><a href="#h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">3.3.1.37. Low battery notification</a></li>
+<li><a href="#h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377">3.3.1.38. Lanzaboote</a></li>
 </ul>
 </li>
 <li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">3.3.2. Server</a>
@@ -489,7 +496,7 @@
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.4.1. Common</a>
 <ul>
 <li><a href="#h:16fd2e85-fdd4-440a-81f0-65b9b098a43a">3.4.1.1. Imports</a></li>
-<li><a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">3.4.1.2. Shared Configuration Options (hold firefox config parts)</a></li>
+<li><a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">3.4.1.2. Shared Configuration Options (holds firefox &amp; stylix config parts)</a></li>
 <li><a href="#h:4af4f67f-7c48-4754-b4bd-6800e3a66664">3.4.1.3. General home-manager-settings</a></li>
 <li><a href="#h:90af1862-90b3-4c93-8730-2443bc62986a">3.4.1.4. nixGL</a></li>
 <li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.4.1.5. Installed packages</a>
@@ -725,21 +732,20 @@
 </li>
 </ul>
 </li>
-<li><a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">5. Appendix A: Noweb-Ref blocks</a></li>
-<li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">6. Appendix B: Supplementary Files</a>
+<li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">5. Appendix B: Supplementary Files</a>
 <ul>
-<li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">6.1. Server Emacs config</a></li>
-<li><a href="#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">6.2. tridactylrc</a></li>
-<li><a href="#h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">6.3. tridactyl theme</a></li>
-<li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">6.4. Waybar style.css</a></li>
-<li><a href="#h:788937cf-8816-466b-8e57-1b695cb50f52">6.5. justfile</a></li>
+<li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">5.1. Server Emacs config</a></li>
+<li><a href="#h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">5.2. tridactylrc</a></li>
+<li><a href="#h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">5.3. tridactyl theme</a></li>
+<li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">5.4. Waybar style.css</a></li>
+<li><a href="#h:788937cf-8816-466b-8e57-1b695cb50f52">5.5. justfile</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <p>
-<b>This file has 71481 words spanning 19500 lines and was last revised on 2025-06-29 15:39:50 +0200.</b>
+<b>This file has 73111 words spanning 19692 lines and was last revised on 2025-06-30 23:10:29 +0200.</b>
 </p>
 
 <p>
@@ -768,7 +774,10 @@ This configuration is part of a NixOS system that is (nearly) fully declarative 
 <p>
 This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 </p>
-
+</div>
+<div id="outline-container-org0ec9db2" class="outline-3">
+<h3 id="org0ec9db2"><span class="section-number-3">1.1.</span> Structure of this file</h3>
+<div class="outline-text-3" id="text-1-1">
 <p>
 This file is structured as follows:
 </p>
@@ -776,9 +785,6 @@ This file is structured as follows:
 <ul class="org-ul">
 <li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">Introduction (no code)</a>
 This is the block you are currently in. It holds no code that actually builds the system, it just outlines the general approach and explains my rough mentality</li>
-
-<li><a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a>
-This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.</li>
 
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">flake.nix</a>
 This block holds everything related to the heart of the nix side of the configuration - the <code>flake.nix</code> file.</li>
@@ -792,7 +798,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-06-29 15:39:50 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-06-30 23:10:29 +0200)
 </p></li>
 </ul>
 
@@ -867,9 +873,156 @@ new Darkmode().showWidget();
 window.addEventListener('load', addDarkmodeWidget);
 </script>
 
+
 <p>
-The rest of this file will now contain actual code that is used in the configuration.
+This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.
 </p>
+
+<ul class="org-ul">
+<li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">Appendix A: Supplementary Files</a>
+This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl. Note that shell scripts are still defined under their respective entry in <a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">Packages</a>.</li>
+
+<li>Historical Note: Noweb-Ref blocks</li>
+</ul>
+
+<p>
+These blocks were used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section used need to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
+</p>
+
+<p>
+Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains. For example, the above problem can be solved by defining a <code>theme</code> attribute set and using <code>lib.recursiveUpdate</code> as shown in <a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">Shared Configuration Options (holds firefox &amp; stylix config parts)</a> and <a href="#h:a92318cd-413e-4e78-a478-e63b09df019c">Theme (stylix)</a>.
+</p>
+
+<p>
+As such, this served to reduce code duplication in this file. The tangled files experienced no size reduction, since noweb-ref only substitutes these blocks in.
+</p>
+
+<p>
+For archival reasons, here is shown how to use a noweb-ref block, in case I ever decide to use it again, or it is interesting to you:
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-nix">enable = true;
+</pre>
+</div>
+
+<p>
+which can then be used in a block like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix">enable = true;
+</pre>
+</div>
+
+<p>
+not that noweb-reffed blocks will not be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in <a href="#h:59d4306e-9b73-4b2c-b039-6a6518c357fc">org-mode: Upon-save actions (Auto-tangle, export to html, formatting)</a>. Originally, I also automatically exported to html there, but it incurred a too high memory penalty which made Emacs become sluggish over time.
+</p>
+</div>
+</div>
+<div id="outline-container-org3985bb7" class="outline-3">
+<h3 id="org3985bb7"><span class="section-number-3">1.2.</span> <span class="todo TODO">TODO</span> Structure of this flake</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+The structure of this flake as seen many revisions, however lately I have settled on a system that I have grown to like:
+</p>
+
+<ul class="org-ul">
+<li><code>hosts</code>: This folder is used to house all configurations that are used across the infrastructure. At the top level, it splits into the subfolders <code>nixos</code>, <code>home</code>, <code>darwin</code>, and <code>android</code>. These folders specify the mode that the configuration is running in:
+<ul class="org-ul">
+<li>nixos: Full NixOS host (may or may not also use home-manager)</li>
+<li>darwin: Host that uses NixOS on MacOS (may or may not use home-manager)</li>
+<li>home: Host that uses only home-manager (no full NixOS)</li>
+<li>android: Phone using nix-on-droid (may or may not use home-manager)</li>
+</ul></li>
+</ul>
+
+<p>
+The corresponding configurations are automatically generated by <code>mkFullHostConfigs</code> and <code>mkHalfHostConfigs</code>. A "full" host either in the nixos or darwin folder, while a "half" host is in either of home or android. This has to do with the scheme in which these configurations are generated.
+</p>
+
+<p>
+These &lt;hosttype&gt; folders hold in turn a number of &lt;hostname&gt; folders, the actual configurations. At this time, the files stored in this folder are:
+</p>
+<ul class="org-ul">
+<li>default.nix:
+This file holds the abstracted configuration of the host. This should mostly be enabling <a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">Profiles</a> as well as setting some <a href="#h:f4f22166-e345-43e6-b15f-b7f5bb886554">Shared Configuration Options</a>.</li>
+<li>hardware-config.nix:
+It is not clearly defined what I hold in this file. Mostly it is just the attributes that nix originally sets when setting up the system for the first time (although at this time modified by me!), bar any filesystem configuration. This makes my deployment in <a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">swarsel-bootstrap</a> a little bit simpler.</li>
+<li>disk-config.nix
+Holds the aforementioned filesystem configuration and is applied using <a href="https://github.com/nix-community/disko">disko</a>.</li>
+
+<li>The hosts/&lt;hosttype&gt;/&lt;hostname&gt; folders may also have a <code>secrets</code> folder, under which a single file <code>pii.nix.enc</code> can be stored. As the name suggests, this file should be encrypted. Specifically, it needs to be a <a href="https://github.com/getsops/sops">sops</a>-encrypted file (sops does not seem to suggest a file ending other than .yml or others, which is not verbose enough for me, so I went with <code>.enc</code>).  This file should have the structure of a nix expression, e.g.:</li>
+</ul>
+
+<div class="org-src-container">
+<pre class="src src-nix">{
+  my_value = 2;
+  my_attrSet = {
+    enable = true;
+  };
+}
+</pre>
+</div>
+
+<p>
+Using the mechanisms in <a href="#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">PII management</a> (which in turn uses <a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">extra-builtins</a> and <a href="#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb">sops-decrypt-and-cache</a>), these files are decrypted during evaluation time and stored under a persistent directory. As the name suggests, I am using these files to store personally identifiable information - these "secrets" are stored world-readable in the nix store. As such, this should not be used to store important secrets, but rather information that you would not like everyone on the internet to easily find in your git repo.
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>modules</code>
+This folder holds the most part of the actual system configuration done in this repository. At some point I thought it was cool to have my whole configuration exposed under the flakes <code>nixosModules</code>, which is indeed achieved (its usefulness is however debatable). In any way, this folder splits up as:
+</p>
+<ul class="org-ul">
+<li>nixos: Holds true NixOS configuration</li>
+<li>home: Holds configuration to be used by home-manager (either as a NixOS submodule or not)</li>
+<li>darwin: Holds configuration for nix-darwin. This folder further splits up into a nixos and a home folder, which hold respective nix or home-manager configuration for nix-darwin.</li>
+<li>iso: Holds specific configuration for my installer ISO that I do not want to have loaded in the rest of the configuration.</li>
+</ul>
+
+<p>
+The nixos and home folders further split up:
+</p>
+
+<ul class="org-ul">
+<li>common: Configuration that can be used by all hosts (TODO: this currently includes configuration used by my user devices, which will mostly not be used by servers)</li>
+<li>server: Configuration to be used on servers</li>
+<li>optional: Configuration that will be used rather rarely</li>
+</ul>
+
+<p>
+This structure is very optionated and highly subjective. I will possibly change this in the future.
+</p>
+
+<p>
+By themselves, most of the files in the modules folder will not do anything. In order for them to do something, their corresponding <code>config.swarselsystems.modules</code> attribute needs to be enabled. This is done using&#x2026;
+</p></li>
+
+<li><code>profiles</code>: This folder splits up into <code>home</code> and <code>nixos</code> subfolders, where groupings of module enablers are stored for the respective home and nix setups. Note that <code>home</code> profiles are also used in NixOS setups (extensively even)!</li>
+
+<li><code>nix</code>: This special folder holds mostly <code>.nix</code> files that are not automatically loaded, but rather setup specific things that affect most of the flake. For example, here lies the aforementioned <a href="#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">extra-builtins</a> as well as the setup for the <a href="#org30c67be">Globals</a> system. TODO: Move flake-parts units there and explain them here.</li>
+
+<li><code>lib</code>: This folder holds utility functions that I add to the nixpkgs library under the <code>swarselsystems</code> attribute set. An example would be the <code>mkIfElse</code> function.</li>
+
+<li><code>pkgs</code>: This folder holds derivations (mostly packages) that I define myself. This is mostly used to grab versions that are not (yet) in nixpkgs, or modified versions of another package. Each derivation in this folder is in turn in its own folder which holds a defautlt.nix. Using the mechanism in <a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">Packages</a>, these are automatically built and available to all configurations (packages still need to be installed e.g. in <code>environment.systemPackages</code>)</li>
+
+<li><code>checks</code>: Holds a file that defines my pre-commit-hook checks. TODO: move this to /nix probably</li>
+
+<li><code>scripts</code>: This folder holds a bunch of shell scripts that I use for various tasks. Nearly all of these are made into a derivation using <code>pkgs.writeShellApplication</code>. In the future (TODO?), I might convert these to native nix, but in the past I kept the as true shellfiles in case I ever wanted to move away from nix. This is becoming less and less likely, however. And even in case that this would happen, I could retrieve these files from the nix store and would simply have to remove the nix store paths.</li>
+
+<li><code>secrets</code>: Unlike the similar folder under <code>hosts</code>, this folder holds actual sops-encrypted secrets that are created at activation time and not in the nix store. The folder splits up into a bunch of &lt;hostname&gt; folders, as well as a <code>repo</code> folder, which holds another <code>pii.nix.enc</code>, which holds global PII's, and a <code>certs</code> folder that holds some longer certificate style secrets.</li>
+
+<li><code>overlays</code>: This holds a single <code>default.nix</code> that defines the overlay I am using in my configuration. It is responsible for adding my defined packages and modifications to the final nixpkgs. Also I add some other conveniences like all past stable nixpkgs and some other package sets.</li>
+
+<li><code>programs</code>: This folder holds configurations for various programs (most notably emacs' <code>init.el</code> and <code>early-init.el</code>), that are being rendered using org-babel and loaded using nix.</li>
+
+<li><code>wallpaper</code>: Holds wallpapers and profile pictures.</li>
+
+<li><code>topology</code>: Holds the configuration used by <a href="https://github.com/oddlama/nix-topology">nix-topology</a>.</li>
+</ul>
+</div>
 </div>
 </div>
 <div id="outline-container-h:c7588c0d-2528-485d-b2df-04d6336428d7" class="outline-2">
@@ -887,7 +1040,7 @@ These blocks are later inserted here: <a href="#h:aee5ec75-7ca6-40d8-b6ac-a3e7e3
 <h3 id="h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b"><span class="section-number-3">2.1.</span> flake.nix skeleton</h3>
 <div class="outline-text-3" id="text-h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b">
 <p>
-This sections puts together the <code>flake.nix</code> file from the <a href="#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">Noweb-Ref blocks</a> section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+This sections puts together the <code>flake.nix</code> file from the [BROKEN LINK: h:d39b8dfb-536d-414f-9fc0-7d67df48cee4] section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
 </p>
 
 <p>
@@ -988,128 +1141,208 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-topology.url = "github:oddlama/nix-topology";
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
   outputs =
     inputs@{ self
-    , nixpkgs
-    , home-manager
-    , systems
-    , ...
-    }:
+           , nixpkgs
+           , home-manager
+           , systems
+           , ...
+           }:
     let
 
       inherit (self) outputs;
       lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
     in
-    {
-      inherit lib;
-
-      # nixosModules = import ./modules/nixos { inherit lib; };
-      # homeModules = import ./modules/home { inherit lib; };
-      packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
-      formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-      overlays = import ./overlays { inherit self lib inputs; };
-
-      apps = lib.swarselsystems.forAllSystems (system:
-        let
-          appNames = [
-            "swarsel-bootstrap"
-            "swarsel-install"
-            "swarsel-rebuild"
-            "swarsel-postinstall"
-          ];
-          appSet = lib.swarselsystems.mkApps system appNames self;
-        in
-
-        appSet // {
-          default = appSet.swarsel-bootstrap;
-        }
-      );
-
-      devShells = lib.swarselsystems.forAllSystems (system:
-        let
-          pkgs = lib.swarselsystems.pkgsFor.${system};
-          checks = self.checks.${system};
-        in
-        {
-          default = pkgs.mkShell {
-              # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-              #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
-              #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
-              # })}/lib/nix/plugins
-            NIX_CONFIG = ''
-              plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
-              extra-builtins-file = ${self + /nix/extra-builtins.nix}
-            '';
-            inherit (checks.pre-commit-check) shellHook;
-
-            buildInputs = checks.pre-commit-check.enabledPackages;
-            nativeBuildInputs = [
-              (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
-              # pkgs.nix
-              pkgs.home-manager
-              pkgs.git
-              pkgs.just
-              pkgs.age
-              pkgs.ssh-to-age
-              pkgs.sops
-              pkgs.statix
-              pkgs.deadnix
-              pkgs.nixpkgs-fmt
-            ];
-          };
-        }
-      );
-
-      templates = import ./templates { inherit lib; };
-
-      checks = lib.swarselsystems.forAllSystems (system:
-        let
-          pkgs = lib.swarselsystems.pkgsFor.${system};
-        in
-        import ./checks { inherit self inputs system pkgs; }
-      );
-
-      diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
-
-      nixosConfigurations =
-      lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
-      homeConfigurations =
-
-      # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-      #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
-      #  extraSpecialArgs = { inherit inputs outputs; };
-      #   modules = homeModules ++ mixedModules ++ [
-      #     ./hosts/home-manager
-      #   ];
-      # };
-
-      lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
-      darwinConfigurations =
-      lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
-      nixOnDroidConfigurations =
-
-      # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-      #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
-      #   modules = [
-      #     ./hosts/magicant
-      #   ];
-      # };
-
-      lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
-
-
-      topology =
-
-      lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
-        inherit pkgs;
-        modules = [
-          "${self}/topology"
-          { inherit (self) nixosConfigurations; }
+      inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+        imports = [
+          ./nix/globals.nix
         ];
-      });
+        flake = { config, ... }:
+          let
 
+            inherit (self) outputs;
+            lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
+
+
+            linuxUser = "swarsel";
+            macUser = "leon.schwarzaeugl";
+
+            mkFullHost = host: type: {
+              ${host} =
+                let
+                  systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
+                in
+                  systemFunc {
+                    specialArgs = { inherit inputs outputs lib self; inherit (config) globals; };
+                    modules = [
+                      {
+                        node.name = host;
+                        node.secretsDir = ./hosts/${type}/${host}/secrets;
+                      }
+                      # put inports here that are for all hosts
+                      inputs.disko.nixosModules.disko
+                      inputs.sops-nix.nixosModules.sops
+                      inputs.impermanence.nixosModules.impermanence
+                      inputs.lanzaboote.nixosModules.lanzaboote
+                      inputs.fw-fanctrl.nixosModules.default
+                      "${self}/hosts/${type}/${host}"
+                      {
+                        _module.args.primaryUser = linuxUser;
+                      }
+                    ] ++
+                    (if (host == "iso") then [
+                      inputs.nix-topology.nixosModules.default
+                    ] else
+                      ([
+                        # put nixos imports here that are for all servers and normal hosts
+                        inputs.nix-topology.nixosModules.default
+                        "${self}/modules/${type}/common"
+                        inputs.stylix.nixosModules.stylix
+                        inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+                      ] ++ (if (type == "nixos") then [
+                        inputs.home-manager.nixosModules.home-manager
+                        "${self}/profiles/nixos"
+                        "${self}/modules/nixos/server"
+                        "${self}/modules/nixos/optional"
+                        {
+                          home-manager.users."${linuxUser}".imports = [
+                            # put home-manager imports here that are for all normal hosts
+                            "${self}/modules/home/common"
+                            "${self}/modules/home/server"
+                            "${self}/modules/home/optional"
+                            "${self}/profiles/home"
+                          ];
+                        }
+                      ] else [
+                        # put nixos imports here that are for darwin hosts
+                        "${self}/modules/darwin/nixos/common"
+                        "${self}/profiles/darwin"
+                        inputs.home-manager.darwinModules.home-manager
+                        {
+                          home-manager.users."${macUser}".imports = [
+                            # put home-manager imports here that are for darwin hosts
+                            "${self}/modules/darwin/home"
+                            "${self}/modules/home/server"
+                            "${self}/modules/home/optional"
+                            "${self}/profiles/home"
+                          ];
+                        }
+                      ])
+                      ));
+                  };
+            };
+
+            mkHalfHost = host: type: pkgs: {
+              ${host} =
+                let
+                  systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+                in
+                  systemFunc
+                    {
+                      inherit pkgs;
+                      extraSpecialArgs = { inherit inputs outputs lib self; };
+                      modules = [ "${self}/hosts/${type}/${host}" ];
+                    };
+            };
+
+            mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host type) hosts);
+
+            mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkHalfHost host type pkgs) hosts);
+
+          in
+            {
+              inherit lib;
+
+              # nixosModules = import ./modules/nixos { inherit lib; };
+              # homeModules = import ./modules/home { inherit lib; };
+              packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+              formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
+              overlays = import ./overlays { inherit self lib inputs; };
+
+              apps = lib.swarselsystems.forAllSystems (system:
+                let
+                  appNames = [
+                    "swarsel-bootstrap"
+                    "swarsel-install"
+                    "swarsel-rebuild"
+                    "swarsel-postinstall"
+                  ];
+                  appSet = lib.swarselsystems.mkApps system appNames self;
+                in
+
+                appSet // {
+                  default = appSet.swarsel-bootstrap;
+                }
+              );
+
+              devShells = lib.swarselsystems.forAllSystems (system:
+                let
+                  pkgs = lib.swarselsystems.pkgsFor.${system};
+                  checks = self.checks.${system};
+                in
+                {
+                  default = pkgs.mkShell {
+                      # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+                      #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
+                      #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
+                      # })}/lib/nix/plugins
+                    NIX_CONFIG = ''
+                      plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+                      extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                    '';
+                    inherit (checks.pre-commit-check) shellHook;
+
+                    buildInputs = checks.pre-commit-check.enabledPackages;
+                    nativeBuildInputs = [
+                      (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+                      # pkgs.nix
+                      pkgs.home-manager
+                      pkgs.git
+                      pkgs.just
+                      pkgs.age
+                      pkgs.ssh-to-age
+                      pkgs.sops
+                      pkgs.statix
+                      pkgs.deadnix
+                      pkgs.nixpkgs-fmt
+                    ];
+                  };
+                }
+              );
+
+              templates = import ./templates { inherit lib; };
+
+              checks = lib.swarselsystems.forAllSystems (system:
+                let
+                  pkgs = lib.swarselsystems.pkgsFor.${system};
+                in
+                import ./checks { inherit self inputs system pkgs; }
+              );
+
+              diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
+
+              nixosConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
+              homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+              darwinConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
+              nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+
+              topology = lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
+                inherit pkgs;
+                modules = [
+                  "${self}/topology"
+                  { inherit (self) nixosConfigurations; }
+                ];
+              });
+
+              nodes = config.nixosConfigurations;
+            };
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+        ];
       };
 }
 </pre>
@@ -1259,6 +1492,7 @@ vbc-nix = {
   inputs.nixpkgs.follows = "nixpkgs";
 };
 nix-topology.url = "github:oddlama/nix-topology";
+flake-parts.url = "github:hercules-ci/flake-parts";
 </pre>
 </div>
 </div>
@@ -1476,7 +1710,7 @@ Note: The preceding <code>nixosConfigurations</code> is found in <a href="#h:aee
 
 
 <div class="org-src-container">
-<pre class="src src-nix">lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
+<pre class="src src-nix">
 </pre>
 </div>
 </div>
@@ -1494,7 +1728,7 @@ Note: The preceding <code>darwinConfigurations</code> is found in <a href="#h:ae
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">lib.swarselsystems.mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
+<pre class="src src-nix">
 </pre>
 </div>
 </div>
@@ -1516,7 +1750,6 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 #   ];
 # };
 
-lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
 </pre>
 </div>
 </div>
@@ -1537,7 +1770,6 @@ Nix on Android also demands an own flake output, which is provided here.
 #   ];
 # };
 
-lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
 </pre>
 </div>
@@ -1548,13 +1780,6 @@ lib.swarselsystems.mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "a
 <div class="outline-text-3" id="text-h:1337e267-bca3-4c65-863f-9f44b753dee4">
 <div class="org-src-container">
 <pre class="src src-nix">
-lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
-  inherit pkgs;
-  modules = [
-    "${self}/topology"
-    { inherit (self) nixosConfigurations; }
-  ];
-});
 
 </pre>
 </div>
@@ -3167,6 +3392,9 @@ in
     "${self}/modules/nixos/common/sharedsetup.nix"
     "${self}/modules/nixos/common/topology.nix"
     "${self}/modules/home/common/sharedsetup.nix"
+
+    "${self}/modules/nixos/common/globals.nix"
+
 
     inputs.home-manager.nixosModules.home-manager
     {
@@ -6226,11 +6454,7 @@ TODO
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, systems, inputs, outputs, ... }:
-let
-  linuxUser = "swarsel";
-  macUser = "leon.schwarzaeugl";
-in
+<pre class="src src-nix">{ self, lib, systems, inputs, ... }:
 {
 
   mkIfElseList = p: yes: no: lib.mkMerge [
@@ -6274,88 +6498,6 @@ in
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
-
-  mkFullHost = host: type: {
-    ${host} =
-      let
-        systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-      in
-      systemFunc {
-        specialArgs = { inherit inputs outputs lib self; };
-        modules = [
-          {
-            node.name = host;
-            node.secretsDir = ../hosts/${type}/${host}/secrets;
-          }
-          # put inports here that are for all hosts
-          inputs.disko.nixosModules.disko
-          inputs.sops-nix.nixosModules.sops
-          inputs.impermanence.nixosModules.impermanence
-          inputs.lanzaboote.nixosModules.lanzaboote
-          inputs.fw-fanctrl.nixosModules.default
-          "${self}/hosts/${type}/${host}"
-          {
-            _module.args.primaryUser = linuxUser;
-          }
-        ] ++
-        (if (host == "iso") then [
-          inputs.nix-topology.nixosModules.default
-        ] else
-        ([
-          # put nixos imports here that are for all servers and normal hosts
-          inputs.nix-topology.nixosModules.default
-          "${self}/modules/${type}/common"
-          inputs.stylix.nixosModules.stylix
-          inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-        ] ++ (if (type == "nixos") then [
-          inputs.home-manager.nixosModules.home-manager
-          "${self}/profiles/nixos"
-          "${self}/modules/nixos/server"
-          "${self}/modules/nixos/optional"
-          {
-            home-manager.users."${linuxUser}".imports = [
-              # put home-manager imports here that are for all normal hosts
-              "${self}/modules/home/common"
-              "${self}/modules/home/server"
-              "${self}/modules/home/optional"
-              "${self}/profiles/home"
-            ];
-          }
-        ] else [
-          # put nixos imports here that are for darwin hosts
-          "${self}/modules/darwin/nixos/common"
-          "${self}/profiles/darwin"
-          inputs.home-manager.darwinModules.home-manager
-          {
-            home-manager.users."${macUser}".imports = [
-              # put home-manager imports here that are for darwin hosts
-              "${self}/modules/darwin/home"
-              "${self}/modules/home/server"
-              "${self}/modules/home/optional"
-              "${self}/profiles/home"
-            ];
-          }
-        ])
-        ));
-      };
-  };
-
-  mkHalfHost = host: type: pkgs: {
-    ${host} =
-      let
-        systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-      in
-      systemFunc
-        {
-          inherit pkgs;
-          extraSpecialArgs = { inherit inputs outputs lib self; };
-          modules = [ "${self}/hosts/${type}/${host}" ];
-        };
-  };
-
-  mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkFullHost host type) hosts);
-
-  mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: lib.swarselsystems.mkHalfHost host type pkgs) hosts);
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
   readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
@@ -6673,6 +6815,64 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-org30c67be" class="outline-5">
+<h5 id="org30c67be"><span class="section-number-5">3.2.5.4.</span> Globals</h5>
+<div class="outline-text-5" id="text-3-2-5-4">
+<div class="org-src-container">
+<pre class="src src-nix">{ inputs, ... }:
+{
+  flake =
+    {
+      config,
+      lib,
+      ...
+    }:
+    {
+      globals =
+        let
+          globalsSystem = lib.evalModules {
+            prefix = [ "globals" ];
+            specialArgs = {
+              inherit lib;
+              inherit inputs;
+              inherit (config) nodes;
+            };
+            modules = [
+              ../modules/nixos/common/globals.nix
+              (
+                { lib, ... }:
+                {
+                  globals = lib.mkMerge (
+                    lib.concatLists (
+                      lib.flip lib.mapAttrsToList config.nodes (
+                        name: cfg:
+                        builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
+                      )
+                    )
+                  );
+                }
+              )
+            ];
+          };
+        in
+        {
+          # Make sure the keys of this attrset are trivially evaluatable to avoid infinite recursion,
+          # therefore we inherit relevant attributes from the config.
+          inherit (globalsSystem.config.globals)
+            domains
+            services
+            macs
+            myuser
+            root
+            ;
+        };
+    };
+}
+
+</pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-h:6da812f5-358c-49cb-aff2-0a94f20d70b3" class="outline-3">
@@ -6748,38 +6948,6 @@ I usually use <code>mutableUsers = false</code> in my NixOS configuration. Howev
       isImpermanence = lib.mkEnableOption "use impermanence on this system";
       isSecureBoot = lib.mkEnableOption "use secure boot on this system";
     };
-    globals = lib.mkOption {
-      default = { };
-      type = lib.types.submodule {
-        options = {
-
-          services = lib.mkOption {
-            type = lib.types.attrsOf (
-              lib.types.submodule {
-                options = {
-                  domain = lib.mkOption {
-                    type = lib.types.str;
-                    description = "Domain that the service runs under";
-                  };
-                };
-              }
-            );
-          };
-          domains = {
-            main = lib.mkOption {
-              type = lib.types.str;
-              description = "My main domain.";
-            };
-          };
-        };
-      };
-    };
-    # _globalsDefs = lib.mkOption {
-    #   type = lib.types.unspecified;
-    #   default = options.globals.definitions;
-    #   readOnly = true;
-    #   internal = true;
-    # };
   };
 }
 </pre>
@@ -6967,8 +7135,91 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-org332d9a8" class="outline-5">
+<h5 id="org332d9a8"><span class="section-number-5">3.3.1.5.</span> Global options</h5>
+<div class="outline-text-5" id="text-3-3-1-5">
+<div class="org-src-container">
+<pre class="src src-nix">{ lib, options, ... }:
+let
+  inherit (lib)
+    mkOption
+    types
+    ;
+
+in
+{
+  options = {
+    globals = mkOption {
+      default = { };
+      type = types.submodule {
+        options = {
+          root = {
+            hashedPassword = mkOption {
+              type = types.str;
+              description = "My root user's password hash.";
+            };
+          };
+
+          myuser = {
+            name = mkOption {
+              type = types.str;
+              description = "My unix username.";
+            };
+            hashedPassword = mkOption {
+              type = types.str;
+              description = "My unix password hash.";
+            };
+          };
+
+
+          services = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  domain = mkOption {
+                    type = types.str;
+                    description = "The domain under which this service can be reached";
+                  };
+                };
+              }
+            );
+          };
+
+          domains = {
+            me = mkOption {
+              type = types.str;
+              description = "My main domain.";
+            };
+
+            personal = mkOption {
+              type = types.str;
+              description = "My personal domain.";
+            };
+          };
+
+          macs = mkOption {
+            default = { };
+            type = types.attrsOf types.str;
+            description = "Known MAC addresses for external devices.";
+          };
+        };
+      };
+    };
+
+    _globalsDefs = mkOption {
+      type = types.unspecified;
+      default = options.globals.definitions;
+      readOnly = true;
+      internal = true;
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:0e7e8bea-ec58-499c-9731-09dddfc39532" class="outline-5">
-<h5 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-5">3.3.1.5.</span> System Packages</h5>
+<h5 id="h:0e7e8bea-ec58-499c-9731-09dddfc39532"><span class="section-number-5">3.3.1.6.</span> System Packages</h5>
 <div class="outline-text-5" id="text-h:0e7e8bea-ec58-499c-9731-09dddfc39532">
 <p>
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in <a href="#h:893a7f33-7715-415b-a895-2687ded31c18">Installed packages</a>.
@@ -7064,7 +7315,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 </div>
 </div>
 <div id="outline-container-h:7f6d6908-4d02-4907-9c70-f802f4358520" class="outline-5">
-<h5 id="h:7f6d6908-4d02-4907-9c70-f802f4358520"><span class="section-number-5">3.3.1.6.</span> Setup home-manager base</h5>
+<h5 id="h:7f6d6908-4d02-4907-9c70-f802f4358520"><span class="section-number-5">3.3.1.7.</span> Setup home-manager base</h5>
 <div class="outline-text-5" id="text-h:7f6d6908-4d02-4907-9c70-f802f4358520">
 <p>
 We enable the use of <code>home-manager</code> as a NixoS module. A nice trick here is the <code>extraSpecialArgs = inputs</code> line, which enables the use of <code>seflf</code> in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
@@ -7096,7 +7347,7 @@ We enable the use of <code>home-manager</code> as a NixoS module. A nice trick h
 </div>
 </div>
 <div id="outline-container-h:41d1b7c6-52bf-45f3-9d83-610b469dffc0" class="outline-5">
-<h5 id="h:41d1b7c6-52bf-45f3-9d83-610b469dffc0"><span class="section-number-5">3.3.1.7.</span> Setup home-manager specialArgs</h5>
+<h5 id="h:41d1b7c6-52bf-45f3-9d83-610b469dffc0"><span class="section-number-5">3.3.1.8.</span> Setup home-manager specialArgs</h5>
 <div class="outline-text-5" id="text-h:41d1b7c6-52bf-45f3-9d83-610b469dffc0">
 <p>
 This sets up the <code>nix-secrets</code> extraSpeciaArgs. This should not be present on the <code>chaostheatre</code> configuration, which is why I split this section into its own file, which makes removal easier when setting that system up.
@@ -7117,7 +7368,7 @@ This sets up the <code>nix-secrets</code> extraSpeciaArgs. This should not be pr
 </div>
 </div>
 <div id="outline-container-h:7248f338-8cad-4443-9060-deae7955b26f" class="outline-5">
-<h5 id="h:7248f338-8cad-4443-9060-deae7955b26f"><span class="section-number-5">3.3.1.8.</span> Setup login keymap</h5>
+<h5 id="h:7248f338-8cad-4443-9060-deae7955b26f"><span class="section-number-5">3.3.1.9.</span> Setup login keymap</h5>
 <div class="outline-text-5" id="text-h:7248f338-8cad-4443-9060-deae7955b26f">
 <p>
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
@@ -7141,7 +7392,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </div>
 </div>
 <div id="outline-container-h:48959890-fbc7-4d28-b33c-f33e028ab473" class="outline-5">
-<h5 id="h:48959890-fbc7-4d28-b33c-f33e028ab473"><span class="section-number-5">3.3.1.9.</span> User setup, Make users non-mutable</h5>
+<h5 id="h:48959890-fbc7-4d28-b33c-f33e028ab473"><span class="section-number-5">3.3.1.10.</span> User setup, Make users non-mutable</h5>
 <div class="outline-text-5" id="text-h:48959890-fbc7-4d28-b33c-f33e028ab473">
 <p>
 This ensures that all user-configuration happens here in the config file.
@@ -7180,7 +7431,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8" class="outline-5">
-<h5 id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"><span class="section-number-5">3.3.1.10.</span> Environment setup</h5>
+<h5 id="h:f4006367-0965-4b4f-a3b0-45f63b07d2b8"><span class="section-number-5">3.3.1.11.</span> Environment setup</h5>
 <div class="outline-text-5" id="text-h:f4006367-0965-4b4f-a3b0-45f63b07d2b8">
 <p>
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
@@ -7211,7 +7462,7 @@ Next, we will setup some environment variables that need to be set on the system
 </div>
 </div>
 <div id="outline-container-h:e2d40df9-0026-4caa-8476-9dc2353055a1" class="outline-5">
-<h5 id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"><span class="section-number-5">3.3.1.11.</span> Security</h5>
+<h5 id="h:e2d40df9-0026-4caa-8476-9dc2353055a1"><span class="section-number-5">3.3.1.12.</span> Security</h5>
 <div class="outline-text-5" id="text-h:e2d40df9-0026-4caa-8476-9dc2353055a1">
 <p>
 Needed for control over system-wide privileges etc. Also I make sure that the root user has access to <code>SSH_AUTH_SOCK</code> (without this, root will not be able to read my <code>nix-secrets</code> repository).
@@ -7245,7 +7496,7 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 </div>
 </div>
 <div id="outline-container-h:12858442-c129-4aa1-9c9c-a0916e36b302" class="outline-5">
-<h5 id="h:12858442-c129-4aa1-9c9c-a0916e36b302"><span class="section-number-5">3.3.1.12.</span> Reduce systemd timeouts</h5>
+<h5 id="h:12858442-c129-4aa1-9c9c-a0916e36b302"><span class="section-number-5">3.3.1.13.</span> Reduce systemd timeouts</h5>
 <div class="outline-text-5" id="text-h:12858442-c129-4aa1-9c9c-a0916e36b302">
 <p>
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason <code>a stop job is running for session 1 of user ...</code>. I do not want to wait that long and am confident no important data is lost by doing this.
@@ -7268,7 +7519,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </div>
 </div>
 <div id="outline-container-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b" class="outline-5">
-<h5 id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"><span class="section-number-5">3.3.1.13.</span> Hardware settings</h5>
+<h5 id="h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b"><span class="section-number-5">3.3.1.14.</span> Hardware settings</h5>
 <div class="outline-text-5" id="text-h:1fa7cf61-5c03-43a3-a7f0-3d6ee246b31b">
 <p>
 Enable OpenGL, Sound, Bluetooth and various drivers.
@@ -7328,7 +7579,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </div>
 </div>
 <div id="outline-container-h:63f6773e-b321-4b1d-a206-3913658cf62d" class="outline-5">
-<h5 id="h:63f6773e-b321-4b1d-a206-3913658cf62d"><span class="section-number-5">3.3.1.14.</span> Pulseaudio</h5>
+<h5 id="h:63f6773e-b321-4b1d-a206-3913658cf62d"><span class="section-number-5">3.3.1.15.</span> Pulseaudio</h5>
 <div class="outline-text-5" id="text-h:63f6773e-b321-4b1d-a206-3913658cf62d">
 <p>
 This is only used on systems not running Pipewire.
@@ -7352,7 +7603,7 @@ This is only used on systems not running Pipewire.
 </div>
 </div>
 <div id="outline-container-h:aa433f5e-a455-4414-b76b-0a2692fa06aa" class="outline-5">
-<h5 id="h:aa433f5e-a455-4414-b76b-0a2692fa06aa"><span class="section-number-5">3.3.1.15.</span> Pipewire</h5>
+<h5 id="h:aa433f5e-a455-4414-b76b-0a2692fa06aa"><span class="section-number-5">3.3.1.16.</span> Pipewire</h5>
 <div class="outline-text-5" id="text-h:aa433f5e-a455-4414-b76b-0a2692fa06aa">
 <p>
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with <code>xdg-desktop-portal-wlr</code>.
@@ -7384,7 +7635,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 </div>
 </div>
 <div id="outline-container-h:7d696b64-debe-4a95-80b5-1e510156a6c6" class="outline-5">
-<h5 id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"><span class="section-number-5">3.3.1.16.</span> Common network settings</h5>
+<h5 id="h:7d696b64-debe-4a95-80b5-1e510156a6c6"><span class="section-number-5">3.3.1.17.</span> Common network settings</h5>
 <div class="outline-text-5" id="text-h:7d696b64-debe-4a95-80b5-1e510156a6c6">
 <p>
 Here I only enable <code>networkmanager</code> and a few default networks. The rest of the network config is done separately in <a href="#h:88bf4b90-e94b-46fb-aaf1-a381a512860d">System specific configuration</a>.
@@ -7647,7 +7898,7 @@ Here I only enable <code>networkmanager</code> and a few default networks. The r
 </div>
 </div>
 <div id="outline-container-h:852d59ab-63c3-4831-993d-b5e23b877796" class="outline-5">
-<h5 id="h:852d59ab-63c3-4831-993d-b5e23b877796"><span class="section-number-5">3.3.1.17.</span> Time, locale settings</h5>
+<h5 id="h:852d59ab-63c3-4831-993d-b5e23b877796"><span class="section-number-5">3.3.1.18.</span> Time, locale settings</h5>
 <div class="outline-text-5" id="text-h:852d59ab-63c3-4831-993d-b5e23b877796">
 <p>
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
@@ -7684,7 +7935,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </div>
 </div>
 <div id="outline-container-h:30b81bf9-1e69-4ce8-88af-5592896bcee4" class="outline-5">
-<h5 id="h:30b81bf9-1e69-4ce8-88af-5592896bcee4"><span class="section-number-5">3.3.1.18.</span> Meta options</h5>
+<h5 id="h:30b81bf9-1e69-4ce8-88af-5592896bcee4"><span class="section-number-5">3.3.1.19.</span> Meta options</h5>
 <div class="outline-text-5" id="text-h:30b81bf9-1e69-4ce8-88af-5592896bcee4">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, ... }:
@@ -7708,7 +7959,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </div>
 </div>
 <div id="outline-container-h:e2e7444b-cb85-4719-b154-e5f37274d02d" class="outline-5">
-<h5 id="h:e2e7444b-cb85-4719-b154-e5f37274d02d"><span class="section-number-5">3.3.1.19.</span> Topology</h5>
+<h5 id="h:e2e7444b-cb85-4719-b154-e5f37274d02d"><span class="section-number-5">3.3.1.20.</span> Topology</h5>
 <div class="outline-text-5" id="text-h:e2e7444b-cb85-4719-b154-e5f37274d02d">
 <div class="org-src-container">
 <pre class="src src-nix">{ self, lib, config, ... }:
@@ -7730,7 +7981,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </div>
 </div>
 <div id="outline-container-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb" class="outline-5">
-<h5 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-5">3.3.1.20.</span> sops</h5>
+<h5 id="h:d87d80fd-2ac7-4f29-b338-0518d06b4deb"><span class="section-number-5">3.3.1.21.</span> sops</h5>
 <div class="outline-text-5" id="text-h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">
 <p>
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -7803,7 +8054,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:82b8ede2-02d8-4c43-8952-7200ebd4dc23" class="outline-5">
-<h5 id="h:82b8ede2-02d8-4c43-8952-7200ebd4dc23"><span class="section-number-5">3.3.1.21.</span> PII management</h5>
+<h5 id="h:82b8ede2-02d8-4c43-8952-7200ebd4dc23"><span class="section-number-5">3.3.1.22.</span> PII management</h5>
 <div class="outline-text-5" id="text-h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">
 <div class="org-src-container">
 <pre class="src src-nix"># largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
@@ -7885,7 +8136,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:e6e44705-94af-49fe-9ca0-0629d0f7d932" class="outline-5">
-<h5 id="h:e6e44705-94af-49fe-9ca0-0629d0f7d932"><span class="section-number-5">3.3.1.22.</span> Theme (stylix)</h5>
+<h5 id="h:e6e44705-94af-49fe-9ca0-0629d0f7d932"><span class="section-number-5">3.3.1.23.</span> Theme (stylix)</h5>
 <div class="outline-text-5" id="text-h:e6e44705-94af-49fe-9ca0-0629d0f7d932">
 <p>
 By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style GRUB as well. However, I think that looks horrible.
@@ -7915,7 +8166,7 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
 </div>
 </div>
 <div id="outline-container-h:2bbf5f31-246d-4738-925f-eca40681f7b6" class="outline-5">
-<h5 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-5">3.3.1.23.</span> Programs (including zsh setup)</h5>
+<h5 id="h:2bbf5f31-246d-4738-925f-eca40681f7b6"><span class="section-number-5">3.3.1.24.</span> Programs (including zsh setup)</h5>
 <div class="outline-text-5" id="text-h:2bbf5f31-246d-4738-925f-eca40681f7b6">
 <p>
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
@@ -7937,7 +8188,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </div>
 </div>
 <div id="outline-container-h:7daa06ff-d3b0-4491-97ce-770b749c52f9" class="outline-6">
-<h6 id="h:7daa06ff-d3b0-4491-97ce-770b749c52f9"><span class="section-number-6">3.3.1.23.1.</span> zsh</h6>
+<h6 id="h:7daa06ff-d3b0-4491-97ce-770b749c52f9"><span class="section-number-6">3.3.1.24.1.</span> zsh</h6>
 <div class="outline-text-6" id="text-h:7daa06ff-d3b0-4491-97ce-770b749c52f9">
 <p>
 Here I disable global completion to prevent redundant compinit calls and cache invalidation that slow down shell startup (enabled on the home-manager side).
@@ -7962,7 +8213,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 </div>
 </div>
 <div id="outline-container-h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8" class="outline-6">
-<h6 id="h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8"><span class="section-number-6">3.3.1.23.2.</span> syncthing</h6>
+<h6 id="h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8"><span class="section-number-6">3.3.1.24.2.</span> syncthing</h6>
 <div class="outline-text-6" id="text-h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, config, pkgs, ... }:
@@ -8031,14 +8282,14 @@ in
 </div>
 </div>
 <div id="outline-container-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7" class="outline-5">
-<h5 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-5">3.3.1.24.</span> Services</h5>
+<h5 id="h:79f3258f-ed9d-434d-b50a-e58d57ade2a7"><span class="section-number-5">3.3.1.25.</span> Services</h5>
 <div class="outline-text-5" id="text-h:79f3258f-ed9d-434d-b50a-e58d57ade2a7">
 <p>
 Setting up some hardware services as well as keyboard related settings. Here we make sure that we can use the CAPS key as a ESC/CTRL double key, which is a lifesaver.
 </p>
 </div>
 <div id="outline-container-h:b91df05b-113d-4d09-93d1-b271e5b76810" class="outline-6">
-<h6 id="h:b91df05b-113d-4d09-93d1-b271e5b76810"><span class="section-number-6">3.3.1.24.1.</span> blueman</h6>
+<h6 id="h:b91df05b-113d-4d09-93d1-b271e5b76810"><span class="section-number-6">3.3.1.25.1.</span> blueman</h6>
 <div class="outline-text-6" id="text-h:b91df05b-113d-4d09-93d1-b271e5b76810">
 <p>
 Enables the blueman service including the nice system tray icon.
@@ -8058,7 +8309,7 @@ Enables the blueman service including the nice system tray icon.
 </div>
 </div>
 <div id="outline-container-h:73ed28cb-2f82-47b2-8bc5-208278b55788" class="outline-6">
-<h6 id="h:73ed28cb-2f82-47b2-8bc5-208278b55788"><span class="section-number-6">3.3.1.24.2.</span> Network devices</h6>
+<h6 id="h:73ed28cb-2f82-47b2-8bc5-208278b55788"><span class="section-number-6">3.3.1.25.2.</span> Network devices</h6>
 <div class="outline-text-6" id="text-h:73ed28cb-2f82-47b2-8bc5-208278b55788">
 <p>
 In this section we enable compatibility with several network devices I have at home, mainly printers and scanners.
@@ -8109,7 +8360,7 @@ Avahi is the service used for the network discovery.
 </div>
 </div>
 <div id="outline-container-h:f101daa2-604d-4553-99e2-f64b9c207f51" class="outline-6">
-<h6 id="h:f101daa2-604d-4553-99e2-f64b9c207f51"><span class="section-number-6">3.3.1.24.3.</span> enable GVfs</h6>
+<h6 id="h:f101daa2-604d-4553-99e2-f64b9c207f51"><span class="section-number-6">3.3.1.25.3.</span> enable GVfs</h6>
 <div class="outline-text-6" id="text-h:f101daa2-604d-4553-99e2-f64b9c207f51">
 <p>
 This is being set to allow myself to use all functions of nautilus in NixOS
@@ -8128,7 +8379,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 </div>
 </div>
 <div id="outline-container-h:08d213d5-a9f4-4309-8635-ba557b01dc7d" class="outline-6">
-<h6 id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"><span class="section-number-6">3.3.1.24.4.</span> interception-tools: Make CAPS work as ESC/CTRL</h6>
+<h6 id="h:08d213d5-a9f4-4309-8635-ba557b01dc7d"><span class="section-number-6">3.3.1.25.4.</span> interception-tools: Make CAPS work as ESC/CTRL</h6>
 <div class="outline-text-6" id="text-h:08d213d5-a9f4-4309-8635-ba557b01dc7d">
 <p>
 This is a super-convenient package that lets my remap my <code>CAPS</code> key to <code>ESC</code> if pressed shortly, and <code>CTRL</code> if being held.
@@ -8172,7 +8423,7 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 <div id="outline-container-h:82fbba41-3a46-4db7-aade-49e4c23fc475" class="outline-6">
-<h6 id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"><span class="section-number-6">3.3.1.24.5.</span> power-profiles-daemon</h6>
+<h6 id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"><span class="section-number-6">3.3.1.25.5.</span> power-profiles-daemon</h6>
 <div class="outline-text-6" id="text-h:82fbba41-3a46-4db7-aade-49e4c23fc475">
 <p>
 This enables power profile management. The available modes are:
@@ -8201,7 +8452,7 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 </div>
 </div>
 <div id="outline-container-h:5db15758-17d8-4bde-811d-d11ccdd3f3d3" class="outline-6">
-<h6 id="h:5db15758-17d8-4bde-811d-d11ccdd3f3d3"><span class="section-number-6">3.3.1.24.6.</span> SwayOSD</h6>
+<h6 id="h:5db15758-17d8-4bde-811d-d11ccdd3f3d3"><span class="section-number-6">3.3.1.25.6.</span> SwayOSD</h6>
 <div class="outline-text-6" id="text-h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">
 <div class="org-src-container">
 <pre class="src src-nix">{ lib, pkgs, config, ... }:
@@ -8232,11 +8483,11 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 </div>
 </div>
 <div id="outline-container-h:7a89b5e3-b700-4167-8b14-2b8172f33936" class="outline-5">
-<h5 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-5">3.3.1.25.</span> Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</h5>
+<h5 id="h:7a89b5e3-b700-4167-8b14-2b8172f33936"><span class="section-number-5">3.3.1.26.</span> Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</h5>
 <div class="outline-text-5" id="text-h:7a89b5e3-b700-4167-8b14-2b8172f33936">
 </div>
 <div id="outline-container-h:49aa792d-edfb-4eac-ae31-ecf23c4dca00" class="outline-6">
-<h6 id="h:49aa792d-edfb-4eac-ae31-ecf23c4dca00"><span class="section-number-6">3.3.1.25.1.</span> Yubikey</h6>
+<h6 id="h:49aa792d-edfb-4eac-ae31-ecf23c4dca00"><span class="section-number-6">3.3.1.26.1.</span> Yubikey</h6>
 <div class="outline-text-6" id="text-h:49aa792d-edfb-4eac-ae31-ecf23c4dca00">
 <p>
 This takes care of the main Yubikey related configuration on the NixOS side - note that the starting of the gpg-agent is done in the sway settings, to also perform this step of the setup for non NixOS-machines at the same time.
@@ -8276,7 +8527,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
 </div>
 </div>
 <div id="outline-container-h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4" class="outline-6">
-<h6 id="h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4"><span class="section-number-6">3.3.1.25.2.</span> Ledger</h6>
+<h6 id="h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4"><span class="section-number-6">3.3.1.26.2.</span> Ledger</h6>
 <div class="outline-text-6" id="text-h:c3cba64c-cdd7-4d58-a2c2-6a7fb36ad6c4">
 <p>
 This performs the necessary configuration to support this hardware.
@@ -8300,7 +8551,7 @@ This performs the necessary configuration to support this hardware.
 </div>
 </div>
 <div id="outline-container-h:103b68b6-33a1-4369-a534-5f36dfa95e03" class="outline-6">
-<h6 id="h:103b68b6-33a1-4369-a534-5f36dfa95e03"><span class="section-number-6">3.3.1.25.3.</span> Keyboards</h6>
+<h6 id="h:103b68b6-33a1-4369-a534-5f36dfa95e03"><span class="section-number-6">3.3.1.26.3.</span> Keyboards</h6>
 <div class="outline-text-6" id="text-h:103b68b6-33a1-4369-a534-5f36dfa95e03">
 <p>
 This loads some udev rules that I need for my split keyboards.
@@ -8324,7 +8575,7 @@ This loads some udev rules that I need for my split keyboards.
 </div>
 </div>
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-5">
-<h5 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-5">3.3.1.26.</span> System Login</h5>
+<h5 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-5">3.3.1.27.</span> System Login</h5>
 <div class="outline-text-5" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -8359,7 +8610,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </div>
 </div>
 <div id="outline-container-h:404cc18b-b5f8-48d9-a407-a0fd70d57f46" class="outline-5">
-<h5 id="h:404cc18b-b5f8-48d9-a407-a0fd70d57f46"><span class="section-number-5">3.3.1.27.</span> nix-ld</h5>
+<h5 id="h:404cc18b-b5f8-48d9-a407-a0fd70d57f46"><span class="section-number-5">3.3.1.28.</span> nix-ld</h5>
 <div class="outline-text-5" id="text-h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">
 <p>
 This provides libraries for binaries that are not patched for use on NixOS. This really makes the biggest gripe with NixOS go away, that being having to run a binary that is only found in a single spot. It is most of the times possible to patch such a file, but this makes such a situation take much less time to resolve.
@@ -8492,7 +8743,7 @@ When a program does not work, start with <code>nix-ldd &lt;program&gt;</code>. T
 </div>
 </div>
 <div id="outline-container-h:e7668594-fa8b-4d36-a695-a58222478988" class="outline-5">
-<h5 id="h:e7668594-fa8b-4d36-a695-a58222478988"><span class="section-number-5">3.3.1.28.</span> Impermanence</h5>
+<h5 id="h:e7668594-fa8b-4d36-a695-a58222478988"><span class="section-number-5">3.3.1.29.</span> Impermanence</h5>
 <div class="outline-text-5" id="text-h:e7668594-fa8b-4d36-a695-a58222478988">
 <p>
 This is where the impermanence magic happens. When this is enabled, the root directory is rolled back to a blanket state on each reboot.
@@ -8599,7 +8850,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:b751d77d-246c-4bd6-b689-3467d82bf9c3" class="outline-5">
-<h5 id="h:b751d77d-246c-4bd6-b689-3467d82bf9c3"><span class="section-number-5">3.3.1.29.</span> Summary of nixos-rebuild diff</h5>
+<h5 id="h:b751d77d-246c-4bd6-b689-3467d82bf9c3"><span class="section-number-5">3.3.1.30.</span> Summary of nixos-rebuild diff</h5>
 <div class="outline-text-5" id="text-h:b751d77d-246c-4bd6-b689-3467d82bf9c3">
 <p>
 This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
@@ -8624,7 +8875,7 @@ This snipped is added to the activation script that is run after every rebuild a
 </div>
 </div>
 <div id="outline-container-h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f" class="outline-5">
-<h5 id="h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f"><span class="section-number-5">3.3.1.30.</span> gnome-keyring</h5>
+<h5 id="h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f"><span class="section-number-5">3.3.1.31.</span> gnome-keyring</h5>
 <div class="outline-text-5" id="text-h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">
 <p>
 Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
@@ -8647,7 +8898,7 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 </div>
 </div>
 <div id="outline-container-h:f78ffdd3-232b-4313-bd89-d6fb331fef22" class="outline-5">
-<h5 id="h:f78ffdd3-232b-4313-bd89-d6fb331fef22"><span class="section-number-5">3.3.1.31.</span> Sway</h5>
+<h5 id="h:f78ffdd3-232b-4313-bd89-d6fb331fef22"><span class="section-number-5">3.3.1.32.</span> Sway</h5>
 <div class="outline-text-5" id="text-h:f78ffdd3-232b-4313-bd89-d6fb331fef22">
 <p>
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the <code>package</code> attribute will be <code>null</code> for such an host, using the systems derivation instead.
@@ -8683,7 +8934,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 </div>
 </div>
 <div id="outline-container-h:872d5f46-2ffd-4076-9a2c-98783dd29434" class="outline-5">
-<h5 id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"><span class="section-number-5">3.3.1.32.</span> xdg-portal</h5>
+<h5 id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"><span class="section-number-5">3.3.1.33.</span> xdg-portal</h5>
 <div class="outline-text-5" id="text-h:872d5f46-2ffd-4076-9a2c-98783dd29434">
 <p>
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
@@ -8715,7 +8966,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 </div>
 </div>
 <div id="outline-container-h:1bef3914-a258-4585-b232-e0fbe9e7a9b5" class="outline-5">
-<h5 id="h:1bef3914-a258-4585-b232-e0fbe9e7a9b5"><span class="section-number-5">3.3.1.33.</span> Podmam (distrobox)</h5>
+<h5 id="h:1bef3914-a258-4585-b232-e0fbe9e7a9b5"><span class="section-number-5">3.3.1.34.</span> Podmam (distrobox)</h5>
 <div class="outline-text-5" id="text-h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">
 <p>
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
@@ -8743,7 +8994,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 </div>
 </div>
 <div id="outline-container-h:cfc22f8d-251e-4636-98d6-a43cdb112b68" class="outline-5">
-<h5 id="h:cfc22f8d-251e-4636-98d6-a43cdb112b68"><span class="section-number-5">3.3.1.34.</span> Appimage</h5>
+<h5 id="h:cfc22f8d-251e-4636-98d6-a43cdb112b68"><span class="section-number-5">3.3.1.35.</span> Appimage</h5>
 <div class="outline-text-5" id="text-h:cfc22f8d-251e-4636-98d6-a43cdb112b68">
 <p>
 Adds the necessary tools to allow .appimage programs easily.
@@ -8766,7 +9017,7 @@ Adds the necessary tools to allow .appimage programs easily.
 </div>
 </div>
 <div id="outline-container-h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd" class="outline-5">
-<h5 id="h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd"><span class="section-number-5">3.3.1.35.</span> Handle lid switch correctly</h5>
+<h5 id="h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd"><span class="section-number-5">3.3.1.36.</span> Handle lid switch correctly</h5>
 <div class="outline-text-5" id="text-h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">
 <p>
 This turns off the display when the lid is closed.
@@ -8815,7 +9066,7 @@ This turns off the display when the lid is closed.
 </div>
 </div>
 <div id="outline-container-h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17" class="outline-5">
-<h5 id="h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17"><span class="section-number-5">3.3.1.36.</span> Low battery notification</h5>
+<h5 id="h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17"><span class="section-number-5">3.3.1.37.</span> Low battery notification</h5>
 <div class="outline-text-5" id="text-h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">
 <p>
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by <a href="https://gist.github.com/cafkafk">cafkafk</a>.
@@ -8856,7 +9107,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 </div>
 </div>
 <div id="outline-container-h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377" class="outline-5">
-<h5 id="h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377"><span class="section-number-5">3.3.1.37.</span> Lanzaboote</h5>
+<h5 id="h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377"><span class="section-number-5">3.3.1.38.</span> Lanzaboote</h5>
 <div class="outline-text-5" id="text-h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377">
 <p>
 This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
@@ -9201,6 +9452,7 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/kavita.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.kavita = {
       enable = true;
@@ -9270,7 +9522,8 @@ in
       ];
     };
 
-    topology.self.services.jellyfin.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.jellyfin = {
       enable = true;
@@ -9352,6 +9605,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ 4040 ];
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.navidrome = {
       enable = true;
@@ -9712,6 +9967,8 @@ in
       };
     };
 
+    globals.services.${serviceName}.domain = matrixDomain;
+
     services = {
       postgresql = {
         enable = true;
@@ -9996,6 +10253,9 @@ in
       };
     };
 
+
+    globals.services.${serviceName}.domain = serviceDomain;
+
     services = {
       nextcloud = {
         enable = true;
@@ -10053,7 +10313,7 @@ in
 <h5 id="h:33bad8ad-b362-4bf1-8a49-b9df92329aed"><span class="section-number-5">3.3.2.17.</span> immich</h5>
 <div class="outline-text-5" id="text-h:33bad8ad-b362-4bf1-8a49-b9df92329aed">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix">{ lib, config, globals, ... }:
 let
   serviceDomain = "shots.swarsel.win";
   servicePort = 3001;
@@ -10068,7 +10328,8 @@ in
       extraGroups = [ "video" "render" "users" ];
     };
 
-    topology.self.services.immich.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.immich = {
       enable = true;
@@ -10162,6 +10423,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       paperless = {
@@ -10357,6 +10620,8 @@ in
       prowlarr.info = "https://${serviceDomain}/prowlarr";
     };
 
+    globals.services.transmission.domain = serviceDomain;
+
     services = {
       radarr = {
         enable = true;
@@ -10477,6 +10742,8 @@ in
     users.groups."${serviceGroup}" = { };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.syncthing = {
       enable = true;
@@ -10696,6 +10963,7 @@ in
     networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
     topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
+    globals.services.${moduleName}.domain = serviceDomain;
 
     services = {
       grafana = {
@@ -11034,11 +11302,13 @@ in
       #   };
     };
 
-    topology.self.services.freshrss = {
+    topology.self.services.${serviceName} = {
       name = "FreshRSS";
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/freshrss.png";
     };
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.freshrss = {
       enable = true;
@@ -11116,6 +11386,8 @@ in
     sops.secrets = {
       kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.forgejo = {
       enable = true;
@@ -11264,10 +11536,12 @@ in
 
     sops.secrets.swarsel = { owner = "root"; };
 
-    topology.self.services.anki = {
+    topology.self.services.${serviceName} = {
       name = lib.mkForce "Anki Sync Server";
       info = "https://${serviceDomain}";
     };
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.anki-sync-server = {
       enable = true;
@@ -11330,7 +11604,7 @@ To get other URLs (token, etc.), use <a href="https://&lt;kanidmdomain&gt;/oauth
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, pkgs, config, ... }:
+<pre class="src src-nix">{ self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   serviceDomain = "sso.swarsel.win";
@@ -11338,7 +11612,7 @@ let
   serviceUser = "kanidm";
   serviceGroup = serviceUser;
   serviceName = "kanidm";
-  oauth2ProxyDomain = "soauth.swarsel.win";
+  oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
 in
 {
   options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
@@ -11368,6 +11642,8 @@ in
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       kanidm = {
@@ -11582,9 +11858,9 @@ in
 <h5 id="h:605f5974-e985-4572-b353-fd1d3ccbadae"><span class="section-number-5">3.3.2.29.</span> oauth2-proxy</h5>
 <div class="outline-text-5" id="text-h:605f5974-e985-4572-b353-fd1d3ccbadae">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix">{ lib, config, globals, ... }:
 let
-  kanidmDomain = "sso.swarsel.win";
+  kanidmDomain = globals.services.kanidm.domain;
   oauth2ProxyDomain = "soauth.swarsel.win";
   oauth2ProxyPort = 3004;
 in
@@ -11721,6 +11997,8 @@ in
 
     networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
 
+    globals.services.oauth2Proxy.domain = oauth2ProxyDomain;
+
     services = {
       oauth2-proxy = {
         enable = true;
@@ -11808,7 +12086,7 @@ in
 <pre class="src src-nix">{ self, lib, config, ... }:
 let
   cfg = config.services.firefly-iii;
-  fireflyDomain = "stonks.swarsel.win";
+  serviceDomain = "stonks.swarsel.win";
   fireflyUser = "firefly-iii";
   serviceName = "firefly";
 in
@@ -11829,9 +12107,10 @@ in
 
     topology.self.services.firefly-iii = {
       name = "Firefly-III";
-      info = "https://${fireflyDomain}";
+      info = "https://${serviceDomain}";
       icon = "${self}/topology/images/firefly-iii.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       firefly-iii = {
@@ -11841,7 +12120,7 @@ in
         dataDir = "/Vault/data/firefly-iii";
         settings = {
           TZ = config.repo.secrets.common.location.timezone;
-          APP_URL = "https://${fireflyDomain}";
+          APP_URL = "https://${serviceDomain}";
           APP_KEY_FILE = config.sops.secrets.firefly-iii-app-key.path;
           APP_ENV = "local";
           DB_CONNECTION = "sqlite";
@@ -11852,12 +12131,12 @@ in
           # AUTHENTICATION_GUARD_EMAIL = "X-Email";
         };
         enableNginx = true;
-        virtualHost = fireflyDomain;
+        virtualHost = serviceDomain;
       };
 
       nginx = {
         virtualHosts = {
-          "${fireflyDomain}" = {
+          "${serviceDomain}" = {
             locations = {
               "/api" = {
                 setOauth2Headers = false;
@@ -11882,7 +12161,7 @@ in
         };
       };
       virtualHosts = {
-        "${fireflyDomain}" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
@@ -11938,6 +12217,7 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/topology/images/koillection.png";
     };
+    globals.services.${serviceName}.domain = serviceDomain;
 
     virtualisation.oci-containers.containers = {
       koillection = {
@@ -12050,7 +12330,8 @@ in
   options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
 
-    topology.self.services.atuin.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.atuin = {
       enable = true;
@@ -12127,7 +12408,8 @@ in
       };
     };
 
-    topology.self.services.radicale.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.radicale = {
       enable = true;
@@ -12243,7 +12525,8 @@ in
       };
     };
 
-    topology.self.services.croc.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.croc = {
       enable = true;
@@ -12322,7 +12605,8 @@ in
       };
     };
 
-    topology.self.services."${serviceName}".info = "https://${serviceDomain}";
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services."${serviceName}" = {
       enable = true;
@@ -12459,6 +12743,9 @@ in
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
       { directory = "/var/lib/containers"; }
     ];
+
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services.nginx = {
       upstreams = {
@@ -13167,7 +13454,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:79f7150f-b162-4f57-abdf-07f40dffd932" class="outline-5">
-<h5 id="h:79f7150f-b162-4f57-abdf-07f40dffd932"><span class="section-number-5">3.4.1.2.</span> Shared Configuration Options (hold firefox config parts)</h5>
+<h5 id="h:79f7150f-b162-4f57-abdf-07f40dffd932"><span class="section-number-5">3.4.1.2.</span> Shared Configuration Options (holds firefox &amp; stylix config parts)</h5>
 <div class="outline-text-5" id="text-h:79f7150f-b162-4f57-abdf-07f40dffd932">
 <p>
 Provides settings related to nix-darwin systems. At the moment, I am only making use of a <code>isDarwin</code> flag.
@@ -13176,6 +13463,18 @@ Provides settings related to nix-darwin systems. At the moment, I am only making
 <p>
 At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> that are all practically using the same configuration. To save screen space, I template that profile here.
 Set in firefox <code>about:config &gt; toolkit.legacyUserProfileCustomizations.stylesheets</code> to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
+</p>
+
+<p>
+For styling, I am using the <a href="https://github.com/danth/stylix">stylix</a> NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
+</p>
+
+<p>
+The full list of nerd-fonts can be found here: <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json">https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json</a>
+</p>
+
+<p>
+This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the <code>${self}</code> method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [BROKEN LINK: h:e7f98ad8-74a6-4860-a368-cce154285ff0]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 </p>
 
 <div class="org-src-container">
@@ -20557,89 +20856,15 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
-<div id="outline-container-h:d39b8dfb-536d-414f-9fc0-7d67df48cee4" class="outline-2">
-<h2 id="h:d39b8dfb-536d-414f-9fc0-7d67df48cee4"><span class="section-number-2">5.</span> Appendix A: Noweb-Ref blocks</h2>
-<div class="outline-text-2" id="text-h:d39b8dfb-536d-414f-9fc0-7d67df48cee4">
-<p>
-These blocks are used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section needs to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
-</p>
-
-<p>
-Originally, I used this method a lot throughout my configuration. However, as my knowledge of NixOS grew, I have been weeding these snippets out more and more as I find more efficient native solutions. Now, only the theming block remains.
-</p>
-
-<p>
-This serves only to reduce code duplication in this file. The tangled files experience no size reduction, since noweb-ref only substitutes these blocks in.
-</p>
-
-<p>
-For styling, I am using the <a href="https://github.com/danth/stylix">stylix</a> NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
-</p>
-
-<p>
-The full list of nerd-fonts can be found here: <a href="https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json">https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json</a>
-</p>
-
-<p>
-This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the <code>${self}</code> method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [BROKEN LINK: h:e7f98ad8-74a6-4860-a368-cce154285ff0]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
-</p>
-
-
-<div class="org-src-container">
-<pre class="src src-nix">enable = true;
-base16Scheme = "${self}/programs/stylix/swarsel.yaml";
-polarity = "dark";
-opacity.popups = 0.5;
-cursor = {
-  package = pkgs.banana-cursor;
-  # package = pkgs.capitaine-cursors;
-  name = "Banana";
-  # name = "capitaine-cursors";
-  size = 16;
-};
-fonts = {
-  sizes = {
-    terminal = 10;
-    applications = 11;
-  };
-  serif = {
-    # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-    package = pkgs.cantarell-fonts;
-    # package = pkgs.montserrat;
-    name = "Cantarell";
-    # name = "FiraCode Nerd Font Propo";
-    # name = "Montserrat";
-  };
-  sansSerif = {
-    # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-    package = pkgs.cantarell-fonts;
-    # package = pkgs.montserrat;
-    name = "Cantarell";
-    # name = "FiraCode Nerd Font Propo";
-    # name = "Montserrat";
-  };
-  monospace = {
-    package = pkgs.nerd-fonts.fira-mono; # has overrides
-    name = "FiraCode Nerd Font Mono";
-  };
-  emoji = {
-    package = pkgs.noto-fonts-emoji;
-    name = "Noto Color Emoji";
-  };
-};
-</pre>
-</div>
-</div>
-</div>
 <div id="outline-container-h:8fc9f66a-7412-4091-8dee-a06f897baf67" class="outline-2">
-<h2 id="h:8fc9f66a-7412-4091-8dee-a06f897baf67"><span class="section-number-2">6.</span> Appendix B: Supplementary Files</h2>
+<h2 id="h:8fc9f66a-7412-4091-8dee-a06f897baf67"><span class="section-number-2">5.</span> Appendix B: Supplementary Files</h2>
 <div class="outline-text-2" id="text-h:8fc9f66a-7412-4091-8dee-a06f897baf67">
 <p>
 This section now holds some of the configuration files that cannot be defined directly within NixOS configuration. These files are usually symlinked using <code>home.file</code>.
 </p>
 </div>
 <div id="outline-container-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8" class="outline-3">
-<h3 id="h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8"><span class="section-number-3">6.1.</span> Server Emacs config</h3>
+<h3 id="h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8"><span class="section-number-3">5.1.</span> Server Emacs config</h3>
 <div class="outline-text-3" id="text-h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">
 <p>
 On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using <code>bjm/elfeed-updater</code>. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change <code>(elfeed-db-load)</code> in <code>bjm/elfeed-updater</code> to <code>(elfeed-db-save)</code>.
@@ -20733,7 +20958,7 @@ On my server, I use a reduced, self-contained emacs configuration that only serv
 </div>
 </div>
 <div id="outline-container-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51" class="outline-3">
-<h3 id="h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51"><span class="section-number-3">6.2.</span> tridactylrc</h3>
+<h3 id="h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51"><span class="section-number-3">5.2.</span> tridactylrc</h3>
 <div class="outline-text-3" id="text-h:fc64f42f-e7cf-4829-89f6-2d0d58e04f51">
 <p>
 This is the configuration file for tridactyl, which provides keyboard-driven navigation in firefox. Pay attention to the warnings in this file; depending on your browsing behaviour, you might expose yourself to some vulnerabilities by copying this configuration.
@@ -20878,7 +21103,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 </div>
 </div>
 <div id="outline-container-h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0" class="outline-3">
-<h3 id="h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0"><span class="section-number-3">6.3.</span> tridactyl theme</h3>
+<h3 id="h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0"><span class="section-number-3">5.3.</span> tridactyl theme</h3>
 <div class="outline-text-3" id="text-h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">
 <div class="org-src-container">
 <pre class="src src-config">
@@ -21049,7 +21274,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 </div>
 </div>
 <div id="outline-container-h:77b1c523-5074-4610-b320-90af95e6134d" class="outline-3">
-<h3 id="h:77b1c523-5074-4610-b320-90af95e6134d"><span class="section-number-3">6.4.</span> Waybar style.css</h3>
+<h3 id="h:77b1c523-5074-4610-b320-90af95e6134d"><span class="section-number-3">5.4.</span> Waybar style.css</h3>
 <div class="outline-text-3" id="text-h:77b1c523-5074-4610-b320-90af95e6134d">
 <p>
 This is the stylesheet used by waybar.
@@ -21327,7 +21552,7 @@ window#waybar.hidden {
 </div>
 </div>
 <div id="outline-container-h:788937cf-8816-466b-8e57-1b695cb50f52" class="outline-3">
-<h3 id="h:788937cf-8816-466b-8e57-1b695cb50f52"><span class="section-number-3">6.5.</span> justfile</h3>
+<h3 id="h:788937cf-8816-466b-8e57-1b695cb50f52"><span class="section-number-3">5.5.</span> justfile</h3>
 <div class="outline-text-3" id="text-h:788937cf-8816-466b-8e57-1b695cb50f52">
 <p>
 This file defines a few workflows that I often need to run when working on my configuration. This works similar to <code>make</code>, but is geared towards general tasks and as such requires no extra handling (as long as there are no dependencies involved) or <code>.PHONY</code> recipes.
@@ -21375,7 +21600,7 @@ sync USER HOST:
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-06-29 So 15:39</p>
+<p class="date">Created: 2025-06-30 Mo 23:10</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
