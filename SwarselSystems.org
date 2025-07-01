@@ -15956,7 +15956,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
 This holds configuration that is specific to framework laptops.
 
-#+begin_src nix :tangle modules/home/optional/framework.nix
+#+begin_src nix-ts :tangle modules/home/optional/framework.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
@@ -17709,7 +17709,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 
 #+end_src
 
-***** old easy structure templates
+***** old easy structure templates (org-tempo)
 :PROPERTIES:
 :CUSTOM_ID: h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9
 :END:
@@ -17725,6 +17725,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
       (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
       (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
       (add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
+      (add-to-list 'org-structure-template-alist '("nix-ts" . "src nix-ts :tangle"))
 
     #+end_src
 
@@ -17920,10 +17921,44 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 
 #+begin_src emacs-lisp
 
-  (use-package nix-mode)
+    (use-package nix-mode
+      :after lsp-mode
+      :ensure t
+      :hook
+      (nix-mode . lsp-deferred) ;; So that envrc mode will work
+      :custom
+      (lsp-disabled-clients '((nix-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+      :config
+      (setq lsp-nix-nixd-server-path "nixd"
+            lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+            lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
+            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+            ))
 
-  (use-package nix-ts-mode
-    :mode "\\.nix\\'")
+    (use-package nix-mode
+      :after lsp-mode
+      :mode "\\.nix\\'"
+      :ensure t
+      :hook
+      (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work
+      :custom
+      (lsp-disabled-clients '((nix-ts-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+      :config
+      (setq lsp-nix-nixd-server-path "nixd"
+            lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+            lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
+            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+            ))
+
+
+    (with-eval-after-load 'lsp-mode
+      (lsp-register-client
+       (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                        :major-modes '(nix-mode nix-ts-mode)
+                        :priority 0
+                        :server-id 'nixd)))
 #+end_src
 *** HCL Mode
 :PROPERTIES:
@@ -18650,22 +18685,55 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
 :CUSTOM_ID: h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75
 :END:
 
+company is now disabled since it seems that corfu runs just fine with lsp-mode and I prefer it. Also I set the auto-guess-root option to true in order to stop excessive nag when editing within org-src blocks.
 
 #+begin_src emacs-lisp
-
-  (use-package lsp-bridge
-    :ensure nil)
 
   (use-package lsp-mode
     :init
     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
     (setq lsp-keymap-prefix "C-c l")
+    (setq lsp-auto-guess-root "t")
     :commands lsp)
 
-  (use-package company)
+  ;; (use-package company)
 
 #+end_src
 
+*** lsp-mode in org-src blocks
+
+#+begin_src emacs-lisp
+  ;; thanks to https://tecosaur.github.io/emacs-config/config.html#lsp-support-src
+  (cl-defmacro lsp-org-babel-enable (lang)
+    "Support LANG in org source code block."
+    (setq centaur-lsp 'lsp-mode)
+    (cl-check-type lang string)
+    (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+           (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+      `(progn
+         (defun ,intern-pre (info)
+           (let ((file-name (->> info caddr (alist-get :file))))
+             (unless file-name
+               (setq file-name (make-temp-file "babel-lsp-")))
+             (setq buffer-file-name file-name)
+             (lsp-deferred)))
+         (put ',intern-pre 'function-documentation
+              (format "Enable lsp-mode in the buffer of org source block (%s)."
+                      (upcase ,lang)))
+         (if (fboundp ',edit-pre)
+             (advice-add ',edit-pre :after ',intern-pre)
+           (progn
+             (defun ,edit-pre (info)
+               (,intern-pre info))
+             (put ',edit-pre 'function-documentation
+                  (format "Prepare local buffer environment for org source block (%s)."
+                          (upcase ,lang))))))))
+  (defvar org-babel-lang-list
+    '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
+  (dolist (lang org-babel-lang-list)
+    (eval `(lsp-org-babel-enable ,lang)))
+
+#+end_src
 *** lsp-bridge
 :PROPERTIES:
 :CUSTOM_ID: h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61
@@ -18676,15 +18744,6 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
 
   (use-package lsp-bridge
     :ensure nil)
-
-  (use-package lsp-mode
-    :init
-    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-    (setq lsp-keymap-prefix "C-c l")
-    :commands lsp)
-
-  (use-package company)
-
 #+end_src
 
 *** sideline-flymake
