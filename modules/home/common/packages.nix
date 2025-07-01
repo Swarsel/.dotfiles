@@ -14,7 +14,7 @@
       picard-tools
       audacity
       sox
-      stable.feishin
+      # stable.feishin # does not work with oauth2-proxy
       calibre
 
       # printing
