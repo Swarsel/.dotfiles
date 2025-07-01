@@ -28,9 +28,15 @@ in
         (mkConnection "moonside" "wan")
         (mkConnection "pfsense" "wan")
         (mkConnection "sync" "wan")
+        (mkConnection "toto" "bootstrapper")
+        (mkConnection "drugstore" "installer image")
+        (mkConnection "chaostheatre" "demo host")
       ];
     };
 
+    chaostheatre.interfaces."demo host" = { };
+    drugstore.interfaces."installer image" = { };
+    toto.interfaces."bootstrapper" = { };
     sync.interfaces.wan = { };
     moonside.interfaces.wan = { };
 
@@ -150,5 +156,7 @@ in
       image = ../topology/images/DELL-C2665dnf.png;
       interfaces.eth1 = { };
     };
+
   };
+
 }

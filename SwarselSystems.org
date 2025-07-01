@@ -448,6 +448,8 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
           systems = [
             "x86_64-linux"
             "aarch64-linux"
+            "x86_64-darwin"
+            "aarch64-darwin"
           ];
         };
   }
@@ -518,7 +520,7 @@ When setting this option normally, the password would normally be written world-
   nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
   nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
   nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-  systems.url = "github:nix-systems/default-linux";
+  systems.url = "github:nix-systems/default";
   home-manager = {
     url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -625,7 +627,7 @@ In this section I am creating some attributes that define general concepts of my
 
   # nixosModules = import ./modules/nixos { inherit lib; };
   # homeModules = import ./modules/home { inherit lib; };
-  packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+  packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import ./pkgs { inherit lib pkgs; });
   formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
   overlays = import ./overlays { inherit self lib inputs; };
 
@@ -5389,6 +5391,19 @@ TODO
       }
     );
 
+    toCapitalized = str:
+      if builtins.stringLength str == 0 then
+        ""
+      else
+        let
+          first = builtins.substring 0 1 str;
+          rest = builtins.substring 1 (builtins.stringLength str - 1) str;
+          upper = lib.toUpper first;
+          lower = lib.toLower rest;
+        in
+          upper + lower;
+
+
     # mkUser = name: {
     #   config.users.users.${name} = {
     #     group = name;
@@ -5408,6 +5423,7 @@ TODO
     getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
     forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
+    forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f lib.swarselsystems.pkgsFor.${system});
 
     readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
     readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
@@ -5594,9 +5610,15 @@ in
           (mkConnection "moonside" "wan")
           (mkConnection "pfsense" "wan")
           (mkConnection "sync" "wan")
+          (mkConnection "toto" "bootstrapper")
+          (mkConnection "drugstore" "installer image")
+          (mkConnection "chaostheatre" "demo host")
         ];
       };
 
+      chaostheatre.interfaces."demo host" = { };
+      drugstore.interfaces."installer image" = { };
+      toto.interfaces."bootstrapper" = { };
       sync.interfaces.wan = { };
       moonside.interfaces.wan = { };
 
@@ -5716,7 +5738,9 @@ in
         image = ../topology/images/DELL-C2665dnf.png;
         interfaces.eth1 = { };
       };
+
     };
+
   }
 
 #+end_src
@@ -6858,14 +6882,14 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     options.swarselsystems.modules.commonSops = lib.mkEnableOption "sops config";
     config = lib.mkIf config.swarselsystems.modules.commonSops {
-      sops = lib.mkIf (!config.swarselsystems.isPublic) {
+      sops = {
 
         age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
         defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
         validateSopsFiles = false;
 
-        secrets = {
+        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
           ernest = { };
           frauns = { };
           hotspot = { };
@@ -6886,7 +6910,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
           "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
         };
-        templates = {
+        templates = lib.mkIf (!config.swarselsystems.isPublic) {
           "network-manager.env".content = ''
             ERNEST=${config.sops.placeholder.ernest}
             FRAUNS=${config.sops.placeholder.frauns}
@@ -8087,7 +8111,6 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             "valid users" = "Swarsel";
           };
         };
-
 
         avahi = {
           publish.enable = true;
@@ -10962,10 +10985,10 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         koillection-env-file = { };
       };
 
-      topology.self.services.koillection = {
-        name = "Koillection";
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/koillection.png";
+        icon = "${self}/topology/images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -11243,7 +11266,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/croc.nix
-  { lib, config, pkgs, ... }:
+  { self, lib, config, pkgs, ... }:
   let
     serviceDomain = "send.swarsel.win";
     servicePorts = [
@@ -11275,7 +11298,13 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/${serviceName}.png";
+      };
+
       globals.services.${serviceName}.domain = serviceDomain;
 
       services.croc = {
@@ -11311,7 +11340,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/microbin.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   let
     serviceDomain = "scratch.swarsel.win";
     servicePort = 8777;
@@ -11355,7 +11384,11 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/${serviceName}.png";
+      };
       globals.services.${serviceName}.domain = serviceDomain;
 
       services."${serviceName}" = {
@@ -11444,7 +11477,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :END:
 
 #+begin_src nix :tangle modules/nixos/server/shlink.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   let
     serviceDomain = "s.swarsel.win";
     servicePort = 8081;
@@ -11494,7 +11527,11 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         { directory = "/var/lib/containers"; }
       ];
 
-      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      topology.self.services.${serviceName} = {
+        name = lib.swarselsystems.toCapitalized serviceName;
+        info = "https://${serviceDomain}";
+        icon = "${self}/topology/images/${serviceName}.png";
+      };
       globals.services.${serviceName}.domain = serviceDomain;
 
       services.nginx = {
@@ -12835,12 +12872,12 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
     config = lib.mkIf config.swarselsystems.modules.sops {
-      sops = lib.mkIf (!config.swarselsystems.isPublic) {
+      sops =  {
         age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
         defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
         validateSopsFiles = false;
-        secrets = {
+        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
           mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
           nautilus = { path = "${xdgDir}/secrets/nautilus"; };
           leon = { path = "${xdgDir}/secrets/leon"; };
@@ -13673,7 +13710,7 @@ Currently I only use it as before with =initExtra= though.
           #   src = pkgs.zsh-fzf-tab;
           # }
         ];
-        initContent = ''
+        initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
           my-forward-word() {
             local WORDCHARS=$WORDCHARS
             WORDCHARS="''${WORDCHARS//:}"

@@ -77,7 +77,7 @@ in
         #   src = pkgs.zsh-fzf-tab;
         # }
       ];
-      initContent = ''
+      initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
         my-forward-word() {
           local WORDCHARS=$WORDCHARS
           WORDCHARS="''${WORDCHARS//:}"

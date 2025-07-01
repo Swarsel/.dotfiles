@@ -6,14 +6,14 @@ in
 {
   options.swarselsystems.modules.commonSops = lib.mkEnableOption "sops config";
   config = lib.mkIf config.swarselsystems.modules.commonSops {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    sops = {
 
       age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
 
-      secrets = {
+      secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         ernest = { };
         frauns = { };
         hotspot = { };
@@ -34,7 +34,7 @@ in
         "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
         "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
       };
-      templates = {
+      templates = lib.mkIf (!config.swarselsystems.isPublic) {
         "network-manager.env".content = ''
           ERNEST=${config.sops.placeholder.ernest}
           FRAUNS=${config.sops.placeholder.frauns}

@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
 let
   serviceDomain = "s.swarsel.win";
   servicePort = 8081;
@@ -48,7 +48,11 @@ in
       { directory = "/var/lib/containers"; }
     ];
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/${serviceName}.png";
+    };
     globals.services.${serviceName}.domain = serviceDomain;
 
     services.nginx = {

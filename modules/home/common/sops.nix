@@ -5,12 +5,12 @@ in
 {
   options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
   config = lib.mkIf config.swarselsystems.modules.sops {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    sops = {
       age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
-      secrets = {
+      secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
         nautilus = { path = "${xdgDir}/secrets/nautilus"; };
         leon = { path = "${xdgDir}/secrets/leon"; };

@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ self, lib, config, pkgs, ... }:
 let
   serviceDomain = "send.swarsel.win";
   servicePorts = [
@@ -30,7 +30,13 @@ in
       };
     };
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/${serviceName}.png";
+    };
+
     globals.services.${serviceName}.domain = serviceDomain;
 
     services.croc = {

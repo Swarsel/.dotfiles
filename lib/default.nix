@@ -23,6 +23,19 @@
     }
   );
 
+  toCapitalized = str:
+    if builtins.stringLength str == 0 then
+      ""
+    else
+      let
+        first = builtins.substring 0 1 str;
+        rest = builtins.substring 1 (builtins.stringLength str - 1) str;
+        upper = lib.toUpper first;
+        lower = lib.toLower rest;
+      in
+      upper + lower;
+
+
   # mkUser = name: {
   #   config.users.users.${name} = {
   #     group = name;
@@ -42,6 +55,7 @@
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
+  forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f lib.swarselsystems.pkgsFor.${system});
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
   readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));

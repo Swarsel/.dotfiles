@@ -18,7 +18,7 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-    systems.url = "github:nix-systems/default-linux";
+    systems.url = "github:nix-systems/default";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -200,7 +200,7 @@
 
           # nixosModules = import ./modules/nixos { inherit lib; };
           # homeModules = import ./modules/home { inherit lib; };
-          packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+          packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import ./pkgs { inherit lib pkgs; });
           formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
           overlays = import ./overlays { inherit self lib inputs; };
 
@@ -284,6 +284,8 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
       ];
     };
 }

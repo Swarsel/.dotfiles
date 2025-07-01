@@ -18,10 +18,10 @@ in
       koillection-env-file = { };
     };
 
-    topology.self.services.koillection = {
-      name = "Koillection";
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/koillection.png";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 
