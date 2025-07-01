@@ -876,8 +876,7 @@ create a new one."
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
-(add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
-(add-to-list 'org-structure-template-alist '("nix-ts" . "src nix-ts :tangle"))
+(add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
 
 (use-package auctex)
 (setq TeX-auto-save t)
@@ -1024,7 +1023,7 @@ create a new one."
         lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
         ))
 
-(use-package nix-mode
+(use-package nix-ts-mode
   :after lsp-mode
   :mode "\\.nix\\'"
   :ensure t

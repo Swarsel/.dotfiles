@@ -1,6 +1,7 @@
 #+title: SwarselSystems: NixOS + Emacs Configuration
 #+PROPERTY: header-args:emacs-lisp :tangle programs/emacs/init.el :mkdirp yes
 #+PROPERTY: header-args:nix :mkdirp yes
+#+PROPERTY: header-args:nix-ts :mkdirp yes
 #+EXPORT_FILE_NAME: index.html
 #+OPTIONS: toc:6
 #+macro: revision-date (eval (format-time-string "%F %T %z"))
@@ -122,13 +123,13 @@ As such, this served to reduce code duplication in this file. The tangled files 
 For archival reasons, here is shown how to use a noweb-ref block, in case I ever decide to use it again, or it is interesting to you:
 
 
-#+begin_src nix :tangle no :noweb-ref blockName
+#+begin_src nix-ts :tangle no :noweb-ref blockName
   enable = true;
 #+end_src
 
 which can then be used in a block like:
 
-#+begin_src nix :tangle no :noweb yes
+#+begin_src nix-ts :tangle no :noweb yes
   <<blockName>>
 #+end_src
 
@@ -159,7 +160,7 @@ The structure of this flake as seen many revisions, however lately I have settle
 
     - The hosts/<hosttype>/<hostname> folders may also have a =secrets= folder, under which a single file =pii.nix.enc= can be stored. As the name suggests, this file should be encrypted. Specifically, it needs to be a [[https://github.com/getsops/sops][sops]]-encrypted file (sops does not seem to suggest a file ending other than .yml or others, which is not verbose enough for me, so I went with =.enc=).  This file should have the structure of a nix expression, e.g.:
 
-  #+begin_src nix :tangle no
+  #+begin_src nix-ts :tangle no
     {
       my_value = 2;
       my_attrSet = {
@@ -513,7 +514,7 @@ When setting this option normally, the password would normally be written world-
 - [[https://github.com/oddlama/nix-topology][nix-topology]]
   This automatically creates a topology diagram of my configuration.
 
-#+begin_src nix :tangle no :noweb-ref flakeinputs
+#+begin_src nix-ts :tangle no :noweb-ref flakeinputs
 
   nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
@@ -596,7 +597,7 @@ Here I define a few variables that I need for my system specifications. There us
 - =outputs=, which is needed for =lib=
 - =lib=: This exposes a common =lib= for NixOS and home-manager that is extended by my own personal =lib= functions.
 
-#+begin_src nix :tangle no :noweb-ref flakelet
+#+begin_src nix-ts :tangle no :noweb-ref flakelet
 
   inherit (self) outputs;
   lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
@@ -622,7 +623,7 @@ In this section I am creating some attributes that define general concepts of my
   4) =zjstatus= holds some options for =zellij=, but I have stopped using it since I prefer =tmux=.
   They are defined in [[#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab][Overlays (additions, overrides, nixpkgs-stable)]]. The way this is handled was simplified in =647a2ae feat: simplify overlay structure=; however, the old structure might be easier to understand as a reference.
 
-#+begin_src nix :tangle no :noweb-ref flakeoutputgeneral
+#+begin_src nix-ts :tangle no :noweb-ref flakeoutputgeneral
   inherit lib;
 
   # nixosModules = import ./modules/nixos { inherit lib; };
@@ -701,7 +702,7 @@ In this section I am creating some attributes that define general concepts of my
 
 This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=)
 
-#+begin_src nix :tangle checks/default.nix
+#+begin_src nix-ts :tangle checks/default.nix
   { self, inputs, pkgs, system, ... }:
   {
     pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
@@ -751,7 +752,7 @@ This file defines a number of checks that can either be run by calling =nix flak
 This file defines the templates that are being exposed by the flake. These can be used by running =nix flake init -t github:Swarsel/.dotfiles#<TEMPLATE_NAME>=.
 
 
-#+begin_src nix :tangle templates/default.nix
+#+begin_src nix-ts :tangle templates/default.nix
   { lib, ... }:
   let
     templateNames = [
@@ -778,7 +779,7 @@ Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6
 =3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
 
 
-#+begin_src nix :tangle no :noweb-ref flakenixosconf
+#+begin_src nix-ts :tangle no :noweb-ref flakenixosconf
 #+end_src
 ** darwinConfigurations
 :PROPERTIES:
@@ -790,7 +791,7 @@ And this defines darwin systems (MacOS), which I only have one of, that serves a
 Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Also, the method of generating the hosts was changed in commit
 =3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
 
-#+begin_src nix :tangle no :noweb-ref flakedarwinconf
+#+begin_src nix-ts :tangle no :noweb-ref flakedarwinconf
 #+end_src
 
 ** homeConfigurations
@@ -800,7 +801,7 @@ Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b
 
 In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
 
-#+begin_src nix :tangle no :noweb-ref flakehomeconf
+#+begin_src nix-ts :tangle no :noweb-ref flakehomeconf
 
   # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
   #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
@@ -819,7 +820,7 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 
 Nix on Android also demands an own flake output, which is provided here.
 
-#+begin_src nix :tangle no :noweb-ref flakedroidconf
+#+begin_src nix-ts :tangle no :noweb-ref flakedroidconf
 
   # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
   #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
@@ -837,7 +838,7 @@ Nix on Android also demands an own flake output, which is provided here.
 :END:
 
 
-#+begin_src nix :tangle no :noweb-ref topologyconf
+#+begin_src nix-ts :tangle no :noweb-ref topologyconf
 
 
 #+end_src
@@ -869,7 +870,7 @@ This is the template that I use for new deployments of personal machines. Server
 :CUSTOM_ID: h:859aec97-65a2-4633-b7d8-73d4ccf89cc5
 :END:
 
-#+begin_src nix :tangle templates/hosts/nixos/default.nix
+#+begin_src nix-ts :tangle templates/hosts/nixos/default.nix
   { self, inputs, pkgs, lib, primaryUser, ... }:
   let
     modulesPath = "${self}/modules";
@@ -938,7 +939,7 @@ This is the template that I use for new deployments of personal machines. Server
 
 Acceptance of arbitraty argumments is here needed because =disko= passes =diskoFile= to this file.
 
-#+begin_src nix :tangle templates/hosts/nixos/disk-config.nix
+#+begin_src nix-ts :tangle templates/hosts/nixos/disk-config.nix
   { lib, pkgs, config, rootDisk, ... }:
   let
     type = "btrfs";
@@ -1080,7 +1081,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :PROPERTIES:
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
-#+begin_src nix :tangle hosts/nixos/nbl-imba-2/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/default.nix
   { self, config, inputs, lib, primaryUser, ... }:
   let
     sharedOptions = {
@@ -1167,7 +1168,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
 :END:
 
-#+begin_src nix :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
   { config, lib, pkgs, modulesPath, ... }:
   {
     imports =
@@ -1244,7 +1245,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:e0da04c7-4199-44b0-b525-6cfc64072b45
 :END:
 
-#+begin_src nix :tangle hosts/nixos/nbl-imba-2/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/disk-config.nix
   {
     disko.devices = {
       disk = {
@@ -1335,7 +1336,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
-#+begin_src nix :tangle hosts/nixos/winters/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/winters/default.nix
   { lib, config, primaryUser, ... }:
   let
     sharedOptions = {
@@ -1390,7 +1391,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0
 :END:
-#+begin_src nix :tangle hosts/nixos/winters/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/winters/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
   {
@@ -1444,7 +1445,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
-#+begin_src nix :tangle hosts/darwin/nbm-imba-166/default.nix
+#+begin_src nix-ts :tangle hosts/darwin/nbm-imba-166/default.nix
   { lib, ... }:
   let
     inherit (config.repo.secrets.local) workUser;
@@ -1477,7 +1478,7 @@ A Mac notebook that I have received from work. I use this machine for getting ac
 
 My phone. I use only a minimal config for remote debugging here.
 
-#+begin_src nix :tangle hosts/android/magicant/default.nix
+#+begin_src nix-ts :tangle hosts/android/magicant/default.nix
 
   { pkgs, ... }: {
     environment = {
@@ -1549,7 +1550,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
-#+begin_src nix :tangle hosts/nixos/sync/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/sync/default.nix
   { lib, config, primaryUser, ... }:
   let
     sharedOptions = {
@@ -1734,7 +1735,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 :CUSTOM_ID: h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9
 :END:
 
-#+begin_src nix :tangle hosts/nixos/moonside/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/moonside/default.nix
   { lib, config, primaryUser, ... }:
   let
     inherit (config.repo.secrets.common) workHostName;
@@ -1974,7 +1975,7 @@ This machine mainly acts as an external sync helper. It manages the following th
         efiInstallAsRemovable = true;
         device = "nodev";
       };
-#+begin_src nix :tangle hosts/nixos/moonside/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/moonside/hardware-configuration.nix
   { lib, modulesPath, ... }:
   {
     imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
@@ -1996,7 +1997,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix :tangle hosts/nixos/moonside/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/moonside/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , config
@@ -2139,7 +2140,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :PROPERTIES:
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
-#+begin_src nix :tangle hosts/nixos/toto/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/toto/default.nix
   { self, inputs, pkgs, lib, primaryUser, ... }:
   let
     modulesPath = "${self}/modules";
@@ -2231,7 +2232,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix :tangle hosts/nixos/toto/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/toto/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , pkgs
@@ -2388,7 +2389,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 #+end_src
 
 
-#+begin_src nix :tangle hosts/nixos/iso/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/iso/default.nix
     { self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
     let
       pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
@@ -2538,7 +2539,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
 
-#+begin_src nix :tangle hosts/home/default/default.nix
+#+begin_src nix-ts :tangle hosts/home/default/default.nix
   { self, outputs, config, ... }:
   {
 
@@ -2594,7 +2595,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab
 :END:
 
-#+begin_src nix :tangle hosts/nixos/chaostheatre/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/default.nix
   { self, inputs, config, pkgs, lib, primaryUser, ... }:
   let
     sharedOptions = {
@@ -2674,7 +2675,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
 :END:
 
-#+begin_src nix :tangle hosts/nixos/chaostheatre/options.nix
+#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/options.nix
   _:
   { }
 
@@ -2685,7 +2686,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:88ccb198-74b9-4269-8e22-af1277f44667
 :END:
 
-#+begin_src nix :tangle hosts/nixos/chaostheatre/options-home.nix
+#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/options-home.nix
   _:
   { }
 
@@ -2720,7 +2721,7 @@ This is the central station for self-defined packages. These are all referenced 
 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
-#+begin_src nix :tangle pkgs/default.nix
+#+begin_src nix-ts :tangle pkgs/default.nix
   { lib, pkgs, ... }:
   let
     packageNames = lib.swarselsystems.readNix "pkgs";
@@ -2791,7 +2792,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
 #+end_src
 
-#+begin_src nix :tangle pkgs/pass-fuzzel/default.nix
+#+begin_src nix-ts :tangle pkgs/pass-fuzzel/default.nix
   { self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
   writeShellApplication {
     inherit name;
@@ -2809,7 +2810,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newer AppImage here and use that instead.
 
 
-#+begin_src nix :tangle pkgs/cura5/default.nix
+#+begin_src nix-ts :tangle pkgs/cura5/default.nix
   # taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
   { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
 
@@ -2850,7 +2851,7 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 This script allows for quick git home-manager specialisation switching.
 
 
-#+begin_src nix :tangle pkgs/hm-specialisation/default.nix
+#+begin_src nix-ts :tangle pkgs/hm-specialisation/default.nix
   { name, writeShellApplication, fzf, findutils, home-manager, ... }:
 
   writeShellApplication {
@@ -2874,7 +2875,7 @@ This script allows for quick git home-manager specialisation switching.
 This script allows for quick git worktree switching.
 
 
-#+begin_src nix :tangle pkgs/cdw/default.nix
+#+begin_src nix-ts :tangle pkgs/cdw/default.nix
   { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
@@ -2895,7 +2896,7 @@ This script allows for quick git worktree switching.
 
 This script allows for quick git branch switching.
 
-#+begin_src nix :tangle pkgs/cdb/default.nix
+#+begin_src nix-ts :tangle pkgs/cdb/default.nix
   { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
@@ -2916,7 +2917,7 @@ This script allows for quick git branch switching.
 This script lets me quickly backup files by appending =.bak= to the filename.
 
 
-#+begin_src nix :tangle pkgs/bak/default.nix
+#+begin_src nix-ts :tangle pkgs/bak/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -2937,7 +2938,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 This app starts a configuratble timer and uses TTS to say something once the timer runs out.
 
 
-#+begin_src nix :tangle pkgs/timer/default.nix
+#+begin_src nix-ts :tangle pkgs/timer/default.nix
   { name, writeShellApplication, speechd, ... }:
 
   writeShellApplication {
@@ -2983,7 +2984,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   fi
 #+end_src
 
-#+begin_src nix :tangle pkgs/e/default.nix
+#+begin_src nix-ts :tangle pkgs/e/default.nix
   { self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
   writeShellApplication {
     inherit name;
@@ -3109,7 +3110,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   fi
 #+end_src
 
-#+begin_src nix :tangle pkgs/swarselcheck/default.nix
+#+begin_src nix-ts :tangle pkgs/swarselcheck/default.nix
   { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
@@ -3134,7 +3135,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   fi
 #+end_src
 
-#+begin_src nix :tangle pkgs/swarselzellij/default.nix
+#+begin_src nix-ts :tangle pkgs/swarselzellij/default.nix
   { self, name, writeShellApplication, kitty }:
   writeShellApplication {
     inherit name;
@@ -3178,7 +3179,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
   echo "$OUT"
 #+end_src
 
-#+begin_src nix :tangle pkgs/waybarupdate/default.nix
+#+begin_src nix-ts :tangle pkgs/waybarupdate/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -3203,7 +3204,7 @@ This app quickly toggles between 5% and 0% transparency.
   fi
 #+end_src
 
-#+begin_src nix :tangle pkgs/opacitytoggle/default.nix
+#+begin_src nix-ts :tangle pkgs/opacitytoggle/default.nix
   { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
@@ -3242,7 +3243,7 @@ This utility is used to compare the current state of the root directory with the
       done
 #+end_src
 
-#+begin_src nix :tangle pkgs/fs-diff/default.nix
+#+begin_src nix-ts :tangle pkgs/fs-diff/default.nix
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
@@ -3258,7 +3259,7 @@ This utility is used to compare the current state of the root directory with the
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
 
-#+begin_src nix :tangle pkgs/github-notifications/default.nix
+#+begin_src nix-ts :tangle pkgs/github-notifications/default.nix
   { name, writeShellApplication, jq, ... }:
 
   writeShellApplication {
@@ -3281,7 +3282,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 This application moves the wl-mirror app to the T workspace and makes it fullscreen there.
 
-#+begin_src nix :tangle pkgs/fullscreen/default.nix
+#+begin_src nix-ts :tangle pkgs/fullscreen/default.nix
   { name, writeShellApplication, sway, ... }:
 
   writeShellApplication {
@@ -3327,7 +3328,7 @@ This application moves the wl-mirror app to the T workspace and makes it fullscr
 #+end_src
 
 
-#+begin_src nix :tangle pkgs/screenshare/default.nix
+#+begin_src nix-ts :tangle pkgs/screenshare/default.nix
   { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
@@ -3686,7 +3687,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 #+end_src
 
 
-#+begin_src nix :tangle pkgs/swarsel-bootstrap/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-bootstrap/default.nix
   { self, name, writeShellApplication, openssh }:
   writeShellApplication {
     inherit name;
@@ -3805,7 +3806,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 
 
-#+begin_src nix :tangle pkgs/swarsel-rebuild/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-rebuild/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -4040,7 +4041,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 
 
-#+begin_src nix :tangle pkgs/swarsel-install/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-install/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -4133,7 +4134,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 
 
-#+begin_src nix :tangle pkgs/swarsel-postinstall/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-postinstall/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -4147,7 +4148,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
-#+begin_src nix :tangle pkgs/t2ts/default.nix
+#+begin_src nix-ts :tangle pkgs/t2ts/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -4165,7 +4166,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
-#+begin_src nix :tangle pkgs/ts2t/default.nix
+#+begin_src nix-ts :tangle pkgs/ts2t/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -4183,7 +4184,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
 :END:
 
-#+begin_src nix :tangle pkgs/vershell/default.nix
+#+begin_src nix-ts :tangle pkgs/vershell/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -4201,7 +4202,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
 :END:
 
-#+begin_src nix :tangle pkgs/eontimer/default.nix
+#+begin_src nix-ts :tangle pkgs/eontimer/default.nix
   { lib
   , python3
   , fetchFromGitHub
@@ -4315,7 +4316,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   direnv allow
 #+end_src
 
-#+begin_src nix :tangle pkgs/project/default.nix
+#+begin_src nix-ts :tangle pkgs/project/default.nix
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
@@ -4329,7 +4330,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :END:
 
 
-#+begin_src nix :tangle pkgs/fhs/default.nix
+#+begin_src nix-ts :tangle pkgs/fhs/default.nix
   { name, pkgs, ... }:
   let
     base = pkgs.appimageTools.defaultFhsEnvArgs;
@@ -4355,7 +4356,7 @@ A crude script to power on all displays that might be attached. Needed because s
   swaymsg "output * dpms on" > /dev/null 2>&1 || true
 #+end_src
 
-#+begin_src nix :tangle pkgs/swarsel-displaypower/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-displaypower/default.nix
   { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
@@ -4373,7 +4374,7 @@ A crude script to power on all displays that might be attached. Needed because s
 AppImage version of mgba in which the lua scripting works.
 
 
-#+begin_src nix :tangle pkgs/swarsel-mgba/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-mgba/default.nix
   { appimageTools, fetchurl, ... }:
   let
     pname = "mgba";
@@ -4402,7 +4403,7 @@ AppImage version of mgba in which the lua scripting works.
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
 
-#+begin_src nix :tangle pkgs/swarsel-deploy/default.nix
+#+begin_src nix-ts :tangle pkgs/swarsel-deploy/default.nix
   # heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
   { name, bc, nix-output-monitor, writeShellApplication, ... }:
   writeShellApplication {
@@ -4550,7 +4551,7 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
   fi
 #+end_src
 
-#+begin_src nix :tangle pkgs/sshrm/default.nix
+#+begin_src nix-ts :tangle pkgs/sshrm/default.nix
   { self, name, writeShellApplication, openssh }:
   writeShellApplication {
     inherit name;
@@ -4568,7 +4569,7 @@ This file now holds all of the "nixpkgs-changes" that I am using across the conf
 
 When adding a new entry here, do not forget to add it in the default output of this file, otherwise it will not be exposed to the rest of the system.
 
-#+begin_src nix :tangle overlays/default.nix
+#+begin_src nix-ts :tangle overlays/default.nix
   { self, inputs, lib, ... }:
 
   let
@@ -4674,7 +4675,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 
 Modules that need to be loaded on the NixOS level. Note that these will not be available on systems that are not running NixOS.
 
-#+begin_src nix :tangle profiles/nixos/default.nix
+#+begin_src nix-ts :tangle profiles/nixos/default.nix
   { lib, ... }:
   let
     profileNames = lib.swarselsystems.readNix "profiles/nixos";
@@ -4688,7 +4689,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:32d654de-8db2-403a-9a27-4c46d7b9172d
 :END:
 
-#+begin_src nix :tangle profiles/nixos/personal/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/personal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
@@ -4759,7 +4760,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:b79fbb59-9cf2-48eb-b469-2589223dda95
 :END:
 
-#+begin_src nix :tangle profiles/nixos/chaostheatre/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/chaostheatre/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
@@ -4822,7 +4823,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:125443fb-deb6-44c9-83ee-bbd10daf78dd
 :END:
 
-#+begin_src nix :tangle profiles/nixos/toto/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/toto/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
@@ -4855,7 +4856,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d
 :END:
 
-#+begin_src nix :tangle profiles/nixos/work/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/work/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
@@ -4877,7 +4878,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:eb272c99-842a-4095-bc65-283562749300
 :END:
 
-#+begin_src nix :tangle profiles/nixos/framework/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/framework/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
@@ -4899,7 +4900,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:b7beb4a5-8808-438d-8799-7f08f38fd1ba
 :END:
 
-#+begin_src nix :tangle profiles/nixos/amdcpu/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/amdcpu/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
@@ -4921,7 +4922,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:79c71b6d-a1ad-447d-8940-bb5bfd71dced
 :END:
 
-#+begin_src nix :tangle profiles/nixos/amdgpu/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/amdgpu/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.amdgpu = lib.mkEnableOption "is this a host with amd gpu";
@@ -4943,7 +4944,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:641d0a2a-0592-448a-a6e3-d0a9c330293e
 :END:
 
-#+begin_src nix :tangle profiles/nixos/hibernation/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/hibernation/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.hibernation = lib.mkEnableOption "is this a host using hibernation";
@@ -4965,7 +4966,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2
 :END:
 
-#+begin_src nix :tangle profiles/nixos/btrfs/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/btrfs/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.btrfs = lib.mkEnableOption "is this a host using btrfs";
@@ -4987,7 +4988,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:dfc076fd-ee74-4663-b164-653370c52b75
 :END:
 
-#+begin_src nix :tangle profiles/nixos/localserver/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/localserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
@@ -5043,7 +5044,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:9b7b50d1-57ad-41ca-94ab-74393aae01bf
 :END:
 
-#+begin_src nix :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
@@ -5079,7 +5080,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :CUSTOM_ID: h:cc780ef2-7e5e-4835-b659-c731b306a320
 :END:
 
-#+begin_src nix :tangle profiles/nixos/moonside/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/moonside/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.server.moonside = lib.mkEnableOption "is this a moonside server";
@@ -5119,7 +5120,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 This holds modules that are to be used on most hosts. These are also the most important options to configure, as these allow me easy access to monitor, keyboard, and other setups.
 
-#+BEGIN_src nix :tangle profiles/home/default.nix
+#+BEGIN_src nix-ts :tangle profiles/home/default.nix
   { lib, ... }:
   let
     profileNames = lib.swarselsystems.readNix "profiles/home";
@@ -5134,7 +5135,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:26512487-8c29-4b92-835b-d67394c3f5ef
 :END:
 
-#+begin_src nix :tangle profiles/home/personal/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/personal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
@@ -5193,7 +5194,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:36a0209f-2c17-4808-a1d0-a9e1920c307a
 :END:
 
-#+begin_src nix :tangle profiles/home/chaostheatre/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/chaostheatre/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
@@ -5246,7 +5247,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:e1d4f141-af11-448a-9796-fc822a8f77ec
 :END:
 
-#+begin_src nix :tangle profiles/home/toto/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/toto/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
@@ -5267,7 +5268,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:7b091523-a5b0-48b6-8b03-4dc2405e2d81
 :END:
 
-#+begin_src nix :tangle profiles/home/work/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/work/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
@@ -5288,7 +5289,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc
 :END:
 
-#+begin_src nix :tangle profiles/home/framework/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/framework/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
@@ -5310,7 +5311,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:24e6d661-f498-478c-9008-e8d8c17432ca
 :END:
 
-#+begin_src nix :tangle profiles/home/darwin/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/darwin/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.darwin = lib.mkEnableOption "is this a darwin host";
@@ -5329,7 +5330,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 :CUSTOM_ID: h:8027b858-369e-4f12-bbaf-f15eeee3d904
 :END:
 
-#+begin_src nix :tangle profiles/home/localserver/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/localserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
     options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
@@ -5365,7 +5366,7 @@ The interesting part is in the start:
   =lib.optionals= evaluates to an empty list (=[]=) in case that the conditional is not met.
 TODO
 
-#+begin_src nix :tangle lib/default.nix
+#+begin_src nix-ts :tangle lib/default.nix
   { self, lib, systems, inputs, ... }:
   {
 
@@ -5497,7 +5498,7 @@ TODO
 :CUSTOM_ID: h:87c7893e-e946-4fc0-8973-1ca27d15cf0e
 :END:
 
-#+begin_src nix :tangle nix/extra-builtins.nix
+#+begin_src nix-ts :tangle nix/extra-builtins.nix
 # adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
 { exec, ... }:
 let
@@ -5579,7 +5580,7 @@ in
 :CUSTOM_ID: h:46458265-074e-4368-ad9a-055877754914
 :END:
 
-#+begin_src nix :tangle topology/default.nix
+#+begin_src nix-ts :tangle topology/default.nix
   { config, ... }:
   let
     inherit (config.lib.topology)
@@ -5749,7 +5750,7 @@ in
 :CUSTOM_ID: h:af83893d-c0f9-4b45-b816-4849110d41b3
 :END:
 
-#+begin_src nix :tangle nix/globals.nix
+#+begin_src nix-ts :tangle nix/globals.nix
   { inputs, ... }:
   {
     flake =
@@ -5821,7 +5822,7 @@ These are system-level settings specific to NixOS machines. All settings that ar
 
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
-#+begin_src nix :tangle modules/nixos/common/default.nix
+#+begin_src nix-ts :tangle modules/nixos/common/default.nix
   { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos/common";
@@ -5844,7 +5845,7 @@ This section is for setting things that should be used on hosts that are using t
 
 I usually use =mutableUsers = false= in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
 
-#+begin_src nix :tangle modules/nixos/common/sharedsetup.nix
+#+begin_src nix-ts :tangle modules/nixos/common/sharedsetup.nix
   { lib, ... }:
   {
     options = {
@@ -5907,7 +5908,7 @@ A breakdown of the flags being set:
   - nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. =nixpkgs= directly in =nix repl=
   - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
-#+begin_src nix :tangle modules/nixos/common/settings.nix
+#+begin_src nix-ts :tangle modules/nixos/common/settings.nix
   { lib, pkgs, config, outputs, inputs, ... }:
   {
     options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
@@ -5978,7 +5979,7 @@ A breakdown of the flags being set:
 :CUSTOM_ID: h:5c3027b4-ba66-445e-9c5f-c27e332c90e5
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/nodes.nix
+#+begin_src nix-ts :tangle modules/nixos/common/nodes.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
   { config, lib, outputs, ... }:
   let
@@ -6050,7 +6051,7 @@ A breakdown of the flags being set:
 :CUSTOM_ID: h:85c9b83f-40c3-4558-bb28-a37b6f8597b9
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/globals.nix
+#+begin_src nix-ts :tangle modules/nixos/common/globals.nix
 { lib, options, ... }:
 let
   inherit (lib)
@@ -6135,7 +6136,7 @@ in
 
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
-#+begin_src nix :tangle modules/nixos/common/packages.nix
+#+begin_src nix-ts :tangle modules/nixos/common/packages.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
@@ -6229,7 +6230,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
-#+begin_src nix :tangle modules/nixos/common/home-manager.nix
+#+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
   { inputs, config, lib, ... }:
   {
 
@@ -6259,7 +6260,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
 
 This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on the =chaostheatre= configuration, which is why I split this section into its own file, which makes removal easier when setting that system up.
 
-#+begin_src nix :tangle modules/nixos/common/home-manager-extra.nix
+#+begin_src nix-ts :tangle modules/nixos/common/home-manager-extra.nix
   { inputs, config, lib, ... }:
   {
     options.swarselsystems.modules.home-managerExtra = lib.mkEnableOption "home-manager extras for non-chaostheatre";
@@ -6278,7 +6279,7 @@ This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on th
 
 Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
 
-#+begin_src nix :tangle modules/nixos/common/xserver.nix
+#+begin_src nix-ts :tangle modules/nixos/common/xserver.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
@@ -6303,7 +6304,7 @@ In case of using a fully setup system, this makes also sure that no further user
 
 For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
 
-#+begin_src nix :tangle modules/nixos/common/users.nix
+#+begin_src nix-ts :tangle modules/nixos/common/users.nix
   { self, pkgs, config, lib, ... }:
   let
     sopsFile = self + /secrets/general/secrets.yaml;
@@ -6335,7 +6336,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 
-#+begin_src nix :tangle modules/nixos/common/env.nix
+#+begin_src nix-ts :tangle modules/nixos/common/env.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
@@ -6364,7 +6365,7 @@ Next, we will setup some environment variables that need to be set on the system
 
 Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
 
-#+begin_src nix :tangle modules/nixos/common/polkit.nix
+#+begin_src nix-ts :tangle modules/nixos/common/polkit.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.security = lib.mkEnableOption "security config";
@@ -6396,7 +6397,7 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
-#+begin_src nix :tangle modules/nixos/common/systemd.nix
+#+begin_src nix-ts :tangle modules/nixos/common/systemd.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
@@ -6417,7 +6418,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 
 Enable OpenGL, Sound, Bluetooth and various drivers.
 
-#+begin_src nix :tangle modules/nixos/common/hardware.nix
+#+begin_src nix-ts :tangle modules/nixos/common/hardware.nix
   { pkgs, config, lib, ... }:
   {
 
@@ -6476,7 +6477,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 This is only used on systems not running Pipewire.
 
 
-#+begin_src nix :tangle modules/nixos/common/pulseaudio.nix
+#+begin_src nix-ts :tangle modules/nixos/common/pulseaudio.nix
   { config, pkgs, lib, ... }: {
 
     options.swarselsystems.modules.pulseaudio = lib.mkEnableOption "pulseaudio config";
@@ -6496,7 +6497,7 @@ This is only used on systems not running Pipewire.
 
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
 
-#+begin_src nix :tangle modules/nixos/common/pipewire.nix
+#+begin_src nix-ts :tangle modules/nixos/common/pipewire.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
@@ -6525,7 +6526,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 
 Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
-#+begin_src nix :tangle modules/nixos/common/network.nix
+#+begin_src nix-ts :tangle modules/nixos/common/network.nix
   { lib, config, ... }:
   {
     options.swarselsystems = {
@@ -6786,7 +6787,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
 Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
 
-#+begin_src nix :tangle modules/nixos/common/time.nix
+#+begin_src nix-ts :tangle modules/nixos/common/time.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.time = lib.mkEnableOption "time config";
@@ -6820,7 +6821,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 :END:
 
 
-#+begin_src nix :tangle modules/nixos/common/meta.nix
+#+begin_src nix-ts :tangle modules/nixos/common/meta.nix
   { lib, ... }:
   {
     options = {
@@ -6844,7 +6845,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 :CUSTOM_ID: h:e2e7444b-cb85-4719-b154-e5f37274d02d
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/topology.nix
+#+begin_src nix-ts :tangle modules/nixos/common/topology.nix
   { self, lib, config, ... }:
   {
     options.swarselsystems.info = lib.mkOption {
@@ -6873,7 +6874,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
-#+begin_src nix :tangle modules/nixos/common/sops.nix
+#+begin_src nix-ts :tangle modules/nixos/common/sops.nix
   { self, config, lib, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
@@ -6935,7 +6936,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/pii.nix
+#+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
   { config, inputs, lib, ... }:
   let
@@ -7020,7 +7021,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
-#+begin_src nix :noweb yes :tangle modules/nixos/common/stylix.nix
+#+begin_src nix-ts :noweb yes :tangle modules/nixos/common/stylix.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
@@ -7047,7 +7048,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 
-#+begin_src nix :tangle modules/nixos/common/programs.nix
+#+begin_src nix-ts :tangle modules/nixos/common/programs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.programs = lib.mkEnableOption "small program modules config";
@@ -7067,7 +7068,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 :END:
 Here I disable global completion to prevent redundant compinit calls and cache invalidation that slow down shell startup (enabled on the home-manager side).
 
-#+begin_src nix :tangle modules/nixos/common/zsh.nix
+#+begin_src nix-ts :tangle modules/nixos/common/zsh.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
@@ -7087,7 +7088,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 :CUSTOM_ID: h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/syncthing.nix
+#+begin_src nix-ts :tangle modules/nixos/common/syncthing.nix
   { lib, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
@@ -7164,7 +7165,7 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 
 Enables the blueman service including the nice system tray icon.
 
-#+begin_src nix :tangle modules/nixos/common/blueman.nix
+#+begin_src nix-ts :tangle modules/nixos/common/blueman.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.blueman = lib.mkEnableOption "blueman config";
@@ -7186,7 +7187,7 @@ This allows me to use my big scanner/printer's scanning function over the networ
 This also allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
 Avahi is the service used for the network discovery.
 
-#+begin_src nix :tangle modules/nixos/common/networkdevices.nix
+#+begin_src nix-ts :tangle modules/nixos/common/networkdevices.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
@@ -7229,7 +7230,7 @@ Avahi is the service used for the network discovery.
 
 This is being set to allow myself to use all functions of nautilus in NixOS
 
-#+begin_src nix :tangle modules/nixos/common/gvfs.nix
+#+begin_src nix-ts :tangle modules/nixos/common/gvfs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
@@ -7246,7 +7247,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 
 This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held.
 
-#+begin_src nix :tangle modules/nixos/common/interceptiontools.nix
+#+begin_src nix-ts :tangle modules/nixos/common/interceptiontools.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.interceptionTools = lib.mkEnableOption "interception tools config";
@@ -7294,7 +7295,7 @@ This enables power profile management. The available modes are:
 
 Most of the time I am using =power-saver=, however, it is good to be able to choose.
 
-#+begin_src nix :tangle modules/nixos/common/power-profiles-daemon.nix
+#+begin_src nix-ts :tangle modules/nixos/common/power-profiles-daemon.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
@@ -7309,7 +7310,7 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
 :CUSTOM_ID: h:5db15758-17d8-4bde-811d-d11ccdd3f3d3
 :END:
 
-#+begin_src nix :tangle modules/nixos/common/swayosd.nix
+#+begin_src nix-ts :tangle modules/nixos/common/swayosd.nix
   { lib, pkgs, config, ... }:
   {
     options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
@@ -7351,7 +7352,7 @@ Many guides state that it is needed to enable =pcscd=  to use the smartcard mode
 
 Also, since I use a GPG key in sops, it seems that scdaemon creates an instance at boot which sometimes hogs the Yubikey, which leads to significant delays after e.g. locking the screen and unplugging the Yubikey. Since I do not need the GPG key for the actual sops secrets (I use machine age keys instead), I kill that process.
 
-#+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-yubikey.nix
+#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-yubikey.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
@@ -7377,7 +7378,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
 
 This performs the necessary configuration to support this hardware.
 
-#+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-ledger.nix
+#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-ledger.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.ledger = lib.mkEnableOption "ledger config";
@@ -7399,7 +7400,7 @@ This performs the necessary configuration to support this hardware.
 
 This loads some udev rules that I need for my split keyboards.
 
-#+begin_src nix :tangle modules/nixos/common/hardwarecompatibility-keyboards.nix
+#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-keyboards.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.keyboards = lib.mkEnableOption "keyboards config";
@@ -7420,7 +7421,7 @@ This loads some udev rules that I need for my split keyboards.
 
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
 
-#+begin_src nix :tangle modules/nixos/common/login.nix
+#+begin_src nix-ts :tangle modules/nixos/common/login.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.login = lib.mkEnableOption "login config";
@@ -7457,7 +7458,7 @@ Only some binaries that touch system settings might still not work, apart from t
 
 When a program does not work, start with =nix-ldd <program>=. This will tell you which library is missing. Afterwards, continue with =nix-locate <program>= to find which packages provide that library. Add it to libraries below and rebuild. After a reboot, it will be visible using =nix-ldd=. It can also be useful to take a look at =ldd= to see which libraries are needed in general.
 
-#+begin_src nix :tangle modules/nixos/common/nix-ld.nix
+#+begin_src nix-ts :tangle modules/nixos/common/nix-ld.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.nix-ld = lib.mkEnableOption "nix-ld config";
@@ -7582,7 +7583,7 @@ This is where the impermanence magic happens. When this is enabled, the root dir
 
 Normally, doing that also resets the lecture that happens on the first use of =sudo=, so we disable that at this point. Also, here we can set files to be persisted. Do note that you should still pay attention to files that need sudo access, as these need to be copied manually.
 
-#+begin_src nix :tangle modules/nixos/common/impermanence.nix
+#+begin_src nix-ts :tangle modules/nixos/common/impermanence.nix
   { config, lib, ... }:
   let
     mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
@@ -7683,7 +7684,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
 This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
 
-#+begin_src nix :tangle modules/nixos/common/nvd-rebuild.nix
+#+begin_src nix-ts :tangle modules/nixos/common/nvd-rebuild.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
@@ -7706,7 +7707,7 @@ This snipped is added to the activation script that is run after every rebuild a
 
 Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
 
-#+begin_src nix :tangle modules/nixos/common/gnome-keyring.nix
+#+begin_src nix-ts :tangle modules/nixos/common/gnome-keyring.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
@@ -7727,7 +7728,7 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
-#+begin_src nix :tangle modules/nixos/common/sway.nix
+#+begin_src nix-ts :tangle modules/nixos/common/sway.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
@@ -7761,7 +7762,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
 
-#+begin_src nix :tangle modules/nixos/common/xdg-portal.nix
+#+begin_src nix-ts :tangle modules/nixos/common/xdg-portal.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.xdg-portal = lib.mkEnableOption "xdg portal config";
@@ -7791,7 +7792,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 
-#+begin_src nix :tangle modules/nixos/common/distrobox.nix
+#+begin_src nix-ts :tangle modules/nixos/common/distrobox.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
@@ -7816,7 +7817,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 :END:
 Adds the necessary tools to allow .appimage programs easily.
 
-#+begin_src nix :tangle modules/nixos/common/appimage.nix
+#+begin_src nix-ts :tangle modules/nixos/common/appimage.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.appimage = lib.mkEnableOption "appimage config";
@@ -7837,7 +7838,7 @@ Adds the necessary tools to allow .appimage programs easily.
 
 This turns off the display when the lid is closed.
 
-#+begin_src nix :tangle modules/nixos/common/lid.nix
+#+begin_src nix-ts :tangle modules/nixos/common/lid.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
@@ -7884,7 +7885,7 @@ This turns off the display when the lid is closed.
 
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
-#+begin_src nix :tangle modules/nixos/common/lowbattery.nix
+#+begin_src nix-ts :tangle modules/nixos/common/lowbattery.nix
   { pkgs, lib, config, ... }:
   {
     options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
@@ -7923,7 +7924,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 
 This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
 
-#+begin_src nix :tangle modules/nixos/common/lanzaboote.nix
+#+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
@@ -7958,7 +7959,7 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 
 Also, the system state version is set here. No need to touch it.
 
-#+begin_src nix :tangle modules/nixos/server/default.nix
+#+begin_src nix-ts :tangle modules/nixos/server/default.nix
   { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos/server";
@@ -7986,7 +7987,7 @@ Also, the system state version is set here. No need to touch it.
 
 Here we just define some aliases for rebuilding the system, and we allow some insecure packages that are needed by some server derivations. It would be more elegant to define these in the respective module, but nixpkgs needs to be defined before we can evaluate modules within it, so this must be a top-level configuration.
 
-#+begin_src nix :tangle modules/nixos/server/settings.nix
+#+begin_src nix-ts :tangle modules/nixos/server/settings.nix
   { lib, config, ... }:
   let
     inherit (config.swarselsystems) flakePath;
@@ -8031,7 +8032,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/packages.nix
+#+begin_src nix-ts :tangle modules/nixos/server/packages.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.server.packages = lib.mkEnableOption "enable packages on server";
@@ -8057,7 +8058,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/sops.nix
+#+begin_src nix-ts :tangle modules/nixos/server/sops.nix
   { config, lib, ... }:
   {
     options.swarselsystems.modules.server.sops = lib.mkEnableOption "enable sops on server";
@@ -8076,7 +8077,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:d6840d31-110c-465f-93fa-0306f755de28
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/nfs.nix
+#+begin_src nix-ts :tangle modules/nixos/server/nfs.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
@@ -8135,7 +8136,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :CUSTOM_ID: h:302468d2-106a-41c8-b2bc-9fdc40064a9c
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/nginx.nix
+#+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
   { pkgs, lib, config, ... }:
   {
     options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
@@ -8182,7 +8183,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
 Here I am forcing =startWhenNeeded= to false so that the value will not be set to true in containers = this would be a problem because it would delay ssh host key generation.
 
-#+begin_src nix :tangle modules/nixos/server/ssh.nix
+#+begin_src nix-ts :tangle modules/nixos/server/ssh.nix
   { self, lib, config, ... }:
   {
     options.swarselsystems.modules.server.ssh = lib.mkEnableOption "enable ssh on server";
@@ -8222,7 +8223,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/kavita.nix
+#+begin_src nix-ts :tangle modules/nixos/server/kavita.nix
   { self, lib, config, pkgs, ... }:
   let
     serviceName = "kavita";
@@ -8293,7 +8294,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/jellyfin.nix
+#+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, ... }:
   let
     serviceDomain = "screen.swarsel.win";
@@ -8363,7 +8364,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/navidrome.nix
+#+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, ... }:
   let
     serviceDomain = "sound.swarsel.win";
@@ -8507,7 +8508,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/spotifyd.nix
+#+begin_src nix-ts :tangle modules/nixos/server/spotifyd.nix
   { lib, config, ... }:
   let
     servicePort = 1025;
@@ -8556,7 +8557,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:baa4149b-3788-4b05-87ec-0ee9d0726117
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/mpd.nix
+#+begin_src nix-ts :tangle modules/nixos/server/mpd.nix
   { self, lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
@@ -8622,7 +8623,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/pipewire.nix
+#+begin_src nix-ts :tangle modules/nixos/server/pipewire.nix
   { lib, config, ... }:
   {
     config = lib.mkIf (config?swarselsystems.modules.server.mpd || config?swarselsystems.modules.server.navidrome) {
@@ -8650,7 +8651,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:6ca43d5a-8ba6-4cd1-96b9-f088f11662c0
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/postgresql.nix
+#+begin_src nix-ts :tangle modules/nixos/server/postgresql.nix
   { config, lib, pkgs, ... }:
   let
     serviceName = "postgresql";
@@ -8675,7 +8676,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:1e68d84a-8f99-422f-89ac-78f664ac0013
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/matrix.nix
+#+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
   { lib, config, pkgs, ... }:
   let
     matrixDomain = "swatrix.swarsel.win";
@@ -9026,7 +9027,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:d11ad8d5-25d7-4691-b319-61c16ccef715
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/nextcloud.nix
+#+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
   let
     serviceDomain = "stash.swarsel.win";
@@ -9110,7 +9111,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :CUSTOM_ID: h:33bad8ad-b362-4bf1-8a49-b9df92329aed
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/immich.nix
+#+begin_src nix-ts :tangle modules/nixos/server/immich.nix
   { lib, config, globals, ... }:
   let
     serviceDomain = "shots.swarsel.win";
@@ -9190,7 +9191,7 @@ This is my personal document management system. It automatically pulls documents
 
 Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
 
-#+begin_src nix :tangle modules/nixos/server/paperless.nix
+#+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
   { lib, pkgs, config, ... }:
   let
     serviceDomain = "scan.swarsel.win";
@@ -9326,7 +9327,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :CUSTOM_ID: h:5afeb311-ab86-4029-be53-2160f6d836c3
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/transmission.nix
+#+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
   { self, pkgs, lib, config, ... }:
   let
     serviceDomain = "store.swarsel.win";
@@ -9513,7 +9514,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :CUSTOM_ID: h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/syncthing.nix
+#+begin_src nix-ts :tangle modules/nixos/server/syncthing.nix
   { lib, config, ... }:
   let
     inherit (config.repo.secrets.common) workHostName;
@@ -9651,7 +9652,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
 This manages backups for my pictures and obsidian files.
 
-#+begin_src nix :tangle modules/nixos/server/restic.nix
+#+begin_src nix-ts :tangle modules/nixos/server/restic.nix
   { lib, pkgs, config, ... }:
   let
     inherit (config.repo.secrets.local) resticRepo;
@@ -9715,7 +9716,7 @@ This manages backups for my pictures and obsidian files.
 
 This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
 
-#+begin_src nix :tangle modules/nixos/server/monitoring.nix
+#+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
   { self, lib, config, ... }:
   let
     serviceDomain = "status.swarsel.win";
@@ -9945,7 +9946,7 @@ This section exposes several metrics that I use to check the health of my server
 
 This is a WIP Jenkins instance. It is used to automatically build a new system when pushes to the main repository are detected. I have turned this service off for now however, as I actually prefer to start my builds manually.
 
-#+begin_src nix :tangle modules/nixos/server/jenkins.nix
+#+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, ... }:
   let
     serviceDomain = "servant.swarsel.win";
@@ -10001,7 +10002,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 
 This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
 
-#+begin_src nix :tangle modules/nixos/server/emacs.nix
+#+begin_src nix-ts :tangle modules/nixos/server/emacs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.server.emacs = lib.mkEnableOption "enable emacs server on server";
@@ -10033,7 +10034,7 @@ I am using this with CapyReader on my phone, set it up as a FreshRSS account wit
 
 FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
 
-#+begin_src nix :tangle modules/nixos/server/freshrss.nix
+#+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
   { self, lib, config, ... }:
   let
     serviceName = "freshrss";
@@ -10139,7 +10140,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :CUSTOM_ID: h:a9965660-4358-4b9a-8c46-d55f28598344
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/forgejo.nix
+#+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
   { lib, config, pkgs, ... }:
   let
     serviceDomain = "swagit.swarsel.win";
@@ -10299,7 +10300,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :CUSTOM_ID: h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/ankisync.nix
+#+begin_src nix-ts :tangle modules/nixos/server/ankisync.nix
   { lib, config, ... }:
   let
     serviceDomain = "synki.swarsel.win";
@@ -10375,7 +10376,7 @@ A stupid (but simple) way to get the =originUrl= is to simply set any URL there 
 
 To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://sso.swarsel.win/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
 
-#+begin_src nix :tangle modules/nixos/server/kanidm.nix
+#+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
   { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
@@ -10630,7 +10631,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :END:
 
 
-#+begin_src nix :tangle modules/nixos/server/oauth2-proxy.nix
+#+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { lib, config, globals, ... }:
   let
     kanidmDomain = globals.services.kanidm.domain;
@@ -10855,7 +10856,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/firefly-iii.nix
+#+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
   { self, lib, config, ... }:
   let
     cfg = config.services.firefly-iii;
@@ -10964,7 +10965,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/koillection.nix
+#+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
   { self, lib, config, ... }:
   let
     serviceDomain = "swag.swarsel.win";
@@ -11092,7 +11093,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:27eac8b9-c202-4e45-9b80-42592f1e41c8
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/atuin.nix
+#+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
   { lib, config, ... }:
   let
     serviceDomain = "shellhistory.swarsel.win";
@@ -11149,7 +11150,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/radicale.nix
+#+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
   { self, lib, config, ... }:
   let
     inherit (config.repo.secrets.local.radicale) user1;
@@ -11265,7 +11266,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/croc.nix
+#+begin_src nix-ts :tangle modules/nixos/server/croc.nix
   { self, lib, config, pkgs, ... }:
   let
     serviceDomain = "send.swarsel.win";
@@ -11339,7 +11340,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:13071cc3-5cba-44b5-8b5b-2a27be22e021
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/microbin.nix
+#+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
   { self, lib, config, ... }:
   let
     serviceDomain = "scratch.swarsel.win";
@@ -11476,7 +11477,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c
 :END:
 
-#+begin_src nix :tangle modules/nixos/server/shlink.nix
+#+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, ... }:
   let
     serviceDomain = "s.swarsel.win";
@@ -11570,7 +11571,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle modules/darwin/nixos/default.nix
+#+begin_src nix-ts :tangle modules/darwin/nixos/default.nix
   _:
   {
 
@@ -11607,7 +11608,7 @@ These sets of configuration do not need to be deployed on every host, for a mult
 
 This opens a few gaming ports and installs the steam configuration suite for gaming. There are more options in [[#h:84fd7029-ecb6-4131-9333-289982f24ffa][Gaming]] (home-manager side).
 
-#+begin_src nix :tangle modules/nixos/optional/gaming.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/gaming.nix
   { pkgs, lib, config, ... }:
   {
     options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
@@ -11659,7 +11660,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow. I only use this privately to run an old editor that does not run well under wine, so I put it into it's own specialisation.
 
-#+begin_src nix :tangle modules/nixos/optional/virtualbox.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/virtualbox.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
@@ -11698,7 +11699,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 
 This sets the VirtualBox configuration. Guest should not be enabled if not direly needed, it will make rebuilds unbearably slow.
 
-#+begin_src nix :tangle modules/nixos/optional/vmware.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/vmware.nix
   { lib, config, ... }:
   {
 
@@ -11717,7 +11718,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 
 Auto login for the initial session.
 
-#+begin_src nix :tangle modules/nixos/optional/autologin.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/autologin.nix
   { lib, config, ... }:
   let
     inherit (config.swarselsystems) mainUser;
@@ -11740,7 +11741,7 @@ Auto login for the initial session.
 
 This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 
-#+begin_src nix :tangle modules/nixos/optional/nswitch-rcm.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/nswitch-rcm.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
@@ -11763,7 +11764,7 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 
 This holds configuration that is specific to framework laptops.
 
-#+begin_src nix :tangle modules/nixos/optional/framework.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/framework.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
@@ -11798,7 +11799,7 @@ This holds configuration that is specific to framework laptops.
 :CUSTOM_ID: h:b64b8988-94fa-440f-8cf1-ee5568bfd75e
 :END:
 
-#+begin_src nix :tangle modules/nixos/optional/amdcpu.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/amdcpu.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
@@ -11816,7 +11817,7 @@ This holds configuration that is specific to framework laptops.
 :END:
 
 
-#+begin_src nix :tangle modules/nixos/optional/amdgpu.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/amdgpu.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
@@ -11839,7 +11840,7 @@ This holds configuration that is specific to framework laptops.
 :CUSTOM_ID: h:15b581ab-09fe-4f84-af26-2f1fbf7d726b
 :END:
 
-#+begin_src nix :tangle modules/nixos/optional/hibernation.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/hibernation.nix
   { lib, config, ... }:
   {
     options.swarselsystems = {
@@ -11871,7 +11872,7 @@ This holds configuration that is specific to framework laptops.
 :CUSTOM_ID: h:86fb3236-9e18-43f0-8a08-3a2acd61cc98
 :END:
 
-#+begin_src nix :tangle modules/nixos/optional/btrfs.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/btrfs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
@@ -11890,7 +11891,7 @@ This holds configuration that is specific to framework laptops.
 
 Options that I need specifically at work. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
-#+begin_src nix :tangle modules/nixos/optional/work.nix
+#+begin_src nix-ts :tangle modules/nixos/optional/work.nix
   { self, lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir xdgDir;
@@ -12115,7 +12116,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
 These options are really only to be used on the iso image in order to run nixos-anywhere.
 
-#+begin_src nix :tangle modules/iso/minimal.nix
+#+begin_src nix-ts :tangle modules/iso/minimal.nix
   { lib, pkgs, ... }:
   {
 
@@ -12204,7 +12205,7 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle modules/home/common/default.nix
+#+begin_src nix-ts :tangle modules/home/common/default.nix
   { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/home/common";
@@ -12230,7 +12231,7 @@ The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/
 
 This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 
-#+begin_src nix :noweb yes :tangle modules/home/common/sharedsetup.nix
+#+begin_src nix-ts :noweb yes :tangle modules/home/common/sharedsetup.nix
   { self, lib, pkgs, ... }:
   {
     options.swarselsystems = {
@@ -12507,7 +12508,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
-#+begin_src nix :tangle modules/home/common/settings.nix
+#+begin_src nix-ts :tangle modules/home/common/settings.nix
   { lib, config, ... }:
   let
     inherit (config.swarselsystems) mainUser;
@@ -12570,7 +12571,7 @@ It can be set to either:
   - a PCI bus id in the form =pci-XXX_YY_ZZ_U=
   - a PCI id in the form =vendor_id:device_id=
 
-#+begin_src nix :tangle modules/home/common/nixgl.nix
+#+begin_src nix-ts :tangle modules/home/common/nixgl.nix
 { lib, config, nixgl, ... }:
 {
   options.swarselsystems = {
@@ -12618,7 +12619,7 @@ Programming languages and default lsp's are defined here: [[#h:0e7e8bea-ec58-499
 
 This holds packages that I can use as provided, or with small modifications (as in the =texlive= package that needs special configuration).
 
-#+begin_src nix :tangle modules/home/common/packages.nix
+#+begin_src nix-ts :tangle modules/home/common/packages.nix
   { lib, config, pkgs, ... }:
 
   {
@@ -12813,7 +12814,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 
 This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. This is a good idea so that I do not lose track of package names I have defined myself, as this was once a problem in the past already.
 
-#+begin_src nix :tangle modules/home/common/custom-packages.nix
+#+begin_src nix-ts :tangle modules/home/common/custom-packages.nix
   { lib, config, pkgs, ... }:
 
   {
@@ -12864,7 +12865,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
   Since we are using the home-manager implementation here, we need to specify the runtime path.
 
-#+begin_src nix :tangle modules/home/common/sops.nix
+#+begin_src nix-ts :tangle modules/home/common/sops.nix
   { config, lib, ... }:
   let
     inherit (config.swarselsystems) homeDir xdgDir;
@@ -12895,7 +12896,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :CUSTOM_ID: h:4c850b80-56e0-437b-b564-2dd897027b2f
 :END:
 
-#+begin_src nix :tangle modules/home/common/yubikey.nix
+#+begin_src nix-ts :tangle modules/home/common/yubikey.nix
   { lib, config, nixosConfig, ... }:
   {
     options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
@@ -12918,7 +12919,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
-#+begin_src nix :tangle modules/home/common/ssh.nix
+#+begin_src nix-ts :tangle modules/home/common/ssh.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.ssh = lib.mkEnableOption "ssh settings";
@@ -12976,7 +12977,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
-#+begin_src nix :noweb yes :tangle modules/home/common/stylix.nix
+#+begin_src nix-ts :noweb yes :tangle modules/home/common/stylix.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix settings";
@@ -13000,7 +13001,7 @@ Some programs lack a dmenu launcher - I define them myself here.
 
 TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the programs prefixed with "nixGL". I need to figure out how to automate this process, as it is not feasible to write desktop entries for all programs installed on that machine.
 
-#+begin_src nix :tangle modules/home/common/desktop.nix
+#+begin_src nix-ts :tangle modules/home/common/desktop.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.desktop = lib.mkEnableOption "desktop settings";
@@ -13118,7 +13119,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 Also, we link some files to the users XDG configuration home:
 Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.stylesheets` to true.
 
-#+begin_src nix :tangle modules/home/common/symlink.nix
+#+begin_src nix-ts :tangle modules/home/common/symlink.nix
   { self, lib, config, ... }:
   {
     options.swarselsystems.modules.symlink = lib.mkEnableOption "symlink settings";
@@ -13160,7 +13161,7 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
-#+begin_src nix :tangle modules/home/common/env.nix
+#+begin_src nix-ts :tangle modules/home/common/env.nix
   { lib, config, nixosConfig, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
@@ -13195,7 +13196,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
 
-#+begin_src nix :tangle modules/home/common/programs.nix
+#+begin_src nix-ts :tangle modules/home/common/programs.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.programs = lib.mkEnableOption "programs settings";
@@ -13236,7 +13237,7 @@ This section is for programs that require no further configuration. zsh Integrat
 
 nix-index provides a way to find out which packages are provided by which derivations. By default it also comes with a replacement for =command-not-found.sh=, however, the implementation is based on a channel based setup. I like consistency, so I replace the command with one that provides a flakes-based output.
 
-#+begin_src nix :tangle modules/home/common/nix-index.nix
+#+begin_src nix-ts :tangle modules/home/common/nix-index.nix
   { self, lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.nix-index = lib.mkEnableOption "nix-index settings";
@@ -13270,7 +13271,7 @@ nix-index provides a way to find out which packages are provided by which deriva
 
 Enables password store with the =pass-otp= extension which allows me to store and generate one-time-passwords.
 
-#+begin_src nix :tangle modules/home/common/password-store.nix
+#+begin_src nix-ts :tangle modules/home/common/password-store.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.passwordstore = lib.mkEnableOption "passwordstore settings";
@@ -13293,7 +13294,7 @@ Enables password store with the =pass-otp= extension which allows me to store an
 
 Enables direnv, which I use for nearly all of my nix dev flakes.
 
-#+begin_src nix :tangle modules/home/common/direnv.nix
+#+begin_src nix-ts :tangle modules/home/common/direnv.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.direnv = lib.mkEnableOption "direnv settings";
@@ -13314,7 +13315,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 
 Eza provides me with a better =ls= command and some other useful aliases.
 
-#+begin_src nix :tangle modules/home/common/eza.nix
+#+begin_src nix-ts :tangle modules/home/common/eza.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.eza = lib.mkEnableOption "eza settings";
@@ -13337,7 +13338,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 :CUSTOM_ID: h:38f127f3-003b-418b-85ba-a3bcf44bf16c
 :END:
 
-#+begin_src nix :tangle modules/home/common/atuin.nix
+#+begin_src nix-ts :tangle modules/home/common/atuin.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
@@ -13362,7 +13363,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
-#+begin_src nix :tangle modules/home/common/git.nix
+#+begin_src nix-ts :tangle modules/home/common/git.nix
   { lib, config, nixosConfig, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1;
@@ -13418,7 +13419,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 
 Here I only need to set basic layout options - the rest is being managed by stylix.
 
-#+begin_src nix :tangle modules/home/common/fuzzel.nix
+#+begin_src nix-ts :tangle modules/home/common/fuzzel.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.fuzzel = lib.mkEnableOption "fuzzel settings";
@@ -13445,7 +13446,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 
 Starship makes my =zsh= look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
 
-#+begin_src nix :tangle modules/home/common/starship.nix
+#+begin_src nix-ts :tangle modules/home/common/starship.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.starship = lib.mkEnableOption "starship settings";
@@ -13581,7 +13582,7 @@ Kitty is the terminal emulator of choice for me, it is nice to configure using n
 
 The theme is handled by stylix.
 
-#+begin_src nix :tangle modules/home/common/kitty.nix
+#+begin_src nix-ts :tangle modules/home/common/kitty.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.kitty = lib.mkEnableOption "kitty settings";
@@ -13630,7 +13631,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 
 Currently I only use it as before with =initExtra= though.
 
-#+begin_src nix :tangle modules/home/common/zsh.nix
+#+begin_src nix-ts :tangle modules/home/common/zsh.nix
   { config, lib, ... }:
   let
     inherit (config.swarselsystems) flakePath;
@@ -13761,7 +13762,7 @@ Currently I only use it as before with =initExtra= though.
 :PROPERTIES:
 :CUSTOM_ID: h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7
 :END:
-#+begin_src nix :tangle modules/home/common/zellij.nix
+#+begin_src nix-ts :tangle modules/home/common/zellij.nix
   { self, lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.zellij = lib.mkEnableOption "zellij settings";
@@ -13787,7 +13788,7 @@ Currently I only use it as before with =initExtra= though.
 :PROPERTIES:
 :CUSTOM_ID: h:45de9430-f925-4df6-9db6-bffb5b8f1604
 :END:
-#+begin_src nix :tangle modules/home/common/tmux.nix
+#+begin_src nix-ts :tangle modules/home/common/tmux.nix
   { lib, config, pkgs, ... }:
   let
     tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin
@@ -13897,7 +13898,7 @@ Currently I only use it as before with =initExtra= though.
 
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
-#+begin_src nix :tangle modules/home/common/mail.nix
+#+begin_src nix-ts :tangle modules/home/common/mail.nix
   { lib, config, nixosConfig, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
@@ -14053,7 +14054,7 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
-#+begin_src nix :tangle modules/home/common/emacs.nix
+#+begin_src nix-ts :tangle modules/home/common/emacs.nix
   { self, lib, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) homeDir isPublic;
@@ -14150,7 +14151,7 @@ The rest of the related configuration is found here:
 - [[#h:a9530c81-1976-442b-b597-0b4bed6baf25][Waybar]]
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
-#+begin_src nix :tangle modules/home/common/waybar.nix
+#+begin_src nix-ts :tangle modules/home/common/waybar.nix
   { self, config, lib, ... }:
   let
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
@@ -14476,7 +14477,7 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
-#+begin_src nix :tangle modules/home/common/firefox.nix
+#+begin_src nix-ts :tangle modules/home/common/firefox.nix
   { config, pkgs, lib, ... }:
   {
     options.swarselsystems.modules.firefox = lib.mkEnableOption "firefox settings";
@@ -14643,7 +14644,7 @@ Services that can be defined through home-manager should be defined here.
 
 Used for storing sessions in e.g. Nextcloud
 
-#+begin_src nix :tangle modules/home/common/gnome-keyring.nix
+#+begin_src nix-ts :tangle modules/home/common/gnome-keyring.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome keyring settings";
@@ -14662,7 +14663,7 @@ Used for storing sessions in e.g. Nextcloud
 
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
 
-#+begin_src nix :tangle modules/home/common/kdeconnect.nix
+#+begin_src nix-ts :tangle modules/home/common/kdeconnect.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.kdeconnect = lib.mkEnableOption "kdeconnect settings";
@@ -14685,7 +14686,7 @@ Desktop notifications!
 
 The `extraConfig` section here CANNOT be reindented. This has something to do with how nix handles multiline strings, when indented Mako will fail to start. This might be a mako bug as well.
 
-#+begin_src nix :tangle modules/home/common/mako.nix
+#+begin_src nix-ts :tangle modules/home/common/mako.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.mako = lib.mkEnableOption "mako settings";
@@ -14728,7 +14729,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 :CUSTOM_ID: h:388e71be-f00a-4d45-ade1-218ce942057d
 :END:
 
-#+begin_src nix :tangle modules/home/common/swayosd.nix
+#+begin_src nix-ts :tangle modules/home/common/swayosd.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
@@ -14746,7 +14747,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 :CUSTOM_ID: h:1598c90b-f195-41a0-9132-94612edf3586
 :END:
 
-#+begin_src nix :tangle modules/home/common/yubikey-touch-detector.nix
+#+begin_src nix-ts :tangle modules/home/common/yubikey-touch-detector.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
@@ -14790,7 +14791,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
-#+begin_src nix :tangle modules/home/common/sway.nix
+#+begin_src nix-ts :tangle modules/home/common/sway.nix
   { self, config, lib, ... }:
   {
     options.swarselsystems = {
@@ -15204,7 +15205,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 :END:
 
 
-#+begin_src nix :tangle modules/home/common/kanshi.nix
+#+begin_src nix-ts :tangle modules/home/common/kanshi.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
@@ -15302,7 +15303,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 
-#+begin_src nix :tangle modules/home/common/gpg-agent.nix
+#+begin_src nix-ts :tangle modules/home/common/gpg-agent.nix
   { self, lib, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
@@ -15354,7 +15355,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
-#+begin_src nix :tangle modules/home/common/gammastep.nix
+#+begin_src nix-ts :tangle modules/home/common/gammastep.nix
   { lib, config, nixosConfig, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
@@ -15383,7 +15384,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle modules/home/server/default.nix
+#+begin_src nix-ts :tangle modules/home/server/default.nix
   { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/home/server";
@@ -15406,7 +15407,7 @@ This section should be used in order to symlink already existing configuration f
 
 As for the `home.sessionVariables`, it should be noted that environment variables that are needed at system start should NOT be loaded here, but instead in `programs.zsh.config.extraSessionCommands` (in the home-manager programs section). This is also where all the wayland related variables are stored.
 
-#+begin_src nix :tangle modules/home/server/symlink.nix
+#+begin_src nix-ts :tangle modules/home/server/symlink.nix
   { self, lib, config, ... }:
   {
     options.swarselsystems.modules.server.dotfiles = lib.mkEnableOption "server dotfiles settings";
@@ -15433,7 +15434,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix :tangle modules/darwin/home/default.nix
+#+begin_src nix-ts :tangle modules/darwin/home/default.nix
   { self, ... }:
   let
     modulesPath = "${self}/modules";
@@ -15460,7 +15461,7 @@ Akin to the optional NixOS modules.
 
 The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming]].
 
-#+begin_src nix :tangle modules/home/optional/gaming.nix
+#+begin_src nix-ts :tangle modules/home/optional/gaming.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
@@ -15510,7 +15511,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
-#+begin_src nix :tangle modules/home/optional/work.nix :noweb yes
+#+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
   { self, config, pkgs, lib, nixosConfig, ... }:
   let
     inherit (config.swarselsystems) homeDir;
@@ -17724,8 +17725,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
       (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
       (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
       (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
-      (add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
-      (add-to-list 'org-structure-template-alist '("nix-ts" . "src nix-ts :tangle"))
+      (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
 
     #+end_src
 
@@ -17936,7 +17936,7 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
             lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
             ))
 
-    (use-package nix-mode
+    (use-package nix-ts-mode
       :after lsp-mode
       :mode "\\.nix\\'"
       :ensure t
