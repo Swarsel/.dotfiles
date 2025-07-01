@@ -1,15 +1,16 @@
 { self, lib, config, ... }:
 let
-  serviceDomain = "s.swarsel.win";
   servicePort = 8081;
   serviceName = "shlink";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
   containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 in
 {
   options = {
-    swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+    swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   };
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops = {
       secrets = {
@@ -25,7 +26,7 @@ in
       };
     };
 
-    virtualisation.oci-containers.containers."shlink" = {
+    virtualisation.oci-containers.containers.${serviceName} = {
       image = "shlinkio/shlink@${containerRev}";
       environment = {
         "DEFAULT_DOMAIN" = serviceDomain;
@@ -57,7 +58,7 @@ in
 
     services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "localhost:${builtins.toString servicePort}" = { };
           };

@@ -1,16 +1,17 @@
 { lib, config, pkgs, ... }:
 let
-  matrixDomain = "swatrix.swarsel.win";
+  servicePort = 8008;
   serviceName = "matrix";
-  synapsePort = 8008;
-  synapseUser = "matrix-synapse";
+  serviceDomain = config.repo.secrets.common.services.domains.matrix;
+  serviceUser = "matrix-synapse";
+
+  federationPort = 8448;
   whatsappPort = 29318;
   telegramPort = 29317;
   signalPort = 29328;
-
-  baseUrl = "https://${matrixDomain}";
+  baseUrl = "https://${serviceDomain}";
   clientConfig."m.homeserver".base_url = baseUrl;
-  serverConfig."m.server" = "${matrixDomain}:443";
+  serverConfig."m.server" = "${serviceDomain}:443";
   mkWellKnown = data: ''
     default_type application/json;
     add_header Access-Control-Allow-Origin *;
@@ -18,8 +19,8 @@ let
   '';
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
     environment.systemPackages = with pkgs; [
       matrix-synapse
       lottieconverter
@@ -28,24 +29,24 @@ in
 
     sops = {
       secrets = {
-        matrixsharedsecret = { owner = synapseUser; };
-        mautrixtelegram_as = { owner = synapseUser; };
-        mautrixtelegram_hs = { owner = synapseUser; };
-        mautrixtelegram_api_id = { owner = synapseUser; };
-        mautrixtelegram_api_hash = { owner = synapseUser; };
+        matrixsharedsecret = { owner = serviceUser; };
+        mautrixtelegram_as = { owner = serviceUser; };
+        mautrixtelegram_hs = { owner = serviceUser; };
+        mautrixtelegram_api_id = { owner = serviceUser; };
+        mautrixtelegram_api_hash = { owner = serviceUser; };
       };
       templates = {
         "matrix_user_register.sh".content = ''
-          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString synapsePort}
+          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString servicePort}
         '';
         matrixshared = {
-          owner = synapseUser;
+          owner = serviceUser;
           content = ''
             registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
           '';
         };
         mautrixtelegram = {
-          owner = synapseUser;
+          owner = serviceUser;
           content = ''
             MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
             MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
@@ -56,7 +57,7 @@ in
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ 8008 8448 ];
+    networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
     systemd = {
       timers."restart-bridges" = {
@@ -87,7 +88,7 @@ in
       };
     };
 
-    globals.services.${serviceName}.domain = matrixDomain;
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
       postgresql = {
@@ -130,11 +131,11 @@ in
               "${dataDir}/signal-registration.yaml"
               "${dataDir}/doublepuppet.yaml"
             ];
-          server_name = matrixDomain;
-          public_baseurl = "https://${matrixDomain}";
+          server_name = serviceDomain;
+          public_baseurl = "https://${serviceDomain}";
           listeners = [
             {
-              port = synapsePort;
+              port = servicePort;
               bind_addresses = [
                 "0.0.0.0"
                 # "::1"
@@ -162,8 +163,8 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:${builtins.toString synapsePort}";
-            domain = matrixDomain;
+            address = "http://localhost:${builtins.toString servicePort}";
+            domain = serviceDomain;
           };
           appservice = {
             address = "http://localhost:${builtins.toString telegramPort}";
@@ -188,7 +189,7 @@ in
             telegram_link_preview = true;
             permissions = {
               "*" = "relaybot";
-              "@swarsel:${matrixDomain}" = "admin";
+              "@swarsel:${serviceDomain}" = "admin";
             };
             animated_sticker = {
               target = "gif";
@@ -208,8 +209,8 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:${builtins.toString synapsePort}";
-            domain = matrixDomain;
+            address = "http://localhost:${builtins.toString servicePort}";
+            domain = serviceDomain;
           };
           appservice = {
             address = "http://localhost:${builtins.toString whatsappPort}";
@@ -234,7 +235,7 @@ in
               };
             };
             login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
+              ${serviceDomain} = "as_token:doublepuppet";
             };
             sync_manual_marked_unread = true;
             send_presence_on_typing = true;
@@ -244,7 +245,7 @@ in
             extev_polls = true;
             permissions = {
               "*" = "relay";
-              "@swarsel:${matrixDomain}" = "admin";
+              "@swarsel:${serviceDomain}" = "admin";
             };
           };
         };
@@ -255,8 +256,8 @@ in
         registerToSynapse = false;
         settings = {
           homeserver = {
-            address = "http://localhost:${builtins.toString synapsePort}";
-            domain = matrixDomain;
+            address = "http://localhost:${builtins.toString servicePort}";
+            domain = serviceDomain;
           };
           appservice = {
             address = "http://localhost:${builtins.toString signalPort}";
@@ -270,12 +271,12 @@ in
           bridge = {
             displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
             login_shared_secret_map = {
-              matrixDomain = "as_token:doublepuppet";
+              ${serviceDomain} = "as_token:doublepuppet";
             };
             caption_in_message = true;
             permissions = {
               "*" = "relay";
-              "@swarsel:${matrixDomain}" = "admin";
+              "@swarsel:${serviceDomain}" = "admin";
             };
           };
         };
@@ -288,14 +289,14 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString synapsePort}" = { };
+            "192.168.1.2:${builtins.toString servicePort}" = { };
           };
         };
       };
       virtualHosts = {
-        "${matrixDomain}" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;

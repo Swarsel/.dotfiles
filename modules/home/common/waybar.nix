@@ -1,4 +1,4 @@
-{ self, config, lib, ... }:
+{ self, config, lib, pkgs, ... }:
 let
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
   modulesLeft = [
@@ -79,28 +79,28 @@ in
 
           "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
             format = "";
-            on-click-right = "wlogout -p layer-shell";
+            on-click-right = "${pkgs.wlogout}/bin/wlogout -p layer-shell";
           };
 
           "custom/configwarn" = {
-            exec = "waybarupdate";
+            exec = "${pkgs.waybarupdate}/bin/waybarupdate";
             interval = 60;
           };
 
           "custom/scratchpad-indicator" = {
             interval = 3;
-            exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
+            exec = "${pkgs.swayfx}/bin/swaymsg -t get_tree | ${pkgs.jq}/bin/jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
             format = "{} ";
-            on-click = "swaymsg 'scratchpad show'";
-            on-click-right = "swaymsg 'move scratchpad'";
+            on-click = "${pkgs.swayfx}/bin/swaymsg 'scratchpad show'";
+            on-click-right = "${pkgs.swayfx}/bin/swaymsg 'move scratchpad'";
           };
 
           "custom/github" = {
             format = "{}  ";
             return-type = "json";
             interval = 60;
-            exec = "github-notifications";
-            on-click = "xdg-open https://github.com/notifications";
+            exec = "${pkgs.github-notifications}/bin/github-notifications";
+            on-click = "${pkgs.xdg-utils}/bin/xdg-open https://github.com/notifications";
           };
 
           idle_inhibitor = {
@@ -235,8 +235,8 @@ in
               ];
             };
             scroll-step = 1;
-            on-click = "pamixer -t";
-            on-click-right = "pavucontrol";
+            on-click = "${pkgs.pamixer}/bin/pamixer -t";
+            on-click-right = "${pkgs.pavucontrol}/bin/pavucontrol";
           };
 
           memory = {
@@ -250,13 +250,13 @@ in
             interval = 5;
             format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
             # on-click-right= "com.github.stsdc.monitor";
-            on-click-right = "kitty -o confirm_os_window_close=0 btm";
+            on-click-right = "${pkgs.kitty}/bin/kitty -o confirm_os_window_close=0 btm";
 
           };
           "custom/vpn" = {
             format = "()";
             exec = "echo '{\"class\": \"connected\"}'";
-            exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+            exec-if = "${pkgs.toybox}/bin/test -d /proc/sys/net/ipv4/conf/tun0";
             return-type = "json";
             interval = 5;
           };

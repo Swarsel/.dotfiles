@@ -1,23 +1,29 @@
 { self, lib, config, pkgs, ... }:
+let
+  servicePort = 3254;
+  serviceUser = "mpd";
+  serviceGroup = serviceUser;
+  serviceName = "mpd";
+in
 {
-  options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
-  config = lib.mkIf config.swarselsystems.modules.server.mpd {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
     users = {
       groups = {
         mpd = { };
       };
 
       users = {
-        mpd = {
+        ${serviceUser} = {
           isSystemUser = true;
-          group = "mpd";
+          group = serviceGroup;
           extraGroups = [ "audio" "utmp" ];
         };
       };
     };
 
     sops = {
-      secrets.mpdpass = { owner = "mpd"; };
+      secrets.mpdpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     environment.systemPackages = with pkgs; [
@@ -26,19 +32,19 @@
       mpv
     ];
 
-    topology.self.services.mpd = {
-      name = "MPD";
-      info = "http://localhost:3254";
-      icon = "${self}/topology/images/mpd.png";
+    topology.self.services.${serviceName} = {
+      name = lib.toUpper serviceName;
+      info = "http://localhost:${builtins.toString servicePort}";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
 
-    services.mpd = {
+    services.${serviceName} = {
       enable = true;
       musicDirectory = "/media";
-      user = "mpd";
-      group = "mpd";
+      user = serviceUser;
+      group = serviceGroup;
       network = {
-        port = 3254;
+        port = servicePort;
         listenAddress = "any";
       };
       credentials = [

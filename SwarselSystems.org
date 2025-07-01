@@ -2,6 +2,7 @@
 #+PROPERTY: header-args:emacs-lisp :tangle programs/emacs/init.el :mkdirp yes
 #+PROPERTY: header-args:nix :mkdirp yes
 #+PROPERTY: header-args:nix-ts :mkdirp yes
+#+PROPERTY: header-args:shell :mkdirp yes
 #+EXPORT_FILE_NAME: index.html
 #+OPTIONS: toc:6
 #+macro: revision-date (eval (format-time-string "%F %T %z"))
@@ -1550,6 +1551,12 @@ This machine mainly acts as an external sync helper. It manages the following th
 
   All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
+
+***** Main configuration
+:PROPERTIES:
+:CUSTOM_ID: h:922105c3-a604-47d9-918b-db1803784c75
+:END:
+
 #+begin_src nix-ts :tangle hosts/nixos/sync/default.nix
   { lib, config, primaryUser, ... }:
   let
@@ -1559,6 +1566,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     };
     inherit (config.repo.secrets.common) workHostName;
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+    serviceDomain = config.repo.secrets.common.services.domains.syncthing2;
   in
   {
     imports = [
@@ -1603,11 +1611,12 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     system.stateVersion = "23.11";
 
+    globals.services."syncthing-${config.networking.hostName}".domain = serviceDomain;
 
     services = {
       nginx = {
         virtualHosts = {
-          "sync.swarsel.win" = {
+          ${serviceDomain} = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -1663,7 +1672,7 @@ This machine mainly acts as an external sync helper. It manages the following th
               type = "receiveonly";
               versioning = {
                 type = "simple";
-               params.keep = "5";
+                params.keep = "5";
               };
               devices = [ "winters" "magicant" "${workHostName}" ];
               id = "yjvni-9eaa7";
@@ -1726,6 +1735,51 @@ This machine mainly acts as an external sync helper. It manages the following th
   }
 
 #+end_src
+***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/sync/hardware-configuration.nix
+  { config, lib, modulesPath, ... }: {
+    imports = [
+      (modulesPath + "/profiles/qemu-guest.nix")
+    ];
+
+    boot = {
+      initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
+      initrd.kernelModules = [ ];
+      kernelModules = [ "kvm-amd" ];
+      extraModulePackages = [ ];
+    };
+
+    fileSystems = {
+      "/" = {
+        device = "/dev/disk/by-uuid/4b47378a-02eb-4548-bab8-59cbf379252a";
+        fsType = "xfs";
+      };
+
+      "/boot" = {
+        device = "/dev/disk/by-uuid/2B75-2AD5";
+        fsType = "vfat";
+      };
+    };
+
+    swapDevices = [
+      { device = "/dev/disk/by-uuid/f0126a93-753e-4769-ada8-7499a1efb3a9"; }
+    ];
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.ens3.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+#+end_src
 **** Moonside (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:f547ed16-5e6e-4744-9e33-af090e0a175b
@@ -1740,6 +1794,8 @@ This machine mainly acts as an external sync helper. It manages the following th
   let
     inherit (config.repo.secrets.common) workHostName;
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+    serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
+
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
@@ -1778,7 +1834,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     };
 
     topology.self.interfaces.wg = {
-      addresses = ["192.168.3.4"];
+      addresses = [ "192.168.3.4" ];
       renderer.hidePhysicalConnections = true;
       virtual = true;
       type = "wireguard";
@@ -1821,10 +1877,12 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     system.stateVersion = "23.11";
 
+    globals.services."syncthing-${config.networking.hostName}".domain = serviceDomain;
+
     services = {
       nginx = {
         virtualHosts = {
-          "syncthing.swarsel.win" = {
+          ${serviceDomain} = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -1970,11 +2028,6 @@ This machine mainly acts as an external sync helper. It manages the following th
 :CUSTOM_ID: h:f99c05ab-f047-4350-b80a-4c1ff55b91bf
 :END:
 
-      loader.grub = {
-        efiSupport = true;
-        efiInstallAsRemovable = true;
-        device = "nodev";
-      };
 #+begin_src nix-ts :tangle hosts/nixos/moonside/hardware-configuration.nix
   { lib, modulesPath, ... }:
   {
@@ -1983,7 +2036,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     boot = {
       initrd = {
         availableKernelModules = [ "xhci_pci" "virtio_pci" "virtio_scsi" "usbhid" ];
-        kernelModules = [  ];
+        kernelModules = [ ];
       };
       kernelModules = [ ];
       extraModulePackages = [ ];
@@ -2373,7 +2426,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
 For added convenience, the live environment displays a helpful text on login, we define it here (will be put into =/etc/issue=):
 
-#+begin_src bash :tangle programs/etc/issue
+#+begin_src bash :tangle programs/etc/issue :mkdirp yes
   [32m~SwarselSystems~[0m
                            IP of primary interface: [31m\4[0m
                                                                The Password for all users & root is '[31msetup[0m'.
@@ -2670,6 +2723,142 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
 #+end_src
 
+***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/disk-config.nix
+# NOTE: ... is needed because dikso passes diskoFile
+{ lib
+, pkgs
+, config
+, diskDevice ? config.swarselsystem.rootDisk
+, ...
+}:
+let
+  type = "btrfs";
+  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+  subvolumes = {
+    "/root" = {
+      mountpoint = "/";
+      mountOptions = [
+        "subvol=root"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/home";
+      mountOptions = [
+        "subvol=home"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/persist";
+      mountOptions = [
+        "subvol=persist"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/var/log";
+      mountOptions = [
+        "subvol=log"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/nix" = {
+      mountpoint = "/nix";
+      mountOptions = [
+        "subvol=nix"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/swap" = lib.mkIf config.swarselsystems.isSwap {
+      mountpoint = "/.swapvol";
+      swap.swapfile.size = config.swarselsystems.swapSize;
+    };
+  };
+in
+{
+  disko.devices = {
+    disk = {
+      disk0 = {
+        type = "disk";
+        device = diskDevice;
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              priority = 1;
+              name = "ESP";
+              size = "512M";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "defaults" ];
+              };
+            };
+            root = lib.mkIf (!config.swarselsystems.isCrypted) {
+              size = "100%";
+              content = {
+                inherit type subvolumes extraArgs;
+                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                  MNTPOINT=$(mktemp -d)
+                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                '';
+              };
+            };
+            luks = lib.mkIf config.swarselsystems.isCrypted {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "cryptroot";
+                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                settings = {
+                  allowDiscards = true;
+                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                  crypttabExtraOpts = [
+                    "fido2-device=auto"
+                    "token-timeout=10"
+                  ];
+                };
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+
+  environment.systemPackages = [
+    pkgs.yubikey-manager
+  ];
+}
+#+end_src
+
 ***** NixOS dummy options configuration
 :PROPERTIES:
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
@@ -2738,7 +2927,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 
 This app allows me, in conjunction with my Yubikey, to quickly enter passwords when the need arises. Normal and TOTP passwords are supported, and they can either be printed directly or copied to the clipboard.
 
-#+begin_src shell :tangle scripts/pass-fuzzel.sh
+#+begin_src shell :tangle scripts/pass-fuzzel.sh :mkdirp yes
   # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
   shopt -s nullglob globstar
 
@@ -4612,7 +4801,7 @@ When adding a new entry here, do not forget to add it in the default output of t
       };
     };
 
-   nixpkgs-kernel = final: _: {
+    nixpkgs-kernel = final: _: {
       kernel = import inputs.nixpkgs-kernel {
         inherit (final) system;
         config.allowUnfree = true;
@@ -4736,6 +4925,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lid = lib.mkDefault true;
         lowBattery = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
+        tmp = lib.mkDefault true;
 
         optional = {
           gaming = lib.mkDefault true;
@@ -5022,12 +5212,12 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             paperless = lib.mkDefault true;
             transmission = lib.mkDefault true;
             syncthing = lib.mkDefault true;
-            monitoring = lib.mkDefault true;
+            grafana = lib.mkDefault true;
             emacs = lib.mkDefault true;
             freshrss = lib.mkDefault true;
             jenkins = lib.mkDefault false;
             kanidm = lib.mkDefault true;
-            firefly = lib.mkDefault true;
+            firefly-iii = lib.mkDefault true;
             koillection = lib.mkDefault true;
             radicale = lib.mkDefault true;
             atuin = lib.mkDefault true;
@@ -5101,7 +5291,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             sops = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
-            oauth2Proxy = lib.mkDefault true;
+            oauth2-proxy = lib.mkDefault true;
             croc = lib.mkDefault true;
             microbin = lib.mkDefault true;
             shlink = lib.mkDefault true;
@@ -5402,7 +5592,7 @@ TODO
           upper = lib.toUpper first;
           lower = lib.toLower rest;
         in
-          upper + lower;
+        upper + lower;
 
 
     # mkUser = name: {
@@ -5499,33 +5689,33 @@ TODO
 :END:
 
 #+begin_src nix-ts :tangle nix/extra-builtins.nix
-# adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
-{ exec, ... }:
-let
-  assertMsg = pred: msg: pred || builtins.throw msg;
-  hasSuffix =
-    suffix: content:
-    let
-      lenContent = builtins.stringLength content;
-      lenSuffix = builtins.stringLength suffix;
-    in
-    lenContent >= lenSuffix && builtins.substring (lenContent - lenSuffix) lenContent content == suffix;
-in
-{
-  # Instead of calling sops directly here, we call a wrapper script that will cache the output
-  # in a predictable path in /tmp, which allows us to only require the password for each encrypted
-  # file once.
-  sopsImportEncrypted =
-    nixFile:
-    assert assertMsg (builtins.isPath nixFile)
-      "The file to decrypt must be given as a path (not a string) to prevent impurity.";
-    assert assertMsg (hasSuffix ".nix.enc" nixFile)
-      "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
-    exec [
-        ./sops-decrypt-and-cache.sh
-        nixFile
-      ];
-}
+  # adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
+  { exec, ... }:
+  let
+    assertMsg = pred: msg: pred || builtins.throw msg;
+    hasSuffix =
+      suffix: content:
+      let
+        lenContent = builtins.stringLength content;
+        lenSuffix = builtins.stringLength suffix;
+      in
+      lenContent >= lenSuffix && builtins.substring (lenContent - lenSuffix) lenContent content == suffix;
+  in
+  {
+    # Instead of calling sops directly here, we call a wrapper script that will cache the output
+    # in a predictable path in /tmp, which allows us to only require the password for each encrypted
+    # file once.
+    sopsImportEncrypted =
+      nixFile:
+        assert assertMsg (builtins.isPath nixFile)
+          "The file to decrypt must be given as a path (not a string) to prevent impurity.";
+        assert assertMsg (hasSuffix ".nix.enc" nixFile)
+          "The content of the decrypted file must be a nix expression and should therefore end in .nix.enc";
+        exec [
+          ./sops-decrypt-and-cache.sh
+          nixFile
+        ];
+  }
 
 #+end_src
 **** sops-decrypt-and-cache
@@ -5533,8 +5723,7 @@ in
 :CUSTOM_ID: h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb
 :END:
 
-#+begin_src shell :tangle nix/sops-decrypt-and-cache.sh
-  #!/usr/bin/env bash
+#+begin_src shell :tangle nix/sops-decrypt-and-cache.sh :shebang #!/usr/bin/env bash
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
   set -euo pipefail
 
@@ -5636,7 +5825,7 @@ in
           ]
           [ "wan" ]
         ];
-        interfaces.wg0 = {
+        interfaces.wg = {
           addresses = [ "192.168.3.1" ];
           network = "wg";
           virtual = true;
@@ -5751,14 +5940,10 @@ in
 :END:
 
 #+begin_src nix-ts :tangle nix/globals.nix
+  # taken from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
   { inputs, ... }:
   {
-    flake =
-      {
-        config,
-        lib,
-        ...
-      }:
+    flake = { config, lib, ... }:
       {
         globals =
           let
@@ -5771,6 +5956,7 @@ in
               };
               modules = [
                 ../modules/nixos/common/globals.nix
+                ./globals-general.nix
                 (
                   { lib, ... }:
                   {
@@ -5778,7 +5964,7 @@ in
                       lib.concatLists (
                         lib.flip lib.mapAttrsToList config.nodes (
                           name: cfg:
-                          builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
+                            builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
                         )
                       )
                     );
@@ -5793,12 +5979,33 @@ in
             inherit (globalsSystem.config.globals)
               domains
               services
-              macs
-              myuser
-              root
+              user
               ;
           };
       };
+  }
+
+#+end_src
+**** Set general global options
+
+This file is only loaded in the =lib.evalModules= call in [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] to load globals that do not belong to one host in particular; the structure of =globals.nix.enc= requires a toplevel =globals=.
+
+#+begin_src nix-ts :tangle nix/globals-general.nix
+  { lib, ... }:
+  let
+    # Try to access the extra builtin we loaded via nix-plugins.
+    # Throw an error if that doesn't exist.
+    sopsImportEncrypted =
+      assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
+        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./nix/extra-builtins.nix` ?";
+      builtins.extraBuiltins.sopsImportEncrypted;
+  in
+
+  {
+    imports = [
+      (sopsImportEncrypted ../secrets/repo/globals.nix.enc)
+    ];
+
   }
 
 #+end_src
@@ -5969,6 +6176,11 @@ A breakdown of the flags being set:
         };
 
       services.dbus.implementation = "broker";
+
+      systemd.services.nix-daemon = {
+        environment.TMPDIR = "/var/tmp";
+      };
+
       system.stateVersion = lib.mkDefault "23.05";
     };
   }
@@ -6052,81 +6264,55 @@ A breakdown of the flags being set:
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/common/globals.nix
-{ lib, options, ... }:
-let
-  inherit (lib)
-    mkOption
-    types
-    ;
-
-in
-{
-  options = {
-    globals = mkOption {
-      default = { };
-      type = types.submodule {
-        options = {
-          root = {
-            hashedPassword = mkOption {
-              type = types.str;
-              description = "My root user's password hash.";
+  { lib, options, ... }:
+  let
+    inherit (lib)
+      mkOption
+      types
+      ;
+  in
+  {
+    options = {
+      globals = mkOption {
+        default = { };
+        type = types.submodule {
+          options = {
+            user = {
+              name = mkOption {
+                type = types.str;
+              };
             };
-          };
-
-          myuser = {
-            name = mkOption {
-              type = types.str;
-              description = "My unix username.";
-            };
-            hashedPassword = mkOption {
-              type = types.str;
-              description = "My unix password hash.";
-            };
-          };
 
 
-          services = mkOption {
-            type = types.attrsOf (
-              types.submodule {
-                options = {
-                  domain = mkOption {
-                    type = types.str;
-                    description = "The domain under which this service can be reached";
+            services = mkOption {
+              type = types.attrsOf (
+                types.submodule {
+                  options = {
+                    domain = mkOption {
+                      type = types.str;
+                    };
                   };
-                };
-              }
-            );
-          };
-
-          domains = {
-            me = mkOption {
-              type = types.str;
-              description = "My main domain.";
+                }
+              );
             };
 
-            personal = mkOption {
-              type = types.str;
-              description = "My personal domain.";
+            domains = {
+              main = mkOption {
+                type = types.str;
+              };
             };
-          };
-
-          macs = mkOption {
-            default = { };
-            type = types.attrsOf types.str;
-            description = "Known MAC addresses for external devices.";
           };
         };
       };
-    };
 
-    _globalsDefs = mkOption {
-      type = types.unspecified;
-      default = options.globals.definitions;
-      readOnly = true;
-      internal = true;
+      _globalsDefs = mkOption {
+        type = types.unspecified;
+        default = options.globals.definitions;
+        readOnly = true;
+        internal = true;
+      };
     };
-  };
-}
+  }
 #+end_src
 
 **** System Packages
@@ -6231,7 +6417,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { inputs, config, lib, ... }:
+  { inputs, config, lib, outputs, globals, nodes, ... }:
   {
 
     options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
@@ -6243,11 +6429,11 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
         sharedModules = [
           inputs.nix-index-database.hmModules.nix-index
           inputs.sops-nix.homeManagerModules.sops
-        {
-          home.stateVersion = lib.mkDefault config.system.stateVersion;
-        }
+          {
+            home.stateVersion = lib.mkDefault config.system.stateVersion;
+          }
         ];
-        extraSpecialArgs = { inherit (inputs) self; };
+        extraSpecialArgs = { inherit (inputs) self; inherit inputs outputs globals nodes; };
       };
     };
   }
@@ -6551,6 +6737,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
         networkmanager = {
           enable = true;
+          wifi.backend = "iwd";
           ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
             environmentFiles = [
               "${config.sops.templates."network-manager.env".path}"
@@ -6936,7 +7123,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
 :END:
 
-#+begin_src nix-ts :tangle modules/nixos/common/pii.nix
+ #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
   { config, inputs, lib, ... }:
   let
@@ -7659,6 +7846,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
             "/etc/nix"
             "/etc/NetworkManager/system-connections"
             "/var/lib/nixos"
+            "/var/tmp"
             {
               directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
               mode = "1777";
@@ -7674,6 +7862,18 @@ Normally, doing that also resets the lecture that happens on the first use of =s
       };
     };
 
+  }
+#+end_src
+
+**** Mount /tmp inside tmpfs
+
+#+begin_src nix-ts :tangle modules/nixos/common/tmp.nix
+  { config, lib, ... }:
+  {
+    options.swarselsystems.modules.tmp = lib.mkEnableOption "tmp dir config";
+    config = lib.mkIf config.swarselsystems.modules.tmp {
+      boot.tmp.useTmpfs = !config.swarselsystems.modules.impermanence true;
+    };
   }
 #+end_src
 
@@ -7917,7 +8117,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
   }
 #+end_src
 
-**** Lanzaboote
+**** Lanzaboote (secure boot)
 :PROPERTIES:
 :CUSTOM_ID: h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377
 :END:
@@ -8078,7 +8278,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nfs.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, pkgs, globals, ... }:
+  let
+    nfsUser = globals.user.name;
+  in
   {
     options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
     config = lib.mkIf config.swarselsystems.modules.server.nfs {
@@ -8109,7 +8312,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
             path = "/Vault/Eternor";
             writable = "true";
             comment = "Eternor";
-            "valid users" = "Swarsel";
+            "valid users" = nfsUser;
           };
         };
 
@@ -8138,6 +8341,10 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
 #+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
   { pkgs, lib, config, ... }:
+  let
+    inherit (config.repo.secrets.common) dnsProvider;
+    inherit (config.repo.secrets.common.mail) address3;
+  in
   {
     options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
     config = lib.mkIf config.swarselsystems.modules.server.nginx {
@@ -8157,8 +8364,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         acceptTerms = true;
         preliminarySelfsigned = false;
         defaults = {
-          email = "mrswarsel@gmail.com";
-          dnsProvider = "cloudflare";
+          inherit dnsProvider;
+          email = address3;
           environmentFile = "${config.sops.templates."certs.secret".path}";
         };
       };
@@ -8226,44 +8433,44 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/kavita.nix
   { self, lib, config, pkgs, ... }:
   let
+    servicePort = 8080;
     serviceName = "kavita";
     serviceUser = "kavita";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    servicePort = 8080;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         calibre
       ];
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         extraGroups = [ "users" ];
       };
 
       sops.secrets.kavita = { owner = serviceUser; };
 
-      networking.firewall.allowedTCPPorts = [ 8080 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      topology.self.services.kavita = {
+      topology.self.services.${serviceName} = {
         name = "Kavita";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/kavita.png";
+        icon = "${self}/topology/images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.kavita = {
+      services.${serviceName} = {
         enable = true;
         user = serviceUser;
         settings.Port = servicePort;
         tokenKeyFile = config.sops.secrets.kavita.path;
-        dataDir = "/Vault/data/kavita";
+        dataDir = "/Vault/data/${serviceName}";
       };
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -8297,15 +8504,15 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/jellyfin.nix
   { pkgs, lib, config, ... }:
   let
-    serviceDomain = "screen.swarsel.win";
     servicePort = 8096;
     serviceName = "jellyfin";
     serviceUser = "jellyfin";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
-      users.users."${serviceUser}" = {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+      users.users.${serviceUser} = {
         extraGroups = [ "video" "render" "users" ];
       };
       nixpkgs.config.packageOverrides = pkgs: {
@@ -8324,7 +8531,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.jellyfin = {
+      services.${serviceName} = {
         enable = true;
         user = serviceUser;
         openFirewall = true; # this works only for the default ports
@@ -8332,7 +8539,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -8367,15 +8574,15 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/navidrome.nix
   { pkgs, config, lib, ... }:
   let
-    serviceDomain = "sound.swarsel.win";
     servicePort = 4040;
     serviceName = "navidrome";
     serviceUser = "navidrome";
     serviceGroup = serviceUser;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         pciutils
         alsa-utils
@@ -8384,13 +8591,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       users = {
         groups = {
-          "${serviceGroup}" = {
+          ${serviceGroup} = {
             gid = 61593;
           };
         };
 
         users = {
-          "${serviceUser}" = {
+          ${serviceUser} = {
             isSystemUser = true;
             uid = 61593;
             group = serviceGroup;
@@ -8403,11 +8610,11 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         enableAllFirmware = lib.mkForce true;
       };
 
-      networking.firewall.allowedTCPPorts = [ 4040 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.navidrome = {
+      services.${serviceName} = {
         enable = true;
         openFirewall = true;
         settings = {
@@ -8449,7 +8656,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -8475,19 +8682,19 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               in
               {
                 "/" = {
-                  proxyPass = "http://navidrome";
+                  proxyPass = "http://${serviceName}";
                   proxyWebsockets = true;
                   inherit extraConfig;
                 };
                 "/share" = {
-                  proxyPass = "http://navidrome";
+                  proxyPass = "http://${serviceName}";
                   proxyWebsockets = true;
                   setOauth2Headers = false;
                   bypassAuth = true;
                   inherit extraConfig;
                 };
                 "/rest" = {
-                  proxyPass = "http://navidrome";
+                  proxyPass = "http://${serviceName}";
                   proxyWebsockets = true;
                   setOauth2Headers = false;
                   bypassAuth = true;
@@ -8517,13 +8724,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceGroup = serviceUser;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
-      users.groups."${serviceGroup}" = {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+      users.groups.${serviceGroup} = {
         gid = 65136;
       };
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         isSystemUser = true;
         uid = 65136;
         group = serviceGroup;
@@ -8559,25 +8766,31 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
 #+begin_src nix-ts :tangle modules/nixos/server/mpd.nix
   { self, lib, config, pkgs, ... }:
+  let
+    servicePort = 3254;
+    serviceUser = "mpd";
+    serviceGroup = serviceUser;
+    serviceName = "mpd";
+  in
   {
-    options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
-    config = lib.mkIf config.swarselsystems.modules.server.mpd {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
       users = {
         groups = {
           mpd = { };
         };
 
         users = {
-          mpd = {
+          ${serviceUser} = {
             isSystemUser = true;
-            group = "mpd";
+            group = serviceGroup;
             extraGroups = [ "audio" "utmp" ];
           };
         };
       };
 
       sops = {
-        secrets.mpdpass = { owner = "mpd"; };
+        secrets.mpdpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       environment.systemPackages = with pkgs; [
@@ -8586,19 +8799,19 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         mpv
       ];
 
-      topology.self.services.mpd = {
-        name = "MPD";
-        info = "http://localhost:3254";
-        icon = "${self}/topology/images/mpd.png";
+      topology.self.services.${serviceName} = {
+        name = lib.toUpper serviceName;
+        info = "http://localhost:${builtins.toString servicePort}";
+        icon = "${self}/topology/images/${serviceName}.png";
       };
 
-      services.mpd = {
+      services.${serviceName} = {
         enable = true;
         musicDirectory = "/media";
-        user = "mpd";
-        group = "mpd";
+        user = serviceUser;
+        group = serviceGroup;
         network = {
-          port = 3254;
+          port = servicePort;
           listenAddress = "any";
         };
         credentials = [
@@ -8658,13 +8871,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     postgresVersion = 14;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
       services = {
-        postgresql = {
+        ${serviceName} = {
           enable = true;
           package = pkgs."postgresql_${builtins.toString postgresVersion}";
-          dataDir = "/Vault/data/postgresql/${builtins.toString postgresVersion}";
+          dataDir = "/Vault/data/${serviceName}/${builtins.toString postgresVersion}";
         };
       };
     };
@@ -8679,17 +8892,18 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
   { lib, config, pkgs, ... }:
   let
-    matrixDomain = "swatrix.swarsel.win";
+    servicePort = 8008;
     serviceName = "matrix";
-    synapsePort = 8008;
-    synapseUser = "matrix-synapse";
+    serviceDomain = config.repo.secrets.common.services.domains.matrix;
+    serviceUser = "matrix-synapse";
+
+    federationPort = 8448;
     whatsappPort = 29318;
     telegramPort = 29317;
     signalPort = 29328;
-
-    baseUrl = "https://${matrixDomain}";
+    baseUrl = "https://${serviceDomain}";
     clientConfig."m.homeserver".base_url = baseUrl;
-    serverConfig."m.server" = "${matrixDomain}:443";
+    serverConfig."m.server" = "${serviceDomain}:443";
     mkWellKnown = data: ''
       default_type application/json;
       add_header Access-Control-Allow-Origin *;
@@ -8697,8 +8911,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     '';
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         matrix-synapse
         lottieconverter
@@ -8707,24 +8921,24 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       sops = {
         secrets = {
-          matrixsharedsecret = { owner = synapseUser; };
-          mautrixtelegram_as = { owner = synapseUser; };
-          mautrixtelegram_hs = { owner = synapseUser; };
-          mautrixtelegram_api_id = { owner = synapseUser; };
-          mautrixtelegram_api_hash = { owner = synapseUser; };
+          matrixsharedsecret = { owner = serviceUser; };
+          mautrixtelegram_as = { owner = serviceUser; };
+          mautrixtelegram_hs = { owner = serviceUser; };
+          mautrixtelegram_api_id = { owner = serviceUser; };
+          mautrixtelegram_api_hash = { owner = serviceUser; };
         };
         templates = {
           "matrix_user_register.sh".content = ''
-            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString synapsePort}
+            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString servicePort}
           '';
           matrixshared = {
-            owner = synapseUser;
+            owner = serviceUser;
             content = ''
               registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
             '';
           };
           mautrixtelegram = {
-            owner = synapseUser;
+            owner = serviceUser;
             content = ''
               MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
               MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
@@ -8735,7 +8949,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ 8008 8448 ];
+      networking.firewall.allowedTCPPorts = [ servicePort federationPort ];
 
       systemd = {
         timers."restart-bridges" = {
@@ -8766,7 +8980,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
       };
 
-      globals.services.${serviceName}.domain = matrixDomain;
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
         postgresql = {
@@ -8799,20 +9013,21 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           enable = true;
           dataDir = "/Vault/data/matrix-synapse";
           settings = {
-            app_service_config_files = let
-              inherit (config.services.matrix-synapse) dataDir;
-            in
+            app_service_config_files =
+              let
+                inherit (config.services.matrix-synapse) dataDir;
+              in
               [
-              "${dataDir}/telegram-registration.yaml"
-              "${dataDir}/whatsapp-registration.yaml"
-              "${dataDir}/signal-registration.yaml"
-              "${dataDir}/doublepuppet.yaml"
-            ];
-            server_name = matrixDomain;
-            public_baseurl = "https://${matrixDomain}";
+                "${dataDir}/telegram-registration.yaml"
+                "${dataDir}/whatsapp-registration.yaml"
+                "${dataDir}/signal-registration.yaml"
+                "${dataDir}/doublepuppet.yaml"
+              ];
+            server_name = serviceDomain;
+            public_baseurl = "https://${serviceDomain}";
             listeners = [
               {
-                port = synapsePort;
+                port = servicePort;
                 bind_addresses = [
                   "0.0.0.0"
                   # "::1"
@@ -8840,8 +9055,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:${builtins.toString synapsePort}";
-              domain = matrixDomain;
+              address = "http://localhost:${builtins.toString servicePort}";
+              domain = serviceDomain;
             };
             appservice = {
               address = "http://localhost:${builtins.toString telegramPort}";
@@ -8866,7 +9081,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               telegram_link_preview = true;
               permissions = {
                 "*" = "relaybot";
-                "@swarsel:${matrixDomain}" = "admin";
+                "@swarsel:${serviceDomain}" = "admin";
               };
               animated_sticker = {
                 target = "gif";
@@ -8886,8 +9101,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:${builtins.toString synapsePort}";
-              domain = matrixDomain;
+              address = "http://localhost:${builtins.toString servicePort}";
+              domain = serviceDomain;
             };
             appservice = {
               address = "http://localhost:${builtins.toString whatsappPort}";
@@ -8912,7 +9127,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
                 };
               };
               login_shared_secret_map = {
-                matrixDomain = "as_token:doublepuppet";
+                ${serviceDomain} = "as_token:doublepuppet";
               };
               sync_manual_marked_unread = true;
               send_presence_on_typing = true;
@@ -8922,7 +9137,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               extev_polls = true;
               permissions = {
                 "*" = "relay";
-                "@swarsel:${matrixDomain}" = "admin";
+                "@swarsel:${serviceDomain}" = "admin";
               };
             };
           };
@@ -8933,8 +9148,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           registerToSynapse = false;
           settings = {
             homeserver = {
-              address = "http://localhost:${builtins.toString synapsePort}";
-              domain = matrixDomain;
+              address = "http://localhost:${builtins.toString servicePort}";
+              domain = serviceDomain;
             };
             appservice = {
               address = "http://localhost:${builtins.toString signalPort}";
@@ -8948,12 +9163,12 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             bridge = {
               displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
               login_shared_secret_map = {
-                matrixDomain = "as_token:doublepuppet";
+                ${serviceDomain} = "as_token:doublepuppet";
               };
               caption_in_message = true;
               permissions = {
                 "*" = "relay";
-                "@swarsel:${matrixDomain}" = "admin";
+                "@swarsel:${serviceDomain}" = "admin";
               };
             };
           };
@@ -8966,14 +9181,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
-              "192.168.1.2:${builtins.toString synapsePort}" = { };
+              "192.168.1.2:${builtins.toString servicePort}" = { };
             };
           };
         };
         virtualHosts = {
-          "${matrixDomain}" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -9030,14 +9245,17 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/nextcloud.nix
   { pkgs, lib, config, ... }:
   let
-    serviceDomain = "stash.swarsel.win";
+    inherit (config.repo.secrets.local.nextcloud) adminuser;
+
+    servicePort = 80;
     serviceUser = "nextcloud";
     serviceGroup = serviceUser;
     serviceName = "nextcloud";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops.secrets = {
         nextcloudadminpass = {
@@ -9056,7 +9274,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
-        nextcloud = {
+        ${serviceName} = {
           enable = true;
           settings = {
             trusted_proxies = [ "0.0.0.0" ];
@@ -9064,8 +9282,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
           package = pkgs.nextcloud31;
           hostName = serviceDomain;
-          home = "/Vault/data/nextcloud";
-          datadir = "/Vault/data/nextcloud";
+          home = "/Vault/data/${serviceName}";
+          datadir = "/Vault/data/${serviceName}";
           https = true;
           configureRedis = true;
           maxUploadSize = "4G";
@@ -9074,7 +9292,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           };
           extraAppsEnable = true;
           config = {
-            adminuser = "admin";
+            inherit adminuser;
             adminpassFile = config.sops.secrets.nextcloudadminpass.path;
             dbtype = "sqlite";
           };
@@ -9083,9 +9301,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
-              "192.168.1.2:80" = { };
+              "192.168.1.2:${builtins.toString servicePort}" = { };
             };
           };
         };
@@ -9114,23 +9332,23 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
   { lib, config, globals, ... }:
   let
-    serviceDomain = "shots.swarsel.win";
     servicePort = 3001;
     serviceUser = "immich";
     serviceName = "immich";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         extraGroups = [ "video" "render" "users" ];
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.immich = {
+      services.${serviceName} = {
         enable = true;
         host = "0.0.0.0";
         port = servicePort;
@@ -9145,7 +9363,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -9192,19 +9410,23 @@ This is my personal document management system. It automatically pulls documents
 Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml='s. This is needed for e.g. online services that only send their invoices through email body text.
 
 #+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
-  { lib, pkgs, config, ... }:
+  { lib, pkgs, config, globals, ... }:
   let
-    serviceDomain = "scan.swarsel.win";
     servicePort = 28981;
     serviceUser = "paperless";
     serviceGroup = serviceUser;
     serviceName = "paperless";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    tikaPort = 9998;
+    gotenbergPort = 3002;
+    kanidmDomain = globals.services.kanidm.domain;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         extraGroups = [ "users" ];
       };
 
@@ -9222,25 +9444,25 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
-        paperless = {
+        ${serviceName} = {
           enable = true;
           mediaDir = "/Vault/Eternor/Paperless";
-          dataDir = "/Vault/data/paperless";
+          dataDir = "/Vault/data/${serviceName}";
           user = serviceUser;
           port = servicePort;
           passwordFile = config.sops.secrets.paperless_admin.path;
           address = "0.0.0.0";
           settings = {
             PAPERLESS_OCR_LANGUAGE = "deu+eng";
-            PAPERLESS_URL = "https://scan.swarsel.win";
+            PAPERLESS_URL = "https://${serviceDomain}";
             PAPERLESS_OCR_USER_ARGS = builtins.toJSON {
               optimize = 1;
               invalidate_digital_signatures = true;
               pdfa_image_compression = "lossless";
             };
             PAPERLESS_TIKA_ENABLED = "true";
-            PAPERLESS_TIKA_ENDPOINT = "http://localhost:9998";
-            PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:3002";
+            PAPERLESS_TIKA_ENDPOINT = "http://localhost:${builtins.toString tikaPort}";
+            PAPERLESS_TIKA_GOTENBERG_ENDPOINT = "http://localhost:${builtins.toString gotenbergPort}";
             PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
             PAPERLESS_SOCIALACCOUNT_PROVIDERS = builtins.toJSON {
               openid_connect = {
@@ -9252,7 +9474,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                     client_id = "paperless";
                     # secret will be added by paperless-web.service (see below)
                     #secret = "";
-                    settings.server_url = "https://sso.swarsel.win/oauth2/openid/${client_id}/.well-known/openid-configuration";
+                    settings.server_url = "https://${kanidmDomain}/oauth2/openid/${client_id}/.well-known/openid-configuration";
                   }
                 ];
               };
@@ -9262,7 +9484,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
         tika = {
           enable = true;
-          port = 9998;
+          port = tikaPort;
           openFirewall = false;
           listenAddress = "127.0.0.1";
           enableOcr = true;
@@ -9271,7 +9493,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         gotenberg = {
           enable = true;
           package = pkgs.stable.gotenberg;
-          port = 3002;
+          port = gotenbergPort;
           bindIP = "127.0.0.1";
           timeout = "600s";
           chromium.package = pkgs.stable.chromium;
@@ -9291,7 +9513,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -9330,7 +9552,9 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 #+begin_src nix-ts :tangle modules/nixos/server/transmission.nix
   { self, pkgs, lib, config, ... }:
   let
-    serviceDomain = "store.swarsel.win";
+    serviceName = "transmission";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
     lidarrUser = "lidarr";
     lidarrGroup = lidarrUser;
     lidarrPort = 8686;
@@ -9348,8 +9572,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     prowlarrPort = 9696;
   in
   {
-    options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
-    config = lib.mkIf config.swarselsystems.modules.server.transmission {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       # this user/group section is probably unneeded
       users = {
@@ -9518,34 +9742,37 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
   { lib, config, ... }:
   let
     inherit (config.repo.secrets.common) workHostName;
-    serviceDomain = "storync.swarsel.win";
+
     servicePort = 8384;
     serviceUser = "syncthing";
     serviceGroup = serviceUser;
     serviceName = "syncthing";
+    serviceDomain = config.repo.secrets.common.services.domains.syncthing1;
+
+    cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         extraGroups = [ "users" ];
         group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups."${serviceGroup}" = { };
+      users.groups.${serviceGroup} = { };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.${serviceName}.domain = serviceDomain;
+      globals.services."${serviceName}-${config.networking.hostName}".domain = serviceDomain;
 
-      services.syncthing = {
+      services.${serviceName} = rec {
         enable = true;
         user = serviceUser;
         group = serviceGroup;
-        dataDir = "/Vault/data/syncthing";
-        configDir = "/Vault/data/syncthing/.config/syncthing";
+        dataDir = "/Vault/data/${serviceName}";
+        configDir = "${cfg.dataDir}/.config/${serviceName}";
         guiAddress = "0.0.0.0:${builtins.toString servicePort}";
         openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
         relay.enable = false;
@@ -9567,14 +9794,14 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           };
           folders = {
             "Default Folder" = lib.mkForce {
-              path = "/Vault/data/syncthing/Sync";
+              path = "${cfg.dataDir}/Sync";
               type = "receiveonly";
               versioning = null;
               devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "default";
             };
             "Obsidian" = {
-              path = "/Vault/data/syncthing/Obsidian";
+              path = "${cfg.dataDir}/Obsidian";
               type = "receiveonly";
               versioning = {
                 type = "simple";
@@ -9584,7 +9811,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               id = "yjvni-9eaa7";
             };
             "Org" = {
-              path = "/Vault/data/syncthing/Org";
+              path = "${cfg.dataDir}/Org";
               type = "receiveonly";
               versioning = {
                 type = "simple";
@@ -9594,7 +9821,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
-              path = "/Vault/data/syncthing/Vpn";
+              path = "${cfg.dataDir}/Vpn";
               type = "receiveonly";
               versioning = {
                 type = "simple";
@@ -9604,7 +9831,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               id = "hgp9s-fyq3p";
             };
             # "Documents" = {
-            #   path = "/Vault/data/syncthing/Documents";
+            #   path = "${cfg.dataDir}/Documents";
             #   type = "receiveonly";
             #   versioning = {
             #     type = "simple";
@@ -9619,7 +9846,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -9709,7 +9936,7 @@ This manages backups for my pictures and obsidian files.
   }
 #+end_src
 
-**** monitoring (Grafana)
+**** monitoring (Grafana, Prometheus)
 :PROPERTIES:
 :CUSTOM_ID: h:a31c7192-e11d-4a26-915d-1bbc38e373d3
 :END:
@@ -9717,26 +9944,47 @@ This manages backups for my pictures and obsidian files.
 This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
 
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
-  { self, lib, config, ... }:
+  { self, lib, config, globals, ... }:
   let
-    serviceDomain = "status.swarsel.win";
+
     servicePort = 3000;
     serviceUser = "grafana";
     serviceGroup = serviceUser;
-    moduleName = "monitoring";
+    serviceName = "grafana";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    prometheusPort = 9090;
+    prometheusUser = "prometheus";
+    prometheusGroup = prometheusUser;
+    nextcloudUser = config.repo.secrets.local.nextcloud.adminuser;
     grafanaUpstream = "grafana";
     prometheusUpstream = "prometheus";
-    prometheusPort = 9090;
     prometheusWebRoot = "prometheus";
+    kanidmDomain = globals.services.kanidm.domain;
   in
   {
-    options.swarselsystems.modules.server."${moduleName}" = lib.mkEnableOption "enable ${moduleName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${moduleName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      sops.secrets = {
-        grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      sops = {
+        secrets = {
+          grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          prometheus-admin-hash = { sopsFile = self + /secrets/winters/secrets2.yaml; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+
+        };
+        templates = {
+          "web-config" = {
+            content = ''
+              basic_auth_users:
+                admin: ${config.sops.placeholder.prometheus-admin-hash}
+            '';
+            owner = prometheusUser;
+            group = prometheusGroup;
+            mode = "0440";
+          };
+        };
       };
 
       users = {
@@ -9745,7 +9993,7 @@ This section exposes several metrics that I use to check the health of my server
             extraGroups = [ "nextcloud" ];
           };
 
-          "${serviceUser}" = {
+          ${serviceUser} = {
             extraGroups = [ "users" ];
           };
         };
@@ -9754,12 +10002,12 @@ This section exposes several metrics that I use to check the health of my server
       networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
       topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
-      globals.services.${moduleName}.domain = serviceDomain;
+      globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
-        grafana = {
+        ${serviceName} = {
           enable = true;
-          dataDir = "/Vault/data/grafana";
+          dataDir = "/Vault/data/${serviceName}";
           provision = {
             enable = true;
             datasources.settings = {
@@ -9816,9 +10064,9 @@ This section exposes several metrics that I use to check the health of my server
               client_secret = "$__file{${config.sops.secrets.kanidm-grafana-client.path}}";
               scopes = "openid email profile";
               login_attribute_path = "preferred_username";
-              auth_url = "https://sso.swarsel.win/ui/oauth2";
-              token_url = "https://sso.swarsel.win/oauth2/token";
-              api_url = "https://sso.swarsel.win/oauth2/openid/grafana/userinfo";
+              auth_url = "https://${kanidmDomain}/ui/oauth2";
+              token_url = "https://${kanidmDomain}/oauth2/token";
+              api_url = "https://${kanidmDomain}/oauth2/openid/grafana/userinfo";
               use_pkce = true;
               use_refresh_token = true;
               # Allow mapping oauth2 roles to server admin
@@ -9830,13 +10078,13 @@ This section exposes several metrics that I use to check the health of my server
 
         prometheus = {
           enable = true;
-          webExternalUrl = "https://status.swarsel.win/${prometheusWebRoot}";
+          webExternalUrl = "https://${serviceDomain}/${prometheusWebRoot}";
           port = prometheusPort;
           listenAddress = "0.0.0.0";
           globalConfig = {
             scrape_interval = "10s";
           };
-          webConfigFile = self + /programs/server/prometheus/web.config;
+          webConfigFile = config.sops.templates.web-config.path;
           scrapeConfigs = [
             {
               job_name = "node";
@@ -9890,8 +10138,8 @@ This section exposes several metrics that I use to check the health of my server
             nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
               enable = true;
               port = 9205;
-              url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
-              username = "admin";
+              url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
+              username = nextcloudUser;
               passwordFile = config.sops.secrets.nextcloudadminpass.path;
             };
           };
@@ -9949,26 +10197,26 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 #+begin_src nix-ts :tangle modules/nixos/server/jenkins.nix
   { pkgs, lib, config, ... }:
   let
-    serviceDomain = "servant.swarsel.win";
     servicePort = 8088;
     serviceName = "jenkins";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       services.jenkins = {
         enable = true;
         withCLI = true;
-        port = 8088;
+        port = servicePort;
         packages = [ pkgs.stdenv pkgs.git pkgs.jdk17 config.programs.ssh.package pkgs.nix ];
         listenAddress = "0.0.0.0";
-        home = "/Vault/apps/jenkins";
+        home = "/Vault/apps/${serviceName}";
       };
 
       services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -10004,13 +10252,17 @@ This was an approach of hosting an RSS server from within emacs. That would have
 
 #+begin_src nix-ts :tangle modules/nixos/server/emacs.nix
   { lib, config, ... }:
+  let
+    serviceName = "emacs";
+    servicePort = 9812;
+  in
   {
-    options.swarselsystems.modules.server.emacs = lib.mkEnableOption "enable emacs server on server";
-    config = lib.mkIf config.swarselsystems.modules.server.emacs {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} server on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      networking.firewall.allowedTCPPorts = [ 9812 ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      services.emacs = {
+      services.${serviceName} = {
         enable = true;
         install = true;
         startWithGraphical = false;
@@ -10028,31 +10280,34 @@ This was an approach of hosting an RSS server from within emacs. That would have
 
 FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
 
-It serves both a Greader API at https://signpost.swarsel.win/api/greader.php, as well as a Fever API at     https://signpost.swarsel.win/api/fever.php.
+It serves both a Greader API at https://${serviceName}/api/greader.php, as well as a Fever API at     https://${serviceName}/api/fever.php.
 
-I am using this with CapyReader on my phone, set it up as a FreshRSS account with Server URL =https://signpost.swarsel.win/api/greader.php
+I am using this with CapyReader on my phone, set it up as a FreshRSS account with Server URL =https://${serviceName}/api/greader.php
 
 FreshRSS claims to support HTTP header auth, but at least it does not work with my oauth2-proxy setup. Until this is fixed, I resorted to the "form" login, since I mostly do not use the web version anyways.
 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
   { self, lib, config, ... }:
   let
+    inherit (config.repo.secrets.local.freshrss) defaultUser;
+
+    servicePort = 80;
     serviceName = "freshrss";
-    serviceDomain = "signpost.swarsel.win";
     serviceUser = "freshrss";
     serviceGroup = serviceName;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
-    config = lib.mkIf config.swarselsystems.modules.server.freshrss {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         extraGroups = [ "users" ];
         group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups."${serviceGroup}" = { };
+      users.groups.${serviceGroup} = { };
 
       sops = {
         secrets = {
@@ -10066,7 +10321,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         #       content = ''
         #         DATA_PATH=${config.services.freshrss.dataDir}
         #         OIDC_ENABLED=1
-        #         OIDC_PROVIDER_METADATA_URL=https://sso.swarsel.win/.well-known/openid-configuration
+        #         OIDC_PROVIDER_METADATA_URL=https://${kanidmDomain}/.well-known/openid-configuration
         #         OIDC_CLIENT_ID=freshrss
         #         OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-freshrss-client}
         #         OIDC_CLIENT_CRYPTO_KEY=${config.sops.placeholder.oidc-crypto-key}
@@ -10084,18 +10339,18 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       topology.self.services.${serviceName} = {
         name = "FreshRSS";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/freshrss.png";
+        icon = "${self}/topology/images/${serviceName}.png";
       };
 
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.freshrss = {
+      services.${serviceName} = {
+        inherit defaultUser;
         enable = true;
         virtualHost = serviceDomain;
         baseUrl = "https://${serviceDomain}";
         authType = "form";
         dataDir = "/Vault/data/tt-rss";
-        defaultUser = "Swarsel";
         passwordFile = config.sops.secrets.fresh.path;
       };
 
@@ -10105,9 +10360,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
-              "192.168.1.2:80" = { };
+              "192.168.1.2:${builtins.toString servicePort}" = { };
             };
           };
         };
@@ -10141,26 +10396,28 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, pkgs, globals, ... }:
   let
-    serviceDomain = "swagit.swarsel.win";
     servicePort = 3000;
     serviceUser = "forgejo";
     serviceGroup = serviceUser;
     serviceName = "forgejo";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    kanidmDomain = globals.services.kanidm.domain;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups."${serviceGroup}" = { };
+      users.groups.${serviceGroup} = { };
 
       sops.secrets = {
         kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -10168,7 +10425,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.forgejo = {
+      services.${serviceName} = {
         enable = true;
         user = serviceUser;
         group = serviceGroup;
@@ -10210,13 +10467,13 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
       };
 
-      systemd.services.forgejo = {
+      systemd.services.${serviceName} = {
         serviceConfig.RestartSec = "60"; # Retry every minute
         preStart =
           let
             exe = lib.getExe config.services.forgejo.package;
             providerName = "kanidm";
-            clientId = "forgejo";
+            clientId = serviceName;
             args = lib.escapeShellArgs (
               lib.concatLists [
                 [
@@ -10233,7 +10490,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
                 ]
                 [
                   "--auto-discover-url"
-                  "https://sso.swarsel.win/oauth2/openid/${clientId}/.well-known/openid-configuration"
+                  "https://${kanidmDomain}/oauth2/openid/${clientId}/.well-known/openid-configuration"
                 ]
                 [
                   "--scopes"
@@ -10268,7 +10525,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -10301,15 +10558,17 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/ankisync.nix
-  { lib, config, ... }:
+  { self, lib, config, globals, ... }:
   let
-    serviceDomain = "synki.swarsel.win";
     servicePort = 27701;
     serviceName = "ankisync";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    ankiUser = globals.user.name;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -10317,6 +10576,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       topology.self.services.${serviceName} = {
         name = lib.mkForce "Anki Sync Server";
+        icon = "${self}/topology/images/${serviceName}.png";
         info = "https://${serviceDomain}";
       };
 
@@ -10329,7 +10589,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         openFirewall = true;
         users = [
           {
-            username = "Swarsel";
+            username = ankiUser;
             passwordFile = config.sops.secrets.swarsel.path;
           }
         ];
@@ -10337,7 +10597,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -10374,29 +10634,36 @@ The forgejo configuration is a little broken and will show a 500 error when sign
 A stupid (but simple) way to get the =originUrl= is to simply set any URL there and try to auth using kanidm. Then check the logs (=journalctl -eu kanidm=) and check for the line that says something along the lines of
   `🚧 [warn]: Invalid OAuth2 redirect_uri (must be an exact match to a redirect-url) - got <your =originURL=>`
 
-To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://sso.swarsel.win/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
+To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://<kanidmDomain>/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
 
 #+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
   { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
-    serviceDomain = "sso.swarsel.win";
+
     servicePort = 8300;
     serviceUser = "kanidm";
     serviceGroup = serviceUser;
     serviceName = "kanidm";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
     oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
+    immichDomain = globals.services.immich.domain;
+    paperlessDomain = globals.services.paperless.domain;
+    forgejoDomain = globals.services.forgejo.domain;
+    grafanaDomain = globals.services.grafana.domain;
+    nextcloudDomain = globals.services.nextcloud.domain;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users."${serviceUser}" = {
+      users.users.${serviceUser} = {
         group = serviceGroup;
         isSystemUser = true;
       };
 
-      users.groups."${serviceGroup}" = { };
+      users.groups.${serviceGroup} = { };
 
       sops = {
         secrets = {
@@ -10419,7 +10686,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
-        kanidm = {
+        ${serviceName} = {
           package = pkgs.kanidmWithSecretProvisioning;
           enableServer = true;
           serverSettings = {
@@ -10464,12 +10731,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                 immich = {
                   displayName = "Immich";
                   originUrl = [
-                    "https://shots.swarsel.win/auth/login"
-                    "https://shots.swarsel.win/user-settings"
+                    "https://${immichDomain}/auth/login"
+                    "https://${immichDomain}/user-settings"
                     "app.immich:///oauth-callback"
-                    "https://shots.swarsel.win/api/oauth/mobile-redirect"
+                    "https://${immichDomain}/api/oauth/mobile-redirect"
                   ];
-                  originLanding = "https://shots.swarsel.win/";
+                  originLanding = "https://${immichDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-immich.path;
                   preferShortUsername = true;
                   enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
@@ -10481,8 +10748,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                 };
                 paperless = {
                   displayName = "Paperless";
-                  originUrl = "https://scan.swarsel.win/accounts/oidc/kanidm/login/callback/";
-                  originLanding = "https://scan.swarsel.win/";
+                  originUrl = "https://${paperlessDomain}/accounts/oidc/kanidm/login/callback/";
+                  originLanding = "https://${paperlessDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-paperless.path;
                   preferShortUsername = true;
                   scopeMaps."paperless.access" = [
@@ -10493,8 +10760,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                 };
                 forgejo = {
                   displayName = "Forgejo";
-                  originUrl = "https://swagit.swarsel.win/user/oauth2/kanidm/callback";
-                  originLanding = "https://swagit.swarsel.win/";
+                  originUrl = "https://${forgejoDomain}/user/oauth2/kanidm/callback";
+                  originLanding = "https://${forgejoDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
                   scopeMaps."forgejo.access" = [
                     "openid"
@@ -10512,8 +10779,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                 };
                 grafana = {
                   displayName = "Grafana";
-                  originUrl = "https://status.swarsel.win/login/generic_oauth";
-                  originLanding = "https://status.swarsel.win/";
+                  originUrl = "https://${grafanaDomain}/login/generic_oauth";
+                  originLanding = "https://${grafanaDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-grafana.path;
                   preferShortUsername = true;
                   scopeMaps."grafana.access" = [
@@ -10532,8 +10799,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
                 };
                 nextcloud = {
                   displayName = "Nextcloud";
-                  originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
-                  originLanding = "https://stash.swarsel.win/";
+                  originUrl = " https://${nextcloudDomain}/apps/sociallogin/custom_oidc/kanidm";
+                  originLanding = "https://${nextcloudDomain}/";
                   basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
                   allowInsecureClientDisablePkce = true;
                   scopeMaps."nextcloud.access" = [
@@ -10594,12 +10861,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       };
 
       systemd.services = {
-        kanidm.serviceConfig.RestartSec = "30";
+        ${serviceName}.serviceConfig.RestartSec = "30";
       };
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -10634,13 +10901,18 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/oauth2-proxy.nix
   { lib, config, globals, ... }:
   let
+    servicePort = 3004;
+    serviceUser = "oauth2-proxy";
+    serviceGroup = serviceUser;
+    serviceName = "oauth2-proxy";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
     kanidmDomain = globals.services.kanidm.domain;
-    oauth2ProxyDomain = "soauth.swarsel.win";
-    oauth2ProxyPort = 3004;
+    mainDomain = globals.domains.main;
   in
   {
     options = {
-      swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+      swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
       # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
       services.nginx.virtualHosts = lib.mkOption {
         type = lib.types.attrsOf (
@@ -10748,12 +11020,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         );
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.server.oauth2Proxy {
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops = {
         secrets = {
-          "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-          "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+          "oauth2-cookie-secret" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-oauth2-proxy-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
         templates = {
@@ -10762,34 +11034,34 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
               OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
               OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
             '';
-            owner = "oauth2-proxy";
-            group = "oauth2-proxy";
+            owner = serviceUser;
+            group = serviceGroup;
             mode = "0440";
           };
         };
       };
 
-      networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      globals.services.oauth2Proxy.domain = oauth2ProxyDomain;
+      globals.services.oauth2Proxy.domain = serviceDomain;
 
       services = {
-        oauth2-proxy = {
+        ${serviceName} = {
           enable = true;
           cookie = {
-            domain = ".swarsel.win";
+            domain = ".${mainDomain}";
             secure = true;
             expire = "900m";
             secret = null; # set by service EnvironmentFile
           };
           clientSecret = null; # set by service EnvironmentFile
           reverseProxy = true;
-          httpAddress = "0.0.0.0:${builtins.toString oauth2ProxyPort}";
-          redirectURL = "https://${oauth2ProxyDomain}/oauth2/callback";
+          httpAddress = "0.0.0.0:${builtins.toString servicePort}";
+          redirectURL = "https://${serviceDomain}/oauth2/callback";
           setXauthrequest = true;
           extraConfig = {
             code-challenge-method = "S256";
-            whitelist-domain = ".swarsel.win";
+            whitelist-domain = ".${mainDomain}";
             set-authorization-header = true;
             pass-access-token = true;
             skip-jwt-bearer-tokens = true;
@@ -10802,16 +11074,16 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
           loginURL = "https://${kanidmDomain}/ui/oauth2";
           redeemURL = "https://${kanidmDomain}/oauth2/token";
           validateURL = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy/userinfo";
-          clientID = "oauth2-proxy";
+          clientID = serviceName;
           email.domains = [ "*" ];
         };
       };
 
       systemd.services = {
-        oauth2-proxy = {
+        ${serviceName} = {
           # after = [ "kanidm.service" ];
           serviceConfig = {
-            RuntimeDirectory = "oauth2-proxy";
+            RuntimeDirectory = serviceName;
             RuntimeDirectoryMode = "0750";
             UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
             RestartSec = "60"; # Retry every minute
@@ -10824,20 +11096,20 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services.nginx = {
         upstreams = {
-          oauth2-proxy = {
+          ${serviceName} = {
             servers = {
-              "localhost:${builtins.toString oauth2ProxyPort}" = { };
+              "localhost:${builtins.toString servicePort}" = { };
             };
           };
         };
         virtualHosts = {
-          "${oauth2ProxyDomain}" = {
+          "${serviceDomain}" = {
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
             locations = {
               "/" = {
-                proxyPass = "http://oauth2-proxy";
+                proxyPass = "http://${serviceName}";
               };
             };
             extraConfig = ''
@@ -10859,39 +11131,48 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/firefly-iii.nix
   { self, lib, config, ... }:
   let
+    servicePort = 80;
+    serviceUser = "firefly-iii";
+    serviceGroup = serviceUser;
+    serviceName = "firefly-iii";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    nginxGroup = "nginx";
+
     cfg = config.services.firefly-iii;
-    serviceDomain = "stonks.swarsel.win";
-    fireflyUser = "firefly-iii";
-    serviceName = "firefly";
   in
   {
-    options.swarselsystems.modules.server.firefly = lib.mkEnableOption "enable firefly-iii on server";
-    config = lib.mkIf config.swarselsystems.modules.server.firefly {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-      users.users.firefly-iii = {
-        group = "nginx";
-        isSystemUser = true;
+      users = {
+        groups.${serviceGroup} = { };
+        users.${serviceUser} = {
+          group = lib.mkForce serviceGroup;
+          extraGroups = lib.mkIf cfg.enableNginx [ nginxGroup ];
+          isSystemUser = true;
+        };
       };
 
       sops = {
         secrets = {
-          "firefly-iii-app-key" = { owner = fireflyUser; group = "nginx"; mode = "0440"; };
+          "firefly-iii-app-key" = { owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
         };
       };
 
-      topology.self.services.firefly-iii = {
+      topology.self.services.${serviceName} = {
         name = "Firefly-III";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/firefly-iii.png";
+        icon = "${self}/topology/images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
       services = {
-        firefly-iii = {
+        ${serviceName} = {
           enable = true;
-          user = fireflyUser;
-          group = if cfg.enableNginx then "nginx" else fireflyUser;
-          dataDir = "/Vault/data/firefly-iii";
+          user = serviceUser;
+          group = if cfg.enableNginx then nginxGroup else serviceGroup;
+          dataDir = "/Vault/data/${serviceName}";
           settings = {
             TZ = config.repo.secrets.common.location.timezone;
             APP_URL = "https://${serviceDomain}";
@@ -10928,9 +11209,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
-              "192.168.1.2:80" = { };
+              "192.168.1.2:${builtins.toString servicePort}" = { };
             };
           };
         };
@@ -10968,18 +11249,19 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/koillection.nix
   { self, lib, config, ... }:
   let
-    serviceDomain = "swag.swarsel.win";
     serviceUser = "koillection";
     serviceDB = "koillection";
     serviceName = "koillection";
     servicePort = 2282;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
     postgresPort = config.services.postgresql.settings.port; # 5432
     containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops.secrets = {
         koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
@@ -11065,7 +11347,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -11096,18 +11378,18 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/atuin.nix
   { lib, config, ... }:
   let
-    serviceDomain = "shellhistory.swarsel.win";
     servicePort = 8888;
     serviceName = "atuin";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.atuin = {
+      services.${serviceName} = {
         enable = true;
         host = "0.0.0.0";
         port = servicePort;
@@ -11117,7 +11399,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -11155,17 +11437,18 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   let
     inherit (config.repo.secrets.local.radicale) user1;
     sopsFile = self + /secrets/winters/secrets2.yaml;
-    serviceDomain = "schedule.swarsel.win";
+
     servicePort = 8000;
     serviceName = "radicale";
     serviceUser = "radicale";
     serviceGroup = serviceUser;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
-    cfg = config.services."${serviceName}";
+    cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops = {
         secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -11185,7 +11468,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.radicale = {
+      services.${serviceName} = {
         enable = true;
         settings = {
           server = {
@@ -11228,11 +11511,10 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       ];
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
-      networking.firewall.allowedUDPPorts = [ servicePort ];
 
       nodes.moonside.services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "192.168.1.2:${builtins.toString servicePort}" = { };
             };
@@ -11269,7 +11551,6 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
   { self, lib, config, pkgs, ... }:
   let
-    serviceDomain = "send.swarsel.win";
     servicePorts = [
       9009
       9010
@@ -11278,12 +11559,13 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       9013
     ];
     serviceName = "croc";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
     cfg = config.services.croc;
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops = {
         secrets = {
@@ -11308,7 +11590,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.croc = {
+      services.${serviceName} = {
         enable = true;
         ports = servicePorts;
         pass = config.sops.secrets.croc-password.path;
@@ -11317,7 +11599,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
 
       systemd.services = {
-        "${serviceName}" = {
+        ${serviceName} = {
           serviceConfig = {
             ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
               lib.concatMapStringsSep "," toString cfg.ports}";
@@ -11343,22 +11625,22 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/microbin.nix
   { self, lib, config, ... }:
   let
-    serviceDomain = "scratch.swarsel.win";
     servicePort = 8777;
     serviceName = "microbin";
     serviceUser = "microbin";
     serviceGroup = serviceUser;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
-    cfg = config.services."${serviceName}";
+    cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       users = {
-        groups."${serviceGroup}" = { };
+        groups.${serviceGroup} = { };
 
-        users."${serviceUser}" = {
+        users.${serviceUser} = {
           isSystemUser = true;
           group = serviceGroup;
         };
@@ -11392,7 +11674,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services."${serviceName}" = {
+      services.${serviceName} = {
         enable = true;
         passwordFile = config.sops.templates.microbin-env.path;
         dataDir = "/var/lib/microbin";
@@ -11427,7 +11709,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       };
 
       systemd.services = {
-        "${serviceName}" = {
+        ${serviceName} = {
           serviceConfig = {
             DynamicUser = lib.mkForce false;
             User = serviceUser;
@@ -11444,7 +11726,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "localhost:${builtins.toString servicePort}" = { };
             };
@@ -11480,20 +11762,21 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, ... }:
   let
-    serviceDomain = "s.swarsel.win";
     servicePort = 8081;
     serviceName = "shlink";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
   in
   {
     options = {
-      swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
+      swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     };
-    config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops = {
         secrets = {
-          shlink-api = {  };
+          shlink-api = { };
         };
 
         templates = {
@@ -11505,7 +11788,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
       };
 
-      virtualisation.oci-containers.containers."shlink" = {
+      virtualisation.oci-containers.containers.${serviceName} = {
         image = "shlinkio/shlink@${containerRev}";
         environment = {
           "DEFAULT_DOMAIN" = serviceDomain;
@@ -11537,7 +11820,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services.nginx = {
         upstreams = {
-          "${serviceName}" = {
+          ${serviceName} = {
             servers = {
               "localhost:${builtins.toString servicePort}" = { };
             };
@@ -11600,6 +11883,20 @@ These sets of configuration do not need to be deployed on every host, for a mult
 - There are some hosts that I do not want to autologin to.
 - =nswitch-rcm= is a tool I wrote for easy payload flashing of a Nintendo Switch in RCM mode. However, that is not needed on every machine.
 - The work profile is only used on my work laptop.
+
+  #+begin_src nix-ts :tangle modules/nixos/optional/default.nix
+    { self, lib, ... }:
+    let
+      importNames = lib.swarselsystems.readNix "modules/nixos/optional";
+      modulesPath = "${self}/modules";
+    in
+    {
+      imports = lib.swarselsystems.mkImports importNames "modules/nixos/optional" ++ [
+        "${modulesPath}/home/common/sharedsetup.nix"
+      ];
+    }
+  #+end_src
+
 
 **** gaming
 :PROPERTIES:
@@ -12701,7 +12998,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         obsidian
         spotify
         vesktop # discord client
-        nextcloud-client
+        # nextcloud-client # enables a systemd service that I do not want
         spotify-player
         element-desktop
         nicotine-plus
@@ -12873,7 +13170,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   {
     options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
     config = lib.mkIf config.swarselsystems.modules.sops {
-      sops =  {
+      sops = {
         age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
         defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
@@ -12902,7 +13199,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
 
     config = lib.mkIf config.swarselsystems.modules.yubikey {
-      pam.yubico.authorizedYubiKeys = {
+      pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         ids = [
           nixosConfig.repo.secrets.common.yubikeys.dev1
           nixosConfig.repo.secrets.common.yubikeys.dev2
@@ -13162,10 +13459,11 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, nixosConfig, globals, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
     inherit (nixosConfig.repo.secrets.common) fullName;
+    crocDomain = globals.services.croc.domain;
   in
   {
     options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
@@ -13173,11 +13471,11 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
       home.sessionVariables = {
         EDITOR = "e -w";
         DISPLAY = ":0";
-        CROC_RELAY = "send.swarsel.win";
+        CROC_RELAY = crocDomain;
         SWARSEL_LO_RES = config.swarselsystems.lowResolution;
         SWARSEL_HI_RES = config.swarselsystems.highResolution;
       };
-      systemd.user.sessionVariables = {
+      systemd.user.sessionVariables = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         SWARSEL_MAIL1 = address1;
         SWARSEL_MAIL2 = address2;
         SWARSEL_MAIL3 = address3;
@@ -13339,7 +13637,10 @@ Eza provides me with a better =ls= command and some other useful aliases.
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/atuin.nix
-  { lib, config, ... }:
+  { lib, config, globals, ... }:
+  let
+    atuinDomain = globals.services.atuin.domain;
+  in
   {
     options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
     config = lib.mkIf config.swarselsystems.modules.atuin {
@@ -13349,7 +13650,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
         settings = {
           auto_sync = true;
           sync_frequency = "5m";
-          sync_address = "https://shellhistory.swarsel.win";
+          sync_address = "https://${atuinDomain}";
         };
       };
     };
@@ -13364,10 +13665,12 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/home/common/git.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, nixosConfig, globals, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1;
     inherit (nixosConfig.repo.secrets.common) fullName;
+
+    gitUser = globals.user.name;
   in
   {
     options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
@@ -13391,15 +13694,15 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
           key = "0x76FD3810215AE097";
           signByDefault = true;
         };
-        userEmail = lib.mkDefault address1;
-        userName = fullName;
+        userEmail = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
+        userName = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
         difftastic.enable = true;
         lfs.enable = true;
         includes = [
           {
             contents = {
               github = {
-                user = "Swarsel";
+                user = gitUser;
               };
               commit = {
                 template = "~/.gitmessage";
@@ -13925,7 +14228,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
       # this is needed so that mbsync can use the passwords from sops
       systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-      accounts = lib.mkIf (!config.swarselsystems.isPublic) {
+      accounts = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         email = {
           maildirBasePath = "Mail";
           accounts = {
@@ -14152,7 +14455,7 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix-ts :tangle modules/home/common/waybar.nix
-  { self, config, lib, ... }:
+  { self, config, lib, pkgs, ... }:
   let
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
     modulesLeft = [
@@ -14233,28 +14536,28 @@ The rest of the related configuration is found here:
 
             "custom/pseudobat" = lib.mkIf (!config.swarselsystems.isLaptop) {
               format = "";
-              on-click-right = "wlogout -p layer-shell";
+              on-click-right = "${pkgs.wlogout}/bin/wlogout -p layer-shell";
             };
 
             "custom/configwarn" = {
-              exec = "waybarupdate";
+              exec = "${pkgs.waybarupdate}/bin/waybarupdate";
               interval = 60;
             };
 
             "custom/scratchpad-indicator" = {
               interval = 3;
-              exec = "swaymsg -t get_tree | jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
+              exec = "${pkgs.swayfx}/bin/swaymsg -t get_tree | ${pkgs.jq}/bin/jq 'recurse(.nodes[]) | first(select(.name==\"__i3_scratch\")) | .floating_nodes | length | select(. >= 1)'";
               format = "{} ";
-              on-click = "swaymsg 'scratchpad show'";
-              on-click-right = "swaymsg 'move scratchpad'";
+              on-click = "${pkgs.swayfx}/bin/swaymsg 'scratchpad show'";
+              on-click-right = "${pkgs.swayfx}/bin/swaymsg 'move scratchpad'";
             };
 
             "custom/github" = {
               format = "{}  ";
               return-type = "json";
               interval = 60;
-              exec = "github-notifications";
-              on-click = "xdg-open https://github.com/notifications";
+              exec = "${pkgs.github-notifications}/bin/github-notifications";
+              on-click = "${pkgs.xdg-utils}/bin/xdg-open https://github.com/notifications";
             };
 
             idle_inhibitor = {
@@ -14389,8 +14692,8 @@ The rest of the related configuration is found here:
                 ];
               };
               scroll-step = 1;
-              on-click = "pamixer -t";
-              on-click-right = "pavucontrol";
+              on-click = "${pkgs.pamixer}/bin/pamixer -t";
+              on-click-right = "${pkgs.pavucontrol}/bin/pavucontrol";
             };
 
             memory = {
@@ -14404,13 +14707,13 @@ The rest of the related configuration is found here:
               interval = 5;
               format-icons = [ "▁" "▂" "▃" "▄" "▅" "▆" "▇" "█" ];
               # on-click-right= "com.github.stsdc.monitor";
-              on-click-right = "kitty -o confirm_os_window_close=0 btm";
+              on-click-right = "${pkgs.kitty}/bin/kitty -o confirm_os_window_close=0 btm";
 
             };
             "custom/vpn" = {
               format = "()";
               exec = "echo '{\"class\": \"connected\"}'";
-              exec-if = "test -d /proc/sys/net/ipv4/conf/tun0";
+              exec-if = "${pkgs.toybox}/bin/test -d /proc/sys/net/ipv4/conf/tun0";
               return-type = "json";
               interval = 5;
             };
@@ -15363,7 +15666,7 @@ This service changes the screen hue at night. I am not sure if that really does 
   {
     options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
     config = lib.mkIf config.swarselsystems.modules.gammastep {
-      services.gammastep = {
+      services.gammastep = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         enable = true;
         provider = "manual";
         inherit longitude latitude;
@@ -15453,6 +15756,16 @@ This section sets up all the imports that are used in the home-manager section.
 :END:
 
 Akin to the optional NixOS modules.
+
+#+begin_src nix-ts :tangle modules/home/optional/default.nix
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "modules/home/optional";
+  in
+  {
+    imports = lib.swarselsystems.mkImports importNames "modules/home/optional";
+  }
+#+end_src
 
 **** Gaming
 :PROPERTIES:
@@ -18701,6 +19014,9 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 #+end_src
 
 *** lsp-mode in org-src blocks
+:PROPERTIES:
+:CUSTOM_ID: h:cd552ba1-4db1-4605-8ead-4fcb6a466826
+:END:
 
 #+begin_src emacs-lisp
   ;; thanks to https://tecosaur.github.io/emacs-config/config.html#lsp-support-src
@@ -19875,6 +20191,1591 @@ This file defines a few workflows that I often need to run when working on my co
   sync USER HOST:
     rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
 
+#+end_src
+** aspell.conf
+:PROPERTIES:
+:CUSTOM_ID: h:038feb42-6e1e-4b65-abe9-e26746b72b78
+:END:
+
+#+begin_src shell :tangle programs/config/.aspell.conf
+dict-dir /run/current-system/sw/lib/aspell
+#+end_src
+** nix-plugins.patch
+:PROPERTIES:
+:CUSTOM_ID: h:931ff2fd-61f0-4f8f-b221-d879780f38d7
+:END:
+
+#+begin_src diff :tangle nix/nix-plugins.patch
+diff --git a/extra-builtins.cc b/extra-builtins.cc
+index 3a0f90e..bb10f8b 100644
+--- a/extra-builtins.cc
++++ b/extra-builtins.cc
+@@ -1,9 +1,9 @@
+-#include <config.h>
+-#include <primops.hh>
+-#include <globals.hh>
+-#include <config-global.hh>
+-#include <eval-settings.hh>
+-#include <common-eval-args.hh>
+-#include <filtering-source-accessor.hh>
++#include <nix/cmd/common-eval-args.hh>
++#include <nix/expr/eval-settings.hh>
++#include <nix/expr/primops.hh>
++#include <nix/fetchers/filtering-source-accessor.hh>
++#include <nix/store/globals.hh>
++#include <nix/util/configuration.hh>
++#include <nix/util/config-global.hh>
+
+ #include "nix-plugins-config.h"
+#+end_src
+** Zellij layout default.kdl.nix
+:PROPERTIES:
+:CUSTOM_ID: h:bed316c9-47ed-494f-8375-998ef1315d7b
+:END:
+
+#+begin_src shell :tangle programs/zellij/layouts/default.kdl.nix
+{ config, pkgs }:
+let
+  inherit (config.lib.stylix) colors;
+in
+''
+  layout {
+         swap_tiled_layout name="vertical" {
+             tab max_panes=5 {
+                 pane split_direction="vertical" {
+                     pane
+                     pane { children; }
+                 }
+             }
+             tab max_panes=8 {
+                 pane split_direction="vertical" {
+                     pane { children; }
+                     pane { pane; pane; pane; pane; }
+                 }
+             }
+             tab max_panes=12 {
+                 pane split_direction="vertical" {
+                     pane { children; }
+                     pane { pane; pane; pane; pane; }
+                     pane { pane; pane; pane; pane; }
+                 }
+             }
+         }
+
+         swap_tiled_layout name="horizontal" {
+             tab max_panes=5 {
+                 pane
+                 pane
+             }
+             tab max_panes=8 {
+                 pane {
+                     pane split_direction="vertical" { children; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                 }
+             }
+             tab max_panes=12 {
+                 pane {
+                     pane split_direction="vertical" { children; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                 }
+             }
+         }
+
+         swap_tiled_layout name="stacked" {
+             tab min_panes=5 {
+                 pane split_direction="vertical" {
+                     pane
+                     pane stacked=true { children; }
+                 }
+             }
+         }
+
+         swap_floating_layout name="staggered" {
+             floating_panes
+         }
+
+         swap_floating_layout name="enlarged" {
+             floating_panes max_panes=10 {
+                 pane { x "5%"; y 1; width "90%"; height "90%"; }
+                 pane { x "5%"; y 2; width "90%"; height "90%"; }
+                 pane { x "5%"; y 3; width "90%"; height "90%"; }
+                 pane { x "5%"; y 4; width "90%"; height "90%"; }
+                 pane { x "5%"; y 5; width "90%"; height "90%"; }
+                 pane { x "5%"; y 6; width "90%"; height "90%"; }
+                 pane { x "5%"; y 7; width "90%"; height "90%"; }
+                 pane { x "5%"; y 8; width "90%"; height "90%"; }
+                 pane { x "5%"; y 9; width "90%"; height "90%"; }
+                 pane focus=true { x 10; y 10; width "90%"; height "90%"; }
+             }
+         }
+
+         swap_floating_layout name="spread" {
+             floating_panes max_panes=1 {
+                 pane {y "50%"; x "50%"; }
+             }
+             floating_panes max_panes=2 {
+                 pane { x "1%"; y "25%"; width "45%"; }
+                 pane { x "50%"; y "25%"; width "45%"; }
+             }
+             floating_panes max_panes=3 {
+                 pane focus=true { y "55%"; width "45%"; height "45%"; }
+                 pane { x "1%"; y "1%"; width "45%"; }
+                 pane { x "50%"; y "1%"; width "45%"; }
+             }
+             floating_panes max_panes=4 {
+                 pane { x "1%"; y "55%"; width "45%"; height "45%"; }
+                 pane focus=true { x "50%"; y "55%"; width "45%"; height "45%"; }
+                 pane { x "1%"; y "1%"; width "45%"; height "45%"; }
+                 pane { x "50%"; y "1%"; width "45%"; height "45%"; }
+             }
+         }
+
+         default_tab_template {
+             children
+             pane size=1 borderless=true {
+                 plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
+                     format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
+                     format_center ""
+                     format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"
+                     format_space  ""
+                     format_hide_on_overlength "false"
+                     format_precedence "lcr"
+
+                     border_enabled  "false"
+                     border_char     "─"
+                     border_format   "#[fg=#6C7086]{char}"
+                     border_position "top"
+
+                     mode_normal        "#[bg=#${colors.base0B},fg=#${colors.base01},bold] NORMAL#[bg=#${colors.base01},fg=#${colors.base0B}]█"
+                     mode_locked        "#[bg=#${colors.base04},fg=#${colors.base01},bold] LOCKED #[bg=#${colors.base01},fg=#${colors.base04}]█"
+                     mode_resize        "#[bg=#${colors.base08},fg=#${colors.base01},bold] RESIZE#[bg=#${colors.base01},fg=#${colors.base08}]█"
+                     mode_pane          "#[bg=#${colors.base0D},fg=#${colors.base01},bold] PANE#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_tab           "#[bg=#${colors.base07},fg=#${colors.base01},bold] TAB#[bg=#${colors.base01},fg=#${colors.base07}]█"
+                     mode_scroll        "#[bg=#${colors.base0A},fg=#${colors.base01},bold] SCROLL#[bg=#${colors.base01},fg=#${colors.base0A}]█"
+                     mode_enter_search  "#[bg=#${colors.base0D},fg=#${colors.base01},bold] ENT-SEARCH#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_search        "#[bg=#${colors.base0D},fg=#${colors.base01},bold] SEARCHARCH#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_rename_tab    "#[bg=#${colors.base07},fg=#${colors.base01},bold] RENAME-TAB#[bg=#${colors.base01},fg=#${colors.base07}]█"
+                     mode_rename_pane   "#[bg=#${colors.base0D},fg=#${colors.base01},bold] RENAME-PANE#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_session       "#[bg=#${colors.base0E},fg=#${colors.base01},bold] SESSION#[bg=#${colors.base01},fg=#${colors.base0E}]█"
+                     mode_move          "#[bg=#${colors.base0F},fg=#${colors.base01},bold] MOVE#[bg=#${colors.base01},fg=#${colors.base0F}]█"
+                     mode_prompt        "#[bg=#${colors.base0D},fg=#${colors.base01},bold] PROMPT#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_tmux          "#[bg=#${colors.base09},fg=#${colors.base01},bold] TMUX#[bg=#${colors.base01},fg=#${colors.base09}]█"
+
+                     // formatting for inactive tabs
+                     tab_normal              "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{floating_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_normal_fullscreen   "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{fullscreen_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_normal_sync         "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{sync_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+
+                     // formatting for the current active tab
+                     tab_active              "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{floating_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_active_fullscreen   "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{fullscreen_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_active_sync         "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{sync_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+
+                     // separator between the tabs
+                     tab_separator           "#[bg=#${colors.base00}] "
+
+                     // indicators
+                     tab_sync_indicator       " "
+                     tab_fullscreen_indicator " 󰊓"
+                     tab_floating_indicator   " 󰹙"
+
+                     command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
+                     command_git_branch_format      "#[fg=blue] {stdout} "
+                     command_git_branch_interval    "10"
+                     command_git_branch_rendermode  "static"
+
+                     datetime        "#[fg=#6C7086,bold] {format} "
+                     datetime_format "%A, %d %b %Y %H:%M"
+                     datetime_timezone "Europe/Vienna"
+                 }
+             }
+         }
+     }
+''
+
+#+end_src
+** Zellij config.kdl.nix
+:PROPERTIES:
+:CUSTOM_ID: h:ae07e867-fc17-4dd7-bd21-5886265308ee
+:END:
+
+#+begin_src nix-ts :tangle programs/zellij/config.kdl.nix
+{ config }:
+''
+  pane_frames false
+  simplified_ui false
+  default_shell "zsh"
+  copy_on_select true
+  on_force_close "detach"
+
+  default_layout "default"
+  layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"
+  theme_dir "${config.home.homeDirectory}/.config/zellij/themes"
+
+  keybinds clear-defaults=true {
+      locked {
+          bind "Ctrl g" { SwitchToMode "normal"; }
+      }
+      pane {
+          bind "left" { MoveFocus "left"; }
+          bind "down" { MoveFocus "down"; }
+          bind "up" { MoveFocus "up"; }
+          bind "right" { MoveFocus "right"; }
+          bind "c" { SwitchToMode "renamepane"; PaneNameInput 0; }
+          bind "d" { NewPane "down"; SwitchToMode "normal"; }
+          bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "normal"; }
+          bind "f" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+          bind "h" { MoveFocus "left"; }
+          bind "j" { MoveFocus "down"; }
+          bind "k" { MoveFocus "up"; }
+          bind "l" { MoveFocus "right"; }
+          bind "n" { NewPane; SwitchToMode "normal"; }
+          bind "p" { SwitchFocus; }
+          bind "Ctrl p" { SwitchToMode "normal"; }
+          bind "r" { NewPane "right"; SwitchToMode "normal"; }
+          bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
+          bind "z" { TogglePaneFrames; SwitchToMode "normal"; }
+      }
+      tab {
+          bind "left" { GoToPreviousTab; }
+          bind "down" { GoToNextTab; }
+          bind "up" { GoToPreviousTab; }
+          bind "right" { GoToNextTab; }
+          bind "1" { GoToTab 1; SwitchToMode "normal"; }
+          bind "2" { GoToTab 2; SwitchToMode "normal"; }
+          bind "3" { GoToTab 3; SwitchToMode "normal"; }
+          bind "4" { GoToTab 4; SwitchToMode "normal"; }
+          bind "5" { GoToTab 5; SwitchToMode "normal"; }
+          bind "6" { GoToTab 6; SwitchToMode "normal"; }
+          bind "7" { GoToTab 7; SwitchToMode "normal"; }
+          bind "8" { GoToTab 8; SwitchToMode "normal"; }
+          bind "9" { GoToTab 9; SwitchToMode "normal"; }
+          bind "[" { BreakPaneLeft; SwitchToMode "normal"; }
+          bind "]" { BreakPaneRight; SwitchToMode "normal"; }
+          bind "b" { BreakPane; SwitchToMode "normal"; }
+          bind "h" { GoToPreviousTab; }
+          bind "j" { GoToNextTab; }
+          bind "k" { GoToPreviousTab; }
+          bind "l" { GoToNextTab; }
+          bind "n" { NewTab; SwitchToMode "normal"; }
+          bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
+          bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
+          bind "Ctrl t" { SwitchToMode "normal"; }
+          bind "x" { CloseTab; SwitchToMode "normal"; }
+          bind "tab" { ToggleTab; }
+      }
+      resize {
+          bind "left" { Resize "Increase left"; }
+          bind "down" { Resize "Increase down"; }
+          bind "up" { Resize "Increase up"; }
+          bind "right" { Resize "Increase right"; }
+          bind "+" { Resize "Increase"; }
+          bind "-" { Resize "Decrease"; }
+          bind "=" { Resize "Increase"; }
+          bind "H" { Resize "Decrease left"; }
+          bind "J" { Resize "Decrease down"; }
+          bind "K" { Resize "Decrease up"; }
+          bind "L" { Resize "Decrease right"; }
+          bind "h" { Resize "Increase left"; }
+          bind "j" { Resize "Increase down"; }
+          bind "k" { Resize "Increase up"; }
+          bind "l" { Resize "Increase right"; }
+          bind "Ctrl n" { SwitchToMode "normal"; }
+      }
+      move {
+          bind "left" { MovePane "left"; }
+          bind "down" { MovePane "down"; }
+          bind "up" { MovePane "up"; }
+          bind "right" { MovePane "right"; }
+          bind "h" { MovePane "left"; }
+          bind "Ctrl h" { SwitchToMode "normal"; }
+          bind "j" { MovePane "down"; }
+          bind "k" { MovePane "up"; }
+          bind "l" { MovePane "right"; }
+          bind "n" { MovePane; }
+          bind "p" { MovePaneBackwards; }
+          bind "tab" { MovePane; }
+      }
+      scroll {
+          bind "e" { EditScrollback; SwitchToMode "normal"; }
+          bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
+      }
+      search {
+          bind "c" { SearchToggleOption "CaseSensitivity"; }
+          bind "n" { Search "down"; }
+          bind "o" { SearchToggleOption "WholeWord"; }
+          bind "p" { Search "up"; }
+          bind "w" { SearchToggleOption "Wrap"; }
+      }
+      session {
+          bind "c" {
+              LaunchOrFocusPlugin "configuration" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+          bind "Ctrl o" { SwitchToMode "normal"; }
+          bind "p" {
+              LaunchOrFocusPlugin "plugin-manager" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+          bind "w" {
+              LaunchOrFocusPlugin "session-manager" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+      }
+      shared_except "locked" {
+          bind "Alt left" { MoveFocusOrTab "left"; }
+          bind "Alt down" { MoveFocus "down"; }
+          bind "Alt up" { MoveFocus "up"; }
+          bind "Alt right" { MoveFocusOrTab "right"; }
+          bind "Alt +" { Resize "Increase"; }
+          bind "Alt -" { Resize "Decrease"; }
+          bind "Alt =" { Resize "Increase"; }
+          bind "Alt [" { PreviousSwapLayout; }
+          bind "Alt ]" { NextSwapLayout; }
+          bind "Alt f" { ToggleFloatingPanes; }
+          bind "Ctrl g" { SwitchToMode "locked"; }
+          bind "Alt h" { MoveFocusOrTab "left"; }
+          bind "Alt i" { MoveTab "left"; }
+          bind "Alt j" { MoveFocus "down"; }
+          bind "Alt k" { MoveFocus "up"; }
+          bind "Alt l" { MoveFocusOrTab "right"; }
+          bind "Alt n" { NewPane; }
+          bind "Alt o" { MoveTab "right"; }
+          bind "Ctrl q" { Quit; }
+      }
+      shared_except "locked" "move" {
+          bind "Ctrl h" { SwitchToMode "move"; }
+      }
+      shared_except "locked" "session" {
+          bind "Ctrl o" { SwitchToMode "session"; }
+      }
+      shared_except "locked" "scroll" "search" "tmux" {
+          bind "Ctrl b" { SwitchToMode "tmux"; }
+      }
+      shared_except "locked" "scroll" "search" {
+          bind "Ctrl s" { SwitchToMode "scroll"; }
+      }
+      shared_except "locked" "tab" {
+          bind "Ctrl t" { SwitchToMode "tab"; }
+      }
+      shared_except "locked" "pane" {
+          bind "Ctrl p" { SwitchToMode "pane"; }
+      }
+      shared_except "locked" "resize" {
+          bind "Ctrl n" { SwitchToMode "resize"; }
+      }
+      shared_except "normal" "locked" "entersearch" {
+          bind "enter" { SwitchToMode "normal"; }
+      }
+      shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
+          bind "esc" { SwitchToMode "normal"; }
+      }
+      shared_among "pane" "tmux" {
+          bind "x" { CloseFocus; SwitchToMode "normal"; }
+      }
+      shared_among "scroll" "search" {
+          bind "PageDown" { PageScrollDown; }
+          bind "PageUp" { PageScrollUp; }
+          bind "left" { PageScrollUp; }
+          bind "down" { ScrollDown; }
+          bind "up" { ScrollUp; }
+          bind "right" { PageScrollDown; }
+          bind "Ctrl b" { PageScrollUp; }
+          bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
+          bind "d" { HalfPageScrollDown; }
+          bind "Ctrl f" { PageScrollDown; }
+          bind "h" { PageScrollUp; }
+          bind "j" { ScrollDown; }
+          bind "k" { ScrollUp; }
+          bind "l" { PageScrollDown; }
+          bind "Ctrl s" { SwitchToMode "normal"; }
+          bind "u" { HalfPageScrollUp; }
+      }
+      entersearch {
+          bind "Ctrl c" { SwitchToMode "scroll"; }
+          bind "esc" { SwitchToMode "scroll"; }
+          bind "enter" { SwitchToMode "search"; }
+      }
+      renametab {
+          bind "esc" { UndoRenameTab; SwitchToMode "tab"; }
+      }
+      shared_among "renametab" "renamepane" {
+          bind "Ctrl c" { SwitchToMode "normal"; }
+      }
+      renamepane {
+          bind "esc" { UndoRenamePane; SwitchToMode "pane"; }
+      }
+      shared_among "session" "tmux" {
+          bind "d" { Detach; }
+      }
+      tmux {
+          bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
+          bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
+          bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
+          bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
+          bind "space" { NextSwapLayout; }
+          bind "\"" { NewPane "down"; SwitchToMode "normal"; }
+          bind "%" { NewPane "right"; SwitchToMode "normal"; }
+          bind "," { SwitchToMode "renametab"; }
+          bind "[" { SwitchToMode "scroll"; }
+          bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
+          bind "c" { NewTab; SwitchToMode "normal"; }
+          bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
+          bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
+          bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
+          bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
+          bind "n" { GoToNextTab; SwitchToMode "normal"; }
+          bind "o" { FocusNextPane; }
+          bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
+          bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+      }
+  }
+
+  // Plugin aliases - can be used to change the implementation of Zellij
+  // changing these requires a restart to take effect
+  plugins {
+      compact-bar location="zellij:compact-bar"
+      configuration location="zellij:configuration"
+      filepicker location="zellij:strider" {
+          cwd "/"
+      }
+      plugin-manager location="zellij:plugin-manager"
+      session-manager location="zellij:session-manager"
+      status-bar location="zellij:status-bar"
+      strider location="zellij:strider"
+      tab-bar location="zellij:tab-bar"
+      welcome-screen location="zellij:session-manager" {
+          welcome_screen true
+      }
+  }
+
+  // Plugins to load in the background when a new session starts
+  // eg. "file:/path/to/my-plugin.wasm"
+  // eg. "https://example.com/my-plugin.wasm"
+  load_plugins {
+  }
+
+  // Provide a command to execute when copying text. The text will be piped to
+  // the stdin of the program to perform the copy. This can be used with
+  // terminal emulators which do not support the OSC 52 ANSI control sequence
+  // that will be used by default if this option is not set.
+  // Examples:
+  //
+  // copy_command "xclip -selection clipboard" // x11
+  // copy_command "wl-copy"                    // wayland
+  // copy_command "pbcopy"                     // osx
+  //
+  // copy_command "pbcopy"
+
+  // Choose the destination for copied text
+  // Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
+  // Does not apply when using copy_command.
+  // Options:
+  //   - system (default)
+  //   - primary
+  //
+  // copy_clipboard "primary"
+
+  // Path to the default editor to use to edit pane scrollbuffer
+  // Default: $EDITOR or $VISUAL
+  // scrollback_editor "/usr/bin/vim"
+
+  // Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
+  // Options:
+  //   - true (default)
+  //   - false
+  //
+  // auto_layout false
+
+  // Whether sessions should be serialized to the cache folder (including their tabs/panes, cwds and running commands) so that they can later be resurrected
+  // Options:
+  //   - true (default)
+  //   - false
+  //
+  // session_serialization false
+
+  // Whether pane viewports are serialized along with the session, default is false
+  // Options:
+  //   - true
+  //   - false (default)
+  //
+  // serialize_pane_viewport false
+
+  // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
+  // defaults to the scrollback size. If this number is higher than the scrollback size, it will
+  // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
+  //
+  // scrollback_lines_to_serialize 10000
+
+  // Enable or disable the rendering of styled and colored underlines (undercurl).
+  // May need to be disabled for certain unsupported terminals
+  // (Requires restart)
+  // Default: true
+  //
+  // styled_underlines false
+
+  // How often in seconds sessions are serialized
+  //
+  // serialization_interval 10000
+
+  // Enable or disable writing of session metadata to disk (if disabled, other sessions might not know
+  // metadata info on this session)
+  // (Requires restart)
+  // Default: false
+  //
+  // disable_session_metadata false
+
+  // Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
+  // (Requires restart)
+  // Default: true (if the host terminal supports it)
+  //
+  // support_kitty_keyboard_protocol false
+''
+
+#+end_src
+** Vieb config
+:PROPERTIES:
+:CUSTOM_ID: h:0124a4eb-4ea3-455c-939d-ba4584c703af
+:END:
+
+#+begin_src shell :tangle programs/vieb/viebrc
+" Options
+set adblocker=update
+set adblockernotifications=all
+set cache=clearonquit
+set noclearcookiesonquit
+set nocleardownloadsoncompleted
+set nocleardownloadsonquit
+set clearhistoryinterval=none
+set noclearlocalstorageonquit
+set noclosablepinnedtabs
+set commandhist=persistuseronly
+set containerkeeponreopen
+set containernewtab=s:usecurrent
+set containershowname=automatic
+set containersplitpage=s:usecurrent
+set containerstartuppage=main
+set countlimit=100
+" set nodarkreader
+set darkreaderbg=#181a1b
+set darkreaderbrightness=100
+set darkreadercontrast=100
+set darkreaderfg=#e8e6e3
+set darkreadergrayscale=0
+set darkreadermode=dark
+set darkreadersepia=0
+set darkreadertextstroke=0
+set devtoolsposition=split
+set dialogalert=notifyblock
+set dialogconfirm=notifyallow
+set dialogprompt=notifyblock
+set downloadmethod=automatic
+set downloadpath=
+set encodeurlcopy=nospaces
+set encodeurlext=nospaces
+set explorehist=persist
+set externalcommand=
+set favicons=session
+set followchars=numbers
+set followfallbackaction=filter
+set followlabelposition=outsiderighttop
+set follownewtabswitch
+set guifontsize=14
+set guifullscreennavbar=oninput
+set guifullscreentabbar=onupdate
+set guihidetimeout=5000
+set guinavbar=oninput
+set guiscrollbar=onscroll
+set guitabbar=onupdate
+set historyperpage=100
+set ignorecase
+set incsearch
+set inputfocusalignment=rememberend
+set keeprecentlyclosed
+set lang=en
+set loadingindicator=line
+set mapsuggest=9000000000000000
+set mapsuggestposition=topright
+set markposition=newtab
+set markpositionshifted=default
+set maxmapdepth=10
+set menupage=elementasneeded
+set menusuggest=both
+set menuvieb=both
+set mintabwidth=28
+set mouse=all
+set mousedisabledbehavior=nothing
+set nomousefocus
+set mousenewtabswitch
+set mousevisualmode=onswitch
+set nativenotification=never
+set nativetheme=dark
+set newtaburl=
+set notificationduration=6000
+set notificationforpermissions=silent
+set notificationforsystemcommands=errors
+set notificationlimitsmall=3
+set notificationposition=bottomright
+set pdfbehavior=download
+set permissioncamera=ask
+set permissioncertificateerror=allow
+set permissionclipboardread=allow
+set permissionclipboardwrite=allow
+set permissionclosepage=allow
+set permissiondisplaycapture=ask
+set permissionfullscreen=allow
+set permissiongeolocation=block
+set permissionhid=block
+set permissionidledetection=block
+set permissionmediadevices=allowfull
+set permissionmicrophone=ask
+set permissionmidi=ask
+set permissionmidisysex=ask
+set permissionnotifications=ask
+set permissionopenexternal=ask
+set permissionpersistentstorage=ask
+set permissionpointerlock=block
+set permissionscreenwakelock=block
+set permissionsensors=block
+set permissionserial=block
+set permissionunknown=ask
+set permissionusb=allow
+set permissionwindowmanagement=ask
+set pointerposlocalid=domain
+set pointerpostype=casing
+set noquitonlasttabclose
+set redirecttohttp
+set noreloadtaboncrash
+set replacespecial=special
+set replacestartup=never
+set requesttimeout=20000
+set restoretabs=all
+set scrollposlocalid=domain
+set scrollpostype=casing
+set searchemptyscope=global
+set searchpointeralignment=left
+set searchscope=global
+set shell=
+set showcmd
+set smartcase
+set spell
+set nosplitbelow
+set nosplitright
+set nosponsorblock
+set suggestbouncedelay=100
+set suggestcommands=9000000000000000
+set suggesttopsites=10
+set suspendbackgroundtab
+set suspendonrestore=regular
+set suspendtimeout=0
+set tabclosefocus=left
+set tabcycle
+set tabnewposition=right
+set tabopenmuted=never
+set taboverflow=scroll
+set tabreopenmuted=remember
+set tabreopenposition=right
+set timeout
+set timeoutlen=2000
+set translateapi=auto
+set translatekey=
+set translatelang=en-us
+set translateurl=https://api-free.deepl.com/v2/
+" set nouserscript
+" set nouserstyle
+set useragent=%firefox
+set vimcommand=gvim
+set windowfullscreen=restore
+set windowmaximize=restore
+set windowposition=restore
+set windowsize=restore
+set windowtitle="%app - %title"
+
+" Commands
+colorscheme default
+
+
+" Mappings
+nmap o <toExploreMode>
+nmap t <:tabnew><toExploreMode>
+nmap b <toCommandMode>buffer<Space>
+nmap g0 <:buffer 0>
+nmap g^ <:buffer 0>
+nmap g$ <:buffer -1>
+nmap <C-m> <:buffer #>
+nmap J <previousTab>
+nmap K <nextTab>
+nmap >> <moveTabForward>
+nmap <lt><lt> <moveTabBackward>
+nmap O <toExploreMode><End>
+nmap gx0 <:lclose>
+nmap gx$ <:rclose>
+nmap x <stopLoadingPage>
+nunmap [
+nunmap ]
+nmap [[ <previousPage>
+nmap ]] <nextPage>
+nmap [c <decreasePageNumber>
+nmap ]c <increasePageNumber>
+nmap zz <zoomReset>
+nmap zi <zoomIn>
+nmap zo <zoomOut>
+nmap zm 5<zoomIn>
+nmap zr 5<zoomOut>
+nmap zM 5<zoomIn>
+nmap zR 5<zoomOut>
+nmap zI 7<zoomIn>
+nmap zO 7<zoomOut>
+
+" Search
+set searchengine=https://kagi.com/search?q=%s
+set searchwords+=no~https://search.nixos.org/options?query=%s
+set searchwords+=np~https://search.nixos.org/packages?query=%s
+set searchwords+=hm~https://home-manager-options.extranix.com/?query=%s
+
+" Viebrc generated by Vieb
+" vim: ft=vim
+
+#+end_src
+** swayidle
+:PROPERTIES:
+:CUSTOM_ID: h:69ea5818-4ebb-436a-a31a-6a2348cf215c
+:END:
+
+#+begin_src shell :tangle programs/swayidle/config
+timeout 300 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
+timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"'
+before-sleep 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
+#+end_src
+** stylix color scheme
+:PROPERTIES:
+:CUSTOM_ID: h:2e9b84d7-cb18-4e74-83f8-65ada11a8911
+:END:
+
+#+begin_src css :tangle programs/stylix/swarsel.yaml :mkdirp yes
+# scheme: "better-contrast"
+author: "Swarsel"
+base00: "1D252C" # #1d252c passt
+base01: "171D23" # #171d23
+base02: "5EC4FF" # #5EC4FF
+base03: "566C7D" # #566C7D passt
+base04: "5EC4FF" # #5EC4FF passt
+base05: "A0B3C5" # #A0B3C5 passt
+base06: "C06ECE" # #C06ECE passt
+base07: "A0B3C5" # #A0B3C5 passt
+base08: "D95468" # #D95468 passt
+base09: "FFA880" # #ffA880 passt
+base0A: "5EC4FF" # #5EC4FF
+base0B: "8BD49C" # #8BD49C
+base0C: "008B94" # #008B94 passt
+base0D: "5EC4FF" # #5EC4FF passt
+base0E: "C06ECE" # #C06ECE passt
+base0F: "5EC4FF" # #5EC4FF passt
+
+# base00 - Default Background
+# base01 - Lighter Background (Used for status bars)
+# base02 - Selection Background
+# base03 - Comments, Invisibles, Line Highlighting
+# base04 - Dark Foreground (Used for status bars)
+# base05 - Default Foreground, Caret, Delimiters, Operators
+# base06 - Light Foreground (Not often used)
+# base07 - Light Background (Not often used)
+# base08 - Variables, XML Tags, Markup Link Text, Markup Lists, Diff Deleted
+# base09 - Integers, Boolean, Constants, XML Attributes, Markup Link Url
+# base0A - Classes, Markup Bold, Search Text Background
+# base0B - Strings, Inherited Class, Markup Code, Diff Inserted
+# base0C - Support, Regular Expressions, Escape Characters, Markup Quotes
+# base0D - Functions, Methods, Attribute IDs, Headings
+# base0E - Keywords, Storage, Selector, Markup Italic, Diff Changed
+# base0F - Deprecated, Opening/Closing Embedded Language Tags, e.g. <?php ?>
+#+end_src
+** .gitmessage
+:PROPERTIES:
+:CUSTOM_ID: h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128
+:END:
+
+#+begin_src shell :tangle programs/git/.gitmessage
+
+#                         max. 50 chars is here: #
+# <type>[optional scope]: <description>
+# types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
+# ! indicates a breaking change.
+
+
+# Body:                                      wrap at 72 chars is here: #
+# Include at least one empty line before co-authored. Format:
+# Co-authored-by: name <user@users.noreply.github.com>
+#+end_src
+** userChrome.css
+:PROPERTIES:
+:CUSTOM_ID: h:a2990def-9a2a-491b-9fee-3057dc324c3c
+:END:
+
+#+begin_src css :tangle programs/firefox/chrome/userChrome.css :mkdirp yes
+  /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_toolbox.css made available under Mozilla Public License v. 2.0
+See the above repository for updates as well as full license text. */
+
+/* Hide the whole toolbar area unless urlbar is focused or cursor is over the toolbar
+ * Dimensions on non-Win10 OS probably needs to be adjusted.
+ */
+
+:root{
+    --uc-autohide-toolbox-delay: 0ms; /* Wait 0.1s before hiding toolbars */
+    --uc-toolbox-rotation: 107deg;  /* This may need to be lower on mac - like 75 or so */
+
+    --base00: #1D252C;
+    --base01: #171D23;
+    --base02: #5EC4FF;
+    --base03: #566C7D;
+    --base04: #5EC4FF;
+    --base05: #A0B3C5;
+    --base06: #C06ECE;
+    --base07: #A0B3C5;
+    --base08: #D95468;
+    --base09: #FFA880;
+    --base0A: #5EC4FF;
+    --base0B: #8BD49C;
+    --base0C: #008B94;
+    --base0D: #5EC4FF;
+    --base0E: #C06ECE;
+    --base0F: #5EC4FF;
+
+}
+
+:root[sizemode="maximized"]{
+    --uc-toolbox-rotation: 88.5deg;
+}
+
+@media  (-moz-platform: windows){
+    :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
+}
+
+:root[sizemode="fullscreen"],
+:root[sizemode="fullscreen"] #navigator-toolbox{ margin-top: 0 !important; }
+
+#navigator-toolbox{
+    --browser-area-z-index-toolbox: 3;
+    position: fixed !important;
+    background-color: var(--lwt-accent-color,black) !important;
+    transition: transform 0ms linear, opacity 0ms linear !important;
+    transition-delay: var(--uc-autohide-toolbox-delay) !important;
+    transform-origin: top;
+    transform: rotateX(var(--uc-toolbox-rotation));
+    opacity: 0;
+    line-height: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+:root[sessionrestored] #urlbar[popover]{
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 0ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 0ms);
+    transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
+    transform: rotateX(89.9deg);
+}
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox #urlbar[popover],
+#navigator-toolbox:is(:hover,:focus-within) #urlbar[popover],
+#urlbar-container > #urlbar[popover]:is([focused],[open]){
+    pointer-events: auto;
+    opacity: 1;
+    transition-delay: 0ms;
+    transform: rotateX(0deg);
+}
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox,
+#navigator-toolbox:has(#urlbar:is([open],[focus-within])),
+#navigator-toolbox:hover,
+#navigator-toolbox:focus-within{
+    transition-delay: 0ms !important;
+    transform: rotateX(0);
+    opacity: 1;
+}
+/* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
+ * Unfortunately it also means that other OS native surfaces (such as context menu on macos)
+ * and other always-on-top applications will trigger toolbox to show up. */
+@media (-moz-bool-pref: "userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
+    :root[sizemode="maximized"]:not(:hover){
+        #navigator-toolbox:not(:-moz-window-inactive),
+    #urlbar[popover]:not(:-moz-window-inactive){
+        transition-delay: 0ms !important;
+        transform: rotateX(0);
+        opacity: 1;
+    }
+    }
+}
+
+#navigator-toolbox > *{ line-height: normal; pointer-events: auto }
+
+#navigator-toolbox,
+#navigator-toolbox > *{
+    width: 100vw;
+    -moz-appearance: none !important;
+}
+
+/* These two exist for oneliner compatibility */
+#nav-bar{ width: var(--uc-navigationbar-width,100vw) }
+#TabsToolbar
+{
+    visibility: collapse;
+}
+/* Don't apply transform before window has been fully created */
+:root:not([sessionrestored]) #navigator-toolbox{ transform:none !important }
+
+:root[customizing] #navigator-toolbox{
+    position: relative !important;
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+#navigator-toolbox[inFullscreen] > #PersonalToolbar,
+#PersonalToolbar[collapsed="true"]{ display: none }
+
+/* Uncomment this if tabs toolbar is hidden with hide_tabs_toolbar.css */
+ /*#titlebar{ margin-bottom: -9px }*/
+
+/* Uncomment the following for compatibility with tabs_on_bottom.css - this isn't well tested though */
+/*
+#navigator-toolbox{ flex-direction: column; display: flex; }
+#titlebar{ order: 2 }
+*/
+#sidebar-header {
+    display: none;
+}
+#sidebar-header {
+    /* display: none; */
+    visibility: collapse !important;
+}
+/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_sidebar.css made available under Mozilla Public License v. 2.0
+See the above repository for updates as well as full license text. */
+
+/* Show sidebar only when the cursor is over it  */
+/* The border controlling sidebar width will be removed so you'll need to modify these values to change width */
+
+#sidebar-box{
+    --uc-sidebar-width: 30px;
+    --uc-sidebar-hover-width: 210px;
+    --uc-autohide-sidebar-delay: 0ms; /* Wait 0.6s before hiding sidebar */
+    --uc-autohide-transition-duration: 0ms;
+    --uc-autohide-transition-type: linear;
+    --browser-area-z-index-sidebar: 3;
+    position: relative;
+    min-width: var(--uc-sidebar-width) !important;
+    width: var(--uc-sidebar-width) !important;
+    max-width: var(--uc-sidebar-width) !important;
+    z-index: var(--browser-area-z-index-sidebar,3);
+}
+#sidebar-box[positionend]{ direction: rtl }
+#sidebar-box[positionend] > *{ direction: ltr }
+
+#sidebar-box[positionend]:-moz-locale-dir(rtl){ direction: ltr }
+#sidebar-box[positionend]:-moz-locale-dir(rtl) > *{ direction: rtl }
+
+#main-window[sizemode="fullscreen"] #sidebar-box{ --uc-sidebar-width: 1px; }
+
+#sidebar-splitter{ display: none }
+
+#sidebar-header{
+    overflow: hidden;
+    color: var(--chrome-color, inherit) !important;
+    padding-inline: 0 !important;
+}
+
+#sidebar-header::before,
+#sidebar-header::after{
+    content: "";
+    display: flex;
+    padding-left: 8px;
+}
+
+#sidebar-header,
+#sidebar{
+    transition: min-width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+    min-width: var(--uc-sidebar-width) !important;
+    will-change: min-width;
+}
+#sidebar-box:hover > #sidebar-header,
+#sidebar-box:hover > #sidebar{
+    min-width: var(--uc-sidebar-hover-width) !important;
+    transition-delay: 0ms !important;
+}
+
+.sidebar-panel{
+    background-color: transparent !important;
+    color: var(--newtab-text-primary-color) !important;
+}
+
+.sidebar-panel #search-box{
+    -moz-appearance: none !important;
+    background-color: rgba(249,249,250,0.1) !important;
+    color: inherit !important;
+}
+
+/* Add sidebar divider and give it background */
+
+#sidebar,
+#sidebar-header{
+    background-color: inherit !important;
+    border-inline: 1px solid rgb(80,80,80);
+    border-inline-width: 0px 1px;
+}
+
+#sidebar-box:not([positionend]) > :-moz-locale-dir(rtl),
+#sidebar-box[positionend] > *{
+    border-inline-width: 1px 0px;
+}
+
+/* Move statuspanel to the other side when sidebar is hovered so it doesn't get covered by sidebar */
+
+#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel{
+    inset-inline: auto 0px !important;
+}
+#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel-label{
+    margin-inline: 0px !important;
+    border-left-style: solid !important;
+}
+
+#+end_src
+** Default Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9
+:END:
+
+#+begin_src nix-ts :tangle templates/default/flake.nix
+{
+  description = "General purpose Flake";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs =
+    { nixpkgs
+    , systems
+    , ...
+    }:
+    let
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+    in
+    {
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+      devShells = forEachSystem (system: {
+        default = pkgsFor.${system}.mkShell {
+          packages = with pkgsFor.${system}; [
+
+          ];
+        };
+      });
+
+    };
+}
+#+end_src
+** C++ Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53
+:END:
+
+#+begin_src nix-ts :tangle templates/cpp/flake.nix
+  # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/cpp-cmake/flake.nix
+  {
+    description = "C++ Flake";
+
+    inputs = {
+      nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+      systems.url = "github:nix-systems/default";
+    };
+
+    outputs =
+      { self
+      , nixpkgs
+      , systems
+      , ...
+      }:
+      let
+        forEachSystem = nixpkgs.lib.genAttrs (import systems);
+        pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+
+        pname = "name";
+      in
+      {
+        formatter = forEachSystem (system: pkgsFor.${system}.nixpgks-fmt);
+
+        devShells = forEachSystem (system: {
+          default = pkgsFor.${system}.mkShell {
+            packages = with pkgsFor.${system}; [
+              libllvm
+              cmake
+              gtest
+              cppcheck
+              valgrind
+              doxygen
+              clang-tools
+              # cudatoolkit
+            ];
+          };
+        });
+
+        packages = forEachSystem (system: {
+          default = pkgsFor.${system}.stdenv.mkDerivation {
+            inherit pname;
+            version = "0.1.0";
+            src = ./.;
+
+            nativeBuildInputs = with pkgsFor.${system}; [
+              cmake
+            ];
+            buildInputs = with pkgsFor.${system}; [
+              gtest
+            ];
+          };
+        });
+
+        apps = forEachSystem (system: {
+          default = {
+            type = "app";
+            program = "${self.packages.${system}.default}/bin/${pname}";
+          };
+        });
+      };
+  }
+#+end_src
+** Go Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:def2d654-e8da-4d8a-8958-b59a60d019f5
+:END:
+
+#+begin_src nix-ts :tangle templates/go/flake.nix
+  # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/go-nix/flake.nix
+  {
+    description = "Go Flake";
+
+    inputs = {
+      nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+      systems.url = "github:nix-systems/default";
+    };
+
+    outputs =
+      { self
+      , nixpkgs
+      , systems
+      , ...
+      }:
+      let
+        forEachSystem = nixpkgs.lib.genAttrs (import systems);
+        pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+
+        pname = "name";
+      in
+      {
+        formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+        devShells = forEachSystem (system: {
+          default = pkgsFor.${system}.mkShell {
+            packages = with pkgsFor.${system}; [
+              go
+              gopls
+              go-tools
+              gotools
+            ];
+          };
+        });
+
+        packages = forEachSystem (system: {
+          default = pkgsFor.${system}.buildGoModule {
+            inherit pname;
+            version = "0.1.0";
+            src = ./.;
+            vendorHash = null;
+          };
+        });
+
+        apps = forEachSystem (system: {
+          default = {
+            type = "app";
+            program = "${self.packages.${system}.default}/bin/${pname}";
+          };
+        });
+      };
+  }
+#+end_src
+** LaTeX Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:adccea10-6c72-46aa-8c67-5e06b7606c71
+:END:
+
+#+begin_src nix-ts :tangle templates/latex/flake.nix
+  # This template is based on https://github.com/Leixb/latex-template/tree/master
+  {
+    description = "LaTeX Flake";
+
+    inputs.flake-utils.url = "github:numtide/flake-utils";
+
+    outputs = { self, nixpkgs, flake-utils }:
+      {
+
+        lib.latexmk = import ./build-document.nix;
+
+      } // flake-utils.lib.eachDefaultSystem (system:
+        let
+          pname = "document";
+
+          pkgs = import nixpkgs { inherit system; };
+
+          latex-packages = with pkgs; [
+            (texlive.combine {
+              inherit (texlive)
+                scheme-medium
+                framed
+                titlesec
+                cleveref
+                multirow
+                wrapfig
+                tabu
+                threeparttable
+                threeparttablex
+                makecell
+                environ
+                biblatex
+                biber
+                fvextra
+                upquote
+                catchfile
+                xstring
+                csquotes
+                minted
+                dejavu
+                comment
+                footmisc
+                xltabular
+                ltablex
+                ;
+            })
+            which
+            python39Packages.pygments
+          ];
+
+          dev-packages = with pkgs; [
+            texlab
+            zathura
+            wmctrl
+          ];
+        in
+        rec {
+          devShell = pkgs.mkShell {
+            buildInputs = [ latex-packages dev-packages ];
+          };
+
+          formatter = pkgs.nixpkgs-fmt;
+
+          packages = flake-utils.lib.flattenTree {
+            default = import ./build-document.nix {
+              inherit pkgs;
+              name = pname;
+              texlive = latex-packages;
+              shellEscape = true;
+              minted = true;
+              SOURCE_DATE_EPOCH = toString self.lastModified;
+            };
+          };
+
+          apps.default = flake-utils.lib.mkApp { drv = "${pkgs.texlivePackages.latexmk}"; exePath = "/bin/latexmk"; };
+        }
+      );
+  }
+#+end_src
+** Python Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:1a918c8d-08b4-4474-8d34-3da502081a16
+:END:
+
+#+begin_src nix-ts :tangle templates/python/flake.nix
+  # based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
+  {
+    description = "Python flake using uv2nix";
+
+    inputs = {
+      nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+      pyproject-nix = {
+        url = "github:pyproject-nix/pyproject.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+
+      uv2nix = {
+        url = "github:pyproject-nix/uv2nix";
+        inputs = {
+          pyproject-nix.follows = "pyproject-nix";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+
+      pyproject-build-systems = {
+        url = "github:pyproject-nix/build-system-pkgs";
+        inputs = {
+          pyproject-nix.follows = "pyproject-nix";
+          uv2nix.follows = "uv2nix";
+          nixpkgs.follows = "nixpkgs";
+        };
+      };
+    };
+
+    outputs =
+      { nixpkgs
+      , uv2nix
+      , pyproject-nix
+      , pyproject-build-systems
+      , ...
+      }:
+      let
+        inherit (nixpkgs) lib;
+        pname = "name";
+        forAllSystems = lib.genAttrs lib.systems.flakeExposed;
+
+        # Load a uv workspace from a workspace root.
+        # Uv2nix treats all uv projects as workspace projects.
+        workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
+
+        overlay = workspace.mkPyprojectOverlay {
+          # Prefer prebuilt binary wheels as a package source.
+          # Sdists are less likely to "just work" because of the metadata missing from uv.lock.
+          # Binary wheels are more likely to, but may still require overrides for library dependencies.
+          sourcePreference = "wheel"; # or sourcePreference = "sdist";
+          # Optionally customise PEP 508 environment
+          # environ = {
+          #   platform_release = "5.10.65";
+          # };
+        };
+
+
+        pythonSets = forAllSystems
+          (system:
+            let
+              inherit (pkgs) stdenv;
+              pkgs = nixpkgs.legacyPackages.${system};
+              pyprojectOverrides = final: prev: {
+                # Implement build fixups here.
+                ${pname} = prev.${pname}.overrideAttrs (old: {
+
+                  passthru = old.passthru // {
+                    # Put all tests in the passthru.tests attribute set.
+                    # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+                    #
+                    # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+                    tests =
+                      let
+
+                        virtualenv = final.mkVirtualEnv "${pname}-pytest-env" {
+                          ${pname} = [ "test" ];
+                        };
+
+                      in
+                      (old.tests or { })
+                        // {
+                        pytest = stdenv.mkDerivation {
+                          name = "${final.${pname}.name}-pytest";
+                          inherit (final.${pname}) src;
+                          nativeBuildInputs = [
+                            virtualenv
+                          ];
+                          dontConfigure = true;
+
+                          # Because this package is running tests, and not actually building the main package
+                          # the build phase is running the tests.
+                          #
+                          # We also output a HTML coverage report, which is used as the build output.
+                          buildPhase = ''
+                            runHook preBuild
+                            pytest --cov tests --cov-report html
+                            runHook postBuild
+                          '';
+
+                          # Install the HTML coverage report into the build output.
+                          #
+                          # If you wanted to install multiple test output formats such as TAP outputs
+                          # you could make this derivation a multiple-output derivation.
+                          #
+                          # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
+                          installPhase = ''
+                            runHook preInstall
+                            mv htmlcov $out
+                            runHook postInstall
+                          '';
+                        };
+
+                      };
+                  };
+                });
+              };
+
+              baseSet = pkgs.callPackage pyproject-nix.build.packages {
+                python = pkgs.python312;
+              };
+            in
+            baseSet.overrideScope
+              (
+                lib.composeManyExtensions [
+                  pyproject-build-systems.overlays.default
+                  overlay
+                  pyprojectOverrides
+                ]
+              ));
+
+      in
+      {
+        packages = forAllSystems (system:
+          let
+            pythonSet = pythonSets.${system};
+          in
+          { default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default; });
+
+        devShells = forAllSystems
+          (system:
+            let
+              pythonSet = pythonSets.${system};
+              pkgs = nixpkgs.legacyPackages.${system};
+            in
+            {
+              default =
+                let
+                  # Create an overlay enabling editable mode for all local dependencies.
+                  editableOverlay = workspace.mkEditablePyprojectOverlay {
+                    # Use environment variable
+                    root = "$REPO_ROOT";
+                    # Optional: Only enable editable for these packages
+                    # members = [ "hello-world" ];
+                  };
+
+                  # Override previous set with our overrideable overlay.
+                  editablePythonSet = pythonSet.overrideScope editableOverlay;
+
+                  virtualenv = editablePythonSet.mkVirtualEnv "${pname}-dev-env" {
+                    ${pname} = [ "dev" ];
+                  };
+
+                in
+                pkgs.mkShell {
+                  packages = [
+                    virtualenv
+                    pkgs.uv
+                  ];
+                  shellHook = ''
+                    # Undo dependency propagation by nixpkgs.
+                    unset PYTHONPATH
+
+                    # Don't create venv using uv
+                    export UV_NO_SYNC=1
+
+                    # Prevent uv from downloading managed Python's
+                    export UV_PYTHON_DOWNLOADS=never
+
+                    # Get repository root using git. This is expanded at runtime by the editable `.pth` machinery.
+                    export REPO_ROOT=$(git rev-parse --show-toplevel)
+                  '';
+                };
+            });
+
+        checks = forAllSystems (
+          system:
+          let
+            pythonSet = pythonSets.${system};
+          in
+          {
+            inherit (pythonSet.${pname}.passthru.tests) pytest;
+          }
+        );
+
+        formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+
+      };
+  }
+#+end_src
+** Rust Flake Template
+:PROPERTIES:
+:CUSTOM_ID: h:c03663fd-f7bd-4054-9075-5dacaf2abf76
+:END:
+
+#+begin_src nix-ts :tangle templates/rust/flake.nix
+  # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/rust-fenix-naersk/flake.nix
+  {
+    description = "Rust Flake using Fenix and Naersk";
+
+    inputs = {
+      nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+      systems.url = "github:nix-systems/default";
+      naersk.url = "github:nix-community/naersk";
+      fenix = {
+        url = "github:nix-community/fenix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+    };
+
+    outputs =
+      { self
+      , nixpkgs
+      , naersk
+      , fenix
+      , systems
+      , ...
+      }:
+      let
+        forEachSystem = nixpkgs.lib.genAttrs (import systems);
+        pkgsFor = forEachSystem (system:
+
+          import nixpkgs {
+            inherit system;
+            overlays = [
+              fenix.overlays.default
+            ];
+          });
+        rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
+      in
+      {
+        formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+        devShells = forEachSystem (system: {
+          default = pkgsFor.${system}.mkShell {
+            packages = with rust-toolchain.${system}; [
+              cargo
+              rustc
+              clippy
+              rustfmt
+              rust-analyzer
+            ];
+            env = {
+              RUST_BACKTRACE = "full";
+            };
+            RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
+          };
+        });
+
+        packages = forEachSystem (system: {
+          default =
+            (pkgsFor.${system}.callPackage naersk {
+              inherit (rust-toolchain.${system}) cargo rustc;
+            }).buildPackage {
+              src = ./.;
+            };
+        });
+
+        apps = forEachSystem (system: {
+          default = {
+            type = "app";
+            program = "${self.packages.${system}.default}/bin/rust";
+          };
+        });
+      };
+  }
 #+end_src
 ** GitHub Readme
 :PROPERTIES:

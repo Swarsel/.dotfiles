@@ -58,6 +58,11 @@
       };
 
     services.dbus.implementation = "broker";
+
+    systemd.services.nix-daemon = {
+      environment.TMPDIR = "/var/tmp";
+    };
+
     system.stateVersion = lib.mkDefault "23.05";
   };
 }

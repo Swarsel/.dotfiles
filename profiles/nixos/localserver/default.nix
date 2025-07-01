@@ -31,12 +31,12 @@
           paperless = lib.mkDefault true;
           transmission = lib.mkDefault true;
           syncthing = lib.mkDefault true;
-          monitoring = lib.mkDefault true;
+          grafana = lib.mkDefault true;
           emacs = lib.mkDefault true;
           freshrss = lib.mkDefault true;
           jenkins = lib.mkDefault false;
           kanidm = lib.mkDefault true;
-          firefly = lib.mkDefault true;
+          firefly-iii = lib.mkDefault true;
           koillection = lib.mkDefault true;
           radicale = lib.mkDefault true;
           atuin = lib.mkDefault true;

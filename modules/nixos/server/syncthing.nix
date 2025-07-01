@@ -1,34 +1,37 @@
 { lib, config, ... }:
 let
   inherit (config.repo.secrets.common) workHostName;
-  serviceDomain = "storync.swarsel.win";
+
   servicePort = 8384;
   serviceUser = "syncthing";
   serviceGroup = serviceUser;
   serviceName = "syncthing";
+  serviceDomain = config.repo.secrets.common.services.domains.syncthing1;
+
+  cfg = config.services.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       extraGroups = [ "users" ];
       group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups."${serviceGroup}" = { };
+    users.groups.${serviceGroup} = { };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services."${serviceName}-${config.networking.hostName}".domain = serviceDomain;
 
-    services.syncthing = {
+    services.${serviceName} = rec {
       enable = true;
       user = serviceUser;
       group = serviceGroup;
-      dataDir = "/Vault/data/syncthing";
-      configDir = "/Vault/data/syncthing/.config/syncthing";
+      dataDir = "/Vault/data/${serviceName}";
+      configDir = "${cfg.dataDir}/.config/${serviceName}";
       guiAddress = "0.0.0.0:${builtins.toString servicePort}";
       openDefaultPorts = true; # opens ports TCP/UDP 22000 and UDP 21027 for discovery
       relay.enable = false;
@@ -50,14 +53,14 @@ in
         };
         folders = {
           "Default Folder" = lib.mkForce {
-            path = "/Vault/data/syncthing/Sync";
+            path = "${cfg.dataDir}/Sync";
             type = "receiveonly";
             versioning = null;
             devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "default";
           };
           "Obsidian" = {
-            path = "/Vault/data/syncthing/Obsidian";
+            path = "${cfg.dataDir}/Obsidian";
             type = "receiveonly";
             versioning = {
               type = "simple";
@@ -67,7 +70,7 @@ in
             id = "yjvni-9eaa7";
           };
           "Org" = {
-            path = "/Vault/data/syncthing/Org";
+            path = "${cfg.dataDir}/Org";
             type = "receiveonly";
             versioning = {
               type = "simple";
@@ -77,7 +80,7 @@ in
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
-            path = "/Vault/data/syncthing/Vpn";
+            path = "${cfg.dataDir}/Vpn";
             type = "receiveonly";
             versioning = {
               type = "simple";
@@ -87,7 +90,7 @@ in
             id = "hgp9s-fyq3p";
           };
           # "Documents" = {
-          #   path = "/Vault/data/syncthing/Documents";
+          #   path = "${cfg.dataDir}/Documents";
           #   type = "receiveonly";
           #   versioning = {
           #     type = "simple";
@@ -102,7 +105,7 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

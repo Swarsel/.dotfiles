@@ -6,13 +6,13 @@ let
   serviceGroup = serviceUser;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
-    users.groups."${serviceGroup}" = {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    users.groups.${serviceGroup} = {
       gid = 65136;
     };
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       isSystemUser = true;
       uid = 65136;
       group = serviceGroup;

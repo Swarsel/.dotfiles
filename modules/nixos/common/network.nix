@@ -22,6 +22,7 @@
 
       networkmanager = {
         enable = true;
+        wifi.backend = "iwd";
         ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
           environmentFiles = [
             "${config.sops.templates."network-manager.env".path}"

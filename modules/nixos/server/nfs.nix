@@ -1,4 +1,7 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, globals, ... }:
+let
+  nfsUser = globals.user.name;
+in
 {
   options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
   config = lib.mkIf config.swarselsystems.modules.server.nfs {
@@ -29,7 +32,7 @@
           path = "/Vault/Eternor";
           writable = "true";
           comment = "Eternor";
-          "valid users" = "Swarsel";
+          "valid users" = nfsUser;
         };
       };
 

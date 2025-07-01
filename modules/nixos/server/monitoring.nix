@@ -1,23 +1,44 @@
-{ self, lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
-  serviceDomain = "status.swarsel.win";
+
   servicePort = 3000;
   serviceUser = "grafana";
   serviceGroup = serviceUser;
-  moduleName = "monitoring";
+  serviceName = "grafana";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+  prometheusPort = 9090;
+  prometheusUser = "prometheus";
+  prometheusGroup = prometheusUser;
+  nextcloudUser = config.repo.secrets.local.nextcloud.adminuser;
   grafanaUpstream = "grafana";
   prometheusUpstream = "prometheus";
-  prometheusPort = 9090;
   prometheusWebRoot = "prometheus";
+  kanidmDomain = globals.services.kanidm.domain;
 in
 {
-  options.swarselsystems.modules.server."${moduleName}" = lib.mkEnableOption "enable ${moduleName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${moduleName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    sops.secrets = {
-      grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-      prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-      kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+    sops = {
+      secrets = {
+        grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        prometheus-admin-hash = { sopsFile = self + /secrets/winters/secrets2.yaml; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+
+      };
+      templates = {
+        "web-config" = {
+          content = ''
+            basic_auth_users:
+              admin: ${config.sops.placeholder.prometheus-admin-hash}
+          '';
+          owner = prometheusUser;
+          group = prometheusGroup;
+          mode = "0440";
+        };
+      };
     };
 
     users = {
@@ -26,7 +47,7 @@ in
           extraGroups = [ "nextcloud" ];
         };
 
-        "${serviceUser}" = {
+        ${serviceUser} = {
           extraGroups = [ "users" ];
         };
       };
@@ -35,12 +56,12 @@ in
     networking.firewall.allowedTCPPorts = [ servicePort prometheusPort ];
 
     topology.self.services.prometheus.info = "https://${serviceDomain}/${prometheusWebRoot}";
-    globals.services.${moduleName}.domain = serviceDomain;
+    globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
-      grafana = {
+      ${serviceName} = {
         enable = true;
-        dataDir = "/Vault/data/grafana";
+        dataDir = "/Vault/data/${serviceName}";
         provision = {
           enable = true;
           datasources.settings = {
@@ -97,9 +118,9 @@ in
             client_secret = "$__file{${config.sops.secrets.kanidm-grafana-client.path}}";
             scopes = "openid email profile";
             login_attribute_path = "preferred_username";
-            auth_url = "https://sso.swarsel.win/ui/oauth2";
-            token_url = "https://sso.swarsel.win/oauth2/token";
-            api_url = "https://sso.swarsel.win/oauth2/openid/grafana/userinfo";
+            auth_url = "https://${kanidmDomain}/ui/oauth2";
+            token_url = "https://${kanidmDomain}/oauth2/token";
+            api_url = "https://${kanidmDomain}/oauth2/openid/grafana/userinfo";
             use_pkce = true;
             use_refresh_token = true;
             # Allow mapping oauth2 roles to server admin
@@ -111,13 +132,13 @@ in
 
       prometheus = {
         enable = true;
-        webExternalUrl = "https://status.swarsel.win/${prometheusWebRoot}";
+        webExternalUrl = "https://${serviceDomain}/${prometheusWebRoot}";
         port = prometheusPort;
         listenAddress = "0.0.0.0";
         globalConfig = {
           scrape_interval = "10s";
         };
-        webConfigFile = self + /programs/server/prometheus/web.config;
+        webConfigFile = config.sops.templates.web-config.path;
         scrapeConfigs = [
           {
             job_name = "node";
@@ -171,8 +192,8 @@ in
           nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
             enable = true;
             port = 9205;
-            url = "https://stash.swarsel.win/ocs/v2.php/apps/serverinfo/api/v1/info";
-            username = "admin";
+            url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
+            username = nextcloudUser;
             passwordFile = config.sops.secrets.nextcloudadminpass.path;
           };
         };

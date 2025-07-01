@@ -1,22 +1,22 @@
 { lib, config, globals, ... }:
 let
-  serviceDomain = "shots.swarsel.win";
   servicePort = 3001;
   serviceUser = "immich";
   serviceName = "immich";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       extraGroups = [ "video" "render" "users" ];
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.immich = {
+    services.${serviceName} = {
       enable = true;
       host = "0.0.0.0";
       port = servicePort;
@@ -31,7 +31,7 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

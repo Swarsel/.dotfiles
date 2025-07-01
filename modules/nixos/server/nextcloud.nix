@@ -1,13 +1,16 @@
 { pkgs, lib, config, ... }:
 let
-  serviceDomain = "stash.swarsel.win";
+  inherit (config.repo.secrets.local.nextcloud) adminuser;
+
+  servicePort = 80;
   serviceUser = "nextcloud";
   serviceGroup = serviceUser;
   serviceName = "nextcloud";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops.secrets = {
       nextcloudadminpass = {
@@ -26,7 +29,7 @@ in
     globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
-      nextcloud = {
+      ${serviceName} = {
         enable = true;
         settings = {
           trusted_proxies = [ "0.0.0.0" ];
@@ -34,8 +37,8 @@ in
         };
         package = pkgs.nextcloud31;
         hostName = serviceDomain;
-        home = "/Vault/data/nextcloud";
-        datadir = "/Vault/data/nextcloud";
+        home = "/Vault/data/${serviceName}";
+        datadir = "/Vault/data/${serviceName}";
         https = true;
         configureRedis = true;
         maxUploadSize = "4G";
@@ -44,7 +47,7 @@ in
         };
         extraAppsEnable = true;
         config = {
-          adminuser = "admin";
+          inherit adminuser;
           adminpassFile = config.sops.secrets.nextcloudadminpass.path;
           dbtype = "sqlite";
         };
@@ -53,9 +56,9 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
-            "192.168.1.2:80" = { };
+            "192.168.1.2:${builtins.toString servicePort}" = { };
           };
         };
       };

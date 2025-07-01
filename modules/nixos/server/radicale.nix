@@ -2,17 +2,18 @@
 let
   inherit (config.repo.secrets.local.radicale) user1;
   sopsFile = self + /secrets/winters/secrets2.yaml;
-  serviceDomain = "schedule.swarsel.win";
+
   servicePort = 8000;
   serviceName = "radicale";
   serviceUser = "radicale";
   serviceGroup = serviceUser;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
-  cfg = config.services."${serviceName}";
+  cfg = config.services.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops = {
       secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -32,7 +33,7 @@ in
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.radicale = {
+    services.${serviceName} = {
       enable = true;
       settings = {
         server = {
@@ -75,11 +76,10 @@ in
     ];
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
-    networking.firewall.allowedUDPPorts = [ servicePort ];
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

@@ -4,7 +4,6 @@ let
     mkOption
     types
     ;
-
 in
 {
   options = {
@@ -12,21 +11,9 @@ in
       default = { };
       type = types.submodule {
         options = {
-          root = {
-            hashedPassword = mkOption {
-              type = types.str;
-              description = "My root user's password hash.";
-            };
-          };
-
-          myuser = {
+          user = {
             name = mkOption {
               type = types.str;
-              description = "My unix username.";
-            };
-            hashedPassword = mkOption {
-              type = types.str;
-              description = "My unix password hash.";
             };
           };
 
@@ -37,7 +24,6 @@ in
                 options = {
                   domain = mkOption {
                     type = types.str;
-                    description = "The domain under which this service can be reached";
                   };
                 };
               }
@@ -45,21 +31,9 @@ in
           };
 
           domains = {
-            me = mkOption {
+            main = mkOption {
               type = types.str;
-              description = "My main domain.";
             };
-
-            personal = mkOption {
-              type = types.str;
-              description = "My personal domain.";
-            };
-          };
-
-          macs = mkOption {
-            default = { };
-            type = types.attrsOf types.str;
-            description = "Known MAC addresses for external devices.";
           };
         };
       };

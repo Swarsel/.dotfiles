@@ -1,4 +1,8 @@
 { pkgs, lib, config, ... }:
+let
+  inherit (config.repo.secrets.common) dnsProvider;
+  inherit (config.repo.secrets.common.mail) address3;
+in
 {
   options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
   config = lib.mkIf config.swarselsystems.modules.server.nginx {
@@ -18,8 +22,8 @@
       acceptTerms = true;
       preliminarySelfsigned = false;
       defaults = {
-        email = "mrswarsel@gmail.com";
-        dnsProvider = "cloudflare";
+        inherit dnsProvider;
+        email = address3;
         environmentFile = "${config.sops.templates."certs.secret".path}";
       };
     };

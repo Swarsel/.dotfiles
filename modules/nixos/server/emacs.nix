@@ -1,11 +1,15 @@
 { lib, config, ... }:
+let
+  serviceName = "emacs";
+  servicePort = 9812;
+in
 {
-  options.swarselsystems.modules.server.emacs = lib.mkEnableOption "enable emacs server on server";
-  config = lib.mkIf config.swarselsystems.modules.server.emacs {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} server on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    networking.firewall.allowedTCPPorts = [ 9812 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    services.emacs = {
+    services.${serviceName} = {
       enable = true;
       install = true;
       startWithGraphical = false;

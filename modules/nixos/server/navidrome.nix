@@ -1,14 +1,14 @@
 { pkgs, config, lib, ... }:
 let
-  serviceDomain = "sound.swarsel.win";
   servicePort = 4040;
   serviceName = "navidrome";
   serviceUser = "navidrome";
   serviceGroup = serviceUser;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
     environment.systemPackages = with pkgs; [
       pciutils
       alsa-utils
@@ -17,13 +17,13 @@ in
 
     users = {
       groups = {
-        "${serviceGroup}" = {
+        ${serviceGroup} = {
           gid = 61593;
         };
       };
 
       users = {
-        "${serviceUser}" = {
+        ${serviceUser} = {
           isSystemUser = true;
           uid = 61593;
           group = serviceGroup;
@@ -36,11 +36,11 @@ in
       enableAllFirmware = lib.mkForce true;
     };
 
-    networking.firewall.allowedTCPPorts = [ 4040 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.navidrome = {
+    services.${serviceName} = {
       enable = true;
       openFirewall = true;
       settings = {
@@ -82,7 +82,7 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };
@@ -108,19 +108,19 @@ in
             in
             {
               "/" = {
-                proxyPass = "http://navidrome";
+                proxyPass = "http://${serviceName}";
                 proxyWebsockets = true;
                 inherit extraConfig;
               };
               "/share" = {
-                proxyPass = "http://navidrome";
+                proxyPass = "http://${serviceName}";
                 proxyWebsockets = true;
                 setOauth2Headers = false;
                 bypassAuth = true;
                 inherit extraConfig;
               };
               "/rest" = {
-                proxyPass = "http://navidrome";
+                proxyPass = "http://${serviceName}";
                 proxyWebsockets = true;
                 setOauth2Headers = false;
                 bypassAuth = true;

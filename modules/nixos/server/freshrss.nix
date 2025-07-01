@@ -1,21 +1,24 @@
 { self, lib, config, ... }:
 let
+  inherit (config.repo.secrets.local.freshrss) defaultUser;
+
+  servicePort = 80;
   serviceName = "freshrss";
-  serviceDomain = "signpost.swarsel.win";
   serviceUser = "freshrss";
   serviceGroup = serviceName;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 in
 {
-  options.swarselsystems.modules.server.freshrss = lib.mkEnableOption "enable freshrss on server";
-  config = lib.mkIf config.swarselsystems.modules.server.freshrss {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       extraGroups = [ "users" ];
       group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups."${serviceGroup}" = { };
+    users.groups.${serviceGroup} = { };
 
     sops = {
       secrets = {
@@ -29,7 +32,7 @@ in
       #       content = ''
       #         DATA_PATH=${config.services.freshrss.dataDir}
       #         OIDC_ENABLED=1
-      #         OIDC_PROVIDER_METADATA_URL=https://sso.swarsel.win/.well-known/openid-configuration
+      #         OIDC_PROVIDER_METADATA_URL=https://${kanidmDomain}/.well-known/openid-configuration
       #         OIDC_CLIENT_ID=freshrss
       #         OIDC_CLIENT_SECRET=${config.sops.placeholder.kanidm-freshrss-client}
       #         OIDC_CLIENT_CRYPTO_KEY=${config.sops.placeholder.oidc-crypto-key}
@@ -47,18 +50,18 @@ in
     topology.self.services.${serviceName} = {
       name = "FreshRSS";
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/freshrss.png";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
 
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.freshrss = {
+    services.${serviceName} = {
+      inherit defaultUser;
       enable = true;
       virtualHost = serviceDomain;
       baseUrl = "https://${serviceDomain}";
       authType = "form";
       dataDir = "/Vault/data/tt-rss";
-      defaultUser = "Swarsel";
       passwordFile = config.sops.secrets.fresh.path;
     };
 
@@ -68,9 +71,9 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
-            "192.168.1.2:80" = { };
+            "192.168.1.2:${builtins.toString servicePort}" = { };
           };
         };
       };

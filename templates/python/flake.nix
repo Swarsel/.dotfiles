@@ -1,5 +1,4 @@
 # based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
-
 {
   description = "Python flake using uv2nix";
 

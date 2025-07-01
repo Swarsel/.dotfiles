@@ -7,6 +7,4 @@ in
   imports = lib.swarselsystems.mkImports importNames "modules/nixos/optional" ++ [
     "${modulesPath}/home/common/sharedsetup.nix"
   ];
-
-
 }

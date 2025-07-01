@@ -1,10 +1,7 @@
+# taken from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
 { inputs, ... }:
 {
-  flake =
-    { config
-    , lib
-    , ...
-    }:
+  flake = { config, lib, ... }:
     {
       globals =
         let
@@ -17,6 +14,7 @@
             };
             modules = [
               ../modules/nixos/common/globals.nix
+              ./globals-general.nix
               (
                 { lib, ... }:
                 {
@@ -39,9 +37,7 @@
           inherit (globalsSystem.config.globals)
             domains
             services
-            macs
-            myuser
-            root
+            user
             ;
         };
     };

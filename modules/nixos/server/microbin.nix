@@ -1,21 +1,21 @@
 { self, lib, config, ... }:
 let
-  serviceDomain = "scratch.swarsel.win";
   servicePort = 8777;
   serviceName = "microbin";
   serviceUser = "microbin";
   serviceGroup = serviceUser;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
-  cfg = config.services."${serviceName}";
+  cfg = config.services.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     users = {
-      groups."${serviceGroup}" = { };
+      groups.${serviceGroup} = { };
 
-      users."${serviceUser}" = {
+      users.${serviceUser} = {
         isSystemUser = true;
         group = serviceGroup;
       };
@@ -49,7 +49,7 @@ in
     };
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services."${serviceName}" = {
+    services.${serviceName} = {
       enable = true;
       passwordFile = config.sops.templates.microbin-env.path;
       dataDir = "/var/lib/microbin";
@@ -84,7 +84,7 @@ in
     };
 
     systemd.services = {
-      "${serviceName}" = {
+      ${serviceName} = {
         serviceConfig = {
           DynamicUser = lib.mkForce false;
           User = serviceUser;
@@ -101,7 +101,7 @@ in
 
     services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "localhost:${builtins.toString servicePort}" = { };
           };

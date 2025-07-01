@@ -1,38 +1,47 @@
 { self, lib, config, ... }:
 let
+  servicePort = 80;
+  serviceUser = "firefly-iii";
+  serviceGroup = serviceUser;
+  serviceName = "firefly-iii";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+  nginxGroup = "nginx";
+
   cfg = config.services.firefly-iii;
-  serviceDomain = "stonks.swarsel.win";
-  fireflyUser = "firefly-iii";
-  serviceName = "firefly";
 in
 {
-  options.swarselsystems.modules.server.firefly = lib.mkEnableOption "enable firefly-iii on server";
-  config = lib.mkIf config.swarselsystems.modules.server.firefly {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    users.users.firefly-iii = {
-      group = "nginx";
-      isSystemUser = true;
+    users = {
+      groups.${serviceGroup} = { };
+      users.${serviceUser} = {
+        group = lib.mkForce serviceGroup;
+        extraGroups = lib.mkIf cfg.enableNginx [ nginxGroup ];
+        isSystemUser = true;
+      };
     };
 
     sops = {
       secrets = {
-        "firefly-iii-app-key" = { owner = fireflyUser; group = "nginx"; mode = "0440"; };
+        "firefly-iii-app-key" = { owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
       };
     };
 
-    topology.self.services.firefly-iii = {
+    topology.self.services.${serviceName} = {
       name = "Firefly-III";
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/firefly-iii.png";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
-      firefly-iii = {
+      ${serviceName} = {
         enable = true;
-        user = fireflyUser;
-        group = if cfg.enableNginx then "nginx" else fireflyUser;
-        dataDir = "/Vault/data/firefly-iii";
+        user = serviceUser;
+        group = if cfg.enableNginx then nginxGroup else serviceGroup;
+        dataDir = "/Vault/data/${serviceName}";
         settings = {
           TZ = config.repo.secrets.common.location.timezone;
           APP_URL = "https://${serviceDomain}";
@@ -69,9 +78,9 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
-            "192.168.1.2:80" = { };
+            "192.168.1.2:${builtins.toString servicePort}" = { };
           };
         };
       };

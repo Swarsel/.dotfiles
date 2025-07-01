@@ -1,17 +1,17 @@
 { lib, config, ... }:
 let
-  serviceDomain = "shellhistory.swarsel.win";
   servicePort = 8888;
   serviceName = "atuin";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.atuin = {
+    services.${serviceName} = {
       enable = true;
       host = "0.0.0.0";
       port = servicePort;
@@ -21,7 +21,7 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

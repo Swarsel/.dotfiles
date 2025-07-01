@@ -1,6 +1,5 @@
 { self, lib, config, pkgs, ... }:
 let
-  serviceDomain = "send.swarsel.win";
   servicePorts = [
     9009
     9010
@@ -9,12 +8,13 @@ let
     9013
   ];
   serviceName = "croc";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
   cfg = config.services.croc;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops = {
       secrets = {
@@ -39,7 +39,7 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.croc = {
+    services.${serviceName} = {
       enable = true;
       ports = servicePorts;
       pass = config.sops.secrets.croc-password.path;
@@ -48,7 +48,7 @@ in
 
 
     systemd.services = {
-      "${serviceName}" = {
+      ${serviceName} = {
         serviceConfig = {
           ExecStart = lib.mkForce "${pkgs.croc}/bin/croc ${lib.optionalString cfg.debug "--debug"} relay --ports ${
             lib.concatMapStringsSep "," toString cfg.ports}";

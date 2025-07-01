@@ -1,17 +1,18 @@
 { self, lib, config, ... }:
 let
-  serviceDomain = "swag.swarsel.win";
   serviceUser = "koillection";
   serviceDB = "koillection";
   serviceName = "koillection";
   servicePort = 2282;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
   containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops.secrets = {
       koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
@@ -97,7 +98,7 @@ in
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

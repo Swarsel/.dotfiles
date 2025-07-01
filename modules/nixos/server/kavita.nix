@@ -1,43 +1,43 @@
 { self, lib, config, pkgs, ... }:
 let
+  servicePort = 8080;
   serviceName = "kavita";
   serviceUser = "kavita";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  servicePort = 8080;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
     environment.systemPackages = with pkgs; [
       calibre
     ];
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       extraGroups = [ "users" ];
     };
 
     sops.secrets.kavita = { owner = serviceUser; };
 
-    networking.firewall.allowedTCPPorts = [ 8080 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    topology.self.services.kavita = {
+    topology.self.services.${serviceName} = {
       name = "Kavita";
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/kavita.png";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.kavita = {
+    services.${serviceName} = {
       enable = true;
       user = serviceUser;
       settings.Port = servicePort;
       tokenKeyFile = config.sops.secrets.kavita.path;
-      dataDir = "/Vault/data/kavita";
+      dataDir = "/Vault/data/${serviceName}";
     };
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

@@ -2,6 +2,8 @@
 let
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+  serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
+
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
@@ -83,10 +85,12 @@ in
 
   system.stateVersion = "23.11";
 
+  globals.services."syncthing-${config.networking.hostName}".domain = serviceDomain;
+
   services = {
     nginx = {
       virtualHosts = {
-        "syncthing.swarsel.win" = {
+        ${serviceDomain} = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;

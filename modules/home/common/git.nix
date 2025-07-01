@@ -1,7 +1,9 @@
-{ lib, config, nixosConfig, ... }:
+{ lib, config, nixosConfig, globals, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1;
   inherit (nixosConfig.repo.secrets.common) fullName;
+
+  gitUser = globals.user.name;
 in
 {
   options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
@@ -25,15 +27,15 @@ in
         key = "0x76FD3810215AE097";
         signByDefault = true;
       };
-      userEmail = lib.mkDefault address1;
-      userName = fullName;
+      userEmail = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
+      userName = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
       difftastic.enable = true;
       lfs.enable = true;
       includes = [
         {
           contents = {
             github = {
-              user = "Swarsel";
+              user = gitUser;
             };
             commit = {
               template = "~/.gitmessage";

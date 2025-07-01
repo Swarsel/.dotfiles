@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-07-01 Di 00:53 -->
+<!-- 2025-07-02 Mi 01:23 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -256,7 +256,12 @@
 </li>
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a>
 <ul>
-<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">3.1.3.1. Sync (OCI)</a></li>
+<li><a href="#h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf">3.1.3.1. Sync (OCI)</a>
+<ul>
+<li><a href="#h:922105c3-a604-47d9-918b-db1803784c75">3.1.3.1.1. Main configuration</a></li>
+<li><a href="#h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b">3.1.3.1.2. hardware-configuration</a></li>
+</ul>
+</li>
 <li><a href="#h:f547ed16-5e6e-4744-9e33-af090e0a175b">3.1.3.2. Moonside (OCI)</a>
 <ul>
 <li><a href="#h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9">3.1.3.2.1. Main Configuration</a></li>
@@ -279,8 +284,9 @@
 <li><a href="#h:e1498bef-ec67-483d-bf02-76264e30be8e">3.1.4.4. ChaosTheatre (Demo Physical/VM)</a>
 <ul>
 <li><a href="#h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab">3.1.4.4.1. Main configuration</a></li>
-<li><a href="#h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9">3.1.4.4.2. NixOS dummy options configuration</a></li>
-<li><a href="#h:88ccb198-74b9-4269-8e22-af1277f44667">3.1.4.4.3. home-manager dummy options configuration</a></li>
+<li><a href="#h:849e4233-ba40-4fec-acfe-0d76e1e4371b">3.1.4.4.2. disko</a></li>
+<li><a href="#h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9">3.1.4.4.3. NixOS dummy options configuration</a></li>
+<li><a href="#h:88ccb198-74b9-4269-8e22-af1277f44667">3.1.4.4.4. home-manager dummy options configuration</a></li>
 </ul>
 </li>
 </ul>
@@ -665,7 +671,7 @@
 <li><a href="#h:3e0b6da3-0497-4080-bb49-bab949c03bc4">4.4.1.5. Babel</a>
 <ul>
 <li><a href="#h:5d5ed7be-ec5f-4e17-bbb8-820ab6a9961c">4.4.1.5.1. Language Configuration</a></li>
-<li><a href="#h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">4.4.1.5.2. old easy structure templates</a></li>
+<li><a href="#h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">4.4.1.5.2. old easy structure templates (org-tempo)</a></li>
 </ul>
 </li>
 <li><a href="#h:4696e2fc-3296-47dc-8fc3-66912c329d4c">4.4.1.6. aucTex</a></li>
@@ -710,27 +716,28 @@
 <li><a href="#h:d60ce0b1-cabf-43f5-a236-a1e4b400d2f5">4.4.29. Commenting</a></li>
 <li><a href="#h:6cf0310b-2fdf-45f0-9845-4704649777eb">4.4.30. eglot</a></li>
 <li><a href="#h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75">4.4.31. lsp-mode &amp; company</a></li>
-<li><a href="#h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61">4.4.32. lsp-bridge</a></li>
-<li><a href="#h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857">4.4.33. sideline-flymake</a></li>
-<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.34. Prevent breaking of hardlinks</a></li>
-<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.35. Dirvish</a></li>
-<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">4.4.36. undo-tree</a></li>
-<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">4.4.37. Hydra</a>
+<li><a href="#h:cd552ba1-4db1-4605-8ead-4fcb6a466826">4.4.32. lsp-mode in org-src blocks</a></li>
+<li><a href="#h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61">4.4.33. lsp-bridge</a></li>
+<li><a href="#h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857">4.4.34. sideline-flymake</a></li>
+<li><a href="#h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">4.4.35. Prevent breaking of hardlinks</a></li>
+<li><a href="#h:0918557a-8463-430c-b8df-6546dea9abd0">4.4.36. Dirvish</a></li>
+<li><a href="#h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">4.4.37. undo-tree</a></li>
+<li><a href="#h:b6c18dd0-3377-47ea-80c3-ac1486454e18">4.4.38. Hydra</a>
 <ul>
-<li><a href="#h:c5681884-7040-4b55-ab1b-5777631a0514">4.4.37.1. Text scaling</a></li>
+<li><a href="#h:c5681884-7040-4b55-ab1b-5777631a0514">4.4.38.1. Text scaling</a></li>
 </ul>
 </li>
-<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.38. Email</a>
+<li><a href="#h:2f333330-b19d-4f64-85ea-146ff28667e8">4.4.39. Email</a>
 <ul>
-<li><a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">4.4.38.1. mu4e</a></li>
-<li><a href="#h:43209eeb-5d46-472e-b7c2-58a3fb465199">4.4.38.2. mu4e-alert</a></li>
+<li><a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">4.4.39.1. mu4e</a></li>
+<li><a href="#h:43209eeb-5d46-472e-b7c2-58a3fb465199">4.4.39.2. mu4e-alert</a></li>
 </ul>
 </li>
-<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.39. Calendar</a></li>
-<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.40. Dashboard: emacs startup screen</a></li>
-<li><a href="#h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">4.4.41. vterm</a></li>
-<li><a href="#h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">4.4.42. multiple cursors</a></li>
-<li><a href="#h:438d928f-77a8-477a-ac8b-ca54ec673f91">4.4.43. Less logging</a></li>
+<li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.40. Calendar</a></li>
+<li><a href="#h:48f5be2b-b3d2-4276-bd49-2630733f23d5">4.4.41. Dashboard: emacs startup screen</a></li>
+<li><a href="#h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">4.4.42. vterm</a></li>
+<li><a href="#h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">4.4.43. multiple cursors</a></li>
+<li><a href="#h:438d928f-77a8-477a-ac8b-ca54ec673f91">4.4.44. Less logging</a></li>
 </ul>
 </li>
 </ul>
@@ -743,14 +750,29 @@
 <li><a href="#h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0">6.3. tridactyl theme</a></li>
 <li><a href="#h:77b1c523-5074-4610-b320-90af95e6134d">6.4. Waybar style.css</a></li>
 <li><a href="#h:788937cf-8816-466b-8e57-1b695cb50f52">6.5. justfile</a></li>
-<li><a href="#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec">6.6. GitHub Readme</a></li>
+<li><a href="#h:038feb42-6e1e-4b65-abe9-e26746b72b78">6.6. aspell.conf</a></li>
+<li><a href="#h:931ff2fd-61f0-4f8f-b221-d879780f38d7">6.7. nix-plugins.patch</a></li>
+<li><a href="#h:bed316c9-47ed-494f-8375-998ef1315d7b">6.8. Zellij layout default.kdl.nix</a></li>
+<li><a href="#h:ae07e867-fc17-4dd7-bd21-5886265308ee">6.9. Zellij config.kdl.nix</a></li>
+<li><a href="#h:0124a4eb-4ea3-455c-939d-ba4584c703af">6.10. Vieb config</a></li>
+<li><a href="#h:69ea5818-4ebb-436a-a31a-6a2348cf215c">6.11. swayidle</a></li>
+<li><a href="#h:2e9b84d7-cb18-4e74-83f8-65ada11a8911">6.12. stylix color scheme</a></li>
+<li><a href="#h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128">6.13. .gitmessage</a></li>
+<li><a href="#h:a2990def-9a2a-491b-9fee-3057dc324c3c">6.14. userChrome.css</a></li>
+<li><a href="#h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9">6.15. Default Flake Template</a></li>
+<li><a href="#h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53">6.16. C++ Flake Template</a></li>
+<li><a href="#h:def2d654-e8da-4d8a-8958-b59a60d019f5">6.17. Go Flake Template</a></li>
+<li><a href="#h:adccea10-6c72-46aa-8c67-5e06b7606c71">6.18. LaTeX Flake Template</a></li>
+<li><a href="#h:1a918c8d-08b4-4474-8d34-3da502081a16">6.19. Python Flake Template</a></li>
+<li><a href="#h:c03663fd-f7bd-4054-9075-5dacaf2abf76">6.20. Rust Flake Template</a></li>
+<li><a href="#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec">6.21. GitHub Readme</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 <p>
-<b>This file has 76328 words spanning 20028 lines and was last revised on 2025-07-01 00:53:42 +0200.</b>
+<b>This file has 83537 words spanning 21934 lines and was last revised on 2025-07-02 01:23:11 +0200.</b>
 </p>
 
 <p>
@@ -803,7 +825,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-07-01 00:53:42 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-07-02 01:23:11 +0200)
 </p></li>
 </ul>
 
@@ -908,7 +930,7 @@ For archival reasons, here is shown how to use a noweb-ref block, in case I ever
 
 
 <div class="org-src-container">
-<pre class="src src-nix">enable = true;
+<pre class="src src-nix-ts">enable = true;
 </pre>
 </div>
 
@@ -917,7 +939,7 @@ which can then be used in a block like:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">enable = true;
+<pre class="src src-nix-ts">enable = true;
 </pre>
 </div>
 
@@ -962,7 +984,7 @@ Holds the aforementioned filesystem configuration and is applied using <a href="
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{
+<pre class="src src-nix-ts">{
   my_value = 2;
   my_attrSet = {
     enable = true;
@@ -1156,7 +1178,7 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-    systems.url = "github:nix-systems/default-linux";
+    systems.url = "github:nix-systems/default";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -1338,7 +1360,7 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
 
               # nixosModules = import ./modules/nixos { inherit lib; };
               # homeModules = import ./modules/home { inherit lib; };
-              packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+              packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import ./pkgs { inherit lib pkgs; });
               formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
               overlays = import ./overlays { inherit self lib inputs; };
 
@@ -1422,6 +1444,8 @@ In <code>outputs = inputs@ [...]</code>, the <code>inputs@</code> makes it so th
         systems = [
           "x86_64-linux"
           "aarch64-linux"
+          "x86_64-darwin"
+          "aarch64-darwin"
         ];
       };
 }
@@ -1501,13 +1525,13 @@ This automatically creates a topology diagram of my configuration.</li>
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
 nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
 nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
 nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-systems.url = "github:nix-systems/default-linux";
+systems.url = "github:nix-systems/default";
 home-manager = {
   url = "github:nix-community/home-manager";
   inputs.nixpkgs.follows = "nixpkgs";
@@ -1589,7 +1613,7 @@ Here I define a few variables that I need for my system specifications. There us
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 inherit (self) outputs;
 lib = (nixpkgs.lib // home-manager.lib).extend  (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
 
@@ -1626,11 +1650,11 @@ They are defined in <a href="#h:5e3e21e0-57af-4dad-b32f-6400af9b7aab">Overlays (
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">inherit lib;
+<pre class="src src-nix-ts">inherit lib;
 
 # nixosModules = import ./modules/nixos { inherit lib; };
 # homeModules = import ./modules/home { inherit lib; };
-packages = lib.swarselsystems.forEachSystem (pkgs: import ./pkgs { inherit lib pkgs; });
+packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import ./pkgs { inherit lib pkgs; });
 formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
 overlays = import ./overlays { inherit self lib inputs; };
 
@@ -1707,7 +1731,7 @@ This file defines a number of checks that can either be run by calling <code>nix
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, pkgs, system, ... }:
+<pre class="src src-nix-ts">{ self, inputs, pkgs, system, ... }:
 {
   pre-commit-check = inputs.pre-commit-hooks.lib.${system}.run {
     src = "${self}";
@@ -1759,7 +1783,7 @@ This file defines the templates that are being exposed by the flake. These can b
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 let
   templateNames = [
     "python"
@@ -1790,7 +1814,7 @@ Note: The preceding <code>nixosConfigurations</code> is found in <a href="#h:aee
 
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 </pre>
 </div>
 </div>
@@ -1808,7 +1832,7 @@ Note: The preceding <code>darwinConfigurations</code> is found in <a href="#h:ae
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 </pre>
 </div>
 </div>
@@ -1821,7 +1845,7 @@ In contrast, this defines home-manager systems, which I only have one of, that s
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
 #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
 #  extraSpecialArgs = { inherit inputs outputs; };
@@ -1842,7 +1866,7 @@ Nix on Android also demands an own flake output, which is provided here.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
 #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
 #   modules = [
@@ -1859,7 +1883,7 @@ Nix on Android also demands an own flake output, which is provided here.
 <h3 id="h:1337e267-bca3-4c65-863f-9f44b753dee4"><span class="section-number-3">2.11.</span> topologyConfigurations</h3>
 <div class="outline-text-3" id="text-h:1337e267-bca3-4c65-863f-9f44b753dee4">
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 
 </pre>
 </div>
@@ -1892,7 +1916,7 @@ This is the template that I use for new deployments of personal machines. Server
 <h5 id="h:859aec97-65a2-4633-b7d8-73d4ccf89cc5"><span class="section-number-5">3.1.1.1.</span> Main Configuration</h5>
 <div class="outline-text-5" id="text-h:859aec97-65a2-4633-b7d8-73d4ccf89cc5">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, pkgs, lib, primaryUser, ... }:
+<pre class="src src-nix-ts">{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
   modulesPath = "${self}/modules";
   sharedOptions = {
@@ -1964,7 +1988,7 @@ Acceptance of arbitraty argumments is here needed because <code>disko</code> pas
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, rootDisk, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, config, rootDisk, ... }:
 let
   type = "btrfs";
   extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
@@ -2109,7 +2133,7 @@ My work machine. Built for more security, this is the gold standard of my config
 <h6 id="h:567c0055-f5f7-4e53-8f13-d767d7166e9d"><span class="section-number-6">3.1.2.1.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:567c0055-f5f7-4e53-8f13-d767d7166e9d">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, config, inputs, lib, primaryUser, ... }:
+<pre class="src src-nix-ts">{ self, config, inputs, lib, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = true;
@@ -2196,7 +2220,7 @@ in
 <h6 id="h:25115a54-c634-4896-9a41-254064ce9fcc"><span class="section-number-6">3.1.2.1.2.</span> hardware-configuration</h6>
 <div class="outline-text-6" id="text-h:25115a54-c634-4896-9a41-254064ce9fcc">
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, pkgs, modulesPath, ... }:
+<pre class="src src-nix-ts">{ config, lib, pkgs, modulesPath, ... }:
 {
   imports =
     [
@@ -2274,7 +2298,7 @@ in
 <h6 id="h:e0da04c7-4199-44b0-b525-6cfc64072b45"><span class="section-number-6">3.1.2.1.3.</span> disko</h6>
 <div class="outline-text-6" id="text-h:e0da04c7-4199-44b0-b525-6cfc64072b45">
 <div class="org-src-container">
-<pre class="src src-nix">{
+<pre class="src src-nix-ts">{
   disko.devices = {
     disk = {
       nvme0n1 = {
@@ -2368,7 +2392,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 <h6 id="h:8ad68406-4a75-45ba-97ad-4c310b921124"><span class="section-number-6">3.1.2.2.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:8ad68406-4a75-45ba-97ad-4c310b921124">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, primaryUser, ... }:
+<pre class="src src-nix-ts">{ lib, config, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
@@ -2424,7 +2448,7 @@ in
 <h6 id="h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0"><span class="section-number-6">3.1.2.2.2.</span> hardware-configuration</h6>
 <div class="outline-text-6" id="text-h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0">
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, modulesPath, ... }:
+<pre class="src src-nix-ts">{ config, lib, modulesPath, ... }:
 
 {
   imports =
@@ -2482,7 +2506,7 @@ A Mac notebook that I have received from work. I use this machine for getting ac
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 let
   inherit (config.repo.secrets.local) workUser;
 in
@@ -2517,7 +2541,7 @@ My phone. I use only a minimal config for remote debugging here.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">
+<pre class="src src-nix-ts">
 { pkgs, ... }: {
   environment = {
     packages = with pkgs; [
@@ -2598,9 +2622,12 @@ Syncthing backup of replaceable data
 All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 </p></li>
 </ul>
-
+</div>
+<div id="outline-container-h:922105c3-a604-47d9-918b-db1803784c75" class="outline-6">
+<h6 id="h:922105c3-a604-47d9-918b-db1803784c75"><span class="section-number-6">3.1.3.1.1.</span> Main configuration</h6>
+<div class="outline-text-6" id="text-h:922105c3-a604-47d9-918b-db1803784c75">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, primaryUser, ... }:
+<pre class="src src-nix-ts">{ lib, config, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
@@ -2778,6 +2805,53 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b" class="outline-6">
+<h6 id="h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b"><span class="section-number-6">3.1.3.1.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ config, lib, modulesPath, ... }: {
+  imports = [
+    (modulesPath + "/profiles/qemu-guest.nix")
+  ];
+
+  boot = {
+    initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
+    initrd.kernelModules = [ ];
+    kernelModules = [ "kvm-amd" ];
+    extraModulePackages = [ ];
+  };
+
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-uuid/4b47378a-02eb-4548-bab8-59cbf379252a";
+      fsType = "xfs";
+    };
+
+    "/boot" = {
+      device = "/dev/disk/by-uuid/2B75-2AD5";
+      fsType = "vfat";
+    };
+  };
+
+  swapDevices = [
+    { device = "/dev/disk/by-uuid/f0126a93-753e-4769-ada8-7499a1efb3a9"; }
+  ];
+
+  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+  # (the default) this is the recommended approach. When using systemd-networkd it's
+  # still possible to use this option, but it's recommended to use it in conjunction
+  # with explicit per-interface declarations with `networking.interfaces.&lt;interface&gt;.useDHCP`.
+  networking.useDHCP = lib.mkDefault true;
+  # networking.interfaces.ens3.useDHCP = lib.mkDefault true;
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+}
+</pre>
+</div>
+</div>
+</div>
+</div>
 <div id="outline-container-h:f547ed16-5e6e-4744-9e33-af090e0a175b" class="outline-5">
 <h5 id="h:f547ed16-5e6e-4744-9e33-af090e0a175b"><span class="section-number-5">3.1.3.2.</span> Moonside (OCI)</h5>
 <div class="outline-text-5" id="text-h:f547ed16-5e6e-4744-9e33-af090e0a175b">
@@ -2786,7 +2860,7 @@ in
 <h6 id="h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9"><span class="section-number-6">3.1.3.2.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, primaryUser, ... }:
+<pre class="src src-nix-ts">{ lib, config, primaryUser, ... }:
 let
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
@@ -3021,15 +3095,8 @@ in
 <div id="outline-container-h:f99c05ab-f047-4350-b80a-4c1ff55b91bf" class="outline-6">
 <h6 id="h:f99c05ab-f047-4350-b80a-4c1ff55b91bf"><span class="section-number-6">3.1.3.2.2.</span> hardware-configuration</h6>
 <div class="outline-text-6" id="text-h:f99c05ab-f047-4350-b80a-4c1ff55b91bf">
-<p>
-loader.grub = {
-  efiSupport = true;
-  efiInstallAsRemovable = true;
-  device = "nodev";
-};
-</p>
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, modulesPath, ... }:
+<pre class="src src-nix-ts">{ lib, modulesPath, ... }:
 {
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
@@ -3052,7 +3119,7 @@ loader.grub = {
 <h6 id="h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d"><span class="section-number-6">3.1.3.2.3.</span> disko</h6>
 <div class="outline-text-6" id="text-h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d">
 <div class="org-src-container">
-<pre class="src src-nix"># NOTE: ... is needed because dikso passes diskoFile
+<pre class="src src-nix-ts"># NOTE: ... is needed because dikso passes diskoFile
 { lib
 , config
 , rootDisk
@@ -3199,7 +3266,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 <h6 id="h:4e53b40b-98b2-4615-b1b0-3696a75edd6e"><span class="section-number-6">3.1.4.1.1.</span> Main Configuration</h6>
 <div class="outline-text-6" id="text-h:4e53b40b-98b2-4615-b1b0-3696a75edd6e">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, pkgs, lib, primaryUser, ... }:
+<pre class="src src-nix-ts">{ self, inputs, pkgs, lib, primaryUser, ... }:
 let
   modulesPath = "${self}/modules";
   sharedOptions = {
@@ -3291,7 +3358,7 @@ in
 <h6 id="h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d"><span class="section-number-6">3.1.4.1.2.</span> disko</h6>
 <div class="outline-text-6" id="text-h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d">
 <div class="org-src-container">
-<pre class="src src-nix"># NOTE: ... is needed because dikso passes diskoFile
+<pre class="src src-nix-ts"># NOTE: ... is needed because dikso passes diskoFile
 { lib
 , pkgs
 , config
@@ -3458,7 +3525,7 @@ Also, an initial bash history is provided to allow for a very quick local deploy
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+<pre class="src src-nix-ts">{ self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -3610,7 +3677,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, outputs, config, ... }:
+<pre class="src src-nix-ts">{ self, outputs, config, ... }:
 {
 
   imports = [
@@ -3669,7 +3736,7 @@ I also set the <code>WLR_RENDERER_ALLOW_SOFTWARE=1</code> to allow this configur
 <h6 id="h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab"><span class="section-number-6">3.1.4.4.1.</span> Main configuration</h6>
 <div class="outline-text-6" id="text-h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, config, pkgs, lib, primaryUser, ... }:
+<pre class="src src-nix-ts">{ self, inputs, config, pkgs, lib, primaryUser, ... }:
 let
   sharedOptions = {
     isBtrfs = false;
@@ -3745,11 +3812,147 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:849e4233-ba40-4fec-acfe-0d76e1e4371b" class="outline-6">
+<h6 id="h:849e4233-ba40-4fec-acfe-0d76e1e4371b"><span class="section-number-6">3.1.4.4.2.</span> disko</h6>
+<div class="outline-text-6" id="text-h:849e4233-ba40-4fec-acfe-0d76e1e4371b">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># NOTE: ... is needed because dikso passes diskoFile
+{ lib
+, pkgs
+, config
+, diskDevice ? config.swarselsystem.rootDisk
+, ...
+}:
+let
+  type = "btrfs";
+  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+  subvolumes = {
+    "/root" = {
+      mountpoint = "/";
+      mountOptions = [
+        "subvol=root"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/home";
+      mountOptions = [
+        "subvol=home"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/persist";
+      mountOptions = [
+        "subvol=persist"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+      mountpoint = "/var/log";
+      mountOptions = [
+        "subvol=log"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/nix" = {
+      mountpoint = "/nix";
+      mountOptions = [
+        "subvol=nix"
+        "compress=zstd"
+        "noatime"
+      ];
+    };
+    "/swap" = lib.mkIf config.swarselsystems.isSwap {
+      mountpoint = "/.swapvol";
+      swap.swapfile.size = config.swarselsystems.swapSize;
+    };
+  };
+in
+{
+  disko.devices = {
+    disk = {
+      disk0 = {
+        type = "disk";
+        device = diskDevice;
+        content = {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              priority = 1;
+              name = "ESP";
+              size = "512M";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "defaults" ];
+              };
+            };
+            root = lib.mkIf (!config.swarselsystems.isCrypted) {
+              size = "100%";
+              content = {
+                inherit type subvolumes extraArgs;
+                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                  MNTPOINT=$(mktemp -d)
+                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                '';
+              };
+            };
+            luks = lib.mkIf config.swarselsystems.isCrypted {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "cryptroot";
+                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                settings = {
+                  allowDiscards = true;
+                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                  crypttabExtraOpts = [
+                    "fido2-device=auto"
+                    "token-timeout=10"
+                  ];
+                };
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+
+  environment.systemPackages = [
+    pkgs.yubikey-manager
+  ];
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9" class="outline-6">
-<h6 id="h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9"><span class="section-number-6">3.1.4.4.2.</span> NixOS dummy options configuration</h6>
+<h6 id="h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9"><span class="section-number-6">3.1.4.4.3.</span> NixOS dummy options configuration</h6>
 <div class="outline-text-6" id="text-h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9">
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix-ts">_:
 { }
 
 </pre>
@@ -3757,10 +3960,10 @@ in
 </div>
 </div>
 <div id="outline-container-h:88ccb198-74b9-4269-8e22-af1277f44667" class="outline-6">
-<h6 id="h:88ccb198-74b9-4269-8e22-af1277f44667"><span class="section-number-6">3.1.4.4.3.</span> home-manager dummy options configuration</h6>
+<h6 id="h:88ccb198-74b9-4269-8e22-af1277f44667"><span class="section-number-6">3.1.4.4.4.</span> home-manager dummy options configuration</h6>
 <div class="outline-text-6" id="text-h:88ccb198-74b9-4269-8e22-af1277f44667">
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix-ts">_:
 { }
 
 </pre>
@@ -3810,7 +4013,7 @@ Note: The structure of generating the packages was changed in commit <code>2cf03
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, ... }:
 let
   packageNames = lib.swarselsystems.readNix "pkgs";
 in
@@ -3883,7 +4086,7 @@ notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
@@ -3903,7 +4106,7 @@ The version of <code>cura</code> used to be quite outdated in nixpkgs. I am fetc
 
 
 <div class="org-src-container">
-<pre class="src src-nix"># taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
+<pre class="src src-nix-ts"># taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
 { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
 
 
@@ -3946,7 +4149,7 @@ This script allows for quick git home-manager specialisation switching.
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, fzf, findutils, home-manager, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, fzf, findutils, home-manager, ... }:
 
 writeShellApplication {
   inherit name;
@@ -3972,7 +4175,7 @@ This script allows for quick git worktree switching.
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, fzf, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, fzf, ... }:
 
 writeShellApplication {
   inherit name;
@@ -3995,7 +4198,7 @@ This script allows for quick git branch switching.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, fzf, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, fzf, ... }:
 
 writeShellApplication {
   inherit name;
@@ -4018,7 +4221,7 @@ This script lets me quickly backup files by appending <code>.bak</code> to the f
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, ... }:
 
 writeShellApplication {
   inherit name;
@@ -4041,7 +4244,7 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, speechd, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, speechd, ... }:
 
 writeShellApplication {
   inherit name;
@@ -4090,7 +4293,7 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ emacs30-pgtk sway jq ];
@@ -4221,7 +4424,7 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
@@ -4247,7 +4450,7 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, kitty }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, kitty }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ kitty ];
@@ -4294,7 +4497,7 @@ echo "$OUT"
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, git }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, git }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];
@@ -4322,7 +4525,7 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, sway }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, sway }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
@@ -4364,7 +4567,7 @@ sudo btrfs subvolume find-new "/mnt/root" "$OLD_TRANSID" |
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication }:
 writeShellApplication {
   inherit name;
   text = builtins.readFile "${self}/scripts/${name}.sh";
@@ -4382,7 +4585,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, jq, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, jq, ... }:
 
 writeShellApplication {
   inherit name;
@@ -4407,7 +4610,7 @@ This application moves the wl-mirror app to the T workspace and makes it fullscr
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, sway, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, sway, ... }:
 
 writeShellApplication {
   inherit name;
@@ -4454,7 +4657,7 @@ fi
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, sway }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, sway }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
@@ -4816,7 +5019,7 @@ fi
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, openssh }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, openssh }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ openssh ];
@@ -4936,7 +5139,7 @@ yellow "Please keep in mind that this is only a demo of the configuration. Thing
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, git }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, git }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];
@@ -5174,7 +5377,7 @@ green "Installation finished! Reboot to see changes"
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, git }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, git }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];
@@ -5268,7 +5471,7 @@ green "Post-install finished!"
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, git }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, git }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];
@@ -5282,7 +5485,7 @@ writeShellApplication {
 <h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">3.2.1.22.</span> t2ts</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, ... }:
 
 writeShellApplication {
   inherit name;
@@ -5300,7 +5503,7 @@ writeShellApplication {
 <h5 id="h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1"><span class="section-number-5">3.2.1.23.</span> ts2t</h5>
 <div class="outline-text-5" id="text-h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1">
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, ... }:
 
 writeShellApplication {
   inherit name;
@@ -5318,7 +5521,7 @@ writeShellApplication {
 <h5 id="h:7806b129-a4a5-4d10-af27-6cbeafbcb294"><span class="section-number-5">3.2.1.24.</span> vershell</h5>
 <div class="outline-text-5" id="text-h:7806b129-a4a5-4d10-af27-6cbeafbcb294">
 <div class="org-src-container">
-<pre class="src src-nix">{ name, writeShellApplication, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, ... }:
 
 writeShellApplication {
   inherit name;
@@ -5336,7 +5539,7 @@ writeShellApplication {
 <h5 id="h:9fda7829-09a4-4b8f-86f6-08b078ab2874"><span class="section-number-5">3.2.1.25.</span> eontimer</h5>
 <div class="outline-text-5" id="text-h:9fda7829-09a4-4b8f-86f6-08b078ab2874">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib
+<pre class="src src-nix-ts">{ lib
 , python3
 , fetchFromGitHub
 , makeDesktopItem
@@ -5451,7 +5654,7 @@ direnv allow
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication }:
 writeShellApplication {
   inherit name;
   text = builtins.readFile "${self}/scripts/${name}.sh";
@@ -5464,7 +5667,7 @@ writeShellApplication {
 <h5 id="h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0"><span class="section-number-5">3.2.1.27.</span> fhs</h5>
 <div class="outline-text-5" id="text-h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0">
 <div class="org-src-container">
-<pre class="src src-nix">{ name, pkgs, ... }:
+<pre class="src src-nix-ts">{ name, pkgs, ... }:
 let
   base = pkgs.appimageTools.defaultFhsEnvArgs;
 in
@@ -5493,7 +5696,7 @@ swaymsg "output * dpms on" &gt; /dev/null 2&gt;&amp;1 || true
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, sway }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, sway }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
@@ -5513,7 +5716,7 @@ AppImage version of mgba in which the lua scripting works.
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ appimageTools, fetchurl, ... }:
+<pre class="src src-nix-ts">{ appimageTools, fetchurl, ... }:
 let
   pname = "mgba";
   version = "0.10.4";
@@ -5542,7 +5745,7 @@ appimageTools.wrapType2 {
 <h5 id="h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e"><span class="section-number-5">3.2.1.30.</span> swarsel-deploy</h5>
 <div class="outline-text-5" id="text-h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e">
 <div class="org-src-container">
-<pre class="src src-nix"># heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
+<pre class="src src-nix-ts"># heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
 { name, bc, nix-output-monitor, writeShellApplication, ... }:
 writeShellApplication {
   runtimeInputs = [ bc nix-output-monitor ];
@@ -5693,7 +5896,7 @@ fi
 </div>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, name, writeShellApplication, openssh }:
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, openssh }:
 writeShellApplication {
   inherit name;
   runtimeInputs = [ openssh ];
@@ -5716,7 +5919,7 @@ When adding a new entry here, do not forget to add it in the default output of t
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, inputs, lib, ... }:
+<pre class="src src-nix-ts">{ self, inputs, lib, ... }:
 
 let
   additions = final: _: import "${self}/pkgs" { pkgs = final; inherit lib; };
@@ -5826,7 +6029,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 let
   profileNames = lib.swarselsystems.readNix "profiles/nixos";
 in
@@ -5840,7 +6043,7 @@ in
 <h6 id="h:32d654de-8db2-403a-9a27-4c46d7b9172d"><span class="section-number-6">3.2.3.1.1.</span> Personal</h6>
 <div class="outline-text-6" id="text-h:32d654de-8db2-403a-9a27-4c46d7b9172d">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
   config = lib.mkIf config.swarselsystems.profiles.personal {
@@ -5911,7 +6114,7 @@ in
 <h6 id="h:b79fbb59-9cf2-48eb-b469-2589223dda95"><span class="section-number-6">3.2.3.1.2.</span> Chaostheatre</h6>
 <div class="outline-text-6" id="text-h:b79fbb59-9cf2-48eb-b469-2589223dda95">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
   config = lib.mkIf config.swarselsystems.profiles.chaostheatre {
@@ -5974,7 +6177,7 @@ in
 <h6 id="h:125443fb-deb6-44c9-83ee-bbd10daf78dd"><span class="section-number-6">3.2.3.1.3.</span> toto</h6>
 <div class="outline-text-6" id="text-h:125443fb-deb6-44c9-83ee-bbd10daf78dd">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
   config = lib.mkIf config.swarselsystems.profiles.toto {
@@ -6007,7 +6210,7 @@ in
 <h6 id="h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d"><span class="section-number-6">3.2.3.1.4.</span> Work</h6>
 <div class="outline-text-6" id="text-h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
   config = lib.mkIf config.swarselsystems.profiles.work {
@@ -6029,7 +6232,7 @@ in
 <h6 id="h:eb272c99-842a-4095-bc65-283562749300"><span class="section-number-6">3.2.3.1.5.</span> Framework</h6>
 <div class="outline-text-6" id="text-h:eb272c99-842a-4095-bc65-283562749300">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
   config = lib.mkIf config.swarselsystems.profiles.framework {
@@ -6051,7 +6254,7 @@ in
 <h6 id="h:b7beb4a5-8808-438d-8799-7f08f38fd1ba"><span class="section-number-6">3.2.3.1.6.</span> AMD CPU</h6>
 <div class="outline-text-6" id="text-h:b7beb4a5-8808-438d-8799-7f08f38fd1ba">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
   config = lib.mkIf config.swarselsystems.profiles.amdcpu {
@@ -6073,7 +6276,7 @@ in
 <h6 id="h:79c71b6d-a1ad-447d-8940-bb5bfd71dced"><span class="section-number-6">3.2.3.1.7.</span> AMD GPU</h6>
 <div class="outline-text-6" id="text-h:79c71b6d-a1ad-447d-8940-bb5bfd71dced">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.amdgpu = lib.mkEnableOption "is this a host with amd gpu";
   config = lib.mkIf config.swarselsystems.profiles.amdgpu {
@@ -6095,7 +6298,7 @@ in
 <h6 id="h:641d0a2a-0592-448a-a6e3-d0a9c330293e"><span class="section-number-6">3.2.3.1.8.</span> Hibernation</h6>
 <div class="outline-text-6" id="text-h:641d0a2a-0592-448a-a6e3-d0a9c330293e">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.hibernation = lib.mkEnableOption "is this a host using hibernation";
   config = lib.mkIf config.swarselsystems.profiles.hibernation {
@@ -6117,7 +6320,7 @@ in
 <h6 id="h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2"><span class="section-number-6">3.2.3.1.9.</span> BTRFS</h6>
 <div class="outline-text-6" id="text-h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.btrfs = lib.mkEnableOption "is this a host using btrfs";
   config = lib.mkIf config.swarselsystems.profiles.btrfs {
@@ -6139,7 +6342,7 @@ in
 <h6 id="h:dfc076fd-ee74-4663-b164-653370c52b75"><span class="section-number-6">3.2.3.1.10.</span> Local Server</h6>
 <div class="outline-text-6" id="text-h:dfc076fd-ee74-4663-b164-653370c52b75">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
   config = lib.mkIf config.swarselsystems.profiles.server.local {
@@ -6196,7 +6399,7 @@ in
 <h6 id="h:9b7b50d1-57ad-41ca-94ab-74393aae01bf"><span class="section-number-6">3.2.3.1.11.</span> OCI Sync Server</h6>
 <div class="outline-text-6" id="text-h:9b7b50d1-57ad-41ca-94ab-74393aae01bf">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
   config = lib.mkIf config.swarselsystems.profiles.server.sync {
@@ -6233,7 +6436,7 @@ in
 <h6 id="h:cc780ef2-7e5e-4835-b659-c731b306a320"><span class="section-number-6">3.2.3.1.12.</span> Moonside</h6>
 <div class="outline-text-6" id="text-h:cc780ef2-7e5e-4835-b659-c731b306a320">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.server.moonside = lib.mkEnableOption "is this a moonside server";
   config = lib.mkIf config.swarselsystems.profiles.server.moonside {
@@ -6277,7 +6480,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 let
   profileNames = lib.swarselsystems.readNix "profiles/home";
 in
@@ -6291,7 +6494,7 @@ in
 <h6 id="h:26512487-8c29-4b92-835b-d67394c3f5ef"><span class="section-number-6">3.2.3.2.1.</span> Personal</h6>
 <div class="outline-text-6" id="text-h:26512487-8c29-4b92-835b-d67394c3f5ef">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
   config = lib.mkIf config.swarselsystems.profiles.personal {
@@ -6350,7 +6553,7 @@ in
 <h6 id="h:36a0209f-2c17-4808-a1d0-a9e1920c307a"><span class="section-number-6">3.2.3.2.2.</span> Chaostheatre</h6>
 <div class="outline-text-6" id="text-h:36a0209f-2c17-4808-a1d0-a9e1920c307a">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
   config = lib.mkIf config.swarselsystems.profiles.chaostheatre {
@@ -6403,7 +6606,7 @@ in
 <h6 id="h:e1d4f141-af11-448a-9796-fc822a8f77ec"><span class="section-number-6">3.2.3.2.3.</span> toto</h6>
 <div class="outline-text-6" id="text-h:e1d4f141-af11-448a-9796-fc822a8f77ec">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
   config = lib.mkIf config.swarselsystems.profiles.toto {
@@ -6424,7 +6627,7 @@ in
 <h6 id="h:7b091523-a5b0-48b6-8b03-4dc2405e2d81"><span class="section-number-6">3.2.3.2.4.</span> Work</h6>
 <div class="outline-text-6" id="text-h:7b091523-a5b0-48b6-8b03-4dc2405e2d81">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
   config = lib.mkIf config.swarselsystems.profiles.work {
@@ -6445,7 +6648,7 @@ in
 <h6 id="h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc"><span class="section-number-6">3.2.3.2.5.</span> Framework</h6>
 <div class="outline-text-6" id="text-h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
   config = lib.mkIf config.swarselsystems.profiles.framework {
@@ -6467,7 +6670,7 @@ in
 <h6 id="h:24e6d661-f498-478c-9008-e8d8c17432ca"><span class="section-number-6">3.2.3.2.6.</span> Darwin</h6>
 <div class="outline-text-6" id="text-h:24e6d661-f498-478c-9008-e8d8c17432ca">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.darwin = lib.mkEnableOption "is this a darwin host";
   config = lib.mkIf config.swarselsystems.profiles.darwin {
@@ -6486,7 +6689,7 @@ in
 <h6 id="h:8027b858-369e-4f12-bbaf-f15eeee3d904"><span class="section-number-6">3.2.3.2.7.</span> Local Server</h6>
 <div class="outline-text-6" id="text-h:8027b858-369e-4f12-bbaf-f15eeee3d904">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
   config = lib.mkIf config.swarselsystems.profiles.server.local {
@@ -6534,7 +6737,7 @@ TODO
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, systems, inputs, ... }:
+<pre class="src src-nix-ts">{ self, lib, systems, inputs, ... }:
 {
 
   mkIfElseList = p: yes: no: lib.mkMerge [
@@ -6559,6 +6762,19 @@ TODO
     }
   );
 
+  toCapitalized = str:
+    if builtins.stringLength str == 0 then
+      ""
+    else
+      let
+        first = builtins.substring 0 1 str;
+        rest = builtins.substring 1 (builtins.stringLength str - 1) str;
+        upper = lib.toUpper first;
+        lower = lib.toLower rest;
+      in
+        upper + lower;
+
+
   # mkUser = name: {
   #   config.users.users.${name} = {
   #     group = name;
@@ -6578,6 +6794,7 @@ TODO
   getSecret = filename: lib.strings.trim (builtins.readFile "${filename}");
 
   forEachSystem = f: lib.genAttrs (import systems) (system: f lib.swarselsystems.pkgsFor.${system});
+  forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f lib.swarselsystems.pkgsFor.${system});
 
   readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
   readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
@@ -6652,7 +6869,7 @@ TODO
 <h5 id="h:87c7893e-e946-4fc0-8973-1ca27d15cf0e"><span class="section-number-5">3.2.5.1.</span> extra-builtins</h5>
 <div class="outline-text-5" id="text-h:87c7893e-e946-4fc0-8973-1ca27d15cf0e">
 <div class="org-src-container">
-<pre class="src src-nix"># adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
+<pre class="src src-nix-ts"># adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
 { exec, ... }:
 let
   assertMsg = pred: msg: pred || builtins.throw msg;
@@ -6688,8 +6905,7 @@ in
 <h5 id="h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb"><span class="section-number-5">3.2.5.2.</span> sops-decrypt-and-cache</h5>
 <div class="outline-text-5" id="text-h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb">
 <div class="org-src-container">
-<pre class="src src-shell">#!/usr/bin/env bash
-# adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
+<pre class="src src-shell"># adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
 set -euo pipefail
 
 print_out_path=false
@@ -6736,7 +6952,7 @@ fi
 <h5 id="h:46458265-074e-4368-ad9a-055877754914"><span class="section-number-5">3.2.5.3.</span> nix-topology</h5>
 <div class="outline-text-5" id="text-h:46458265-074e-4368-ad9a-055877754914">
 <div class="org-src-container">
-<pre class="src src-nix">{ config, ... }:
+<pre class="src src-nix-ts">{ config, ... }:
 let
   inherit (config.lib.topology)
     mkInternet
@@ -6766,9 +6982,15 @@ in
         (mkConnection "moonside" "wan")
         (mkConnection "pfsense" "wan")
         (mkConnection "sync" "wan")
+        (mkConnection "toto" "bootstrapper")
+        (mkConnection "drugstore" "installer image")
+        (mkConnection "chaostheatre" "demo host")
       ];
     };
 
+    chaostheatre.interfaces."demo host" = { };
+    drugstore.interfaces."installer image" = { };
+    toto.interfaces."bootstrapper" = { };
     sync.interfaces.wan = { };
     moonside.interfaces.wan = { };
 
@@ -6888,7 +7110,9 @@ in
       image = ../topology/images/DELL-C2665dnf.png;
       interfaces.eth1 = { };
     };
+
   };
+
 }
 
 </pre>
@@ -6899,7 +7123,7 @@ in
 <h5 id="h:af83893d-c0f9-4b45-b816-4849110d41b3"><span class="section-number-5">3.2.5.4.</span> Globals</h5>
 <div class="outline-text-5" id="text-h:af83893d-c0f9-4b45-b816-4849110d41b3">
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, ... }:
+<pre class="src src-nix-ts">{ inputs, ... }:
 {
   flake =
     {
@@ -6977,7 +7201,7 @@ This section is for setting things that should be used on hosts that are using t
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, ... }:
+<pre class="src src-nix-ts">{ self, lib, ... }:
 let
   importNames = lib.swarselsystems.readNix "modules/nixos/common";
   modulesPath = "${self}/modules";
@@ -7002,7 +7226,7 @@ I usually use <code>mutableUsers = false</code> in my NixOS configuration. Howev
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 {
   options = {
     swarselsystems = {
@@ -7076,7 +7300,7 @@ A breakdown of the flags being set:
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, outputs, inputs, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, config, outputs, inputs, ... }:
 {
   options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
   config = lib.mkIf config.swarselsystems.modules.general {
@@ -7147,7 +7371,7 @@ A breakdown of the flags being set:
 <h5 id="h:5c3027b4-ba66-445e-9c5f-c27e332c90e5"><span class="section-number-5">3.3.1.4.</span> Share configuration between nodes</h5>
 <div class="outline-text-5" id="text-h:5c3027b4-ba66-445e-9c5f-c27e332c90e5">
 <div class="org-src-container">
-<pre class="src src-nix"># adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
+<pre class="src src-nix-ts"># adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
 { config, lib, outputs, ... }:
 let
   nodeName = config.node.name;
@@ -7219,7 +7443,7 @@ in
 <h5 id="h:85c9b83f-40c3-4558-bb28-a37b6f8597b9"><span class="section-number-5">3.3.1.5.</span> Global options</h5>
 <div class="outline-text-5" id="text-h:85c9b83f-40c3-4558-bb28-a37b6f8597b9">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, options, ... }:
+<pre class="src src-nix-ts">{ lib, options, ... }:
 let
   inherit (lib)
     mkOption
@@ -7306,7 +7530,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
   config = lib.mkIf config.swarselsystems.modules.packages {
@@ -7402,7 +7626,7 @@ We enable the use of <code>home-manager</code> as a NixoS module. A nice trick h
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, config, lib, ... }:
+<pre class="src src-nix-ts">{ inputs, config, lib, ... }:
 {
 
   options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
@@ -7434,7 +7658,7 @@ This sets up the <code>nix-secrets</code> extraSpeciaArgs. This should not be pr
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ inputs, config, lib, ... }:
+<pre class="src src-nix-ts">{ inputs, config, lib, ... }:
 {
   options.swarselsystems.modules.home-managerExtra = lib.mkEnableOption "home-manager extras for non-chaostheatre";
   config = lib.mkIf config.swarselsystems.modules.home-managerExtra {
@@ -7455,7 +7679,7 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
   config = lib.mkIf config.swarselsystems.modules.packages {
@@ -7484,7 +7708,7 @@ For that reason, make sure that <code>sops-nix</code> is properly working before
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, pkgs, config, lib, ... }:
+<pre class="src src-nix-ts">{ self, pkgs, config, lib, ... }:
 let
   sopsFile = self + /secrets/general/secrets.yaml;
 in
@@ -7518,7 +7742,7 @@ Next, we will setup some environment variables that need to be set on the system
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
   config = lib.mkIf config.swarselsystems.modules.env {
@@ -7549,7 +7773,7 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.security = lib.mkEnableOption "security config";
   config = lib.mkIf config.swarselsystems.modules.security {
@@ -7583,7 +7807,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
   config = lib.mkIf config.swarselsystems.modules.systemdTimeout {
@@ -7606,7 +7830,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, config, lib, ... }:
+<pre class="src src-nix-ts">{ pkgs, config, lib, ... }:
 {
 
   options.swarselsystems = {
@@ -7667,7 +7891,7 @@ This is only used on systems not running Pipewire.
 
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, lib, ... }: {
+<pre class="src src-nix-ts">{ config, pkgs, lib, ... }: {
 
   options.swarselsystems.modules.pulseaudio = lib.mkEnableOption "pulseaudio config";
   config = lib.mkIf config.swarselsystems.modules.pulseaudio {
@@ -7690,7 +7914,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
   config = lib.mkIf config.swarselsystems.modules.pipewire {
@@ -7722,7 +7946,7 @@ Here I only enable <code>networkmanager</code> and a few default networks. The r
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems = {
     modules.network = lib.mkEnableOption "network config";
@@ -7985,7 +8209,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.time = lib.mkEnableOption "time config";
   config = lib.mkIf config.swarselsystems.modules.time {
@@ -8018,7 +8242,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 <h5 id="h:30b81bf9-1e69-4ce8-88af-5592896bcee4"><span class="section-number-5">3.3.1.19.</span> Meta options</h5>
 <div class="outline-text-5" id="text-h:30b81bf9-1e69-4ce8-88af-5592896bcee4">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 {
   options = {
     node = {
@@ -8042,7 +8266,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 <h5 id="h:e2e7444b-cb85-4719-b154-e5f37274d02d"><span class="section-number-5">3.3.1.20.</span> Topology</h5>
 <div class="outline-text-5" id="text-h:e2e7444b-cb85-4719-b154-e5f37274d02d">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 {
   options.swarselsystems.info = lib.mkOption {
     type = lib.types.str;
@@ -8075,7 +8299,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, config, lib, ... }:
+<pre class="src src-nix-ts">{ self, config, lib, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   inherit (config.swarselsystems) mainUser homeDir;
@@ -8083,14 +8307,14 @@ in
 {
   options.swarselsystems.modules.commonSops = lib.mkEnableOption "sops config";
   config = lib.mkIf config.swarselsystems.modules.commonSops {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    sops = {
 
       age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
 
-      secrets = {
+      secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         ernest = { };
         frauns = { };
         hotspot = { };
@@ -8111,7 +8335,7 @@ in
         "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
         "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
       };
-      templates = {
+      templates = lib.mkIf (!config.swarselsystems.isPublic) {
         "network-manager.env".content = ''
           ERNEST=${config.sops.placeholder.ernest}
           FRAUNS=${config.sops.placeholder.frauns}
@@ -8137,7 +8361,7 @@ in
 <h5 id="h:82b8ede2-02d8-4c43-8952-7200ebd4dc23"><span class="section-number-5">3.3.1.22.</span> PII management</h5>
 <div class="outline-text-5" id="text-h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">
 <div class="org-src-container">
-<pre class="src src-nix"># largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
+<pre class="src src-nix-ts"># largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
 { config, inputs, lib, ... }:
 let
 
@@ -8224,7 +8448,7 @@ By default, <a href="https://github.com/danth/stylix">stylix</a> wants to style 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
   config = lib.mkIf config.swarselsystems.modules.stylix {
@@ -8253,7 +8477,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.programs = lib.mkEnableOption "small program modules config";
   config = lib.mkIf config.swarselsystems.modules.programs {
@@ -8275,7 +8499,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
   config = lib.mkIf config.swarselsystems.modules.zsh {
@@ -8296,7 +8520,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 <h6 id="h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8"><span class="section-number-6">3.3.1.24.2.</span> syncthing</h6>
 <div class="outline-text-6" id="text-h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
 in
@@ -8376,7 +8600,7 @@ Enables the blueman service including the nice system tray icon.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.blueman = lib.mkEnableOption "blueman config";
   config = lib.mkIf config.swarselsystems.modules.blueman {
@@ -8402,7 +8626,7 @@ Avahi is the service used for the network discovery.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
   config = lib.mkIf config.swarselsystems.modules.networkDevices {
@@ -8447,7 +8671,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
   config = lib.mkIf config.swarselsystems.modules.gvfs {
@@ -8466,7 +8690,7 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.interceptionTools = lib.mkEnableOption "interception tools config";
   config = lib.mkIf config.swarselsystems.modules.interceptionTools {
@@ -8520,7 +8744,7 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
   config = lib.mkIf config.swarselsystems.modules.ppd {
@@ -8535,7 +8759,7 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 <h6 id="h:5db15758-17d8-4bde-811d-d11ccdd3f3d3"><span class="section-number-6">3.3.1.25.6.</span> SwayOSD</h6>
 <div class="outline-text-6" id="text-h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 {
   options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
   config = lib.mkIf config.swarselsystems.modules.swayosd {
@@ -8586,7 +8810,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
   config = lib.mkIf config.swarselsystems.modules.yubikey {
@@ -8614,7 +8838,7 @@ This performs the necessary configuration to support this hardware.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.ledger = lib.mkEnableOption "ledger config";
   config = lib.mkIf config.swarselsystems.modules.ledger {
@@ -8638,7 +8862,7 @@ This loads some udev rules that I need for my split keyboards.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.keyboards = lib.mkEnableOption "keyboards config";
   config = lib.mkIf config.swarselsystems.modules.keyboards {
@@ -8662,7 +8886,7 @@ This section houses the greetd related settings. I do not really want to use a d
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.login = lib.mkEnableOption "login config";
   config = lib.mkIf config.swarselsystems.modules.login {
@@ -8705,7 +8929,7 @@ When a program does not work, start with <code>nix-ldd &lt;program&gt;</code>. T
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.nix-ld = lib.mkEnableOption "nix-ld config";
   config = lib.mkIf config.swarselsystems.modules.nix-ld {
@@ -8834,7 +9058,7 @@ Normally, doing that also resets the lecture that happens on the first use of <c
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, ... }:
+<pre class="src src-nix-ts">{ config, lib, ... }:
 let
   mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
   inherit (config.swarselsystems) isImpermanence isCrypted;
@@ -8937,7 +9161,7 @@ This snipped is added to the activation script that is run after every rebuild a
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
   config = lib.mkIf config.swarselsystems.modules.nvd {
@@ -8962,7 +9186,7 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
   config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
@@ -8985,7 +9209,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
   config = lib.mkIf config.swarselsystems.modules.sway {
@@ -9021,7 +9245,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.xdg-portal = lib.mkEnableOption "xdg portal config";
   config = lib.mkIf config.swarselsystems.modules.xdg-portal {
@@ -9053,7 +9277,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
   config = lib.mkIf config.swarselsystems.modules.distrobox {
@@ -9081,7 +9305,7 @@ Adds the necessary tools to allow .appimage programs easily.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.appimage = lib.mkEnableOption "appimage config";
   config = lib.mkIf config.swarselsystems.modules.appimage {
@@ -9104,7 +9328,7 @@ This turns off the display when the lid is closed.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
   config = lib.mkIf config.swarselsystems.modules.lid {
@@ -9153,7 +9377,7 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 {
   options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
   config = lib.mkIf config.swarselsystems.modules.lowBattery {
@@ -9194,7 +9418,7 @@ This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsys
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
   config = lib.mkIf config.swarselsystems.modules.lanzaboote {
@@ -9236,7 +9460,7 @@ Also, the system state version is set here. No need to touch it.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, ... }:
+<pre class="src src-nix-ts">{ self, lib, ... }:
 let
   importNames = lib.swarselsystems.readNix "modules/nixos/server";
   modulesPath = "${self}/modules";
@@ -9266,7 +9490,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   inherit (config.swarselsystems) flakePath;
 in
@@ -9311,7 +9535,7 @@ in
 <h5 id="h:6f2967d9-7e32-4605-bb5c-5e27770bec0f"><span class="section-number-5">3.3.2.3.</span> System Packages</h5>
 <div class="outline-text-5" id="text-h:6f2967d9-7e32-4605-bb5c-5e27770bec0f">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.server.packages = lib.mkEnableOption "enable packages on server";
   config = lib.mkIf config.swarselsystems.modules.server.packages {
@@ -9337,7 +9561,7 @@ in
 <h5 id="h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4"><span class="section-number-5">3.3.2.4.</span> sops</h5>
 <div class="outline-text-5" id="text-h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4">
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, ... }:
+<pre class="src src-nix-ts">{ config, lib, ... }:
 {
   options.swarselsystems.modules.server.sops = lib.mkEnableOption "enable sops on server";
   config = lib.mkIf config.swarselsystems.modules.server.sops {
@@ -9356,7 +9580,7 @@ in
 <h5 id="h:d6840d31-110c-465f-93fa-0306f755de28"><span class="section-number-5">3.3.2.5.</span> nfs/samba (smb)</h5>
 <div class="outline-text-5" id="text-h:d6840d31-110c-465f-93fa-0306f755de28">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
   config = lib.mkIf config.swarselsystems.modules.server.nfs {
@@ -9391,7 +9615,6 @@ in
         };
       };
 
-
       avahi = {
         publish.enable = true;
         publish.userServices = true; # Needed to allow samba to automatically register mDNS records without the need for an `extraServiceFile`
@@ -9416,7 +9639,7 @@ in
 <h5 id="h:302468d2-106a-41c8-b2bc-9fdc40064a9c"><span class="section-number-5">3.3.2.6.</span> NGINX</h5>
 <div class="outline-text-5" id="text-h:302468d2-106a-41c8-b2bc-9fdc40064a9c">
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 {
   options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
   config = lib.mkIf config.swarselsystems.modules.server.nginx {
@@ -9465,7 +9688,7 @@ Here I am forcing <code>startWhenNeeded</code> to false so that the value will n
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 {
   options.swarselsystems.modules.server.ssh = lib.mkEnableOption "enable ssh on server";
   config = lib.mkIf config.swarselsystems.modules.server.ssh {
@@ -9505,11 +9728,11 @@ Here I am forcing <code>startWhenNeeded</code> to false so that the value will n
 <h5 id="h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295"><span class="section-number-5">3.3.2.8.</span> kavita</h5>
 <div class="outline-text-5" id="text-h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 let
   serviceName = "kavita";
   serviceUser = "kavita";
-  serviceDomain = "scroll.swarsel.win";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   servicePort = 8080;
 in
 {
@@ -9576,7 +9799,7 @@ in
 <h5 id="h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b"><span class="section-number-5">3.3.2.9.</span> jellyfin</h5>
 <div class="outline-text-5" id="text-h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b">
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 let
   serviceDomain = "screen.swarsel.win";
   servicePort = 8096;
@@ -9646,7 +9869,7 @@ in
 <h5 id="h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72"><span class="section-number-5">3.3.2.10.</span> navidrome</h5>
 <div class="outline-text-5" id="text-h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, config, lib, ... }:
+<pre class="src src-nix-ts">{ pkgs, config, lib, ... }:
 let
   serviceDomain = "sound.swarsel.win";
   servicePort = 4040;
@@ -9790,7 +10013,7 @@ in
 <h5 id="h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41"><span class="section-number-5">3.3.2.11.</span> spotifyd</h5>
 <div class="outline-text-5" id="text-h:ec9c5a7d-ea8b-46d5-809c-163c917f5c41">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   servicePort = 1025;
   serviceName = "spotifyd";
@@ -9839,7 +10062,7 @@ in
 <h5 id="h:baa4149b-3788-4b05-87ec-0ee9d0726117"><span class="section-number-5">3.3.2.12.</span> mpd</h5>
 <div class="outline-text-5" id="text-h:baa4149b-3788-4b05-87ec-0ee9d0726117">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.server.mpd = lib.mkEnableOption "enable mpd on server";
   config = lib.mkIf config.swarselsystems.modules.server.mpd {
@@ -9905,7 +10128,7 @@ in
 <h5 id="h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a"><span class="section-number-5">3.3.2.13.</span> pipewire</h5>
 <div class="outline-text-5" id="text-h:ce6a4371-e44f-419a-be9e-e17c7abdaf3a">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   config = lib.mkIf (config?swarselsystems.modules.server.mpd || config?swarselsystems.modules.server.navidrome) {
 
@@ -9933,7 +10156,7 @@ in
 <h5 id="h:6ca43d5a-8ba6-4cd1-96b9-f088f11662c0"><span class="section-number-5">3.3.2.14.</span> postgresql</h5>
 <div class="outline-text-5" id="text-h:6ca43d5a-8ba6-4cd1-96b9-f088f11662c0">
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, pkgs, ... }:
+<pre class="src src-nix-ts">{ config, lib, pkgs, ... }:
 let
   serviceName = "postgresql";
   postgresVersion = 14;
@@ -9958,7 +10181,7 @@ in
 <h5 id="h:1e68d84a-8f99-422f-89ac-78f664ac0013"><span class="section-number-5">3.3.2.15.</span> matrix</h5>
 <div class="outline-text-5" id="text-h:1e68d84a-8f99-422f-89ac-78f664ac0013">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
   matrixDomain = "swatrix.swarsel.win";
   serviceName = "matrix";
@@ -10309,7 +10532,7 @@ in
 <h5 id="h:d11ad8d5-25d7-4691-b319-61c16ccef715"><span class="section-number-5">3.3.2.16.</span> nextcloud</h5>
 <div class="outline-text-5" id="text-h:d11ad8d5-25d7-4691-b319-61c16ccef715">
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 let
   serviceDomain = "stash.swarsel.win";
   serviceUser = "nextcloud";
@@ -10393,7 +10616,7 @@ in
 <h5 id="h:33bad8ad-b362-4bf1-8a49-b9df92329aed"><span class="section-number-5">3.3.2.17.</span> immich</h5>
 <div class="outline-text-5" id="text-h:33bad8ad-b362-4bf1-8a49-b9df92329aed">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, globals, ... }:
+<pre class="src src-nix-ts">{ lib, config, globals, ... }:
 let
   serviceDomain = "shots.swarsel.win";
   servicePort = 3001;
@@ -10477,7 +10700,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of <code>
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 let
   serviceDomain = "scan.swarsel.win";
   servicePort = 28981;
@@ -10613,7 +10836,7 @@ in
 <h5 id="h:5afeb311-ab86-4029-be53-2160f6d836c3"><span class="section-number-5">3.3.2.19.</span> transmission</h5>
 <div class="outline-text-5" id="text-h:5afeb311-ab86-4029-be53-2160f6d836c3">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, pkgs, lib, config, ... }:
 let
   serviceDomain = "store.swarsel.win";
   lidarrUser = "lidarr";
@@ -10800,7 +11023,7 @@ in
 <h5 id="h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d"><span class="section-number-5">3.3.2.20.</span> syncthing</h5>
 <div class="outline-text-5" id="text-h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   inherit (config.repo.secrets.common) workHostName;
   serviceDomain = "storync.swarsel.win";
@@ -10940,7 +11163,7 @@ This manages backups for my pictures and obsidian files.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 let
   inherit (config.repo.secrets.local) resticRepo;
 in
@@ -11006,12 +11229,14 @@ This section exposes several metrics that I use to check the health of my server
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   serviceDomain = "status.swarsel.win";
   servicePort = 3000;
   serviceUser = "grafana";
+  prometheusUser = "prometheus";
   serviceGroup = serviceUser;
+  prometheusGroup = prometheusUser;
   moduleName = "monitoring";
   grafanaUpstream = "grafana";
   prometheusUpstream = "prometheus";
@@ -11022,10 +11247,24 @@ in
   options.swarselsystems.modules.server."${moduleName}" = lib.mkEnableOption "enable ${moduleName} on server";
   config = lib.mkIf config.swarselsystems.modules.server."${moduleName}" {
 
-    sops.secrets = {
-      grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-      prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-      kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+    sops = {
+      secrets = {
+        grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        prometheus-admin-hash = { owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+      };
+      templates = {
+        "web-config" = {
+          content = ''
+            basic_auth_users:
+              admin: ${config.sops.placeholder.prometheus-admin-hash}
+          '';
+          owner = prometheusUser;
+          group = prometheusGroup;
+          mode = "0440";
+        };
+      };
     };
 
     users = {
@@ -11125,7 +11364,7 @@ in
         globalConfig = {
           scrape_interval = "10s";
         };
-        webConfigFile = self + /programs/server/prometheus/web.config;
+        webConfigFile = config.sops.templates.web-config.path;
         scrapeConfigs = [
           {
             job_name = "node";
@@ -11238,7 +11477,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 let
   serviceDomain = "servant.swarsel.win";
   servicePort = 8088;
@@ -11296,7 +11535,7 @@ This was an approach of hosting an RSS server from within emacs. That would have
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.server.emacs = lib.mkEnableOption "enable emacs server on server";
   config = lib.mkIf config.swarselsystems.modules.server.emacs {
@@ -11336,7 +11575,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   serviceName = "freshrss";
   serviceDomain = "signpost.swarsel.win";
@@ -11442,7 +11681,7 @@ in
 <h5 id="h:a9965660-4358-4b9a-8c46-d55f28598344"><span class="section-number-5">3.3.2.26.</span> forgejo (git server)</h5>
 <div class="outline-text-5" id="text-h:a9965660-4358-4b9a-8c46-d55f28598344">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
   serviceDomain = "swagit.swarsel.win";
   servicePort = 3000;
@@ -11602,7 +11841,7 @@ in
 <h5 id="h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4"><span class="section-number-5">3.3.2.27.</span> Anki Sync Server</h5>
 <div class="outline-text-5" id="text-h:cb3f6552-7751-4f9a-b4c7-8d8ba5b255c4">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   serviceDomain = "synki.swarsel.win";
   servicePort = 27701;
@@ -11684,7 +11923,7 @@ To get other URLs (token, etc.), use <a href="https://&lt;kanidmdomain&gt;/oauth
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, pkgs, config, globals, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   serviceDomain = "sso.swarsel.win";
@@ -11938,7 +12177,7 @@ in
 <h5 id="h:605f5974-e985-4572-b353-fd1d3ccbadae"><span class="section-number-5">3.3.2.29.</span> oauth2-proxy</h5>
 <div class="outline-text-5" id="text-h:605f5974-e985-4572-b353-fd1d3ccbadae">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, globals, ... }:
+<pre class="src src-nix-ts">{ lib, config, globals, ... }:
 let
   kanidmDomain = globals.services.kanidm.domain;
   oauth2ProxyDomain = "soauth.swarsel.win";
@@ -12163,7 +12402,7 @@ in
 <h5 id="h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331"><span class="section-number-5">3.3.2.30.</span> Firefly-III</h5>
 <div class="outline-text-5" id="text-h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   cfg = config.services.firefly-iii;
   serviceDomain = "stonks.swarsel.win";
@@ -12272,7 +12511,7 @@ in
 <h5 id="h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2"><span class="section-number-5">3.3.2.31.</span> Koillection</h5>
 <div class="outline-text-5" id="text-h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   serviceDomain = "swag.swarsel.win";
   serviceUser = "koillection";
@@ -12292,10 +12531,10 @@ in
       koillection-env-file = { };
     };
 
-    topology.self.services.koillection = {
-      name = "Koillection";
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/koillection.png";
+      icon = "${self}/topology/images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 
@@ -12400,7 +12639,7 @@ in
 <h5 id="h:27eac8b9-c202-4e45-9b80-42592f1e41c8"><span class="section-number-5">3.3.2.32.</span> Atuin</h5>
 <div class="outline-text-5" id="text-h:27eac8b9-c202-4e45-9b80-42592f1e41c8">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   serviceDomain = "shellhistory.swarsel.win";
   servicePort = 8888;
@@ -12457,7 +12696,7 @@ in
 <h5 id="h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6"><span class="section-number-5">3.3.2.33.</span> Radicale</h5>
 <div class="outline-text-5" id="text-h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   inherit (config.repo.secrets.local.radicale) user1;
   sopsFile = self + /secrets/winters/secrets2.yaml;
@@ -12573,7 +12812,7 @@ in
 <h5 id="h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0"><span class="section-number-5">3.3.2.34.</span> croc</h5>
 <div class="outline-text-5" id="text-h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 let
   serviceDomain = "send.swarsel.win";
   servicePorts = [
@@ -12605,7 +12844,13 @@ in
       };
     };
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/${serviceName}.png";
+    };
+
     globals.services.${serviceName}.domain = serviceDomain;
 
     services.croc = {
@@ -12641,7 +12886,7 @@ in
 <h5 id="h:13071cc3-5cba-44b5-8b5b-2a27be22e021"><span class="section-number-5">3.3.2.35.</span> microbin</h5>
 <div class="outline-text-5" id="text-h:13071cc3-5cba-44b5-8b5b-2a27be22e021">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   serviceDomain = "scratch.swarsel.win";
   servicePort = 8777;
@@ -12685,7 +12930,11 @@ in
       };
     };
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/${serviceName}.png";
+    };
     globals.services.${serviceName}.domain = serviceDomain;
 
     services."${serviceName}" = {
@@ -12774,7 +13023,7 @@ in
 <h5 id="h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c"><span class="section-number-5">3.3.2.36.</span> shlink</h5>
 <div class="outline-text-5" id="text-h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 let
   serviceDomain = "s.swarsel.win";
   servicePort = 8081;
@@ -12824,7 +13073,11 @@ in
       { directory = "/var/lib/containers"; }
     ];
 
-    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    topology.self.services.${serviceName} = {
+      name = lib.swarselsystems.toCapitalized serviceName;
+      info = "https://${serviceDomain}";
+      icon = "${self}/topology/images/${serviceName}.png";
+    };
     globals.services.${serviceName}.domain = serviceDomain;
 
     services.nginx = {
@@ -12867,7 +13120,7 @@ This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">_:
+<pre class="src src-nix-ts">_:
 {
 
   nix.settings.experimental-features = "nix-command flakes";
@@ -12898,7 +13151,23 @@ These sets of configuration do not need to be deployed on every host, for a mult
 <li>The VirtualBox package takes forever to build, and I do not need virtual machines on every host.</li>
 <li>There are some hosts that I do not want to autologin to.</li>
 <li><code>nswitch-rcm</code> is a tool I wrote for easy payload flashing of a Nintendo Switch in RCM mode. However, that is not needed on every machine.</li>
-<li>The work profile is only used on my work laptop.</li>
+<li><p>
+The work profile is only used on my work laptop.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ self, lib, ... }:
+let
+  importNames = lib.swarselsystems.readNix "modules/nixos/optional";
+  modulesPath = "${self}/modules";
+in
+{
+  imports = lib.swarselsystems.mkImports importNames "modules/nixos/optional" ++ [
+    "${modulesPath}/home/common/sharedsetup.nix"
+  ];
+}
+</pre>
+</div></li>
 </ul>
 </div>
 <div id="outline-container-h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431" class="outline-5">
@@ -12909,7 +13178,7 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
 {
   options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
   config = lib.mkIf config.swarselsystems.modules.optional.gaming {
@@ -12963,7 +13232,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
   config = lib.mkIf config.swarselsystems.modules.optional.virtualbox {
@@ -13003,7 +13272,7 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
 
   options.swarselsystems.modules.optional.vmware = lib.mkEnableOption "optional vmware settings";
@@ -13024,7 +13293,7 @@ Auto login for the initial session.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   inherit (config.swarselsystems) mainUser;
 in
@@ -13049,7 +13318,7 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
   config = lib.mkIf config.swarselsystems.modules.optional.nswitch-rcm {
@@ -13074,7 +13343,7 @@ This holds configuration that is specific to framework laptops.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
   config = lib.mkIf config.swarselsystems.modules.optional.framework {
@@ -13109,7 +13378,7 @@ This holds configuration that is specific to framework laptops.
 <h5 id="h:b64b8988-94fa-440f-8cf1-ee5568bfd75e"><span class="section-number-5">3.3.4.7.</span> AMD CPU</h5>
 <div class="outline-text-5" id="text-h:b64b8988-94fa-440f-8cf1-ee5568bfd75e">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
   config = lib.mkIf config.swarselsystems.modules.optional.amdcpu {
@@ -13126,7 +13395,7 @@ This holds configuration that is specific to framework laptops.
 <h5 id="h:0dc68d4f-72b3-465a-8d73-4453d06e7853"><span class="section-number-5">3.3.4.8.</span> AMD GPU</h5>
 <div class="outline-text-5" id="text-h:0dc68d4f-72b3-465a-8d73-4453d06e7853">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
   config = lib.mkIf config.swarselsystems.modules.optional.amdgpu {
@@ -13149,7 +13418,7 @@ This holds configuration that is specific to framework laptops.
 <h5 id="h:15b581ab-09fe-4f84-af26-2f1fbf7d726b"><span class="section-number-5">3.3.4.9.</span> Hibernation</h5>
 <div class="outline-text-5" id="text-h:15b581ab-09fe-4f84-af26-2f1fbf7d726b">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems = {
     modules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
@@ -13181,7 +13450,7 @@ This holds configuration that is specific to framework laptops.
 <h5 id="h:86fb3236-9e18-43f0-8a08-3a2acd61cc98"><span class="section-number-5">3.3.4.10.</span> BTRFS</h5>
 <div class="outline-text-5" id="text-h:86fb3236-9e18-43f0-8a08-3a2acd61cc98">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
   config = lib.mkIf config.swarselsystems.modules.optional.btrfs {
@@ -13202,7 +13471,7 @@ Options that I need specifically at work. There are more options at <a href="#h:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir xdgDir;
   owner = mainUser;
@@ -13429,7 +13698,7 @@ These options are really only to be used on the iso image in order to run nixos-
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, pkgs, ... }:
 {
 
   nix.settings = {
@@ -13522,7 +13791,7 @@ This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, ... }:
+<pre class="src src-nix-ts">{ lib, ... }:
 let
   importNames = lib.swarselsystems.readNix "modules/home/common";
 in
@@ -13558,7 +13827,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, ... }:
 {
   options.swarselsystems = {
     isLaptop = lib.mkEnableOption "laptop host";
@@ -13837,7 +14106,7 @@ Again, we adapt <code>nix</code> to our needs, enable the home-manager command f
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 let
   inherit (config.swarselsystems) mainUser;
 in
@@ -13906,7 +14175,7 @@ It can be set to either:
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixgl, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixgl, ... }:
 {
   options.swarselsystems = {
     modules.nixgl = lib.mkEnableOption "nixgl settings";
@@ -13960,7 +14229,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 
 {
   options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
@@ -13976,7 +14245,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       picard-tools
       audacity
       sox
-      stable.feishin
+      # stable.feishin # does not work with oauth2-proxy
       calibre
 
       # printing
@@ -14157,7 +14426,7 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 
 {
   options.swarselsystems.modules.ownpackages = lib.mkEnableOption "own packages settings";
@@ -14217,19 +14486,19 @@ Since we are using the home-manager implementation here, we need to specify the 
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, ... }:
+<pre class="src src-nix-ts">{ config, lib, ... }:
 let
   inherit (config.swarselsystems) homeDir xdgDir;
 in
 {
   options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
   config = lib.mkIf config.swarselsystems.modules.sops {
-    sops = lib.mkIf (!config.swarselsystems.isPublic) {
+    sops =  {
       age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
       defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
       validateSopsFiles = false;
-      secrets = {
+      secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
         nautilus = { path = "${xdgDir}/secrets/nautilus"; };
         leon = { path = "${xdgDir}/secrets/leon"; };
@@ -14248,7 +14517,7 @@ in
 <h5 id="h:4c850b80-56e0-437b-b564-2dd897027b2f"><span class="section-number-5">3.4.1.7.</span> Yubikey</h5>
 <div class="outline-text-5" id="text-h:4c850b80-56e0-437b-b564-2dd897027b2f">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig, ... }:
 {
   options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
 
@@ -14273,7 +14542,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.ssh = lib.mkEnableOption "ssh settings";
   config = lib.mkIf config.swarselsystems.modules.ssh {
@@ -14337,7 +14606,7 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix settings";
   config = lib.mkIf config.swarselsystems.modules.stylix {
@@ -14365,7 +14634,7 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.desktop = lib.mkEnableOption "desktop settings";
   config = lib.mkIf config.swarselsystems.modules.desktop {
@@ -14489,7 +14758,7 @@ Also in firefox `about:config &gt; toolkit.legacyUserProfileCustomizations.style
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 {
   options.swarselsystems.modules.symlink = lib.mkEnableOption "symlink settings";
   config = lib.mkIf config.swarselsystems.modules.symlink {
@@ -14533,7 +14802,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
   inherit (nixosConfig.repo.secrets.common) fullName;
@@ -14570,7 +14839,7 @@ This section is for programs that require no further configuration. zsh Integrat
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.programs = lib.mkEnableOption "programs settings";
   config = lib.mkIf config.swarselsystems.modules.programs {
@@ -14613,7 +14882,7 @@ nix-index provides a way to find out which packages are provided by which deriva
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.nix-index = lib.mkEnableOption "nix-index settings";
   config = lib.mkIf config.swarselsystems.modules.nix-index {
@@ -14649,7 +14918,7 @@ Enables password store with the <code>pass-otp</code> extension which allows me 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.passwordstore = lib.mkEnableOption "passwordstore settings";
   config = lib.mkIf config.swarselsystems.modules.passwordstore {
@@ -14674,7 +14943,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.direnv = lib.mkEnableOption "direnv settings";
   config = lib.mkIf config.swarselsystems.modules.direnv {
@@ -14697,7 +14966,7 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.eza = lib.mkEnableOption "eza settings";
   config = lib.mkIf config.swarselsystems.modules.eza {
@@ -14720,7 +14989,7 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 <h5 id="h:38f127f3-003b-418b-85ba-a3bcf44bf16c"><span class="section-number-5">3.4.1.18.</span> atuin</h5>
 <div class="outline-text-5" id="text-h:38f127f3-003b-418b-85ba-a3bcf44bf16c">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
   config = lib.mkIf config.swarselsystems.modules.atuin {
@@ -14747,7 +15016,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1;
   inherit (nixosConfig.repo.secrets.common) fullName;
@@ -14805,7 +15074,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.fuzzel = lib.mkEnableOption "fuzzel settings";
   config = lib.mkIf config.swarselsystems.modules.fuzzel {
@@ -14834,7 +15103,7 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.starship = lib.mkEnableOption "starship settings";
   config = lib.mkIf config.swarselsystems.modules.starship {
@@ -14974,7 +15243,7 @@ The theme is handled by stylix.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.kitty = lib.mkEnableOption "kitty settings";
   config = lib.mkIf config.swarselsystems.modules.kitty {
@@ -15038,7 +15307,7 @@ Currently I only use it as before with <code>initExtra</code> though.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, lib, ... }:
+<pre class="src src-nix-ts">{ config, lib, ... }:
 let
   inherit (config.swarselsystems) flakePath;
 in
@@ -15117,7 +15386,7 @@ in
         #   src = pkgs.zsh-fzf-tab;
         # }
       ];
-      initContent = ''
+      initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
         my-forward-word() {
           local WORDCHARS=$WORDCHARS
           WORDCHARS="''${WORDCHARS//:}"
@@ -15170,7 +15439,7 @@ in
 <h5 id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"><span class="section-number-5">3.4.1.24.</span> zellij</h5>
 <div class="outline-text-5" id="text-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.zellij = lib.mkEnableOption "zellij settings";
   config = lib.mkIf config.swarselsystems.modules.zellij {
@@ -15198,7 +15467,7 @@ in
 <h5 id="h:45de9430-f925-4df6-9db6-bffb5b8f1604"><span class="section-number-5">3.4.1.25.</span> tmux</h5>
 <div class="outline-text-5" id="text-h:45de9430-f925-4df6-9db6-bffb5b8f1604">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
   tmux-super-fingers = pkgs.tmuxPlugins.mkTmuxPlugin
     {
@@ -15311,7 +15580,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
   inherit (nixosConfig.repo.secrets.common) fullName;
@@ -15471,7 +15740,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 let
   inherit (config.swarselsystems) homeDir isPublic;
 in
@@ -15578,7 +15847,7 @@ The rest of the related configuration is found here:
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, config, lib, ... }:
+<pre class="src src-nix-ts">{ self, config, lib, ... }:
 let
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
   modulesLeft = [
@@ -15912,7 +16181,7 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ config, pkgs, lib, ... }:
+<pre class="src src-nix-ts">{ config, pkgs, lib, ... }:
 {
   options.swarselsystems.modules.firefox = lib.mkEnableOption "firefox settings";
   config = lib.mkIf config.swarselsystems.modules.firefox {
@@ -16081,7 +16350,7 @@ Used for storing sessions in e.g. Nextcloud
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome keyring settings";
   config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
@@ -16102,7 +16371,7 @@ This enables phone/computer communication, including sending clipboard, files et
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.kdeconnect = lib.mkEnableOption "kdeconnect settings";
   config = lib.mkIf config.swarselsystems.modules.kdeconnect {
@@ -16129,7 +16398,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.mako = lib.mkEnableOption "mako settings";
   config = lib.mkIf config.swarselsystems.modules.mako {
@@ -16172,7 +16441,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 <h6 id="h:388e71be-f00a-4d45-ade1-218ce942057d"><span class="section-number-6">3.4.1.30.4.</span> SwayOSD</h6>
 <div class="outline-text-6" id="text-h:388e71be-f00a-4d45-ade1-218ce942057d">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
   config = lib.mkIf config.swarselsystems.modules.swayosd {
@@ -16190,7 +16459,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 <h6 id="h:1598c90b-f195-41a0-9132-94612edf3586"><span class="section-number-6">3.4.1.30.5.</span> yubikey-touch-detector</h6>
 <div class="outline-text-6" id="text-h:1598c90b-f195-41a0-9132-94612edf3586">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
   config = lib.mkIf config.swarselsystems.modules.yubikeytouch {
@@ -16239,7 +16508,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, config, lib, ... }:
+<pre class="src src-nix-ts">{ self, config, lib, ... }:
 {
   options.swarselsystems = {
     modules.sway = lib.mkEnableOption "sway settings";
@@ -16259,13 +16528,13 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     startup = lib.mkOption {
       type = lib.types.listOf (lib.types.attrsOf lib.types.str);
       default = [
-        { command = "nextcloud --background"; }
+        # { command = "nextcloud --background"; }
         { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
         { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
         { command = "ANKI_WAYLAND=1 anki"; }
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
         { command = "nm-applet"; }
-        { command = "feishin"; }
+        # { command = "feishin"; }
       ];
     };
     kyria = lib.mkOption {
@@ -16652,7 +16921,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 <h5 id="h:eb94df98-2bcd-4555-9f88-e252f93b924f"><span class="section-number-5">3.4.1.32.</span> Kanshi</h5>
 <div class="outline-text-5" id="text-h:eb94df98-2bcd-4555-9f88-e252f93b924f">
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
   config = lib.mkIf config.swarselsystems.modules.kanshi {
@@ -16752,7 +17021,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
 in
@@ -16806,7 +17075,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
 in
@@ -16837,7 +17106,7 @@ This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, ... }:
+<pre class="src src-nix-ts">{ self, lib, ... }:
 let
   importNames = lib.swarselsystems.readNix "modules/home/server";
   modulesPath = "${self}/modules";
@@ -16864,7 +17133,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, ... }:
 {
   options.swarselsystems.modules.server.dotfiles = lib.mkEnableOption "server dotfiles settings";
   config = lib.mkIf config.swarselsystems.modules.server.dotfiles {
@@ -16893,7 +17162,7 @@ This section sets up all the imports that are used in the home-manager section.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, ... }:
+<pre class="src src-nix-ts">{ self, ... }:
 let
   modulesPath = "${self}/modules";
 in
@@ -16914,6 +17183,17 @@ in
 <p>
 Akin to the optional NixOS modules.
 </p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, ... }:
+let
+  importNames = lib.swarselsystems.readNix "modules/home/optional";
+in
+{
+  imports = lib.swarselsystems.mkImports importNames "modules/home/optional";
+}
+</pre>
+</div>
 </div>
 <div id="outline-container-h:84fd7029-ecb6-4131-9333-289982f24ffa" class="outline-5">
 <h5 id="h:84fd7029-ecb6-4131-9333-289982f24ffa"><span class="section-number-5">3.4.4.1.</span> Gaming</h5>
@@ -16923,7 +17203,7 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
   options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
   config = lib.mkIf config.swarselsystems.modules.optional.gaming {
@@ -16975,7 +17255,7 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ self, config, pkgs, lib, nixosConfig, ... }:
+<pre class="src src-nix-ts">{ self, config, pkgs, lib, nixosConfig, ... }:
 let
   inherit (config.swarselsystems) homeDir;
   inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
@@ -17304,13 +17584,13 @@ in
     };
     swarselsystems = {
       startup = [
-        { command = "nextcloud --background"; }
+        # { command = "nextcloud --background"; }
         { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
         { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
         { command = "ANKI_WAYLAND=1 anki"; }
         { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
         { command = "nm-applet"; }
-        { command = "feishin"; }
+        # { command = "feishin"; }
         { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
         { command = "1password"; }
       ];
@@ -17423,7 +17703,7 @@ This holds configuration that is specific to framework laptops.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
   options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
   config = lib.mkIf config.swarselsystems.modules.optional.framework {
@@ -19412,7 +19692,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 </div>
 </div>
 <div id="outline-container-h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9" class="outline-6">
-<h6 id="h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9"><span class="section-number-6">4.4.1.5.2.</span> old easy structure templates</h6>
+<h6 id="h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9"><span class="section-number-6">4.4.1.5.2.</span> old easy structure templates (org-tempo)</h6>
 <div class="outline-text-6" id="text-h:d112ed66-b2dd-45cc-8d70-9cf6631f28a9">
 <ul class="org-ul">
 <li><p>
@@ -19429,7 +19709,7 @@ Usage: Type <code>&lt;</code>, followed by one of the below keywords and press <
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
-(add-to-list 'org-structure-template-alist '("nix" . "src nix :tangle"))
+(add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
 
 </pre>
 </div></li>
@@ -19641,10 +19921,44 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-(use-package nix-mode)
+(use-package nix-mode
+  :after lsp-mode
+  :ensure t
+  :hook
+  (nix-mode . lsp-deferred) ;; So that envrc mode will work
+  :custom
+  (lsp-disabled-clients '((nix-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+  :config
+  (setq lsp-nix-nixd-server-path "nixd"
+        lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+        lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
+        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+        ))
 
 (use-package nix-ts-mode
-  :mode "\\.nix\\'")
+  :after lsp-mode
+  :mode "\\.nix\\'"
+  :ensure t
+  :hook
+  (nix-ts-mode . lsp-deferred) ;; So that envrc mode will work
+  :custom
+  (lsp-disabled-clients '((nix-ts-mode . nix-nil))) ;; Disable nil so that nixd will be used as lsp-server
+  :config
+  (setq lsp-nix-nixd-server-path "nixd"
+        lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
+        lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
+        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
+        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+        ))
+
+
+(with-eval-after-load 'lsp-mode
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "nixd")
+                    :major-modes '(nix-mode nix-ts-mode)
+                    :priority 0
+                    :server-id 'nixd)))
 </pre>
 </div>
 </div>
@@ -20460,45 +20774,76 @@ A blocking issue can still occur while entering a direnv that has a longer evalu
 <div id="outline-container-h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75" class="outline-4">
 <h4 id="h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75"><span class="section-number-4">4.4.31.</span> lsp-mode &amp; company</h4>
 <div class="outline-text-4" id="text-h:7b9044cf-0fab-4dfa-87fc-f8c18e433e75">
+<p>
+company is now disabled since it seems that corfu runs just fine with lsp-mode and I prefer it. Also I set the auto-guess-root option to true in order to stop excessive nag when editing within org-src blocks.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
-(use-package lsp-bridge
-  :ensure nil)
-
 (use-package lsp-mode
   :init
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   (setq lsp-keymap-prefix "C-c l")
+  (setq lsp-auto-guess-root "t")
   :commands lsp)
 
-(use-package company)
+;; (use-package company)
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:cd552ba1-4db1-4605-8ead-4fcb6a466826" class="outline-4">
+<h4 id="h:cd552ba1-4db1-4605-8ead-4fcb6a466826"><span class="section-number-4">4.4.32.</span> lsp-mode in org-src blocks</h4>
+<div class="outline-text-4" id="text-h:cd552ba1-4db1-4605-8ead-4fcb6a466826">
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; thanks to https://tecosaur.github.io/emacs-config/config.html#lsp-support-src
+(cl-defmacro lsp-org-babel-enable (lang)
+  "Support LANG in org source code block."
+  (setq centaur-lsp 'lsp-mode)
+  (cl-check-type lang string)
+  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+    `(progn
+       (defun ,intern-pre (info)
+         (let ((file-name (-&gt;&gt; info caddr (alist-get :file))))
+           (unless file-name
+             (setq file-name (make-temp-file "babel-lsp-")))
+           (setq buffer-file-name file-name)
+           (lsp-deferred)))
+       (put ',intern-pre 'function-documentation
+            (format "Enable lsp-mode in the buffer of org source block (%s)."
+                    (upcase ,lang)))
+       (if (fboundp ',edit-pre)
+           (advice-add ',edit-pre :after ',intern-pre)
+         (progn
+           (defun ,edit-pre (info)
+             (,intern-pre info))
+           (put ',edit-pre 'function-documentation
+                (format "Prepare local buffer environment for org source block (%s)."
+                        (upcase ,lang))))))))
+(defvar org-babel-lang-list
+  '( "nix" "nix-ts" "go" "python" "ipython" "bash" "sh" ))
+(dolist (lang org-babel-lang-list)
+  (eval `(lsp-org-babel-enable ,lang)))
 
 </pre>
 </div>
 </div>
 </div>
 <div id="outline-container-h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61" class="outline-4">
-<h4 id="h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61"><span class="section-number-4">4.4.32.</span> lsp-bridge</h4>
+<h4 id="h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61"><span class="section-number-4">4.4.33.</span> lsp-bridge</h4>
 <div class="outline-text-4" id="text-h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package lsp-bridge
   :ensure nil)
-
-(use-package lsp-mode
-  :init
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  (setq lsp-keymap-prefix "C-c l")
-  :commands lsp)
-
-(use-package company)
-
 </pre>
 </div>
 </div>
 </div>
 <div id="outline-container-h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857" class="outline-4">
-<h4 id="h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857"><span class="section-number-4">4.4.33.</span> sideline-flymake</h4>
+<h4 id="h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857"><span class="section-number-4">4.4.34.</span> sideline-flymake</h4>
 <div class="outline-text-4" id="text-h:d9cd31ea-6c8c-4f1f-83b8-7853bab53857">
 <p>
 This brings back warnings and errors on the sideline for eglot; a feature that I have been missing from lsp-mode for a while.
@@ -20518,7 +20863,7 @@ This brings back warnings and errors on the sideline for eglot; a feature that I
 </div>
 </div>
 <div id="outline-container-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53" class="outline-4">
-<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">4.4.34.</span> Prevent breaking of hardlinks</h4>
+<h4 id="h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53"><span class="section-number-4">4.4.35.</span> Prevent breaking of hardlinks</h4>
 <div class="outline-text-4" id="text-h:e9a30d0f-423f-4e85-af4b-f8560f1c1b53">
 <p>
 This setting ensures that hard links are preserved during the backup process, which is useful for maintaining the integrity of files that are linked in multiple locations.
@@ -20533,7 +20878,7 @@ This setting ensures that hard links are preserved during the backup process, wh
 </div>
 </div>
 <div id="outline-container-h:0918557a-8463-430c-b8df-6546dea9abd0" class="outline-4">
-<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">4.4.35.</span> Dirvish</h4>
+<h4 id="h:0918557a-8463-430c-b8df-6546dea9abd0"><span class="section-number-4">4.4.36.</span> Dirvish</h4>
 <div class="outline-text-4" id="text-h:0918557a-8463-430c-b8df-6546dea9abd0">
 <p>
 Dirvish is an improvement upon the dired-framework and has more features like file preview etc. Sadly it has an incompatibility with <code>openwith</code> which is why I have disabled that package.
@@ -20597,7 +20942,7 @@ Dirvish is an improvement upon the dired-framework and has more features like fi
 </div>
 </div>
 <div id="outline-container-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8" class="outline-4">
-<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">4.4.36.</span> undo-tree</h4>
+<h4 id="h:1fc538d1-8c53-48b2-8652-66046f4bbbf8"><span class="section-number-4">4.4.37.</span> undo-tree</h4>
 <div class="outline-text-4" id="text-h:1fc538d1-8c53-48b2-8652-66046f4bbbf8">
 <p>
 Base emacs undo logic is very useful, but not easy to understand for me. I prefer undo-tree, which makes switching between branches easier and also allows quickly switching back to a much older state using the visualizer.
@@ -20632,7 +20977,7 @@ While we are at it, we are also setting up a persistent undo-file for every file
 </div>
 </div>
 <div id="outline-container-h:b6c18dd0-3377-47ea-80c3-ac1486454e18" class="outline-4">
-<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">4.4.37.</span> Hydra</h4>
+<h4 id="h:b6c18dd0-3377-47ea-80c3-ac1486454e18"><span class="section-number-4">4.4.38.</span> Hydra</h4>
 <div class="outline-text-4" id="text-h:b6c18dd0-3377-47ea-80c3-ac1486454e18">
 <p>
 Hydra allows for the writing of macro-style functions. I have not yet looked into this all too much, but it seems to be a potent feature.
@@ -20646,7 +20991,7 @@ Hydra allows for the writing of macro-style functions. I have not yet looked int
 </div>
 </div>
 <div id="outline-container-h:c5681884-7040-4b55-ab1b-5777631a0514" class="outline-5">
-<h5 id="h:c5681884-7040-4b55-ab1b-5777631a0514"><span class="section-number-5">4.4.37.1.</span> Text scaling</h5>
+<h5 id="h:c5681884-7040-4b55-ab1b-5777631a0514"><span class="section-number-5">4.4.38.1.</span> Text scaling</h5>
 <div class="outline-text-5" id="text-h:c5681884-7040-4b55-ab1b-5777631a0514">
 <p>
 I only wrote this in order to try out hydra; rarely do I really need this. However, it can be useful for <a href="#h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">Presentations</a>. It simply scales the text size.
@@ -20668,11 +21013,11 @@ I only wrote this in order to try out hydra; rarely do I really need this. Howev
 </div>
 </div>
 <div id="outline-container-h:2f333330-b19d-4f64-85ea-146ff28667e8" class="outline-4">
-<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">4.4.38.</span> Email</h4>
+<h4 id="h:2f333330-b19d-4f64-85ea-146ff28667e8"><span class="section-number-4">4.4.39.</span> Email</h4>
 <div class="outline-text-4" id="text-h:2f333330-b19d-4f64-85ea-146ff28667e8">
 </div>
 <div id="outline-container-h:b92a18cf-eec3-4605-a8c2-37133ade3574" class="outline-5">
-<h5 id="h:b92a18cf-eec3-4605-a8c2-37133ade3574"><span class="section-number-5">4.4.38.1.</span> mu4e</h5>
+<h5 id="h:b92a18cf-eec3-4605-a8c2-37133ade3574"><span class="section-number-5">4.4.39.1.</span> mu4e</h5>
 <div class="outline-text-5" id="text-h:b92a18cf-eec3-4605-a8c2-37133ade3574">
 <p>
 In this section we are setting up mu4e, a mail client for emacs using mu with mbsync as backend. The mail accounts themselves are setup in the NixOS configuration, so we only need to add Emacs specific settings here.
@@ -20736,7 +21081,7 @@ The hook functions are defined here: <a href="#h:34506761-06b9-43b5-a818-506d9b3
 </div>
 </div>
 <div id="outline-container-h:43209eeb-5d46-472e-b7c2-58a3fb465199" class="outline-5">
-<h5 id="h:43209eeb-5d46-472e-b7c2-58a3fb465199"><span class="section-number-5">4.4.38.2.</span> mu4e-alert</h5>
+<h5 id="h:43209eeb-5d46-472e-b7c2-58a3fb465199"><span class="section-number-5">4.4.39.2.</span> mu4e-alert</h5>
 <div class="outline-text-5" id="text-h:43209eeb-5d46-472e-b7c2-58a3fb465199">
 <p>
 This adds the simple utility of sending desktop notifications whenever a new mail is received. I am using <code>libnotify</code> because I want to use this with <code>notify-send</code>.
@@ -20757,7 +21102,7 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </div>
 </div>
 <div id="outline-container-h:c760f04e-622f-4b3e-8916-53ca8cce6edc" class="outline-4">
-<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.39.</span> Calendar</h4>
+<h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.40.</span> Calendar</h4>
 <div class="outline-text-4" id="text-h:c760f04e-622f-4b3e-8916-53ca8cce6edc">
 <p>
 This provides a beautiful calender to emacs.
@@ -20825,7 +21170,7 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
 </div>
 </div>
 <div id="outline-container-h:48f5be2b-b3d2-4276-bd49-2630733f23d5" class="outline-4">
-<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">4.4.40.</span> Dashboard: emacs startup screen</h4>
+<h4 id="h:48f5be2b-b3d2-4276-bd49-2630733f23d5"><span class="section-number-4">4.4.41.</span> Dashboard: emacs startup screen</h4>
 <div class="outline-text-4" id="text-h:48f5be2b-b3d2-4276-bd49-2630733f23d5">
 <p>
 This sets up the <code>dashboard</code>, which is really quite useless. But, it looks cool and makes me happy whenever I start an emacsclient without a file name as argument :)
@@ -20898,7 +21243,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 <div id="outline-container-h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb" class="outline-4">
-<h4 id="h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb"><span class="section-number-4">4.4.41.</span> vterm</h4>
+<h4 id="h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb"><span class="section-number-4">4.4.42.</span> vterm</h4>
 <div class="outline-text-4" id="text-h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -20910,7 +21255,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 <div id="outline-container-h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd" class="outline-4">
-<h4 id="h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd"><span class="section-number-4">4.4.42.</span> multiple cursors</h4>
+<h4 id="h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd"><span class="section-number-4">4.4.43.</span> multiple cursors</h4>
 <div class="outline-text-4" id="text-h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -20921,7 +21266,7 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 <div id="outline-container-h:438d928f-77a8-477a-ac8b-ca54ec673f91" class="outline-4">
-<h4 id="h:438d928f-77a8-477a-ac8b-ca54ec673f91"><span class="section-number-4">4.4.43.</span> Less logging</h4>
+<h4 id="h:438d928f-77a8-477a-ac8b-ca54ec673f91"><span class="section-number-4">4.4.44.</span> Less logging</h4>
 <div class="outline-text-4" id="text-h:438d928f-77a8-477a-ac8b-ca54ec673f91">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -21684,8 +22029,1608 @@ sync USER HOST:
 </div>
 </div>
 </div>
+<div id="outline-container-h:038feb42-6e1e-4b65-abe9-e26746b72b78" class="outline-3">
+<h3 id="h:038feb42-6e1e-4b65-abe9-e26746b72b78"><span class="section-number-3">6.6.</span> aspell.conf</h3>
+<div class="outline-text-3" id="text-h:038feb42-6e1e-4b65-abe9-e26746b72b78">
+<div class="org-src-container">
+<pre class="src src-shell">dict-dir /run/current-system/sw/lib/aspell
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:931ff2fd-61f0-4f8f-b221-d879780f38d7" class="outline-3">
+<h3 id="h:931ff2fd-61f0-4f8f-b221-d879780f38d7"><span class="section-number-3">6.7.</span> nix-plugins.patch</h3>
+<div class="outline-text-3" id="text-h:931ff2fd-61f0-4f8f-b221-d879780f38d7">
+<div class="org-src-container">
+<pre class="src src-diff">diff --git a/extra-builtins.cc b/extra-builtins.cc
+index 3a0f90e..bb10f8b 100644
+--- a/extra-builtins.cc
++++ b/extra-builtins.cc
+@@ -1,9 +1,9 @@
+-#include &lt;config.h&gt;
+-#include &lt;primops.hh&gt;
+-#include &lt;globals.hh&gt;
+-#include &lt;config-global.hh&gt;
+-#include &lt;eval-settings.hh&gt;
+-#include &lt;common-eval-args.hh&gt;
+-#include &lt;filtering-source-accessor.hh&gt;
++#include &lt;nix/cmd/common-eval-args.hh&gt;
++#include &lt;nix/expr/eval-settings.hh&gt;
++#include &lt;nix/expr/primops.hh&gt;
++#include &lt;nix/fetchers/filtering-source-accessor.hh&gt;
++#include &lt;nix/store/globals.hh&gt;
++#include &lt;nix/util/configuration.hh&gt;
++#include &lt;nix/util/config-global.hh&gt;
+
+ #include "nix-plugins-config.h"
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:bed316c9-47ed-494f-8375-998ef1315d7b" class="outline-3">
+<h3 id="h:bed316c9-47ed-494f-8375-998ef1315d7b"><span class="section-number-3">6.8.</span> Zellij layout default.kdl.nix</h3>
+<div class="outline-text-3" id="text-h:bed316c9-47ed-494f-8375-998ef1315d7b">
+<div class="org-src-container">
+<pre class="src src-shell">{ config, pkgs }:
+let
+  inherit (config.lib.stylix) colors;
+in
+''
+  layout {
+         swap_tiled_layout name="vertical" {
+             tab max_panes=5 {
+                 pane split_direction="vertical" {
+                     pane
+                     pane { children; }
+                 }
+             }
+             tab max_panes=8 {
+                 pane split_direction="vertical" {
+                     pane { children; }
+                     pane { pane; pane; pane; pane; }
+                 }
+             }
+             tab max_panes=12 {
+                 pane split_direction="vertical" {
+                     pane { children; }
+                     pane { pane; pane; pane; pane; }
+                     pane { pane; pane; pane; pane; }
+                 }
+             }
+         }
+
+         swap_tiled_layout name="horizontal" {
+             tab max_panes=5 {
+                 pane
+                 pane
+             }
+             tab max_panes=8 {
+                 pane {
+                     pane split_direction="vertical" { children; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                 }
+             }
+             tab max_panes=12 {
+                 pane {
+                     pane split_direction="vertical" { children; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                     pane split_direction="vertical" { pane; pane; pane; pane; }
+                 }
+             }
+         }
+
+         swap_tiled_layout name="stacked" {
+             tab min_panes=5 {
+                 pane split_direction="vertical" {
+                     pane
+                     pane stacked=true { children; }
+                 }
+             }
+         }
+
+         swap_floating_layout name="staggered" {
+             floating_panes
+         }
+
+         swap_floating_layout name="enlarged" {
+             floating_panes max_panes=10 {
+                 pane { x "5%"; y 1; width "90%"; height "90%"; }
+                 pane { x "5%"; y 2; width "90%"; height "90%"; }
+                 pane { x "5%"; y 3; width "90%"; height "90%"; }
+                 pane { x "5%"; y 4; width "90%"; height "90%"; }
+                 pane { x "5%"; y 5; width "90%"; height "90%"; }
+                 pane { x "5%"; y 6; width "90%"; height "90%"; }
+                 pane { x "5%"; y 7; width "90%"; height "90%"; }
+                 pane { x "5%"; y 8; width "90%"; height "90%"; }
+                 pane { x "5%"; y 9; width "90%"; height "90%"; }
+                 pane focus=true { x 10; y 10; width "90%"; height "90%"; }
+             }
+         }
+
+         swap_floating_layout name="spread" {
+             floating_panes max_panes=1 {
+                 pane {y "50%"; x "50%"; }
+             }
+             floating_panes max_panes=2 {
+                 pane { x "1%"; y "25%"; width "45%"; }
+                 pane { x "50%"; y "25%"; width "45%"; }
+             }
+             floating_panes max_panes=3 {
+                 pane focus=true { y "55%"; width "45%"; height "45%"; }
+                 pane { x "1%"; y "1%"; width "45%"; }
+                 pane { x "50%"; y "1%"; width "45%"; }
+             }
+             floating_panes max_panes=4 {
+                 pane { x "1%"; y "55%"; width "45%"; height "45%"; }
+                 pane focus=true { x "50%"; y "55%"; width "45%"; height "45%"; }
+                 pane { x "1%"; y "1%"; width "45%"; height "45%"; }
+                 pane { x "50%"; y "1%"; width "45%"; height "45%"; }
+             }
+         }
+
+         default_tab_template {
+             children
+             pane size=1 borderless=true {
+                 plugin location="file://${pkgs.zjstatus}/bin/zjstatus.wasm" {
+                     format_left   "{mode}#[bg=#${colors.base00}] {tabs}"
+                     format_center ""
+                     format_right  "#[bg=#${colors.base00},fg=#${colors.base02}]#[bg=#${colors.base02},fg=#${colors.base01},bold] #[bg=#${colors.base02},fg=#${colors.base01},bold] {session} #[bg=#${colors.base02},fg=#${colors.base01},bold]"
+                     format_space  ""
+                     format_hide_on_overlength "false"
+                     format_precedence "lcr"
+
+                     border_enabled  "false"
+                     border_char     "─"
+                     border_format   "#[fg=#6C7086]{char}"
+                     border_position "top"
+
+                     mode_normal        "#[bg=#${colors.base0B},fg=#${colors.base01},bold] NORMAL#[bg=#${colors.base01},fg=#${colors.base0B}]█"
+                     mode_locked        "#[bg=#${colors.base04},fg=#${colors.base01},bold] LOCKED #[bg=#${colors.base01},fg=#${colors.base04}]█"
+                     mode_resize        "#[bg=#${colors.base08},fg=#${colors.base01},bold] RESIZE#[bg=#${colors.base01},fg=#${colors.base08}]█"
+                     mode_pane          "#[bg=#${colors.base0D},fg=#${colors.base01},bold] PANE#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_tab           "#[bg=#${colors.base07},fg=#${colors.base01},bold] TAB#[bg=#${colors.base01},fg=#${colors.base07}]█"
+                     mode_scroll        "#[bg=#${colors.base0A},fg=#${colors.base01},bold] SCROLL#[bg=#${colors.base01},fg=#${colors.base0A}]█"
+                     mode_enter_search  "#[bg=#${colors.base0D},fg=#${colors.base01},bold] ENT-SEARCH#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_search        "#[bg=#${colors.base0D},fg=#${colors.base01},bold] SEARCHARCH#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_rename_tab    "#[bg=#${colors.base07},fg=#${colors.base01},bold] RENAME-TAB#[bg=#${colors.base01},fg=#${colors.base07}]█"
+                     mode_rename_pane   "#[bg=#${colors.base0D},fg=#${colors.base01},bold] RENAME-PANE#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_session       "#[bg=#${colors.base0E},fg=#${colors.base01},bold] SESSION#[bg=#${colors.base01},fg=#${colors.base0E}]█"
+                     mode_move          "#[bg=#${colors.base0F},fg=#${colors.base01},bold] MOVE#[bg=#${colors.base01},fg=#${colors.base0F}]█"
+                     mode_prompt        "#[bg=#${colors.base0D},fg=#${colors.base01},bold] PROMPT#[bg=#${colors.base01},fg=#${colors.base0D}]█"
+                     mode_tmux          "#[bg=#${colors.base09},fg=#${colors.base01},bold] TMUX#[bg=#${colors.base01},fg=#${colors.base09}]█"
+
+                     // formatting for inactive tabs
+                     tab_normal              "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{floating_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_normal_fullscreen   "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{fullscreen_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_normal_sync         "#[bg=#${colors.base01},fg=#${colors.base0C}]█#[bg=#${colors.base0C},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base0C},bold] {name}{sync_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+
+                     // formatting for the current active tab
+                     tab_active              "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{floating_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_active_fullscreen   "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{fullscreen_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+                     tab_active_sync         "#[bg=#${colors.base01},fg=#${colors.base09}]█#[bg=#${colors.base09},fg=#${colors.base01},bold]{index} #[bg=#${colors.base01},fg=#${colors.base09},bold] {name}{sync_indicator}#[bg=#${colors.base01},fg=#${colors.base01},bold]█"
+
+                     // separator between the tabs
+                     tab_separator           "#[bg=#${colors.base00}] "
+
+                     // indicators
+                     tab_sync_indicator       " "
+                     tab_fullscreen_indicator " 󰊓"
+                     tab_floating_indicator   " 󰹙"
+
+                     command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
+                     command_git_branch_format      "#[fg=blue] {stdout} "
+                     command_git_branch_interval    "10"
+                     command_git_branch_rendermode  "static"
+
+                     datetime        "#[fg=#6C7086,bold] {format} "
+                     datetime_format "%A, %d %b %Y %H:%M"
+                     datetime_timezone "Europe/Vienna"
+                 }
+             }
+         }
+     }
+''
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:ae07e867-fc17-4dd7-bd21-5886265308ee" class="outline-3">
+<h3 id="h:ae07e867-fc17-4dd7-bd21-5886265308ee"><span class="section-number-3">6.9.</span> Zellij config.kdl.nix</h3>
+<div class="outline-text-3" id="text-h:ae07e867-fc17-4dd7-bd21-5886265308ee">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ config }:
+''
+  pane_frames false
+  simplified_ui false
+  default_shell "zsh"
+  copy_on_select true
+  on_force_close "detach"
+
+  default_layout "default"
+  layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"
+  theme_dir "${config.home.homeDirectory}/.config/zellij/themes"
+
+  keybinds clear-defaults=true {
+      locked {
+          bind "Ctrl g" { SwitchToMode "normal"; }
+      }
+      pane {
+          bind "left" { MoveFocus "left"; }
+          bind "down" { MoveFocus "down"; }
+          bind "up" { MoveFocus "up"; }
+          bind "right" { MoveFocus "right"; }
+          bind "c" { SwitchToMode "renamepane"; PaneNameInput 0; }
+          bind "d" { NewPane "down"; SwitchToMode "normal"; }
+          bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "normal"; }
+          bind "f" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+          bind "h" { MoveFocus "left"; }
+          bind "j" { MoveFocus "down"; }
+          bind "k" { MoveFocus "up"; }
+          bind "l" { MoveFocus "right"; }
+          bind "n" { NewPane; SwitchToMode "normal"; }
+          bind "p" { SwitchFocus; }
+          bind "Ctrl p" { SwitchToMode "normal"; }
+          bind "r" { NewPane "right"; SwitchToMode "normal"; }
+          bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
+          bind "z" { TogglePaneFrames; SwitchToMode "normal"; }
+      }
+      tab {
+          bind "left" { GoToPreviousTab; }
+          bind "down" { GoToNextTab; }
+          bind "up" { GoToPreviousTab; }
+          bind "right" { GoToNextTab; }
+          bind "1" { GoToTab 1; SwitchToMode "normal"; }
+          bind "2" { GoToTab 2; SwitchToMode "normal"; }
+          bind "3" { GoToTab 3; SwitchToMode "normal"; }
+          bind "4" { GoToTab 4; SwitchToMode "normal"; }
+          bind "5" { GoToTab 5; SwitchToMode "normal"; }
+          bind "6" { GoToTab 6; SwitchToMode "normal"; }
+          bind "7" { GoToTab 7; SwitchToMode "normal"; }
+          bind "8" { GoToTab 8; SwitchToMode "normal"; }
+          bind "9" { GoToTab 9; SwitchToMode "normal"; }
+          bind "[" { BreakPaneLeft; SwitchToMode "normal"; }
+          bind "]" { BreakPaneRight; SwitchToMode "normal"; }
+          bind "b" { BreakPane; SwitchToMode "normal"; }
+          bind "h" { GoToPreviousTab; }
+          bind "j" { GoToNextTab; }
+          bind "k" { GoToPreviousTab; }
+          bind "l" { GoToNextTab; }
+          bind "n" { NewTab; SwitchToMode "normal"; }
+          bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
+          bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
+          bind "Ctrl t" { SwitchToMode "normal"; }
+          bind "x" { CloseTab; SwitchToMode "normal"; }
+          bind "tab" { ToggleTab; }
+      }
+      resize {
+          bind "left" { Resize "Increase left"; }
+          bind "down" { Resize "Increase down"; }
+          bind "up" { Resize "Increase up"; }
+          bind "right" { Resize "Increase right"; }
+          bind "+" { Resize "Increase"; }
+          bind "-" { Resize "Decrease"; }
+          bind "=" { Resize "Increase"; }
+          bind "H" { Resize "Decrease left"; }
+          bind "J" { Resize "Decrease down"; }
+          bind "K" { Resize "Decrease up"; }
+          bind "L" { Resize "Decrease right"; }
+          bind "h" { Resize "Increase left"; }
+          bind "j" { Resize "Increase down"; }
+          bind "k" { Resize "Increase up"; }
+          bind "l" { Resize "Increase right"; }
+          bind "Ctrl n" { SwitchToMode "normal"; }
+      }
+      move {
+          bind "left" { MovePane "left"; }
+          bind "down" { MovePane "down"; }
+          bind "up" { MovePane "up"; }
+          bind "right" { MovePane "right"; }
+          bind "h" { MovePane "left"; }
+          bind "Ctrl h" { SwitchToMode "normal"; }
+          bind "j" { MovePane "down"; }
+          bind "k" { MovePane "up"; }
+          bind "l" { MovePane "right"; }
+          bind "n" { MovePane; }
+          bind "p" { MovePaneBackwards; }
+          bind "tab" { MovePane; }
+      }
+      scroll {
+          bind "e" { EditScrollback; SwitchToMode "normal"; }
+          bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
+      }
+      search {
+          bind "c" { SearchToggleOption "CaseSensitivity"; }
+          bind "n" { Search "down"; }
+          bind "o" { SearchToggleOption "WholeWord"; }
+          bind "p" { Search "up"; }
+          bind "w" { SearchToggleOption "Wrap"; }
+      }
+      session {
+          bind "c" {
+              LaunchOrFocusPlugin "configuration" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+          bind "Ctrl o" { SwitchToMode "normal"; }
+          bind "p" {
+              LaunchOrFocusPlugin "plugin-manager" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+          bind "w" {
+              LaunchOrFocusPlugin "session-manager" {
+                  floating true
+                  move_to_focused_tab true
+              }
+              SwitchToMode "normal"
+          }
+      }
+      shared_except "locked" {
+          bind "Alt left" { MoveFocusOrTab "left"; }
+          bind "Alt down" { MoveFocus "down"; }
+          bind "Alt up" { MoveFocus "up"; }
+          bind "Alt right" { MoveFocusOrTab "right"; }
+          bind "Alt +" { Resize "Increase"; }
+          bind "Alt -" { Resize "Decrease"; }
+          bind "Alt =" { Resize "Increase"; }
+          bind "Alt [" { PreviousSwapLayout; }
+          bind "Alt ]" { NextSwapLayout; }
+          bind "Alt f" { ToggleFloatingPanes; }
+          bind "Ctrl g" { SwitchToMode "locked"; }
+          bind "Alt h" { MoveFocusOrTab "left"; }
+          bind "Alt i" { MoveTab "left"; }
+          bind "Alt j" { MoveFocus "down"; }
+          bind "Alt k" { MoveFocus "up"; }
+          bind "Alt l" { MoveFocusOrTab "right"; }
+          bind "Alt n" { NewPane; }
+          bind "Alt o" { MoveTab "right"; }
+          bind "Ctrl q" { Quit; }
+      }
+      shared_except "locked" "move" {
+          bind "Ctrl h" { SwitchToMode "move"; }
+      }
+      shared_except "locked" "session" {
+          bind "Ctrl o" { SwitchToMode "session"; }
+      }
+      shared_except "locked" "scroll" "search" "tmux" {
+          bind "Ctrl b" { SwitchToMode "tmux"; }
+      }
+      shared_except "locked" "scroll" "search" {
+          bind "Ctrl s" { SwitchToMode "scroll"; }
+      }
+      shared_except "locked" "tab" {
+          bind "Ctrl t" { SwitchToMode "tab"; }
+      }
+      shared_except "locked" "pane" {
+          bind "Ctrl p" { SwitchToMode "pane"; }
+      }
+      shared_except "locked" "resize" {
+          bind "Ctrl n" { SwitchToMode "resize"; }
+      }
+      shared_except "normal" "locked" "entersearch" {
+          bind "enter" { SwitchToMode "normal"; }
+      }
+      shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
+          bind "esc" { SwitchToMode "normal"; }
+      }
+      shared_among "pane" "tmux" {
+          bind "x" { CloseFocus; SwitchToMode "normal"; }
+      }
+      shared_among "scroll" "search" {
+          bind "PageDown" { PageScrollDown; }
+          bind "PageUp" { PageScrollUp; }
+          bind "left" { PageScrollUp; }
+          bind "down" { ScrollDown; }
+          bind "up" { ScrollUp; }
+          bind "right" { PageScrollDown; }
+          bind "Ctrl b" { PageScrollUp; }
+          bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
+          bind "d" { HalfPageScrollDown; }
+          bind "Ctrl f" { PageScrollDown; }
+          bind "h" { PageScrollUp; }
+          bind "j" { ScrollDown; }
+          bind "k" { ScrollUp; }
+          bind "l" { PageScrollDown; }
+          bind "Ctrl s" { SwitchToMode "normal"; }
+          bind "u" { HalfPageScrollUp; }
+      }
+      entersearch {
+          bind "Ctrl c" { SwitchToMode "scroll"; }
+          bind "esc" { SwitchToMode "scroll"; }
+          bind "enter" { SwitchToMode "search"; }
+      }
+      renametab {
+          bind "esc" { UndoRenameTab; SwitchToMode "tab"; }
+      }
+      shared_among "renametab" "renamepane" {
+          bind "Ctrl c" { SwitchToMode "normal"; }
+      }
+      renamepane {
+          bind "esc" { UndoRenamePane; SwitchToMode "pane"; }
+      }
+      shared_among "session" "tmux" {
+          bind "d" { Detach; }
+      }
+      tmux {
+          bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
+          bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
+          bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
+          bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
+          bind "space" { NextSwapLayout; }
+          bind "\"" { NewPane "down"; SwitchToMode "normal"; }
+          bind "%" { NewPane "right"; SwitchToMode "normal"; }
+          bind "," { SwitchToMode "renametab"; }
+          bind "[" { SwitchToMode "scroll"; }
+          bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
+          bind "c" { NewTab; SwitchToMode "normal"; }
+          bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
+          bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
+          bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
+          bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
+          bind "n" { GoToNextTab; SwitchToMode "normal"; }
+          bind "o" { FocusNextPane; }
+          bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
+          bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+      }
+  }
+
+  // Plugin aliases - can be used to change the implementation of Zellij
+  // changing these requires a restart to take effect
+  plugins {
+      compact-bar location="zellij:compact-bar"
+      configuration location="zellij:configuration"
+      filepicker location="zellij:strider" {
+          cwd "/"
+      }
+      plugin-manager location="zellij:plugin-manager"
+      session-manager location="zellij:session-manager"
+      status-bar location="zellij:status-bar"
+      strider location="zellij:strider"
+      tab-bar location="zellij:tab-bar"
+      welcome-screen location="zellij:session-manager" {
+          welcome_screen true
+      }
+  }
+
+  // Plugins to load in the background when a new session starts
+  // eg. "file:/path/to/my-plugin.wasm"
+  // eg. "https://example.com/my-plugin.wasm"
+  load_plugins {
+  }
+
+  // Provide a command to execute when copying text. The text will be piped to
+  // the stdin of the program to perform the copy. This can be used with
+  // terminal emulators which do not support the OSC 52 ANSI control sequence
+  // that will be used by default if this option is not set.
+  // Examples:
+  //
+  // copy_command "xclip -selection clipboard" // x11
+  // copy_command "wl-copy"                    // wayland
+  // copy_command "pbcopy"                     // osx
+  //
+  // copy_command "pbcopy"
+
+  // Choose the destination for copied text
+  // Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
+  // Does not apply when using copy_command.
+  // Options:
+  //   - system (default)
+  //   - primary
+  //
+  // copy_clipboard "primary"
+
+  // Path to the default editor to use to edit pane scrollbuffer
+  // Default: $EDITOR or $VISUAL
+  // scrollback_editor "/usr/bin/vim"
+
+  // Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
+  // Options:
+  //   - true (default)
+  //   - false
+  //
+  // auto_layout false
+
+  // Whether sessions should be serialized to the cache folder (including their tabs/panes, cwds and running commands) so that they can later be resurrected
+  // Options:
+  //   - true (default)
+  //   - false
+  //
+  // session_serialization false
+
+  // Whether pane viewports are serialized along with the session, default is false
+  // Options:
+  //   - true
+  //   - false (default)
+  //
+  // serialize_pane_viewport false
+
+  // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
+  // defaults to the scrollback size. If this number is higher than the scrollback size, it will
+  // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
+  //
+  // scrollback_lines_to_serialize 10000
+
+  // Enable or disable the rendering of styled and colored underlines (undercurl).
+  // May need to be disabled for certain unsupported terminals
+  // (Requires restart)
+  // Default: true
+  //
+  // styled_underlines false
+
+  // How often in seconds sessions are serialized
+  //
+  // serialization_interval 10000
+
+  // Enable or disable writing of session metadata to disk (if disabled, other sessions might not know
+  // metadata info on this session)
+  // (Requires restart)
+  // Default: false
+  //
+  // disable_session_metadata false
+
+  // Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
+  // (Requires restart)
+  // Default: true (if the host terminal supports it)
+  //
+  // support_kitty_keyboard_protocol false
+''
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:0124a4eb-4ea3-455c-939d-ba4584c703af" class="outline-3">
+<h3 id="h:0124a4eb-4ea3-455c-939d-ba4584c703af"><span class="section-number-3">6.10.</span> Vieb config</h3>
+<div class="outline-text-3" id="text-h:0124a4eb-4ea3-455c-939d-ba4584c703af">
+<div class="org-src-container">
+<pre class="src src-shell">" Options
+set adblocker=update
+set adblockernotifications=all
+set cache=clearonquit
+set noclearcookiesonquit
+set nocleardownloadsoncompleted
+set nocleardownloadsonquit
+set clearhistoryinterval=none
+set noclearlocalstorageonquit
+set noclosablepinnedtabs
+set commandhist=persistuseronly
+set containerkeeponreopen
+set containernewtab=s:usecurrent
+set containershowname=automatic
+set containersplitpage=s:usecurrent
+set containerstartuppage=main
+set countlimit=100
+" set nodarkreader
+set darkreaderbg=#181a1b
+set darkreaderbrightness=100
+set darkreadercontrast=100
+set darkreaderfg=#e8e6e3
+set darkreadergrayscale=0
+set darkreadermode=dark
+set darkreadersepia=0
+set darkreadertextstroke=0
+set devtoolsposition=split
+set dialogalert=notifyblock
+set dialogconfirm=notifyallow
+set dialogprompt=notifyblock
+set downloadmethod=automatic
+set downloadpath=
+set encodeurlcopy=nospaces
+set encodeurlext=nospaces
+set explorehist=persist
+set externalcommand=
+set favicons=session
+set followchars=numbers
+set followfallbackaction=filter
+set followlabelposition=outsiderighttop
+set follownewtabswitch
+set guifontsize=14
+set guifullscreennavbar=oninput
+set guifullscreentabbar=onupdate
+set guihidetimeout=5000
+set guinavbar=oninput
+set guiscrollbar=onscroll
+set guitabbar=onupdate
+set historyperpage=100
+set ignorecase
+set incsearch
+set inputfocusalignment=rememberend
+set keeprecentlyclosed
+set lang=en
+set loadingindicator=line
+set mapsuggest=9000000000000000
+set mapsuggestposition=topright
+set markposition=newtab
+set markpositionshifted=default
+set maxmapdepth=10
+set menupage=elementasneeded
+set menusuggest=both
+set menuvieb=both
+set mintabwidth=28
+set mouse=all
+set mousedisabledbehavior=nothing
+set nomousefocus
+set mousenewtabswitch
+set mousevisualmode=onswitch
+set nativenotification=never
+set nativetheme=dark
+set newtaburl=
+set notificationduration=6000
+set notificationforpermissions=silent
+set notificationforsystemcommands=errors
+set notificationlimitsmall=3
+set notificationposition=bottomright
+set pdfbehavior=download
+set permissioncamera=ask
+set permissioncertificateerror=allow
+set permissionclipboardread=allow
+set permissionclipboardwrite=allow
+set permissionclosepage=allow
+set permissiondisplaycapture=ask
+set permissionfullscreen=allow
+set permissiongeolocation=block
+set permissionhid=block
+set permissionidledetection=block
+set permissionmediadevices=allowfull
+set permissionmicrophone=ask
+set permissionmidi=ask
+set permissionmidisysex=ask
+set permissionnotifications=ask
+set permissionopenexternal=ask
+set permissionpersistentstorage=ask
+set permissionpointerlock=block
+set permissionscreenwakelock=block
+set permissionsensors=block
+set permissionserial=block
+set permissionunknown=ask
+set permissionusb=allow
+set permissionwindowmanagement=ask
+set pointerposlocalid=domain
+set pointerpostype=casing
+set noquitonlasttabclose
+set redirecttohttp
+set noreloadtaboncrash
+set replacespecial=special
+set replacestartup=never
+set requesttimeout=20000
+set restoretabs=all
+set scrollposlocalid=domain
+set scrollpostype=casing
+set searchemptyscope=global
+set searchpointeralignment=left
+set searchscope=global
+set shell=
+set showcmd
+set smartcase
+set spell
+set nosplitbelow
+set nosplitright
+set nosponsorblock
+set suggestbouncedelay=100
+set suggestcommands=9000000000000000
+set suggesttopsites=10
+set suspendbackgroundtab
+set suspendonrestore=regular
+set suspendtimeout=0
+set tabclosefocus=left
+set tabcycle
+set tabnewposition=right
+set tabopenmuted=never
+set taboverflow=scroll
+set tabreopenmuted=remember
+set tabreopenposition=right
+set timeout
+set timeoutlen=2000
+set translateapi=auto
+set translatekey=
+set translatelang=en-us
+set translateurl=https://api-free.deepl.com/v2/
+" set nouserscript
+" set nouserstyle
+set useragent=%firefox
+set vimcommand=gvim
+set windowfullscreen=restore
+set windowmaximize=restore
+set windowposition=restore
+set windowsize=restore
+set windowtitle="%app - %title"
+
+" Commands
+colorscheme default
+
+
+" Mappings
+nmap o &lt;toExploreMode&gt;
+nmap t &lt;:tabnew&gt;&lt;toExploreMode&gt;
+nmap b &lt;toCommandMode&gt;buffer&lt;Space&gt;
+nmap g0 &lt;:buffer 0&gt;
+nmap g^ &lt;:buffer 0&gt;
+nmap g$ &lt;:buffer -1&gt;
+nmap &lt;C-m&gt; &lt;:buffer #&gt;
+nmap J &lt;previousTab&gt;
+nmap K &lt;nextTab&gt;
+nmap &gt;&gt; &lt;moveTabForward&gt;
+nmap &lt;lt&gt;&lt;lt&gt; &lt;moveTabBackward&gt;
+nmap O &lt;toExploreMode&gt;&lt;End&gt;
+nmap gx0 &lt;:lclose&gt;
+nmap gx$ &lt;:rclose&gt;
+nmap x &lt;stopLoadingPage&gt;
+nunmap [
+nunmap ]
+nmap [[ &lt;previousPage&gt;
+nmap ]] &lt;nextPage&gt;
+nmap [c &lt;decreasePageNumber&gt;
+nmap ]c &lt;increasePageNumber&gt;
+nmap zz &lt;zoomReset&gt;
+nmap zi &lt;zoomIn&gt;
+nmap zo &lt;zoomOut&gt;
+nmap zm 5&lt;zoomIn&gt;
+nmap zr 5&lt;zoomOut&gt;
+nmap zM 5&lt;zoomIn&gt;
+nmap zR 5&lt;zoomOut&gt;
+nmap zI 7&lt;zoomIn&gt;
+nmap zO 7&lt;zoomOut&gt;
+
+" Search
+set searchengine=https://kagi.com/search?q=%s
+set searchwords+=no~https://search.nixos.org/options?query=%s
+set searchwords+=np~https://search.nixos.org/packages?query=%s
+set searchwords+=hm~https://home-manager-options.extranix.com/?query=%s
+
+" Viebrc generated by Vieb
+" vim: ft=vim
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:69ea5818-4ebb-436a-a31a-6a2348cf215c" class="outline-3">
+<h3 id="h:69ea5818-4ebb-436a-a31a-6a2348cf215c"><span class="section-number-3">6.11.</span> swayidle</h3>
+<div class="outline-text-3" id="text-h:69ea5818-4ebb-436a-a31a-6a2348cf215c">
+<div class="org-src-container">
+<pre class="src src-shell">timeout 300 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
+timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"'
+before-sleep 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:2e9b84d7-cb18-4e74-83f8-65ada11a8911" class="outline-3">
+<h3 id="h:2e9b84d7-cb18-4e74-83f8-65ada11a8911"><span class="section-number-3">6.12.</span> stylix color scheme</h3>
+<div class="outline-text-3" id="text-h:2e9b84d7-cb18-4e74-83f8-65ada11a8911">
+<div class="org-src-container">
+<pre class="src src-css"># scheme: "better-contrast"
+author: "Swarsel"
+base00: "1D252C" # #1d252c passt
+base01: "171D23" # #171d23
+base02: "5EC4FF" # #5EC4FF
+base03: "566C7D" # #566C7D passt
+base04: "5EC4FF" # #5EC4FF passt
+base05: "A0B3C5" # #A0B3C5 passt
+base06: "C06ECE" # #C06ECE passt
+base07: "A0B3C5" # #A0B3C5 passt
+base08: "D95468" # #D95468 passt
+base09: "FFA880" # #ffA880 passt
+base0A: "5EC4FF" # #5EC4FF
+base0B: "8BD49C" # #8BD49C
+base0C: "008B94" # #008B94 passt
+base0D: "5EC4FF" # #5EC4FF passt
+base0E: "C06ECE" # #C06ECE passt
+base0F: "5EC4FF" # #5EC4FF passt
+
+# base00 - Default Background
+# base01 - Lighter Background (Used for status bars)
+# base02 - Selection Background
+# base03 - Comments, Invisibles, Line Highlighting
+# base04 - Dark Foreground (Used for status bars)
+# base05 - Default Foreground, Caret, Delimiters, Operators
+# base06 - Light Foreground (Not often used)
+# base07 - Light Background (Not often used)
+# base08 - Variables, XML Tags, Markup Link Text, Markup Lists, Diff Deleted
+# base09 - Integers, Boolean, Constants, XML Attributes, Markup Link Url
+# base0A - Classes, Markup Bold, Search Text Background
+# base0B - Strings, Inherited Class, Markup Code, Diff Inserted
+# base0C - Support, Regular Expressions, Escape Characters, Markup Quotes
+# base0D - Functions, Methods, Attribute IDs, Headings
+# base0E - Keywords, Storage, Selector, Markup Italic, Diff Changed
+# base0F - Deprecated, Opening/Closing Embedded Language Tags, e.g. &lt;?php ?&gt;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128" class="outline-3">
+<h3 id="h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128"><span class="section-number-3">6.13.</span> .gitmessage</h3>
+<div class="outline-text-3" id="text-h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128">
+<div class="org-src-container">
+<pre class="src src-shell">
+#                         max. 50 chars is here: #
+# &lt;type&gt;[optional scope]: &lt;description&gt;
+# types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
+# ! indicates a breaking change.
+
+
+# Body:                                      wrap at 72 chars is here: #
+# Include at least one empty line before co-authored. Format:
+# Co-authored-by: name &lt;user@users.noreply.github.com&gt;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:a2990def-9a2a-491b-9fee-3057dc324c3c" class="outline-3">
+<h3 id="h:a2990def-9a2a-491b-9fee-3057dc324c3c"><span class="section-number-3">6.14.</span> userChrome.css</h3>
+<div class="outline-text-3" id="text-h:a2990def-9a2a-491b-9fee-3057dc324c3c">
+<div class="org-src-container">
+<pre class="src src-css">  /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_toolbox.css made available under Mozilla Public License v. 2.0
+See the above repository for updates as well as full license text. */
+
+/* Hide the whole toolbar area unless urlbar is focused or cursor is over the toolbar
+ * Dimensions on non-Win10 OS probably needs to be adjusted.
+ */
+
+:root{
+    --uc-autohide-toolbox-delay: 0ms; /* Wait 0.1s before hiding toolbars */
+    --uc-toolbox-rotation: 107deg;  /* This may need to be lower on mac - like 75 or so */
+
+    --base00: #1D252C;
+    --base01: #171D23;
+    --base02: #5EC4FF;
+    --base03: #566C7D;
+    --base04: #5EC4FF;
+    --base05: #A0B3C5;
+    --base06: #C06ECE;
+    --base07: #A0B3C5;
+    --base08: #D95468;
+    --base09: #FFA880;
+    --base0A: #5EC4FF;
+    --base0B: #8BD49C;
+    --base0C: #008B94;
+    --base0D: #5EC4FF;
+    --base0E: #C06ECE;
+    --base0F: #5EC4FF;
+
+}
+
+:root[sizemode="maximized"]{
+    --uc-toolbox-rotation: 88.5deg;
+}
+
+@media  (-moz-platform: windows){
+    :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
+}
+
+:root[sizemode="fullscreen"],
+:root[sizemode="fullscreen"] #navigator-toolbox{ margin-top: 0 !important; }
+
+#navigator-toolbox{
+    --browser-area-z-index-toolbox: 3;
+    position: fixed !important;
+    background-color: var(--lwt-accent-color,black) !important;
+    transition: transform 0ms linear, opacity 0ms linear !important;
+    transition-delay: var(--uc-autohide-toolbox-delay) !important;
+    transform-origin: top;
+    transform: rotateX(var(--uc-toolbox-rotation));
+    opacity: 0;
+    line-height: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+:root[sessionrestored] #urlbar[popover]{
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 0ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 0ms);
+    transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
+    transform: rotateX(89.9deg);
+}
+#mainPopupSet:has(&gt; [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox #urlbar[popover],
+#navigator-toolbox:is(:hover,:focus-within) #urlbar[popover],
+#urlbar-container &gt; #urlbar[popover]:is([focused],[open]){
+    pointer-events: auto;
+    opacity: 1;
+    transition-delay: 0ms;
+    transform: rotateX(0deg);
+}
+#mainPopupSet:has(&gt; [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox,
+#navigator-toolbox:has(#urlbar:is([open],[focus-within])),
+#navigator-toolbox:hover,
+#navigator-toolbox:focus-within{
+    transition-delay: 0ms !important;
+    transform: rotateX(0);
+    opacity: 1;
+}
+/* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
+ * Unfortunately it also means that other OS native surfaces (such as context menu on macos)
+ * and other always-on-top applications will trigger toolbox to show up. */
+@media (-moz-bool-pref: "userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
+    :root[sizemode="maximized"]:not(:hover){
+        #navigator-toolbox:not(:-moz-window-inactive),
+    #urlbar[popover]:not(:-moz-window-inactive){
+        transition-delay: 0ms !important;
+        transform: rotateX(0);
+        opacity: 1;
+    }
+    }
+}
+
+#navigator-toolbox &gt; *{ line-height: normal; pointer-events: auto }
+
+#navigator-toolbox,
+#navigator-toolbox &gt; *{
+    width: 100vw;
+    -moz-appearance: none !important;
+}
+
+/* These two exist for oneliner compatibility */
+#nav-bar{ width: var(--uc-navigationbar-width,100vw) }
+#TabsToolbar
+{
+    visibility: collapse;
+}
+/* Don't apply transform before window has been fully created */
+:root:not([sessionrestored]) #navigator-toolbox{ transform:none !important }
+
+:root[customizing] #navigator-toolbox{
+    position: relative !important;
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+#navigator-toolbox[inFullscreen] &gt; #PersonalToolbar,
+#PersonalToolbar[collapsed="true"]{ display: none }
+
+/* Uncomment this if tabs toolbar is hidden with hide_tabs_toolbar.css */
+ /*#titlebar{ margin-bottom: -9px }*/
+
+/* Uncomment the following for compatibility with tabs_on_bottom.css - this isn't well tested though */
+/*
+#navigator-toolbox{ flex-direction: column; display: flex; }
+#titlebar{ order: 2 }
+*/
+#sidebar-header {
+    display: none;
+}
+#sidebar-header {
+    /* display: none; */
+    visibility: collapse !important;
+}
+/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_sidebar.css made available under Mozilla Public License v. 2.0
+See the above repository for updates as well as full license text. */
+
+/* Show sidebar only when the cursor is over it  */
+/* The border controlling sidebar width will be removed so you'll need to modify these values to change width */
+
+#sidebar-box{
+    --uc-sidebar-width: 30px;
+    --uc-sidebar-hover-width: 210px;
+    --uc-autohide-sidebar-delay: 0ms; /* Wait 0.6s before hiding sidebar */
+    --uc-autohide-transition-duration: 0ms;
+    --uc-autohide-transition-type: linear;
+    --browser-area-z-index-sidebar: 3;
+    position: relative;
+    min-width: var(--uc-sidebar-width) !important;
+    width: var(--uc-sidebar-width) !important;
+    max-width: var(--uc-sidebar-width) !important;
+    z-index: var(--browser-area-z-index-sidebar,3);
+}
+#sidebar-box[positionend]{ direction: rtl }
+#sidebar-box[positionend] &gt; *{ direction: ltr }
+
+#sidebar-box[positionend]:-moz-locale-dir(rtl){ direction: ltr }
+#sidebar-box[positionend]:-moz-locale-dir(rtl) &gt; *{ direction: rtl }
+
+#main-window[sizemode="fullscreen"] #sidebar-box{ --uc-sidebar-width: 1px; }
+
+#sidebar-splitter{ display: none }
+
+#sidebar-header{
+    overflow: hidden;
+    color: var(--chrome-color, inherit) !important;
+    padding-inline: 0 !important;
+}
+
+#sidebar-header::before,
+#sidebar-header::after{
+    content: "";
+    display: flex;
+    padding-left: 8px;
+}
+
+#sidebar-header,
+#sidebar{
+    transition: min-width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+    min-width: var(--uc-sidebar-width) !important;
+    will-change: min-width;
+}
+#sidebar-box:hover &gt; #sidebar-header,
+#sidebar-box:hover &gt; #sidebar{
+    min-width: var(--uc-sidebar-hover-width) !important;
+    transition-delay: 0ms !important;
+}
+
+.sidebar-panel{
+    background-color: transparent !important;
+    color: var(--newtab-text-primary-color) !important;
+}
+
+.sidebar-panel #search-box{
+    -moz-appearance: none !important;
+    background-color: rgba(249,249,250,0.1) !important;
+    color: inherit !important;
+}
+
+/* Add sidebar divider and give it background */
+
+#sidebar,
+#sidebar-header{
+    background-color: inherit !important;
+    border-inline: 1px solid rgb(80,80,80);
+    border-inline-width: 0px 1px;
+}
+
+#sidebar-box:not([positionend]) &gt; :-moz-locale-dir(rtl),
+#sidebar-box[positionend] &gt; *{
+    border-inline-width: 1px 0px;
+}
+
+/* Move statuspanel to the other side when sidebar is hovered so it doesn't get covered by sidebar */
+
+#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel{
+    inset-inline: auto 0px !important;
+}
+#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel-label{
+    margin-inline: 0px !important;
+    border-left-style: solid !important;
+}
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9" class="outline-3">
+<h3 id="h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9"><span class="section-number-3">6.15.</span> Default Flake Template</h3>
+<div class="outline-text-3" id="text-h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{
+  description = "General purpose Flake";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs =
+    { nixpkgs
+    , systems
+    , ...
+    }:
+    let
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+    in
+    {
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+      devShells = forEachSystem (system: {
+        default = pkgsFor.${system}.mkShell {
+          packages = with pkgsFor.${system}; [
+
+          ];
+        };
+      });
+
+    };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53" class="outline-3">
+<h3 id="h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53"><span class="section-number-3">6.16.</span> C++ Flake Template</h3>
+<div class="outline-text-3" id="text-h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/cpp-cmake/flake.nix
+{
+  description = "C++ Flake";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs =
+    { self
+    , nixpkgs
+    , systems
+    , ...
+    }:
+    let
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+
+      pname = "name";
+    in
+    {
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpgks-fmt);
+
+      devShells = forEachSystem (system: {
+        default = pkgsFor.${system}.mkShell {
+          packages = with pkgsFor.${system}; [
+            libllvm
+            cmake
+            gtest
+            cppcheck
+            valgrind
+            doxygen
+            clang-tools
+            # cudatoolkit
+          ];
+        };
+      });
+
+      packages = forEachSystem (system: {
+        default = pkgsFor.${system}.stdenv.mkDerivation {
+          inherit pname;
+          version = "0.1.0";
+          src = ./.;
+
+          nativeBuildInputs = with pkgsFor.${system}; [
+            cmake
+          ];
+          buildInputs = with pkgsFor.${system}; [
+            gtest
+          ];
+        };
+      });
+
+      apps = forEachSystem (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/${pname}";
+        };
+      });
+    };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:def2d654-e8da-4d8a-8958-b59a60d019f5" class="outline-3">
+<h3 id="h:def2d654-e8da-4d8a-8958-b59a60d019f5"><span class="section-number-3">6.17.</span> Go Flake Template</h3>
+<div class="outline-text-3" id="text-h:def2d654-e8da-4d8a-8958-b59a60d019f5">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/go-nix/flake.nix
+{
+  description = "Go Flake";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    systems.url = "github:nix-systems/default";
+  };
+
+  outputs =
+    { self
+    , nixpkgs
+    , systems
+    , ...
+    }:
+    let
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      pkgsFor = forEachSystem (system: import nixpkgs { inherit system; });
+
+      pname = "name";
+    in
+    {
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+      devShells = forEachSystem (system: {
+        default = pkgsFor.${system}.mkShell {
+          packages = with pkgsFor.${system}; [
+            go
+            gopls
+            go-tools
+            gotools
+          ];
+        };
+      });
+
+      packages = forEachSystem (system: {
+        default = pkgsFor.${system}.buildGoModule {
+          inherit pname;
+          version = "0.1.0";
+          src = ./.;
+          vendorHash = null;
+        };
+      });
+
+      apps = forEachSystem (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/${pname}";
+        };
+      });
+    };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:adccea10-6c72-46aa-8c67-5e06b7606c71" class="outline-3">
+<h3 id="h:adccea10-6c72-46aa-8c67-5e06b7606c71"><span class="section-number-3">6.18.</span> LaTeX Flake Template</h3>
+<div class="outline-text-3" id="text-h:adccea10-6c72-46aa-8c67-5e06b7606c71">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># This template is based on https://github.com/Leixb/latex-template/tree/master
+{
+  description = "LaTeX Flake";
+
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+
+  outputs = { self, nixpkgs, flake-utils }:
+    {
+
+      lib.latexmk = import ./build-document.nix;
+
+    } // flake-utils.lib.eachDefaultSystem (system:
+      let
+        pname = "document";
+
+        pkgs = import nixpkgs { inherit system; };
+
+        latex-packages = with pkgs; [
+          (texlive.combine {
+            inherit (texlive)
+              scheme-medium
+              framed
+              titlesec
+              cleveref
+              multirow
+              wrapfig
+              tabu
+              threeparttable
+              threeparttablex
+              makecell
+              environ
+              biblatex
+              biber
+              fvextra
+              upquote
+              catchfile
+              xstring
+              csquotes
+              minted
+              dejavu
+              comment
+              footmisc
+              xltabular
+              ltablex
+              ;
+          })
+          which
+          python39Packages.pygments
+        ];
+
+        dev-packages = with pkgs; [
+          texlab
+          zathura
+          wmctrl
+        ];
+      in
+      rec {
+        devShell = pkgs.mkShell {
+          buildInputs = [ latex-packages dev-packages ];
+        };
+
+        formatter = pkgs.nixpkgs-fmt;
+
+        packages = flake-utils.lib.flattenTree {
+          default = import ./build-document.nix {
+            inherit pkgs;
+            name = pname;
+            texlive = latex-packages;
+            shellEscape = true;
+            minted = true;
+            SOURCE_DATE_EPOCH = toString self.lastModified;
+          };
+        };
+
+        apps.default = flake-utils.lib.mkApp { drv = "${pkgs.texlivePackages.latexmk}"; exePath = "/bin/latexmk"; };
+      }
+    );
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:1a918c8d-08b4-4474-8d34-3da502081a16" class="outline-3">
+<h3 id="h:1a918c8d-08b4-4474-8d34-3da502081a16"><span class="section-number-3">6.19.</span> Python Flake Template</h3>
+<div class="outline-text-3" id="text-h:1a918c8d-08b4-4474-8d34-3da502081a16">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
+{
+  description = "Python flake using uv2nix";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs = {
+        pyproject-nix.follows = "pyproject-nix";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
+
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs = {
+        pyproject-nix.follows = "pyproject-nix";
+        uv2nix.follows = "uv2nix";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
+  };
+
+  outputs =
+    { nixpkgs
+    , uv2nix
+    , pyproject-nix
+    , pyproject-build-systems
+    , ...
+    }:
+    let
+      inherit (nixpkgs) lib;
+      pname = "name";
+      forAllSystems = lib.genAttrs lib.systems.flakeExposed;
+
+      # Load a uv workspace from a workspace root.
+      # Uv2nix treats all uv projects as workspace projects.
+      workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
+
+      overlay = workspace.mkPyprojectOverlay {
+        # Prefer prebuilt binary wheels as a package source.
+        # Sdists are less likely to "just work" because of the metadata missing from uv.lock.
+        # Binary wheels are more likely to, but may still require overrides for library dependencies.
+        sourcePreference = "wheel"; # or sourcePreference = "sdist";
+        # Optionally customise PEP 508 environment
+        # environ = {
+        #   platform_release = "5.10.65";
+        # };
+      };
+
+
+      pythonSets = forAllSystems
+        (system:
+          let
+            inherit (pkgs) stdenv;
+            pkgs = nixpkgs.legacyPackages.${system};
+            pyprojectOverrides = final: prev: {
+              # Implement build fixups here.
+              ${pname} = prev.${pname}.overrideAttrs (old: {
+
+                passthru = old.passthru // {
+                  # Put all tests in the passthru.tests attribute set.
+                  # Nixpkgs also uses the passthru.tests mechanism for ofborg test discovery.
+                  #
+                  # For usage with Flakes we will refer to the passthru.tests attributes to construct the flake checks attribute set.
+                  tests =
+                    let
+
+                      virtualenv = final.mkVirtualEnv "${pname}-pytest-env" {
+                        ${pname} = [ "test" ];
+                      };
+
+                    in
+                    (old.tests or { })
+                      // {
+                      pytest = stdenv.mkDerivation {
+                        name = "${final.${pname}.name}-pytest";
+                        inherit (final.${pname}) src;
+                        nativeBuildInputs = [
+                          virtualenv
+                        ];
+                        dontConfigure = true;
+
+                        # Because this package is running tests, and not actually building the main package
+                        # the build phase is running the tests.
+                        #
+                        # We also output a HTML coverage report, which is used as the build output.
+                        buildPhase = ''
+                          runHook preBuild
+                          pytest --cov tests --cov-report html
+                          runHook postBuild
+                        '';
+
+                        # Install the HTML coverage report into the build output.
+                        #
+                        # If you wanted to install multiple test output formats such as TAP outputs
+                        # you could make this derivation a multiple-output derivation.
+                        #
+                        # See https://nixos.org/manual/nixpkgs/stable/#chap-multiple-output for more information on multiple outputs.
+                        installPhase = ''
+                          runHook preInstall
+                          mv htmlcov $out
+                          runHook postInstall
+                        '';
+                      };
+
+                    };
+                };
+              });
+            };
+
+            baseSet = pkgs.callPackage pyproject-nix.build.packages {
+              python = pkgs.python312;
+            };
+          in
+          baseSet.overrideScope
+            (
+              lib.composeManyExtensions [
+                pyproject-build-systems.overlays.default
+                overlay
+                pyprojectOverrides
+              ]
+            ));
+
+    in
+    {
+      packages = forAllSystems (system:
+        let
+          pythonSet = pythonSets.${system};
+        in
+        { default = pythonSet.mkVirtualEnv "${pname}-env" workspace.deps.default; });
+
+      devShells = forAllSystems
+        (system:
+          let
+            pythonSet = pythonSets.${system};
+            pkgs = nixpkgs.legacyPackages.${system};
+          in
+          {
+            default =
+              let
+                # Create an overlay enabling editable mode for all local dependencies.
+                editableOverlay = workspace.mkEditablePyprojectOverlay {
+                  # Use environment variable
+                  root = "$REPO_ROOT";
+                  # Optional: Only enable editable for these packages
+                  # members = [ "hello-world" ];
+                };
+
+                # Override previous set with our overrideable overlay.
+                editablePythonSet = pythonSet.overrideScope editableOverlay;
+
+                virtualenv = editablePythonSet.mkVirtualEnv "${pname}-dev-env" {
+                  ${pname} = [ "dev" ];
+                };
+
+              in
+              pkgs.mkShell {
+                packages = [
+                  virtualenv
+                  pkgs.uv
+                ];
+                shellHook = ''
+                  # Undo dependency propagation by nixpkgs.
+                  unset PYTHONPATH
+
+                  # Don't create venv using uv
+                  export UV_NO_SYNC=1
+
+                  # Prevent uv from downloading managed Python's
+                  export UV_PYTHON_DOWNLOADS=never
+
+                  # Get repository root using git. This is expanded at runtime by the editable `.pth` machinery.
+                  export REPO_ROOT=$(git rev-parse --show-toplevel)
+                '';
+              };
+          });
+
+      checks = forAllSystems (
+        system:
+        let
+          pythonSet = pythonSets.${system};
+        in
+        {
+          inherit (pythonSet.${pname}.passthru.tests) pytest;
+        }
+      );
+
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+
+    };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:c03663fd-f7bd-4054-9075-5dacaf2abf76" class="outline-3">
+<h3 id="h:c03663fd-f7bd-4054-9075-5dacaf2abf76"><span class="section-number-3">6.20.</span> Rust Flake Template</h3>
+<div class="outline-text-3" id="text-h:c03663fd-f7bd-4054-9075-5dacaf2abf76">
+<div class="org-src-container">
+<pre class="src src-nix-ts"># heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/rust-fenix-naersk/flake.nix
+{
+  description = "Rust Flake using Fenix and Naersk";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    systems.url = "github:nix-systems/default";
+    naersk.url = "github:nix-community/naersk";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs =
+    { self
+    , nixpkgs
+    , naersk
+    , fenix
+    , systems
+    , ...
+    }:
+    let
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      pkgsFor = forEachSystem (system:
+
+        import nixpkgs {
+          inherit system;
+          overlays = [
+            fenix.overlays.default
+          ];
+        });
+      rust-toolchain = forEachSystem (system: pkgsFor.${system}.fenix.stable);
+    in
+    {
+      formatter = forEachSystem (system: pkgsFor.${system}.nixpkgs-fmt);
+
+      devShells = forEachSystem (system: {
+        default = pkgsFor.${system}.mkShell {
+          packages = with rust-toolchain.${system}; [
+            cargo
+            rustc
+            clippy
+            rustfmt
+            rust-analyzer
+          ];
+          env = {
+            RUST_BACKTRACE = "full";
+          };
+          RUST_SRC_PATH = "${rust-toolchain.${system}.rust-src}/lib/rustlib/src/rust/library";
+        };
+      });
+
+      packages = forEachSystem (system: {
+        default =
+          (pkgsFor.${system}.callPackage naersk {
+            inherit (rust-toolchain.${system}) cargo rustc;
+          }).buildPackage {
+            src = ./.;
+          };
+      });
+
+      apps = forEachSystem (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/rust";
+        };
+      });
+    };
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec" class="outline-3">
-<h3 id="h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec"><span class="section-number-3">6.6.</span> GitHub Readme</h3>
+<h3 id="h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec"><span class="section-number-3">6.21.</span> GitHub Readme</h3>
 <div class="outline-text-3" id="text-h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec">
 <p>
 Here lies defined the readme for GitHub and Forgejo:
@@ -21981,7 +23926,7 @@ If you feel that I forgot to pay you tribute for code that I used in this reposi
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-07-01 Di 00:53</p>
+<p class="date">Created: 2025-07-02 Mi 01:23</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

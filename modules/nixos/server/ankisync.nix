@@ -1,12 +1,14 @@
-{ lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
-  serviceDomain = "synki.swarsel.win";
   servicePort = 27701;
   serviceName = "ankisync";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+  ankiUser = globals.user.name;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -14,6 +16,7 @@ in
 
     topology.self.services.${serviceName} = {
       name = lib.mkForce "Anki Sync Server";
+      icon = "${self}/topology/images/${serviceName}.png";
       info = "https://${serviceDomain}";
     };
 
@@ -26,7 +29,7 @@ in
       openFirewall = true;
       users = [
         {
-          username = "Swarsel";
+          username = ankiUser;
           passwordFile = config.sops.secrets.swarsel.path;
         }
       ];
@@ -34,7 +37,7 @@ in
 
     services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

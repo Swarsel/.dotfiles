@@ -53,7 +53,7 @@ in
         ]
         [ "wan" ]
       ];
-      interfaces.wg0 = {
+      interfaces.wg = {
         addresses = [ "192.168.3.1" ];
         network = "wg";
         virtual = true;

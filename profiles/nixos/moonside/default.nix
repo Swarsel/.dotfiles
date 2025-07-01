@@ -18,7 +18,7 @@
           sops = lib.mkDefault true;
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
-          oauth2Proxy = lib.mkDefault true;
+          oauth2-proxy = lib.mkDefault true;
           croc = lib.mkDefault true;
           microbin = lib.mkDefault true;
           shlink = lib.mkDefault true;

@@ -44,6 +44,7 @@
       lid = lib.mkDefault true;
       lowBattery = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
+      tmp = lib.mkDefault true;
 
       optional = {
         gaming = lib.mkDefault true;

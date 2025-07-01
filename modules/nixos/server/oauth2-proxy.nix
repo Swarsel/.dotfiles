@@ -1,12 +1,17 @@
 { lib, config, globals, ... }:
 let
+  servicePort = 3004;
+  serviceUser = "oauth2-proxy";
+  serviceGroup = serviceUser;
+  serviceName = "oauth2-proxy";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
   kanidmDomain = globals.services.kanidm.domain;
-  oauth2ProxyDomain = "soauth.swarsel.win";
-  oauth2ProxyPort = 3004;
+  mainDomain = globals.domains.main;
 in
 {
   options = {
-    swarselsystems.modules.server.oauth2Proxy = lib.mkEnableOption "enable oauth2-proxy on server";
+    swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
     services.nginx.virtualHosts = lib.mkOption {
       type = lib.types.attrsOf (
@@ -114,12 +119,12 @@ in
       );
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.server.oauth2Proxy {
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops = {
       secrets = {
-        "oauth2-cookie-secret" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
-        "kanidm-oauth2-proxy-client" = { owner = "oauth2-proxy"; group = "oauth2-proxy"; mode = "0440"; };
+        "oauth2-cookie-secret" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-oauth2-proxy-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       templates = {
@@ -128,34 +133,34 @@ in
             OAUTH2_PROXY_CLIENT_SECRET="${config.sops.placeholder.kanidm-oauth2-proxy-client}"
             OAUTH2_PROXY_COOKIE_SECRET=${config.sops.placeholder.oauth2-cookie-secret}
           '';
-          owner = "oauth2-proxy";
-          group = "oauth2-proxy";
+          owner = serviceUser;
+          group = serviceGroup;
           mode = "0440";
         };
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ oauth2ProxyPort ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.oauth2Proxy.domain = oauth2ProxyDomain;
+    globals.services.oauth2Proxy.domain = serviceDomain;
 
     services = {
-      oauth2-proxy = {
+      ${serviceName} = {
         enable = true;
         cookie = {
-          domain = ".swarsel.win";
+          domain = ".${mainDomain}";
           secure = true;
           expire = "900m";
           secret = null; # set by service EnvironmentFile
         };
         clientSecret = null; # set by service EnvironmentFile
         reverseProxy = true;
-        httpAddress = "0.0.0.0:${builtins.toString oauth2ProxyPort}";
-        redirectURL = "https://${oauth2ProxyDomain}/oauth2/callback";
+        httpAddress = "0.0.0.0:${builtins.toString servicePort}";
+        redirectURL = "https://${serviceDomain}/oauth2/callback";
         setXauthrequest = true;
         extraConfig = {
           code-challenge-method = "S256";
-          whitelist-domain = ".swarsel.win";
+          whitelist-domain = ".${mainDomain}";
           set-authorization-header = true;
           pass-access-token = true;
           skip-jwt-bearer-tokens = true;
@@ -168,16 +173,16 @@ in
         loginURL = "https://${kanidmDomain}/ui/oauth2";
         redeemURL = "https://${kanidmDomain}/oauth2/token";
         validateURL = "https://${kanidmDomain}/oauth2/openid/oauth2-proxy/userinfo";
-        clientID = "oauth2-proxy";
+        clientID = serviceName;
         email.domains = [ "*" ];
       };
     };
 
     systemd.services = {
-      oauth2-proxy = {
+      ${serviceName} = {
         # after = [ "kanidm.service" ];
         serviceConfig = {
-          RuntimeDirectory = "oauth2-proxy";
+          RuntimeDirectory = serviceName;
           RuntimeDirectoryMode = "0750";
           UMask = "007"; # TODO remove once https://github.com/oauth2-proxy/oauth2-proxy/issues/2141 is fixed
           RestartSec = "60"; # Retry every minute
@@ -190,20 +195,20 @@ in
 
     services.nginx = {
       upstreams = {
-        oauth2-proxy = {
+        ${serviceName} = {
           servers = {
-            "localhost:${builtins.toString oauth2ProxyPort}" = { };
+            "localhost:${builtins.toString servicePort}" = { };
           };
         };
       };
       virtualHosts = {
-        "${oauth2ProxyDomain}" = {
+        "${serviceDomain}" = {
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
           locations = {
             "/" = {
-              proxyPass = "http://oauth2-proxy";
+              proxyPass = "http://${serviceName}";
             };
           };
           extraConfig = ''

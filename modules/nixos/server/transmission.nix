@@ -1,6 +1,8 @@
 { self, pkgs, lib, config, ... }:
 let
-  serviceDomain = "store.swarsel.win";
+  serviceName = "transmission";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;
   lidarrPort = 8686;
@@ -18,8 +20,8 @@ let
   prowlarrPort = 9696;
 in
 {
-  options.swarselsystems.modules.server.transmission = lib.mkEnableOption "enable transmission and friends on server";
-  config = lib.mkIf config.swarselsystems.modules.server.transmission {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     # this user/group section is probably unneeded
     users = {

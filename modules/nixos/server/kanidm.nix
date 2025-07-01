@@ -1,23 +1,30 @@
 { self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
-  serviceDomain = "sso.swarsel.win";
+
   servicePort = 8300;
   serviceUser = "kanidm";
   serviceGroup = serviceUser;
   serviceName = "kanidm";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
   oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
+  immichDomain = globals.services.immich.domain;
+  paperlessDomain = globals.services.paperless.domain;
+  forgejoDomain = globals.services.forgejo.domain;
+  grafanaDomain = globals.services.grafana.domain;
+  nextcloudDomain = globals.services.nextcloud.domain;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups."${serviceGroup}" = { };
+    users.groups.${serviceGroup} = { };
 
     sops = {
       secrets = {
@@ -40,7 +47,7 @@ in
     globals.services.${serviceName}.domain = serviceDomain;
 
     services = {
-      kanidm = {
+      ${serviceName} = {
         package = pkgs.kanidmWithSecretProvisioning;
         enableServer = true;
         serverSettings = {
@@ -85,12 +92,12 @@ in
               immich = {
                 displayName = "Immich";
                 originUrl = [
-                  "https://shots.swarsel.win/auth/login"
-                  "https://shots.swarsel.win/user-settings"
+                  "https://${immichDomain}/auth/login"
+                  "https://${immichDomain}/user-settings"
                   "app.immich:///oauth-callback"
-                  "https://shots.swarsel.win/api/oauth/mobile-redirect"
+                  "https://${immichDomain}/api/oauth/mobile-redirect"
                 ];
-                originLanding = "https://shots.swarsel.win/";
+                originLanding = "https://${immichDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-immich.path;
                 preferShortUsername = true;
                 enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
@@ -102,8 +109,8 @@ in
               };
               paperless = {
                 displayName = "Paperless";
-                originUrl = "https://scan.swarsel.win/accounts/oidc/kanidm/login/callback/";
-                originLanding = "https://scan.swarsel.win/";
+                originUrl = "https://${paperlessDomain}/accounts/oidc/kanidm/login/callback/";
+                originLanding = "https://${paperlessDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-paperless.path;
                 preferShortUsername = true;
                 scopeMaps."paperless.access" = [
@@ -114,8 +121,8 @@ in
               };
               forgejo = {
                 displayName = "Forgejo";
-                originUrl = "https://swagit.swarsel.win/user/oauth2/kanidm/callback";
-                originLanding = "https://swagit.swarsel.win/";
+                originUrl = "https://${forgejoDomain}/user/oauth2/kanidm/callback";
+                originLanding = "https://${forgejoDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
                 scopeMaps."forgejo.access" = [
                   "openid"
@@ -133,8 +140,8 @@ in
               };
               grafana = {
                 displayName = "Grafana";
-                originUrl = "https://status.swarsel.win/login/generic_oauth";
-                originLanding = "https://status.swarsel.win/";
+                originUrl = "https://${grafanaDomain}/login/generic_oauth";
+                originLanding = "https://${grafanaDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-grafana.path;
                 preferShortUsername = true;
                 scopeMaps."grafana.access" = [
@@ -153,8 +160,8 @@ in
               };
               nextcloud = {
                 displayName = "Nextcloud";
-                originUrl = " https://stash.swarsel.win/apps/sociallogin/custom_oidc/kanidm";
-                originLanding = "https://stash.swarsel.win/";
+                originUrl = " https://${nextcloudDomain}/apps/sociallogin/custom_oidc/kanidm";
+                originLanding = "https://${nextcloudDomain}/";
                 basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
                 allowInsecureClientDisablePkce = true;
                 scopeMaps."nextcloud.access" = [
@@ -215,12 +222,12 @@ in
     };
 
     systemd.services = {
-      kanidm.serviceConfig.RestartSec = "30";
+      ${serviceName}.serviceConfig.RestartSec = "30";
     };
 
     nodes.moonside.services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };

@@ -1,4 +1,4 @@
-{ inputs, config, lib, ... }:
+{ inputs, config, lib, outputs, globals, nodes, ... }:
 {
 
   options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
@@ -14,7 +14,7 @@
           home.stateVersion = lib.mkDefault config.system.stateVersion;
         }
       ];
-      extraSpecialArgs = { inherit (inputs) self; };
+      extraSpecialArgs = { inherit (inputs) self; inherit inputs outputs globals nodes; };
     };
   };
 }

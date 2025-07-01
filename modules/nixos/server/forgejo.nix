@@ -1,23 +1,25 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, globals, ... }:
 let
-  serviceDomain = "swagit.swarsel.win";
   servicePort = 3000;
   serviceUser = "forgejo";
   serviceGroup = serviceUser;
   serviceName = "forgejo";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+  kanidmDomain = globals.services.kanidm.domain;
 in
 {
-  options.swarselsystems.modules.server."${serviceName}" = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server."${serviceName}" {
+  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    users.users."${serviceUser}" = {
+    users.users.${serviceUser} = {
       group = serviceGroup;
       isSystemUser = true;
     };
 
-    users.groups."${serviceGroup}" = { };
+    users.groups.${serviceGroup} = { };
 
     sops.secrets = {
       kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -25,7 +27,7 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.forgejo = {
+    services.${serviceName} = {
       enable = true;
       user = serviceUser;
       group = serviceGroup;
@@ -67,13 +69,13 @@ in
       };
     };
 
-    systemd.services.forgejo = {
+    systemd.services.${serviceName} = {
       serviceConfig.RestartSec = "60"; # Retry every minute
       preStart =
         let
           exe = lib.getExe config.services.forgejo.package;
           providerName = "kanidm";
-          clientId = "forgejo";
+          clientId = serviceName;
           args = lib.escapeShellArgs (
             lib.concatLists [
               [
@@ -90,7 +92,7 @@ in
               ]
               [
                 "--auto-discover-url"
-                "https://sso.swarsel.win/oauth2/openid/${clientId}/.well-known/openid-configuration"
+                "https://${kanidmDomain}/oauth2/openid/${clientId}/.well-known/openid-configuration"
               ]
               [
                 "--scopes"
@@ -125,7 +127,7 @@ in
 
     services.nginx = {
       upstreams = {
-        "${serviceName}" = {
+        ${serviceName} = {
           servers = {
             "192.168.1.2:${builtins.toString servicePort}" = { };
           };
