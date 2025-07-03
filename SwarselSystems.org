@@ -364,45 +364,38 @@ In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are auto
                         inputs.impermanence.nixosModules.impermanence
                         inputs.lanzaboote.nixosModules.lanzaboote
                         inputs.fw-fanctrl.nixosModules.default
+                        inputs.nix-topology.nixosModules.default
+                        inputs.home-manager.nixosModules.home-manager
                         "${self}/hosts/${type}/${host}"
                         {
                           _module.args.primaryUser = linuxUser;
                         }
                       ] ++
                       (if (host == "iso") then [
-                        inputs.nix-topology.nixosModules.default
                       ] else
                         ([
                           # put nixos imports here that are for all servers and normal hosts
-                          inputs.nix-topology.nixosModules.default
-                          "${self}/modules/${type}/common"
+                          "${self}/modules/nixos"
                           inputs.stylix.nixosModules.stylix
                           inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
                         ] ++ (if (type == "nixos") then [
-                          inputs.home-manager.nixosModules.home-manager
                           "${self}/profiles/nixos"
-                          "${self}/modules/nixos/server"
-                          "${self}/modules/nixos/optional"
                           {
                             home-manager.users."${linuxUser}".imports = [
                               # put home-manager imports here that are for all normal hosts
-                              "${self}/modules/home/common"
-                              "${self}/modules/home/server"
-                              "${self}/modules/home/optional"
                               "${self}/profiles/home"
+                              "${self}/modules/home"
                             ];
                           }
                         ] else [
                           # put nixos imports here that are for darwin hosts
-                          "${self}/modules/darwin/nixos/common"
-                          "${self}/profiles/darwin"
+                          "${self}/modules/nixos/darwin"
+                          "${self}/profiles/nixos"
                           inputs.home-manager.darwinModules.home-manager
                           {
                             home-manager.users."${macUser}".imports = [
                               # put home-manager imports here that are for darwin hosts
-                              "${self}/modules/darwin/home"
-                              "${self}/modules/home/server"
-                              "${self}/modules/home/optional"
+                              "${self}/modules/home/darwin"
                               "${self}/profiles/home"
                             ];
                           }
@@ -769,68 +762,10 @@ This file defines the templates that are being exposed by the flake. These can b
 
 #+end_src
 
-** nixosConfigurations
-:PROPERTIES:
-:CUSTOM_ID: h:9c9b9e3b-8771-44fa-ba9e-5056ae809655
-:END:
 
-This section used to be much longer, since I performed all of my imports right here in the past. Since then, I have however refactored and now my important hosts can be defined in little space. Once I have fully transitioned my server to NixOS too this section will become even smaller once more.
+** Hosts
 
-Note: The preceding =nixosConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Also, the method of generating the hosts was changed in commit
-=3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
-
-
-#+begin_src nix-ts :tangle no :noweb-ref flakenixosconf
-#+end_src
-** darwinConfigurations
-:PROPERTIES:
-:CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
-:END:
-
-And this defines darwin systems (MacOS), which I only have one of, that serves as a template mostly.
-
-Note: The preceding =darwinConfigurations= is found in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Also, the method of generating the hosts was changed in commit
-=3a272b1 feat!: dynamically create hosts=, and the deprecated system definitions removed in =7457109 main chore: remove deprecated static host config=. See those commits for a state with a simpler config.
-
-#+begin_src nix-ts :tangle no :noweb-ref flakedarwinconf
-#+end_src
-
-** homeConfigurations
-:PROPERTIES:
-:CUSTOM_ID: h:f881aa05-a670-48dd-a57b-2916abdcb692
-:END:
-
-In contrast, this defines home-manager systems, which I only have one of, that serves as a template mostly.
-
-#+begin_src nix-ts :tangle no :noweb-ref flakehomeconf
-
-  # "swarsel@home-manager" = inputs.home-manager.lib.homeManagerConfiguration {
-  #  pkgs = lib.swarselsystems.pkgsFor.x86_64-linux;
-  #  extraSpecialArgs = { inherit inputs outputs; };
-  #   modules = homeModules ++ mixedModules ++ [
-  #     ./hosts/home-manager
-  #   ];
-  # };
-
-#+end_src
-
-** nixOnDroidConfigurations
-:PROPERTIES:
-:CUSTOM_ID: h:5f6ef553-59f9-4239-b6f3-63d33b57f335
-:END:
-
-Nix on Android also demands an own flake output, which is provided here.
-
-#+begin_src nix-ts :tangle no :noweb-ref flakedroidconf
-
-  # magicant = inputs.nix-on-droid.lib.nixOnDroidConfiguration {
-  #  pkgs = lib.swarselsystems.pkgsFor.aarch64-linux;
-  #   modules = [
-  #     ./hosts/magicant
-  #   ];
-  # };
-
-
+#+begin_src nix-ts :tangle no
 #+end_src
 
 ** topologyConfigurations
@@ -3976,7 +3911,6 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       rm modules/home/common/mail.nix
       rm modules/home/common/yubikey.nix
       rm modules/nixos/server/restic.nix
-      rm modules/nixos/common/home-manager-extra.nix
       rm hosts/nixos/sync/default.nix
       rm -rf modules/nixos/server
       rm -rf modules/home/server
@@ -4115,22 +4049,9 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       rm modules/home/common/mail.nix
       rm modules/home/common/yubikey.nix
       rm modules/nixos/server/restic.nix
-      rm modules/nixos/common/home-manager-extra.nix
       rm hosts/nixos/sync/default.nix
       rm -rf modules/nixos/server
       rm -rf modules/home/server
-      cat > hosts/nixos/chaostheatre/options.nix << EOF
-          { self, lib, ... }:
-          {
-            options = {
-              swarselsystems = {
-                modules = {
-                  home-managerExtra = lib.mkEnableOption "dummy option for chaostheatre";
-                };
-              };
-            };
-          }
-  EOF
       cat > hosts/nixos/chaostheatre/options-home.nix << EOF
           { self, lib, ... }:
           {
@@ -4887,7 +4808,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         packages = lib.mkDefault true;
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
-        home-managerExtra = lib.mkDefault true;
         xserver = lib.mkDefault true;
         users = lib.mkDefault true;
         env = lib.mkDefault true;
@@ -4898,7 +4818,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         pipewire = lib.mkDefault true;
         network = lib.mkDefault true;
         time = lib.mkDefault true;
-        commonSops = lib.mkDefault true;
+        sops = lib.mkDefault true;
         pii = lib.mkDefault true;
         stylix = lib.mkDefault true;
         programs = lib.mkDefault true;
@@ -4925,12 +4845,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lid = lib.mkDefault true;
         lowBattery = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
-        tmp = lib.mkDefault true;
+        autologin = lib.mkDefault true;
 
         optional = {
           gaming = lib.mkDefault true;
           virtualbox = lib.mkDefault true;
-          autologin = lib.mkDefault true;
           nswitch-rcm = lib.mkDefault true;
         };
 
@@ -4959,7 +4878,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         packages = lib.mkDefault true;
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
-        home-managerExtra = lib.mkDefault false;
         xserver = lib.mkDefault true;
         users = lib.mkDefault true;
         env = lib.mkDefault true;
@@ -4970,7 +4888,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         pipewire = lib.mkDefault true;
         network = lib.mkDefault true;
         time = lib.mkDefault true;
-        commonSops = lib.mkDefault true;
+        sops = lib.mkDefault false;
         stylix = lib.mkDefault true;
         programs = lib.mkDefault true;
         zsh = lib.mkDefault true;
@@ -4996,10 +4914,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lid = lib.mkDefault true;
         lowBattery = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
-
-        optional = {
-          autologin = lib.mkDefault true;
-        };
+        autologin = lib.mkDefault true;
       };
 
     };
@@ -5021,17 +4936,14 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       swarselsystems.modules = {
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
-        home-managerExtra = lib.mkDefault true;
         xserver = lib.mkDefault true;
         users = lib.mkDefault true;
-        commonSops = lib.mkDefault true;
+        sops = lib.mkDefault true;
         impermanence = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
+        autologin = lib.mkDefault true;
         server = {
           ssh = lib.mkDefault true;
-        };
-        optional = {
-          autologin = lib.mkDefault true;
         };
       };
 
@@ -5188,14 +5100,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           general = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
-          home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
+          sops = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
-            sops = lib.mkDefault true;
             nfs = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
@@ -5245,14 +5156,13 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           nix-ld = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
-          home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
+          sops = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
-            sops = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
             forgejo = lib.mkDefault true;
@@ -5280,15 +5190,14 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           general = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
-          home-managerExtra = lib.mkDefault true;
           xserver = lib.mkDefault true;
           time = lib.mkDefault true;
           users = lib.mkDefault true;
           impermanence = lib.mkDefault true;
+          sops = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
-            sops = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
             oauth2-proxy = lib.mkDefault true;
@@ -6015,6 +5924,18 @@ This file is only loaded in the =lib.evalModules= call in [[#h:af83893d-c0f9-4b4
 :END:
 
 Here we have NixOS options. All options are split into smaller files that are loaded by the general =default.nix=. Common files are used by all user hosts equally, optionals need to be added to the machine's =default.nix= on a case-by-case basis.
+
+#+begin_src nix-ts :tangle modules/nixos/default.nix
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "modules/nixos";
+  in
+  {
+    imports = lib.swarselsystems.mkImports importNames "modules/nixos";
+  }
+
+#+end_src
+
 *** Common
 :PROPERTIES:
 :CUSTOM_ID: h:1c1250cd-e9b4-4715-8d9f-eb09e64bfc7f
@@ -6022,7 +5943,7 @@ Here we have NixOS options. All options are split into smaller files that are lo
 
 These are system-level settings specific to NixOS machines. All settings that are required on all machines go here.
 
-**** Imports, non-server settings
+**** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
 :END:
@@ -6045,7 +5966,161 @@ This section is for setting things that should be used on hosts that are using t
 
 #+end_src
 
-**** Shared Configuration Options
+**** Share configuration between nodes (automatically active)
+:PROPERTIES:
+:CUSTOM_ID: h:5c3027b4-ba66-445e-9c5f-c27e332c90e5
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/common/nodes.nix
+  # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
+  { config, lib, outputs, ... }:
+  let
+    nodeName = config.node.name;
+    mkForwardedOption =
+      path:
+      lib.mkOption {
+        type = lib.mkOptionType {
+          name = "Same type that the receiving option `${lib.concatStringsSep "." path}` normally accepts.";
+          merge =
+            _loc: defs:
+            builtins.filter (x: builtins.isAttrs x -> ((x._type or "") != "__distributed_config_empty")) (
+              map (x: x.value) defs
+            );
+        };
+        default = {
+          _type = "__distributed_config_empty";
+        };
+        description = ''
+          Anything specified here will be forwarded to `${lib.concatStringsSep "." path}`
+          on the given node. Forwarding happens as-is to the raw values,
+          so validity can only be checked on the receiving node.
+        '';
+      };
+
+    forwardedOptions = [
+      [
+        "services"
+        "nginx"
+        "upstreams"
+      ]
+      [
+        "services"
+        "nginx"
+        "virtualHosts"
+      ]
+    ];
+
+    attrsForEachOption =
+      f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
+  in
+  {
+    options.nodes = lib.mkOption {
+      description = "Options forwarded to the given node.";
+      default = { };
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = attrsForEachOption mkForwardedOption;
+        }
+      );
+    };
+
+    config =
+      let
+        getConfig =
+          path: otherNode:
+          let
+            cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
+          in
+          lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
+        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
+      in
+      attrsForEachOption mergeConfigFromOthers;
+  }
+#+end_src
+
+**** Global options (automatically active)
+:PROPERTIES:
+:CUSTOM_ID: h:85c9b83f-40c3-4558-bb28-a37b6f8597b9
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/common/globals.nix
+  { lib, options, ... }:
+  let
+    inherit (lib)
+      mkOption
+      types
+      ;
+  in
+  {
+    options = {
+      globals = mkOption {
+        default = { };
+        type = types.submodule {
+          options = {
+            user = {
+              name = mkOption {
+                type = types.str;
+              };
+            };
+
+
+            services = mkOption {
+              type = types.attrsOf (
+                types.submodule {
+                  options = {
+                    domain = mkOption {
+                      type = types.str;
+                    };
+                  };
+                }
+              );
+            };
+
+            domains = {
+              main = mkOption {
+                type = types.str;
+              };
+            };
+          };
+        };
+      };
+
+      _globalsDefs = mkOption {
+        type = types.unspecified;
+        default = options.globals.definitions;
+        readOnly = true;
+        internal = true;
+      };
+    };
+  }
+#+end_src
+
+**** Meta options (automatically active)
+:PROPERTIES:
+:CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
+:END:
+
+
+#+begin_src nix-ts :tangle modules/nixos/common/meta.nix
+  { lib, ... }:
+  {
+    options = {
+      node = {
+        secretsDir = lib.mkOption {
+          description = "Path to the secrets directory for this node.";
+          type = lib.types.path;
+          default = ./.;
+        };
+        name = lib.mkOption {
+          description = "Node Name.";
+          type = lib.types.str;
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Shared Configuration Options (automatically active)
 :PROPERTIES:
 :CUSTOM_ID: h:f4f22166-e345-43e6-b15f-b7f5bb886554
 :END:
@@ -6083,7 +6158,28 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
   }
 #+end_src
 
-**** General NixOS settings (stateVersion)
+**** Topology (automatically active)
+:PROPERTIES:
+:CUSTOM_ID: h:e2e7444b-cb85-4719-b154-e5f37274d02d
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/common/topology.nix
+  { self, lib, config, ... }:
+  {
+    options.swarselsystems.info = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    config.topology = {
+      id = config.node.name;
+      self = {
+        hardware.info = config.swarselsystems.info;
+        icon = lib.mkIf config.swarselsystems.isLaptop "devices.laptop";
+      };
+    };
+  }
+#+end_src
+**** General NixOS settings (nix, stateVersion)
 :PROPERTIES:
 :CUSTOM_ID: h:24c9146f-2147-4fd5-bafc-d5853e15cf12
 :END:
@@ -6186,133 +6282,360 @@ A breakdown of the flags being set:
   }
 #+end_src
 
-**** Share configuration between nodes
+**** Setup home-manager base
 :PROPERTIES:
-:CUSTOM_ID: h:5c3027b4-ba66-445e-9c5f-c27e332c90e5
+:CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
 :END:
 
-#+begin_src nix-ts :tangle modules/nixos/common/nodes.nix
-  # adapted from https://github.com/oddlama/nix-config/blob/main/modules/distributed-config.nix
-  { config, lib, outputs, ... }:
-  let
-    nodeName = config.node.name;
-    mkForwardedOption =
-      path:
-      lib.mkOption {
-        type = lib.mkOptionType {
-          name = "Same type that the receiving option `${lib.concatStringsSep "." path}` normally accepts.";
-          merge =
-            _loc: defs:
-            builtins.filter (x: builtins.isAttrs x -> ((x._type or "") != "__distributed_config_empty")) (
-              map (x: x.value) defs
-            );
-        };
-        default = {
-          _type = "__distributed_config_empty";
-        };
-        description = ''
-          Anything specified here will be forwarded to `${lib.concatStringsSep "." path}`
-          on the given node. Forwarding happens as-is to the raw values,
-          so validity can only be checked on the receiving node.
-        '';
-      };
+We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
-    forwardedOptions = [
-      [
-        "services"
-        "nginx"
-        "upstreams"
-      ]
-      [
-        "services"
-        "nginx"
-        "virtualHosts"
-      ]
-    ];
-
-    attrsForEachOption =
-      f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
-  in
+#+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
+  { inputs, config, lib, outputs, globals, nodes, ... }:
   {
-    options.nodes = lib.mkOption {
-      description = "Options forwarded to the given node.";
-      default = { };
-      type = lib.types.attrsOf (
-        lib.types.submodule {
-          options = attrsForEachOption mkForwardedOption;
-        }
-      );
-    };
 
-    config =
-      let
-        getConfig =
-          path: otherNode:
-          let
-            cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
-          in
-          lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
-        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
-      in
-      attrsForEachOption mergeConfigFromOthers;
+    options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
+    config = lib.mkIf config.swarselsystems.modules.home-manager {
+      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        verbose = true;
+        sharedModules = [
+          inputs.nix-index-database.hmModules.nix-index
+          inputs.sops-nix.homeManagerModules.sops
+          {
+            home.stateVersion = lib.mkDefault config.system.stateVersion;
+          }
+        ];
+        extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
+      };
+    };
   }
 #+end_src
 
-**** Global options
+**** User setup, Make users non-mutable
 :PROPERTIES:
-:CUSTOM_ID: h:85c9b83f-40c3-4558-bb28-a37b6f8597b9
+:CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
 :END:
 
-#+begin_src nix-ts :tangle modules/nixos/common/globals.nix
-  { lib, options, ... }:
+This ensures that all user-configuration happens here in the config file.
+In case of using a fully setup system, this makes also sure that no further user level modifications can be made using CLI utilities (e.g. usermod etc.). Everything must be defined in the flake.
+
+For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
+
+#+begin_src nix-ts :tangle modules/nixos/common/users.nix
+  { self, pkgs, config, lib, ... }:
   let
-    inherit (lib)
-      mkOption
-      types
-      ;
+    sopsFile = self + /secrets/general/secrets.yaml;
   in
   {
-    options = {
-      globals = mkOption {
-        default = { };
-        type = types.submodule {
-          options = {
-            user = {
-              name = mkOption {
-                type = types.str;
-              };
-            };
+    options.swarselsystems.modules.users = lib.mkEnableOption "user config";
+    config = lib.mkIf config.swarselsystems.modules.users {
+      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
-
-            services = mkOption {
-              type = types.attrsOf (
-                types.submodule {
-                  options = {
-                    domain = mkOption {
-                      type = types.str;
-                    };
-                  };
-                }
-              );
-            };
-
-            domains = {
-              main = mkOption {
-                type = types.str;
-              };
-            };
-          };
+      users = {
+        mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
+        users."${config.swarselsystems.mainUser}" = {
+          isNormalUser = true;
+          description = "Leon S";
+          password = lib.mkIf config.swarselsystems.initialSetup "setup";
+          hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
+          extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+          packages = with pkgs; [ ];
         };
-      };
-
-      _globalsDefs = mkOption {
-        type = types.unspecified;
-        default = options.globals.definitions;
-        readOnly = true;
-        internal = true;
       };
     };
   }
+#+end_src
+
+**** Setup login keymap
+:PROPERTIES:
+:CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
+:END:
+
+Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
+
+#+begin_src nix-ts :tangle modules/nixos/common/xserver.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
+    config = lib.mkIf config.swarselsystems.modules.packages {
+      services.xserver = {
+        xkb = {
+          layout = "us";
+          variant = "altgr-intl";
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Time, locale settings
+:PROPERTIES:
+:CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
+:END:
+
+Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
+
+#+begin_src nix-ts :tangle modules/nixos/common/time.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.time = lib.mkEnableOption "time config";
+    config = lib.mkIf config.swarselsystems.modules.time {
+      time = {
+        timeZone = "Europe/Vienna";
+        # hardwareClockInLocalTime = true;
+      };
+
+      i18n = {
+        defaultLocale = "en_US.UTF-8";
+        extraLocaleSettings = {
+          LC_ADDRESS = "de_AT.UTF-8";
+          LC_IDENTIFICATION = "de_AT.UTF-8";
+          LC_MEASUREMENT = "de_AT.UTF-8";
+          LC_MONETARY = "de_AT.UTF-8";
+          LC_NAME = "de_AT.UTF-8";
+          LC_NUMERIC = "de_AT.UTF-8";
+          LC_PAPER = "de_AT.UTF-8";
+          LC_TELEPHONE = "de_AT.UTF-8";
+          LC_TIME = "de_AT.UTF-8";
+        };
+      };
+    };
+  }
+#+end_src
+
+**** PII management
+:PROPERTIES:
+:CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/common/pii.nix
+  # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
+  { config, inputs, lib, ... }:
+  let
+
+    # If the given expression is a bare set, it will be wrapped in a function,
+    # so that the imported file can always be applied to the inputs, similar to
+    # how modules can be functions or sets.
+    constSet = x: if builtins.isAttrs x then (_: x) else x;
+
+    # Try to access the extra builtin we loaded via nix-plugins.
+    # Throw an error if that doesn't exist.
+    sopsImportEncrypted =
+      assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
+        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `<flakeRoot>/nix/extra-builtins.nix` ?";
+      builtins.extraBuiltins.sopsImportEncrypted;
+
+    # This "imports" an encrypted .nix.age file by evaluating the decrypted content.
+    importEncrypted =
+      path:
+      constSet (
+        if builtins.pathExists path then
+          sopsImportEncrypted path
+        else
+          { }
+      );
+  in
+  {
+    options = {
+      repo = {
+        secretFiles = lib.mkOption {
+          default = { };
+          type = lib.types.attrsOf lib.types.path;
+          example = lib.literalExpression "{ local = ./pii.nix.enc; }";
+          description = ''
+          This file manages the origin for this machine's repository-secrets. Anything that is
+          technically not a secret in the classical sense (i.e. that it has to be protected
+          after it has been deployed), but something you want to keep secret from the public;
+          Anything that you wouldn't want people to see on GitHub, but that can live unencrypted
+          on your own devices. Consider it a more ergonomic nix alternative to using git-crypt.
+
+          All of these secrets may (and probably will be) put into the world-readable nix-store
+          on the build and target hosts. You'll most likely want to store personally identifiable
+          information here, such as:
+            - MAC Addreses
+            - Static IP addresses
+            - Your full name (when configuring your users)
+            - Your postal address (when configuring e.g. home-assistant)
+            - ...
+
+          Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
+          the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
+        '';
+        };
+
+        secrets = lib.mkOption {
+          readOnly = true;
+          default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
+          type = lib.types.unspecified;
+          description = "Exposes the loaded repo secrets. This option is read-only.";
+        };
+      };
+      swarselsystems.modules.pii = lib.mkEnableOption "enable pii management";
+    };
+    config = lib.mkIf config.swarselsystems.modules.pii {
+      repo.secretFiles =
+        let
+          local = config.node.secretsDir + "/pii.nix.enc";
+        in
+          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
+           common = ../../../secrets/repo/pii.nix.enc;
+        };
+    };
+    }
+
+#+end_src
+
+**** Lanzaboote (secure boot)
+:PROPERTIES:
+:CUSTOM_ID: h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377
+:END:
+
+This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
+
+#+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
+  { lib, config, ... }:
+  {
+    options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
+    config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+      boot = {
+        loader = {
+          efi.canTouchEfiVariables = true;
+          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+        };
+        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+          enable = true;
+          pkiBundle = "/var/lib/sbctl";
+          configurationLimit = 6;
+        };
+      };
+    };
+  }
+#+end_src
+
+**** Impermanence
+:PROPERTIES:
+:CUSTOM_ID: h:e7668594-fa8b-4d36-a695-a58222478988
+:END:
+
+This is where the impermanence magic happens. When this is enabled, the root directory is rolled back to a blanket state on each reboot.
+
+Normally, doing that also resets the lecture that happens on the first use of =sudo=, so we disable that at this point. Also, here we can set files to be persisted. Do note that you should still pay attention to files that need sudo access, as these need to be copied manually.
+
+#+begin_src nix-ts :tangle modules/nixos/common/impermanence.nix
+  { config, lib, ... }:
+  let
+    mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
+    inherit (config.swarselsystems) isImpermanence isCrypted;
+  in
+  {
+    options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
+    config = lib.mkIf config.swarselsystems.modules.impermanence {
+
+
+      security.sudo.extraConfig = lib.mkIf isImpermanence ''
+        # rollback results in sudo lectures after each reboot
+        Defaults lecture = never
+      '';
+
+      # This script does the actual wipe of the system
+      # So if it doesn't run, the btrfs system effectively acts like a normal system
+      # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
+      boot.tmp.useTmpfs = lib.mkIf (!isImpermanence) true;
+      boot.initrd.systemd = lib.mkIf isImpermanence {
+        enable = true;
+        services.rollback = {
+          description = "Rollback BTRFS root subvolume to a pristine state";
+          wantedBy = [ "initrd.target" ];
+          # make sure it's done after encryption
+          # i.e. LUKS/TPM process
+          after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
+          requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
+          # mount the root fs before clearing
+          before = [ "sysroot.mount" ];
+          unitConfig.DefaultDependencies = "no";
+          serviceConfig.Type = "oneshot";
+          script = ''
+            mkdir -p /mnt
+
+            # We first mount the btrfs root to /mnt
+            # so we can manipulate btrfs subvolumes.
+            mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
+            btrfs subvolume list -o /mnt/root
+
+            # While we're tempted to just delete /root and create
+            # a new snapshot from /root-blank, /root is already
+            # populated at this point with a number of subvolumes,
+            # which makes `btrfs subvolume delete` fail.
+            # So, we remove them first.
+            #
+            # /root contains subvolumes:
+            # - /root/var/lib/portables
+            # - /root/var/lib/machines
+
+            btrfs subvolume list -o /mnt/root |
+            cut -f9 -d' ' |
+            while read subvolume; do
+              echo "deleting /$subvolume subvolume..."
+              btrfs subvolume delete "/mnt/$subvolume"
+            done &&
+            echo "deleting /root subvolume..." &&
+            btrfs subvolume delete /mnt/root
+
+            echo "restoring blank /root subvolume..."
+            btrfs subvolume snapshot /mnt/root-blank /mnt/root
+
+            # Once we're done rolling back to a blank snapshot,
+            # we can unmount /mnt and continue on the boot process.
+            umount /mnt
+          '';
+        };
+      };
+
+
+      environment.persistence."/persist" = lib.mkIf isImpermanence {
+        hideMounts = true;
+        directories =
+          [
+            "/etc/nix"
+            "/etc/NetworkManager/system-connections"
+            "/var/lib/nixos"
+            "/var/tmp"
+            {
+              directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+              mode = "1777";
+            }
+            # "/etc/secureboot"
+          ];
+
+        files = [
+          "/etc/ssh/ssh_host_ed25519_key"
+          "/etc/ssh/ssh_host_ed25519_key.pub"
+          "/etc/machine-id"
+        ];
+      };
+    };
+
+  }
+#+end_src
+
+*** Client
+**** Imports
+:PROPERTIES:
+:CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
+:END:
+
+This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
+
+#+begin_src nix-ts :tangle modules/nixos/client/default.nix
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "modules/nixos/client";
+  in
+  {
+    imports = lib.swarselsystems.mkImports importNames "modules/nixos/client";
+  }
+
 #+end_src
 
 **** System Packages
@@ -6322,7 +6645,7 @@ A breakdown of the flags being set:
 
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
-#+begin_src nix-ts :tangle modules/nixos/common/packages.nix
+#+begin_src nix-ts :tangle modules/nixos/client/packages.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
@@ -6409,112 +6732,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
   }
 #+end_src
 
-**** Setup home-manager base
-:PROPERTIES:
-:CUSTOM_ID: h:7f6d6908-4d02-4907-9c70-f802f4358520
-:END:
-
-We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
-
-#+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { inputs, config, lib, outputs, globals, nodes, ... }:
-  {
-
-    options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
-    config = lib.mkIf config.swarselsystems.modules.home-manager {
-      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-        verbose = true;
-        sharedModules = [
-          inputs.nix-index-database.hmModules.nix-index
-          inputs.sops-nix.homeManagerModules.sops
-          {
-            home.stateVersion = lib.mkDefault config.system.stateVersion;
-          }
-        ];
-        extraSpecialArgs = { inherit (inputs) self; inherit inputs outputs globals nodes; };
-      };
-    };
-  }
-#+end_src
-
-**** Setup home-manager specialArgs
-:PROPERTIES:
-:CUSTOM_ID: h:41d1b7c6-52bf-45f3-9d83-610b469dffc0
-:END:
-
-This sets up the =nix-secrets= extraSpeciaArgs. This should not be present on the =chaostheatre= configuration, which is why I split this section into its own file, which makes removal easier when setting that system up.
-
-#+begin_src nix-ts :tangle modules/nixos/common/home-manager-extra.nix
-  { inputs, config, lib, ... }:
-  {
-    options.swarselsystems.modules.home-managerExtra = lib.mkEnableOption "home-manager extras for non-chaostheatre";
-    config = lib.mkIf config.swarselsystems.modules.home-managerExtra {
-      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-        extraSpecialArgs = { inherit (inputs) nix-secrets nixgl; };
-      };
-    };
-  }
-#+end_src
-
-**** Setup login keymap
-:PROPERTIES:
-:CUSTOM_ID: h:7248f338-8cad-4443-9060-deae7955b26f
-:END:
-
-Next, we setup the keymap in case we are not in a graphical session. At this point, I always resort to us/altgr-intl, as it is comfortable to use and I do not write too much German anyways.
-
-#+begin_src nix-ts :tangle modules/nixos/common/xserver.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
-    config = lib.mkIf config.swarselsystems.modules.packages {
-      services.xserver = {
-        xkb = {
-          layout = "us";
-          variant = "altgr-intl";
-        };
-      };
-    };
-  }
-#+end_src
-
-**** User setup, Make users non-mutable
-:PROPERTIES:
-:CUSTOM_ID: h:48959890-fbc7-4d28-b33c-f33e028ab473
-:END:
-
-This ensures that all user-configuration happens here in the config file.
-In case of using a fully setup system, this makes also sure that no further user level modifications can be made using CLI utilities (e.g. usermod etc.). Everything must be defined in the flake.
-
-For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
-
-#+begin_src nix-ts :tangle modules/nixos/common/users.nix
-  { self, pkgs, config, lib, ... }:
-  let
-    sopsFile = self + /secrets/general/secrets.yaml;
-  in
-  {
-    options.swarselsystems.modules.users = lib.mkEnableOption "user config";
-    config = lib.mkIf config.swarselsystems.modules.users {
-      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
-
-      users = {
-        mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
-        users."${config.swarselsystems.mainUser}" = {
-          isNormalUser = true;
-          description = "Leon S";
-          password = lib.mkIf config.swarselsystems.initialSetup "setup";
-          hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-          extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
-          packages = with pkgs; [ ];
-        };
-      };
-    };
-  }
-#+end_src
-
 **** Environment setup
 :PROPERTIES:
 :CUSTOM_ID: h:f4006367-0965-4b4f-a3b0-45f63b07d2b8
@@ -6522,7 +6739,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
 
 Next, we will setup some environment variables that need to be set on the system-side. We apply some compatibility options for chromium apps on wayland, enable the wordlist and make metadata reading possible for my file explorer (nautilus).
 
-#+begin_src nix-ts :tangle modules/nixos/common/env.nix
+#+begin_src nix-ts :tangle modules/nixos/client/env.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
@@ -6551,7 +6768,7 @@ Next, we will setup some environment variables that need to be set on the system
 
 Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
 
-#+begin_src nix-ts :tangle modules/nixos/common/polkit.nix
+#+begin_src nix-ts :tangle modules/nixos/client/polkit.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.security = lib.mkEnableOption "security config";
@@ -6583,7 +6800,7 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 
 There is a persistent bug over Linux kernels that makes the user wait 1m30s on system shutdown due to the reason =a stop job is running for session 1 of user ...=. I do not want to wait that long and am confident no important data is lost by doing this.
 
-#+begin_src nix-ts :tangle modules/nixos/common/systemd.nix
+#+begin_src nix-ts :tangle modules/nixos/client/systemd.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
@@ -6604,7 +6821,7 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 
 Enable OpenGL, Sound, Bluetooth and various drivers.
 
-#+begin_src nix-ts :tangle modules/nixos/common/hardware.nix
+#+begin_src nix-ts :tangle modules/nixos/client/hardware.nix
   { pkgs, config, lib, ... }:
   {
 
@@ -6663,7 +6880,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
 This is only used on systems not running Pipewire.
 
 
-#+begin_src nix-ts :tangle modules/nixos/common/pulseaudio.nix
+#+begin_src nix-ts :tangle modules/nixos/client/pulseaudio.nix
   { config, pkgs, lib, ... }: {
 
     options.swarselsystems.modules.pulseaudio = lib.mkEnableOption "pulseaudio config";
@@ -6683,7 +6900,7 @@ This is only used on systems not running Pipewire.
 
 Pipewire handles communication on Wayland. This enables several sound tools as well as screen sharing in combinaton with =xdg-desktop-portal-wlr=.
 
-#+begin_src nix-ts :tangle modules/nixos/common/pipewire.nix
+#+begin_src nix-ts :tangle modules/nixos/client/pipewire.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
@@ -6712,15 +6929,74 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 
 Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
-#+begin_src nix-ts :tangle modules/nixos/common/network.nix
-  { lib, config, ... }:
+#+begin_src nix-ts :tangle modules/nixos/client/network.nix
+  { self, lib, config, ... }:
+  let
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    inherit (config.swarselsystems) mainUser;
+    iwd = config.networking.networkmanager.wifi.backend == "iwd";
+  in
   {
     options.swarselsystems = {
       modules.network = lib.mkEnableOption "network config";
       firewall = lib.swarselsystems.mkTrueOption;
     };
     config = lib.mkIf config.swarselsystems.modules.network {
+
+      sops = {
+        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+          ernest = { };
+          frauns = { };
+          hotspot = { };
+          eduid = { };
+          edupass = { };
+          handyhotspot = { };
+          vpnuser = { };
+          vpnpass = { };
+          wireguardpriv = { };
+          wireguardpub = { };
+          wireguardendpoint = { };
+          stashuser = { };
+          stashpass = { };
+          githubforgeuser = { };
+          githubforgepass = { };
+          gitlabforgeuser = { };
+          gitlabforgepass = { };
+          "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+          "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+        };
+        templates = lib.mkIf (!config.swarselsystems.isPublic) {
+          "network-manager.env".content = ''
+            ERNEST=${config.sops.placeholder.ernest}
+            FRAUNS=${config.sops.placeholder.frauns}
+            HOTSPOT=${config.sops.placeholder.hotspot}
+            EDUID=${config.sops.placeholder.eduid}
+            EDUPASS=${config.sops.placeholder.edupass}
+            HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+            VPNUSER=${config.sops.placeholder.vpnuser}
+            VPNPASS=${config.sops.placeholder.vpnpass}
+            WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
+            WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
+            WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
+          '';
+        };
+      };
+
       networking = {
+        wireless.iwd = {
+          enable = true;
+          settings = {
+            IPv6 = {
+              Enabled = true;
+            };
+            Settings = {
+              AutoConnect = true;
+            };
+            DriverQuirks = {
+              UseDefaultInterface = true;
+            };
+          };
+        };
         nftables.enable = lib.mkDefault true;
         enableIPv6 = lib.mkDefault true;
         firewall = {
@@ -6791,10 +7067,11 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
               eduroam = {
                 "802-1x" = {
-                  eap = "ttls;";
+                  eap = if (!iwd) then "ttls;" else "peap;";
                   identity = "$EDUID";
                   password = "$EDUPASS";
                   phase2-auth = "mschapv2";
+                  anonymous-identity = lib.mkIf iwd "anonymous@student.tuwien.ac.at";
                 };
                 connection = {
                   id = "eduroam";
@@ -6967,88 +7244,6 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
   }
 #+end_src
 
-**** Time, locale settings
-:PROPERTIES:
-:CUSTOM_ID: h:852d59ab-63c3-4831-993d-b5e23b877796
-:END:
-
-Setup timezone and locale. I want to use the US layout, but have the rest adapted to my country and timezone. Also, there is an issue with running Windows/Linux dualboot on the same machine where the hardware clock desyncs between the two OS'es. We fix that bug here as well.
-
-#+begin_src nix-ts :tangle modules/nixos/common/time.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems.modules.time = lib.mkEnableOption "time config";
-    config = lib.mkIf config.swarselsystems.modules.time {
-      time = {
-        timeZone = "Europe/Vienna";
-        # hardwareClockInLocalTime = true;
-      };
-
-      i18n = {
-        defaultLocale = "en_US.UTF-8";
-        extraLocaleSettings = {
-          LC_ADDRESS = "de_AT.UTF-8";
-          LC_IDENTIFICATION = "de_AT.UTF-8";
-          LC_MEASUREMENT = "de_AT.UTF-8";
-          LC_MONETARY = "de_AT.UTF-8";
-          LC_NAME = "de_AT.UTF-8";
-          LC_NUMERIC = "de_AT.UTF-8";
-          LC_PAPER = "de_AT.UTF-8";
-          LC_TELEPHONE = "de_AT.UTF-8";
-          LC_TIME = "de_AT.UTF-8";
-        };
-      };
-    };
-  }
-#+end_src
-
-**** Meta options
-:PROPERTIES:
-:CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
-:END:
-
-
-#+begin_src nix-ts :tangle modules/nixos/common/meta.nix
-  { lib, ... }:
-  {
-    options = {
-      node = {
-        secretsDir = lib.mkOption {
-          description = "Path to the secrets directory for this node.";
-          type = lib.types.path;
-          default = ./.;
-        };
-        name = lib.mkOption {
-          description = "Node Name.";
-          type = lib.types.str;
-        };
-      };
-    };
-  }
-#+end_src
-
-**** Topology
-:PROPERTIES:
-:CUSTOM_ID: h:e2e7444b-cb85-4719-b154-e5f37274d02d
-:END:
-
-#+begin_src nix-ts :tangle modules/nixos/common/topology.nix
-  { self, lib, config, ... }:
-  {
-    options.swarselsystems.info = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-    };
-    config.topology = {
-      id = config.node.name;
-      self = {
-        hardware.info = config.swarselsystems.info;
-        icon = lib.mkIf config.swarselsystems.isLaptop "devices.laptop";
-      };
-    };
-  }
-#+end_src
-
 **** sops
 :PROPERTIES:
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
@@ -7061,143 +7256,23 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
-#+begin_src nix-ts :tangle modules/nixos/common/sops.nix
-  { self, config, lib, ... }:
-  let
-    certsSopsFile = self + /secrets/certs/secrets.yaml;
-    inherit (config.swarselsystems) mainUser homeDir;
-  in
+#+begin_src nix-ts :tangle modules/nixos/client/sops.nix
+  { config, lib, ... }:
   {
-    options.swarselsystems.modules.commonSops = lib.mkEnableOption "sops config";
-    config = lib.mkIf config.swarselsystems.modules.commonSops {
+    options.swarselsystems.modules.sops = lib.mkEnableOption "sops config";
+    config = lib.mkIf config.swarselsystems.modules.sops {
       sops = {
 
-        age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${homeDir}/.ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-        defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+        # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+        age.sshKeyPaths = [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+        # defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+        defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
 
         validateSopsFiles = false;
 
-        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-          ernest = { };
-          frauns = { };
-          hotspot = { };
-          eduid = { };
-          edupass = { };
-          handyhotspot = { };
-          vpnuser = { };
-          vpnpass = { };
-          wireguardpriv = { };
-          wireguardpub = { };
-          wireguardendpoint = { };
-          stashuser = { };
-          stashpass = { };
-          githubforgeuser = { };
-          githubforgepass = { };
-          gitlabforgeuser = { };
-          gitlabforgepass = { };
-          "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-          "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-        };
-        templates = lib.mkIf (!config.swarselsystems.isPublic) {
-          "network-manager.env".content = ''
-            ERNEST=${config.sops.placeholder.ernest}
-            FRAUNS=${config.sops.placeholder.frauns}
-            HOTSPOT=${config.sops.placeholder.hotspot}
-            EDUID=${config.sops.placeholder.eduid}
-            EDUPASS=${config.sops.placeholder.edupass}
-            HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-            VPNUSER=${config.sops.placeholder.vpnuser}
-            VPNPASS=${config.sops.placeholder.vpnpass}
-            WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
-            WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
-            WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
-          '';
-        };
       };
     };
   }
-#+end_src
-
-**** PII management
-:PROPERTIES:
-:CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
-:END:
-
- #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
-  # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, ... }:
-  let
-
-    # If the given expression is a bare set, it will be wrapped in a function,
-    # so that the imported file can always be applied to the inputs, similar to
-    # how modules can be functions or sets.
-    constSet = x: if builtins.isAttrs x then (_: x) else x;
-
-    # Try to access the extra builtin we loaded via nix-plugins.
-    # Throw an error if that doesn't exist.
-    sopsImportEncrypted =
-      assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
-        "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `<flakeRoot>/nix/extra-builtins.nix` ?";
-      builtins.extraBuiltins.sopsImportEncrypted;
-
-    # This "imports" an encrypted .nix.age file by evaluating the decrypted content.
-    importEncrypted =
-      path:
-      constSet (
-        if builtins.pathExists path then
-          sopsImportEncrypted path
-        else
-          { }
-      );
-  in
-  {
-    options = {
-      repo = {
-        secretFiles = lib.mkOption {
-          default = { };
-          type = lib.types.attrsOf lib.types.path;
-          example = lib.literalExpression "{ local = ./pii.nix.enc; }";
-          description = ''
-          This file manages the origin for this machine's repository-secrets. Anything that is
-          technically not a secret in the classical sense (i.e. that it has to be protected
-          after it has been deployed), but something you want to keep secret from the public;
-          Anything that you wouldn't want people to see on GitHub, but that can live unencrypted
-          on your own devices. Consider it a more ergonomic nix alternative to using git-crypt.
-
-          All of these secrets may (and probably will be) put into the world-readable nix-store
-          on the build and target hosts. You'll most likely want to store personally identifiable
-          information here, such as:
-            - MAC Addreses
-            - Static IP addresses
-            - Your full name (when configuring your users)
-            - Your postal address (when configuring e.g. home-assistant)
-            - ...
-
-          Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
-          the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
-        '';
-        };
-
-        secrets = lib.mkOption {
-          readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
-          type = lib.types.unspecified;
-          description = "Exposes the loaded repo secrets. This option is read-only.";
-        };
-      };
-      swarselsystems.modules.pii = lib.mkEnableOption "enable pii management";
-    };
-    config = lib.mkIf config.swarselsystems.modules.pii {
-      repo.secretFiles =
-        let
-          local = config.node.secretsDir + "/pii.nix.enc";
-        in
-          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
-           common = ../../../secrets/repo/pii.nix.enc;
-        };
-    };
-    }
-
 #+end_src
 
 **** Theme (stylix)
@@ -7208,7 +7283,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as well. However, I think that looks horrible.
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
-#+begin_src nix-ts :noweb yes :tangle modules/nixos/common/stylix.nix
+#+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
@@ -7235,7 +7310,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 
 Some programs profit from being installed through dedicated NixOS settings on system-level; these go here. Notably the zsh setup goes here and cannot be deleted under any circumstances.
 
-#+begin_src nix-ts :tangle modules/nixos/common/programs.nix
+#+begin_src nix-ts :tangle modules/nixos/client/programs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.programs = lib.mkEnableOption "small program modules config";
@@ -7255,7 +7330,7 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 :END:
 Here I disable global completion to prevent redundant compinit calls and cache invalidation that slow down shell startup (enabled on the home-manager side).
 
-#+begin_src nix-ts :tangle modules/nixos/common/zsh.nix
+#+begin_src nix-ts :tangle modules/nixos/client/zsh.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
@@ -7275,7 +7350,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 :CUSTOM_ID: h:1e6d3d56-e415-43a2-8e80-3bad8062ecf8
 :END:
 
-#+begin_src nix-ts :tangle modules/nixos/common/syncthing.nix
+#+begin_src nix-ts :tangle modules/nixos/client/syncthing.nix
   { lib, config, pkgs, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
@@ -7352,7 +7427,7 @@ Setting up some hardware services as well as keyboard related settings. Here we 
 
 Enables the blueman service including the nice system tray icon.
 
-#+begin_src nix-ts :tangle modules/nixos/common/blueman.nix
+#+begin_src nix-ts :tangle modules/nixos/client/blueman.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.blueman = lib.mkEnableOption "blueman config";
@@ -7374,7 +7449,7 @@ This allows me to use my big scanner/printer's scanning function over the networ
 This also allows me to use my big scanner/printer's printing function over the network. Most of the settings are driver related.
 Avahi is the service used for the network discovery.
 
-#+begin_src nix-ts :tangle modules/nixos/common/networkdevices.nix
+#+begin_src nix-ts :tangle modules/nixos/client/networkdevices.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
@@ -7417,7 +7492,7 @@ Avahi is the service used for the network discovery.
 
 This is being set to allow myself to use all functions of nautilus in NixOS
 
-#+begin_src nix-ts :tangle modules/nixos/common/gvfs.nix
+#+begin_src nix-ts :tangle modules/nixos/client/gvfs.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
@@ -7434,7 +7509,7 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 
 This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if pressed shortly, and =CTRL= if being held.
 
-#+begin_src nix-ts :tangle modules/nixos/common/interceptiontools.nix
+#+begin_src nix-ts :tangle modules/nixos/client/interceptiontools.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.interceptionTools = lib.mkEnableOption "interception tools config";
@@ -7482,7 +7557,7 @@ This enables power profile management. The available modes are:
 
 Most of the time I am using =power-saver=, however, it is good to be able to choose.
 
-#+begin_src nix-ts :tangle modules/nixos/common/power-profiles-daemon.nix
+#+begin_src nix-ts :tangle modules/nixos/client/power-profiles-daemon.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
@@ -7497,7 +7572,7 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
 :CUSTOM_ID: h:5db15758-17d8-4bde-811d-d11ccdd3f3d3
 :END:
 
-#+begin_src nix-ts :tangle modules/nixos/common/swayosd.nix
+#+begin_src nix-ts :tangle modules/nixos/client/swayosd.nix
   { lib, pkgs, config, ... }:
   {
     options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
@@ -7539,7 +7614,7 @@ Many guides state that it is needed to enable =pcscd=  to use the smartcard mode
 
 Also, since I use a GPG key in sops, it seems that scdaemon creates an instance at boot which sometimes hogs the Yubikey, which leads to significant delays after e.g. locking the screen and unplugging the Yubikey. Since I do not need the GPG key for the actual sops secrets (I use machine age keys instead), I kill that process.
 
-#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-yubikey.nix
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-yubikey.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
@@ -7565,7 +7640,7 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
 
 This performs the necessary configuration to support this hardware.
 
-#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-ledger.nix
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-ledger.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.ledger = lib.mkEnableOption "ledger config";
@@ -7587,7 +7662,7 @@ This performs the necessary configuration to support this hardware.
 
 This loads some udev rules that I need for my split keyboards.
 
-#+begin_src nix-ts :tangle modules/nixos/common/hardwarecompatibility-keyboards.nix
+#+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-keyboards.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.keyboards = lib.mkEnableOption "keyboards config";
@@ -7608,7 +7683,7 @@ This loads some udev rules that I need for my split keyboards.
 
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the *system specific* settings, make sure to update it there
 
-#+begin_src nix-ts :tangle modules/nixos/common/login.nix
+#+begin_src nix-ts :tangle modules/nixos/client/login.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.login = lib.mkEnableOption "login config";
@@ -7645,7 +7720,7 @@ Only some binaries that touch system settings might still not work, apart from t
 
 When a program does not work, start with =nix-ldd <program>=. This will tell you which library is missing. Afterwards, continue with =nix-locate <program>= to find which packages provide that library. Add it to libraries below and rebuild. After a reboot, it will be visible using =nix-ldd=. It can also be useful to take a look at =ldd= to see which libraries are needed in general.
 
-#+begin_src nix-ts :tangle modules/nixos/common/nix-ld.nix
+#+begin_src nix-ts :tangle modules/nixos/client/nix-ld.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.nix-ld = lib.mkEnableOption "nix-ld config";
@@ -7761,122 +7836,6 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
   }
 #+end_src
 
-**** Impermanence
-:PROPERTIES:
-:CUSTOM_ID: h:e7668594-fa8b-4d36-a695-a58222478988
-:END:
-
-This is where the impermanence magic happens. When this is enabled, the root directory is rolled back to a blanket state on each reboot.
-
-Normally, doing that also resets the lecture that happens on the first use of =sudo=, so we disable that at this point. Also, here we can set files to be persisted. Do note that you should still pay attention to files that need sudo access, as these need to be copied manually.
-
-#+begin_src nix-ts :tangle modules/nixos/common/impermanence.nix
-  { config, lib, ... }:
-  let
-    mapperTarget = lib.swarselsystems.mkIfElse config.swarselsystems.isCrypted "/dev/mapper/cryptroot" "/dev/disk/by-label/nixos";
-    inherit (config.swarselsystems) isImpermanence isCrypted;
-  in
-  {
-    options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
-    config = lib.mkIf config.swarselsystems.modules.impermanence {
-
-      security.sudo.extraConfig = lib.mkIf isImpermanence ''
-        # rollback results in sudo lectures after each reboot
-        Defaults lecture = never
-      '';
-
-      # This script does the actual wipe of the system
-      # So if it doesn't run, the btrfs system effectively acts like a normal system
-      # Taken from https://github.com/NotAShelf/nyx/blob/2a8273ed3f11a4b4ca027a68405d9eb35eba567b/modules/core/common/system/impermanence/default.nix
-
-      boot.initrd.systemd.enable = lib.mkIf isImpermanence true;
-
-      boot.initrd.systemd.services.rollback = lib.mkIf isImpermanence {
-        description = "Rollback BTRFS root subvolume to a pristine state";
-        wantedBy = [ "initrd.target" ];
-        # make sure it's done after encryption
-        # i.e. LUKS/TPM process
-        after = lib.swarselsystems.mkIfElseList isCrypted [ "systemd-cryptsetup@cryptroot.service" ] [ "dev-disk-by\\x2dlabel-nixos.device" ];
-        requires = lib.mkIf (!isCrypted) [ "dev-disk-by\\x2dlabel-nixos.device" ];
-        # mount the root fs before clearing
-        before = [ "sysroot.mount" ];
-        unitConfig.DefaultDependencies = "no";
-        serviceConfig.Type = "oneshot";
-        script = ''
-          mkdir -p /mnt
-
-          # We first mount the btrfs root to /mnt
-          # so we can manipulate btrfs subvolumes.
-          mount -o subvolid=5 -t btrfs ${mapperTarget} /mnt
-          btrfs subvolume list -o /mnt/root
-
-          # While we're tempted to just delete /root and create
-          # a new snapshot from /root-blank, /root is already
-          # populated at this point with a number of subvolumes,
-          # which makes `btrfs subvolume delete` fail.
-          # So, we remove them first.
-          #
-          # /root contains subvolumes:
-          # - /root/var/lib/portables
-          # - /root/var/lib/machines
-
-          btrfs subvolume list -o /mnt/root |
-          cut -f9 -d' ' |
-          while read subvolume; do
-            echo "deleting /$subvolume subvolume..."
-            btrfs subvolume delete "/mnt/$subvolume"
-          done &&
-          echo "deleting /root subvolume..." &&
-          btrfs subvolume delete /mnt/root
-
-          echo "restoring blank /root subvolume..."
-          btrfs subvolume snapshot /mnt/root-blank /mnt/root
-
-          # Once we're done rolling back to a blank snapshot,
-          # we can unmount /mnt and continue on the boot process.
-          umount /mnt
-        '';
-      };
-
-
-      environment.persistence."/persist" = lib.mkIf isImpermanence {
-        hideMounts = true;
-        directories =
-          [
-            "/etc/nix"
-            "/etc/NetworkManager/system-connections"
-            "/var/lib/nixos"
-            "/var/tmp"
-            {
-              directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
-              mode = "1777";
-            }
-            # "/etc/secureboot"
-          ];
-
-        files = [
-          "/etc/ssh/ssh_host_ed25519_key"
-          "/etc/ssh/ssh_host_ed25519_key.pub"
-          "/etc/machine-id"
-        ];
-      };
-    };
-
-  }
-#+end_src
-
-**** Mount /tmp inside tmpfs
-
-#+begin_src nix-ts :tangle modules/nixos/common/tmp.nix
-  { config, lib, ... }:
-  {
-    options.swarselsystems.modules.tmp = lib.mkEnableOption "tmp dir config";
-    config = lib.mkIf config.swarselsystems.modules.tmp {
-      boot.tmp.useTmpfs = !config.swarselsystems.modules.impermanence true;
-    };
-  }
-#+end_src
-
 **** Summary of nixos-rebuild diff
 :PROPERTIES:
 :CUSTOM_ID: h:b751d77d-246c-4bd6-b689-3467d82bf9c3
@@ -7884,7 +7843,7 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 
 This snipped is added to the activation script that is run after every rebuild and shows what packages have been added and removed. This is actually not the optimal place to add that snipped, but the correct spot is in some perl file that I have not had the leisure to take a look at yet.
 
-#+begin_src nix-ts :tangle modules/nixos/common/nvd-rebuild.nix
+#+begin_src nix-ts :tangle modules/nixos/client/nvd-rebuild.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
@@ -7907,7 +7866,7 @@ This snipped is added to the activation script that is run after every rebuild a
 
 Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps the login information when logging out of the session as well.
 
-#+begin_src nix-ts :tangle modules/nixos/common/gnome-keyring.nix
+#+begin_src nix-ts :tangle modules/nixos/client/gnome-keyring.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
@@ -7928,7 +7887,7 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 
 This is used to better integrate Sway into the system on NixOS hosts. On the home-manager side, the =package= attribute will be =null= for such an host, using the systems derivation instead.
 
-#+begin_src nix-ts :tangle modules/nixos/common/sway.nix
+#+begin_src nix-ts :tangle modules/nixos/client/sway.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
@@ -7962,7 +7921,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
 
-#+begin_src nix-ts :tangle modules/nixos/common/xdg-portal.nix
+#+begin_src nix-ts :tangle modules/nixos/client/xdg-portal.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.xdg-portal = lib.mkEnableOption "xdg portal config";
@@ -7992,7 +7951,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 
 I am using distrobox to quickly circumvent isses that I cannot immediately solve on NixOS. It is always the goal to quickly get things working on NixOS, but this prevents me from getting completely stuck.
 
-#+begin_src nix-ts :tangle modules/nixos/common/distrobox.nix
+#+begin_src nix-ts :tangle modules/nixos/client/distrobox.nix
   { lib, config, pkgs, ... }:
   {
     options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
@@ -8017,7 +7976,7 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 :END:
 Adds the necessary tools to allow .appimage programs easily.
 
-#+begin_src nix-ts :tangle modules/nixos/common/appimage.nix
+#+begin_src nix-ts :tangle modules/nixos/client/appimage.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.appimage = lib.mkEnableOption "appimage config";
@@ -8038,7 +7997,7 @@ Adds the necessary tools to allow .appimage programs easily.
 
 This turns off the display when the lid is closed.
 
-#+begin_src nix-ts :tangle modules/nixos/common/lid.nix
+#+begin_src nix-ts :tangle modules/nixos/client/lid.nix
   { lib, config, ... }:
   {
     options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
@@ -8085,7 +8044,7 @@ This turns off the display when the lid is closed.
 
 Since I hide the waybar completely during normal operation, I run the risk of not noticing when my battery is about to run out. This module sends a notification when the battery level falls below 10%. Written by [[https://gist.github.com/cafkafk][cafkafk]].
 
-#+begin_src nix-ts :tangle modules/nixos/common/lowbattery.nix
+#+begin_src nix-ts :tangle modules/nixos/client/lowbattery.nix
   { pkgs, lib, config, ... }:
   {
     options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
@@ -8117,28 +8076,24 @@ Since I hide the waybar completely during normal operation, I run the risk of no
   }
 #+end_src
 
-**** Lanzaboote (secure boot)
+**** Auto-login
 :PROPERTIES:
-:CUSTOM_ID: h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377
+:CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
 :END:
 
-This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
+Auto login for the initial session.
 
-#+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
+#+begin_src nix-ts :tangle modules/nixos/client/autologin.nix
   { lib, config, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+  in
   {
-    options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
-    config = lib.mkIf config.swarselsystems.modules.lanzaboote {
-      boot = {
-        loader = {
-          efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
-        };
-        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
-          enable = true;
-          pkiBundle = "/var/lib/sbctl";
-          configurationLimit = 6;
-        };
+    options.swarselsystems.modules.autologin = lib.mkEnableOption "optional autologin settings";
+    config = lib.mkIf config.swarselsystems.modules.autologin {
+      services = {
+        getty.autologinUser = mainUser;
+        greetd.settings.initial_session.user = mainUser;
       };
     };
   }
@@ -8160,23 +8115,12 @@ Also, we disable the warnings that trigger when rebuilding with a dirty flake. A
 Also, the system state version is set here. No need to touch it.
 
 #+begin_src nix-ts :tangle modules/nixos/server/default.nix
-  { self, lib, ... }:
+  { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos/server";
-    modulesPath = "${self}/modules";
   in
   {
-    imports = lib.swarselsystems.mkImports importNames "modules/nixos/server" ++ [
-      "${modulesPath}/nixos/common/settings.nix"
-      "${modulesPath}/nixos/common/home-manager.nix"
-      "${modulesPath}/nixos/common/home-manager-extra.nix"
-      "${modulesPath}/nixos/common/xserver.nix"
-      "${modulesPath}/nixos/common/time.nix"
-      "${modulesPath}/nixos/common/users.nix"
-      "${modulesPath}/nixos/common/nix-ld.nix"
-      "${modulesPath}/nixos/common/sharedsetup.nix"
-      "${modulesPath}/home/common/sharedsetup.nix"
-    ];
+    imports = lib.swarselsystems.mkImports importNames "modules/nixos/server";
   }
 #+end_src
 
@@ -8249,25 +8193,6 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         sops
         swarsel-deploy
       ];
-    };
-  }
-#+end_src
-
-**** sops
-:PROPERTIES:
-:CUSTOM_ID: h:313f7940-e8bb-4b5d-97cb-e2fea4e665e4
-:END:
-
-#+begin_src nix-ts :tangle modules/nixos/server/sops.nix
-  { config, lib, ... }:
-  {
-    options.swarselsystems.modules.server.sops = lib.mkEnableOption "enable sops on server";
-    config = lib.mkIf config.swarselsystems.modules.server.sops {
-      sops = {
-        age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/sops" ];
-        defaultSopsFile = lib.mkDefault "${config.swarselsystems.flakePath}/secrets/winters/secrets.yaml";
-        validateSopsFiles = false;
-      };
     };
   }
 #+end_src
@@ -11854,20 +11779,23 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix-ts :tangle modules/darwin/nixos/default.nix
-  _:
+#+begin_src nix-ts :tangle modules/nixos/darwin/default.nix
+  { lib, config, outputs, ... }:
   {
 
-    nix.settings.experimental-features = "nix-command flakes";
-    nixpkgs = {
-      hostPlatform = "x86_64-darwin";
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
+    options.swarselsystems.modules.darwin.general = lib.mkEnableOption "darwin config";
+    config = lib.mkIf config.swarselsystems.modules.darwin.general {
+      nix.settings.experimental-features = "nix-command flakes";
+      nixpkgs = {
+        hostPlatform = "x86_64-darwin";
+        overlays = [ outputs.overlays.default ];
+        config = {
+          allowUnfree = true;
+        };
       };
-    };
 
-    system.stateVersion = 4;
+      system.stateVersion = 4;
+    };
   }
 #+end_src
 
@@ -12004,29 +11932,6 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
     config = lib.mkIf config.swarselsystems.modules.optional.vmware {
       virtualisation.vmware.host.enable = true;
       virtualisation.vmware.guest.enable = true;
-    };
-  }
-#+end_src
-
-**** Auto-login
-:PROPERTIES:
-:CUSTOM_ID: h:fa8d9ec4-3e22-458a-9239-859cffe7f55c
-:END:
-
-Auto login for the initial session.
-
-#+begin_src nix-ts :tangle modules/nixos/optional/autologin.nix
-  { lib, config, ... }:
-  let
-    inherit (config.swarselsystems) mainUser;
-  in
-  {
-    options.swarselsystems.modules.optional.autologin = lib.mkEnableOption "optional autologin settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.autologin {
-      services = {
-        getty.autologinUser = mainUser;
-        greetd.settings.initial_session.user = mainUser;
-      };
     };
   }
 #+end_src
@@ -12192,6 +12097,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
   { self, lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir xdgDir;
+    iwd = config.networking.networkmanager.wifi.backend == "iwd";
     owner = mainUser;
     sopsFile = self + /secrets/work/secrets.yaml;
     swarselService = name: description: execStart: {
@@ -12240,6 +12146,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
             "govchost"
             "govcnetwork"
             "govcpool"
+            "baseuser"
+            "basepw"
           ];
         in
         {
@@ -12251,6 +12159,12 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
               })
               secretNames
           );
+          templates = {
+            "network-manager-work.env".content = ''
+              BASEUSER=${config.sops.placeholder.baseuser}
+              BASEPASS=${config.sops.placeholder.basepw}
+            '';
+          };
         };
 
       boot.initrd = {
@@ -12288,7 +12202,48 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 
       networking = {
         inherit (config.swarselsystems) hostName fqdn;
-        networkmanager.wifi.scanRandMacAddress = false;
+
+        networkmanager = {
+          wifi.scanRandMacAddress = false;
+          ensureProfiles = {
+            environmentFiles = [
+              "${config.sops.templates."network-manager-work.env".path}"
+            ];
+            profiles = {
+              VBC = {
+                "802-1x" = {
+                  eap = if (!iwd) then "ttls;" else "peap;";
+                  identity = "$BASEUSER";
+                  password = "$BASEPASS";
+                  phase2-auth = "mschapv2";
+                };
+                connection = {
+                  id = "VBC";
+                  type = "wifi";
+                };
+                ipv4 = { method = "auto"; };
+                ipv6 = {
+                  addr-gen-mode = "default";
+                  method = "auto";
+                };
+                proxy = { };
+                wifi = {
+                  cloned-mac-address = "permanent";
+                  mac-address = "E8:65:38:52:63:FF";
+                  mac-address-randomization = "1";
+                  mode = "infrastructure";
+                  ssid = "VBC";
+                };
+                wifi-security = {
+                  auth-alg = "open";
+                  key-mgmt = "wpa-eap";
+                };
+              };
+            };
+          };
+        };
+
+
         firewall = {
           enable = lib.mkDefault true;
           trustedInterfaces = [ "virbr0" ];
@@ -12357,7 +12312,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         openssh = {
           enable = true;
           extraConfig = ''
-                            '';
+                                  '';
         };
 
         syncthing = {
@@ -12490,6 +12445,17 @@ These options are really only to be used on the iso image in order to run nixos-
 :END:
 
 The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20d70b3][NixOS]] section.
+
+#+begin_src nix-ts :tangle modules/home/default.nix
+  { lib, ... }:
+  let
+    importNames = lib.swarselsystems.readNix "modules/home";
+  in
+  {
+    imports = lib.swarselsystems.mkImports importNames "modules/home";
+  }
+
+#+end_src
 
 *** Common
 :PROPERTIES:
@@ -15737,7 +15703,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 
 This section sets up all the imports that are used in the home-manager section.
 
-#+begin_src nix-ts :tangle modules/darwin/home/default.nix
+#+begin_src nix-ts :tangle modules/home/darwin/default.nix
   { self, ... }:
   let
     modulesPath = "${self}/modules";
@@ -21004,17 +20970,22 @@ base0F: "5EC4FF" # #5EC4FF passt
 :CUSTOM_ID: h:8bfaf6d3-a0ab-4199-a07b-8bd9991bc128
 :END:
 
+The double source block is intended here to circumvent a org-babel convenience where the first n empty lines of each source block are not taken into the final file. For the .gitmessage I want an empty newline to type into, so this is what I use to achieve that.
+
 #+begin_src shell :tangle programs/git/.gitmessage
 
-#                         max. 50 chars is here: #
-# <type>[optional scope]: <description>
-# types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
-# ! indicates a breaking change.
+#+end_src
+
+#+begin_src shell :tangle programs/git/.gitmessage
+  #                         max. 50 chars is here: #
+  # <type>[optional scope]: <description>
+  # types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
+  # ! indicates a breaking change.
 
 
-# Body:                                      wrap at 72 chars is here: #
-# Include at least one empty line before co-authored. Format:
-# Co-authored-by: name <user@users.noreply.github.com>
+  # Body:                                      wrap at 72 chars is here: #
+  # Include at least one empty line before co-authored. Format:
+  # Co-authored-by: name <user@users.noreply.github.com>
 #+end_src
 ** userChrome.css
 :PROPERTIES:

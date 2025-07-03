@@ -6,7 +6,6 @@
       packages = lib.mkDefault true;
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
-      home-managerExtra = lib.mkDefault false;
       xserver = lib.mkDefault true;
       users = lib.mkDefault true;
       env = lib.mkDefault true;
@@ -17,7 +16,7 @@
       pipewire = lib.mkDefault true;
       network = lib.mkDefault true;
       time = lib.mkDefault true;
-      commonSops = lib.mkDefault true;
+      sops = lib.mkDefault false;
       stylix = lib.mkDefault true;
       programs = lib.mkDefault true;
       zsh = lib.mkDefault true;
@@ -43,10 +42,7 @@
       lid = lib.mkDefault true;
       lowBattery = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
-
-      optional = {
-        autologin = lib.mkDefault true;
-      };
+      autologin = lib.mkDefault true;
     };
 
   };

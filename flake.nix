@@ -130,45 +130,38 @@
                   inputs.impermanence.nixosModules.impermanence
                   inputs.lanzaboote.nixosModules.lanzaboote
                   inputs.fw-fanctrl.nixosModules.default
+                  inputs.nix-topology.nixosModules.default
+                  inputs.home-manager.nixosModules.home-manager
                   "${self}/hosts/${type}/${host}"
                   {
                     _module.args.primaryUser = linuxUser;
                   }
                 ] ++
                 (if (host == "iso") then [
-                  inputs.nix-topology.nixosModules.default
                 ] else
                   ([
                     # put nixos imports here that are for all servers and normal hosts
-                    inputs.nix-topology.nixosModules.default
-                    "${self}/modules/${type}/common"
+                    "${self}/modules/nixos"
                     inputs.stylix.nixosModules.stylix
                     inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
                   ] ++ (if (type == "nixos") then [
-                    inputs.home-manager.nixosModules.home-manager
                     "${self}/profiles/nixos"
-                    "${self}/modules/nixos/server"
-                    "${self}/modules/nixos/optional"
                     {
                       home-manager.users."${linuxUser}".imports = [
                         # put home-manager imports here that are for all normal hosts
-                        "${self}/modules/home/common"
-                        "${self}/modules/home/server"
-                        "${self}/modules/home/optional"
                         "${self}/profiles/home"
+                        "${self}/modules/home"
                       ];
                     }
                   ] else [
                     # put nixos imports here that are for darwin hosts
-                    "${self}/modules/darwin/nixos/common"
-                    "${self}/profiles/darwin"
+                    "${self}/modules/nixos/darwin"
+                    "${self}/profiles/nixos"
                     inputs.home-manager.darwinModules.home-manager
                     {
                       home-manager.users."${macUser}".imports = [
                         # put home-manager imports here that are for darwin hosts
-                        "${self}/modules/darwin/home"
-                        "${self}/modules/home/server"
-                        "${self}/modules/home/optional"
+                        "${self}/modules/home/darwin"
                         "${self}/profiles/home"
                       ];
                     }

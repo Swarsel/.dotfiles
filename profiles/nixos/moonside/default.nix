@@ -7,15 +7,14 @@
         general = lib.mkDefault true;
         pii = lib.mkDefault true;
         home-manager = lib.mkDefault true;
-        home-managerExtra = lib.mkDefault true;
         xserver = lib.mkDefault true;
         time = lib.mkDefault true;
         users = lib.mkDefault true;
         impermanence = lib.mkDefault true;
+        sops = lib.mkDefault true;
         server = {
           general = lib.mkDefault true;
           packages = lib.mkDefault true;
-          sops = lib.mkDefault true;
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
           oauth2-proxy = lib.mkDefault true;

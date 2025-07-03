@@ -1,11 +1,70 @@
-{ lib, config, ... }:
+{ self, lib, config, ... }:
+let
+  certsSopsFile = self + /secrets/certs/secrets.yaml;
+  inherit (config.swarselsystems) mainUser;
+  iwd = config.networking.networkmanager.wifi.backend == "iwd";
+in
 {
   options.swarselsystems = {
     modules.network = lib.mkEnableOption "network config";
     firewall = lib.swarselsystems.mkTrueOption;
   };
   config = lib.mkIf config.swarselsystems.modules.network {
+
+    sops = {
+      secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+        ernest = { };
+        frauns = { };
+        hotspot = { };
+        eduid = { };
+        edupass = { };
+        handyhotspot = { };
+        vpnuser = { };
+        vpnpass = { };
+        wireguardpriv = { };
+        wireguardpub = { };
+        wireguardendpoint = { };
+        stashuser = { };
+        stashpass = { };
+        githubforgeuser = { };
+        githubforgepass = { };
+        gitlabforgeuser = { };
+        gitlabforgepass = { };
+        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+      };
+      templates = lib.mkIf (!config.swarselsystems.isPublic) {
+        "network-manager.env".content = ''
+          ERNEST=${config.sops.placeholder.ernest}
+          FRAUNS=${config.sops.placeholder.frauns}
+          HOTSPOT=${config.sops.placeholder.hotspot}
+          EDUID=${config.sops.placeholder.eduid}
+          EDUPASS=${config.sops.placeholder.edupass}
+          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
+          VPNUSER=${config.sops.placeholder.vpnuser}
+          VPNPASS=${config.sops.placeholder.vpnpass}
+          WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
+          WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
+          WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
+        '';
+      };
+    };
+
     networking = {
+      wireless.iwd = {
+        enable = true;
+        settings = {
+          IPv6 = {
+            Enabled = true;
+          };
+          Settings = {
+            AutoConnect = true;
+          };
+          DriverQuirks = {
+            UseDefaultInterface = true;
+          };
+        };
+      };
       nftables.enable = lib.mkDefault true;
       enableIPv6 = lib.mkDefault true;
       firewall = {
@@ -76,10 +135,11 @@
 
             eduroam = {
               "802-1x" = {
-                eap = "ttls;";
+                eap = if (!iwd) then "ttls;" else "peap;";
                 identity = "$EDUID";
                 password = "$EDUPASS";
                 phase2-auth = "mschapv2";
+                anonymous-identity = lib.mkIf iwd "anonymous@student.tuwien.ac.at";
               };
               connection = {
                 id = "eduroam";

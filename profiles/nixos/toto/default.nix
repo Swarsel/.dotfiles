@@ -5,17 +5,14 @@
     swarselsystems.modules = {
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
-      home-managerExtra = lib.mkDefault true;
       xserver = lib.mkDefault true;
       users = lib.mkDefault true;
-      commonSops = lib.mkDefault true;
+      sops = lib.mkDefault true;
       impermanence = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
+      autologin = lib.mkDefault true;
       server = {
         ssh = lib.mkDefault true;
-      };
-      optional = {
-        autologin = lib.mkDefault true;
       };
     };
 

@@ -14,7 +14,7 @@
           home.stateVersion = lib.mkDefault config.system.stateVersion;
         }
       ];
-      extraSpecialArgs = { inherit (inputs) self; inherit inputs outputs globals nodes; };
+      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
     };
   };
 }

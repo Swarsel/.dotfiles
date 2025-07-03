@@ -6,7 +6,6 @@
       packages = lib.mkDefault true;
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
-      home-managerExtra = lib.mkDefault true;
       xserver = lib.mkDefault true;
       users = lib.mkDefault true;
       env = lib.mkDefault true;
@@ -17,7 +16,7 @@
       pipewire = lib.mkDefault true;
       network = lib.mkDefault true;
       time = lib.mkDefault true;
-      commonSops = lib.mkDefault true;
+      sops = lib.mkDefault true;
       pii = lib.mkDefault true;
       stylix = lib.mkDefault true;
       programs = lib.mkDefault true;
@@ -44,12 +43,11 @@
       lid = lib.mkDefault true;
       lowBattery = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
-      tmp = lib.mkDefault true;
+      autologin = lib.mkDefault true;
 
       optional = {
         gaming = lib.mkDefault true;
         virtualbox = lib.mkDefault true;
-        autologin = lib.mkDefault true;
         nswitch-rcm = lib.mkDefault true;
       };
 

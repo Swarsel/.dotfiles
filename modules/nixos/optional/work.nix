@@ -1,6 +1,7 @@
 { self, lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir xdgDir;
+  iwd = config.networking.networkmanager.wifi.backend == "iwd";
   owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
   swarselService = name: description: execStart: {
@@ -49,6 +50,8 @@ in
           "govchost"
           "govcnetwork"
           "govcpool"
+          "baseuser"
+          "basepw"
         ];
       in
       {
@@ -60,6 +63,12 @@ in
             })
             secretNames
         );
+        templates = {
+          "network-manager-work.env".content = ''
+            BASEUSER=${config.sops.placeholder.baseuser}
+            BASEPASS=${config.sops.placeholder.basepw}
+          '';
+        };
       };
 
     boot.initrd = {
@@ -97,7 +106,48 @@ in
 
     networking = {
       inherit (config.swarselsystems) hostName fqdn;
-      networkmanager.wifi.scanRandMacAddress = false;
+
+      networkmanager = {
+        wifi.scanRandMacAddress = false;
+        ensureProfiles = {
+          environmentFiles = [
+            "${config.sops.templates."network-manager-work.env".path}"
+          ];
+          profiles = {
+            VBC = {
+              "802-1x" = {
+                eap = if (!iwd) then "ttls;" else "peap;";
+                identity = "$BASEUSER";
+                password = "$BASEPASS";
+                phase2-auth = "mschapv2";
+              };
+              connection = {
+                id = "VBC";
+                type = "wifi";
+              };
+              ipv4 = { method = "auto"; };
+              ipv6 = {
+                addr-gen-mode = "default";
+                method = "auto";
+              };
+              proxy = { };
+              wifi = {
+                cloned-mac-address = "permanent";
+                mac-address = "E8:65:38:52:63:FF";
+                mac-address-randomization = "1";
+                mode = "infrastructure";
+                ssid = "VBC";
+              };
+              wifi-security = {
+                auth-alg = "open";
+                key-mgmt = "wpa-eap";
+              };
+            };
+          };
+        };
+      };
+
+
       firewall = {
         enable = lib.mkDefault true;
         trustedInterfaces = [ "virbr0" ];
@@ -166,7 +216,7 @@ in
       openssh = {
         enable = true;
         extraConfig = ''
-                          '';
+                                '';
       };
 
       syncthing = {
