@@ -13,7 +13,7 @@ in
     programs.emacs = {
       enable = true;
       package = pkgs.emacsWithPackagesFromUsePackage {
-        config = self + /programs/emacs/init.el;
+        config = self + /files/emacs/init.el;
         package = pkgs.emacs-git-pgtk;
         alwaysEnsure = true;
         alwaysTangle = true;

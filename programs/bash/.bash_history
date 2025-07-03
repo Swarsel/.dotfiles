@@ -1,1 +1,0 @@
-swarsel-install -n chaostheatre

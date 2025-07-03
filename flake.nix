@@ -103,6 +103,7 @@
         ./nix/templates.nix
         ./nix/formatter.nix
         ./nix/modules.nix
+        ./nix/iso.nix
       ];
       systems = [
         "x86_64-linux"

@@ -1,4 +1,4 @@
-# highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/scripts/bootstrap-nixos.sh
+# highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/files/scripts/bootstrap-nixos.sh
 set -eo pipefail
 
 target_hostname=""

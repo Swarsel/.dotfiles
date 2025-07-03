@@ -22,7 +22,7 @@ in
     topology.self.services.${serviceName} = {
       name = lib.swarselsystems.toCapitalized serviceName;
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/${serviceName}.png";
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 

@@ -2,5 +2,5 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [ emacs30-pgtk sway jq ];
-  text = builtins.readFile "${self}/scripts/${name}.sh";
+  text = builtins.readFile "${self}/files/scripts/${name}.sh";
 }

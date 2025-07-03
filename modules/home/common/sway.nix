@@ -212,10 +212,10 @@
         # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
         output = {
           "${config.swarselsystems.sharescreen}" = {
-            bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+            bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
           };
           "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-            bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+            bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
           };
         };
         input = config.swarselsystems.standardinputs;

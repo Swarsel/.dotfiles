@@ -35,7 +35,7 @@ in
     topology.self.services.${serviceName} = {
       name = lib.toUpper serviceName;
       info = "http://localhost:${builtins.toString servicePort}";
-      icon = "${self}/topology/images/${serviceName}.png";
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
     services.${serviceName} = {

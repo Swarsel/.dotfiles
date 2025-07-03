@@ -23,7 +23,7 @@
   };
 
   programs.zsh.initContent = "
-  export GPG_TTY=\"$(tty)\"
+    export GPG_TTY=\"$(tty)\"
   export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   gpgconf --launch gpg-agent
         ";
@@ -31,7 +31,7 @@
   swarselsystems = {
     isLaptop = true;
     isNixos = false;
-    wallpaper = self + /wallpaper/surfacewp.png;
+    wallpaper = self + /files/wallpaper/surfacewp.png;
   };
 
 }

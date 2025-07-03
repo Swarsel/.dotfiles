@@ -7,7 +7,7 @@
           (name: {
             inherit name;
             value = {
-              path = "${self}/templates/${name}";
+              path = "${self}/files/templates/${name}";
               description = "${name} project ";
             };
           })

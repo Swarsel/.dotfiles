@@ -25,7 +25,7 @@
     };
     wallpaper = lib.mkOption {
       type = lib.types.path;
-      default = "${self}/wallpaper/lenovowp.png";
+      default = "${self}/files/wallpaper/lenovowp.png";
     };
     sharescreen = lib.mkOption {
       type = lib.types.str;
@@ -44,7 +44,7 @@
       type = lib.types.attrs;
       default = {
         enable = true;
-        base16Scheme = "${self}/programs/stylix/swarsel.yaml";
+        base16Scheme = "${self}/files/stylix/swarsel.yaml";
         polarity = "dark";
         opacity.popups = 0.5;
         cursor = {
@@ -99,7 +99,7 @@
     firefox = lib.mkOption {
       type = lib.types.attrs;
       default = {
-        userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
+        userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
         extensions = {
           packages = with pkgs.nur.repos.rycee.firefox-addons; [
             tridactyl

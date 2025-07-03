@@ -2,5 +2,5 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
-  text = builtins.readFile "${self}/scripts/${name}.sh";
+  text = builtins.readFile "${self}/files/scripts/${name}.sh";
 }

@@ -47,7 +47,7 @@
 
           pfsense = mkRouter "pfSense" {
             info = "HUNSN RM02";
-            image = "${self}/topology-images/hunsn.png";
+            image = "${self}/files/topology-images/hunsn.png";
             interfaceGroups = [
               [
                 "eth2"
@@ -96,7 +96,7 @@
 
           wifi-ap = mkSwitch "Wi-Fi AP" {
             info = "Huawei";
-            image = "${self}/topology-images/huawei.png";
+            image = "${self}/files/topology-images/huawei.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -107,7 +107,7 @@
 
           switch-livingroom = mkSwitch "Switch Livingroom" {
             info = "TL-SG108";
-            image = "${self}/topology-images/TL-SG108.png";
+            image = "${self}/files/topology-images/TL-SG108.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -129,13 +129,13 @@
 
           nswitch = mkDevice "Nintendo Switch" {
             info = "Nintendo Switch";
-            image = "${self}/topology-images/nintendo-switch.png";
+            image = "${self}/files/topology-images/nintendo-switch.png";
             interfaces.eth1 = { };
           };
 
           pc = mkDevice "Windows Gaming Server" {
             info = "i7-4790k, GTX970, 32GB RAM";
-            image = "${self}/topology-images/pc.png";
+            image = "${self}/files/topology-images/pc.png";
             interfaces.eth1 = { };
           };
 
@@ -143,7 +143,7 @@
 
           switch-bedroom = mkSwitch "Switch Bedroom" {
             info = "TL-SG1005D";
-            image = "${self}/topology-images/TL-SG1005D.png";
+            image = "${self}/files/topology-images/TL-SG1005D.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -158,7 +158,7 @@
 
           printer = mkDevice "Printer" {
             info = "DELL C2665dnf";
-            image = "${self}/topology-images/DELL-C2665dnf.png";
+            image = "${self}/files/topology-images/DELL-C2665dnf.png";
             interfaces.eth1 = { };
           };
 

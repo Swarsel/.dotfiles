@@ -84,7 +84,7 @@
       homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
       nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
-      diskoConfigurations.default = import "${self}/templates/hosts/nixos/disk-config.nix";
+      diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
       nodes = config.nixosConfigurations // config.darwinConfigurations;
 

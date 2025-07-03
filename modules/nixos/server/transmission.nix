@@ -80,7 +80,7 @@ in
       readarr = {
         name = "Readarr";
         info = "https://${serviceDomain}/readarr";
-        icon = "${self}/topology/images/readarr.png";
+        icon = "${self}/files/topology-images/readarr.png";
       };
       sonarr.info = "https://${serviceDomain}/sonarr";
       lidarr.info = "https://${serviceDomain}/lidarr";

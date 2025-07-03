@@ -2,5 +2,5 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [ git ];
-  text = builtins.readFile "${self}/scripts/${name}.sh";
+  text = builtins.readFile "${self}/files/scripts/${name}.sh";
 }

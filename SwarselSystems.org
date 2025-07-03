@@ -1,5 +1,5 @@
 #+title: SwarselSystems: NixOS + Emacs Configuration
-#+PROPERTY: header-args:emacs-lisp :tangle programs/emacs/init.el :mkdirp yes
+#+PROPERTY: header-args:emacs-lisp :tangle files/emacs/init.el :mkdirp yes
 #+PROPERTY: header-args:nix :mkdirp yes
 #+PROPERTY: header-args:nix-ts :mkdirp yes
 #+PROPERTY: header-args:shell :mkdirp yes
@@ -245,7 +245,7 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
   |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
   |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
-  |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/programs/emacs/init.el)                          |
+  |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                          |
   |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
   |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
   |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |
@@ -481,6 +481,7 @@ When setting this option normally, the password would normally be written world-
             ./nix/templates.nix
             ./nix/formatter.nix
             ./nix/modules.nix
+            ./nix/iso.nix
           ];
           systems = [
             "x86_64-linux"
@@ -867,7 +868,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
           homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
           nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
-          diskoConfigurations.default = import "${self}/templates/hosts/nixos/disk-config.nix";
+          diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
           nodes = config.nixosConfigurations // config.darwinConfigurations;
 
@@ -930,7 +931,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           pfsense = mkRouter "pfSense" {
             info = "HUNSN RM02";
-            image = "${self}/topology-images/hunsn.png";
+            image = "${self}/files/topology-images/hunsn.png";
             interfaceGroups = [
               [
                 "eth2"
@@ -979,7 +980,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           wifi-ap = mkSwitch "Wi-Fi AP" {
             info = "Huawei";
-            image = "${self}/topology-images/huawei.png";
+            image = "${self}/files/topology-images/huawei.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -990,7 +991,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           switch-livingroom = mkSwitch "Switch Livingroom" {
             info = "TL-SG108";
-            image = "${self}/topology-images/TL-SG108.png";
+            image = "${self}/files/topology-images/TL-SG108.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -1012,13 +1013,13 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           nswitch = mkDevice "Nintendo Switch" {
             info = "Nintendo Switch";
-            image = "${self}/topology-images/nintendo-switch.png";
+            image = "${self}/files/topology-images/nintendo-switch.png";
             interfaces.eth1 = { };
           };
 
           pc = mkDevice "Windows Gaming Server" {
             info = "i7-4790k, GTX970, 32GB RAM";
-            image = "${self}/topology-images/pc.png";
+            image = "${self}/files/topology-images/pc.png";
             interfaces.eth1 = { };
           };
 
@@ -1026,7 +1027,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           switch-bedroom = mkSwitch "Switch Bedroom" {
             info = "TL-SG1005D";
-            image = "${self}/topology-images/TL-SG1005D.png";
+            image = "${self}/files/topology-images/TL-SG1005D.png";
             interfaceGroups = [
               [
                 "eth1"
@@ -1041,7 +1042,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           printer = mkDevice "Printer" {
             info = "DELL C2665dnf";
-            image = "${self}/topology-images/DELL-C2665dnf.png";
+            image = "${self}/files/topology-images/DELL-C2665dnf.png";
             interfaces.eth1 = { };
           };
 
@@ -1224,7 +1225,7 @@ This file defines the templates that are being exposed by the flake. These can b
             (name: {
               inherit name;
               value = {
-                path = "${self}/templates/${name}";
+                path = "${self}/files/templates/${name}";
                 description = "${name} project ";
               };
             })
@@ -1429,6 +1430,30 @@ Lastly, I add some of my own library functions to be used alongside the function
       };
   }
 #+end_src
+** Installer iso
+
+#+begin_src nix-ts :tangle nix/iso.nix
+  { inputs, ... }:
+  {
+    perSystem = { pkgs, system, ... }:
+      {
+        # nix build --print-out-paths --no-link .#images.<target-system>.live-iso
+        packages.live-iso = inputs.nixos-generators.nixosGenerate {
+          inherit pkgs;
+          modules = [
+            inputs.home-manager.nixosModules.home-manager
+            ./installer-config.nix
+          ];
+          format =
+            {
+              x86_64-linux = "install-iso";
+              aarch64-linux = "sd-aarch64-installer";
+            }
+            .${system};
+        };
+      };
+  }
+#+end_src
 * System
 :PROPERTIES:
 :CUSTOM_ID: h:02cd20be-1ffa-4904-9d5a-da5a89ba1421
@@ -1456,7 +1481,7 @@ This is the template that I use for new deployments of personal machines. Server
 :CUSTOM_ID: h:859aec97-65a2-4633-b7d8-73d4ccf89cc5
 :END:
 
-#+begin_src nix-ts :tangle templates/hosts/nixos/default.nix
+#+begin_src nix-ts :tangle files/templates/hosts/nixos/default.nix
   { self, inputs, pkgs, lib, globals, ... }:
   let
     modulesPath = "${self}/modules";
@@ -1498,7 +1523,7 @@ This is the template that I use for new deployments of personal machines. Server
 
     swarselsystems = lib.recursiveUpdate
       {
-        wallpaper = self + /wallpaper/lenovowp.png;
+        wallpaper = self + /files/wallpaper/lenovowp.png;
         hasBluetooth = true;
         hasFingerprint = true;
         isImpermanence = true;
@@ -1526,7 +1551,7 @@ This is the template that I use for new deployments of personal machines. Server
 
 Acceptance of arbitraty argumments is here needed because =disko= passes =diskoFile= to this file.
 
-#+begin_src nix-ts :tangle templates/hosts/nixos/disk-config.nix
+#+begin_src nix-ts :tangle files/templates/hosts/nixos/disk-config.nix
   { lib, pkgs, config, rootDisk, ... }:
   let
     type = "btrfs";
@@ -1698,7 +1723,7 @@ My work machine. Built for more security, this is the gold standard of my config
       {
         info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
         firewall = lib.mkForce true;
-        wallpaper = self + /wallpaper/lenovowp.png;
+        wallpaper = self + /files/wallpaper/lenovowp.png;
         hasBluetooth = true;
         hasFingerprint = true;
         isImpermanence = false;
@@ -2844,7 +2869,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
     swarselsystems = lib.recursiveUpdate
       {
         info = "~SwarselSystems~ remote install helper";
-        wallpaper = self + /wallpaper/lenovowp.png;
+        wallpaper = self + /files/wallpaper/lenovowp.png;
         isImpermanence = true;
         isCrypted = false;
         isSecureBoot = false;
@@ -3014,154 +3039,122 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
 
-For added convenience, the live environment displays a helpful text on login, we define it here (will be put into =/etc/issue=):
 
-#+begin_src bash :tangle programs/etc/issue :mkdirp yes
-  [32m~SwarselSystems~[0m
-                           IP of primary interface: [31m\4[0m
-                                                               The Password for all users & root is '[31msetup[0m'.
-                                                               Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
-                                                               Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+#+begin_src nix-ts :tangle nix/installer-config.nix
+{ pkgs, lib, ... }:
+{
 
-#+end_src
-
-Also, an initial bash history is provided to allow for a very quick local deployment:
-
-#+begin_src shell :tangle programs/bash/.bash_history
-  swarsel-install -n chaostheatre
-#+end_src
-
-
-#+begin_src nix-ts :tangle nix/iso.nix
-    { self, pkgs, inputs, config, lib, modulesPath, ... }:
-    let
-      pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
-    in
-    {
-
-      imports = [
-        "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-        "${modulesPath}/installer/cd-dvd/channel.nix"
-
-        "${self}/modules/iso/minimal.nix"
-        "${self}/modules/nixos/common/sharedsetup.nix"
-        "${self}/modules/nixos/common/topology.nix"
-        "${self}/modules/home/common/sharedsetup.nix"
-
-        "${self}/modules/nixos/common/globals.nix"
-
-
-        inputs.home-manager.nixosModules.home-manager
-        {
-          home-manager.users."setup".imports = [
-            "${self}/modules/home/common/settings.nix"
-            "${self}/modules/home/common/sharedsetup.nix"
-          ];
-        }
-      ];
-
-      config = {
-        swarselsystems = {
-          info = "~SwarselSystems~ installer ISO";
-        };
-        home-manager.users."setup" = {
-          home = {
-            stateVersion = "23.05";
-            file = {
-              ".bash_history" = {
-                source = self + /programs/bash/.bash_history;
-              };
-            };
-          };
-          swarselsystems = {
-            modules.general = lib.mkForce true;
-          };
-        };
-        home-manager.users.root.home = {
-          stateVersion = "23.05";
-          file = {
-            ".bash_history" = {
-              source = self + /programs/bash/.bash_history;
-            };
-          };
-        };
-
-        # environment.etc."issue".text = "\x1B[32m~SwarselSystems~\x1B[0m\nIP of primary interface: \x1B[31m\\4\x1B[0m\nThe Password for all users & root is '\x1B[31msetup\x1B[0m'.\nInstall the system remotely by running '\x1B[33mbootstrap -n <HOSTNAME> -d <IP_FROM_ABOVE> [--impermanence] [--encryption]\x1B[0m' on a machine with deployed secrets.\nAlternatively, run '\x1B[33mswarsel-install -d <DISK> -f <flake>\x1B[0m' for a local install.\n";
-        environment.etc."issue".source = "${self}/programs/etc/issue";
-        networking.dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
-
-        isoImage = {
-          makeEfiBootable = true;
-          makeUsbBootable = true;
-          squashfsCompression = "zstd -Xcompression-level 3";
-        };
-
-        nixpkgs = {
-          hostPlatform = lib.mkDefault "x86_64-linux";
-          config.allowUnfree = true;
-        };
-
-        services.getty.autologinUser = lib.mkForce "setup";
-
-        users = {
-          allowNoPasswordLogin = true;
-          groups.swarsel = { };
-          users = {
-            setup = {
-              name = "setup";
-              group = "setup";
-              isNormalUser = true;
-              password = "setup"; # this is overwritten after install
-              openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
-              extraGroups = [ "wheel" ];
-            };
-            root = {
-              # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-              openssh.authorizedKeys.keys = config.users.users."setup".openssh.authorizedKeys.keys;
-            };
-          };
-        };
-
-        boot = {
-          loader.systemd-boot.enable = lib.mkForce true;
-          loader.efi.canTouchEfiVariables = true;
-        };
-
-        programs.bash.shellAliases = {
-          "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-        };
-
-        system.activationScripts.cache = {
+  config = {
+    home-manager.users.root.home = {
+      stateVersion = "23.05";
+      file = {
+        ".bash_history" = {
           text = ''
-            mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
-            mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
-            mkdir -p -m=0777 /home/setup/.local/share/nix/
-            printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
-            mkdir -p /root/.local/share/nix/
-            printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+            swarsel-install -n chaostheatre
           '';
         };
-        systemd = {
-          services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-          targets = {
-            sleep.enable = false;
-            suspend.enable = false;
-            hibernate.enable = false;
-            hybrid-sleep.enable = false;
-          };
-        };
+      };
+    };
 
-        system.stateVersion = lib.mkForce "23.05";
+    nix.settings = {
+      experimental-features = [ "nix-command" "flakes" ];
+    };
 
-        networking = {
-          hostName = "drugstore";
-          wireless.enable = false;
+    boot = {
+      supportedFilesystems = lib.mkForce [ "brtfs" "vfat" ];
+      loader.systemd-boot = {
+        enable = true;
+      };
+    };
+
+    services = {
+      qemuGuest.enable = true;
+      openssh = {
+        enable = true;
+        settings.PermitRootLogin = "yes";
+        authorizedKeysFiles = lib.mkForce [
+          "/etc/ssh/authorized_keys.d/%u"
+        ];
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      curl
+      git
+      gnupg
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+      sbctl
+    ];
+
+    programs = {
+      git.enable = true;
+    };
+
+    fileSystems."/boot".options = [ "umask=0077" ];
+
+    environment.etc."issue".text = ''
+      [32m~SwarselSystems~[0m
+                               IP of primary interface: [31m\4[0m
+                                                                   The Password for all users & root is '[31msetup[0m'.
+                                                                   Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
+                                                                   Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+    '';
+
+    networking = {
+      hostName = "drugstore";
+      wireless.enable = false;
+      dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+      networkmanager.enable = true;
+    };
+
+    services.getty.autologinUser = lib.mkForce "root";
+
+    users = {
+      allowNoPasswordLogin = true;
+      users = {
+        root = {
+          password = "setup"; # this is overwritten after install
+          initialHashedPassword = lib.mkForce null;
+          openssh.authorizedKeys.keys = [ "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDd0XXoLfRE0AyasxscEBwMqOnLWPqwz+etGqzVNeSw/RcgnxOi903mlVjCH+jzWMSe2GVSgzgM20j/r9sfE2P1z+wq/RODFS04JM0ltUoFkkm/IDZXQ2piOk7AoVi5ajdx4EiBnXY87jvxh5cCgQltkj3ouPF7FVN/MaN21IgWYB8NgkaVGft//OplodlDQNot17c0sFMibY0HcquwmHhqKOtKM1gT98+jZl0rd1rCqXFOvkesW6FPC4nzirPai+Hizp5gncrkJOZmLLqrjVx6PfpQzqzIhoUn1YS5CpyfXnKZUgx2Oi8SENmWOZ9DxYvDklgEttob37E2bIXbUhOw/u4I3olGFgCsKL6jg0N+d5teEaCZFnzlOp0UMWiUo7lVqq7Bwl3rNka2pxEdZ9v/1+m9cJiP7h6pnKmccVGku57iGIDnsnoTrmo1qbAje+EsmPYbc+qMnTDvOdSHTOXnjsyTd+ADklvMHCUAuf6ku4ktQEhlZxU3PvYvKHa1cTCEXxLWjytIgHgTgab9M5IH29Q55LSRRQBzUdkwjOG6KhsqG+xEE6038EbXr0MGKTm01AFmeVZWewmkSLu2UdoOMiw8mTSQhQFfp2QruYHnh7oJCo7ttKT1sLoRX+TfgQm1ryn/orhReg2GFfmbiLGxaJGVNvjqCxqrIFQXx4ZDHw== cardno:22_412_399" ];
         };
       };
-    }
+    };
+
+    programs.bash.shellAliases = {
+      "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+    };
+
+    system.activationScripts.cache = {
+      text = ''
+          mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
+        mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
+        mkdir -p -m=0777 /home/setup/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
+        mkdir -p /root/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+      '';
+    };
+    systemd = {
+      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+      targets = {
+        sleep.enable = false;
+        suspend.enable = false;
+        hibernate.enable = false;
+        hybrid-sleep.enable = false;
+      };
+    };
+
+    system.stateVersion = lib.mkForce "23.05";
+
+  };
+}
 
 
-#+end_src
+        #+end_src
 
 **** Home-manager only (default non-NixOS)
 :PROPERTIES:
@@ -3196,7 +3189,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     };
 
     programs.zsh.initContent = "
-    export GPG_TTY=\"$(tty)\"
+      export GPG_TTY=\"$(tty)\"
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
     gpgconf --launch gpg-agent
           ";
@@ -3204,7 +3197,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     swarselsystems = {
       isLaptop = true;
       isNixos = false;
-      wallpaper = self + /wallpaper/surfacewp.png;
+      wallpaper = self + /files/wallpaper/surfacewp.png;
     };
 
   }
@@ -3239,65 +3232,65 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       };
     };
   in
-  {
+    {
 
-    imports = [
-      ./hardware-configuration.nix
-      ./disk-config.nix
-      {
-        _module.args.diskDevice = config.swarselsystems.rootDisk;
-      }
-      "${self}/hosts/nixos/chaostheatre/options.nix"
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users."${mainUser}".imports = [
-          "${self}/modules/home/common/settings.nix"
-          "${self}/hosts/nixos/chaostheatre/options-home.nix"
-          "${self}/modules/home/common/sharedsetup.nix"
-        ];
-      }
-    ];
+      imports = [
+        ./hardware-configuration.nix
+        ./disk-config.nix
+        {
+          _module.args.diskDevice = config.swarselsystems.rootDisk;
+        }
+        "${self}/hosts/nixos/chaostheatre/options.nix"
+        inputs.home-manager.nixosModules.home-manager
+        {
+          home-manager.users."${mainUser}".imports = [
+            "${self}/modules/home/common/settings.nix"
+            "${self}/hosts/nixos/chaostheatre/options-home.nix"
+            "${self}/modules/home/common/sharedsetup.nix"
+          ];
+        }
+      ];
 
-    environment.variables = {
-      WLR_RENDERER_ALLOW_SOFTWARE = 1;
-    };
+      environment.variables = {
+        WLR_RENDERER_ALLOW_SOFTWARE = 1;
+      };
 
-    services.qemuGuest.enable = true;
+      services.qemuGuest.enable = true;
 
-    boot = {
-      loader.systemd-boot.enable = lib.mkForce true;
-      loader.efi.canTouchEfiVariables = true;
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    };
+      boot = {
+        loader.systemd-boot.enable = lib.mkForce true;
+        loader.efi.canTouchEfiVariables = true;
+        kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+      };
 
-    networking = {
-      hostName = "chaostheatre";
-      firewall.enable = true;
-    };
+      networking = {
+        hostName = "chaostheatre";
+        firewall.enable = true;
+      };
 
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "~SwarselSystems~ demo host";
-        wallpaper = self + /wallpaper/lenovowp.png;
-        initialSetup = true;
-        isImpermanence = true;
-        isCrypted = true;
-        isSecureBoot = false;
-        isSwap = true;
-        swapSize = "4G";
-        rootDisk = "/dev/vda";
-      }
-      sharedOptions;
-
-    home-manager.users.${mainUser} = {
-      home.stateVersion = lib.mkForce "23.05";
       swarselsystems = lib.recursiveUpdate
         {
-          isNixos = true;
+          info = "~SwarselSystems~ demo host";
+          wallpaper = self + /files/wallpaper/lenovowp.png;
+          initialSetup = true;
+          isImpermanence = true;
+          isCrypted = true;
+          isSecureBoot = false;
+          isSwap = true;
+          swapSize = "4G";
+          rootDisk = "/dev/vda";
         }
         sharedOptions;
-    };
-  }
+
+      home-manager.users.${mainUser} = {
+        home.stateVersion = lib.mkForce "23.05";
+        swarselsystems = lib.recursiveUpdate
+          {
+            isNixos = true;
+          }
+          sharedOptions;
+      };
+    }
 
 
 #+end_src
@@ -3308,134 +3301,134 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/chaostheatre/disk-config.nix
-# NOTE: ... is needed because dikso passes diskoFile
-{ lib
-, pkgs
-, config
-, diskDevice ? config.swarselsystem.rootDisk
-, ...
-}:
-let
-  type = "btrfs";
-  extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
-  subvolumes = {
-    "/root" = {
-      mountpoint = "/";
-      mountOptions = [
-        "subvol=root"
-        "compress=zstd"
-        "noatime"
-      ];
+  # NOTE: ... is needed because dikso passes diskoFile
+  { lib
+    , pkgs
+    , config
+    , diskDevice ? config.swarselsystem.rootDisk
+    , ...
+  }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
     };
-    "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/home";
-      mountOptions = [
-        "subvol=home"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
-    "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/persist";
-      mountOptions = [
-        "subvol=persist"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
-    "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-      mountpoint = "/var/log";
-      mountOptions = [
-        "subvol=log"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
-    "/nix" = {
-      mountpoint = "/nix";
-      mountOptions = [
-        "subvol=nix"
-        "compress=zstd"
-        "noatime"
-      ];
-    };
-    "/swap" = lib.mkIf config.swarselsystems.isSwap {
-      mountpoint = "/.swapvol";
-      swap.swapfile.size = config.swarselsystems.swapSize;
-    };
-  };
-in
-{
-  disko.devices = {
-    disk = {
-      disk0 = {
-        type = "disk";
-        device = diskDevice;
-        content = {
-          type = "gpt";
-          partitions = {
-            ESP = {
-              priority = 1;
-              name = "ESP";
-              size = "512M";
-              type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [ "defaults" ];
-              };
-            };
-            root = lib.mkIf (!config.swarselsystems.isCrypted) {
-              size = "100%";
-              content = {
-                inherit type subvolumes extraArgs;
-                postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
-                  mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                  trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                  btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                '';
-              };
-            };
-            luks = lib.mkIf config.swarselsystems.isCrypted {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "cryptroot";
-                passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
-                settings = {
-                  allowDiscards = true;
-                  # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
-                  crypttabExtraOpts = [
-                    "fido2-device=auto"
-                    "token-timeout=10"
-                  ];
+  in
+    {
+      disko.devices = {
+        disk = {
+          disk0 = {
+            type = "disk";
+            device = diskDevice;
+            content = {
+              type = "gpt";
+              partitions = {
+                ESP = {
+                  priority = 1;
+                  name = "ESP";
+                  size = "512M";
+                  type = "EF00";
+                  content = {
+                    type = "filesystem";
+                    format = "vfat";
+                    mountpoint = "/boot";
+                    mountOptions = [ "defaults" ];
+                  };
                 };
-                content = {
-                  inherit type subvolumes extraArgs;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                  size = "100%";
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
                     trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                     btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
+                    '';
+                  };
+                };
+                luks = lib.mkIf config.swarselsystems.isCrypted {
+                  size = "100%";
+                  content = {
+                    type = "luks";
+                    name = "cryptroot";
+                    passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                    settings = {
+                      allowDiscards = true;
+                      # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                      crypttabExtraOpts = [
+                        "fido2-device=auto"
+                        "token-timeout=10"
+                      ];
+                    };
+                    content = {
+                      inherit type subvolumes extraArgs;
+                      postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                        MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                      '';
+                    };
+                  };
                 };
               };
             };
           };
         };
       };
-    };
-  };
 
-  fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-  fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+      fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+      fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
 
-  environment.systemPackages = [
-    pkgs.yubikey-manager
-  ];
-}
+      environment.systemPackages = [
+        pkgs.yubikey-manager
+      ];
+    }
 #+end_src
 
 ***** NixOS dummy options configuration
@@ -3472,9 +3465,9 @@ Here we have NixOS options. All options are split into smaller files that are lo
   let
     importNames = lib.swarselsystems.readNix "modules/nixos";
   in
-  {
-    imports = lib.swarselsystems.mkImports importNames "modules/nixos";
-  }
+    {
+      imports = lib.swarselsystems.mkImports importNames "modules/nixos";
+    }
 
 #+end_src
 
@@ -3498,13 +3491,13 @@ This section is for setting things that should be used on hosts that are using t
     importNames = lib.swarselsystems.readNix "modules/nixos/common";
     modulesPath = "${self}/modules";
   in
-  {
-    imports = lib.swarselsystems.mkImports importNames "modules/nixos/common" ++ [
-      "${modulesPath}/home/common/sharedsetup.nix"
-    ];
+    {
+      imports = lib.swarselsystems.mkImports importNames "modules/nixos/common" ++ [
+        "${modulesPath}/home/common/sharedsetup.nix"
+      ];
 
 
-  }
+    }
 
 #+end_src
 
@@ -3555,29 +3548,29 @@ This section is for setting things that should be used on hosts that are using t
     attrsForEachOption =
       f: lib.foldl' (acc: path: lib.recursiveUpdate acc (lib.setAttrByPath path (f path))) { } forwardedOptions;
   in
-  {
-    options.nodes = lib.mkOption {
-      description = "Options forwarded to the given node.";
-      default = { };
-      type = lib.types.attrsOf (
-        lib.types.submodule {
-          options = attrsForEachOption mkForwardedOption;
-        }
-      );
-    };
+    {
+      options.nodes = lib.mkOption {
+        description = "Options forwarded to the given node.";
+        default = { };
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = attrsForEachOption mkForwardedOption;
+          }
+        );
+      };
 
-    config =
-      let
-        getConfig =
-          path: otherNode:
+      config =
+        let
+          getConfig =
+            path: otherNode:
           let
             cfg = outputs.nixosConfigurations.${otherNode}.config.nodes.${nodeName} or null;
           in
-          lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
-        mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
-      in
-      attrsForEachOption mergeConfigFromOthers;
-  }
+            lib.optionals (cfg != null) (lib.getAttrFromPath path cfg);
+          mergeConfigFromOthers = path: lib.mkMerge (lib.concatMap (getConfig path) (lib.attrNames outputs.nixosConfigurations));
+        in
+          attrsForEachOption mergeConfigFromOthers;
+    }
 #+end_src
 
 **** Global options (automatically active)
@@ -3591,53 +3584,53 @@ This section is for setting things that should be used on hosts that are using t
     inherit (lib)
       mkOption
       types
-      ;
+    ;
   in
-  {
-    options = {
-      globals = mkOption {
-        default = { };
-        type = types.submodule {
-          options = {
-            user = {
-              name = mkOption {
-                type = types.str;
+    {
+      options = {
+        globals = mkOption {
+          default = { };
+          type = types.submodule {
+            options = {
+              user = {
+                name = mkOption {
+                  type = types.str;
+                };
+                work = mkOption {
+                  type = types.str;
+                };
               };
-              work = mkOption {
-                type = types.str;
-              };
-            };
 
 
-            services = mkOption {
-              type = types.attrsOf (
-                types.submodule {
-                  options = {
-                    domain = mkOption {
-                      type = types.str;
+              services = mkOption {
+                type = types.attrsOf (
+                  types.submodule {
+                    options = {
+                      domain = mkOption {
+                        type = types.str;
+                      };
                     };
-                  };
-                }
-              );
-            };
+                  }
+                );
+              };
 
-            domains = {
-              main = mkOption {
-                type = types.str;
+              domains = {
+                main = mkOption {
+                  type = types.str;
+                };
               };
             };
           };
         };
-      };
 
-      _globalsDefs = mkOption {
-        type = types.unspecified;
-        default = options.globals.definitions;
-        readOnly = true;
-        internal = true;
+        _globalsDefs = mkOption {
+          type = types.unspecified;
+          default = options.globals.definitions;
+          readOnly = true;
+          internal = true;
+        };
       };
-    };
-  }
+    }
 #+end_src
 
 **** Meta options (automatically active)
@@ -3735,26 +3728,26 @@ We disable the warnings that trigger when rebuilding with a dirty flake. At this
 Also, the system state version is set here. No need to touch it.
 
 A breakdown of the flags being set:
-  - =nixpgks.config.allowUnfree=: allows packages with an unfree license to be built
-  - nix.settings:
-    - experimental-features:
-      - nix-command: Enables the =nix= command from nix 2.4
-      - flakes: Enables flakes to be used
-      - ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuiluds - to be used with my TODO private hydra and the binary cache =cache.ngi0.nixos.org= in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]
-      - cgroups: allows the use of cgroups in builds
-      - pipe-operators: Enables 'piping' instead of the classic currying syntax - =fun arg= can be expressed as =arg |> fun=. Associatively, it is weaker than functions: =a |> b |> d c |> e = e ((d c) (b a))=
-    - trusted-users: these users have elevated privileges in nix (mostly used to acknowledge binary caches) - root is added per default here
-    - connect-timeout: normally, nix tries to reach the cache for 300 seconds for each derivation per cache. This setting lets me change that
-    - bash-prompt-prefix: adds a prefix to shells spawned by =nix develop=
-    - [min,max]-free: amounts of space where intermittent GC will be run during builds
-    - flake registry: URI of the global flake registry (I disable it)
-    - auto-optimise-store: create hardlinks in the nix store to save space
-    - warn-dirty: I do not need to see the warning when I have uncommited changes
-    - max-jobs: How many build jobs should be run in parallel. =auto= sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now =1=, but used to be =auto=, I set this manually just to be safe in the future.
-    - use-cgroups: Actually run builds within cgroups
-  - nix.channel.enable: whether to use channels
-  - nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. =nixpkgs= directly in =nix repl=
-  - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
+- =nixpgks.config.allowUnfree=: allows packages with an unfree license to be built
+- nix.settings:
+  - experimental-features:
+    - nix-command: Enables the =nix= command from nix 2.4
+    - flakes: Enables flakes to be used
+    - ca-derivations: Enables content-addressed derivations, which stops unnecessary rebuiluds - to be used with my TODO private hydra and the binary cache =cache.ngi0.nixos.org= in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]
+    - cgroups: allows the use of cgroups in builds
+    - pipe-operators: Enables 'piping' instead of the classic currying syntax - =fun arg= can be expressed as =arg |> fun=. Associatively, it is weaker than functions: =a |> b |> d c |> e = e ((d c) (b a))=
+  - trusted-users: these users have elevated privileges in nix (mostly used to acknowledge binary caches) - root is added per default here
+  - connect-timeout: normally, nix tries to reach the cache for 300 seconds for each derivation per cache. This setting lets me change that
+  - bash-prompt-prefix: adds a prefix to shells spawned by =nix develop=
+  - [min,max]-free: amounts of space where intermittent GC will be run during builds
+  - flake registry: URI of the global flake registry (I disable it)
+  - auto-optimise-store: create hardlinks in the nix store to save space
+  - warn-dirty: I do not need to see the warning when I have uncommited changes
+  - max-jobs: How many build jobs should be run in parallel. =auto= sets this to the number of CPUs (which is all) - on systems with many cores this can lead to OOM situations. The default is now =1=, but used to be =auto=, I set this manually just to be safe in the future.
+  - use-cgroups: Actually run builds within cgroups
+- nix.channel.enable: whether to use channels
+- nix.registry: Sets the registry for this flake, which I set to its inputs. This allows me to use e.g. =nixpkgs= directly in =nix repl=
+- nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix-ts :tangle modules/nixos/common/settings.nix
   { lib, pkgs, config, outputs, inputs, ... }:
@@ -3777,44 +3770,44 @@ A breakdown of the flags being set:
         let
           flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
         in
-        {
-          settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-              "ca-derivations"
-              "cgroups"
-              "pipe-operators"
-            ];
-            trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
-            connect-timeout = 5;
-            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
-            fallback = true;
-            min-free = 128000000;
-            max-free = 1000000000;
-            flake-registry = "";
-            auto-optimise-store = true;
-            warn-dirty = false;
-            max-jobs = 1;
-            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+          {
+            settings = {
+              experimental-features = [
+                "nix-command"
+                "flakes"
+                "ca-derivations"
+                "cgroups"
+                "pipe-operators"
+              ];
+              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+              connect-timeout = 5;
+              bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+              bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+              fallback = true;
+              min-free = 128000000;
+              max-free = 1000000000;
+              flake-registry = "";
+              auto-optimise-store = true;
+              warn-dirty = false;
+              max-jobs = 1;
+              use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+            };
+            gc = {
+              automatic = true;
+              dates = "weekly";
+              options = "--delete-older-than 10d";
+            };
+            optimise = {
+              automatic = true;
+              dates = "weekly";
+            };
+            channel.enable = false;
+            registry = rec {
+              nixpkgs.flake = inputs.nixpkgs;
+              p = nixpkgs;
+            };
+            nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
           };
-          gc = {
-            automatic = true;
-            dates = "weekly";
-            options = "--delete-older-than 10d";
-          };
-          optimise = {
-            automatic = true;
-            dates = "weekly";
-          };
-          channel.enable = false;
-          registry = rec {
-            nixpkgs.flake = inputs.nixpkgs;
-            p = nixpkgs;
-          };
-          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-        };
 
       services.dbus.implementation = "broker";
 
@@ -3839,28 +3832,28 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
   let
     mainUser = globals.user.name;
   in
-  {
-    options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
-    config = lib.mkIf config.swarselsystems.modules.home-manager {
-      home-manager = lib.mkIf config.swarselsystems.withHomeManager {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-        verbose = true;
-        users."${mainUser}".imports = [
-          "${self}/profiles/home"
-          "${self}/modules/home"
-        ];
-        sharedModules = [
-          inputs.nix-index-database.hmModules.nix-index
-          inputs.sops-nix.homeManagerModules.sops
-          {
-            home.stateVersion = lib.mkDefault config.system.stateVersion;
-          }
-        ];
-        extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
+    {
+      options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
+      config = lib.mkIf config.swarselsystems.modules.home-manager {
+        home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+          useGlobalPkgs = true;
+          useUserPackages = true;
+          verbose = true;
+          users."${mainUser}".imports = [
+            "${self}/profiles/home"
+            "${self}/modules/home"
+          ];
+          sharedModules = [
+            inputs.nix-index-database.hmModules.nix-index
+            inputs.sops-nix.homeManagerModules.sops
+            {
+              home.stateVersion = lib.mkDefault config.system.stateVersion;
+            }
+          ];
+          extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
+        };
       };
-    };
-  }
+    }
 #+end_src
 
 **** User setup, Make users non-mutable
@@ -3878,24 +3871,24 @@ For that reason, make sure that =sops-nix= is properly working before setting th
   let
     sopsFile = self + /secrets/general/secrets.yaml;
   in
-  {
-    options.swarselsystems.modules.users = lib.mkEnableOption "user config";
-    config = lib.mkIf config.swarselsystems.modules.users {
-      sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
+    {
+      options.swarselsystems.modules.users = lib.mkEnableOption "user config";
+      config = lib.mkIf config.swarselsystems.modules.users {
+        sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
-      users = {
-        mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
-        users."${config.swarselsystems.mainUser}" = {
-          isNormalUser = true;
-          description = "Leon S";
-          password = lib.mkIf config.swarselsystems.initialSetup "setup";
-          hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-          extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
-          packages = with pkgs; [ ];
+        users = {
+          mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
+          users."${config.swarselsystems.mainUser}" = {
+            isNormalUser = true;
+            description = "Leon S";
+            password = lib.mkIf config.swarselsystems.initialSetup "setup";
+            hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
+            extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+            packages = with pkgs; [ ];
+          };
         };
       };
-    };
-  }
+    }
 #+end_src
 
 **** Setup login keymap
@@ -5938,7 +5931,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       topology.self.services.${serviceName} = {
         name = "Kavita";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -6284,7 +6277,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       topology.self.services.${serviceName} = {
         name = lib.toUpper serviceName;
         info = "http://localhost:${builtins.toString servicePort}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
       services.${serviceName} = {
@@ -7114,7 +7107,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         readarr = {
           name = "Readarr";
           info = "https://${serviceDomain}/readarr";
-          icon = "${self}/topology/images/readarr.png";
+          icon = "${self}/files/topology-images/readarr.png";
         };
         sonarr.info = "https://${serviceDomain}/sonarr";
         lidarr.info = "https://${serviceDomain}/lidarr";
@@ -7821,7 +7814,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       topology.self.services.${serviceName} = {
         name = "FreshRSS";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
       globals.services.${serviceName}.domain = serviceDomain;
@@ -8058,7 +8051,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       topology.self.services.${serviceName} = {
         name = lib.mkForce "Anki Sync Server";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
         info = "https://${serviceDomain}";
       };
 
@@ -8645,7 +8638,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName} = {
         name = "Firefly-III";
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -8753,7 +8746,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName} = {
         name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -9067,7 +9060,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName} = {
         name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
 
       globals.services.${serviceName}.domain = serviceDomain;
@@ -9152,7 +9145,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName} = {
         name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -9296,7 +9289,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       topology.self.services.${serviceName} = {
         name = lib.swarselsystems.toCapitalized serviceName;
         info = "https://${serviceDomain}";
-        icon = "${self}/topology/images/${serviceName}.png";
+        icon = "${self}/files/topology-images/${serviceName}.png";
       };
       globals.services.${serviceName}.domain = serviceDomain;
 
@@ -9930,84 +9923,6 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
   }
 #+end_src
 
-**** Minimal Install
-:PROPERTIES:
-:CUSTOM_ID: h:3fc1d301-7bae-4678-9085-d12c23eed8ac
-:END:
-
-These options are really only to be used on the iso image in order to run nixos-anywhere.
-
-#+begin_src nix-ts :tangle modules/iso/minimal.nix
-  { lib, pkgs, ... }:
-  {
-
-    nix.settings = {
-      experimental-features = [ "nix-command" "flakes" ];
-      warn-dirty = false;
-    };
-
-    boot = {
-      # initrd.systemd.enable = true;
-      kernelPackages = pkgs.linuxPackages_latest;
-      supportedFilesystems = lib.mkForce [ "brtfs" "vfat" ];
-      loader = {
-        efi.canTouchEfiVariables = true;
-        systemd-boot = {
-          enable = true;
-          configurationLimit = lib.mkDefault 5;
-          consoleMode = lib.mkDefault "max";
-        };
-      };
-    };
-
-    services = {
-      qemuGuest.enable = true;
-      openssh = {
-        enable = true;
-        ports = lib.mkDefault [ 22 ];
-        settings.PermitRootLogin = "yes";
-        authorizedKeysFiles = lib.mkForce [
-          "/etc/ssh/authorized_keys.d/%u"
-        ];
-      };
-    };
-
-    security.sudo.extraConfig = ''
-      Defaults    env_keep+=SSH_AUTH_SOCK
-      Defaults lecture = never
-    '';
-
-    security.pam = {
-      sshAgentAuth.enable = true;
-      services = {
-        sudo.u2fAuth = true;
-      };
-    };
-
-    environment.systemPackages = with pkgs; [
-      curl
-      git
-      gnupg
-      rsync
-      ssh-to-age
-      sops
-      vim
-      just
-      sbctl
-    ];
-
-    programs = {
-      git.enable = true;
-    };
-
-    fileSystems."/boot".options = [ "umask=0077" ];
-
-    networking.networkmanager.enable = true;
-
-
-  }
-#+end_src
-
 ** Home-manager
 :PROPERTIES:
 :CUSTOM_ID: h:08ded95b-9c43-475d-a0b2-fc088a512287
@@ -10091,7 +10006,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       };
       wallpaper = lib.mkOption {
         type = lib.types.path;
-        default = "${self}/wallpaper/lenovowp.png";
+        default = "${self}/files/wallpaper/lenovowp.png";
       };
       sharescreen = lib.mkOption {
         type = lib.types.str;
@@ -10110,7 +10025,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
         type = lib.types.attrs;
         default = {
           enable = true;
-          base16Scheme = "${self}/programs/stylix/swarsel.yaml";
+          base16Scheme = "${self}/files/stylix/swarsel.yaml";
           polarity = "dark";
           opacity.popups = 0.5;
           cursor = {
@@ -10165,7 +10080,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       firefox = lib.mkOption {
         type = lib.types.attrs;
         default = {
-          userChrome = builtins.readFile "${self}/programs/firefox/chrome/userChrome.css";
+          userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
           extensions = {
             packages = with pkgs.nur.repos.rycee.firefox-addons; [
               tridactyl
@@ -10958,29 +10873,29 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
     config = lib.mkIf config.swarselsystems.modules.symlink {
       home.file = {
         "init.el" = lib.mkDefault {
-          source = self + /programs/emacs/init.el;
+          source = self + /files/emacs/init.el;
           target = ".emacs.d/init.el";
         };
         "early-init.el" = {
-          source = self + /programs/emacs/early-init.el;
+          source = self + /files/emacs/early-init.el;
           target = ".emacs.d/early-init.el";
         };
         # on NixOS, Emacs does not find the aspell dicts easily. Write the configuration manually
         ".aspell.conf" = {
-          source = self + /programs/config/.aspell.conf;
+          source = self + /files/config/.aspell.conf;
           target = ".aspell.conf";
         };
         ".gitmessage" = {
-          source = self + /programs/git/.gitmessage;
+          source = self + /files/git/.gitmessage;
           target = ".gitmessage";
         };
       };
 
       xdg.configFile = {
-        "tridactyl/tridactylrc".source = self + /programs/firefox/tridactyl/tridactylrc;
-        "tridactyl/themes/base16-codeschool.css".source = self + /programs/firefox/tridactyl/themes/base16-codeschool.css;
-        "tridactyl/themes/swarsel.css".source = self + /programs/firefox/tridactyl/themes/swarsel.css;
-        "swayidle/config".source = self + /programs/swayidle/config;
+        "tridactyl/tridactylrc".source = self + /files/firefox/tridactyl/tridactylrc;
+        "tridactyl/themes/base16-codeschool.css".source = self + /files/firefox/tridactyl/themes/base16-codeschool.css;
+        "tridactyl/themes/swarsel.css".source = self + /files/firefox/tridactyl/themes/swarsel.css;
+        "swayidle/config".source = self + /files/swayidle/config;
       };
     };
   }
@@ -11079,7 +10994,7 @@ nix-index provides a way to find out which packages are provided by which deriva
         let
           commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
             mkdir -p $out/etc/profile.d
-            substitute ${self + /scripts/command-not-found.sh}        \
+            substitute ${self + /files/scripts/command-not-found.sh}        \
               $out/etc/profile.d/command-not-found.sh                 \
               --replace-fail @nix-locate@ ${pkgs.nix-index}/bin/nix-locate \
               --replace-fail @tput@ ${pkgs.ncurses}/bin/tput
@@ -11615,8 +11530,8 @@ Currently I only use it as before with =initExtra= though.
       ];
 
       xdg.configFile = {
-        "zellij/config.kdl".text = import "${self}/programs/zellij/config.kdl.nix" { inherit config; };
-        "zellij/layouts/default.kdl".text = import "${self}/programs/zellij/layouts/default.kdl.nix" { inherit config pkgs; };
+        "zellij/config.kdl".text = import "${self}/files/zellij/config.kdl.nix" { inherit config; };
+        "zellij/layouts/default.kdl".text = import "${self}/files/zellij/layouts/default.kdl.nix" { inherit config pkgs; };
       };
     };
 
@@ -11908,7 +11823,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
       programs.emacs = {
         enable = true;
         package = pkgs.emacsWithPackagesFromUsePackage {
-          config = self + /programs/emacs/init.el;
+          config = self + /files/emacs/init.el;
           package = pkgs.emacs-git-pgtk;
           alwaysEnsure = true;
           alwaysTangle = true;
@@ -12296,7 +12211,7 @@ The rest of the related configuration is found here:
             };
           };
         };
-        style = builtins.readFile (self + /programs/waybar/style.css);
+        style = builtins.readFile (self + /files/waybar/style.css);
       };
     };
   }
@@ -12844,10 +12759,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
           output = {
             "${config.swarselsystems.sharescreen}" = {
-              bg = "${self}/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+              bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
             };
             "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-              bg = "${self}/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+              bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
             };
           };
           input = config.swarselsystems.standardinputs;
@@ -13252,7 +13167,7 @@ As for the `home.sessionVariables`, it should be noted that environment variable
     config = lib.mkIf config.swarselsystems.modules.server.dotfiles {
       home.file = {
         "init.el" = lib.mkForce {
-          source = self + /programs/emacs/server.el;
+          source = self + /files/emacs/server.el;
           target = ".emacs.d/init.el";
         };
       };
@@ -13387,13 +13302,13 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
       wayland.windowManager.sway.config = {
         output = {
           "Applied Creative Technology Transmitter QUATTRO201811" = {
-            bg = "${self}/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+            bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
           };
           "Hewlett Packard HP Z24i CN44250RDT" = {
-            bg = "${self}/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+            bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
           };
           "HP Inc. HP 732pk CNC4080YL5" = {
-            bg = "${self}/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+            bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
           };
         };
       };
@@ -13850,7 +13765,7 @@ Note: The structure of generating the packages was changed in commit =2cf03a3 re
 
 This app allows me, in conjunction with my Yubikey, to quickly enter passwords when the need arises. Normal and TOTP passwords are supported, and they can either be printed directly or copied to the clipboard.
 
-#+begin_src shell :tangle scripts/pass-fuzzel.sh :mkdirp yes
+#+begin_src shell :tangle files/scripts/pass-fuzzel.sh :mkdirp yes
   # Adapted from https://code.kulupu.party/thesuess/home-manager/src/branch/main/modules/river.nix
   shopt -s nullglob globstar
 
@@ -13909,7 +13824,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   writeShellApplication {
     inherit name;
     runtimeInputs = [ libnotify (pass.withExtensions (exts: [ exts.pass-otp ])) fuzzel wtype ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -14070,7 +13985,7 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm scratchpad window that I sometimes use for calling a command quickly, in case it is on the screen. After emacs closes, the kittyterm window is then shown again if it was visible earlier.
 
-#+begin_src shell :tangle scripts/e.sh
+#+begin_src shell :tangle files/scripts/e.sh
   wait=0
   while :; do
       case ${1:-} in
@@ -14101,7 +14016,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   writeShellApplication {
     inherit name;
     runtimeInputs = [ emacs30-pgtk sway jq ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -14114,7 +14029,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 The normal =command-not-found.sh= uses the outdated =nix-shell= commands as suggestions. This version supplies me with the more modern =nixpkgs#<name>= version.
 
 
-#+begin_src shell :tangle scripts/command-not-found.sh
+#+begin_src shell :tangle files/scripts/command-not-found.sh
   # Adapted from https://github.com/bennofs/nix-index/blob/master/command-not-found.sh
   command_not_found_handle() {
       if [ -n "${MC_SID-}" ] || ! [ -t 1 ]; then
@@ -14157,7 +14072,7 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
 
 This app checks for different apps that I keep around in the scratchpad for quick viewing and hiding (messengers and music players mostly) and then behaves like the kittyterm hider that I described in [[#h:1834df06-9238-4efa-9af6-851dafe66c68][e]].
 
-#+begin_src shell :tangle scripts/swarselcheck.sh
+#+begin_src shell :tangle files/scripts/swarselcheck.sh
   kitty=0
   element=0
   vesktop=0
@@ -14227,7 +14142,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -14237,7 +14152,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 :CUSTOM_ID: h:564c102c-e335-4f17-a613-c5a436bb4864
 :END:
 
-#+begin_src shell :tangle scripts/swarselzellij.sh
+#+begin_src shell :tangle files/scripts/swarselzellij.sh
   KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
 
   if ((KITTIES < 1)); then
@@ -14252,7 +14167,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   writeShellApplication {
     inherit name;
     runtimeInputs = [ kitty ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -14264,7 +14179,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
 
-#+begin_src shell :tangle scripts/waybarupdate.sh
+#+begin_src shell :tangle files/scripts/waybarupdate.sh
   CFG=$(git --git-dir="$HOME"/.dotfiles/.git --work-tree="$HOME"/.dotfiles/ status -s | wc -l)
   CSE=$(git --git-dir="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/.git --work-tree="$DOCUMENT_DIR_PRIV"/CSE_TUWIEN/ status -s | wc -l)
   PASS=$(($(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ status -s | wc -l) + $(git --git-dir="$HOME"/.local/share/password-store/.git --work-tree="$HOME"/.local/share/password-store/ diff origin/main..HEAD | wc -l)))
@@ -14296,7 +14211,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -14308,7 +14223,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
 This app quickly toggles between 5% and 0% transparency.
 
-#+begin_src shell :tangle scripts/opacitytoggle.sh
+#+begin_src shell :tangle files/scripts/opacitytoggle.sh
   if swaymsg opacity plus 0.01 -q; then
       swaymsg opacity 1
   else
@@ -14321,7 +14236,7 @@ This app quickly toggles between 5% and 0% transparency.
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -14332,7 +14247,7 @@ This app quickly toggles between 5% and 0% transparency.
 
 This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
 
-#+begin_src shell :tangle scripts/fs-diff.sh
+#+begin_src shell :tangle files/scripts/fs-diff.sh
   set -euo pipefail
 
   OLD_TRANSID=$(sudo btrfs subvolume find-new /mnt/root-blank 9999999)
@@ -14359,7 +14274,7 @@ This utility is used to compare the current state of the root directory with the
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -14412,7 +14327,7 @@ This application moves the wl-mirror app to the T workspace and makes it fullscr
 :END:
 
 
-#+begin_src shell :tangle scripts/screenshare.sh
+#+begin_src shell :tangle files/scripts/screenshare.sh
 
   headless="false"
   while [[ $# -gt 0 ]]; do
@@ -14445,7 +14360,7 @@ This application moves the wl-mirror app to the T workspace and makes it fullscr
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -14456,8 +14371,8 @@ This application moves the wl-mirror app to the T workspace and makes it fullscr
 
 This program sets up a new NixOS host remotely. It also takes care of secret management on the new host.
 
-#+begin_src shell :tangle scripts/swarsel-bootstrap.sh
-  # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/scripts/bootstrap-nixos.sh
+#+begin_src shell :tangle files/scripts/swarsel-bootstrap.sh
+  # highly inspired by https://github.com/EmergentMind/nix-config/blob/dev/files/scripts/bootstrap-nixos.sh
   set -eo pipefail
 
   target_hostname=""
@@ -14804,7 +14719,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   writeShellApplication {
     inherit name;
     runtimeInputs = [ openssh ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -14813,7 +14728,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
 
-#+begin_src shell :tangle scripts/swarsel-rebuild.sh
+#+begin_src shell :tangle files/scripts/swarsel-rebuild.sh
   set -eo pipefail
 
   target_config="chaostheatre"
@@ -14922,7 +14837,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -14933,7 +14848,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 Autoformatting always puts the =EOF= with indentation, which makes shfmt check fail. When editing this block, unindent them manually.
 
-#+begin_src shell :tangle scripts/swarsel-install.sh
+#+begin_src shell :tangle files/scripts/swarsel-install.sh
   set -eo pipefail
 
   target_config="chaostheatre"
@@ -15144,7 +15059,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -15153,7 +15068,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
 :END:
 
-#+begin_src shell :tangle scripts/swarsel-postinstall.sh
+#+begin_src shell :tangle files/scripts/swarsel-postinstall.sh
   set -eo pipefail
 
   target_config="chaostheatre"
@@ -15237,7 +15152,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   writeShellApplication {
     inherit name;
     runtimeInputs = [ git ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -15404,7 +15319,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 :CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
 :END:
 
-#+begin_src shell :tangle scripts/project.sh
+#+begin_src shell :tangle files/scripts/project.sh
   set -euo pipefail
 
   if [ ! -d "$(pwd)/.git" ]; then
@@ -15418,7 +15333,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 
@@ -15449,7 +15364,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 A crude script to power on all displays that might be attached. Needed because sometimes displays do not awake from sleep.
 
-#+begin_src shell :tangle scripts/swarsel-displaypower.sh
+#+begin_src shell :tangle files/scripts/swarsel-displaypower.sh
   swaymsg "output * power on" > /dev/null 2>&1 || true
   swaymsg "output * dpms on" > /dev/null 2>&1 || true
 #+end_src
@@ -15459,7 +15374,7 @@ A crude script to power on all displays that might be attached. Needed because s
   writeShellApplication {
     inherit name;
     runtimeInputs = [ sway ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 
 #+end_src
@@ -15659,7 +15574,7 @@ AppImage version of mgba in which the lua scripting works.
 
 This programs simply runs ssh-keygen on the last host that I tried to ssh into. I need this frequently when working with cloud-init usually.
 
-#+begin_src shell :tangle scripts/sshrm.sh
+#+begin_src shell :tangle files/scripts/sshrm.sh
   HISTFILE="$HOME"/.histfile
 
   last_ssh_cmd=$(grep -E "ssh " "$HISTFILE" | sed -E 's/^: [0-9]+:[0-9]+;//' | grep "^ssh " | tail -1)
@@ -15678,7 +15593,7 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
   writeShellApplication {
     inherit name;
     runtimeInputs = [ openssh ];
-    text = builtins.readFile "${self}/scripts/${name}.sh";
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
 ** Profiles
@@ -16382,7 +16297,7 @@ In the end, we need to restore those values to values that will work during norm
 
 Also packed into the hook function is the line =(fset 'epg-wait-for-status 'ignore)=. This line is needed at the end of the configuration in order to allow for my Yubikey to be used to encrypt and decrypt =.gpg= files. Without it, Emacs will just hang forever and basically crash.
 
-#+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
+#+begin_src emacs-lisp :tangle files/emacs/early-init.el :mkdirp yes
   (defvar swarsel-file-name-handler-alist file-name-handler-alist)
   (defvar swarsel-vc-handled-backends vc-handled-backends)
 
@@ -16415,7 +16330,7 @@ We also make require immediate compilation of native code.
 
 For the =default-frame-alist=, I used to also set ='(right-divider-width . 4)= and ='(bottom-divider-width . 4)=, but I did not like the look of the divider bar and usually know my splits anyways, so this is no longer set.
 
-#+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
+#+begin_src emacs-lisp :tangle files/emacs/early-init.el :mkdirp yes
   (tool-bar-mode 0)
   (menu-bar-mode 0)
   (scroll-bar-mode 0)
@@ -16464,7 +16379,7 @@ These keybinds exist to make Emacs work well in terminal mode. However, most of 
 
 NOTE: To use these keybinds, you need to enclose the binding in angled brackets (=<>=). Then they can be used normally
 
-#+begin_src emacs-lisp :tangle programs/emacs/early-init.el :mkdirp yes
+#+begin_src emacs-lisp :tangle files/emacs/early-init.el :mkdirp yes
 
   (add-hook
    'after-make-frame-functions
@@ -19451,7 +19366,7 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
           dashboard-set-footer nil
           dashboard-banner-logo-title "Welcome to SwarsEmacs!"
           dashboard-image-banner-max-height 300
-          dashboard-startup-banner "~/.dotfiles/wallpaper/swarsel.png"
+          dashboard-startup-banner "~/.dotfiles/files/wallpaper/swarsel.png"
           dashboard-projects-backend 'projectile
           dashboard-projects-switch-function 'magit-status
           dashboard-set-navigator t
@@ -19556,7 +19471,7 @@ This section now holds some of the configuration files that cannot be defined di
 On my server, I use a reduced, self-contained emacs configuration that only serves as an elfeed sync server. This is currently unused, however, I am keeping this in here for now as a reference. The big problem here was the bidirectional syncing using =bjm/elfeed-updater=. As I am using this both on a laptop client (using elfeed) as well as on a mobile phone (using elfeed-cljsrn over elfeed-web), I set up a Syncthing service to take care of the feeds as well as the db state. However, I could only either achieve changes propagating properly from the laptop to the server or from the phone to the server. Both would not work. This current state represents the state where from-laptop changes would propagate. To allow from-phone changes, change =(elfeed-db-load)= in =bjm/elfeed-updater= to =(elfeed-db-save)=.
 
 
-#+begin_src emacs-lisp :tangle programs/emacs/server.el
+#+begin_src emacs-lisp :tangle files/emacs/server.el
   (require 'package)
 
   (package-initialize nil)
@@ -19648,7 +19563,7 @@ This is the configuration file for tridactyl, which provides keyboard-driven nav
 
 The =command= command can be supplied with a =-p= flag that will take a single argmuent which is exposed as =JS_ARG=. I use this in a function that switches to an open tab if it exists and otherwise creates it.
 
-#+begin_src config :tangle programs/firefox/tridactyl/tridactylrc :mkdirp yes
+#+begin_src config :tangle files/firefox/tridactyl/tridactylrc :mkdirp yes
 
 sanitise tridactyllocal tridactylsync
 
@@ -19783,7 +19698,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 :PROPERTIES:
 :CUSTOM_ID: h:86f1fd9b-56ee-4fd2-8b35-9ea104d83df0
 :END:
-#+begin_src config :tangle programs/firefox/tridactyl/themes/swarsel.css :mkdirp yes
+#+begin_src config :tangle files/firefox/tridactyl/themes/swarsel.css :mkdirp yes
 
 :root {
 
@@ -19956,7 +19871,7 @@ autocmd DocStart vc-impimba-1.m.imp.ac.at/ui/webconsole mode ignore
 
 This is the stylesheet used by waybar.
 
-#+begin_src css :tangle programs/waybar/style.css :mkdirp yes
+#+begin_src css :tangle files/waybar/style.css :mkdirp yes
   @define-color foreground #fdf6e3;
   @define-color background #1a1a1a;
   @define-color background-alt #292b2e;
@@ -20268,7 +20183,7 @@ This file defines a few workflows that I often need to run when working on my co
 :CUSTOM_ID: h:038feb42-6e1e-4b65-abe9-e26746b72b78
 :END:
 
-#+begin_src shell :tangle programs/config/.aspell.conf
+#+begin_src shell :tangle files/config/.aspell.conf
 dict-dir /run/current-system/sw/lib/aspell
 #+end_src
 ** nix-plugins.patch
@@ -20304,7 +20219,7 @@ index 3a0f90e..bb10f8b 100644
 :CUSTOM_ID: h:bed316c9-47ed-494f-8375-998ef1315d7b
 :END:
 
-#+begin_src shell :tangle programs/zellij/layouts/default.kdl.nix
+#+begin_src shell :tangle files/zellij/layouts/default.kdl.nix
 { config, pkgs }:
 let
   inherit (config.lib.stylix) colors;
@@ -20471,7 +20386,7 @@ in
 :CUSTOM_ID: h:ae07e867-fc17-4dd7-bd21-5886265308ee
 :END:
 
-#+begin_src nix-ts :tangle programs/zellij/config.kdl.nix
+#+begin_src nix-ts :tangle files/zellij/config.kdl.nix
 { config }:
 ''
   pane_frames false
@@ -20819,7 +20734,7 @@ in
 :CUSTOM_ID: h:0124a4eb-4ea3-455c-939d-ba4584c703af
 :END:
 
-#+begin_src shell :tangle programs/vieb/viebrc
+#+begin_src shell :tangle files/vieb/viebrc
 " Options
 set adblocker=update
 set adblockernotifications=all
@@ -21023,7 +20938,7 @@ set searchwords+=hm~https://home-manager-options.extranix.com/?query=%s
 :CUSTOM_ID: h:69ea5818-4ebb-436a-a31a-6a2348cf215c
 :END:
 
-#+begin_src shell :tangle programs/swayidle/config
+#+begin_src shell :tangle files/swayidle/config
 timeout 300 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
 timeout 600 'swaymsg "output * dpms off"' resume 'swaymsg "output * dpms on"'
 before-sleep 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2'
@@ -21033,7 +20948,7 @@ before-sleep 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vigne
 :CUSTOM_ID: h:2e9b84d7-cb18-4e74-83f8-65ada11a8911
 :END:
 
-#+begin_src css :tangle programs/stylix/swarsel.yaml :mkdirp yes
+#+begin_src css :tangle files/stylix/swarsel.yaml :mkdirp yes
 # scheme: "better-contrast"
 author: "Swarsel"
 base00: "1D252C" # #1d252c passt
@@ -21077,11 +20992,11 @@ base0F: "5EC4FF" # #5EC4FF passt
 
 The double source block is intended here to circumvent a org-babel convenience where the first n empty lines of each source block are not taken into the final file. For the .gitmessage I want an empty newline to type into, so this is what I use to achieve that.
 
-#+begin_src shell :tangle programs/git/.gitmessage
+#+begin_src shell :tangle files/git/.gitmessage
 
 #+end_src
 
-#+begin_src shell :tangle programs/git/.gitmessage
+#+begin_src shell :tangle files/git/.gitmessage
   #                         max. 50 chars is here: #
   # <type>[optional scope]: <description>
   # types: feat, fix, build, chore, ci, docs, style, refactor, perf, test
@@ -21097,7 +21012,7 @@ The double source block is intended here to circumvent a org-babel convenience w
 :CUSTOM_ID: h:a2990def-9a2a-491b-9fee-3057dc324c3c
 :END:
 
-#+begin_src css :tangle programs/firefox/chrome/userChrome.css :mkdirp yes
+#+begin_src css :tangle files/firefox/chrome/userChrome.css :mkdirp yes
   /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_toolbox.css made available under Mozilla Public License v. 2.0
 See the above repository for updates as well as full license text. */
 
@@ -21325,7 +21240,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:fefc38d9-b3fb-42c5-8a73-ca363e898bb9
 :END:
 
-#+begin_src nix-ts :tangle templates/default/flake.nix
+#+begin_src nix-ts :tangle files/templates/default/flake.nix
 {
   description = "General purpose Flake";
 
@@ -21362,7 +21277,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:c54fc65b-91ef-4f8f-b0d5-cc0c3cb92b53
 :END:
 
-#+begin_src nix-ts :tangle templates/cpp/flake.nix
+#+begin_src nix-ts :tangle files/templates/cpp/flake.nix
   # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/cpp-cmake/flake.nix
   {
     description = "C++ Flake";
@@ -21431,7 +21346,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:def2d654-e8da-4d8a-8958-b59a60d019f5
 :END:
 
-#+begin_src nix-ts :tangle templates/go/flake.nix
+#+begin_src nix-ts :tangle files/templates/go/flake.nix
   # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/go-nix/flake.nix
   {
     description = "Go Flake";
@@ -21490,7 +21405,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:adccea10-6c72-46aa-8c67-5e06b7606c71
 :END:
 
-#+begin_src nix-ts :tangle templates/latex/flake.nix
+#+begin_src nix-ts :tangle files/templates/latex/flake.nix
   # This template is based on https://github.com/Leixb/latex-template/tree/master
   {
     description = "LaTeX Flake";
@@ -21575,7 +21490,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:1a918c8d-08b4-4474-8d34-3da502081a16
 :END:
 
-#+begin_src nix-ts :tangle templates/python/flake.nix
+#+begin_src nix-ts :tangle files/templates/python/flake.nix
   # based on https://github.com/pyproject-nix/uv2nix/tree/master/templates/hello-world
   {
     description = "Python flake using uv2nix";
@@ -21781,7 +21696,7 @@ See the above repository for updates as well as full license text. */
 :CUSTOM_ID: h:c03663fd-f7bd-4054-9075-5dacaf2abf76
 :END:
 
-#+begin_src nix-ts :tangle templates/rust/flake.nix
+#+begin_src nix-ts :tangle files/templates/rust/flake.nix
   # heavily inspired by https://github.com/nulladmin1/nix-flake-templates/blob/main/rust-fenix-naersk/flake.nix
   {
     description = "Rust Flake using Fenix and Naersk";
@@ -21912,8 +21827,8 @@ Here lies defined the readme for GitHub and Forgejo:
 
   - [SwarselSystems.org](../SwarselSystems.org)
   - [flake.nix](../flake.nix)
-  - [early-init.el](../programs/emacs/early-init.el)
-  - [init.el](../programs/emacs/init.el)
+  - [early-init.el](../files/emacs/early-init.el)
+  - [init.el](../files/emacs/init.el)
 
 
   ### Getting started

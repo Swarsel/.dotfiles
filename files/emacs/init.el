@@ -1641,7 +1641,7 @@ create a new one."
         dashboard-set-footer nil
         dashboard-banner-logo-title "Welcome to SwarsEmacs!"
         dashboard-image-banner-max-height 300
-        dashboard-startup-banner "~/.dotfiles/wallpaper/swarsel.png"
+        dashboard-startup-banner "~/.dotfiles/files/wallpaper/swarsel.png"
         dashboard-projects-backend 'projectile
         dashboard-projects-switch-function 'magit-status
         dashboard-set-navigator t

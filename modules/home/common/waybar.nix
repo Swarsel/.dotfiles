@@ -304,7 +304,7 @@ in
           };
         };
       };
-      style = builtins.readFile (self + /programs/waybar/style.css);
+      style = builtins.readFile (self + /files/waybar/style.css);
     };
   };
 }

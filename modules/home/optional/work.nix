@@ -28,13 +28,13 @@ in
     wayland.windowManager.sway.config = {
       output = {
         "Applied Creative Technology Transmitter QUATTRO201811" = {
-          bg = "${self}/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+          bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
         };
         "Hewlett Packard HP Z24i CN44250RDT" = {
-          bg = "${self}/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+          bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
         };
         "HP Inc. HP 732pk CNC4080YL5" = {
-          bg = "${self}/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+          bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
         };
       };
     };

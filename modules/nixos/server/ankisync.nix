@@ -16,7 +16,7 @@ in
 
     topology.self.services.${serviceName} = {
       name = lib.mkForce "Anki Sync Server";
-      icon = "${self}/topology/images/${serviceName}.png";
+      icon = "${self}/files/topology-images/${serviceName}.png";
       info = "https://${serviceDomain}";
     };
 

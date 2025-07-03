@@ -23,7 +23,7 @@ in
     topology.self.services.${serviceName} = {
       name = "Kavita";
       info = "https://${serviceDomain}";
-      icon = "${self}/topology/images/${serviceName}.png";
+      icon = "${self}/files/topology-images/${serviceName}.png";
     };
     globals.services.${serviceName}.domain = serviceDomain;
 

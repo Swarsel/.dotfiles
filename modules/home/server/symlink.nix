@@ -4,7 +4,7 @@
   config = lib.mkIf config.swarselsystems.modules.server.dotfiles {
     home.file = {
       "init.el" = lib.mkForce {
-        source = self + /programs/emacs/server.el;
+        source = self + /files/emacs/server.el;
         target = ".emacs.d/init.el";
       };
     };

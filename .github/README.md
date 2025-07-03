@@ -49,8 +49,8 @@ Otherwise, the files that are possibly of biggest interest are found here:
 
 - [SwarselSystems.org](../SwarselSystems.org)
 - [flake.nix](../flake.nix)
-- [early-init.el](../programs/emacs/early-init.el)
-- [init.el](../programs/emacs/init.el)
+- [early-init.el](../files/emacs/early-init.el)
+- [init.el](../files/emacs/init.el)
 
 
 ### Getting started
@@ -112,7 +112,7 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
 |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
 |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
 |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
-|✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/programs/emacs/init.el)                          |
+|✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                          |
 |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
 |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
 |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |

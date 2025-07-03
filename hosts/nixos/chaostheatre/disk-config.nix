@@ -81,7 +81,7 @@ in
               content = {
                 inherit type subvolumes extraArgs;
                 postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                  MNTPOINT=$(mktemp -d)
+                    MNTPOINT=$(mktemp -d)
                   mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
                   trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                   btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
@@ -105,7 +105,7 @@ in
                 content = {
                   inherit type subvolumes extraArgs;
                   postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
+                      MNTPOINT=$(mktemp -d)
                     mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
                     trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                     btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank

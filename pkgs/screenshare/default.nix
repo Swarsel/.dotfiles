@@ -2,5 +2,5 @@
 writeShellApplication {
   inherit name;
   runtimeInputs = [ sway ];
-  text = builtins.readFile "${self}/scripts/${name}.sh";
+  text = builtins.readFile "${self}/files/scripts/${name}.sh";
 }
