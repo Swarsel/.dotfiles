@@ -15,6 +15,9 @@ in
             name = mkOption {
               type = types.str;
             };
+            work = mkOption {
+              type = types.str;
+            };
           };
 
 

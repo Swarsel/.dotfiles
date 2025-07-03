@@ -12,7 +12,6 @@
     ];
   };
   inputs = {
-
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
@@ -84,196 +83,27 @@
     };
     nix-topology.url = "github:oddlama/nix-topology";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs =
-    inputs@{ self
-    , nixpkgs
-    , home-manager
-    , systems
-    , ...
-    }:
-    let
-
-      inherit (self) outputs;
-      lib = (nixpkgs.lib // home-manager.lib).extend (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
-
-    in
+    inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         ./nix/globals.nix
+        ./nix/hosts.nix
+        ./nix/topology.nix
+        ./nix/devshell.nix
+        ./nix/apps.nix
+        ./nix/packages.nix
+        ./nix/overlays.nix
+        ./nix/lib.nix
+        ./nix/templates.nix
+        ./nix/formatter.nix
+        ./nix/modules.nix
       ];
-      flake = { config, ... }:
-        let
-
-          inherit (self) outputs;
-          lib = (nixpkgs.lib // home-manager.lib).extend (_: _: { swarselsystems = import ./lib { inherit self lib inputs outputs systems; }; });
-
-
-          linuxUser = "swarsel";
-          macUser = "leon.schwarzaeugl";
-
-          mkFullHost = host: type: {
-            ${host} =
-              let
-                systemFunc = if (type == "nixos") then lib.nixosSystem else inputs.nix-darwin.lib.darwinSystem;
-              in
-              systemFunc {
-                specialArgs = { inherit inputs outputs lib self; inherit (config) globals; };
-                modules = [
-                  {
-                    node.name = host;
-                    node.secretsDir = ./hosts/${type}/${host}/secrets;
-                  }
-                  # put inports here that are for all hosts
-                  inputs.disko.nixosModules.disko
-                  inputs.sops-nix.nixosModules.sops
-                  inputs.impermanence.nixosModules.impermanence
-                  inputs.lanzaboote.nixosModules.lanzaboote
-                  inputs.fw-fanctrl.nixosModules.default
-                  inputs.nix-topology.nixosModules.default
-                  inputs.home-manager.nixosModules.home-manager
-                  "${self}/hosts/${type}/${host}"
-                  {
-                    _module.args.primaryUser = linuxUser;
-                  }
-                ] ++
-                (if (host == "iso") then [
-                ] else
-                  ([
-                    # put nixos imports here that are for all servers and normal hosts
-                    "${self}/modules/nixos"
-                    inputs.stylix.nixosModules.stylix
-                    inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-                  ] ++ (if (type == "nixos") then [
-                    "${self}/profiles/nixos"
-                    {
-                      home-manager.users."${linuxUser}".imports = [
-                        # put home-manager imports here that are for all normal hosts
-                        "${self}/profiles/home"
-                        "${self}/modules/home"
-                      ];
-                    }
-                  ] else [
-                    # put nixos imports here that are for darwin hosts
-                    "${self}/modules/nixos/darwin"
-                    "${self}/profiles/nixos"
-                    inputs.home-manager.darwinModules.home-manager
-                    {
-                      home-manager.users."${macUser}".imports = [
-                        # put home-manager imports here that are for darwin hosts
-                        "${self}/modules/home/darwin"
-                        "${self}/profiles/home"
-                      ];
-                    }
-                  ])
-                  ));
-              };
-          };
-
-          mkHalfHost = host: type: pkgs: {
-            ${host} =
-              let
-                systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-              in
-              systemFunc
-                {
-                  inherit pkgs;
-                  extraSpecialArgs = { inherit inputs outputs lib self; };
-                  modules = [ "${self}/hosts/${type}/${host}" ];
-                };
-          };
-
-          mkFullHostConfigs = hosts: type: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkFullHost host type) hosts);
-
-          mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (host: mkHalfHost host type pkgs) hosts);
-
-        in
-        {
-          inherit lib;
-
-          # nixosModules = import ./modules/nixos { inherit lib; };
-          # homeModules = import ./modules/home { inherit lib; };
-          packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import ./pkgs { inherit lib pkgs; });
-          formatter = lib.swarselsystems.forEachSystem (pkgs: pkgs.nixpkgs-fmt);
-          overlays = import ./overlays { inherit self lib inputs; };
-
-          apps = lib.swarselsystems.forAllSystems (system:
-            let
-              appNames = [
-                "swarsel-bootstrap"
-                "swarsel-install"
-                "swarsel-rebuild"
-                "swarsel-postinstall"
-              ];
-              appSet = lib.swarselsystems.mkApps system appNames self;
-            in
-
-            appSet // {
-              default = appSet.swarsel-bootstrap;
-            }
-          );
-
-          devShells = lib.swarselsystems.forAllSystems (system:
-            let
-              pkgs = lib.swarselsystems.pkgsFor.${system};
-              checks = self.checks.${system};
-            in
-            {
-              default = pkgs.mkShell {
-                # plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                #   buildInputs = [pkgs.nixVersions.latest pkgs.boost];
-                #   patches = (o.patches or []) ++ [ "${self}/nix/nix-plugins.patch" ];
-                # })}/lib/nix/plugins
-                NIX_CONFIG = ''
-                  plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
-                  extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                '';
-                inherit (checks.pre-commit-check) shellHook;
-
-                buildInputs = checks.pre-commit-check.enabledPackages;
-                nativeBuildInputs = [
-                  (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
-                  # pkgs.nix
-                  pkgs.home-manager
-                  pkgs.git
-                  pkgs.just
-                  pkgs.age
-                  pkgs.ssh-to-age
-                  pkgs.sops
-                  pkgs.statix
-                  pkgs.deadnix
-                  pkgs.nixpkgs-fmt
-                ];
-              };
-            }
-          );
-
-          templates = import ./templates { inherit lib; };
-
-          checks = lib.swarselsystems.forAllSystems (system:
-            let
-              pkgs = lib.swarselsystems.pkgsFor.${system};
-            in
-            import ./checks { inherit self inputs system pkgs; }
-          );
-
-          diskoConfigurations.default = import .templates/hosts/nixos/disk-config.nix;
-
-          nixosConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "nixos") "nixos";
-          homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
-          darwinConfigurations = mkFullHostConfigs (lib.swarselsystems.readHosts "darwin") "darwin";
-          nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
-
-          topology = lib.swarselsystems.forEachSystem (pkgs: import inputs.nix-topology {
-            inherit pkgs;
-            modules = [
-              "${self}/topology"
-              { inherit (self) nixosConfigurations; }
-            ];
-          });
-
-          nodes = config.nixosConfigurations;
-        };
       systems = [
         "x86_64-linux"
         "aarch64-linux"

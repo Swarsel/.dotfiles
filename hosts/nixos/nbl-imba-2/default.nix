@@ -1,5 +1,6 @@
-{ self, config, inputs, lib, primaryUser, ... }:
+{ self, config, inputs, lib, globals, ... }:
 let
+  primaryUser = globals.user.name;
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;

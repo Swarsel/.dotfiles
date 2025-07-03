@@ -1,5 +1,8 @@
-{ lib, config, ... }:
+{ lib, config, inputs, ... }:
 {
+  imports = [
+    inputs.fw-fanctrl.nixosModules.default
+  ];
   options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
   config = lib.mkIf config.swarselsystems.modules.optional.framework {
     services = {

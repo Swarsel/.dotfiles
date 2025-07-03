@@ -1,5 +1,6 @@
-{ lib, config, primaryUser, ... }:
+{ lib, config, globals, ... }:
 let
+  primaryUser = globals.user.name;
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
   serviceDomain = config.repo.secrets.common.services.domains.syncthing3;

@@ -1,4 +1,4 @@
-{ self, inputs, pkgs, lib, primaryUser, ... }:
+{ self, inputs, pkgs, lib, ... }:
 let
   modulesPath = "${self}/modules";
   sharedOptions = {
@@ -21,7 +21,7 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users."${primaryUser}".imports = [
+      home-manager.users."setup".imports = [
         inputs.sops-nix.homeManagerModules.sops
         "${modulesPath}/home/common/sharedsetup.nix"
         "${self}/profiles/home"
@@ -70,7 +70,7 @@ in
     }
     sharedOptions;
 
-  home-manager.users."${primaryUser}" = {
+  home-manager.users."setup" = {
     home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {

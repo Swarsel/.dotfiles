@@ -1,5 +1,10 @@
-{ lib, config, outputs, ... }:
+{ self, lib, config, outputs, globals, ... }:
+let
+  macUser = globals.user.work;
+in
 {
+  imports = [
+  ];
 
   options.swarselsystems.modules.darwin.general = lib.mkEnableOption "darwin config";
   config = lib.mkIf config.swarselsystems.modules.darwin.general {
@@ -11,6 +16,10 @@
         allowUnfree = true;
       };
     };
+
+    home-manager.users."${macUser}".imports = [
+      "${self}/modules/home/darwin"
+    ];
 
     system.stateVersion = 4;
   };

@@ -1,4 +1,4 @@
-{ self, pkgs, inputs, config, lib, modulesPath, primaryUser ? "swarsel", ... }:
+{ self, pkgs, inputs, config, lib, modulesPath, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
 in
@@ -18,30 +18,18 @@ in
 
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users."${primaryUser}".imports = [
+      home-manager.users."setup".imports = [
         "${self}/modules/home/common/settings.nix"
         "${self}/modules/home/common/sharedsetup.nix"
       ];
     }
   ];
 
-  options.node = {
-    name = lib.mkOption {
-      description = "Node Name.";
-      type = lib.types.str;
-    };
-    secretsDir = lib.mkOption {
-      description = "Path to the secrets directory for this node.";
-      type = lib.types.path;
-      default = ./.;
-    };
-  };
   config = {
-    node.name = lib.mkForce "drugstore";
     swarselsystems = {
       info = "~SwarselSystems~ installer ISO";
     };
-    home-manager.users."${primaryUser}" = {
+    home-manager.users."setup" = {
       home = {
         stateVersion = "23.05";
         file = {
@@ -78,15 +66,15 @@ in
       config.allowUnfree = true;
     };
 
-    services.getty.autologinUser = lib.mkForce primaryUser;
+    services.getty.autologinUser = lib.mkForce "setup";
 
     users = {
       allowNoPasswordLogin = true;
       groups.swarsel = { };
       users = {
-        swarsel = {
-          name = primaryUser;
-          group = primaryUser;
+        setup = {
+          name = "setup";
+          group = "setup";
           isNormalUser = true;
           password = "setup"; # this is overwritten after install
           openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
@@ -94,7 +82,7 @@ in
         };
         root = {
           # password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
-          openssh.authorizedKeys.keys = config.users.users."${primaryUser}".openssh.authorizedKeys.keys;
+          openssh.authorizedKeys.keys = config.users.users."setup".openssh.authorizedKeys.keys;
         };
       };
     };
@@ -110,10 +98,10 @@ in
 
     system.activationScripts.cache = {
       text = ''
-        mkdir -p -m=0777 /home/${primaryUser}/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/${primaryUser}/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/${primaryUser}/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/${primaryUser}/.local/share/nix/trusted-settings.json > /dev/null
+        mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
+        mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
+        mkdir -p -m=0777 /home/setup/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
         mkdir -p /root/.local/share/nix/
         printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
       '';

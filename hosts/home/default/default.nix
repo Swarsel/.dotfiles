@@ -1,12 +1,11 @@
-{ self, outputs, config, ... }:
+{ self, inputs, outputs, ... }:
 {
 
   imports = [
     inputs.stylix.homeManagerModules.stylix
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
-    ./modules/home/common
-    "${self}/modules/home/common/sharedsetup.nix"
+    "${self}/modules/home"
   ];
 
   nixpkgs = {

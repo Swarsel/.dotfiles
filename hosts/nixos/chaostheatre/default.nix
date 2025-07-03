@@ -1,6 +1,8 @@
-{ self, inputs, config, pkgs, lib, primaryUser, ... }:
+{ self, inputs, config, pkgs, lib, ... }:
 let
+  mainUser = "demo";
   sharedOptions = {
+    inherit mainUser;
     isBtrfs = false;
     isLinux = true;
     isPublic = true;
@@ -20,7 +22,7 @@ in
     "${self}/hosts/nixos/chaostheatre/options.nix"
     inputs.home-manager.nixosModules.home-manager
     {
-      home-manager.users."${primaryUser}".imports = [
+      home-manager.users."${mainUser}".imports = [
         "${self}/modules/home/common/settings.nix"
         "${self}/hosts/nixos/chaostheatre/options-home.nix"
         "${self}/modules/home/common/sharedsetup.nix"
@@ -59,7 +61,7 @@ in
     }
     sharedOptions;
 
-  home-manager.users."${primaryUser}" = {
+  home-manager.users.${mainUser} = {
     home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {

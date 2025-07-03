@@ -1,9 +1,10 @@
-{ self, inputs, pkgs, lib, primaryUser, ... }:
+{ self, inputs, pkgs, lib, globals, ... }:
 let
   modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
   };
+  primaryUser = globals.user.name;
 in
 {
 
