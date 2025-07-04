@@ -1,4 +1,4 @@
-{ self, config, inputs, lib, globals, ... }:
+{ self, config, inputs, lib, globals, minimal, ... }:
 let
   primaryUser = globals.user.name;
   sharedOptions = {
@@ -6,7 +6,8 @@ let
     isLinux = true;
     sharescreen = "eDP-2";
     profiles = {
-      personal = true;
+      personal = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
       work = true;
       framework = true;
     };

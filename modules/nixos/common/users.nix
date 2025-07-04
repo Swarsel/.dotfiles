@@ -1,4 +1,4 @@
-{ self, pkgs, config, lib, ... }:
+{ self, pkgs, config, lib, minimal, ... }:
 let
   sopsFile = self + /secrets/general/secrets.yaml;
 in
@@ -12,9 +12,9 @@ in
       users."${config.swarselsystems.mainUser}" = {
         isNormalUser = true;
         description = "Leon S";
-        password = lib.mkIf config.swarselsystems.initialSetup "setup";
-        hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-        extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+        password = lib.mkIf (config.swarselsystems.initialSetup || minimal) "setup";
+        hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup && !minimal) config.sops.secrets.swarseluser.path;
+        extraGroups = lib.mkIf (!minimal) [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
         packages = with pkgs; [ ];
       };
     };
