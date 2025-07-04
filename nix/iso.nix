@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ self, inputs, ... }:
 {
   perSystem = { pkgs, system, ... }:
     {
@@ -7,7 +7,7 @@
         inherit pkgs;
         modules = [
           inputs.home-manager.nixosModules.home-manager
-          ./installer-config.nix
+          "${self}/install/installer-config.nix"
         ];
         format =
           {

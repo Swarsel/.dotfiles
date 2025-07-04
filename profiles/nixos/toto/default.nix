@@ -4,6 +4,7 @@
   config = lib.mkIf config.swarselsystems.profiles.toto {
     swarselsystems.modules = {
       general = lib.mkDefault true;
+      packages = lib.mkDefault true;
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;
       users = lib.mkDefault true;

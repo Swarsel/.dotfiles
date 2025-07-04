@@ -1,6 +1,6 @@
-{ self, inputs, config, lib, outputs, globals, nodes, ... }:
+{ self, inputs, config, lib, outputs, globals, nodes, minimal, ... }:
 let
-  mainUser = globals.user.name;
+  inherit (config.swarselsystems) mainUser;
 in
 {
   options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
@@ -20,7 +20,7 @@ in
           home.stateVersion = lib.mkDefault config.system.stateVersion;
         }
       ];
-      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
+      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal; };
     };
   };
 }

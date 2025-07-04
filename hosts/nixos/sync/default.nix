@@ -1,6 +1,6 @@
 { lib, config, globals, ... }:
 let
-  primaryUser = globals.user.name;
+  primaryUser = config.swarselsystems.mainUser;
   sharedOptions = {
     isBtrfs = false;
     isLinux = true;

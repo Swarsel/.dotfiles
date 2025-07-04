@@ -218,7 +218,7 @@ $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "$
 # ------------------------
 
 green "Deploying minimal NixOS installation on $target_destination"
-SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
+SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
 
 echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
 ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true

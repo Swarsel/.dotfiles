@@ -1433,7 +1433,7 @@ Lastly, I add some of my own library functions to be used alongside the function
 ** Installer iso
 
 #+begin_src nix-ts :tangle nix/iso.nix
-  { inputs, ... }:
+  { self, inputs, ... }:
   {
     perSystem = { pkgs, system, ... }:
       {
@@ -1442,7 +1442,7 @@ Lastly, I add some of my own library functions to be used alongside the function
           inherit pkgs;
           modules = [
             inputs.home-manager.nixosModules.home-manager
-            ./installer-config.nix
+            "${self}/install/installer-config.nix"
           ];
           format =
             {
@@ -1452,6 +1452,17 @@ Lastly, I add some of my own library functions to be used alongside the function
             .${system};
         };
       };
+  }
+#+end_src
+** Installer flake
+
+#+begin_src nix-ts :tangle install/flake.nix
+  {
+    description = "Minimal installer flake - not to be used manually";
+
+    inputs.swarsel.url = "github:Swarsel/.dotfiles";
+
+    outputs = { swarsel, ... }: { nixosConfigurations = swarsel.nixosConfigurationsMinimal; };
   }
 #+end_src
 * System
@@ -1482,13 +1493,13 @@ This is the template that I use for new deployments of personal machines. Server
 :END:
 
 #+begin_src nix-ts :tangle files/templates/hosts/nixos/default.nix
-  { self, inputs, pkgs, lib, globals, ... }:
+  { self, config, inputs, pkgs, lib, ... }:
   let
+    primaryUser = config.swarselsystems.mainUser;
     modulesPath = "${self}/modules";
     sharedOptions = {
       isBtrfs = true;
     };
-    primaryUser = globals.user.name;
   in
   {
 
@@ -1694,17 +1705,18 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, config, inputs, lib, globals, ... }:
+  { self, config, inputs, lib, ... }:
   let
-    primaryUser = globals.user.name;
+    primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
       sharescreen = "eDP-2";
       profiles = {
-        personal = true;
-        work = true;
-        framework = true;
+        personal = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+        work = lib.mkIf (!minimal) true;
+        framework = lib.mkIf (!minimal) true;
       };
     };
   in
@@ -1950,9 +1962,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/winters/default.nix
-  { lib, config, globals, ... }:
+  { lib, config, ... }:
   let
-    primaryUser = globals.user.name;
+    primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
       isBtrfs = false;
       isLinux = true;
@@ -2173,7 +2185,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 #+begin_src nix-ts :tangle hosts/nixos/sync/default.nix
   { lib, config, globals, ... }:
   let
-    primaryUser = globals.user.name;
+    primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
       isBtrfs = false;
       isLinux = true;
@@ -2406,7 +2418,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 #+begin_src nix-ts :tangle hosts/nixos/moonside/default.nix
   { lib, config, globals, ... }:
   let
-    primaryUser = globals.user.name;
+    primaryUser = config.swarselsystems.mainUser;
     inherit (config.repo.secrets.common) workHostName;
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
     serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
@@ -2809,14 +2821,15 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/toto/default.nix
-  { self, inputs, pkgs, lib, ... }:
+  { self, lib, minimal, ... }:
   let
-    modulesPath = "${self}/modules";
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
       profiles = {
-        toto = true;
+        toto = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+        btrfs = lib.mkIf minimal true;
       };
     };
   in
@@ -2825,40 +2838,8 @@ This is a slim setup for developing base configuration. I do not track the hardw
     imports = [
       ./disk-config.nix
       ./hardware-configuration.nix
-
-      "${modulesPath}/nixos/common/sharedsetup.nix"
-      "${modulesPath}/home/common/sharedsetup.nix"
-      "${self}/profiles/nixos"
-
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.users."setup".imports = [
-          inputs.sops-nix.homeManagerModules.sops
-          "${modulesPath}/home/common/sharedsetup.nix"
-          "${self}/profiles/home"
-        ];
-      }
     ];
 
-
-    environment.systemPackages = with pkgs; [
-      curl
-      git
-      gnupg
-      rsync
-      ssh-to-age
-      sops
-      vim
-      just
-      sbctl
-    ];
-
-    system.stateVersion = lib.mkForce "23.05";
-
-    boot = {
-      supportedFilesystems = [ "btrfs" ];
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-    };
 
 
     networking = {
@@ -2871,10 +2852,10 @@ This is a slim setup for developing base configuration. I do not track the hardw
         info = "~SwarselSystems~ remote install helper";
         wallpaper = self + /files/wallpaper/lenovowp.png;
         isImpermanence = true;
-        isCrypted = false;
+        isCrypted = true;
         isSecureBoot = false;
-        isSwap = false;
-        swapSize = "8G";
+        isSwap = true;
+        swapSize = "2G";
         # rootDisk = "/dev/nvme0n1";
         rootDisk = "/dev/sda";
         # rootDisk = "/dev/vda";
@@ -3032,7 +3013,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
 
 #+end_src
-**** drugstore (ISO)
+**** drugstore (ISO installer config)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
@@ -3040,118 +3021,117 @@ This is a slim setup for developing base configuration. I do not track the hardw
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
 
 
-#+begin_src nix-ts :tangle nix/installer-config.nix
-{ pkgs, lib, ... }:
-{
-
-  config = {
-    home-manager.users.root.home = {
-      stateVersion = "23.05";
-      file = {
-        ".bash_history" = {
-          text = ''
-            swarsel-install -n chaostheatre
-          '';
+#+begin_src nix-ts :tangle install/installer-config.nix
+  { pkgs, lib, ... }:
+  {
+    config = {
+      home-manager.users.root.home = {
+        stateVersion = "23.05";
+        file = {
+          ".bash_history" = {
+            text = ''
+              swarsel-install -n chaostheatre
+            '';
+          };
         };
       };
-    };
 
-    nix.settings = {
-      experimental-features = [ "nix-command" "flakes" ];
-    };
-
-    boot = {
-      supportedFilesystems = lib.mkForce [ "brtfs" "vfat" ];
-      loader.systemd-boot = {
-        enable = true;
+      nix.settings = {
+        experimental-features = [ "nix-command" "flakes" ];
       };
-    };
 
-    services = {
-      qemuGuest.enable = true;
-      openssh = {
-        enable = true;
-        settings.PermitRootLogin = "yes";
-        authorizedKeysFiles = lib.mkForce [
-          "/etc/ssh/authorized_keys.d/%u"
-        ];
-      };
-    };
-
-    environment.systemPackages = with pkgs; [
-      curl
-      git
-      gnupg
-      rsync
-      ssh-to-age
-      sops
-      vim
-      just
-      sbctl
-    ];
-
-    programs = {
-      git.enable = true;
-    };
-
-    fileSystems."/boot".options = [ "umask=0077" ];
-
-    environment.etc."issue".text = ''
-      [32m~SwarselSystems~[0m
-                               IP of primary interface: [31m\4[0m
-                                                                   The Password for all users & root is '[31msetup[0m'.
-                                                                   Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
-                                                                   Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
-    '';
-
-    networking = {
-      hostName = "drugstore";
-      wireless.enable = false;
-      dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
-      networkmanager.enable = true;
-    };
-
-    services.getty.autologinUser = lib.mkForce "root";
-
-    users = {
-      allowNoPasswordLogin = true;
-      users = {
-        root = {
-          password = "setup"; # this is overwritten after install
-          initialHashedPassword = lib.mkForce null;
-          openssh.authorizedKeys.keys = [ "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDd0XXoLfRE0AyasxscEBwMqOnLWPqwz+etGqzVNeSw/RcgnxOi903mlVjCH+jzWMSe2GVSgzgM20j/r9sfE2P1z+wq/RODFS04JM0ltUoFkkm/IDZXQ2piOk7AoVi5ajdx4EiBnXY87jvxh5cCgQltkj3ouPF7FVN/MaN21IgWYB8NgkaVGft//OplodlDQNot17c0sFMibY0HcquwmHhqKOtKM1gT98+jZl0rd1rCqXFOvkesW6FPC4nzirPai+Hizp5gncrkJOZmLLqrjVx6PfpQzqzIhoUn1YS5CpyfXnKZUgx2Oi8SENmWOZ9DxYvDklgEttob37E2bIXbUhOw/u4I3olGFgCsKL6jg0N+d5teEaCZFnzlOp0UMWiUo7lVqq7Bwl3rNka2pxEdZ9v/1+m9cJiP7h6pnKmccVGku57iGIDnsnoTrmo1qbAje+EsmPYbc+qMnTDvOdSHTOXnjsyTd+ADklvMHCUAuf6ku4ktQEhlZxU3PvYvKHa1cTCEXxLWjytIgHgTgab9M5IH29Q55LSRRQBzUdkwjOG6KhsqG+xEE6038EbXr0MGKTm01AFmeVZWewmkSLu2UdoOMiw8mTSQhQFfp2QruYHnh7oJCo7ttKT1sLoRX+TfgQm1ryn/orhReg2GFfmbiLGxaJGVNvjqCxqrIFQXx4ZDHw== cardno:22_412_399" ];
+      boot = {
+        supportedFilesystems = lib.mkForce [ "brtfs" "vfat" ];
+        loader.systemd-boot = {
+          enable = true;
         };
       };
-    };
 
-    programs.bash.shellAliases = {
-      "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-    };
+      services = {
+        qemuGuest.enable = true;
+        openssh = {
+          enable = true;
+          settings.PermitRootLogin = "yes";
+          authorizedKeysFiles = lib.mkForce [
+            "/etc/ssh/authorized_keys.d/%u"
+          ];
+        };
+      };
 
-    system.activationScripts.cache = {
-      text = ''
-          mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/setup/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
-        mkdir -p /root/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+      environment.systemPackages = with pkgs; [
+        curl
+        git
+        gnupg
+        rsync
+        ssh-to-age
+        sops
+        vim
+        just
+        sbctl
+      ];
+
+      programs = {
+        git.enable = true;
+      };
+
+      fileSystems."/boot".options = [ "umask=0077" ];
+
+      environment.etc."issue".text = ''
+        [32m~SwarselSystems~[0m
+        IP of primary interface: [31m\4[0m
+        The Password for all users & root is '[31msetup[0m'.
+        Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
+        Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
       '';
-    };
-    systemd = {
-      services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-      targets = {
-        sleep.enable = false;
-        suspend.enable = false;
-        hibernate.enable = false;
-        hybrid-sleep.enable = false;
+
+      networking = {
+        hostName = "drugstore";
+        wireless.enable = false;
+        dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+        networkmanager.enable = true;
       };
+
+      services.getty.autologinUser = lib.mkForce "root";
+
+      users = {
+        allowNoPasswordLogin = true;
+        users = {
+          root = {
+            password = "setup"; # this is overwritten after install
+            initialHashedPassword = lib.mkForce null;
+            openssh.authorizedKeys.keys = [ "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDd0XXoLfRE0AyasxscEBwMqOnLWPqwz+etGqzVNeSw/RcgnxOi903mlVjCH+jzWMSe2GVSgzgM20j/r9sfE2P1z+wq/RODFS04JM0ltUoFkkm/IDZXQ2piOk7AoVi5ajdx4EiBnXY87jvxh5cCgQltkj3ouPF7FVN/MaN21IgWYB8NgkaVGft//OplodlDQNot17c0sFMibY0HcquwmHhqKOtKM1gT98+jZl0rd1rCqXFOvkesW6FPC4nzirPai+Hizp5gncrkJOZmLLqrjVx6PfpQzqzIhoUn1YS5CpyfXnKZUgx2Oi8SENmWOZ9DxYvDklgEttob37E2bIXbUhOw/u4I3olGFgCsKL6jg0N+d5teEaCZFnzlOp0UMWiUo7lVqq7Bwl3rNka2pxEdZ9v/1+m9cJiP7h6pnKmccVGku57iGIDnsnoTrmo1qbAje+EsmPYbc+qMnTDvOdSHTOXnjsyTd+ADklvMHCUAuf6ku4ktQEhlZxU3PvYvKHa1cTCEXxLWjytIgHgTgab9M5IH29Q55LSRRQBzUdkwjOG6KhsqG+xEE6038EbXr0MGKTm01AFmeVZWewmkSLu2UdoOMiw8mTSQhQFfp2QruYHnh7oJCo7ttKT1sLoRX+TfgQm1ryn/orhReg2GFfmbiLGxaJGVNvjqCxqrIFQXx4ZDHw== cardno:22_412_399" ];
+          };
+        };
+      };
+
+      programs.bash.shellAliases = {
+        "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+      };
+
+      system.activationScripts.cache = {
+        text = ''
+          mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
+          mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
+          mkdir -p -m=0777 /home/setup/.local/share/nix/
+          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
+          mkdir -p /root/.local/share/nix/
+          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
+        '';
+      };
+      systemd = {
+        services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+        targets = {
+          sleep.enable = false;
+          suspend.enable = false;
+          hibernate.enable = false;
+          hybrid-sleep.enable = false;
+        };
+      };
+
+      system.stateVersion = lib.mkForce "23.05";
+
     };
-
-    system.stateVersion = lib.mkForce "23.05";
-
-  };
-}
+  }
 
 
         #+end_src
@@ -3750,16 +3730,23 @@ A breakdown of the flags being set:
 - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix-ts :tangle modules/nixos/common/settings.nix
-  { lib, pkgs, config, outputs, inputs, ... }:
+  { lib, pkgs, config, outputs, inputs, minimal, ... }:
   {
     options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselsystems.modules.general {
-      nixpkgs = {
-        overlays = [ outputs.overlays.default ];
-        config = {
-          allowUnfree = true;
+    config = lib.mkIf config.swarselsystems.modules.general
+      ({
+
+        system.stateVersion = lib.mkDefault "23.05";
+
+        nixpkgs = {
+          overlays = [ outputs.overlays.default ];
+          config = {
+            allowUnfree = true;
+          };
         };
-      };
+
+      }
+    // lib.optionalAttrs (!minimal) {
 
       environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
         assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
@@ -3770,44 +3757,44 @@ A breakdown of the flags being set:
         let
           flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
         in
-          {
-            settings = {
-              experimental-features = [
-                "nix-command"
-                "flakes"
-                "ca-derivations"
-                "cgroups"
-                "pipe-operators"
-              ];
-              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
-              connect-timeout = 5;
-              bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-              bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
-              fallback = true;
-              min-free = 128000000;
-              max-free = 1000000000;
-              flake-registry = "";
-              auto-optimise-store = true;
-              warn-dirty = false;
-              max-jobs = 1;
-              use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
-            };
-            gc = {
-              automatic = true;
-              dates = "weekly";
-              options = "--delete-older-than 10d";
-            };
-            optimise = {
-              automatic = true;
-              dates = "weekly";
-            };
-            channel.enable = false;
-            registry = rec {
-              nixpkgs.flake = inputs.nixpkgs;
-              p = nixpkgs;
-            };
-            nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+        {
+          settings = {
+            experimental-features = [
+              "nix-command"
+              "flakes"
+              "ca-derivations"
+              "cgroups"
+              "pipe-operators"
+            ];
+            trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+            connect-timeout = 5;
+            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+            fallback = true;
+            min-free = 128000000;
+            max-free = 1000000000;
+            flake-registry = "";
+            auto-optimise-store = true;
+            warn-dirty = false;
+            max-jobs = 1;
+            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
           };
+          gc = {
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 10d";
+          };
+          optimise = {
+            automatic = true;
+            dates = "weekly";
+          };
+          channel.enable = false;
+          registry = rec {
+            nixpkgs.flake = inputs.nixpkgs;
+            p = nixpkgs;
+          };
+          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+        };
 
       services.dbus.implementation = "broker";
 
@@ -3815,8 +3802,7 @@ A breakdown of the flags being set:
         environment.TMPDIR = "/var/tmp";
       };
 
-      system.stateVersion = lib.mkDefault "23.05";
-    };
+    });
   }
 #+end_src
 
@@ -3828,9 +3814,9 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, outputs, globals, nodes, ... }:
+  { self, inputs, config, lib, outputs, globals, nodes, minimal, ... }:
   let
-    mainUser = globals.user.name;
+    inherit (config.swarselsystems) mainUser;
   in
     {
       options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
@@ -3850,7 +3836,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
               home.stateVersion = lib.mkDefault config.system.stateVersion;
             }
           ];
-          extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes; };
+          extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal; };
         };
       };
     }
@@ -3867,7 +3853,7 @@ In case of using a fully setup system, this makes also sure that no further user
 For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
 
 #+begin_src nix-ts :tangle modules/nixos/common/users.nix
-  { self, pkgs, config, lib, ... }:
+  { self, pkgs, config, lib, minimal, ... }:
   let
     sopsFile = self + /secrets/general/secrets.yaml;
   in
@@ -3881,9 +3867,9 @@ For that reason, make sure that =sops-nix= is properly working before setting th
           users."${config.swarselsystems.mainUser}" = {
             isNormalUser = true;
             description = "Leon S";
-            password = lib.mkIf config.swarselsystems.initialSetup "setup";
-            hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup) config.sops.secrets.swarseluser.path;
-            extraGroups = [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+            password = lib.mkIf (config.swarselsystems.initialSetup || minimal) "setup";
+            hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup && !minimal) config.sops.secrets.swarseluser.path;
+            extraGroups = lib.mkIf (!minimal) [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
         };
@@ -4038,16 +4024,16 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
 
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
-  { lib, config, ... }:
+  { lib, config, minimal, ... }:
   {
     options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
     config = lib.mkIf config.swarselsystems.modules.lanzaboote {
       boot = {
         loader = {
           efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
         };
-        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && config.swarselsystems.isSecureBoot) {
+        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && !minimal && config.swarselsystems.isSecureBoot) {
           enable = true;
           pkiBundle = "/var/lib/sbctl";
           configurationLimit = 6;
@@ -4196,11 +4182,12 @@ This section is for setting things that should be used on hosts that are using t
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/packages.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, pkgs, minimal, ... }:
   {
     options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
     config = lib.mkIf config.swarselsystems.modules.packages {
-      environment.systemPackages = with pkgs; [
+
+      environment.systemPackages = with pkgs; lib.optionals (!minimal) [
         # yubikey packages
         gnupg
         yubikey-personalization
@@ -4271,9 +4258,19 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
         elk-to-svg
 
+      ] ++ lib.optionals minimal [
+        curl
+        git
+        gnupg
+        rsync
+        ssh-to-age
+        sops
+        vim
+        just
+        sbctl
       ];
 
-      nixpkgs.config.permittedInsecurePackages = [
+      nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
         "jitsi-meet-1.0.8043"
         "electron-29.4.6"
         "SDL_ttf-2.0.11"
@@ -4311,7 +4308,7 @@ Next, we will setup some environment variables that need to be set on the system
   }
 #+end_src
 
-**** Security
+**** Security (polkit)
 :PROPERTIES:
 :CUSTOM_ID: h:e2d40df9-0026-4caa-8476-9dc2353055a1
 :END:
@@ -4319,28 +4316,29 @@ Next, we will setup some environment variables that need to be set on the system
 Needed for control over system-wide privileges etc. Also I make sure that the root user has access to =SSH_AUTH_SOCK= (without this, root will not be able to read my =nix-secrets= repository).
 
 #+begin_src nix-ts :tangle modules/nixos/client/polkit.nix
-  { lib, config, ... }:
-  {
-    options.swarselsystems.modules.security = lib.mkEnableOption "security config";
-    config = lib.mkIf config.swarselsystems.modules.security {
+{ lib, config, minimal, ... }:
+{
+  options.swarselsystems.modules.security = lib.mkEnableOption "security config";
+  config = lib.mkIf config.swarselsystems.modules.security {
 
-      security = {
-        pam.services = {
-          login.u2fAuth = true;
-          sudo.u2fAuth = true;
-          swaylock.u2fAuth = true;
-          swaylock.fprintAuth = false;
-        };
-        polkit.enable = true;
+    security = {
+      pam.services = lib.mkIf (!minimal) {
+        login.u2fAuth = true;
+        sudo.u2fAuth = true;
+        swaylock.u2fAuth = true;
+        swaylock.fprintAuth = false;
+      };
+      polkit.enable = lib.mkIf (!minimal) true;
 
-        sudo.extraConfig = ''
-          Defaults    env_keep+=SSH_AUTH_SOCK
+      sudo.extraConfig = ''
+        Defaults    env_keep+=SSH_AUTH_SOCK
+      '' + lib.optionalString (!minimal) ''
           Defaults    env_keep+=XDG_RUNTIME_DIR
           Defaults    env_keep+=WAYLAND_DISPLAY
         '';
-      };
     };
-  }
+  };
+}
 #+end_src
 
 **** Reduce systemd timeouts
@@ -9979,7 +9977,7 @@ The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/
 This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/sharedsetup.nix
-  { self, lib, pkgs, ... }:
+  { self, lib, pkgs, globals, minimal, ... }:
   {
     options.swarselsystems = {
       isLaptop = lib.mkEnableOption "laptop host";
@@ -9990,7 +9988,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       isBtrfs = lib.mkEnableOption "use btrfs filesystem";
       mainUser = lib.mkOption {
         type = lib.types.str;
-        default = "swarsel";
+        default = if (!minimal) then globals.user.name else "setup" ;
       };
       homeDir = lib.mkOption {
         type = lib.types.str;
@@ -10615,24 +10613,16 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 #+begin_src nix-ts :tangle modules/home/common/sops.nix
   { config, lib, ... }:
   let
-    inherit (config.swarselsystems) homeDir xdgDir;
+    inherit (config.swarselsystems) homeDir;
   in
   {
     options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
     config = lib.mkIf config.swarselsystems.modules.sops {
       sops = {
         age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
-        defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+        defaultSopsFile = "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
         validateSopsFiles = false;
-        secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-          mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
-          nautilus = { path = "${xdgDir}/secrets/nautilus"; };
-          leon = { path = "${xdgDir}/secrets/leon"; };
-          swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
-          github_notif = { path = "${xdgDir}/secrets/github_notif"; };
-          u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
-        };
       };
     };
   }
@@ -10645,10 +10635,18 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
   { lib, config, nixosConfig, ... }:
+  let
+    inherit (config.swarselsystems) homeDir;
+  in
   {
     options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
 
     config = lib.mkIf config.swarselsystems.modules.yubikey {
+
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+        u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+      };
+
       pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         ids = [
           nixosConfig.repo.secrets.common.yubikeys.dev1
@@ -11385,7 +11383,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
-  { config, lib, ... }:
+  { config, lib, minimal, ... }:
   let
     inherit (config.swarselsystems) flakePath;
   in
@@ -11397,117 +11395,120 @@ Currently I only use it as before with =initExtra= though.
         default = { };
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.zsh {
+    config = lib.mkIf config.swarselsystems.modules.zsh
+      {
 
-      sops.secrets = {
-        croc-password = { };
-      };
+        sops.secrets = {
+          croc-password = { };
+        };
 
-      programs.zsh = {
-        enable = true;
-        shellAliases = lib.recursiveUpdate
-          {
-            hg = "history | grep";
-            hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
-            # nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-            nswitch = "swarsel-deploy $(hostname) switch";
-            # nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
-            nboot = "swarsel-deploy $(hostname) boot";
-            magit = "emacsclient -nc -e \"(magit-status)\"";
-            config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
-            g = "git";
-            c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
-            passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
-            passpull = "cd ~/.local/share/password-store; git pull; cd -;";
-            hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
-            youtube-dl = "yt-dlp";
-            cat-orig = "cat";
-            cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
-            nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
-            nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
-            nix-ldd-locate = "nix-locate --minimal --top-level -w ";
-            nix-store-search = "ls /nix/store | grep";
-            fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
-            lt = "eza -las modified --total-size";
-            boot-diff = "nix store diff-closures /run/*-system";
-            gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
-            cc = "wl-copy";
-          }
-          config.swarselsystems.shellAliases;
-        autosuggestion.enable = true;
-        enableCompletion = true;
-        syntaxHighlighting.enable = true;
-        autocd = false;
-        cdpath = [
-          "~/.dotfiles"
-          # "~/Documents/GitHub"
-        ];
-        defaultKeymap = "emacs";
-        dirHashes = {
-          dl = "$HOME/Downloads";
-          gh = "$HOME/Documents/GitHub";
-        };
-        history = {
-          expireDuplicatesFirst = true;
-          path = "$HOME/.histfile";
-          save = 100000;
-          size = 100000;
-        };
-        historySubstringSearch = {
+        programs.zsh = {
           enable = true;
-          searchDownKey = "^[OB";
-          searchUpKey = "^[OA";
+        }
+        // lib.optionalAttrs (!minimal) {
+          shellAliases = lib.recursiveUpdate
+            {
+              hg = "history | grep";
+              hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
+              # nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
+              nswitch = "swarsel-deploy $(hostname) switch";
+              # nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+              nboot = "swarsel-deploy $(hostname) boot";
+              magit = "emacsclient -nc -e \"(magit-status)\"";
+              config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
+              g = "git";
+              c = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/";
+              passpush = "cd ~/.local/share/password-store; git add .; git commit -m 'pass file changes'; git push; cd -;";
+              passpull = "cd ~/.local/share/password-store; git pull; cd -;";
+              hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
+              youtube-dl = "yt-dlp";
+              cat-orig = "cat";
+              cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+              nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+              nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
+              nix-ldd-locate = "nix-locate --minimal --top-level -w ";
+              nix-store-search = "ls /nix/store | grep";
+              fs-diff = "sudo mount -o subvol=/ /dev/mapper/cryptroot /mnt ; fs-diff";
+              lt = "eza -las modified --total-size";
+              boot-diff = "nix store diff-closures /run/*-system";
+              gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
+              cc = "wl-copy";
+            }
+            config.swarselsystems.shellAliases;
+          autosuggestion.enable = true;
+          enableCompletion = true;
+          syntaxHighlighting.enable = true;
+          autocd = false;
+          cdpath = [
+            "~/.dotfiles"
+            # "~/Documents/GitHub"
+          ];
+          defaultKeymap = "emacs";
+          dirHashes = {
+            dl = "$HOME/Downloads";
+            gh = "$HOME/Documents/GitHub";
+          };
+          history = {
+            expireDuplicatesFirst = true;
+            path = "$HOME/.histfile";
+            save = 100000;
+            size = 100000;
+          };
+          historySubstringSearch = {
+            enable = true;
+            searchDownKey = "^[OB";
+            searchUpKey = "^[OA";
+          };
+          plugins = [
+            # {
+            #   name = "fzf-tab";
+            #   src = pkgs.zsh-fzf-tab;
+            # }
+          ];
+          initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
+            my-forward-word() {
+              local WORDCHARS=$WORDCHARS
+              WORDCHARS="''${WORDCHARS//:}"
+              WORDCHARS="''${WORDCHARS//\/}"
+              WORDCHARS="''${WORDCHARS//.}"
+              zle forward-word
+            }
+            zle -N my-forward-word
+            # ctrl + right
+            bindkey "^[[1;5C" my-forward-word
+
+            # shift + right
+            bindkey "^[[1;2C" forward-word
+
+            my-backward-word() {
+              local WORDCHARS=$WORDCHARS
+              WORDCHARS="''${WORDCHARS//:}"
+              WORDCHARS="''${WORDCHARS//\/}"
+              WORDCHARS="''${WORDCHARS//.}"
+              zle backward-word
+            }
+            zle -N my-backward-word
+            # ctrl + left
+            bindkey "^[[1;5D" my-backward-word
+
+            # shift + left
+            bindkey "^[[1;2D" backward-word
+
+            my-backward-delete-word() {
+              local WORDCHARS=$WORDCHARS
+              WORDCHARS="''${WORDCHARS//:}"
+              WORDCHARS="''${WORDCHARS//\/}"
+              WORDCHARS="''${WORDCHARS//.}"
+              zle backward-delete-word
+            }
+            zle -N my-backward-delete-word
+            # ctrl + del
+            bindkey '^H' my-backward-delete-word
+
+            export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
+          '';
         };
-        plugins = [
-          # {
-          #   name = "fzf-tab";
-          #   src = pkgs.zsh-fzf-tab;
-          # }
-        ];
-        initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
-          my-forward-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle forward-word
-          }
-          zle -N my-forward-word
-          # ctrl + right
-          bindkey "^[[1;5C" my-forward-word
-
-          # shift + right
-          bindkey "^[[1;2C" forward-word
-
-          my-backward-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle backward-word
-          }
-          zle -N my-backward-word
-          # ctrl + left
-          bindkey "^[[1;5D" my-backward-word
-
-          # shift + left
-          bindkey "^[[1;2D" backward-word
-
-          my-backward-delete-word() {
-            local WORDCHARS=$WORDCHARS
-            WORDCHARS="''${WORDCHARS//:}"
-            WORDCHARS="''${WORDCHARS//\/}"
-            WORDCHARS="''${WORDCHARS//.}"
-            zle backward-delete-word
-          }
-          zle -N my-backward-delete-word
-          # ctrl + del
-          bindkey '^H' my-backward-delete-word
-
-          export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
-        '';
       };
-    };
   }
 #+end_src
 
@@ -11656,10 +11657,19 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
     inherit (nixosConfig.repo.secrets.common) fullName;
+    inherit (config.swarselsystems) xdgDir;
   in
   {
     options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
     config = lib.mkIf config.swarselsystems.modules.mail {
+
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+        mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
+        nautilus = { path = "${xdgDir}/secrets/nautilus"; };
+        leon = { path = "${xdgDir}/secrets/leon"; };
+        swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+      };
+
       programs = {
         mbsync = {
           enable = true;
@@ -11907,6 +11917,7 @@ The rest of the related configuration is found here:
 #+begin_src nix-ts :tangle modules/home/common/waybar.nix
   { self, config, lib, pkgs, ... }:
   let
+    inherit (config.swarselsystems) xdgDir;
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
     modulesLeft = [
       "custom/outer-left-arrow-dark"
@@ -11959,11 +11970,17 @@ The rest of the related configuration is found here:
       };
     };
     config = lib.mkIf config.swarselsystems.modules.waybar {
+
       swarselsystems = {
         waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
           "battery"
         ] ++ modulesRight);
       };
+
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+        github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+      };
+
       programs.waybar = {
         enable = true;
         systemd = {
@@ -14592,7 +14609,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
-  SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake .#"$target_hostname" root@"$target_destination"
+  SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
 
   echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
   ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
@@ -15691,6 +15708,39 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+end_src
 
+**** Minimal
+
+#+begin_src nix-ts :tangle profiles/nixos/minimal/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.minimal = lib.mkEnableOption "declare this a minimal host";
+    config = lib.mkIf config.swarselsystems.profiles.minimal {
+      swarselsystems.modules = {
+        general = lib.mkDefault true;
+        home-manager = lib.mkDefault true;
+        xserver = lib.mkDefault true;
+        lanzaboote = lib.mkDefault true;
+        time = lib.mkDefault true;
+        users = lib.mkDefault true;
+        impermanence = lib.mkDefault true;
+        security = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        pii = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+        yubikey = lib.mkDefault true;
+        autologin = lib.mkDefault true;
+
+        server = {
+          ssh = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
 **** Chaostheatre
 :PROPERTIES:
 :CUSTOM_ID: h:b79fbb59-9cf2-48eb-b469-2589223dda95
@@ -15762,6 +15812,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     config = lib.mkIf config.swarselsystems.profiles.toto {
       swarselsystems.modules = {
         general = lib.mkDefault true;
+        packages = lib.mkDefault true;
         home-manager = lib.mkDefault true;
         xserver = lib.mkDefault true;
         users = lib.mkDefault true;
@@ -16108,6 +16159,28 @@ This holds modules that are to be used on most hosts. These are also the most im
         optional = {
           gaming = lib.mkDefault true;
         };
+      };
+    };
+
+  }
+
+#+end_src
+
+**** Minimal
+:PROPERTIES:
+:CUSTOM_ID: h:26512487-8c29-4b92-835b-d67394c3f5ef
+:END:
+
+#+begin_src nix-ts :tangle profiles/home/minimal/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.minimal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselsystems.profiles.minimal {
+      swarselsystems.modules = {
+        general = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        kitty = lib.mkDefault true;
+        zsh = lib.mkDefault true;
       };
     };
 

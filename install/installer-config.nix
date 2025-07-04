@@ -1,6 +1,5 @@
 { pkgs, lib, ... }:
 {
-
   config = {
     home-manager.users.root.home = {
       stateVersion = "23.05";
@@ -55,10 +54,10 @@
 
     environment.etc."issue".text = ''
       [32m~SwarselSystems~[0m
-                               IP of primary interface: [31m\4[0m
-                                                                   The Password for all users & root is '[31msetup[0m'.
-                                                                   Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
-                                                                   Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
+      IP of primary interface: [31m\4[0m
+      The Password for all users & root is '[31msetup[0m'.
+      Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
+      Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
     '';
 
     networking = {
@@ -87,7 +86,7 @@
 
     system.activationScripts.cache = {
       text = ''
-          mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
+        mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
         mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
         mkdir -p -m=0777 /home/setup/.local/share/nix/
         printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null

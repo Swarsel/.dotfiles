@@ -1,8 +1,9 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, minimal, ... }:
 {
   options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
   config = lib.mkIf config.swarselsystems.modules.packages {
-    environment.systemPackages = with pkgs; [
+
+    environment.systemPackages = with pkgs; lib.optionals (!minimal) [
       # yubikey packages
       gnupg
       yubikey-personalization
@@ -73,9 +74,19 @@
 
       elk-to-svg
 
+    ] ++ lib.optionals minimal [
+      curl
+      git
+      gnupg
+      rsync
+      ssh-to-age
+      sops
+      vim
+      just
+      sbctl
     ];
 
-    nixpkgs.config.permittedInsecurePackages = [
+    nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
       "jitsi-meet-1.0.8043"
       "electron-29.4.6"
       "SDL_ttf-2.0.11"

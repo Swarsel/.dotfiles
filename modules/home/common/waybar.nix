@@ -1,5 +1,6 @@
 { self, config, lib, pkgs, ... }:
 let
+  inherit (config.swarselsystems) xdgDir;
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
   modulesLeft = [
     "custom/outer-left-arrow-dark"
@@ -52,11 +53,17 @@ in
     };
   };
   config = lib.mkIf config.swarselsystems.modules.waybar {
+
     swarselsystems = {
       waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
         "battery"
       ] ++ modulesRight);
     };
+
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+      github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+    };
+
     programs.waybar = {
       enable = true;
       systemd = {

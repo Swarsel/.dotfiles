@@ -1,4 +1,4 @@
-{ self, lib, pkgs, ... }:
+{ self, lib, pkgs, globals, minimal, ... }:
 {
   options.swarselsystems = {
     isLaptop = lib.mkEnableOption "laptop host";
@@ -9,7 +9,7 @@
     isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     mainUser = lib.mkOption {
       type = lib.types.str;
-      default = "swarsel";
+      default = if (!minimal) then globals.user.name else "setup";
     };
     homeDir = lib.mkOption {
       type = lib.types.str;

@@ -1,14 +1,15 @@
-{ self, config, inputs, lib, globals, ... }:
+{ self, config, inputs, lib, ... }:
 let
-  primaryUser = globals.user.name;
+  primaryUser = config.swarselsystems.mainUser;
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
     sharescreen = "eDP-2";
     profiles = {
-      personal = true;
-      work = true;
-      framework = true;
+      personal = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
+      work = lib.mkIf (!minimal) true;
+      framework = lib.mkIf (!minimal) true;
     };
   };
 in

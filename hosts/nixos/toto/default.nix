@@ -1,11 +1,12 @@
-{ self, inputs, pkgs, lib, ... }:
+{ self, lib, minimal, ... }:
 let
-  modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
     profiles = {
-      toto = true;
+      toto = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
+      btrfs = lib.mkIf minimal true;
     };
   };
 in
@@ -14,40 +15,8 @@ in
   imports = [
     ./disk-config.nix
     ./hardware-configuration.nix
-
-    "${modulesPath}/nixos/common/sharedsetup.nix"
-    "${modulesPath}/home/common/sharedsetup.nix"
-    "${self}/profiles/nixos"
-
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."setup".imports = [
-        inputs.sops-nix.homeManagerModules.sops
-        "${modulesPath}/home/common/sharedsetup.nix"
-        "${self}/profiles/home"
-      ];
-    }
   ];
 
-
-  environment.systemPackages = with pkgs; [
-    curl
-    git
-    gnupg
-    rsync
-    ssh-to-age
-    sops
-    vim
-    just
-    sbctl
-  ];
-
-  system.stateVersion = lib.mkForce "23.05";
-
-  boot = {
-    supportedFilesystems = [ "btrfs" ];
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-  };
 
 
   networking = {
@@ -60,10 +29,10 @@ in
       info = "~SwarselSystems~ remote install helper";
       wallpaper = self + /files/wallpaper/lenovowp.png;
       isImpermanence = true;
-      isCrypted = false;
+      isCrypted = true;
       isSecureBoot = false;
-      isSwap = false;
-      swapSize = "8G";
+      isSwap = true;
+      swapSize = "2G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/sda";
       # rootDisk = "/dev/vda";

@@ -1,10 +1,10 @@
-{ self, inputs, pkgs, lib, globals, ... }:
+{ self, config, inputs, pkgs, lib, ... }:
 let
+  primaryUser = config.swarselsystems.mainUser;
   modulesPath = "${self}/modules";
   sharedOptions = {
     isBtrfs = true;
   };
-  primaryUser = globals.user.name;
 in
 {
 

@@ -2,10 +2,19 @@
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
   inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (config.swarselsystems) xdgDir;
 in
 {
   options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
   config = lib.mkIf config.swarselsystems.modules.mail {
+
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+      mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
+      nautilus = { path = "${xdgDir}/secrets/nautilus"; };
+      leon = { path = "${xdgDir}/secrets/leon"; };
+      swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+    };
+
     programs = {
       mbsync = {
         enable = true;

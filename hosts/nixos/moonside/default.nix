@@ -1,6 +1,6 @@
 { lib, config, globals, ... }:
 let
-  primaryUser = globals.user.name;
+  primaryUser = config.swarselsystems.mainUser;
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
   serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
