@@ -3306,7 +3306,6 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
         {
           info = "~SwarselSystems~ demo host";
           wallpaper = self + /files/wallpaper/lenovowp.png;
-          initialSetup = true;
           isImpermanence = true;
           isCrypted = true;
           isSecureBoot = false;
@@ -3721,7 +3720,6 @@ I usually use =mutableUsers = false= in my NixOS configuration. However, on a ne
           default = "";
         };
         isCrypted = lib.mkEnableOption "uses full disk encryption";
-        initialSetup = lib.mkEnableOption "initial setup (no sops keys available)";
 
         isImpermanence = lib.mkEnableOption "use impermanence on this system";
         isSecureBoot = lib.mkEnableOption "use secure boot on this system";
@@ -3924,7 +3922,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
 This ensures that all user-configuration happens here in the config file.
 In case of using a fully setup system, this makes also sure that no further user level modifications can be made using CLI utilities (e.g. usermod etc.). Everything must be defined in the flake.
 
-For that reason, make sure that =sops-nix= is properly working before setting the =initialSetup= flag, otherwise you might lose user access.
+For that reason, make sure that =sops-nix= is properly working before finishing the minimal setup, otherwise we might lose user access. The bootstrapping script takes care of this.
 
 #+begin_src nix-ts :tangle modules/nixos/common/users.nix
   { self, pkgs, config, lib, minimal, ... }:
@@ -3937,12 +3935,12 @@ For that reason, make sure that =sops-nix= is properly working before setting th
         sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
         users = {
-          mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
+          mutableUsers = lib.mkIf (!minimal) false;
           users."${config.swarselsystems.mainUser}" = {
             isNormalUser = true;
             description = "Leon S";
-            password = lib.mkIf (config.swarselsystems.initialSetup || minimal) "setup";
-            hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup && !minimal) config.sops.secrets.swarseluser.path;
+            password = lib.mkIf minimal "setup";
+            hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.swarseluser.path;
             extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
@@ -4094,7 +4092,7 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 :CUSTOM_ID: h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377
 :END:
 
-This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsystems.initialSetup` and `config.swarselsystems.isSecureBoot`.
+This dynamically uses systemd boot or Lanzaboote depending on the minimal system state and `config.swarselsystems.isSecureBoot`.
 
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
   { lib, config, minimal, ... }:
@@ -4104,9 +4102,9 @@ This dynamically uses systemd boot or Lanzaboote depending on `config.swarselsys
       boot = {
         loader = {
           efi.canTouchEfiVariables = true;
-          systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+          systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
         };
-        lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && !minimal && config.swarselsystems.isSecureBoot) {
+        lanzaboote = lib.mkIf (!minimal && config.swarselsystems.isSecureBoot) {
           enable = true;
           pkiBundle = "/var/lib/sbctl";
           configurationLimit = 6;
@@ -14676,9 +14674,6 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
   $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-  green "Injecting initialSetup"
-  $ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
-
   mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
   # ------------------------
@@ -14710,8 +14705,6 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
   fi
   # ------------------------
-  green "Disabling initialSetup"
-  sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 
   if [ -n "$persist_dir" ]; then
       $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"
@@ -15147,9 +15140,6 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   green "Generating hardware configuration ..."
   sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
 
-  green "Injecting initialSetup ..."
-  sudo sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
-
   git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
   sudo mkdir -p /root/.local/share/nix/
   printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
@@ -15245,8 +15235,6 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       sbctl enroll-keys --ignore-immutable --microsoft || true
   fi
 
-  green "Disabling initialSetup"
-  sed -i '/swarselsystems\.initialSetup = true;/d' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
   sudo nixos-rebuild --flake .#"$target_config" switch
   green "Post-install finished!"
 #+end_src

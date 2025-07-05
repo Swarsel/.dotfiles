@@ -8,12 +8,12 @@ in
     sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
     users = {
-      mutableUsers = lib.mkIf (!config.swarselsystems.initialSetup) false;
+      mutableUsers = lib.mkIf (!minimal) false;
       users."${config.swarselsystems.mainUser}" = {
         isNormalUser = true;
         description = "Leon S";
-        password = lib.mkIf (config.swarselsystems.initialSetup || minimal) "setup";
-        hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup && !minimal) config.sops.secrets.swarseluser.path;
+        password = lib.mkIf minimal "setup";
+        hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.swarseluser.path;
         extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
         packages = with pkgs; [ ];
       };

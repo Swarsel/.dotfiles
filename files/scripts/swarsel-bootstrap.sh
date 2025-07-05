@@ -211,9 +211,6 @@ fi
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
 $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-green "Injecting initialSetup"
-$ssh_root_cmd "sed -i '/  boot.extraModulePackages /a \  swarselsystems.initialSetup = true;' /mnt/etc/nixos/hardware-configuration.nix"
-
 mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
 $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 # ------------------------
@@ -245,8 +242,6 @@ if [[ $SECUREBOOT == "true" ]]; then
     $ssh_root_cmd "sbctl enroll-keys --ignore-immutable --microsoft || true"
 fi
 # ------------------------
-green "Disabling initialSetup"
-sed -i '/swarselsystems\.initialSetup = true;/d' "$git_root"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
 
 if [ -n "$persist_dir" ]; then
     $ssh_root_cmd "cp /etc/machine-id $persist_dir/etc/machine-id || true"

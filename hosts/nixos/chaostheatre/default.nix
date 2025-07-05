@@ -51,7 +51,6 @@ in
     {
       info = "~SwarselSystems~ demo host";
       wallpaper = self + /files/wallpaper/lenovowp.png;
-      initialSetup = true;
       isImpermanence = true;
       isCrypted = true;
       isSecureBoot = false;

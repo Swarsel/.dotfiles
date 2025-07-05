@@ -5,9 +5,9 @@
     boot = {
       loader = {
         efi.canTouchEfiVariables = true;
-        systemd-boot.enable = lib.swarselsystems.mkIfElse (config.swarselsystems.initialSetup || minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
+        systemd-boot.enable = lib.swarselsystems.mkIfElse (minimal || !config.swarselsystems.isSecureBoot) (lib.mkForce true) (lib.mkForce false);
       };
-      lanzaboote = lib.mkIf (!config.swarselsystems.initialSetup && !minimal && config.swarselsystems.isSecureBoot) {
+      lanzaboote = lib.mkIf (!minimal && config.swarselsystems.isSecureBoot) {
         enable = true;
         pkiBundle = "/var/lib/sbctl";
         configurationLimit = 6;

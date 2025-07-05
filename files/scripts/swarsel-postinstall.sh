@@ -68,7 +68,5 @@ if [[ $SECUREBOOT == "true" ]]; then
     sbctl enroll-keys --ignore-immutable --microsoft || true
 fi
 
-green "Disabling initialSetup"
-sed -i '/swarselsystems\.initialSetup = true;/d' /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
 sudo nixos-rebuild --flake .#"$target_config" switch
 green "Post-install finished!"
