@@ -92,34 +92,8 @@ cd .dotfiles
 if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     yellow "The ssh key for this configuration is not available."
     green "Adjusting flake.nix so that the configuration is buildable ..."
-    sed -i '/nix-secrets = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/vbc-nix = {/,/^[[:space:]]*};/d' flake.nix
     sed -i '/[[:space:]]*\/\/ (inputs.vbc-nix.overlays.default final prev)/d' overlays/default.nix
-    rm modules/home/common/env.nix
-    rm modules/home/common/gammastep.nix
-    rm modules/home/common/git.nix
-    rm modules/home/common/mail.nix
-    rm modules/home/common/yubikey.nix
-    rm modules/nixos/server/restic.nix
-    rm hosts/nixos/sync/default.nix
-    rm -rf modules/nixos/server
-    rm -rf modules/home/server
-    cat > hosts/nixos/chaostheatre/options-home.nix << EOF
-        { self, lib, ... }:
-        {
-        options = {
-          swarselsystems = {
-            modules = {
-              yubikey = lib.mkEnableOption "dummy option for chaostheatre";
-              env = lib.mkEnableOption "dummy option for chaostheatre";
-              git = lib.mkEnableOption "dummy option for chaostheatre";
-              mail = lib.mkEnableOption "dummy option for chaostheatre";
-              gammastep = lib.mkEnableOption "dummy option for chaostheatre";
-            };
-          };
-        };
-        }
-EOF
     nix flake update vbc-nix
     git add .
 else
@@ -194,5 +168,10 @@ git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-con
 sudo mkdir -p /root/.local/share/nix/
 printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
 green "Installing flake $target_config"
-sudo nixos-install --flake .#"$target_config"
+
+store_path=$(nix build --no-link --print-out-paths .#nixosConfigurationsMinimal."$target_config".config.system.build.toplevel)
+green "Linking generation in bootloader"
+sudo "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
+green "Setting generation to activate upon next boot"
+sudo "$store_path/bin/switch-to-configuration boot"
 green "Installation finished! Reboot to see changes"

@@ -1,4 +1,4 @@
-{ self, inputs, config, pkgs, lib, ... }:
+{ self, config, pkgs, lib, minimal, ... }:
 let
   mainUser = "demo";
   sharedOptions = {
@@ -7,7 +7,8 @@ let
     isLinux = true;
     isPublic = true;
     profiles = {
-      chaostheatre = true;
+      chaostheatre = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
     };
   };
 in
@@ -18,15 +19,6 @@ in
     ./disk-config.nix
     {
       _module.args.diskDevice = config.swarselsystems.rootDisk;
-    }
-    "${self}/hosts/nixos/chaostheatre/options.nix"
-    inputs.home-manager.nixosModules.home-manager
-    {
-      home-manager.users."${mainUser}".imports = [
-        "${self}/modules/home/common/settings.nix"
-        "${self}/hosts/nixos/chaostheatre/options-home.nix"
-        "${self}/modules/home/common/sharedsetup.nix"
-      ];
     }
   ];
 
@@ -57,6 +49,7 @@ in
       isSwap = true;
       swapSize = "4G";
       rootDisk = "/dev/vda";
+      profiles.btrfs = true;
     }
     sharedOptions;
 

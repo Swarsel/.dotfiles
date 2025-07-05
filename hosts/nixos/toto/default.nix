@@ -35,7 +35,7 @@ in
       swapSize = "2G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";
-      profiles.btrfs = lib.mkIf minimal true;
+      profiles.btrfs = true;
       # rootDisk = "/dev/vda";
     }
     sharedOptions;
