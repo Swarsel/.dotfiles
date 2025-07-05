@@ -790,9 +790,9 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
         inherit (outputs) lib;
         # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
-        mkNixosHost = { minimal }: name:
+        mkNixosHost = { minimal }: configName:
               lib.nixosSystem {
-                specialArgs = { inherit inputs outputs lib self minimal; inherit (config) globals nodes; };
+                specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
                 modules = [
                   inputs.disko.nixosModules.disko
                   inputs.sops-nix.nixosModules.sops
@@ -800,19 +800,21 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
                   inputs.lanzaboote.nixosModules.lanzaboote
                   inputs.nix-topology.nixosModules.default
                   inputs.home-manager.nixosModules.home-manager
-                  "${self}/hosts/nixos/${name}"
+                  "${self}/hosts/nixos/${configName}"
                   "${self}/profiles/nixos"
                   "${self}/modules/nixos"
                   {
-                    node.name = name;
-                    node.secretsDir = ../hosts/nixos/${name}/secrets;
+                    node = {
+                      name = configName;
+                      secretsDir = ../hosts/nixos/${configName}/secrets;
+                    };
                   }
                 ];
               };
 
-        mkDarwinHost = { minimal }: name:
+        mkDarwinHost = { minimal }: configName:
               inputs.nix-darwin.lib.darwinSystem {
-                specialArgs = { inherit inputs outputs lib self minimal; inherit (config) globals nodes; };
+                specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
                 modules = [
                   # inputs.disko.nixosModules.disko
                   # inputs.sops-nix.nixosModules.sops
@@ -821,28 +823,28 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
                   # inputs.fw-fanctrl.nixosModules.default
                   # inputs.nix-topology.nixosModules.default
                   inputs.home-manager.darwinModules.home-manager
-                  "${self}/hosts/darwin/${name}"
+                  "${self}/hosts/darwin/${configName}"
                   "${self}/modules/nixos/darwin"
                   # needed for infrastructure
                   "${self}/modules/nixos/common/meta.nix"
                   "${self}/modules/nixos/common/globals.nix"
                   {
-                    node.name = name;
-                    node.secretsDir = ../hosts/darwin/${name}/secrets;
+                    node.name = configName;
+                    node.secretsDir = ../hosts/darwin/${configName}/secrets;
                   }
                 ];
               };
 
-        mkHalfHost = name: type: pkgs: {
-          ${name} =
+        mkHalfHost = configName: type: pkgs: {
+          ${configName} =
             let
               systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
             in
               systemFunc
                 {
                   inherit pkgs;
-                  extraSpecialArgs = { inherit inputs outputs lib self; };
-                  modules = [ "${self}/hosts/${type}/${name}" ];
+                  extraSpecialArgs = { inherit inputs outputs lib self configName; };
+                  modules = [ "${self}/hosts/${type}/${configName}" ];
                 };
         };
 
@@ -1710,6 +1712,8 @@ My work machine. Built for more security, this is the gold standard of my config
   let
     primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
+      isLaptop = true;
+      isNixos = true;
       isBtrfs = true;
       isLinux = true;
       sharescreen = "eDP-2";
@@ -1758,8 +1762,6 @@ My work machine. Built for more security, this is the gold standard of my config
       # home.stateVersion = lib.mkForce "23.05";
       swarselsystems = lib.recursiveUpdate
         {
-          isLaptop = true;
-          isNixos = true;
           isSecondaryGpu = true;
           SecondaryGpuCard = "pci-0000_03_00_0";
           cpuCount = 16;
@@ -3882,10 +3884,7 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, outputs, globals, nodes, minimal, ... }:
-  let
-    inherit (config.swarselsystems) mainUser;
-  in
+  { self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
     {
       options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
       config = lib.mkIf config.swarselsystems.modules.home-manager {
@@ -3893,14 +3892,19 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
           useGlobalPkgs = true;
           useUserPackages = true;
           verbose = true;
-          users."${mainUser}".imports = [
-            "${self}/profiles/home"
-            "${self}/modules/home"
-          ];
           sharedModules = [
             inputs.nix-index-database.hmModules.nix-index
             inputs.sops-nix.homeManagerModules.sops
             {
+              imports = [
+                "${self}/profiles/home"
+                "${self}/modules/home"
+                "${self}/modules/nixos/common/pii.nix"
+                "${self}/modules/nixos/common/meta.nix"
+              ];
+              node = {
+                secretsDir = if config.swarselsystems.isNixos then ../../../hosts/nixos/${configName}/secrets else ../../../hosts/home/${configName}/secrets;
+              };
               home.stateVersion = lib.mkDefault config.system.stateVersion;
             }
           ];
@@ -3928,7 +3932,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
     {
       options.swarselsystems.modules.users = lib.mkEnableOption "user config";
       config = lib.mkIf config.swarselsystems.modules.users {
-        sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
+        sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
         users = {
           mutableUsers = lib.mkIf (!minimal) false;
@@ -3936,7 +3940,7 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
             isNormalUser = true;
             description = "Leon S";
             password = lib.mkIf minimal "setup";
-            hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.swarseluser.path;
+            hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.main-user-hashed-pw.path;
             extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
@@ -4006,6 +4010,8 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 :PROPERTIES:
 :CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
 :END:
+
+This is also exposed to home-manager configurations, in case this ever breaks, I can also go back to importing =nixosConfig= as an attribute in the input attribute set and call the secrets using =nixosConfig.repo.secrets=.
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
@@ -4548,7 +4554,12 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
   { self, lib, config, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
+    clientSopsFile = self + /secrets/${config.networking.hostName}/secrets.yaml;
+
     inherit (config.swarselsystems) mainUser;
+    inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+    inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
+
     iwd = config.networking.networkmanager.wifi.backend == "iwd";
   in
   {
@@ -4560,39 +4571,33 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
       sops = {
         secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-          ernest = { };
-          frauns = { };
-          hotspot = { };
-          eduid = { };
-          edupass = { };
-          handyhotspot = { };
-          vpnuser = { };
-          vpnpass = { };
-          wireguardpriv = { };
-          wireguardpub = { };
-          wireguardendpoint = { };
-          stashuser = { };
-          stashpass = { };
-          githubforgeuser = { };
-          githubforgepass = { };
-          gitlabforgeuser = { };
-          gitlabforgepass = { };
-          "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-          "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+          wlan1-pw = { };
+          wlan2-pw = { };
+          laptop-hotspot-pw = { };
+          mobile-hotspot-pw = { };
+          eduroam-user = { };
+          eduroam-pw = { };
+          pia-vpn-user = { };
+          pia-vpn-pw = { };
+          home-wireguard-client-private-key = { sopsFile = clientSopsFile; };
+          home-wireguard-server-public-key = { };
+          home-wireguard-endpoint = { };
+          pia-vpn1-crl-pem = { sopsFile = certsSopsFile; };
+          pia-vpn1-ca-pem = { sopsFile = certsSopsFile; };
         };
         templates = lib.mkIf (!config.swarselsystems.isPublic) {
           "network-manager.env".content = ''
-            ERNEST=${config.sops.placeholder.ernest}
-            FRAUNS=${config.sops.placeholder.frauns}
-            HOTSPOT=${config.sops.placeholder.hotspot}
-            EDUID=${config.sops.placeholder.eduid}
-            EDUPASS=${config.sops.placeholder.edupass}
-            HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-            VPNUSER=${config.sops.placeholder.vpnuser}
-            VPNPASS=${config.sops.placeholder.vpnpass}
-            WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
-            WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
-            WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
+            WLAN1_PW=${config.sops.placeholder.wlan1-pw}
+            WLAN2_PW=${config.sops.placeholder.wlan2-pw}
+            LAPTOP_HOTSPOT_PW=${config.sops.placeholder.laptop-hotspot-pw}
+            MOBILE_HOTSPOT_PW=${config.sops.placeholder.mobile-hotspot-pw}
+            EDUROAM_USER=${config.sops.placeholder.eduroam-user}
+            EDUROAM_PW=${config.sops.placeholder.eduroam-pw}
+            PIA_VPN_USER=${config.sops.placeholder.pia-vpn-user}
+            PIA_VPN_PW=${config.sops.placeholder.pia-vpn-pw}
+            HOME_WIREGUARD_CLIENT_PRIVATE_KEY=${config.sops.placeholder.home-wireguard-client-private-key}
+            HOME_WIREGUARD_SERVER_PUBLIC_KEY=${config.sops.placeholder.home-wireguard-server-public-key}
+            HOME_WIREGUARD_ENDPOINT=${config.sops.placeholder.home-wireguard-endpoint}
           '';
         };
       };
@@ -4634,9 +4639,9 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               "${config.sops.templates."network-manager.env".path}"
             ];
             profiles = {
-              "Ernest Routerford" = {
+              ${wlan1} = {
                 connection = {
-                  id = "Ernest Routerford";
+                  id = wlan1;
                   permissions = "";
                   type = "wifi";
                 };
@@ -4652,12 +4657,12 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 wifi = {
                   mac-address-blacklist = "";
                   mode = "infrastructure";
-                  ssid = "Ernest Routerford";
+                  ssid = wlan1;
                 };
                 wifi-security = {
                   auth-alg = "open";
                   key-mgmt = "wpa-psk";
-                  psk = "$ERNEST";
+                  psk = "WLAN1_PW";
                 };
               };
 
@@ -4670,7 +4675,6 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 ethernet = {
                   auto-negotiate = "true";
                   cloned-mac-address = "preserve";
-                  mac-address = "90:2E:16:D0:A1:87";
                 };
                 ipv4 = { method = "shared"; };
                 ipv6 = {
@@ -4683,10 +4687,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
               eduroam = {
                 "802-1x" = {
                   eap = if (!iwd) then "ttls;" else "peap;";
-                  identity = "$EDUID";
-                  password = "$EDUPASS";
+                  identity = "$EDUROAM_USER";
+                  password = "$EDUROAM_PW";
                   phase2-auth = "mschapv2";
-                  anonymous-identity = lib.mkIf iwd "anonymous@student.tuwien.ac.at";
+                  anonymous-identity = lib.mkIf iwd eduroam-anon;
                 };
                 connection = {
                   id = "eduroam";
@@ -4726,9 +4730,9 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 proxy = { };
               };
 
-              HH40V_39F5 = {
+              ${wlan2} = {
                 connection = {
-                  id = "HH40V_39F5";
+                  id = wlan2;
                   type = "wifi";
                 };
                 ipv4 = { method = "auto"; };
@@ -4740,17 +4744,17 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 wifi = {
                   band = "bg";
                   mode = "infrastructure";
-                  ssid = "HH40V_39F5";
+                  ssid = wlan2;
                 };
                 wifi-security = {
                   key-mgmt = "wpa-psk";
-                  psk = "$FRAUNS";
+                  psk = "$WLAN2_PW";
                 };
               };
 
-              magicant = {
+              ${mobile1} = {
                 connection = {
-                  id = "magicant";
+                  id = mobile1;
                   type = "wifi";
                 };
                 ipv4 = { method = "auto"; };
@@ -4761,30 +4765,30 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 proxy = { };
                 wifi = {
                   mode = "infrastructure";
-                  ssid = "magicant";
+                  ssid = mobile1;
                 };
                 wifi-security = {
                   auth-alg = "open";
                   key-mgmt = "wpa-psk";
-                  psk = "$HANDYHOTSPOT";
+                  psk = "$MOBILE_HOTSPOT_PW";
                 };
               };
 
-              wireguardvpn = {
+              home-wireguard = {
                 connection = {
                   id = "HomeVPN";
                   type = "wireguard";
                   autoconnect = "false";
                   interface-name = "wg1";
                 };
-                wireguard = { private-key = "$WIREGUARDPRIV"; };
-                "wireguard-peer.$WIREGUARDPUB" = {
-                  endpoint = "$WIREGUARDENDPOINT";
-                  allowed-ips = "0.0.0.0/0";
+                wireguard = { private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY"; };
+                "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
+                  endpoint = "$HOME_WIREGUARD_ENDPOINT";
+                  allowed-ips = home-wireguard-allowed-ips;
                 };
                 ipv4 = {
                   method = "ignore";
-                  address1 = "192.168.3.3/32";
+                  address1 = home-wireguard-address;
                 };
                 ipv6 = {
                   addr-gen-mode = "stable-privacy";
@@ -4793,10 +4797,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 proxy = { };
               };
 
-              "sweden-aes-128-cbc-udp-dns" = {
+              pia-vpn1 = {
                 connection = {
                   autoconnect = "false";
-                  id = "PIA Sweden";
+                  id = "PIA ${vpn1-location}";
                   type = "vpn";
                 };
                 ipv4 = { method = "auto"; };
@@ -4807,21 +4811,21 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                 proxy = { };
                 vpn = {
                   auth = "sha1";
-                  ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
+                  ca = config.sops.secrets."pia-vpn1-ca-pem".path;
                   challenge-response-flags = "2";
-                  cipher = "aes-128-cbc";
+                  cipher = vpn1-cipher;
                   compress = "yes";
                   connection-type = "password";
-                  crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
+                  crl-verify-file = config.sops.secrets."pia-vpn1-crl-pem".path;
                   dev = "tun";
                   password-flags = "0";
-                  remote = "sweden.privacy.network:1198";
+                  remote = vpn1-address;
                   remote-cert-tls = "server";
                   reneg-seconds = "0";
                   service-type = "org.freedesktop.NetworkManager.openvpn";
-                  username = "$VPNUSER";
+                  username = "$PIA_VPN_USER";
                 };
-                vpn-secrets = { password = "$VPNPASS"; };
+                vpn-secrets = { password = "$PIA_VPN_PW"; };
               };
 
               Hotspot = {
@@ -4845,7 +4849,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
                   key-mgmt = "wpa-psk";
                   pairwise = "ccmp;";
                   proto = "rsn;";
-                  psk = "$HOTSPOT";
+                  psk = "$MOBILE_HOTSPOT_PW";
                 };
               };
 
@@ -10321,7 +10325,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { lib, config, ... }:
+  { self, lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) mainUser;
   in
@@ -10329,6 +10333,14 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
     options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
     config = lib.mkIf config.swarselsystems.modules.general {
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
+        package = lib.mkForce pkgs.nixVersions.nix_2_28;
+        extraOptions = ''
+          plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+            buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
+            patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+          })}/lib/nix/plugins
+          extra-builtins-file = ${self + /nix/extra-builtins.nix}
+        '';
         settings = {
           experimental-features = [
             "nix-command"
@@ -10340,7 +10352,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
           trusted-users = [ "@wheel" "${mainUser}" ];
           connect-timeout = 5;
           bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
           fallback = true;
           min-free = 128000000;
           max-free = 1000000000;
@@ -10701,7 +10713,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -10711,13 +10723,13 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     config = lib.mkIf config.swarselsystems.modules.yubikey {
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-        u2f_keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+        u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
       };
 
       pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         ids = [
-          nixosConfig.repo.secrets.common.yubikeys.dev1
-          nixosConfig.repo.secrets.common.yubikeys.dev2
+          config.repo.secrets.common.yubikeys.dev1
+          config.repo.secrets.common.yubikeys.dev2
         ];
       };
     };
@@ -10974,10 +10986,10 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-  { lib, config, nixosConfig, globals, ... }:
+  { lib, config, globals, ... }:
   let
-    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-    inherit (nixosConfig.repo.secrets.common) fullName;
+    inherit (config.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+    inherit (config.repo.secrets.common) fullName;
     crocDomain = globals.services.croc.domain;
   in
   {
@@ -11180,10 +11192,10 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/home/common/git.nix
-  { lib, config, nixosConfig, globals, minimal, ... }:
+  { lib, config, globals, minimal, ... }:
   let
-    inherit (nixosConfig.repo.secrets.common.mail) address1;
-    inherit (nixosConfig.repo.secrets.common) fullName;
+    inherit (config.repo.secrets.common.mail) address1;
+    inherit (config.repo.secrets.common) fullName;
 
     gitUser = globals.user.name;
   in
@@ -11721,10 +11733,10 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix-ts :tangle modules/home/common/mail.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, ... }:
   let
-    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
-    inherit (nixosConfig.repo.secrets.common) fullName;
+    inherit (config.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
+    inherit (config.repo.secrets.common) fullName;
     inherit (config.swarselsystems) xdgDir;
   in
   {
@@ -11732,10 +11744,10 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
     config = lib.mkIf config.swarselsystems.modules.mail {
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-        mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
-        nautilus = { path = "${xdgDir}/secrets/nautilus"; };
-        leon = { path = "${xdgDir}/secrets/leon"; };
-        swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+        address1-token = { path = "${xdgDir}/secrets/address1-token"; };
+        address2-token = { path = "${xdgDir}/secrets/address2-token"; };
+        address3-token = { path = "${xdgDir}/secrets/address3-token"; };
+        address4-token = { path = "${xdgDir}/secrets/address4-token"; };
       };
 
       programs = {
@@ -11765,7 +11777,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               address = address1;
               userName = address1;
               realName = fullName;
-              passwordCommand = "cat ${config.sops.secrets.leon.path}";
+              passwordCommand = "cat ${config.sops.secrets.address1-token.path}";
               gpg = {
                 key = "0x76FD3810215AE097";
                 signByDefault = true;
@@ -11795,11 +11807,11 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 
             swarsel = {
               address = address4;
-              userName = "8227dc594dd515ce232eda1471cb9a19";
+              userName = address4-user;
               realName = fullName;
-              passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+              passwordCommand = "cat ${config.sops.secrets.address4-token.path}";
               smtp = {
-                host = "in-v3.mailjet.com";
+                host = address4-host;
                 port = 587;
                 tls = {
                   enable = true;
@@ -11819,8 +11831,8 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               primary = false;
               address = address2;
               userName = address2;
-              realName = add2Name;
-              passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
+              realName = address2-name;
+              passwordCommand = "cat ${config.sops.secrets.address2-token.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
               msmtp.enable = true;
@@ -11846,8 +11858,8 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               primary = false;
               address = address3;
               userName = address3;
-              realName = add3Name;
-              passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
+              realName = address3-name;
+              passwordCommand = "cat ${config.sops.secrets.address3-token.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
               msmtp.enable = true;
@@ -11894,7 +11906,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
     options.swarselsystems.modules.emacs = lib.mkEnableOption "emacs settings";
     config = lib.mkIf config.swarselsystems.modules.emacs {
       # needed for elfeed
-      sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
+      sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
       # enable emacs overlay for bleeding edge features
       # also read init.el file and install use-package packages
@@ -12046,7 +12058,7 @@ The rest of the related configuration is found here:
       };
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-        github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+        github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
       };
 
       programs.waybar = {
@@ -13194,9 +13206,9 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix-ts :tangle modules/home/common/gammastep.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, ... }:
   let
-    inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
+    inherit (config.repo.secrets.common.location) latitude longitude;
   in
   {
     options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
@@ -13357,10 +13369,10 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, nixosConfig, ... }:
+  { self, config, pkgs, lib, ... }:
   let
     inherit (config.swarselsystems) homeDir;
-    inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+    inherit (config.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
   in
   {
     options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
@@ -14378,7 +14390,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
     inherit name;
     runtimeInputs = [ jq ];
     text = ''
-      count=$(curl -u Swarsel:"$(cat "$XDG_RUNTIME_DIR/secrets/github_notif")" https://api.github.com/notifications | jq '. | length')
+      count=$(curl -u Swarsel:"$(cat "$XDG_RUNTIME_DIR/secrets/github-notifications-token")" https://api.github.com/notifications | jq '. | length')
 
       if [[ "$count" != "0" ]]; then
           echo "{\"text\":\"$count\"}"
@@ -15707,6 +15719,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     config = lib.mkIf config.swarselsystems.profiles.personal {
       swarselsystems.modules = {
         packages = lib.mkDefault true;
+        pii = lib.mkDefault true;
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
         xserver = lib.mkDefault true;
@@ -15720,7 +15733,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         network = lib.mkDefault true;
         time = lib.mkDefault true;
         sops = lib.mkDefault true;
-        pii = lib.mkDefault true;
         stylix = lib.mkDefault true;
         programs = lib.mkDefault true;
         zsh = lib.mkDefault true;
@@ -16177,6 +16189,7 @@ This holds modules that are to be used on most hosts. These are also the most im
     config = lib.mkIf config.swarselsystems.profiles.personal {
       swarselsystems.modules = {
         packages = lib.mkDefault true;
+        pii = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
         nixgl = lib.mkDefault true;

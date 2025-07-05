@@ -1,7 +1,7 @@
-{ lib, config, nixosConfig, ... }:
+{ lib, config, ... }:
 let
-  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 add2Name address3 add3Name address4;
-  inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (config.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
+  inherit (config.repo.secrets.common) fullName;
   inherit (config.swarselsystems) xdgDir;
 in
 {
@@ -9,10 +9,10 @@ in
   config = lib.mkIf config.swarselsystems.modules.mail {
 
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-      mrswarsel = { path = "${xdgDir}/secrets/mrswarsel"; };
-      nautilus = { path = "${xdgDir}/secrets/nautilus"; };
-      leon = { path = "${xdgDir}/secrets/leon"; };
-      swarselmail = { path = "${xdgDir}/secrets/swarselmail"; };
+      address1-token = { path = "${xdgDir}/secrets/address1-token"; };
+      address2-token = { path = "${xdgDir}/secrets/address2-token"; };
+      address3-token = { path = "${xdgDir}/secrets/address3-token"; };
+      address4-token = { path = "${xdgDir}/secrets/address4-token"; };
     };
 
     programs = {
@@ -42,7 +42,7 @@ in
             address = address1;
             userName = address1;
             realName = fullName;
-            passwordCommand = "cat ${config.sops.secrets.leon.path}";
+            passwordCommand = "cat ${config.sops.secrets.address1-token.path}";
             gpg = {
               key = "0x76FD3810215AE097";
               signByDefault = true;
@@ -72,11 +72,11 @@ in
 
           swarsel = {
             address = address4;
-            userName = "8227dc594dd515ce232eda1471cb9a19";
+            userName = address4-user;
             realName = fullName;
-            passwordCommand = "cat ${config.sops.secrets.swarselmail.path}";
+            passwordCommand = "cat ${config.sops.secrets.address4-token.path}";
             smtp = {
-              host = "in-v3.mailjet.com";
+              host = address4-host;
               port = 587;
               tls = {
                 enable = true;
@@ -96,8 +96,8 @@ in
             primary = false;
             address = address2;
             userName = address2;
-            realName = add2Name;
-            passwordCommand = "cat ${config.sops.secrets.nautilus.path}";
+            realName = address2-name;
+            passwordCommand = "cat ${config.sops.secrets.address2-token.path}";
             imap.host = "imap.gmail.com";
             smtp.host = "smtp.gmail.com";
             msmtp.enable = true;
@@ -123,8 +123,8 @@ in
             primary = false;
             address = address3;
             userName = address3;
-            realName = add3Name;
-            passwordCommand = "cat ${config.sops.secrets.mrswarsel.path}";
+            realName = address3-name;
+            passwordCommand = "cat ${config.sops.secrets.address3-token.path}";
             imap.host = "imap.gmail.com";
             smtp.host = "smtp.gmail.com";
             msmtp.enable = true;

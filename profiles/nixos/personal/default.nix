@@ -4,6 +4,7 @@
   config = lib.mkIf config.swarselsystems.profiles.personal {
     swarselsystems.modules = {
       packages = lib.mkDefault true;
+      pii = lib.mkDefault true;
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;
@@ -17,7 +18,6 @@
       network = lib.mkDefault true;
       time = lib.mkDefault true;
       sops = lib.mkDefault true;
-      pii = lib.mkDefault true;
       stylix = lib.mkDefault true;
       programs = lib.mkDefault true;
       zsh = lib.mkDefault true;

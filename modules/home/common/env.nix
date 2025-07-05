@@ -1,7 +1,7 @@
-{ lib, config, nixosConfig, globals, ... }:
+{ lib, config, globals, ... }:
 let
-  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-  inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (config.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+  inherit (config.repo.secrets.common) fullName;
   crocDomain = globals.services.croc.domain;
 in
 {

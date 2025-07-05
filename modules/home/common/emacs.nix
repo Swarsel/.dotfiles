@@ -6,7 +6,7 @@ in
   options.swarselsystems.modules.emacs = lib.mkEnableOption "emacs settings";
   config = lib.mkIf config.swarselsystems.modules.emacs {
     # needed for elfeed
-    sops.secrets.fever = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
+    sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages

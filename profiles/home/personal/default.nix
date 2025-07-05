@@ -4,6 +4,7 @@
   config = lib.mkIf config.swarselsystems.profiles.personal {
     swarselsystems.modules = {
       packages = lib.mkDefault true;
+      pii = lib.mkDefault true;
       ownpackages = lib.mkDefault true;
       general = lib.mkDefault true;
       nixgl = lib.mkDefault true;

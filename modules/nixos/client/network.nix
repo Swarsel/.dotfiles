@@ -1,7 +1,12 @@
 { self, lib, config, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
+  clientSopsFile = self + /secrets/${config.networking.hostName}/secrets.yaml;
+
   inherit (config.swarselsystems) mainUser;
+  inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+  inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
+
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
 in
 {
@@ -13,39 +18,33 @@ in
 
     sops = {
       secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-        ernest = { };
-        frauns = { };
-        hotspot = { };
-        eduid = { };
-        edupass = { };
-        handyhotspot = { };
-        vpnuser = { };
-        vpnpass = { };
-        wireguardpriv = { };
-        wireguardpub = { };
-        wireguardendpoint = { };
-        stashuser = { };
-        stashpass = { };
-        githubforgeuser = { };
-        githubforgepass = { };
-        gitlabforgeuser = { };
-        gitlabforgepass = { };
-        "sweden-aes-128-cbc-udp-dns-crl-verify.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
-        "sweden-aes-128-cbc-udp-dns-ca.pem" = { sopsFile = certsSopsFile; owner = mainUser; };
+        wlan1-pw = { };
+        wlan2-pw = { };
+        laptop-hotspot-pw = { };
+        mobile-hotspot-pw = { };
+        eduroam-user = { };
+        eduroam-pw = { };
+        pia-vpn-user = { };
+        pia-vpn-pw = { };
+        home-wireguard-client-private-key = { sopsFile = clientSopsFile; };
+        home-wireguard-server-public-key = { };
+        home-wireguard-endpoint = { };
+        pia-vpn1-crl-pem = { sopsFile = certsSopsFile; };
+        pia-vpn1-ca-pem = { sopsFile = certsSopsFile; };
       };
       templates = lib.mkIf (!config.swarselsystems.isPublic) {
         "network-manager.env".content = ''
-          ERNEST=${config.sops.placeholder.ernest}
-          FRAUNS=${config.sops.placeholder.frauns}
-          HOTSPOT=${config.sops.placeholder.hotspot}
-          EDUID=${config.sops.placeholder.eduid}
-          EDUPASS=${config.sops.placeholder.edupass}
-          HANDYHOTSPOT=${config.sops.placeholder.handyhotspot}
-          VPNUSER=${config.sops.placeholder.vpnuser}
-          VPNPASS=${config.sops.placeholder.vpnpass}
-          WIREGUARDPRIV=${config.sops.placeholder.wireguardpriv}
-          WIREGUARDPUB=${config.sops.placeholder.wireguardpub}
-          WIREGUARDENDPOINT=${config.sops.placeholder.wireguardendpoint}
+          WLAN1_PW=${config.sops.placeholder.wlan1-pw}
+          WLAN2_PW=${config.sops.placeholder.wlan2-pw}
+          LAPTOP_HOTSPOT_PW=${config.sops.placeholder.laptop-hotspot-pw}
+          MOBILE_HOTSPOT_PW=${config.sops.placeholder.mobile-hotspot-pw}
+          EDUROAM_USER=${config.sops.placeholder.eduroam-user}
+          EDUROAM_PW=${config.sops.placeholder.eduroam-pw}
+          PIA_VPN_USER=${config.sops.placeholder.pia-vpn-user}
+          PIA_VPN_PW=${config.sops.placeholder.pia-vpn-pw}
+          HOME_WIREGUARD_CLIENT_PRIVATE_KEY=${config.sops.placeholder.home-wireguard-client-private-key}
+          HOME_WIREGUARD_SERVER_PUBLIC_KEY=${config.sops.placeholder.home-wireguard-server-public-key}
+          HOME_WIREGUARD_ENDPOINT=${config.sops.placeholder.home-wireguard-endpoint}
         '';
       };
     };
@@ -87,9 +86,9 @@ in
             "${config.sops.templates."network-manager.env".path}"
           ];
           profiles = {
-            "Ernest Routerford" = {
+            ${wlan1} = {
               connection = {
-                id = "Ernest Routerford";
+                id = wlan1;
                 permissions = "";
                 type = "wifi";
               };
@@ -105,12 +104,12 @@ in
               wifi = {
                 mac-address-blacklist = "";
                 mode = "infrastructure";
-                ssid = "Ernest Routerford";
+                ssid = wlan1;
               };
               wifi-security = {
                 auth-alg = "open";
                 key-mgmt = "wpa-psk";
-                psk = "$ERNEST";
+                psk = "WLAN1_PW";
               };
             };
 
@@ -123,7 +122,6 @@ in
               ethernet = {
                 auto-negotiate = "true";
                 cloned-mac-address = "preserve";
-                mac-address = "90:2E:16:D0:A1:87";
               };
               ipv4 = { method = "shared"; };
               ipv6 = {
@@ -136,10 +134,10 @@ in
             eduroam = {
               "802-1x" = {
                 eap = if (!iwd) then "ttls;" else "peap;";
-                identity = "$EDUID";
-                password = "$EDUPASS";
+                identity = "$EDUROAM_USER";
+                password = "$EDUROAM_PW";
                 phase2-auth = "mschapv2";
-                anonymous-identity = lib.mkIf iwd "anonymous@student.tuwien.ac.at";
+                anonymous-identity = lib.mkIf iwd eduroam-anon;
               };
               connection = {
                 id = "eduroam";
@@ -179,9 +177,9 @@ in
               proxy = { };
             };
 
-            HH40V_39F5 = {
+            ${wlan2} = {
               connection = {
-                id = "HH40V_39F5";
+                id = wlan2;
                 type = "wifi";
               };
               ipv4 = { method = "auto"; };
@@ -193,17 +191,17 @@ in
               wifi = {
                 band = "bg";
                 mode = "infrastructure";
-                ssid = "HH40V_39F5";
+                ssid = wlan2;
               };
               wifi-security = {
                 key-mgmt = "wpa-psk";
-                psk = "$FRAUNS";
+                psk = "$WLAN2_PW";
               };
             };
 
-            magicant = {
+            ${mobile1} = {
               connection = {
-                id = "magicant";
+                id = mobile1;
                 type = "wifi";
               };
               ipv4 = { method = "auto"; };
@@ -214,30 +212,30 @@ in
               proxy = { };
               wifi = {
                 mode = "infrastructure";
-                ssid = "magicant";
+                ssid = mobile1;
               };
               wifi-security = {
                 auth-alg = "open";
                 key-mgmt = "wpa-psk";
-                psk = "$HANDYHOTSPOT";
+                psk = "$MOBILE_HOTSPOT_PW";
               };
             };
 
-            wireguardvpn = {
+            home-wireguard = {
               connection = {
                 id = "HomeVPN";
                 type = "wireguard";
                 autoconnect = "false";
                 interface-name = "wg1";
               };
-              wireguard = { private-key = "$WIREGUARDPRIV"; };
-              "wireguard-peer.$WIREGUARDPUB" = {
-                endpoint = "$WIREGUARDENDPOINT";
-                allowed-ips = "0.0.0.0/0";
+              wireguard = { private-key = "$HOME_WIREGUARD_CLIENT_PRIVATE_KEY"; };
+              "wireguard-peer.$HOME_WIREGURARD_SERVER_PUBLIC_KEY" = {
+                endpoint = "$HOME_WIREGUARD_ENDPOINT";
+                allowed-ips = home-wireguard-allowed-ips;
               };
               ipv4 = {
                 method = "ignore";
-                address1 = "192.168.3.3/32";
+                address1 = home-wireguard-address;
               };
               ipv6 = {
                 addr-gen-mode = "stable-privacy";
@@ -246,10 +244,10 @@ in
               proxy = { };
             };
 
-            "sweden-aes-128-cbc-udp-dns" = {
+            pia-vpn1 = {
               connection = {
                 autoconnect = "false";
-                id = "PIA Sweden";
+                id = "PIA ${vpn1-location}";
                 type = "vpn";
               };
               ipv4 = { method = "auto"; };
@@ -260,21 +258,21 @@ in
               proxy = { };
               vpn = {
                 auth = "sha1";
-                ca = config.sops.secrets."sweden-aes-128-cbc-udp-dns-ca.pem".path;
+                ca = config.sops.secrets."pia-vpn1-ca-pem".path;
                 challenge-response-flags = "2";
-                cipher = "aes-128-cbc";
+                cipher = vpn1-cipher;
                 compress = "yes";
                 connection-type = "password";
-                crl-verify-file = config.sops.secrets."sweden-aes-128-cbc-udp-dns-crl-verify.pem".path;
+                crl-verify-file = config.sops.secrets."pia-vpn1-crl-pem".path;
                 dev = "tun";
                 password-flags = "0";
-                remote = "sweden.privacy.network:1198";
+                remote = vpn1-address;
                 remote-cert-tls = "server";
                 reneg-seconds = "0";
                 service-type = "org.freedesktop.NetworkManager.openvpn";
-                username = "$VPNUSER";
+                username = "$PIA_VPN_USER";
               };
-              vpn-secrets = { password = "$VPNPASS"; };
+              vpn-secrets = { password = "$PIA_VPN_PW"; };
             };
 
             Hotspot = {
@@ -298,7 +296,7 @@ in
                 key-mgmt = "wpa-psk";
                 pairwise = "ccmp;";
                 proto = "rsn;";
-                psk = "$HOTSPOT";
+                psk = "$MOBILE_HOTSPOT_PW";
               };
             };
 

@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ self, lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) mainUser;
 in
@@ -6,6 +6,14 @@ in
   options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
   config = lib.mkIf config.swarselsystems.modules.general {
     nix = lib.mkIf (!config.swarselsystems.isNixos) {
+      package = lib.mkForce pkgs.nixVersions.nix_2_28;
+      extraOptions = ''
+        plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+          buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
+          patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+        })}/lib/nix/plugins
+        extra-builtins-file = ${self + /nix/extra-builtins.nix}
+      '';
       settings = {
         experimental-features = [
           "nix-command"
@@ -17,7 +25,7 @@ in
         trusted-users = [ "@wheel" "${mainUser}" ];
         connect-timeout = 5;
         bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)\[\e[1m\]λ\[\e[0m\] [0m";
+        bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
         fallback = true;
         min-free = 128000000;
         max-free = 1000000000;

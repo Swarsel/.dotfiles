@@ -1,7 +1,7 @@
-{ lib, config, nixosConfig, globals, minimal, ... }:
+{ lib, config, globals, minimal, ... }:
 let
-  inherit (nixosConfig.repo.secrets.common.mail) address1;
-  inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (config.repo.secrets.common.mail) address1;
+  inherit (config.repo.secrets.common) fullName;
 
   gitUser = globals.user.name;
 in

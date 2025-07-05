@@ -61,7 +61,7 @@ in
     };
 
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-      github_notif = { path = "${xdgDir}/secrets/github_notif"; };
+      github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };
 
     programs.waybar = {

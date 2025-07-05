@@ -2,6 +2,8 @@
 let
   primaryUser = config.swarselsystems.mainUser;
   sharedOptions = {
+    isLaptop = true;
+    isNixos = true;
     isBtrfs = true;
     isLinux = true;
     sharescreen = "eDP-2";
@@ -50,8 +52,6 @@ in
     # home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {
-        isLaptop = true;
-        isNixos = true;
         isSecondaryGpu = true;
         SecondaryGpuCard = "pci-0000_03_00_0";
         cpuCount = 16;

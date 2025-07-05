@@ -5,7 +5,7 @@ in
 {
   options.swarselsystems.modules.users = lib.mkEnableOption "user config";
   config = lib.mkIf config.swarselsystems.modules.users {
-    sops.secrets.swarseluser = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
+    sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
     users = {
       mutableUsers = lib.mkIf (!minimal) false;
@@ -13,7 +13,7 @@ in
         isNormalUser = true;
         description = "Leon S";
         password = lib.mkIf minimal "setup";
-        hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.swarseluser.path;
+        hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.main-user-hashed-pw.path;
         extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
         packages = with pkgs; [ ];
       };

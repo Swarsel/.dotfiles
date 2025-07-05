@@ -45,6 +45,12 @@ creation_rules:
       - *surface
       - *winters
       - *moonside
+  - path_regex: secrets/nbl-imba-2/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *nbl
   - path_regex: secrets/moonside/secrets.yaml
     key_groups:
     - pgp:
@@ -75,7 +81,6 @@ creation_rules:
       - *swarsel
       age:
       - *nbl
-      - *moonside
   - path_regex: hosts/nixos/winters/secrets/pii.nix.enc
     key_groups:
     - pgp:

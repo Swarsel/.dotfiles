@@ -1,7 +1,7 @@
-{ self, config, pkgs, lib, nixosConfig, ... }:
+{ self, config, pkgs, lib, ... }:
 let
   inherit (config.swarselsystems) homeDir;
-  inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+  inherit (config.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
 in
 {
   options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
