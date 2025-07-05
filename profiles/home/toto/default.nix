@@ -6,6 +6,8 @@
       general = lib.mkDefault true;
       sops = lib.mkDefault true;
       ssh = lib.mkDefault true;
+      kitty = lib.mkDefault true;
+      git = lib.mkDefault true;
     };
   };
 

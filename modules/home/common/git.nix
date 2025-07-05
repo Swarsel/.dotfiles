@@ -1,4 +1,4 @@
-{ lib, config, nixosConfig, globals, ... }:
+{ lib, config, nixosConfig, globals, minimal, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1;
   inherit (nixosConfig.repo.secrets.common) fullName;
@@ -10,6 +10,7 @@ in
   config = lib.mkIf config.swarselsystems.modules.git {
     programs.git = {
       enable = true;
+    } // lib.optionalAttrs (!minimal) {
       aliases = {
         a = "add";
         c = "commit";

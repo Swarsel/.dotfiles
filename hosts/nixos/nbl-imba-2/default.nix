@@ -1,4 +1,4 @@
-{ self, config, inputs, lib, ... }:
+{ self, config, inputs, lib, minimal, ... }:
 let
   primaryUser = config.swarselsystems.mainUser;
   sharedOptions = {

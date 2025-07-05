@@ -12,6 +12,7 @@
       impermanence = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
       autologin = lib.mkDefault true;
+      pii = lib.mkDefault true;
       server = {
         ssh = lib.mkDefault true;
       };

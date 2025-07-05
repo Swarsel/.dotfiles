@@ -1,12 +1,12 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, ... }:
 let
+  primaryUser = config.swarselsystems.mainUser;
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
     profiles = {
       toto = lib.mkIf (!minimal) true;
       minimal = lib.mkIf minimal true;
-      btrfs = lib.mkIf minimal true;
     };
   };
 in
@@ -34,12 +34,13 @@ in
       isSwap = true;
       swapSize = "2G";
       # rootDisk = "/dev/nvme0n1";
-      rootDisk = "/dev/sda";
+      rootDisk = "/dev/vda";
+      profiles.btrfs = lib.mkIf minimal true;
       # rootDisk = "/dev/vda";
     }
     sharedOptions;
 
-  home-manager.users."setup" = {
+  home-manager.users.${primaryUser} = {
     home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {

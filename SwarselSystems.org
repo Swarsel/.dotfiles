@@ -1440,6 +1440,7 @@ Lastly, I add some of my own library functions to be used alongside the function
         # nix build --print-out-paths --no-link .#images.<target-system>.live-iso
         packages.live-iso = inputs.nixos-generators.nixosGenerate {
           inherit pkgs;
+          specialArgs = { inherit self; };
           modules = [
             inputs.home-manager.nixosModules.home-manager
             "${self}/install/installer-config.nix"
@@ -1460,7 +1461,7 @@ Lastly, I add some of my own library functions to be used alongside the function
   {
     description = "Minimal installer flake - not to be used manually";
 
-    inputs.swarsel.url = "github:Swarsel/.dotfiles";
+    inputs.swarsel.url = "./..";
 
     outputs = { swarsel, ... }: { nixosConfigurations = swarsel.nixosConfigurationsMinimal; };
   }
@@ -1705,7 +1706,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/default.nix
-  { self, config, inputs, lib, ... }:
+  { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
@@ -2821,15 +2822,15 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/toto/default.nix
-  { self, lib, minimal, ... }:
+  { self, config, lib, minimal, ... }:
   let
+    primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
       profiles = {
         toto = lib.mkIf (!minimal) true;
         minimal = lib.mkIf minimal true;
-        btrfs = lib.mkIf minimal true;
       };
     };
   in
@@ -2857,12 +2858,13 @@ This is a slim setup for developing base configuration. I do not track the hardw
         isSwap = true;
         swapSize = "2G";
         # rootDisk = "/dev/nvme0n1";
-        rootDisk = "/dev/sda";
+        rootDisk = "/dev/vda";
+        profiles.btrfs = lib.mkIf minimal true;
         # rootDisk = "/dev/vda";
       }
       sharedOptions;
 
-    home-manager.users."setup" = {
+    home-manager.users.${primaryUser} = {
       home.stateVersion = lib.mkForce "23.05";
       swarselsystems = lib.recursiveUpdate
         {
@@ -3022,8 +3024,12 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
 
 #+begin_src nix-ts :tangle install/installer-config.nix
-  { pkgs, lib, ... }:
-  {
+  { self, config, pkgs, lib, ... }:
+  let
+    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+  in
+    {
+
     config = {
       home-manager.users.root.home = {
         stateVersion = "23.05";
@@ -3035,9 +3041,48 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
           };
         };
       };
+      home-manager.users.swarsel = {
+        home = {
+          username = "swarsel";
+          homeDirectory = lib.mkDefault "/home/swarsel";
+          stateVersion = lib.mkDefault "23.05";
+          keyboard.layout = "us";
+          sessionVariables = {
+            FLAKE = "/home/swarsel/.dotfiles";
+          };
+          file = {
+            ".bash_history" = {
+              text = ''
+                swarsel-install -n chaostheatre
+              '';
+            };
+          };
+        };
+      };
 
-      nix.settings = {
-        experimental-features = [ "nix-command" "flakes" ];
+      security.sudo.extraConfig = ''
+        Defaults    env_keep+=SSH_AUTH_SOCK
+        Defaults lecture = never
+      '';
+      security.pam = {
+        sshAgentAuth.enable = true;
+        services = {
+          sudo.u2fAuth = true;
+        };
+      };
+
+      nix = {
+        channel.enable = false;
+        package = pkgs.nixVersions.nix_2_28;
+        extraOptions = ''
+          plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+            buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
+            patches = (o.patches or []) ++ [ ../nix/nix-plugins.patch ];
+          })}/lib/nix/plugins
+          extra-builtins-file = ${../nix/extra-builtins.nix}
+        '';
+
+        settings.experimental-features = [ "nix-command" "flakes" ];
       };
 
       boot = {
@@ -3087,7 +3132,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
       networking = {
         hostName = "drugstore";
         wireless.enable = false;
-        dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+        # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
         networkmanager.enable = true;
       };
 
@@ -3095,11 +3140,20 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
       users = {
         allowNoPasswordLogin = true;
+        groups.swarsel = { };
         users = {
-          root = {
+          swarsel = {
+            name = "swarsel";
+            group = "swarsel";
+            isNormalUser = true;
             password = "setup"; # this is overwritten after install
+            openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+            extraGroups = [ "wheel" ];
+          };
+          root = {
             initialHashedPassword = lib.mkForce null;
-            openssh.authorizedKeys.keys = [ "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDd0XXoLfRE0AyasxscEBwMqOnLWPqwz+etGqzVNeSw/RcgnxOi903mlVjCH+jzWMSe2GVSgzgM20j/r9sfE2P1z+wq/RODFS04JM0ltUoFkkm/IDZXQ2piOk7AoVi5ajdx4EiBnXY87jvxh5cCgQltkj3ouPF7FVN/MaN21IgWYB8NgkaVGft//OplodlDQNot17c0sFMibY0HcquwmHhqKOtKM1gT98+jZl0rd1rCqXFOvkesW6FPC4nzirPai+Hizp5gncrkJOZmLLqrjVx6PfpQzqzIhoUn1YS5CpyfXnKZUgx2Oi8SENmWOZ9DxYvDklgEttob37E2bIXbUhOw/u4I3olGFgCsKL6jg0N+d5teEaCZFnzlOp0UMWiUo7lVqq7Bwl3rNka2pxEdZ9v/1+m9cJiP7h6pnKmccVGku57iGIDnsnoTrmo1qbAje+EsmPYbc+qMnTDvOdSHTOXnjsyTd+ADklvMHCUAuf6ku4ktQEhlZxU3PvYvKHa1cTCEXxLWjytIgHgTgab9M5IH29Q55LSRRQBzUdkwjOG6KhsqG+xEE6038EbXr0MGKTm01AFmeVZWewmkSLu2UdoOMiw8mTSQhQFfp2QruYHnh7oJCo7ttKT1sLoRX+TfgQm1ryn/orhReg2GFfmbiLGxaJGVNvjqCxqrIFQXx4ZDHw== cardno:22_412_399" ];
+            password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+            openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
           };
         };
       };
@@ -3110,10 +3164,10 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
       system.activationScripts.cache = {
         text = ''
-          mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
-          mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
-          mkdir -p -m=0777 /home/setup/.local/share/nix/
-          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
+          mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
+          mkdir -p -m=0777 /home/swarsel/.local/state/home-manager/gcroots
+          mkdir -p -m=0777 /home/swarsel/.local/share/nix/
+          printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json > /dev/null
           mkdir -p /root/.local/share/nix/
           printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
         '';
@@ -3730,24 +3784,9 @@ A breakdown of the flags being set:
 - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix-ts :tangle modules/nixos/common/settings.nix
-  { lib, pkgs, config, outputs, inputs, minimal, ... }:
-  {
-    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselsystems.modules.general
-      ({
-
-        system.stateVersion = lib.mkDefault "23.05";
-
-        nixpkgs = {
-          overlays = [ outputs.overlays.default ];
-          config = {
-            allowUnfree = true;
-          };
-        };
-
-      }
-    // lib.optionalAttrs (!minimal) {
-
+  { self, lib, pkgs, config, outputs, inputs, minimal, ... }:
+  let
+    settings = if minimal then { } else {
       environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
         assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
         { }
@@ -3759,14 +3798,6 @@ A breakdown of the flags being set:
         in
         {
           settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-              "ca-derivations"
-              "cgroups"
-              "pipe-operators"
-            ];
-            trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
             connect-timeout = 5;
             bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
             bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
@@ -3802,7 +3833,50 @@ A breakdown of the flags being set:
         environment.TMPDIR = "/var/tmp";
       };
 
-    });
+    };
+  in
+  {
+    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselsystems.modules.general
+      (lib.recursiveUpdate
+        {
+
+          nix = {
+            package = pkgs.nixVersions.nix_2_28;
+            settings = {
+              experimental-features = [
+                "nix-command"
+                "flakes"
+                "ca-derivations"
+                "cgroups"
+                "pipe-operators"
+              ];
+              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+            };
+            # extraOptions = ''
+            #   plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+            #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            # '';
+            extraOptions = ''
+              plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+                buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
+                patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+              })}/lib/nix/plugins
+              extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            '';
+          };
+
+          system.stateVersion = lib.mkDefault "23.05";
+
+          nixpkgs = {
+            overlays = [ outputs.overlays.default ];
+            config = {
+              allowUnfree = true;
+            };
+          };
+
+        }
+        settings);
   }
 #+end_src
 
@@ -3869,7 +3943,7 @@ For that reason, make sure that =sops-nix= is properly working before setting th
             description = "Leon S";
             password = lib.mkIf (config.swarselsystems.initialSetup || minimal) "setup";
             hashedPasswordFile = lib.mkIf (!config.swarselsystems.initialSetup && !minimal) config.sops.secrets.swarseluser.path;
-            extraGroups = lib.mkIf (!minimal) [ "networkmanager" "syncthing" "docker" "wheel" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+            extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
         };
@@ -3941,9 +4015,8 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, ... }:
+  { config, inputs, lib, minimal, ... }:
   let
-
     # If the given expression is a bare set, it will be wrapped in a function,
     # so that the imported file can always be applied to the inputs, similar to
     # how modules can be functions or sets.
@@ -3968,51 +4041,51 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
   in
   {
     options = {
-      repo = {
-        secretFiles = lib.mkOption {
-          default = { };
-          type = lib.types.attrsOf lib.types.path;
-          example = lib.literalExpression "{ local = ./pii.nix.enc; }";
-          description = ''
-          This file manages the origin for this machine's repository-secrets. Anything that is
-          technically not a secret in the classical sense (i.e. that it has to be protected
-          after it has been deployed), but something you want to keep secret from the public;
-          Anything that you wouldn't want people to see on GitHub, but that can live unencrypted
-          on your own devices. Consider it a more ergonomic nix alternative to using git-crypt.
+        repo = {
+          secretFiles = lib.mkOption {
+            default = { };
+            type = lib.types.attrsOf lib.types.path;
+            example = lib.literalExpression "{ local = ./pii.nix.enc; }";
+            description = ''
+              This file manages the origin for this machine's repository-secrets. Anything that is
+              technically not a secret in the classical sense (i.e. that it has to be protected
+              after it has been deployed), but something you want to keep secret from the public;
+              Anything that you wouldn't want people to see on GitHub, but that can live unencrypted
+              on your own devices. Consider it a more ergonomic nix alternative to using git-crypt.
 
-          All of these secrets may (and probably will be) put into the world-readable nix-store
-          on the build and target hosts. You'll most likely want to store personally identifiable
-          information here, such as:
-            - MAC Addreses
-            - Static IP addresses
-            - Your full name (when configuring your users)
-            - Your postal address (when configuring e.g. home-assistant)
-            - ...
+              All of these secrets may (and probably will be) put into the world-readable nix-store
+              on the build and target hosts. You'll most likely want to store personally identifiable
+              information here, such as:
+                - MAC Addreses
+                - Static IP addresses
+                - Your full name (when configuring your users)
+                - Your postal address (when configuring e.g. home-assistant)
+                - ...
 
-          Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
-          the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
-        '';
+              Each path given here must be an sops-encrypted .nix file. For each attribute `<name>`,
+              the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
+            '';
+          };
+
+          secrets = lib.mkOption {
+            readOnly = true;
+            default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
+            type = lib.types.unspecified;
+            description = "Exposes the loaded repo secrets. This option is read-only.";
+          };
         };
-
-        secrets = lib.mkOption {
-          readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
-          type = lib.types.unspecified;
-          description = "Exposes the loaded repo secrets. This option is read-only.";
-        };
+        swarselsystems.modules.pii = lib.mkEnableOption "enable pii management";
       };
-      swarselsystems.modules.pii = lib.mkEnableOption "enable pii management";
-    };
     config = lib.mkIf config.swarselsystems.modules.pii {
       repo.secretFiles =
         let
           local = config.node.secretsDir + "/pii.nix.enc";
         in
-          (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // {
-           common = ../../../secrets/repo/pii.nix.enc;
+        (lib.optionalAttrs (lib.pathExists local && !minimal ) { inherit local; }) // lib.optionalAttrs (!minimal) {
+          common = ../../../secrets/repo/pii.nix.enc;
         };
     };
-    }
+  }
 
 #+end_src
 
@@ -9988,7 +10061,7 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       isBtrfs = lib.mkEnableOption "use btrfs filesystem";
       mainUser = lib.mkOption {
         type = lib.types.str;
-        default = if (!minimal) then globals.user.name else "setup" ;
+        default = if (!minimal) then globals.user.name else "swarsel" ;
       };
       homeDir = lib.mkOption {
         type = lib.types.str;
@@ -11113,7 +11186,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/home/common/git.nix
-  { lib, config, nixosConfig, globals, ... }:
+  { lib, config, nixosConfig, globals, minimal, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1;
     inherit (nixosConfig.repo.secrets.common) fullName;
@@ -11125,6 +11198,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
     config = lib.mkIf config.swarselsystems.modules.git {
       programs.git = {
         enable = true;
+        } // lib.optionalAttrs (!minimal) {
         aliases = {
           a = "add";
           c = "commit";
@@ -14565,6 +14639,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   fi
 
   cd "$FLAKE"
+  rm install/flake.lock || true
   git_root=$(git rev-parse --show-toplevel)
   # ------------------------
   green "Wiping known_hosts of $target_destination"
@@ -14609,7 +14684,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
-  SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+  nix run github:nix-community/nixos-anywhere/1.10.0 -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
 
   echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
   ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
@@ -14675,14 +14750,15 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+  $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
   $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-  $ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+  $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
   # __________________________
 
   if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
       green "Adding ssh host fingerprints for git{lab,hub}"
-      $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /home/$target_user/.ssh/known_hosts"
-      $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /root/.ssh/known_hosts"
+      $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /home/$target_user/.ssh/known_hosts"
+      $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /root/.ssh/known_hosts"
   fi
   # --------------------------
 
@@ -14699,34 +14775,47 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       fi
 
       if yes_or_no "Do you want to rebuild immediately?"; then
-          green "Rebuilding nix-config on $target_hostname"
-          yellow "Reminder: The password is 'setup'"
-          $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json"
-          $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+          green "Building nix-config for $target_hostname"
+          # yellow "Reminder: The password is 'setup'"
+          $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json"
+          # $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+          store_path=$(nix build --no-link --print-out-paths .#nixosConfigurations."$target_hostname".config.system.build.toplevel)
+          green "Copying generation to $target_hostname"
+          nix copy --to "ssh://root@$target_destination" "$store_path"
+          # prev_system=$($ssh_root_cmd " readlink -e /nix/var/nix/profiles/system")
+          green "Linking generation in bootloader"
+          $ssh_root_cmd "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
+          green "Setting generation to activate upon next boot"
+          $ssh_root_cmd "$store_path/bin/switch-to-configuration boot"
+      else
+          echo
+          green "NixOS was successfully installed!"
+          echo "Post-install config build instructions:"
+          echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
+          echo "just sync $target_user $target_destination"
+          echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
+          echo "cd nix-config"
+          # see above FIXME:(bootstrap)
+          echo "sudo nixos-rebuild .pre-commit-config.yaml show-trace --flake .#$target_hostname switch"
+          # echo "just rebuild"
+          echo
       fi
-  else
-      echo
-      green "NixOS was successfully installed!"
-      echo "Post-install config build instructions:"
-      echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
-      echo "just sync $target_user $target_destination"
-      echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
-      echo "cd nix-config"
-      # see above FIXME:(bootstrap)
-      echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
-      # echo "just rebuild"
-      echo
   fi
 
+  green "NixOS was successfully installed!"
   if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
       cd "${git_root}"
       deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
-      nixpkgs-fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
-      (pre-commit run --all-files 2> /dev/null || true) &&
+      nixpkgs--fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
+      (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
           git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &&
           git add "$git_root/.sops.yaml" &&
           git add "$git_root/secrets" &&
           (git commit -m "feat: deployed $target_hostname" || true) && git push
+  fi
+
+  if yes_or_no "Reboot now?"; then
+      $ssh_root_cmd "reboot"
   fi
 #+end_src
 
@@ -15820,6 +15909,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         impermanence = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
         autologin = lib.mkDefault true;
+        pii = lib.mkDefault true;
         server = {
           ssh = lib.mkDefault true;
         };
@@ -16181,6 +16271,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         sops = lib.mkDefault true;
         kitty = lib.mkDefault true;
         zsh = lib.mkDefault true;
+        git = lib.mkDefault true;
       };
     };
 
@@ -16255,6 +16346,8 @@ This holds modules that are to be used on most hosts. These are also the most im
         general = lib.mkDefault true;
         sops = lib.mkDefault true;
         ssh = lib.mkDefault true;
+        kitty = lib.mkDefault true;
+        git = lib.mkDefault true;
       };
     };
 

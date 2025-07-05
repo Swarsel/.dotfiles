@@ -1,5 +1,9 @@
-{ pkgs, lib, ... }:
+{ self, config, pkgs, lib, ... }:
+let
+  pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+in
 {
+
   config = {
     home-manager.users.root.home = {
       stateVersion = "23.05";
@@ -11,9 +15,48 @@
         };
       };
     };
+    home-manager.users.swarsel = {
+      home = {
+        username = "swarsel";
+        homeDirectory = lib.mkDefault "/home/swarsel";
+        stateVersion = lib.mkDefault "23.05";
+        keyboard.layout = "us";
+        sessionVariables = {
+          FLAKE = "/home/swarsel/.dotfiles";
+        };
+        file = {
+          ".bash_history" = {
+            text = ''
+              swarsel-install -n chaostheatre
+            '';
+          };
+        };
+      };
+    };
 
-    nix.settings = {
-      experimental-features = [ "nix-command" "flakes" ];
+    security.sudo.extraConfig = ''
+      Defaults    env_keep+=SSH_AUTH_SOCK
+      Defaults lecture = never
+    '';
+    security.pam = {
+      sshAgentAuth.enable = true;
+      services = {
+        sudo.u2fAuth = true;
+      };
+    };
+
+    nix = {
+      channel.enable = false;
+      package = pkgs.nixVersions.nix_2_28;
+      extraOptions = ''
+        plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+          buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
+          patches = (o.patches or []) ++ [ ../nix/nix-plugins.patch ];
+        })}/lib/nix/plugins
+        extra-builtins-file = ${../nix/extra-builtins.nix}
+      '';
+
+      settings.experimental-features = [ "nix-command" "flakes" ];
     };
 
     boot = {
@@ -63,7 +106,7 @@
     networking = {
       hostName = "drugstore";
       wireless.enable = false;
-      dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
+      # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
       networkmanager.enable = true;
     };
 
@@ -71,11 +114,20 @@
 
     users = {
       allowNoPasswordLogin = true;
+      groups.swarsel = { };
       users = {
-        root = {
+        swarsel = {
+          name = "swarsel";
+          group = "swarsel";
+          isNormalUser = true;
           password = "setup"; # this is overwritten after install
+          openssh.authorizedKeys.keys = lib.lists.forEach pubKeys (key: builtins.readFile key);
+          extraGroups = [ "wheel" ];
+        };
+        root = {
           initialHashedPassword = lib.mkForce null;
-          openssh.authorizedKeys.keys = [ "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDd0XXoLfRE0AyasxscEBwMqOnLWPqwz+etGqzVNeSw/RcgnxOi903mlVjCH+jzWMSe2GVSgzgM20j/r9sfE2P1z+wq/RODFS04JM0ltUoFkkm/IDZXQ2piOk7AoVi5ajdx4EiBnXY87jvxh5cCgQltkj3ouPF7FVN/MaN21IgWYB8NgkaVGft//OplodlDQNot17c0sFMibY0HcquwmHhqKOtKM1gT98+jZl0rd1rCqXFOvkesW6FPC4nzirPai+Hizp5gncrkJOZmLLqrjVx6PfpQzqzIhoUn1YS5CpyfXnKZUgx2Oi8SENmWOZ9DxYvDklgEttob37E2bIXbUhOw/u4I3olGFgCsKL6jg0N+d5teEaCZFnzlOp0UMWiUo7lVqq7Bwl3rNka2pxEdZ9v/1+m9cJiP7h6pnKmccVGku57iGIDnsnoTrmo1qbAje+EsmPYbc+qMnTDvOdSHTOXnjsyTd+ADklvMHCUAuf6ku4ktQEhlZxU3PvYvKHa1cTCEXxLWjytIgHgTgab9M5IH29Q55LSRRQBzUdkwjOG6KhsqG+xEE6038EbXr0MGKTm01AFmeVZWewmkSLu2UdoOMiw8mTSQhQFfp2QruYHnh7oJCo7ttKT1sLoRX+TfgQm1ryn/orhReg2GFfmbiLGxaJGVNvjqCxqrIFQXx4ZDHw== cardno:22_412_399" ];
+          password = lib.mkForce config.users.users.swarsel.password; # this is overwritten after install
+          openssh.authorizedKeys.keys = config.users.users.swarsel.openssh.authorizedKeys.keys;
         };
       };
     };
@@ -86,10 +138,10 @@
 
     system.activationScripts.cache = {
       text = ''
-        mkdir -p -m=0777 /home/setup/.local/state/nix/profiles
-        mkdir -p -m=0777 /home/setup/.local/state/home-manager/gcroots
-        mkdir -p -m=0777 /home/setup/.local/share/nix/
-        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/setup/.local/share/nix/trusted-settings.json > /dev/null
+        mkdir -p -m=0777 /home/swarsel/.local/state/nix/profiles
+        mkdir -p -m=0777 /home/swarsel/.local/state/home-manager/gcroots
+        mkdir -p -m=0777 /home/swarsel/.local/share/nix/
+        printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /home/swarsel/.local/share/nix/trusted-settings.json > /dev/null
         mkdir -p /root/.local/share/nix/
         printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json > /dev/null
       '';

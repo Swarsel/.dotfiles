@@ -7,6 +7,7 @@
       sops = lib.mkDefault true;
       kitty = lib.mkDefault true;
       zsh = lib.mkDefault true;
+      git = lib.mkDefault true;
     };
   };
 

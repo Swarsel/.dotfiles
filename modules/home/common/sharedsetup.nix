@@ -9,7 +9,7 @@
     isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     mainUser = lib.mkOption {
       type = lib.types.str;
-      default = if (!minimal) then globals.user.name else "setup";
+      default = if (!minimal) then globals.user.name else "swarsel";
     };
     homeDir = lib.mkOption {
       type = lib.types.str;

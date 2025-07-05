@@ -174,6 +174,7 @@ if [ ! -d "$FLAKE" ]; then
 fi
 
 cd "$FLAKE"
+rm install/flake.lock || true
 git_root=$(git rev-parse --show-toplevel)
 # ------------------------
 green "Wiping known_hosts of $target_destination"
@@ -218,7 +219,7 @@ $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "$
 # ------------------------
 
 green "Deploying minimal NixOS installation on $target_destination"
-SHELL=/bin/sh nix run github:nix-community/nixos-anywhere -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+nix run github:nix-community/nixos-anywhere/1.10.0 -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
 
 echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
 ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
@@ -284,14 +285,15 @@ sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.
 # --------------------------
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
+$ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown -R $target_user:users /home/$target_user/.ssh/"
 $scp_cmd root@"$target_destination":/etc/ssh/ssh_host_ed25519_key root@"$target_destination":/home/"$target_user"/.ssh/ssh_host_ed25519_key
-$ssh_root_cmd "mkdir -p /home/$target_user/.ssh; chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
+$ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519_key"
 # __________________________
 
 if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
     green "Adding ssh host fingerprints for git{lab,hub}"
-    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /home/$target_user/.ssh/known_hosts"
-    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win >> /root/.ssh/known_hosts"
+    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /home/$target_user/.ssh/known_hosts"
+    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /root/.ssh/known_hosts"
 fi
 # --------------------------
 
@@ -308,32 +310,45 @@ if yes_or_no "Do you want to copy your full nix-config and nix-secrets to $targe
     fi
 
     if yes_or_no "Do you want to rebuild immediately?"; then
-        green "Rebuilding nix-config on $target_hostname"
-        yellow "Reminder: The password is 'setup'"
-        $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' > /root/.local/share/nix/trusted-settings.json"
-        $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+        green "Building nix-config for $target_hostname"
+        # yellow "Reminder: The password is 'setup'"
+        $ssh_root_cmd "mkdir -p /root/.local/share/nix/; printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | tee /root/.local/share/nix/trusted-settings.json"
+        # $ssh_cmd -oForwardAgent=yes "cd .dotfiles && sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
+        store_path=$(nix build --no-link --print-out-paths .#nixosConfigurations."$target_hostname".config.system.build.toplevel)
+        green "Copying generation to $target_hostname"
+        nix copy --to "ssh://root@$target_destination" "$store_path"
+        # prev_system=$($ssh_root_cmd " readlink -e /nix/var/nix/profiles/system")
+        green "Linking generation in bootloader"
+        $ssh_root_cmd "/run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set $store_path"
+        green "Setting generation to activate upon next boot"
+        $ssh_root_cmd "$store_path/bin/switch-to-configuration boot"
+    else
+        echo
+        green "NixOS was successfully installed!"
+        echo "Post-install config build instructions:"
+        echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
+        echo "just sync $target_user $target_destination"
+        echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
+        echo "cd nix-config"
+        # see above FIXME:(bootstrap)
+        echo "sudo nixos-rebuild .pre-commit-config.yaml show-trace --flake .#$target_hostname switch"
+        # echo "just rebuild"
+        echo
     fi
-else
-    echo
-    green "NixOS was successfully installed!"
-    echo "Post-install config build instructions:"
-    echo "To copy nix-config from this machine to the $target_hostname, run the following command from ~/nix-config"
-    echo "just sync $target_user $target_destination"
-    echo "To rebuild, sign into $target_hostname and run the following command from ~/nix-config"
-    echo "cd nix-config"
-    # see above FIXME:(bootstrap)
-    echo "sudo nixos-rebuild --show-trace --flake .#$target_hostname switch"
-    # echo "just rebuild"
-    echo
 fi
 
+green "NixOS was successfully installed!"
 if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
     cd "${git_root}"
     deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
-    nixpkgs-fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
-    (pre-commit run --all-files 2> /dev/null || true) &&
+    nixpkgs--fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
+    (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
         git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &&
         git add "$git_root/.sops.yaml" &&
         git add "$git_root/secrets" &&
         (git commit -m "feat: deployed $target_hostname" || true) && git push
+fi
+
+if yes_or_no "Reboot now?"; then
+    $ssh_root_cmd "reboot"
 fi
