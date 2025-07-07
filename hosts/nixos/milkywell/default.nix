@@ -15,7 +15,7 @@ in
   ];
 
   sops = {
-    defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
+    defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/milkywell/secrets.yaml";
   };
 
   boot = {
@@ -26,7 +26,7 @@ in
 
   networking = {
     nftables.enable = lib.mkForce false;
-    hostName = "sync";
+    hostName = "milkywell";
     enableIPv6 = false;
     domain = "subnet03112148.vcn03112148.oraclevcn.com";
     firewall = {
@@ -161,7 +161,7 @@ in
       isSecureBoot = false;
       isCrypted = false;
       profiles = {
-        server.sync = true;
+        server.syncserver = true;
       };
     }
     sharedOptions;

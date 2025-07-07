@@ -2178,7 +2178,7 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 
-**** Milkywell (OCI)
+**** MilkyWell (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
 :END:
@@ -2361,7 +2361,7 @@ This machine mainly acts as an external sync helper. It manages the following th
         isSecureBoot = false;
         isCrypted = false;
         profiles = {
-          server.milkywell = true;
+          server.syncserver = true;
         };
       }
       sharedOptions;
@@ -3029,7 +3029,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
 
 #+end_src
-**** drugstore (ISO installer config)
+**** Drugstore (ISO installer config)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
@@ -3204,14 +3204,14 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
 
         #+end_src
 
-**** Home-manager only (default non-NixOS)
+**** Treehouse (home-manager only example)
 :PROPERTIES:
 :CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
 :END:
 
 This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
 
-#+begin_src nix-ts :tangle hosts/home/default/default.nix
+#+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
   { self, inputs, outputs, ... }:
   {
 
@@ -16114,8 +16114,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.milkywell = lib.mkEnableOption "is this a oci milkywell server";
-    config = lib.mkIf config.swarselsystems.profiles.server.milkywell {
+    options.swarselsystems.profiles.server.syncserver = lib.mkEnableOption "is this a oci syncserver server";
+    config = lib.mkIf config.swarselsystems.profiles.server.syncserver {
       swarselsystems = {
         modules = {
           general = lib.mkDefault true;

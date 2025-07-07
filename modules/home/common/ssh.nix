@@ -22,7 +22,7 @@
           hostname = "130.61.119.129";
           user = "opc";
         };
-        "sync" = {
+        "milkywell" = {
           hostname = "193.122.53.173";
           user = "root";
         };

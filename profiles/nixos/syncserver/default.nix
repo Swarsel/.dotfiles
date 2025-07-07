@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
-  config = lib.mkIf config.swarselsystems.profiles.server.sync {
+  options.swarselsystems.profiles.server.syncserver = lib.mkEnableOption "is this a oci syncserver server";
+  config = lib.mkIf config.swarselsystems.profiles.server.syncserver {
     swarselsystems = {
       modules = {
         general = lib.mkDefault true;

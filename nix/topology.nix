@@ -34,7 +34,7 @@
             connections = [
               (mkConnection "moonside" "wan")
               (mkConnection "pfsense" "wan")
-              (mkConnection "sync" "wan")
+              (mkConnection "milkywell" "wan")
               (mkConnection "toto" "bootstrapper")
               (mkConnection "chaostheatre" "demo host")
             ];
@@ -42,7 +42,7 @@
 
           chaostheatre.interfaces."demo host" = { };
           toto.interfaces."bootstrapper" = { };
-          sync.interfaces.wan = { };
+          milkywell.interfaces.wan = { };
           moonside.interfaces.wan = { };
 
           pfsense = mkRouter "pfSense" {

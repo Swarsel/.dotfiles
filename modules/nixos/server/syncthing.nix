@@ -41,7 +41,7 @@ in
           "magicant" = {
             id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
           };
-          "sync@oracle" = {
+          "milkywell@oracle" = {
             id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
           };
           "${workHostName}" = {
@@ -56,7 +56,7 @@ in
             path = "${cfg.dataDir}/Sync";
             type = "receiveonly";
             versioning = null;
-            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+            devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "default";
           };
           "Obsidian" = {
@@ -66,7 +66,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+            devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "yjvni-9eaa7";
           };
           "Org" = {
@@ -76,7 +76,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+            devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "a7xnl-zjj3d";
           };
           "Vpn" = {
@@ -86,7 +86,7 @@ in
               type = "simple";
               params.keep = "5";
             };
-            devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+            devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
             id = "hgp9s-fyq3p";
           };
           # "Documents" = {

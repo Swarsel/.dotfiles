@@ -83,7 +83,7 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     rm modules/home/common/mail.nix
     rm modules/home/common/yubikey.nix
     rm modules/nixos/server/restic.nix
-    rm hosts/nixos/sync/default.nix
+    rm hosts/nixos/milkywell/default.nix
     rm -rf modules/nixos/server
     rm -rf modules/home/server
     nix flake update vbc-nix
