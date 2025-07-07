@@ -26,7 +26,7 @@
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
       # browser
-      vieb
+      stable24_11.vieb
       mgba
 
       # utilities

@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ self, lib, pkgs, config, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.networking.hostName}/secrets.yaml;
@@ -81,6 +81,12 @@ in
       networkmanager = {
         enable = true;
         wifi.backend = "iwd";
+        plugins = [
+          # list of plugins: https://search.nixos.org/packages?query=networkmanager-
+          # docs https://networkmanager.dev/docs/vpn/
+          pkgs.networkmanager-openconnect
+          pkgs.networkmanager-openvpn
+        ];
         ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
           environmentFiles = [
             "${config.sops.templates."network-manager.env".path}"

@@ -54,6 +54,7 @@ in
   config = lib.mkIf config.swarselsystems.modules.general
     (lib.recursiveUpdate
       {
+        sops.secrets.github-api-token = lib.mkIf (!minimal) { };
 
         nix = {
           package = pkgs.nixVersions.nix_2_28;
@@ -77,6 +78,8 @@ in
               patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
             })}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
+          '' + lib.optionalString (!minimal) ''
+            !include ${config.sops.secrets.github-api-token.path}
           '';
         };
 

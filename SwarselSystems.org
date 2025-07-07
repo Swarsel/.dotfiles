@@ -224,13 +224,13 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   |💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
   |💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
   |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
-  |🖥️ **sync**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+  |🖥️ **milkywell**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
   |🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
   |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
   |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
   |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
   |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
-  |🏠 **home**         | -                                                   | Reference configuration for a home-manager only host |
+  |🏠 **Treehouse**         | -                                                   | Reference configuration for a home-manager only host |
 #+end_src
 
 ** Programs
@@ -391,6 +391,7 @@ When setting this option normally, the password would normally be written world-
       };
       inputs = {
         nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+        nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
         nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
         nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
         nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
@@ -920,7 +921,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
             connections = [
               (mkConnection "moonside" "wan")
               (mkConnection "pfsense" "wan")
-              (mkConnection "sync" "wan")
+              (mkConnection "milkywell" "wan")
               (mkConnection "toto" "bootstrapper")
               (mkConnection "chaostheatre" "demo host")
             ];
@@ -928,7 +929,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 
           chaostheatre.interfaces."demo host" = { };
           toto.interfaces."bootstrapper" = { };
-          sync.interfaces.wan = { };
+          milkywell.interfaces.wan = { };
           moonside.interfaces.wan = { };
 
           pfsense = mkRouter "pfSense" {
@@ -1390,6 +1391,13 @@ Lastly, I add some of my own library functions to be used alongside the function
                 };
               };
 
+              nixpkgs-dev = final: _: {
+                dev = import inputs.nixpkgs-dev {
+                  inherit (final) system;
+                  config.allowUnfree = true;
+                };
+              };
+
               nixpkgs-kernel = final: _: {
                 kernel = import inputs.nixpkgs-kernel {
                   inherit (final) system;
@@ -1419,6 +1427,7 @@ Lastly, I add some of my own library functions to be used alongside the function
             (additions final prev)
             // (modifications final prev)
             // (nixpkgs-stable final prev)
+            // (nixpkgs-dev final prev)
             // (nixpkgs-kernel final prev)
             // (nixpkgs-stable24_05 final prev)
             // (nixpkgs-stable24_11 final prev)
@@ -2169,7 +2178,7 @@ My server setup was originally built on Proxmox VE; back when I started, I creat
 
 I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
 
-**** Sync (OCI)
+**** Milkywell (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
 :END:
@@ -2188,7 +2197,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 :CUSTOM_ID: h:922105c3-a604-47d9-918b-db1803784c75
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/sync/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/milkywell/default.nix
   { lib, config, globals, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
@@ -2206,7 +2215,7 @@ This machine mainly acts as an external sync helper. It manages the following th
     ];
 
     sops = {
-      defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/sync/secrets.yaml";
+      defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/milkywell/secrets.yaml";
     };
 
     boot = {
@@ -2217,7 +2226,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     networking = {
       nftables.enable = lib.mkForce false;
-      hostName = "sync";
+      hostName = "milkywell";
       enableIPv6 = false;
       domain = "subnet03112148.vcn03112148.oraclevcn.com";
       firewall = {
@@ -2352,7 +2361,7 @@ This machine mainly acts as an external sync helper. It manages the following th
         isSecureBoot = false;
         isCrypted = false;
         profiles = {
-          server.sync = true;
+          server.milkywell = true;
         };
       }
       sharedOptions;
@@ -2372,7 +2381,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 :CUSTOM_ID: h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/sync/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/milkywell/hardware-configuration.nix
   { config, lib, modulesPath, ... }: {
     imports = [
       (modulesPath + "/profiles/qemu-guest.nix")
@@ -3836,6 +3845,7 @@ A breakdown of the flags being set:
     config = lib.mkIf config.swarselsystems.modules.general
       (lib.recursiveUpdate
         {
+          sops.secrets.github-api-token = lib.mkIf (!minimal) { };
 
           nix = {
             package = pkgs.nixVersions.nix_2_28;
@@ -3859,6 +3869,8 @@ A breakdown of the flags being set:
                 patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
               })}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            '' + lib.optionalString (!minimal) ''
+              !include ${config.sops.secrets.github-api-token.path}
             '';
           };
 
@@ -4551,7 +4563,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/network.nix
-  { self, lib, config, ... }:
+  { self, lib, pkgs, config, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
     clientSopsFile = self + /secrets/${config.networking.hostName}/secrets.yaml;
@@ -4634,6 +4646,12 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
         networkmanager = {
           enable = true;
           wifi.backend = "iwd";
+          plugins = [
+            # list of plugins: https://search.nixos.org/packages?query=networkmanager-
+            # docs https://networkmanager.dev/docs/vpn/
+            pkgs.networkmanager-openconnect
+            pkgs.networkmanager-openvpn
+          ];
           ensureProfiles = lib.mkIf (!config.swarselsystems.isPublic) {
             environmentFiles = [
               "${config.sops.templates."network-manager.env".path}"
@@ -5513,7 +5531,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
     config = lib.mkIf config.swarselsystems.modules.sway {
       programs.sway = {
         enable = true;
-        package = pkgs.swayfx;
+        package = pkgs.dev.swayfx;
         wrapperFeatures = {
           base = true;
           gtk = true;
@@ -7326,7 +7344,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
             "magicant" = {
               id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
             };
-            "sync@oracle" = {
+            "milkywell@oracle" = {
               id = "ETW6TST-NPK7MKZ-M4LXMHA-QUPQHDT-VTSHH5X-CR5EIN2-YU7E55F-MGT7DQB";
             };
             "${workHostName}" = {
@@ -7341,7 +7359,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
               path = "${cfg.dataDir}/Sync";
               type = "receiveonly";
               versioning = null;
-              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+              devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "default";
             };
             "Obsidian" = {
@@ -7351,7 +7369,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+              devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "yjvni-9eaa7";
             };
             "Org" = {
@@ -7361,7 +7379,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+              devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "a7xnl-zjj3d";
             };
             "Vpn" = {
@@ -7371,7 +7389,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
                 type = "simple";
                 params.keep = "5";
               };
-              devices = [ "sync@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
+              devices = [ "milkywell@oracle" "magicant" "${workHostName}" "moonside@oracle" ];
               id = "hgp9s-fyq3p";
             };
             # "Documents" = {
@@ -9922,7 +9940,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         govc
         terraform
         opentofu
-        terragrunt
+        dev.terragrunt
         graphviz
         azure-cli
 
@@ -10472,7 +10490,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 
         # browser
-        vieb
+        stable24_11.vieb
         mgba
 
         # utilities
@@ -10768,7 +10786,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
             hostname = "130.61.119.129";
             user = "opc";
           };
-          "sync" = {
+          "milkywell" = {
             hostname = "193.122.53.173";
             user = "root";
           };
@@ -14921,7 +14939,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       rm modules/home/common/mail.nix
       rm modules/home/common/yubikey.nix
       rm modules/nixos/server/restic.nix
-      rm hosts/nixos/sync/default.nix
+      rm hosts/nixos/milkywell/default.nix
       rm -rf modules/nixos/server
       rm -rf modules/home/server
       nix flake update vbc-nix
@@ -16096,8 +16114,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.sync = lib.mkEnableOption "is this a oci sync server";
-    config = lib.mkIf config.swarselsystems.profiles.server.sync {
+    options.swarselsystems.profiles.server.milkywell = lib.mkEnableOption "is this a oci milkywell server";
+    config = lib.mkIf config.swarselsystems.profiles.server.milkywell {
       swarselsystems = {
         modules = {
           general = lib.mkDefault true;

@@ -4,7 +4,7 @@
   config = lib.mkIf config.swarselsystems.modules.sway {
     programs.sway = {
       enable = true;
-      package = pkgs.swayfx;
+      package = pkgs.dev.swayfx;
       wrapperFeatures = {
         base = true;
         gtk = true;

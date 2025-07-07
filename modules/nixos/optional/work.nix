@@ -195,7 +195,7 @@ in
       govc
       terraform
       opentofu
-      terragrunt
+      dev.terragrunt
       graphviz
       azure-cli
 
