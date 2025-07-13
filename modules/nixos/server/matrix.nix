@@ -1,5 +1,7 @@
 { lib, config, pkgs, ... }:
 let
+  inherit (config.swarselsystems) sopsFile;
+
   servicePort = 8008;
   serviceName = "matrix";
   serviceDomain = config.repo.secrets.common.services.domains.matrix;
@@ -29,29 +31,29 @@ in
 
     sops = {
       secrets = {
-        matrixsharedsecret = { owner = serviceUser; };
-        mautrixtelegram_as = { owner = serviceUser; };
-        mautrixtelegram_hs = { owner = serviceUser; };
-        mautrixtelegram_api_id = { owner = serviceUser; };
-        mautrixtelegram_api_hash = { owner = serviceUser; };
+        matrix-shared-secret = { inherit sopsFile; owner = serviceUser; };
+        mautrix-telegram-as-token = { inherit sopsFile; owner = serviceUser; };
+        mautrix-telegram-hs-token = { inherit sopsFile; owner = serviceUser; };
+        mautrix-telegram-api-id = { inherit sopsFile; owner = serviceUser; };
+        mautrix-telegram-api-hash = { inherit sopsFile; owner = serviceUser; };
       };
       templates = {
         "matrix_user_register.sh".content = ''
-          register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString servicePort}
+          register_new_matrix_user -k ${config.sops.placeholder.matrix-shared-secret} http://localhost:${builtins.toString servicePort}
         '';
         matrixshared = {
           owner = serviceUser;
           content = ''
-            registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+            registration_shared_secret: ${config.sops.placeholder.matrix-shared-secret}
           '';
         };
         mautrixtelegram = {
           owner = serviceUser;
           content = ''
-            MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-            MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-            MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-            MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+            MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrix-telegram-as-token}
+            MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrix-telegram-hs-token}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrix-telegram-api-id}
+            MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrix-telegram-api-hash}
           '';
         };
       };

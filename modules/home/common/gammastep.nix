@@ -1,6 +1,6 @@
-{ lib, config, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  inherit (config.repo.secrets.common.location) latitude longitude;
+  inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
 in
 {
   options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";

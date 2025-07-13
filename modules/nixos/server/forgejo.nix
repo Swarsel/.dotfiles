@@ -1,6 +1,8 @@
 { lib, config, pkgs, globals, ... }:
 let
-  servicePort = 3000;
+  inherit (config.swarselsystems) sopsFile;
+
+  servicePort = 3004;
   serviceUser = "forgejo";
   serviceGroup = serviceUser;
   serviceName = "forgejo";
@@ -22,13 +24,14 @@ in
     users.groups.${serviceGroup} = { };
 
     sops.secrets = {
-      kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      kanidm-forgejo-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     globals.services.${serviceName}.domain = serviceDomain;
 
     services.${serviceName} = {
       enable = true;
+      stateDir = "/Vault/data/${serviceName}";
       user = serviceUser;
       group = serviceGroup;
       lfs.enable = lib.mkDefault true;
@@ -125,7 +128,7 @@ in
         '';
     };
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

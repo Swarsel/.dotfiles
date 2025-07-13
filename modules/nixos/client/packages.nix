@@ -75,6 +75,7 @@
       elk-to-svg
 
     ] ++ lib.optionals minimal [
+      networkmanager
       curl
       git
       gnupg

@@ -1,4 +1,4 @@
-{ self, lib, pkgs, globals, minimal, ... }:
+{ self, config, lib, pkgs, globals, minimal, ... }:
 {
   options.swarselsystems = {
     isLaptop = lib.mkEnableOption "laptop host";
@@ -10,6 +10,10 @@
     mainUser = lib.mkOption {
       type = lib.types.str;
       default = if (!minimal) then globals.user.name else "swarsel";
+    };
+    sopsFile = lib.mkOption {
+      type = lib.types.str;
+      default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
     };
     homeDir = lib.mkOption {
       type = lib.types.str;
@@ -43,8 +47,6 @@
     stylix = lib.mkOption {
       type = lib.types.attrs;
       default = {
-        enable = true;
-        base16Scheme = "${self}/files/stylix/swarsel.yaml";
         polarity = "dark";
         opacity.popups = 0.5;
         cursor = {

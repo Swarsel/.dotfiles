@@ -2,6 +2,11 @@
 {
   options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
   config = lib.mkIf config.swarselsystems.modules.nvd {
+
+    environment.systemPackages = [
+      pkgs.nvd
+    ];
+
     system.activationScripts.diff = {
       supportsDryActivation = true;
       text = ''

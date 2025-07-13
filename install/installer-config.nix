@@ -81,6 +81,7 @@ in
       curl
       git
       gnupg
+      networkmanager
       rsync
       ssh-to-age
       sops

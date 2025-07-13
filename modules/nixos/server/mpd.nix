@@ -1,5 +1,7 @@
 { self, lib, config, pkgs, ... }:
 let
+  inherit (config.swarselsystems) sopsFile;
+
   servicePort = 3254;
   serviceUser = "mpd";
   serviceGroup = serviceUser;
@@ -23,7 +25,7 @@ in
     };
 
     sops = {
-      secrets.mpdpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      secrets.mpd-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     environment.systemPackages = with pkgs; [
@@ -49,7 +51,7 @@ in
       };
       credentials = [
         {
-          passwordFile = config.sops.secrets.mpdpass.path;
+          passwordFile = config.sops.secrets.mpd-pw.path;
           permissions = [
             "read"
             "add"

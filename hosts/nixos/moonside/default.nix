@@ -3,10 +3,12 @@ let
   primaryUser = config.swarselsystems.mainUser;
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+  inherit (config.swarselsystems) sopsFile;
   serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
 
   sharedOptions = {
     isBtrfs = true;
+    isNixos = true;
     isLinux = true;
   };
 in
@@ -18,9 +20,9 @@ in
 
   sops = {
     age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-    defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
+    # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
     secrets = {
-      wireguard-private-key = { };
+      wireguard-private-key = { inherit sopsFile; };
     };
   };
 
@@ -210,7 +212,6 @@ in
   swarselsystems = lib.recursiveUpdate
     {
       info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
-      flakePath = "/home/swarsel/.dotfiles";
       isImpermanence = true;
       isSecureBoot = false;
       isCrypted = false;

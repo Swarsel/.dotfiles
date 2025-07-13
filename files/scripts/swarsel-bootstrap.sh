@@ -200,7 +200,7 @@ if [ "$disk_encryption" -eq 1 ]; then
         green "Please confirm passphrase:"
         read -rs luks_passphrase_confirm
         if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-            $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+            $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
             break
         else
             red "Passwords do not match"
@@ -277,6 +277,7 @@ if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
 fi
 green "Updating all secrets files to reflect updates .sops.yaml"
 sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
+sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_hostname"/secrets/pii.nix.enc
 # --------------------------
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts

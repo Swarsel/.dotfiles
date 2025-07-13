@@ -17,8 +17,8 @@
           packages = lib.mkDefault true;
           nginx = lib.mkDefault true;
           ssh = lib.mkDefault true;
-          forgejo = lib.mkDefault true;
-          ankisync = lib.mkDefault true;
+          forgejo = lib.mkDefault false;
+          ankisync = lib.mkDefault false;
         };
       };
     };

@@ -1,6 +1,7 @@
 { pkgs, lib, config, ... }:
 let
   inherit (config.repo.secrets.local.nextcloud) adminuser;
+  inherit (config.swarselsystems) sopsFile;
 
   servicePort = 80;
   serviceUser = "nextcloud";
@@ -13,16 +14,8 @@ in
   config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops.secrets = {
-      nextcloudadminpass = {
-        owner = serviceUser;
-        group = serviceGroup;
-        mode = "0440";
-      };
-      kanidm-nextcloud-client = {
-        owner = serviceUser;
-        group = serviceGroup;
-        mode = "0440";
-      };
+      nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
 
@@ -48,7 +41,7 @@ in
         extraAppsEnable = true;
         config = {
           inherit adminuser;
-          adminpassFile = config.sops.secrets.nextcloudadminpass.path;
+          adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
           dbtype = "sqlite";
         };
       };

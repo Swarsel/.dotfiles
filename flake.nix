@@ -73,11 +73,6 @@
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-secrets = {
-      url = "git+ssh://git@github.com/Swarsel/nix-secrets.git?ref=main&shallow=1";
-      flake = false;
-      inputs = { };
-    };
     vbc-nix = {
       url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
       inputs.nixpkgs.follows = "nixpkgs";

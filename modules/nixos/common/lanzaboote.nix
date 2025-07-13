@@ -1,7 +1,12 @@
-{ lib, config, minimal, ... }:
+{ lib, pkgs, config, minimal, ... }:
 {
   options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
   config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+
+    environment.systemPackages = lib.mkIf config.swarselsystems.isSecureBoot [
+      pkgs.sbctl
+    ];
+
     boot = {
       loader = {
         efi.canTouchEfiVariables = true;

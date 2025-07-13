@@ -1,7 +1,7 @@
-{ lib, config, ... }:
+{ lib, config, nixosConfig, ... }:
 let
-  inherit (config.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
-  inherit (config.repo.secrets.common) fullName;
+  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
+  inherit (nixosConfig.repo.secrets.common) fullName;
   inherit (config.swarselsystems) xdgDir;
 in
 {

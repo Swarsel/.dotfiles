@@ -4,6 +4,7 @@ let
   sharedOptions = {
     isBtrfs = false;
     isLinux = true;
+    isNixos = true;
     profiles = {
       server.local = true;
     };

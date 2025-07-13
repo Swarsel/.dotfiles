@@ -16,6 +16,8 @@
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.nix-topology.nixosModules.default
             inputs.home-manager.nixosModules.home-manager
+            inputs.stylix.nixosModules.stylix
+            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"

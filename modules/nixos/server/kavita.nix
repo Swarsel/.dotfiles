@@ -1,5 +1,7 @@
 { self, lib, config, pkgs, ... }:
 let
+  inherit (config.swarselsystems) sopsFile;
+
   servicePort = 8080;
   serviceName = "kavita";
   serviceUser = "kavita";
@@ -16,7 +18,7 @@ in
       extraGroups = [ "users" ];
     };
 
-    sops.secrets.kavita = { owner = serviceUser; };
+    sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -31,7 +33,7 @@ in
       enable = true;
       user = serviceUser;
       settings.Port = servicePort;
-      tokenKeyFile = config.sops.secrets.kavita.path;
+      tokenKeyFile = config.sops.secrets.kavita-token.path;
       dataDir = "/Vault/data/${serviceName}";
     };
 

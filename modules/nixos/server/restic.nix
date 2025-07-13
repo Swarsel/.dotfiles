@@ -1,6 +1,6 @@
 { lib, pkgs, config, ... }:
 let
-  inherit (config.repo.secrets.local) resticRepo;
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
@@ -8,9 +8,9 @@ in
 
     sops = {
       secrets = {
-        resticpw = { };
-        resticaccesskey = { };
-        resticsecretaccesskey = { };
+        resticpw = { inherit sopsFile; };
+        resticaccesskey = { inherit sopsFile; };
+        resticsecretaccesskey = { inherit sopsFile; };
       };
       templates = {
         "restic-env".content = ''
@@ -20,35 +20,39 @@ in
       };
     };
 
-    services.restic = {
-      backups = {
-        SwarselWinters = {
-          environmentFile = config.sops.templates."restic-env".path;
-          passwordFile = config.sops.secrets.resticpw.path;
-          paths = [
-            "/Vault/data/paperless"
-            "/Vault/Eternor/Paperless"
-            "/Vault/Eternor/Bilder"
-            "/Vault/Eternor/Immich"
-          ];
-          pruneOpts = [
-            "--keep-daily 3"
-            "--keep-weekly 2"
-            "--keep-monthly 3"
-            "--keep-yearly 100"
-          ];
-          backupPrepareCommand = ''
-            ${pkgs.restic}/bin/restic prune
-          '';
-          repository = "${resticRepo}";
-          initialize = true;
-          timerConfig = {
-            OnCalendar = "03:00";
+    services.restic =
+      let
+        inherit (config.repo.secrets.local) resticRepo;
+      in
+      {
+        backups = {
+          SwarselWinters = {
+            environmentFile = config.sops.templates."restic-env".path;
+            passwordFile = config.sops.secrets.resticpw.path;
+            paths = [
+              "/Vault/data/paperless"
+              "/Vault/Eternor/Paperless"
+              "/Vault/Eternor/Bilder"
+              "/Vault/Eternor/Immich"
+            ];
+            pruneOpts = [
+              "--keep-daily 3"
+              "--keep-weekly 2"
+              "--keep-monthly 3"
+              "--keep-yearly 100"
+            ];
+            backupPrepareCommand = ''
+              ${pkgs.restic}/bin/restic prune
+            '';
+            repository = "${resticRepo}";
+            initialize = true;
+            timerConfig = {
+              OnCalendar = "03:00";
+            };
           };
-        };
 
+        };
       };
-    };
 
   };
 }

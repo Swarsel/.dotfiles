@@ -7,6 +7,7 @@ keys:
     - &swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
   - &hosts
     - &winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+    - &bakery age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh
     - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
     - &surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
     - &nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
@@ -19,6 +20,7 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *bakery
       - *toto
       - *surface
       - *nbl
@@ -30,6 +32,7 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *bakery
       - *toto
       - *surface
       - *nbl
@@ -41,6 +44,7 @@ creation_rules:
       - *swarsel
       age:
       - *nbl
+      - *bakery
       - *toto
       - *surface
       - *winters
@@ -57,6 +61,12 @@ creation_rules:
       - *swarsel
       age:
       - *moonside
+  - path_regex: secrets/bakery/secrets.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *bakery
   - path_regex: secrets/winters/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
@@ -93,6 +103,12 @@ creation_rules:
       - *swarsel
       age:
       - *milkywell
+  - path_regex: hosts/nixos/bakery/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *bakery
   - path_regex: hosts/nixos/moonside/secrets/pii.nix.enc
     key_groups:
     - pgp:

@@ -8,6 +8,8 @@ let
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
+
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   options = {
@@ -123,8 +125,8 @@ in
 
     sops = {
       secrets = {
-        "oauth2-cookie-secret" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-oauth2-proxy-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-oauth2-proxy-client" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       templates = {

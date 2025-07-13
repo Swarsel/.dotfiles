@@ -13,6 +13,7 @@
       vim
       sops
       swarsel-deploy
+      tmux
     ];
   };
 }

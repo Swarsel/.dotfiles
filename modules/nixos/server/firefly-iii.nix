@@ -8,6 +8,7 @@ let
 
   nginxGroup = "nginx";
 
+  inherit (config.swarselsystems) sopsFile;
   cfg = config.services.firefly-iii;
 in
 {
@@ -25,7 +26,7 @@ in
 
     sops = {
       secrets = {
-        "firefly-iii-app-key" = { owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
+        "firefly-iii-app-key" = { inherit sopsFile; owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
       };
     };
 

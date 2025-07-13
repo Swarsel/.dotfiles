@@ -6,23 +6,24 @@
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;
-      sharedModules = [
+      users.swarsel.imports = [
         inputs.nix-index-database.hmModules.nix-index
         inputs.sops-nix.homeManagerModules.sops
+        # inputs.stylix.homeModules.stylix
         {
           imports = [
             "${self}/profiles/home"
             "${self}/modules/home"
-            "${self}/modules/nixos/common/pii.nix"
-            "${self}/modules/nixos/common/meta.nix"
+            # "${self}/modules/nixos/common/pii.nix"
+            # "${self}/modules/nixos/common/meta.nix"
           ];
-          node = {
-            secretsDir = if config.swarselsystems.isNixos then ../../../hosts/nixos/${configName}/secrets else ../../../hosts/home/${configName}/secrets;
-          };
+          # node = {
+          #   secretsDir = if (!config.swarselsystems.isNixos) then ../../../hosts/home/${configName}/secrets else ../../../hosts/nixos/${configName}/secrets;
+          # };
           home.stateVersion = lib.mkDefault config.system.stateVersion;
         }
       ];
-      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal; };
+      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal configName; };
     };
   };
 }

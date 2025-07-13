@@ -2,6 +2,7 @@
 let
   inherit (config.repo.secrets.common) dnsProvider;
   inherit (config.repo.secrets.common.mail) address3;
+
 in
 {
   options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
@@ -11,10 +12,9 @@ in
     ];
 
     sops = {
-      # secrets.dnstokenfull = { owner = "acme"; };
-      secrets.dnstokenfull = { };
+      secrets.acme-dns-token = { inherit (config.swarselsystems) sopsFile; };
       templates."certs.secret".content = ''
-        CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+        CF_DNS_API_TOKEN=${config.sops.placeholder.acme-dns-token}
       '';
     };
 

@@ -54,7 +54,9 @@ in
   config = lib.mkIf config.swarselsystems.modules.general
     (lib.recursiveUpdate
       {
-        sops.secrets.github-api-token = lib.mkIf (!minimal) { };
+        sops.secrets.github-api-token = lib.mkIf (!minimal) {
+          sopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+        };
 
         nix = {
           package = pkgs.nixVersions.nix_2_28;

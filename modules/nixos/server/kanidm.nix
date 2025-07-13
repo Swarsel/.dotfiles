@@ -1,6 +1,7 @@
 { self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
+  inherit (config.swarselsystems) sopsFile;
 
   servicePort = 8300;
   serviceUser = "kanidm";
@@ -30,15 +31,15 @@ in
       secrets = {
         "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-idm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-immich" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-paperless" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-forgejo" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-grafana" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-nextcloud" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-oauth2-proxy" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-immich" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-paperless" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-forgejo" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-grafana" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-nextcloud" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        "kanidm-oauth2-proxy" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
     };
 

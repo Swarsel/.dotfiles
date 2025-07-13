@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
-  config = lib.mkIf config.swarselsystems.profiles.personal {
+  options.swarselsystems.profiles.reduced = lib.mkEnableOption "is this a reduced personal host";
+  config = lib.mkIf config.swarselsystems.profiles.reduced {
     swarselsystems.modules = {
       packages = lib.mkDefault true;
       ownpackages = lib.mkDefault true;
@@ -37,13 +37,10 @@
       swayosd = lib.mkDefault true;
       yubikeytouch = lib.mkDefault true;
       sway = lib.mkDefault true;
-      kanshi = lib.mkDefault true;
+      kanshi = lib.mkDefault false;
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
 
-      optional = {
-        gaming = lib.mkDefault true;
-      };
     };
   };
 

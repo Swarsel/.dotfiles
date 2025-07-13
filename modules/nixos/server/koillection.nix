@@ -9,14 +9,16 @@ let
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
   containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
+
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
     sops.secrets = {
-      koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
-      koillection-env-file = { };
+      koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
+      koillection-env-file = { inherit sopsFile; };
     };
 
     topology.self.services.${serviceName} = {
@@ -70,7 +72,7 @@ in
         passwordPath = config.sops.secrets.koillection-db-password.path;
       in
       ''
-        $PSQL -tA <<'EOF'
+        ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
           DO $$
           DECLARE password TEXT;
           BEGIN

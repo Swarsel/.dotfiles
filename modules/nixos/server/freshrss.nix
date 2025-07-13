@@ -1,12 +1,12 @@
 { self, lib, config, ... }:
 let
-  inherit (config.repo.secrets.local.freshrss) defaultUser;
-
   servicePort = 80;
   serviceName = "freshrss";
   serviceUser = "freshrss";
   serviceGroup = serviceName;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+  inherit (config.swarselsystems) sopsFile;
 in
 {
   options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -22,9 +22,9 @@ in
 
     sops = {
       secrets = {
-        fresh = { owner = serviceUser; };
-        "kanidm-freshrss-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "oidc-crypto-key" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        freshrss-pw = { inherit sopsFile; owner = serviceUser; };
+        kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       #   templates = {
@@ -55,15 +55,19 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
-    services.${serviceName} = {
-      inherit defaultUser;
-      enable = true;
-      virtualHost = serviceDomain;
-      baseUrl = "https://${serviceDomain}";
-      authType = "form";
-      dataDir = "/Vault/data/tt-rss";
-      passwordFile = config.sops.secrets.fresh.path;
-    };
+    services.${serviceName} =
+      let
+        inherit (config.repo.secrets.local.freshrss) defaultUser;
+      in
+      {
+        inherit defaultUser;
+        enable = true;
+        virtualHost = serviceDomain;
+        baseUrl = "https://${serviceDomain}";
+        authType = "form";
+        dataDir = "/Vault/data/tt-rss";
+        passwordFile = config.sops.secrets.freshrss-pw.path;
+      };
 
     # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
     #   config.sops.templates.freshrss-env.path

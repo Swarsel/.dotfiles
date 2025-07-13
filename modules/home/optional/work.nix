@@ -1,7 +1,6 @@
-{ self, config, pkgs, lib, ... }:
+{ self, config, pkgs, lib, nixosConfig, ... }:
 let
   inherit (config.swarselsystems) homeDir;
-  inherit (config.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
 in
 {
   options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
@@ -39,130 +38,140 @@ in
       };
     };
 
-    stylix.targets.firefox.profileNames = [
-      "${user1}"
-      "${user2}"
-      "${user3}"
-      "work"
-    ];
-
-    programs = {
-      git.userEmail = lib.mkForce gitMail;
-
-      zsh = {
-        shellAliases = {
-          dssh = "ssh -l ${user1Long}";
-          cssh = "ssh -l ${user2Long}";
-          wssh = "ssh -l ${user3Long}";
-        };
-        cdpath = [
-          "~/Documents/Work"
+    stylix = {
+      targets.firefox.profileNames =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+        in
+        [
+          "${user1}"
+          "${user2}"
+          "${user3}"
+          "work"
         ];
-        dirHashes = {
-          d = "$HOME/.dotfiles";
-          w = "$HOME/Documents/Work";
-          s = "$HOME/.dotfiles/secrets";
-          pr = "$HOME/Documents/Private";
-          ac = path1;
-        };
-      };
-
-      ssh = {
-        matchBlocks = {
-          "${loc1}" = {
-            hostname = "${loc1}.${domain2}";
-            user = user4;
-          };
-          "${loc1}.stg" = {
-            hostname = "${loc1}.${lifecycle1}.${domain2}";
-            user = user4;
-          };
-          "${loc1}.staging" = {
-            hostname = "${loc1}.${lifecycle1}.${domain2}";
-            user = user4;
-          };
-          "${loc1}.dev" = {
-            hostname = "${loc1}.${lifecycle2}.${domain2}";
-            user = user4;
-          };
-          "${loc2}" = {
-            hostname = "${loc2}.${domain1}";
-            user = user1Long;
-          };
-          "${loc2}.stg" = {
-            hostname = "${loc2}.${lifecycle1}.${domain2}";
-            user = user1Long;
-          };
-          "${loc2}.staging" = {
-            hostname = "${loc2}.${lifecycle1}.${domain2}";
-            user = user1Long;
-          };
-          "*.${domain1}" = {
-            user = user1Long;
-          };
-        };
-      };
-
-      firefox = {
-        profiles =
-          let
-            isDefault = false;
-          in
-          {
-            "${user1}" = lib.recursiveUpdate
-              {
-                inherit isDefault;
-                id = 1;
-                settings = {
-                  "browser.startup.homepage" = "${site1}|${site2}";
-                };
-              }
-              config.swarselsystems.firefox;
-            "${user2}" = lib.recursiveUpdate
-              {
-                inherit isDefault;
-                id = 2;
-                settings = {
-                  "browser.startup.homepage" = "${site3}";
-                };
-              }
-              config.swarselsystems.firefox;
-            "${user3}" = lib.recursiveUpdate
-              {
-                inherit isDefault;
-                id = 3;
-              }
-              config.swarselsystems.firefox;
-            work = lib.recursiveUpdate
-              {
-                inherit isDefault;
-                id = 4;
-                settings = {
-                  "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                };
-              }
-              config.swarselsystems.firefox;
-          };
-      };
-
-      chromium = {
-        enable = true;
-        package = pkgs.chromium;
-
-        extensions = [
-          # 1password
-          "gejiddohjgogedgjnonbofjigllpkmbf"
-          # dark reader
-          "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-          # ublock origin
-          "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-          # i still dont care about cookies
-          "edibdbjcniadpccecjdfdjjppcpchdlm"
-          # browserpass
-          "naepdomgkenhinolocfifgehidddafch"
-        ];
-      };
     };
+
+    programs =
+      let
+        inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+      in
+      {
+        git.userEmail = lib.mkForce gitMail;
+
+        zsh = {
+          shellAliases = {
+            dssh = "ssh -l ${user1Long}";
+            cssh = "ssh -l ${user2Long}";
+            wssh = "ssh -l ${user3Long}";
+          };
+          cdpath = [
+            "~/Documents/Work"
+          ];
+          dirHashes = {
+            d = "$HOME/.dotfiles";
+            w = "$HOME/Documents/Work";
+            s = "$HOME/.dotfiles/secrets";
+            pr = "$HOME/Documents/Private";
+            ac = path1;
+          };
+        };
+
+        ssh = {
+          matchBlocks = {
+            "${loc1}" = {
+              hostname = "${loc1}.${domain2}";
+              user = user4;
+            };
+            "${loc1}.stg" = {
+              hostname = "${loc1}.${lifecycle1}.${domain2}";
+              user = user4;
+            };
+            "${loc1}.staging" = {
+              hostname = "${loc1}.${lifecycle1}.${domain2}";
+              user = user4;
+            };
+            "${loc1}.dev" = {
+              hostname = "${loc1}.${lifecycle2}.${domain2}";
+              user = user4;
+            };
+            "${loc2}" = {
+              hostname = "${loc2}.${domain1}";
+              user = user1Long;
+            };
+            "${loc2}.stg" = {
+              hostname = "${loc2}.${lifecycle1}.${domain2}";
+              user = user1Long;
+            };
+            "${loc2}.staging" = {
+              hostname = "${loc2}.${lifecycle1}.${domain2}";
+              user = user1Long;
+            };
+            "*.${domain1}" = {
+              user = user1Long;
+            };
+          };
+        };
+
+        firefox = {
+          profiles =
+            let
+              isDefault = false;
+            in
+            {
+              "${user1}" = lib.recursiveUpdate
+                {
+                  inherit isDefault;
+                  id = 1;
+                  settings = {
+                    "browser.startup.homepage" = "${site1}|${site2}";
+                  };
+                }
+                config.swarselsystems.firefox;
+              "${user2}" = lib.recursiveUpdate
+                {
+                  inherit isDefault;
+                  id = 2;
+                  settings = {
+                    "browser.startup.homepage" = "${site3}";
+                  };
+                }
+                config.swarselsystems.firefox;
+              "${user3}" = lib.recursiveUpdate
+                {
+                  inherit isDefault;
+                  id = 3;
+                }
+                config.swarselsystems.firefox;
+              work = lib.recursiveUpdate
+                {
+                  inherit isDefault;
+                  id = 4;
+                  settings = {
+                    "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                  };
+                }
+                config.swarselsystems.firefox;
+            };
+        };
+
+        chromium = {
+          enable = true;
+          package = pkgs.chromium;
+
+          extensions = [
+            # 1password
+            "gejiddohjgogedgjnonbofjigllpkmbf"
+            # dark reader
+            "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+            # ublock origin
+            "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+            # i still dont care about cookies
+            "edibdbjcniadpccecjdfdjjppcpchdlm"
+            # browserpass
+            "naepdomgkenhinolocfifgehidddafch"
+          ];
+        };
+      };
 
     services = {
       kanshi = {
@@ -282,49 +291,53 @@ in
       };
     };
 
-    xdg = {
-      mimeApps = {
-        defaultApplications = {
-          "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+    xdg =
+      let
+        inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+      in
+      {
+        mimeApps = {
+          defaultApplications = {
+            "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+          };
         };
+        desktopEntries =
+          let
+            terminal = false;
+            categories = [ "Application" ];
+            icon = "firefox";
+          in
+          {
+            firefox_work = {
+              name = "Firefox (work)";
+              genericName = "Firefox work";
+              exec = "firefox -p work";
+              inherit terminal categories icon;
+            };
+            "firefox_${user1}" = {
+              name = "Firefox (${user1})";
+              genericName = "Firefox ${user1}";
+              exec = "firefox -p ${user1}";
+              inherit terminal categories icon;
+            };
+
+            "firefox_${user2}" = {
+              name = "Firefox (${user2})";
+              genericName = "Firefox ${user2}";
+              exec = "firefox -p ${user2}";
+              inherit terminal categories icon;
+            };
+
+            "firefox_${user3}" = {
+              name = "Firefox (${user3})";
+              genericName = "Firefox ${user3}";
+              exec = "firefox -p ${user3}";
+              inherit terminal categories icon;
+            };
+
+
+          };
       };
-      desktopEntries =
-        let
-          terminal = false;
-          categories = [ "Application" ];
-          icon = "firefox";
-        in
-        {
-          firefox_work = {
-            name = "Firefox (work)";
-            genericName = "Firefox work";
-            exec = "firefox -p work";
-            inherit terminal categories icon;
-          };
-          "firefox_${user1}" = {
-            name = "Firefox (${user1})";
-            genericName = "Firefox ${user1}";
-            exec = "firefox -p ${user1}";
-            inherit terminal categories icon;
-          };
-
-          "firefox_${user2}" = {
-            name = "Firefox (${user2})";
-            genericName = "Firefox ${user2}";
-            exec = "firefox -p ${user2}";
-            inherit terminal categories icon;
-          };
-
-          "firefox_${user3}" = {
-            name = "Firefox (${user3})";
-            genericName = "Firefox ${user3}";
-            exec = "firefox -p ${user3}";
-            inherit terminal categories icon;
-          };
-
-
-        };
-    };
     swarselsystems = {
       startup = [
         # { command = "nextcloud --background"; }

@@ -39,6 +39,8 @@
           koillection = lib.mkDefault true;
           radicale = lib.mkDefault true;
           atuin = lib.mkDefault true;
+          forgejo = lib.mkDefault true;
+          ankisync = lib.mkDefault true;
         };
       };
     };

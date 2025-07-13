@@ -1,6 +1,5 @@
 { self, lib, config, ... }:
 let
-  inherit (config.repo.secrets.local.radicale) user1;
   sopsFile = self + /secrets/winters/secrets2.yaml;
 
   servicePort = 8000;
@@ -18,16 +17,20 @@ in
     sops = {
       secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
 
-      templates = {
-        "radicale-users" = {
-          content = ''
-            ${user1}:${config.sops.placeholder.radicale-user}
-          '';
-          owner = serviceUser;
-          group = serviceGroup;
-          mode = "0440";
+      templates =
+        let
+          inherit (config.repo.secrets.local.radicale) user1;
+        in
+        {
+          "radicale-users" = {
+            content = ''
+              ${user1}:${config.sops.placeholder.radicale-user}
+            '';
+            owner = serviceUser;
+            group = serviceGroup;
+            mode = "0440";
+          };
         };
-      };
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
@@ -42,11 +45,12 @@ in
             "[::]:${builtins.toString servicePort}"
           ];
         };
-        auth = {
-          type = "htpasswd";
-          htpasswd_filename = config.sops.templates.radicale-users.path;
-          htpasswd_encryption = "autodetect";
-        };
+        auth =
+          {
+            type = "htpasswd";
+            htpasswd_filename = config.sops.templates.radicale-users.path;
+            htpasswd_encryption = "autodetect";
+          };
         storage = {
           filesystem_folder = "/Vault/data/radicale/collections";
         };

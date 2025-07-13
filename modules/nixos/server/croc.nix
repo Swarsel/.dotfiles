@@ -10,6 +10,8 @@ let
   serviceName = "croc";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
+  inherit (config.swarselsystems) sopsFile;
+
   cfg = config.services.croc;
 in
 {
@@ -18,7 +20,7 @@ in
 
     sops = {
       secrets = {
-        croc-password = { };
+        croc-password = { inherit sopsFile; };
       };
 
       templates = {

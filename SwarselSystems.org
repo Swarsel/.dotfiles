@@ -451,11 +451,6 @@ When setting this option normally, the password would normally be written world-
           url = "github:cachix/git-hooks.nix";
           inputs.nixpkgs.follows = "nixpkgs";
         };
-        nix-secrets = {
-          url = "git+ssh://git@github.com/Swarsel/nix-secrets.git?ref=main&shallow=1";
-          flake = false;
-          inputs = { };
-        };
         vbc-nix = {
           url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
           inputs.nixpkgs.follows = "nixpkgs";
@@ -792,90 +787,92 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
         # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
         mkNixosHost = { minimal }: configName:
-              lib.nixosSystem {
-                specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
-                modules = [
-                  inputs.disko.nixosModules.disko
-                  inputs.sops-nix.nixosModules.sops
-                  inputs.impermanence.nixosModules.impermanence
-                  inputs.lanzaboote.nixosModules.lanzaboote
-                  inputs.nix-topology.nixosModules.default
-                  inputs.home-manager.nixosModules.home-manager
-                  "${self}/hosts/nixos/${configName}"
-                  "${self}/profiles/nixos"
-                  "${self}/modules/nixos"
-                  {
-                    node = {
-                      name = configName;
-                      secretsDir = ../hosts/nixos/${configName}/secrets;
-                    };
-                  }
-                ];
-              };
+          lib.nixosSystem {
+            specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+            modules = [
+              inputs.disko.nixosModules.disko
+              inputs.sops-nix.nixosModules.sops
+              inputs.impermanence.nixosModules.impermanence
+              inputs.lanzaboote.nixosModules.lanzaboote
+              inputs.nix-topology.nixosModules.default
+              inputs.home-manager.nixosModules.home-manager
+              inputs.stylix.nixosModules.stylix
+              inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+              "${self}/hosts/nixos/${configName}"
+              "${self}/profiles/nixos"
+              "${self}/modules/nixos"
+              {
+                node = {
+                  name = configName;
+                  secretsDir = ../hosts/nixos/${configName}/secrets;
+                };
+              }
+            ];
+          };
 
         mkDarwinHost = { minimal }: configName:
-              inputs.nix-darwin.lib.darwinSystem {
-                specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
-                modules = [
-                  # inputs.disko.nixosModules.disko
-                  # inputs.sops-nix.nixosModules.sops
-                  # inputs.impermanence.nixosModules.impermanence
-                  # inputs.lanzaboote.nixosModules.lanzaboote
-                  # inputs.fw-fanctrl.nixosModules.default
-                  # inputs.nix-topology.nixosModules.default
-                  inputs.home-manager.darwinModules.home-manager
-                  "${self}/hosts/darwin/${configName}"
-                  "${self}/modules/nixos/darwin"
-                  # needed for infrastructure
-                  "${self}/modules/nixos/common/meta.nix"
-                  "${self}/modules/nixos/common/globals.nix"
-                  {
-                    node.name = configName;
-                    node.secretsDir = ../hosts/darwin/${configName}/secrets;
-                  }
-                ];
-              };
+          inputs.nix-darwin.lib.darwinSystem {
+            specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+            modules = [
+              # inputs.disko.nixosModules.disko
+              # inputs.sops-nix.nixosModules.sops
+              # inputs.impermanence.nixosModules.impermanence
+              # inputs.lanzaboote.nixosModules.lanzaboote
+              # inputs.fw-fanctrl.nixosModules.default
+              # inputs.nix-topology.nixosModules.default
+              inputs.home-manager.darwinModules.home-manager
+              "${self}/hosts/darwin/${configName}"
+              "${self}/modules/nixos/darwin"
+              # needed for infrastructure
+              "${self}/modules/nixos/common/meta.nix"
+              "${self}/modules/nixos/common/globals.nix"
+              {
+                node.name = configName;
+                node.secretsDir = ../hosts/darwin/${configName}/secrets;
+              }
+            ];
+          };
 
         mkHalfHost = configName: type: pkgs: {
           ${configName} =
             let
               systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
             in
-              systemFunc
-                {
-                  inherit pkgs;
-                  extraSpecialArgs = { inherit inputs outputs lib self configName; };
-                  modules = [ "${self}/hosts/${type}/${configName}" ];
-                };
+            systemFunc
+              {
+                inherit pkgs;
+                extraSpecialArgs = { inherit inputs outputs lib self configName; };
+                modules = [ "${self}/hosts/${type}/${configName}" ];
+              };
         };
 
         mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (name: mkHalfHost name type pkgs) hosts);
         nixosHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/nixos"));
         darwinHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/darwin"));
       in
-        {
-          nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
-            minimal = false;
-          });
-          nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
-            minimal = true;
-          });
-          darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
-            minimal = false;
-          });
-          darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
-            minimal = true;
-          });
+      {
+        nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
+          minimal = false;
+        });
+        nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
+          minimal = true;
+        });
+        darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
+          minimal = false;
+        });
+        darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
+          minimal = true;
+        });
 
-          # TODO: Build these for all architectures
-          homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
-          nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+        # TODO: Build these for all architectures
+        homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+        nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
-          diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+        diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-          nodes = config.nixosConfigurations // config.darwinConfigurations;
+        nodes = config.nixosConfigurations // config.darwinConfigurations;
 
-        };
+      };
   }
 #+end_src
 
@@ -1442,6 +1439,9 @@ Lastly, I add some of my own library functions to be used alongside the function
   }
 #+end_src
 ** Installer iso
+:PROPERTIES:
+:CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
+:END:
 
 #+begin_src nix-ts :tangle nix/iso.nix
   { self, inputs, ... }:
@@ -1467,6 +1467,9 @@ Lastly, I add some of my own library functions to be used alongside the function
   }
 #+end_src
 ** Installer flake
+:PROPERTIES:
+:CUSTOM_ID: h:1d4514b4-e952-4faf-b30e-d89e73a526c6
+:END:
 
 #+begin_src nix-ts :tangle install/flake.nix
   {
@@ -1965,6 +1968,249 @@ My work machine. Built for more security, this is the gold standard of my config
   }
 
 #+end_src
+**** Bakery (Lenovo ThinkPad)
+:PROPERTIES:
+:CUSTOM_ID: h:a320569e-7bf0-4552-9039-b2a8e0939a12
+:END:
+
+My personal laptop.
+
+***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:6f80d614-d76a-433b-8956-78d7b323b68c
+:END:
+#+begin_src nix-ts :tangle hosts/nixos/bakery/default.nix
+  { self, config, inputs, lib, minimal, ... }:
+  let
+    primaryUser = config.swarselsystems.mainUser;
+    sharedOptions = {
+      isLaptop = true;
+      isNixos = true;
+      isBtrfs = true;
+      isLinux = true;
+      sharescreen = "eDP-1";
+      profiles = {
+        reduced = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+      };
+    };
+  in
+  {
+
+    imports = [
+      inputs.nixos-hardware.nixosModules.common-cpu-intel
+
+      ./disk-config.nix
+      ./hardware-configuration.nix
+
+    ];
+
+
+    swarselsystems = lib.recursiveUpdate
+      {
+        info = "Lenovo ThinkPad";
+        firewall = lib.mkForce true;
+        wallpaper = self + /files/wallpaper/lenovowp.png;
+        hasBluetooth = true;
+        hasFingerprint = true;
+        isImpermanence = true;
+        isSecureBoot = false;
+        isCrypted = true;
+        isSwap = true;
+        rootDisk = "/dev/nvme0n1";
+        swapSize = "4G";
+        hostName = config.node.name;
+        profiles = {
+          btrfs = true;
+        };
+      }
+      sharedOptions;
+
+    home-manager.users."${primaryUser}" = {
+      # home.stateVersion = lib.mkForce "23.05";
+      swarselsystems = lib.recursiveUpdate
+        {
+          lowResolution = "1280x800";
+          highResolution = "1920x1080";
+          monitors = {
+            main = {
+              name = "LG Display 0x04EF Unknown";
+              mode = "1920x1080"; # TEMPLATE
+              scale = "1";
+              position = "1920,0";
+              workspace = "15:L";
+              output = "eDP-1";
+            };
+          };
+        }
+        sharedOptions;
+    };
+  }
+
+
+
+#+end_src
+
+***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:bbba1646-fb5f-4d04-baf0-f606037a8b39
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/bakery/hardware-configuration.nix
+  # Do not modify this file!  It was generated by ‘nixos-generate-config’
+  # and may be overwritten by future invocations.  Please make changes
+  # to /etc/nixos/configuration.nix instead.
+  { config, lib, modulesPath, ... }:
+
+  {
+    imports =
+      [
+        (modulesPath + "/installer/scan/not-detected.nix")
+      ];
+
+    boot = {
+      initrd = {
+        availableKernelModules = [ "xhci_pci" "nvme" "usb_storage" "sd_mod" ];
+        kernelModules = [ ];
+      };
+      kernelModules = [ ];
+      extraModulePackages = [ ];
+    };
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+#+end_src
+***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:72444f85-7951-47c0-858f-b51d8299de8c
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/bakery/disk-config.nix
+  { lib, pkgs, config, rootDisk, ... }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+              luks = lib.mkIf config.swarselsystems.isCrypted {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                  settings = {
+                    allowDiscards = true;
+                    # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                    crypttabExtraOpts = [
+                      "fido2-device=auto"
+                      "token-timeout=10"
+                    ];
+                  };
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                    '';
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+
+    environment.systemPackages = [
+      pkgs.yubikey-manager
+    ];
+  }
+
+#+end_src
 **** Winters (Server)
 :PROPERTIES:
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
@@ -1983,6 +2229,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     sharedOptions = {
       isBtrfs = false;
       isLinux = true;
+      isNixos = true;
       profiles = {
         server.local = true;
       };
@@ -2198,168 +2445,49 @@ This machine mainly acts as an external sync helper. It manages the following th
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/milkywell/default.nix
-  { lib, config, globals, ... }:
+  { lib, config, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
     sharedOptions = {
-      isBtrfs = false;
+      isBtrfs = true;
       isLinux = true;
+      isNixos = true;
     };
-    inherit (config.repo.secrets.common) workHostName;
-    inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
-    serviceDomain = config.repo.secrets.common.services.domains.syncthing2;
+    profiles = {
+      minimal = lib.mkIf minimal true;
+    };
   in
   {
     imports = [
       ./hardware-configuration.nix
+      ./disk-config.nix
     ];
 
-    sops = {
-      defaultSopsFile = lib.mkForce "/root/.dotfiles/secrets/milkywell/secrets.yaml";
-    };
-
     boot = {
+      loader.systemd-boot.enable = true;
       tmp.cleanOnBoot = true;
-      loader.grub.device = "nodev";
     };
-    zramSwap.enable = false;
 
     networking = {
       nftables.enable = lib.mkForce false;
       hostName = "milkywell";
-      enableIPv6 = false;
+      enableIPv6 = true;
       domain = "subnet03112148.vcn03112148.oraclevcn.com";
-      firewall = {
-        allowedTCPPorts = [ 80 443 8384 9812 22000 27701 ];
-        allowedUDPPorts = [ 21027 22000 ];
-        extraCommands = ''
-          iptables -I INPUT -m state --state NEW -p tcp --dport 80 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 27701 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 8384 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 3000 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 22000 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p udp --dport 22000 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p udp --dport 21027 -j ACCEPT
-          iptables -I INPUT -m state --state NEW -p tcp --dport 9812 -j ACCEPT
-        '';
-      };
     };
 
     hardware = {
       enableAllFirmware = lib.mkForce false;
     };
 
-    system.stateVersion = "23.11";
-
-    globals.services."syncthing-${config.networking.hostName}".domain = serviceDomain;
-
-    services = {
-      nginx = {
-        virtualHosts = {
-          ${serviceDomain} = {
-            enableACME = true;
-            forceSSL = true;
-            acmeRoot = null;
-            locations = {
-              "/" = {
-                proxyPass = "http://localhost:8384";
-                extraConfig = ''
-                  client_max_body_size 0;
-                '';
-              };
-            };
-          };
-        };
-      };
-
-      syncthing = {
-        enable = true;
-        guiAddress = "0.0.0.0:8384";
-        openDefaultPorts = true;
-        relay.enable = false;
-        settings = {
-          urAccepted = -1;
-          devices = {
-            "magicant" = {
-              id = "VMWGEE2-4HDS2QO-KNQOVGN-LXLX6LA-666E4EK-ZBRYRRO-XFEX6FB-6E3XLQO";
-            };
-            "winters" = {
-              id = "O7RWDMD-AEAHPP7-7TAVLKZ-BSWNBTU-2VA44MS-EYGUNBB-SLHKB3C-ZSLMOAA";
-            };
-            "${workHostName}" = {
-              id = "YAPV4BV-I26WPTN-SIP32MV-SQP5TBZ-3CHMTCI-Z3D6EP2-MNDQGLP-53FT3AB";
-            };
-            "${dev1}" = {
-              id = "OCCDGDF-IPZ6HHQ-5SSLQ3L-MSSL5ZW-IX5JTAM-PW4PYEK-BRNMJ7E-Q7YDMA7";
-            };
-            "${dev2}" = {
-              id = "LPCFIIB-ENUM2V6-F2BWVZ6-F2HXCL2-BSBZXUF-TIMNKYB-7CATP7H-YU5D3AH";
-            };
-            "${dev3}" = {
-              id = "LAUT2ZP-KEZY35H-AHR3ARD-URAREJI-2B22P5T-PIMUNWW-PQRDETU-7KIGNQR";
-            };
-          };
-          folders = {
-            "Default Folder" = lib.mkForce {
-              path = "/var/lib/syncthing/Sync";
-              type = "receiveonly";
-              versioning = null;
-              devices = [ "winters" "magicant" "${workHostName}" ];
-              id = "default";
-            };
-            "Obsidian" = {
-              path = "/var/lib/syncthing/Obsidian";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "winters" "magicant" "${workHostName}" ];
-              id = "yjvni-9eaa7";
-            };
-            "Org" = {
-              path = "/var/lib/syncthing/Org";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "winters" "magicant" "${workHostName}" ];
-              id = "a7xnl-zjj3d";
-            };
-            "Vpn" = {
-              path = "/var/lib/syncthing/Vpn";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "5";
-              };
-              devices = [ "winters" "magicant" "${workHostName}" ];
-              id = "hgp9s-fyq3p";
-            };
-            "${loc1}" = {
-              path = "/var/lib/syncthing/${loc1}";
-              type = "receiveonly";
-              versioning = {
-                type = "simple";
-                params.keep = "3";
-              };
-              devices = [ dev1 dev2 dev3 ];
-              id = "5gsxv-rzzst";
-            };
-          };
-        };
-      };
-    };
-
     swarselsystems = lib.recursiveUpdate
       {
         info = "VM.Standard.E2.1.Micro";
-        flakePath = "/root/.dotfiles";
-        isImpermanence = false;
+        isImpermanence = true;
         isSecureBoot = false;
-        isCrypted = false;
+        isCrypted = true;
+        isSwap = true;
+        rootDisk = "/dev/sda";
+        swapSize = "4G";
         profiles = {
           server.syncserver = true;
         };
@@ -2367,7 +2495,6 @@ This machine mainly acts as an external sync helper. It manages the following th
       sharedOptions;
 
     home-manager.users."${primaryUser}" = {
-      home.stateVersion = lib.mkForce "23.05";
       swarselsystems = lib.recursiveUpdate
         { }
         sharedOptions;
@@ -2394,22 +2521,6 @@ This machine mainly acts as an external sync helper. It manages the following th
       extraModulePackages = [ ];
     };
 
-    fileSystems = {
-      "/" = {
-        device = "/dev/disk/by-uuid/4b47378a-02eb-4548-bab8-59cbf379252a";
-        fsType = "xfs";
-      };
-
-      "/boot" = {
-        device = "/dev/disk/by-uuid/2B75-2AD5";
-        fsType = "vfat";
-      };
-    };
-
-    swapDevices = [
-      { device = "/dev/disk/by-uuid/f0126a93-753e-4769-ada8-7499a1efb3a9"; }
-    ];
-
     # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
     # (the default) this is the recommended approach. When using systemd-networkd it's
     # still possible to use this option, but it's recommended to use it in conjunction
@@ -2420,6 +2531,113 @@ This machine mainly acts as an external sync helper. It manages the following th
     nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
     hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   }
+#+end_src
+***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
+:END:
+
+#+begin_src nix-ts :tangle hosts/nixos/milkywell/disk-config.nix
+  # NOTE: ... is needed because dikso passes diskoFile
+  { lib
+  , config
+  , rootDisk
+  , ...
+  }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  }
+
+
 #+end_src
 **** Moonside (OCI)
 :PROPERTIES:
@@ -2436,10 +2654,12 @@ This machine mainly acts as an external sync helper. It manages the following th
     primaryUser = config.swarselsystems.mainUser;
     inherit (config.repo.secrets.common) workHostName;
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+    inherit (config.swarselsystems) sopsFile;
     serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
 
     sharedOptions = {
       isBtrfs = true;
+      isNixos = true;
       isLinux = true;
     };
   in
@@ -2451,9 +2671,9 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     sops = {
       age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
+      # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
       secrets = {
-        wireguard-private-key = { };
+        wireguard-private-key = { inherit sopsFile; };
       };
     };
 
@@ -2643,7 +2863,6 @@ This machine mainly acts as an external sync helper. It manages the following th
     swarselsystems = lib.recursiveUpdate
       {
         info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
-        flakePath = "/home/swarsel/.dotfiles";
         isImpermanence = true;
         isSecureBoot = false;
         isCrypted = false;
@@ -3121,6 +3340,7 @@ This is a live environment ISO that I use to bootstrap new systems. It only load
         curl
         git
         gnupg
+        networkmanager
         rsync
         ssh-to-age
         sops
@@ -3845,7 +4065,9 @@ A breakdown of the flags being set:
     config = lib.mkIf config.swarselsystems.modules.general
       (lib.recursiveUpdate
         {
-          sops.secrets.github-api-token = lib.mkIf (!minimal) { };
+          sops.secrets.github-api-token = lib.mkIf (!minimal) {
+            sopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+          };
 
           nix = {
             package = pkgs.nixVersions.nix_2_28;
@@ -3904,23 +4126,24 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
           useGlobalPkgs = true;
           useUserPackages = true;
           verbose = true;
-          sharedModules = [
+          users.swarsel.imports = [
             inputs.nix-index-database.hmModules.nix-index
             inputs.sops-nix.homeManagerModules.sops
+            # inputs.stylix.homeModules.stylix
             {
               imports = [
                 "${self}/profiles/home"
                 "${self}/modules/home"
-                "${self}/modules/nixos/common/pii.nix"
-                "${self}/modules/nixos/common/meta.nix"
+                # "${self}/modules/nixos/common/pii.nix"
+                # "${self}/modules/nixos/common/meta.nix"
               ];
-              node = {
-                secretsDir = if config.swarselsystems.isNixos then ../../../hosts/nixos/${configName}/secrets else ../../../hosts/home/${configName}/secrets;
-              };
+              # node = {
+              #   secretsDir = if (!config.swarselsystems.isNixos) then ../../../hosts/home/${configName}/secrets else ../../../hosts/nixos/${configName}/secrets;
+              # };
               home.stateVersion = lib.mkDefault config.system.stateVersion;
             }
           ];
-          extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal; };
+          extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal configName; };
         };
       };
     }
@@ -4109,10 +4332,15 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
 This dynamically uses systemd boot or Lanzaboote depending on the minimal system state and `config.swarselsystems.isSecureBoot`.
 
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
-  { lib, config, minimal, ... }:
+  { lib, pkgs, config, minimal, ... }:
   {
     options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
     config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+
+      environment.systemPackages = lib.mkIf config.swarselsystems.isSecureBoot [
+        pkgs.sbctl
+      ];
+
       boot = {
         loader = {
           efi.canTouchEfiVariables = true;
@@ -4246,15 +4474,12 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
 #+begin_src nix-ts :tangle modules/nixos/client/default.nix
-  { lib, inputs, ... }:
+  { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos/client";
   in
   {
-    imports = lib.swarselsystems.mkImports importNames "modules/nixos/client" ++ [
-      inputs.stylix.nixosModules.stylix
-      inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-    ];
+    imports = lib.swarselsystems.mkImports importNames "modules/nixos/client";
   }
 
 #+end_src
@@ -4344,6 +4569,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
         elk-to-svg
 
       ] ++ lib.optionals minimal [
+        networkmanager
         curl
         git
         gnupg
@@ -4566,11 +4792,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
   { self, lib, pkgs, config, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
-    clientSopsFile = self + /secrets/${config.networking.hostName}/secrets.yaml;
+    clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
 
     inherit (config.swarselsystems) mainUser;
     inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
-    inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
 
     iwd = config.networking.networkmanager.wifi.backend == "iwd";
   in
@@ -4656,7 +4881,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
             environmentFiles = [
               "${config.sops.templates."network-manager.env".path}"
             ];
-            profiles = {
+            profiles = let
+              inherit (config.repo.secrets.local.network) home-wireguard-address home-wireguard-allowed-ips;
+            in
+              {
               ${wlan1} = {
                 connection = {
                   id = wlan1;
@@ -4921,16 +5149,20 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
-  { lib, config, ... }:
+  { self, lib, config, ... }:
   {
     options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
-    config = lib.mkIf config.swarselsystems.modules.stylix {
-      stylix = lib.recursiveUpdate
-        {
-          targets.grub.enable = false; # the styling makes grub more ugly
-          image = config.swarselsystems.wallpaper;
-        }
-        config.swarselsystems.stylix;
+    config = {
+      stylix = {
+        enable = true;
+        base16Scheme = "${self}/files/stylix/swarsel.yaml";
+      } // lib.optionalAttrs config.swarselsystems.modules.stylix
+        (lib.recursiveUpdate
+          {
+            targets.grub.enable = false; # the styling makes grub more ugly
+            image = config.swarselsystems.wallpaper;
+          }
+          config.swarselsystems.stylix);
       home-manager.users."${config.swarselsystems.mainUser}" = {
         stylix = {
           targets = config.swarselsystems.stylixHomeTargets;
@@ -5214,8 +5446,8 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
   {
     options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
     config = lib.mkIf config.swarselsystems.modules.swayosd {
-      environment.systemPackages = [ pkgs.swayosd ];
-      services.udev.packages = [ pkgs.swayosd ];
+      environment.systemPackages = [ pkgs.dev.swayosd ];
+      services.udev.packages = [ pkgs.dev.swayosd ];
       systemd.services.swayosd-libinput-backend = {
         description = "SwayOSD LibInput backend for listening to certain keys like CapsLock, ScrollLock, VolumeUp, etc.";
         documentation = [ "https://github.com/ErikReider/SwayOSD" ];
@@ -5226,7 +5458,7 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
         serviceConfig = {
           Type = "dbus";
           BusName = "org.erikreider.swayosd";
-          ExecStart = "${pkgs.swayosd}/bin/swayosd-libinput-backend";
+          ExecStart = "${pkgs.dev.swayosd}/bin/swayosd-libinput-backend";
           Restart = "on-failure";
         };
       };
@@ -5485,6 +5717,11 @@ This snipped is added to the activation script that is run after every rebuild a
   {
     options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
     config = lib.mkIf config.swarselsystems.modules.nvd {
+
+      environment.systemPackages = [
+        pkgs.nvd
+      ];
+
       system.activationScripts.diff = {
         supportsDryActivation = true;
         text = ''
@@ -5829,6 +6066,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         vim
         sops
         swarsel-deploy
+        tmux
       ];
     };
   }
@@ -5906,6 +6144,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   let
     inherit (config.repo.secrets.common) dnsProvider;
     inherit (config.repo.secrets.common.mail) address3;
+
   in
   {
     options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
@@ -5915,10 +6154,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       ];
 
       sops = {
-        # secrets.dnstokenfull = { owner = "acme"; };
-        secrets.dnstokenfull = { };
+        secrets.acme-dns-token = { inherit (config.swarselsystems) sopsFile; };
         templates."certs.secret".content = ''
-          CF_DNS_API_TOKEN=${config.sops.placeholder.dnstokenfull}
+          CF_DNS_API_TOKEN=${config.sops.placeholder.acme-dns-token}
         '';
       };
 
@@ -5995,6 +6233,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/kavita.nix
   { self, lib, config, pkgs, ... }:
   let
+    inherit (config.swarselsystems) sopsFile;
+
     servicePort = 8080;
     serviceName = "kavita";
     serviceUser = "kavita";
@@ -6011,7 +6251,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         extraGroups = [ "users" ];
       };
 
-      sops.secrets.kavita = { owner = serviceUser; };
+      sops.secrets.kavita-token = { inherit sopsFile; owner = serviceUser; };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -6026,7 +6266,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         enable = true;
         user = serviceUser;
         settings.Port = servicePort;
-        tokenKeyFile = config.sops.secrets.kavita.path;
+        tokenKeyFile = config.sops.secrets.kavita-token.path;
         dataDir = "/Vault/data/${serviceName}";
       };
 
@@ -6329,6 +6569,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/mpd.nix
   { self, lib, config, pkgs, ... }:
   let
+    inherit (config.swarselsystems) sopsFile;
+
     servicePort = 3254;
     serviceUser = "mpd";
     serviceGroup = serviceUser;
@@ -6352,7 +6594,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       };
 
       sops = {
-        secrets.mpdpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        secrets.mpd-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       environment.systemPackages = with pkgs; [
@@ -6378,7 +6620,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         };
         credentials = [
           {
-            passwordFile = config.sops.secrets.mpdpass.path;
+            passwordFile = config.sops.secrets.mpd-pw.path;
             permissions = [
               "read"
               "add"
@@ -6454,6 +6696,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/matrix.nix
   { lib, config, pkgs, ... }:
   let
+    inherit (config.swarselsystems) sopsFile;
+
     servicePort = 8008;
     serviceName = "matrix";
     serviceDomain = config.repo.secrets.common.services.domains.matrix;
@@ -6483,29 +6727,29 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       sops = {
         secrets = {
-          matrixsharedsecret = { owner = serviceUser; };
-          mautrixtelegram_as = { owner = serviceUser; };
-          mautrixtelegram_hs = { owner = serviceUser; };
-          mautrixtelegram_api_id = { owner = serviceUser; };
-          mautrixtelegram_api_hash = { owner = serviceUser; };
+          matrix-shared-secret = { inherit sopsFile; owner = serviceUser; };
+          mautrix-telegram-as-token = { inherit sopsFile; owner = serviceUser; };
+          mautrix-telegram-hs-token = { inherit sopsFile; owner = serviceUser; };
+          mautrix-telegram-api-id = { inherit sopsFile; owner = serviceUser; };
+          mautrix-telegram-api-hash = { inherit sopsFile; owner = serviceUser; };
         };
         templates = {
           "matrix_user_register.sh".content = ''
-            register_new_matrix_user -k ${config.sops.placeholder.matrixsharedsecret} http://localhost:${builtins.toString servicePort}
+            register_new_matrix_user -k ${config.sops.placeholder.matrix-shared-secret} http://localhost:${builtins.toString servicePort}
           '';
           matrixshared = {
             owner = serviceUser;
             content = ''
-              registration_shared_secret: ${config.sops.placeholder.matrixsharedsecret}
+              registration_shared_secret: ${config.sops.placeholder.matrix-shared-secret}
             '';
           };
           mautrixtelegram = {
             owner = serviceUser;
             content = ''
-              MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrixtelegram_as}
-              MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrixtelegram_hs}
-              MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrixtelegram_api_id}
-              MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrixtelegram_api_hash}
+              MAUTRIX_TELEGRAM_APPSERVICE_AS_TOKEN=${config.sops.placeholder.mautrix-telegram-as-token}
+              MAUTRIX_TELEGRAM_APPSERVICE_HS_TOKEN=${config.sops.placeholder.mautrix-telegram-hs-token}
+              MAUTRIX_TELEGRAM_TELEGRAM_API_ID=${config.sops.placeholder.mautrix-telegram-api-id}
+              MAUTRIX_TELEGRAM_TELEGRAM_API_HASH=${config.sops.placeholder.mautrix-telegram-api-hash}
             '';
           };
         };
@@ -6808,6 +7052,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
   { pkgs, lib, config, ... }:
   let
     inherit (config.repo.secrets.local.nextcloud) adminuser;
+    inherit (config.swarselsystems) sopsFile;
 
     servicePort = 80;
     serviceUser = "nextcloud";
@@ -6820,16 +7065,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops.secrets = {
-        nextcloudadminpass = {
-          owner = serviceUser;
-          group = serviceGroup;
-          mode = "0440";
-        };
-        kanidm-nextcloud-client = {
-          owner = serviceUser;
-          group = serviceGroup;
-          mode = "0440";
-        };
+        nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-nextcloud-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
 
@@ -6855,7 +7092,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           extraAppsEnable = true;
           config = {
             inherit adminuser;
-            adminpassFile = config.sops.secrets.nextcloudadminpass.path;
+            adminpassFile = config.sops.secrets.nextcloud-admin-pw.path;
             dbtype = "sqlite";
           };
         };
@@ -6974,6 +7211,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 #+begin_src nix-ts :tangle modules/nixos/server/paperless.nix
   { lib, pkgs, config, globals, ... }:
   let
+    inherit (config.swarselsystems) sopsFile;
+
     servicePort = 28981;
     serviceUser = "paperless";
     serviceGroup = serviceUser;
@@ -6993,12 +7232,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
       };
 
       sops.secrets = {
-        paperless_admin = { owner = serviceUser; };
-        kanidm-paperless-client = {
-          owner = serviceUser;
-          group = serviceGroup;
-          mode = "0440";
-        };
+        paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
+        kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -7012,7 +7247,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
           dataDir = "/Vault/data/${serviceName}";
           user = serviceUser;
           port = servicePort;
-          passwordFile = config.sops.secrets.paperless_admin.path;
+          passwordFile = config.sops.secrets.paperless-admin-pw.path;
           address = "0.0.0.0";
           settings = {
             PAPERLESS_OCR_LANGUAGE = "deu+eng";
@@ -7444,17 +7679,17 @@ This manages backups for my pictures and obsidian files.
 #+begin_src nix-ts :tangle modules/nixos/server/restic.nix
   { lib, pkgs, config, ... }:
   let
-    inherit (config.repo.secrets.local) resticRepo;
-  in
+    inherit (config.swarselsystems) sopsFile;
+    in
   {
     options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
     config = lib.mkIf config.swarselsystems.modules.server.restic {
 
       sops = {
         secrets = {
-          resticpw = { };
-          resticaccesskey = { };
-          resticsecretaccesskey = { };
+          resticpw = { inherit sopsFile; };
+          resticaccesskey = { inherit sopsFile; };
+          resticsecretaccesskey = { inherit sopsFile; };
         };
         templates = {
           "restic-env".content = ''
@@ -7464,35 +7699,39 @@ This manages backups for my pictures and obsidian files.
         };
       };
 
-      services.restic = {
-        backups = {
-          SwarselWinters = {
-            environmentFile = config.sops.templates."restic-env".path;
-            passwordFile = config.sops.secrets.resticpw.path;
-            paths = [
-              "/Vault/data/paperless"
-              "/Vault/Eternor/Paperless"
-              "/Vault/Eternor/Bilder"
-              "/Vault/Eternor/Immich"
-            ];
-            pruneOpts = [
-              "--keep-daily 3"
-              "--keep-weekly 2"
-              "--keep-monthly 3"
-              "--keep-yearly 100"
-            ];
-            backupPrepareCommand = ''
-              ${pkgs.restic}/bin/restic prune
-            '';
-            repository = "${resticRepo}";
-            initialize = true;
-            timerConfig = {
-              OnCalendar = "03:00";
+      services.restic =
+        let
+          inherit (config.repo.secrets.local) resticRepo;
+        in
+        {
+          backups = {
+            SwarselWinters = {
+              environmentFile = config.sops.templates."restic-env".path;
+              passwordFile = config.sops.secrets.resticpw.path;
+              paths = [
+                "/Vault/data/paperless"
+                "/Vault/Eternor/Paperless"
+                "/Vault/Eternor/Bilder"
+                "/Vault/Eternor/Immich"
+              ];
+              pruneOpts = [
+                "--keep-daily 3"
+                "--keep-weekly 2"
+                "--keep-monthly 3"
+                "--keep-yearly 100"
+              ];
+              backupPrepareCommand = ''
+                ${pkgs.restic}/bin/restic prune
+              '';
+              repository = "${resticRepo}";
+              initialize = true;
+              timerConfig = {
+                OnCalendar = "03:00";
+              };
             };
-          };
 
+          };
         };
-      };
 
     };
   }
@@ -7508,7 +7747,6 @@ This section exposes several metrics that I use to check the health of my server
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
   { self, lib, config, globals, ... }:
   let
-
     servicePort = 3000;
     serviceUser = "grafana";
     serviceGroup = serviceUser;
@@ -7518,11 +7756,12 @@ This section exposes several metrics that I use to check the health of my server
     prometheusPort = 9090;
     prometheusUser = "prometheus";
     prometheusGroup = prometheusUser;
-    nextcloudUser = config.repo.secrets.local.nextcloud.adminuser;
     grafanaUpstream = "grafana";
     prometheusUpstream = "prometheus";
     prometheusWebRoot = "prometheus";
     kanidmDomain = globals.services.kanidm.domain;
+
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7530,9 +7769,9 @@ This section exposes several metrics that I use to check the health of my server
 
       sops = {
         secrets = {
-          grafanaadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          prometheusadminpass = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          kanidm-grafana-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           prometheus-admin-hash = { sopsFile = self + /secrets/winters/secrets2.yaml; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
         };
@@ -7592,7 +7831,7 @@ This section exposes several metrics that I use to check the health of my server
                     incrementalQueryOverlapWindow = "10m";
                   };
                   secureJsonData = {
-                    basicAuthPassword = "$__file{/run/secrets/prometheusadminpass}";
+                    basicAuthPassword = "$__file{/run/secrets/prometheus-admin-pw}";
                   };
                 }
               ];
@@ -7603,7 +7842,7 @@ This section exposes several metrics that I use to check the health of my server
             analytics.reporting_enabled = false;
             users.allow_sign_up = false;
             security = {
-              admin_password = "$__file{/run/secrets/grafanaadminpass}";
+              admin_password = "$__file{/run/secrets/grafana-admin-pw}";
               cookie_secure = true;
               disable_gravatar = true;
             };
@@ -7638,74 +7877,78 @@ This section exposes several metrics that I use to check the health of my server
           };
         };
 
-        prometheus = {
-          enable = true;
-          webExternalUrl = "https://${serviceDomain}/${prometheusWebRoot}";
-          port = prometheusPort;
-          listenAddress = "0.0.0.0";
-          globalConfig = {
-            scrape_interval = "10s";
+        prometheus =
+          let
+            nextcloudUser = config.repo.secrets.local.nextcloud.adminuser;
+          in
+          {
+            enable = true;
+            webExternalUrl = "https://${serviceDomain}/${prometheusWebRoot}";
+            port = prometheusPort;
+            listenAddress = "0.0.0.0";
+            globalConfig = {
+              scrape_interval = "10s";
+            };
+            webConfigFile = config.sops.templates.web-config.path;
+            scrapeConfigs = [
+              {
+                job_name = "node";
+                static_configs = [{
+                  targets = [ "localhost:${toString config.services.prometheus.exporters.node.port}" ];
+                }];
+              }
+              {
+                job_name = "zfs";
+                static_configs = [{
+                  targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
+                }];
+              }
+              {
+                job_name = "nginx";
+                static_configs = [{
+                  targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
+                }];
+              }
+              {
+                job_name = "nextcloud";
+                static_configs = [{
+                  targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
+                }];
+              }
+            ];
+            exporters = {
+              node = {
+                enable = true;
+                port = 9000;
+                enabledCollectors = [ "systemd" ];
+                extraFlags = [ "--collector.ethtool" "--collector.softirqs" "--collector.tcpstat" "--collector.wifi" ];
+              };
+              zfs = {
+                enable = true;
+                port = 9134;
+                pools = [
+                  "Vault"
+                ];
+              };
+              restic = {
+                enable = false;
+                port = 9753;
+              };
+              nginx = {
+                enable = true;
+                port = 9113;
+                sslVerify = false;
+                scrapeUri = "http://localhost/nginx_status";
+              };
+              nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
+                enable = true;
+                port = 9205;
+                url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
+                username = nextcloudUser;
+                passwordFile = config.sops.secrets.nextcloud-admin-pw.path;
+              };
+            };
           };
-          webConfigFile = config.sops.templates.web-config.path;
-          scrapeConfigs = [
-            {
-              job_name = "node";
-              static_configs = [{
-                targets = [ "localhost:${toString config.services.prometheus.exporters.node.port}" ];
-              }];
-            }
-            {
-              job_name = "zfs";
-              static_configs = [{
-                targets = [ "localhost:${toString config.services.prometheus.exporters.zfs.port}" ];
-              }];
-            }
-            {
-              job_name = "nginx";
-              static_configs = [{
-                targets = [ "localhost:${toString config.services.prometheus.exporters.nginx.port}" ];
-              }];
-            }
-            {
-              job_name = "nextcloud";
-              static_configs = [{
-                targets = [ "localhost:${toString config.services.prometheus.exporters.nextcloud.port}" ];
-              }];
-            }
-          ];
-          exporters = {
-            node = {
-              enable = true;
-              port = 9000;
-              enabledCollectors = [ "systemd" ];
-              extraFlags = [ "--collector.ethtool" "--collector.softirqs" "--collector.tcpstat" "--collector.wifi" ];
-            };
-            zfs = {
-              enable = true;
-              port = 9134;
-              pools = [
-                "Vault"
-              ];
-            };
-            restic = {
-              enable = false;
-              port = 9753;
-            };
-            nginx = {
-              enable = true;
-              port = 9113;
-              sslVerify = false;
-              scrapeUri = "http://localhost/nginx_status";
-            };
-            nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
-              enable = true;
-              port = 9205;
-              url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
-              username = nextcloudUser;
-              passwordFile = config.sops.secrets.nextcloudadminpass.path;
-            };
-          };
-        };
       };
 
 
@@ -7851,13 +8094,13 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix-ts :tangle modules/nixos/server/freshrss.nix
   { self, lib, config, ... }:
   let
-    inherit (config.repo.secrets.local.freshrss) defaultUser;
-
     servicePort = 80;
     serviceName = "freshrss";
     serviceUser = "freshrss";
     serviceGroup = serviceName;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7873,9 +8116,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       sops = {
         secrets = {
-          fresh = { owner = serviceUser; };
-          "kanidm-freshrss-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "oidc-crypto-key" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          freshrss-pw = { inherit sopsFile; owner = serviceUser; };
+          kanidm-freshrss-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          # freshrss-oidc-crypto-key = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
         #   templates = {
@@ -7906,15 +8149,19 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       globals.services.${serviceName}.domain = serviceDomain;
 
-      services.${serviceName} = {
-        inherit defaultUser;
-        enable = true;
-        virtualHost = serviceDomain;
-        baseUrl = "https://${serviceDomain}";
-        authType = "form";
-        dataDir = "/Vault/data/tt-rss";
-        passwordFile = config.sops.secrets.fresh.path;
-      };
+      services.${serviceName} =
+        let
+          inherit (config.repo.secrets.local.freshrss) defaultUser;
+        in
+        {
+          inherit defaultUser;
+          enable = true;
+          virtualHost = serviceDomain;
+          baseUrl = "https://${serviceDomain}";
+          authType = "form";
+          dataDir = "/Vault/data/tt-rss";
+          passwordFile = config.sops.secrets.freshrss-pw.path;
+        };
 
       # systemd.services.freshrss-config.serviceConfig.EnvironmentFile = [
       #   config.sops.templates.freshrss-env.path
@@ -7960,7 +8207,9 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix-ts :tangle modules/nixos/server/forgejo.nix
   { lib, config, pkgs, globals, ... }:
   let
-    servicePort = 3000;
+    inherit (config.swarselsystems) sopsFile;
+
+    servicePort = 3004;
     serviceUser = "forgejo";
     serviceGroup = serviceUser;
     serviceName = "forgejo";
@@ -7982,13 +8231,14 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
       users.groups.${serviceGroup} = { };
 
       sops.secrets = {
-        kanidm-forgejo-client = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        kanidm-forgejo-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       globals.services.${serviceName}.domain = serviceDomain;
 
       services.${serviceName} = {
         enable = true;
+        stateDir = "/Vault/data/${serviceName}";
         user = serviceUser;
         group = serviceGroup;
         lfs.enable = lib.mkDefault true;
@@ -8085,7 +8335,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
           '';
       };
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -8122,6 +8372,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 #+begin_src nix-ts :tangle modules/nixos/server/ankisync.nix
   { self, lib, config, globals, ... }:
   let
+    inherit (config.swarselsystems) sopsFile;
+
     servicePort = 27701;
     serviceName = "ankisync";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
@@ -8134,11 +8386,11 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
-      sops.secrets.swarsel = { owner = "root"; };
+      sops.secrets.anki-pw = { inherit sopsFile; owner = "root"; };
 
-      topology.self.services.${serviceName} = {
+      topology.self.services.anki = {
         name = lib.mkForce "Anki Sync Server";
-        icon = "${self}/files/topology-images/${serviceName}.png";
+        icon = lib.mkForce "${self}/files/topology-images/${serviceName}.png";
         info = "https://${serviceDomain}";
       };
 
@@ -8152,12 +8404,12 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         users = [
           {
             username = ankiUser;
-            passwordFile = config.sops.secrets.swarsel.path;
+            passwordFile = config.sops.secrets.anki-pw.path;
           }
         ];
       };
 
-      services.nginx = {
+      nodes.moonside.services.nginx = {
         upstreams = {
           ${serviceName} = {
             servers = {
@@ -8202,6 +8454,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
+    inherit (config.swarselsystems) sopsFile;
 
     servicePort = 8300;
     serviceUser = "kanidm";
@@ -8231,15 +8484,15 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         secrets = {
           "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-idm-admin-pw" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-immich" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-paperless" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-forgejo" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-grafana" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-nextcloud" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-freshrss" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-oauth2-proxy" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-immich" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-paperless" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-forgejo" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-grafana" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-nextcloud" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-oauth2-proxy" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
       };
 
@@ -8471,6 +8724,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
     kanidmDomain = globals.services.kanidm.domain;
     mainDomain = globals.domains.main;
+
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     options = {
@@ -8586,8 +8841,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       sops = {
         secrets = {
-          "oauth2-cookie-secret" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          "kanidm-oauth2-proxy-client" = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-oauth2-proxy-client" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
         templates = {
@@ -8701,6 +8956,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
     nginxGroup = "nginx";
 
+    inherit (config.swarselsystems) sopsFile;
     cfg = config.services.firefly-iii;
   in
   {
@@ -8718,7 +8974,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       sops = {
         secrets = {
-          "firefly-iii-app-key" = { owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
+          "firefly-iii-app-key" = { inherit sopsFile; owner = serviceUser; group = if cfg.enableNginx then nginxGroup else serviceGroup; mode = "0440"; };
         };
       };
 
@@ -8820,14 +9076,16 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
     postgresPort = config.services.postgresql.settings.port; # 5432
     containerRev = "sha256:96693e41a6eb2aae44f96033a090378270f024ddf4e6095edf8d57674f21095d";
+
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
 
       sops.secrets = {
-        koillection-db-password = { owner = postgresUser; group = postgresUser; mode = "0440"; };
-        koillection-env-file = { };
+        koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
+        koillection-env-file = { inherit sopsFile; };
       };
 
       topology.self.services.${serviceName} = {
@@ -8881,7 +9139,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
           passwordPath = config.sops.secrets.koillection-db-password.path;
         in
         ''
-          $PSQL -tA <<'EOF'
+          ${config.services.postgresql.package}/bin/psql -tA <<'EOF'
             DO $$
             DECLARE password TEXT;
             BEGIN
@@ -8997,7 +9255,6 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
   { self, lib, config, ... }:
   let
-    inherit (config.repo.secrets.local.radicale) user1;
     sopsFile = self + /secrets/winters/secrets2.yaml;
 
     servicePort = 8000;
@@ -9015,16 +9272,20 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
       sops = {
         secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
 
-        templates = {
-          "radicale-users" = {
-            content = ''
-              ${user1}:${config.sops.placeholder.radicale-user}
-            '';
-            owner = serviceUser;
-            group = serviceGroup;
-            mode = "0440";
+        templates =
+          let
+            inherit (config.repo.secrets.local.radicale) user1;
+          in
+          {
+            "radicale-users" = {
+              content = ''
+                ${user1}:${config.sops.placeholder.radicale-user}
+              '';
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
           };
-        };
       };
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
@@ -9039,11 +9300,12 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
               "[::]:${builtins.toString servicePort}"
             ];
           };
-          auth = {
-            type = "htpasswd";
-            htpasswd_filename = config.sops.templates.radicale-users.path;
-            htpasswd_encryption = "autodetect";
-          };
+          auth =
+            {
+              type = "htpasswd";
+              htpasswd_filename = config.sops.templates.radicale-users.path;
+              htpasswd_encryption = "autodetect";
+            };
           storage = {
             filesystem_folder = "/Vault/data/radicale/collections";
           };
@@ -9123,6 +9385,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceName = "croc";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
+    inherit (config.swarselsystems) sopsFile;
+
     cfg = config.services.croc;
   in
   {
@@ -9131,7 +9395,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       sops = {
         secrets = {
-          croc-password = { };
+          croc-password = { inherit sopsFile; };
         };
 
         templates = {
@@ -9193,6 +9457,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceGroup = serviceUser;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
+    inherit (config.swarselsystems) sopsFile;
+
     cfg = config.services.${serviceName};
   in
   {
@@ -9210,9 +9476,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       sops = {
         secrets = {
-          microbin-admin-username = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          microbin-admin-password = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          microbin-uploader-password = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          microbin-admin-username = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          microbin-admin-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          microbin-uploader-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         };
 
         templates = {
@@ -9329,6 +9595,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
+
+    inherit (config.swarselsystems) sopsFile;
   in
   {
     options = {
@@ -9338,7 +9606,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       sops = {
         secrets = {
-          shlink-api = { };
+          shlink-api = { inherit sopsFile; };
         };
 
         templates = {
@@ -10066,7 +10334,7 @@ The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/
 This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/sharedsetup.nix
-  { self, lib, pkgs, globals, minimal, ... }:
+  { self, config, lib, pkgs, globals, minimal, ... }:
   {
     options.swarselsystems = {
       isLaptop = lib.mkEnableOption "laptop host";
@@ -10078,6 +10346,10 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       mainUser = lib.mkOption {
         type = lib.types.str;
         default = if (!minimal) then globals.user.name else "swarsel" ;
+      };
+      sopsFile = lib.mkOption {
+        type = lib.types.str;
+        default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
       };
       homeDir = lib.mkOption {
         type = lib.types.str;
@@ -10111,8 +10383,6 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
       stylix = lib.mkOption {
         type = lib.types.attrs;
         default = {
-          enable = true;
-          base16Scheme = "${self}/files/stylix/swarsel.yaml";
           polarity = "dark";
           opacity.popups = 0.5;
           cursor = {
@@ -10731,7 +11001,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
-  { lib, config, ... }:
+  { lib, config, nixosConfig, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -10746,8 +11016,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
       pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         ids = [
-          config.repo.secrets.common.yubikeys.dev1
-          config.repo.secrets.common.yubikeys.dev2
+          nixosConfig.repo.secrets.common.yubikeys.dev1
+          nixosConfig.repo.secrets.common.yubikeys.dev2
         ];
       };
     };
@@ -10776,6 +11046,10 @@ It is very convenient to have SSH aliases in place for machines that I use. This
         matchBlocks = {
           "pfsense" = {
             hostname = "192.168.1.1";
+            user = "root";
+          };
+          "bakery" = {
+            hostname = "192.168.1.136";
             user = "root";
           };
           "winters" = {
@@ -11004,10 +11278,10 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-  { lib, config, globals, ... }:
+  { lib, config, globals, nixosConfig, ... }:
   let
-    inherit (config.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-    inherit (config.repo.secrets.common) fullName;
+    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+    inherit (nixosConfig.repo.secrets.common) fullName;
     crocDomain = globals.services.croc.domain;
   in
   {
@@ -11210,10 +11484,10 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/home/common/git.nix
-  { lib, config, globals, minimal, ... }:
+  { lib, config, globals, minimal, nixosConfig, ... }:
   let
-    inherit (config.repo.secrets.common.mail) address1;
-    inherit (config.repo.secrets.common) fullName;
+    inherit (nixosConfig.repo.secrets.common.mail) address1;
+    inherit (nixosConfig.repo.secrets.common) fullName;
 
     gitUser = globals.user.name;
   in
@@ -11751,10 +12025,10 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix-ts :tangle modules/home/common/mail.nix
-  { lib, config, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    inherit (config.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
-    inherit (config.repo.secrets.common) fullName;
+    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
+    inherit (nixosConfig.repo.secrets.common) fullName;
     inherit (config.swarselsystems) xdgDir;
   in
   {
@@ -12598,12 +12872,13 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/swayosd.nix
-  { lib, config, ... }:
+  { lib, pkgs, config, ... }:
   {
     options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
     config = lib.mkIf config.swarselsystems.modules.swayosd {
       services.swayosd = {
         enable = true;
+        package = pkgs.dev.swayosd;
         topMargin = 0.5;
       };
     };
@@ -13224,9 +13499,9 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix-ts :tangle modules/home/common/gammastep.nix
-  { lib, config, ... }:
+  { lib, config, nixosConfig, ... }:
   let
-    inherit (config.repo.secrets.common.location) latitude longitude;
+    inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
   in
   {
     options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
@@ -13387,10 +13662,9 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, ... }:
+  { self, config, pkgs, lib, nixosConfig, ... }:
   let
     inherit (config.swarselsystems) homeDir;
-    inherit (config.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
   in
   {
     options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
@@ -13428,130 +13702,140 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
       };
 
-      stylix.targets.firefox.profileNames = [
-        "${user1}"
-        "${user2}"
-        "${user3}"
-        "work"
-      ];
-
-      programs = {
-        git.userEmail = lib.mkForce gitMail;
-
-        zsh = {
-          shellAliases = {
-            dssh = "ssh -l ${user1Long}";
-            cssh = "ssh -l ${user2Long}";
-            wssh = "ssh -l ${user3Long}";
-          };
-          cdpath = [
-            "~/Documents/Work"
+      stylix = {
+        targets.firefox.profileNames =
+          let
+            inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+          in
+          [
+            "${user1}"
+            "${user2}"
+            "${user3}"
+            "work"
           ];
-          dirHashes = {
-            d = "$HOME/.dotfiles";
-            w = "$HOME/Documents/Work";
-            s = "$HOME/.dotfiles/secrets";
-            pr = "$HOME/Documents/Private";
-            ac = path1;
-          };
-        };
-
-        ssh = {
-          matchBlocks = {
-            "${loc1}" = {
-              hostname = "${loc1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.stg" = {
-              hostname = "${loc1}.${lifecycle1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.staging" = {
-              hostname = "${loc1}.${lifecycle1}.${domain2}";
-              user = user4;
-            };
-            "${loc1}.dev" = {
-              hostname = "${loc1}.${lifecycle2}.${domain2}";
-              user = user4;
-            };
-            "${loc2}" = {
-              hostname = "${loc2}.${domain1}";
-              user = user1Long;
-            };
-            "${loc2}.stg" = {
-              hostname = "${loc2}.${lifecycle1}.${domain2}";
-              user = user1Long;
-            };
-            "${loc2}.staging" = {
-              hostname = "${loc2}.${lifecycle1}.${domain2}";
-              user = user1Long;
-            };
-            "*.${domain1}" = {
-              user = user1Long;
-            };
-          };
-        };
-
-        firefox = {
-          profiles =
-            let
-              isDefault = false;
-            in
-            {
-              "${user1}" = lib.recursiveUpdate
-                {
-                  inherit isDefault;
-                  id = 1;
-                  settings = {
-                    "browser.startup.homepage" = "${site1}|${site2}";
-                  };
-                }
-                config.swarselsystems.firefox;
-              "${user2}" = lib.recursiveUpdate
-                {
-                  inherit isDefault;
-                  id = 2;
-                  settings = {
-                    "browser.startup.homepage" = "${site3}";
-                  };
-                }
-                config.swarselsystems.firefox;
-              "${user3}" = lib.recursiveUpdate
-                {
-                  inherit isDefault;
-                  id = 3;
-                }
-                config.swarselsystems.firefox;
-              work = lib.recursiveUpdate
-                {
-                  inherit isDefault;
-                  id = 4;
-                  settings = {
-                    "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                  };
-                }
-                config.swarselsystems.firefox;
-            };
-        };
-
-        chromium = {
-          enable = true;
-          package = pkgs.chromium;
-
-          extensions = [
-            # 1password
-            "gejiddohjgogedgjnonbofjigllpkmbf"
-            # dark reader
-            "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-            # ublock origin
-            "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-            # i still dont care about cookies
-            "edibdbjcniadpccecjdfdjjppcpchdlm"
-            # browserpass
-            "naepdomgkenhinolocfifgehidddafch"
-          ];
-        };
       };
+
+      programs =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+        in
+        {
+          git.userEmail = lib.mkForce gitMail;
+
+          zsh = {
+            shellAliases = {
+              dssh = "ssh -l ${user1Long}";
+              cssh = "ssh -l ${user2Long}";
+              wssh = "ssh -l ${user3Long}";
+            };
+            cdpath = [
+              "~/Documents/Work"
+            ];
+            dirHashes = {
+              d = "$HOME/.dotfiles";
+              w = "$HOME/Documents/Work";
+              s = "$HOME/.dotfiles/secrets";
+              pr = "$HOME/Documents/Private";
+              ac = path1;
+            };
+          };
+
+          ssh = {
+            matchBlocks = {
+              "${loc1}" = {
+                hostname = "${loc1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.stg" = {
+                hostname = "${loc1}.${lifecycle1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.staging" = {
+                hostname = "${loc1}.${lifecycle1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.dev" = {
+                hostname = "${loc1}.${lifecycle2}.${domain2}";
+                user = user4;
+              };
+              "${loc2}" = {
+                hostname = "${loc2}.${domain1}";
+                user = user1Long;
+              };
+              "${loc2}.stg" = {
+                hostname = "${loc2}.${lifecycle1}.${domain2}";
+                user = user1Long;
+              };
+              "${loc2}.staging" = {
+                hostname = "${loc2}.${lifecycle1}.${domain2}";
+                user = user1Long;
+              };
+              "*.${domain1}" = {
+                user = user1Long;
+              };
+            };
+          };
+
+          firefox = {
+            profiles =
+              let
+                isDefault = false;
+              in
+              {
+                "${user1}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 1;
+                    settings = {
+                      "browser.startup.homepage" = "${site1}|${site2}";
+                    };
+                  }
+                  config.swarselsystems.firefox;
+                "${user2}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 2;
+                    settings = {
+                      "browser.startup.homepage" = "${site3}";
+                    };
+                  }
+                  config.swarselsystems.firefox;
+                "${user3}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 3;
+                  }
+                  config.swarselsystems.firefox;
+                work = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 4;
+                    settings = {
+                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                    };
+                  }
+                  config.swarselsystems.firefox;
+              };
+          };
+
+          chromium = {
+            enable = true;
+            package = pkgs.chromium;
+
+            extensions = [
+              # 1password
+              "gejiddohjgogedgjnonbofjigllpkmbf"
+              # dark reader
+              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+              # ublock origin
+              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+              # i still dont care about cookies
+              "edibdbjcniadpccecjdfdjjppcpchdlm"
+              # browserpass
+              "naepdomgkenhinolocfifgehidddafch"
+            ];
+          };
+        };
 
       services = {
         kanshi = {
@@ -13671,49 +13955,53 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
       };
 
-      xdg = {
-        mimeApps = {
-          defaultApplications = {
-            "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+      xdg =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+        in
+        {
+          mimeApps = {
+            defaultApplications = {
+              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+            };
           };
+          desktopEntries =
+            let
+              terminal = false;
+              categories = [ "Application" ];
+              icon = "firefox";
+            in
+            {
+              firefox_work = {
+                name = "Firefox (work)";
+                genericName = "Firefox work";
+                exec = "firefox -p work";
+                inherit terminal categories icon;
+              };
+              "firefox_${user1}" = {
+                name = "Firefox (${user1})";
+                genericName = "Firefox ${user1}";
+                exec = "firefox -p ${user1}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user2}" = {
+                name = "Firefox (${user2})";
+                genericName = "Firefox ${user2}";
+                exec = "firefox -p ${user2}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user3}" = {
+                name = "Firefox (${user3})";
+                genericName = "Firefox ${user3}";
+                exec = "firefox -p ${user3}";
+                inherit terminal categories icon;
+              };
+
+
+            };
         };
-        desktopEntries =
-          let
-            terminal = false;
-            categories = [ "Application" ];
-            icon = "firefox";
-          in
-          {
-            firefox_work = {
-              name = "Firefox (work)";
-              genericName = "Firefox work";
-              exec = "firefox -p work";
-              inherit terminal categories icon;
-            };
-            "firefox_${user1}" = {
-              name = "Firefox (${user1})";
-              genericName = "Firefox ${user1}";
-              exec = "firefox -p ${user1}";
-              inherit terminal categories icon;
-            };
-
-            "firefox_${user2}" = {
-              name = "Firefox (${user2})";
-              genericName = "Firefox ${user2}";
-              exec = "firefox -p ${user2}";
-              inherit terminal categories icon;
-            };
-
-            "firefox_${user3}" = {
-              name = "Firefox (${user3})";
-              genericName = "Firefox ${user3}";
-              exec = "firefox -p ${user3}";
-              inherit terminal categories icon;
-            };
-
-
-          };
-      };
       swarselsystems = {
         startup = [
           # { command = "nextcloud --background"; }
@@ -14689,7 +14977,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           green "Please confirm passphrase:"
           read -rs luks_passphrase_confirm
           if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
-              $ssh_root_cmd "/bin/sh -c 'echo $luks_passphrase > /tmp/disko-password'"
+              $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
               break
           else
               red "Passwords do not match"
@@ -14766,6 +15054,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   fi
   green "Updating all secrets files to reflect updates .sops.yaml"
   sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
+  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_hostname"/secrets/pii.nix.enc
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -14837,6 +15126,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       $ssh_root_cmd "reboot"
   fi
 #+end_src
+
+#+RESULTS:
+| trap: | undefined | signal:    | exit   |      |      |   |   |
+| [     | Babel     | evaluation | exited | with | code | 1 | ] |
 
 
 #+begin_src nix-ts :tangle pkgs/swarsel-bootstrap/default.nix
@@ -15795,7 +16088,74 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+end_src
 
+**** Reduced
+:PROPERTIES:
+:CUSTOM_ID: h:2d0eac3b-6e2e-4006-9032-59f2ba7e98ec
+:END:
+
+#+begin_src nix-ts :tangle profiles/nixos/reduced/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.reduced = lib.mkEnableOption "is this a reduced personal host";
+    config = lib.mkIf config.swarselsystems.profiles.reduced {
+      swarselsystems.modules = {
+        packages = lib.mkDefault true;
+        pii = lib.mkDefault true;
+        general = lib.mkDefault true;
+        home-manager = lib.mkDefault true;
+        xserver = lib.mkDefault true;
+        users = lib.mkDefault true;
+        env = lib.mkDefault true;
+        security = lib.mkDefault true;
+        systemdTimeout = lib.mkDefault true;
+        hardware = lib.mkDefault true;
+        pulseaudio = lib.mkDefault true;
+        pipewire = lib.mkDefault true;
+        network = lib.mkDefault true;
+        time = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        stylix = lib.mkDefault true;
+        programs = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+        syncthing = lib.mkDefault true;
+        blueman = lib.mkDefault true;
+        networkDevices = lib.mkDefault true;
+        gvfs = lib.mkDefault true;
+        interceptionTools = lib.mkDefault true;
+        swayosd = lib.mkDefault true;
+        ppd = lib.mkDefault true;
+        yubikey = lib.mkDefault true;
+        ledger = lib.mkDefault true;
+        keyboards = lib.mkDefault true;
+        login = lib.mkDefault true;
+        nix-ld = lib.mkDefault true;
+        impermanence = lib.mkDefault true;
+        nvd = lib.mkDefault true;
+        gnome-keyring = lib.mkDefault true;
+        sway = lib.mkDefault true;
+        xdg-portal = lib.mkDefault true;
+        distrobox = lib.mkDefault true;
+        appimage = lib.mkDefault true;
+        lid = lib.mkDefault true;
+        lowBattery = lib.mkDefault true;
+        lanzaboote = lib.mkDefault true;
+        autologin = lib.mkDefault true;
+
+        server = {
+          ssh = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
 **** Minimal
+:PROPERTIES:
+:CUSTOM_ID: h:b926f0c8-7968-4079-924c-a5d0ae4d3a45
+:END:
 
 #+begin_src nix-ts :tangle profiles/nixos/minimal/default.nix :mkdirp yes
   { lib, config, ... }:
@@ -16098,6 +16458,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             koillection = lib.mkDefault true;
             radicale = lib.mkDefault true;
             atuin = lib.mkDefault true;
+            forgejo = lib.mkDefault true;
+            ankisync = lib.mkDefault true;
           };
         };
       };
@@ -16131,8 +16493,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             packages = lib.mkDefault true;
             nginx = lib.mkDefault true;
             ssh = lib.mkDefault true;
-            forgejo = lib.mkDefault true;
-            ankisync = lib.mkDefault true;
+            forgejo = lib.mkDefault false;
+            ankisync = lib.mkDefault false;
           };
         };
       };
@@ -16207,7 +16569,6 @@ This holds modules that are to be used on most hosts. These are also the most im
     config = lib.mkIf config.swarselsystems.profiles.personal {
       swarselsystems.modules = {
         packages = lib.mkDefault true;
-        pii = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
         nixgl = lib.mkDefault true;
@@ -16248,6 +16609,62 @@ This holds modules that are to be used on most hosts. These are also the most im
         optional = {
           gaming = lib.mkDefault true;
         };
+      };
+    };
+
+  }
+
+#+end_src
+
+**** Reduced
+:PROPERTIES:
+:CUSTOM_ID: h:0554a271-f8ec-4885-b46f-2a02dfd967bd
+:END:
+
+#+begin_src nix-ts :tangle profiles/home/reduced/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselsystems.profiles.reduced = lib.mkEnableOption "is this a reduced personal host";
+    config = lib.mkIf config.swarselsystems.profiles.reduced {
+      swarselsystems.modules = {
+        packages = lib.mkDefault true;
+        ownpackages = lib.mkDefault true;
+        general = lib.mkDefault true;
+        nixgl = lib.mkDefault true;
+        sops = lib.mkDefault true;
+        yubikey = lib.mkDefault true;
+        ssh = lib.mkDefault true;
+        stylix = lib.mkDefault true;
+        desktop = lib.mkDefault true;
+        symlink = lib.mkDefault true;
+        env = lib.mkDefault true;
+        programs = lib.mkDefault true;
+        nix-index = lib.mkDefault true;
+        passwordstore = lib.mkDefault true;
+        direnv = lib.mkDefault true;
+        eza = lib.mkDefault true;
+        atuin = lib.mkDefault true;
+        git = lib.mkDefault true;
+        fuzzel = lib.mkDefault true;
+        starship = lib.mkDefault true;
+        kitty = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+        zellij = lib.mkDefault true;
+        tmux = lib.mkDefault true;
+        mail = lib.mkDefault true;
+        emacs = lib.mkDefault true;
+        waybar = lib.mkDefault true;
+        firefox = lib.mkDefault true;
+        gnome-keyring = lib.mkDefault true;
+        kdeconnect = lib.mkDefault true;
+        mako = lib.mkDefault true;
+        swayosd = lib.mkDefault true;
+        yubikeytouch = lib.mkDefault true;
+        sway = lib.mkDefault true;
+        kanshi = lib.mkDefault false;
+        gpgagent = lib.mkDefault true;
+        gammastep = lib.mkDefault true;
+
       };
     };
 

@@ -6,6 +6,8 @@ let
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
+  inherit (config.swarselsystems) sopsFile;
+
   cfg = config.services.${serviceName};
 in
 {
@@ -23,9 +25,9 @@ in
 
     sops = {
       secrets = {
-        microbin-admin-username = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        microbin-admin-password = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        microbin-uploader-password = { owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        microbin-admin-username = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        microbin-admin-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        microbin-uploader-password = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
       };
 
       templates = {

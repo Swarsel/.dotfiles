@@ -1,5 +1,7 @@
 { self, lib, config, globals, ... }:
 let
+  inherit (config.swarselsystems) sopsFile;
+
   servicePort = 27701;
   serviceName = "ankisync";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
@@ -12,11 +14,11 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    sops.secrets.swarsel = { owner = "root"; };
+    sops.secrets.anki-pw = { inherit sopsFile; owner = "root"; };
 
-    topology.self.services.${serviceName} = {
+    topology.self.services.anki = {
       name = lib.mkForce "Anki Sync Server";
-      icon = "${self}/files/topology-images/${serviceName}.png";
+      icon = lib.mkForce "${self}/files/topology-images/${serviceName}.png";
       info = "https://${serviceDomain}";
     };
 
@@ -30,12 +32,12 @@ in
       users = [
         {
           username = ankiUser;
-          passwordFile = config.sops.secrets.swarsel.path;
+          passwordFile = config.sops.secrets.anki-pw.path;
         }
       ];
     };
 
-    services.nginx = {
+    nodes.moonside.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

@@ -1,5 +1,7 @@
 { lib, pkgs, config, globals, ... }:
 let
+  inherit (config.swarselsystems) sopsFile;
+
   servicePort = 28981;
   serviceUser = "paperless";
   serviceGroup = serviceUser;
@@ -19,12 +21,8 @@ in
     };
 
     sops.secrets = {
-      paperless_admin = { owner = serviceUser; };
-      kanidm-paperless-client = {
-        owner = serviceUser;
-        group = serviceGroup;
-        mode = "0440";
-      };
+      paperless-admin-pw = { inherit sopsFile; owner = serviceUser; };
+      kanidm-paperless-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
     };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
@@ -38,7 +36,7 @@ in
         dataDir = "/Vault/data/${serviceName}";
         user = serviceUser;
         port = servicePort;
-        passwordFile = config.sops.secrets.paperless_admin.path;
+        passwordFile = config.sops.secrets.paperless-admin-pw.path;
         address = "0.0.0.0";
         settings = {
           PAPERLESS_OCR_LANGUAGE = "deu+eng";
