@@ -221,16 +221,17 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 #+begin_src markdown :tangle no :noweb-ref hosts
   | Name               | Hardware                                            | Use                                                  |
   |--------------------|-----------------------------------------------------|------------------------------------------------------|
-  |💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
+  |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
+  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal lapto                                       |
+  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS sandbox                                        |
   |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
-  |🖥️ **milkywell**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+  |🖥️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
   |🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
   |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
   |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
   |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
   |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
-  |🏠 **Treehouse**         | -                                                   | Reference configuration for a home-manager only host |
+  |🏠 **treehouse**    | -                                                   | Reference configuration for a home-manager only host |
 #+end_src
 
 ** Programs
@@ -1007,7 +1008,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
             connections = {
               eth2 = mkConnection "nswitch" "eth1";
               eth7 = mkConnection "pc" "eth1";
-              eth8 = mkConnection "nbl-imba-2" "eth1";
+              eth8 = mkConnection "pyramid" "eth1";
             };
           };
 
@@ -1023,7 +1024,7 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
             interfaces.eth1 = { };
           };
 
-          nbl-imba-2.interfaces.eth1 = { };
+          pyramid.interfaces.eth1 = { };
 
           switch-bedroom = mkSwitch "Switch Bedroom" {
             info = "TL-SG1005D";
@@ -1708,7 +1709,7 @@ Acceptance of arbitraty argumments is here needed because =disko= passes =diskoF
 
 This is a list of all physical machines that I maintain.
 
-**** nbl-imba-2 (Framework Laptop 16)
+**** pyramid (Framework Laptop 16)
 :PROPERTIES:
 :CUSTOM_ID: h:6c6e9261-dfa1-42d8-ab2a-8b7c227be6d9
 :END:
@@ -1719,7 +1720,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :PROPERTIES:
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/pyramid/default.nix
   { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
@@ -1808,7 +1809,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/pyramid/hardware-configuration.nix
   { config, lib, pkgs, modulesPath, ... }:
   {
     imports =
@@ -1885,7 +1886,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:e0da04c7-4199-44b0-b525-6cfc64072b45
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/nbl-imba-2/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/pyramid/disk-config.nix
   {
     disko.devices = {
       disk = {
@@ -2326,14 +2327,14 @@ This is my main server that I run at home. It handles most tasks that require bi
     hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   }
 #+end_src
-**** nbm-imba-166 (MacBook Pro)
+**** machpizza (MacBook Pro)
 :PROPERTIES:
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
 :END:
 
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
 
-#+begin_src nix-ts :tangle hosts/darwin/nbm-imba-166/default.nix
+#+begin_src nix-ts :tangle hosts/darwin/machpizza/default.nix
   { lib, config, ... }:
   let
     inherit (config.repo.secrets.local) workUser;
@@ -18813,8 +18814,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
       (setq lsp-nix-nixd-server-path "nixd"
             lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
             lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
-            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
             ))
 
     (use-package nix-ts-mode
@@ -18829,8 +18830,8 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
       (setq lsp-nix-nixd-server-path "nixd"
             lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
             lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
-            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+            lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+            lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
             ))
 
 

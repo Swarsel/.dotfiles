@@ -123,7 +123,7 @@
             connections = {
               eth2 = mkConnection "nswitch" "eth1";
               eth7 = mkConnection "pc" "eth1";
-              eth8 = mkConnection "nbl-imba-2" "eth1";
+              eth8 = mkConnection "pyramid" "eth1";
             };
           };
 
@@ -139,7 +139,7 @@
             interfaces.eth1 = { };
           };
 
-          nbl-imba-2.interfaces.eth1 = { };
+          pyramid.interfaces.eth1 = { };
 
           switch-bedroom = mkSwitch "Switch Bedroom" {
             info = "TL-SG1005D";

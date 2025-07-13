@@ -149,16 +149,17 @@ Alternatively, to install this from any NixOS live ISO, run `nix run --experimen
 
 | Name               | Hardware                                            | Use                                                  |
 |--------------------|-----------------------------------------------------|------------------------------------------------------|
-|💻 **nbl-imba-2**   | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-|💻 **nbm-imba-166** | MacBook Pro 2016                                    | MacOS Sandbox                                        |
+|💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
+|💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal lapto                                       |
+|💻 **machpizza**    | MacBook Pro 2016                                    | MacOS sandbox                                        |
 |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
-|🖥️ **milkywell**         | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+|🖥️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
 |🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
 |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
 |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
 |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
 |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
-|🏠 **Treehouse**         | -                                                   | Reference configuration for a home-manager only host |
+|🏠 **treehouse**    | -                                                   | Reference configuration for a home-manager only host |
 </details>
 
 ## General Nix tips & useful links

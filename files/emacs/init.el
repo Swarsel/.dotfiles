@@ -1019,8 +1019,8 @@ create a new one."
   (setq lsp-nix-nixd-server-path "nixd"
         lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
         lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
-        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
         ))
 
 (use-package nix-ts-mode
@@ -1035,8 +1035,8 @@ create a new one."
   (setq lsp-nix-nixd-server-path "nixd"
         lsp-nix-nixd-formatting-command [ "nixpkgs-fmt" ]
         lsp-nix-nixd-nixpkgs-expr "import (builtins.getFlake \"/home/swarsel/.dotfiles\").inputs.nixpkgs { }"
-        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options"
-        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.nbl-imba-2.options.home-manager.users.type.getSubOptions []"
+        lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options"
+        lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/swarsel/.dotfiles\").nixosConfigurations.pyramid.options.home-manager.users.type.getSubOptions []"
         ))
 
 
