@@ -14604,13 +14604,14 @@ This app checks for different apps that I keep around in the scratchpad for quic
 :END:
 
 #+begin_src shell :tangle files/scripts/swarselzellij.sh
-  KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
+  # KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
 
-  if ((KITTIES < 1)); then
-      exec kitty -o confirm_os_window_close=0 zellij attach --create main
-  else
-      exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
-  fi
+  # if ((KITTIES < 1)); then
+  #     exec kitty -o confirm_os_window_close=0 zellij attach --create main
+  # else
+  #     exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
+  # fi
+  exec kitty -o confirm_os_window_close=0 zellij
 #+end_src
 
 #+begin_src nix-ts :tangle pkgs/swarselzellij/default.nix

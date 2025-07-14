@@ -1,7 +1,8 @@
-KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
+# KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
 
-if ((KITTIES < 1)); then
-    exec kitty -o confirm_os_window_close=0 zellij attach --create main
-else
-    exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
-fi
+# if ((KITTIES < 1)); then
+#     exec kitty -o confirm_os_window_close=0 zellij attach --create main
+# else
+#     exec kitty -o confirm_os_window_close=0 zellij attach --create "temp $KITTIES"
+# fi
+exec kitty -o confirm_os_window_close=0 zellij
