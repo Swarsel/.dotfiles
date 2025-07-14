@@ -8,7 +8,7 @@
       general = lib.mkDefault true;
       nixgl = lib.mkDefault true;
       sops = lib.mkDefault true;
-      yubikey = lib.mkDefault true;
+      yubikey = lib.mkDefault false;
       ssh = lib.mkDefault true;
       stylix = lib.mkDefault true;
       desktop = lib.mkDefault true;
