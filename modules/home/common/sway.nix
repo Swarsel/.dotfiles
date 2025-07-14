@@ -1,4 +1,10 @@
 { self, config, lib, ... }:
+let
+  eachOutput = _: monitor: {
+    inherit (monitor) name;
+    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
+  };
+in
 {
   options.swarselsystems = {
     modules.sway = lib.mkEnableOption "sway settings";
@@ -54,15 +60,15 @@
     swayfxConfig = lib.mkOption {
       type = lib.types.str;
       default = "
-                      blur enable
-                      blur_xray disable
-                      blur_passes 1
-                      blur_radius 1
-                      shadows enable
-                      corner_radius 2
-                      titlebar_separator disable
-                      default_dim_inactive 0.02
-                  ";
+                        blur enable
+                        blur_xray disable
+                        blur_passes 1
+                        blur_radius 1
+                        shadows enable
+                        corner_radius 2
+                        titlebar_separator disable
+                        default_dim_inactive 0.02
+                    ";
       internal = true;
     };
   };
@@ -209,7 +215,6 @@
           };
         };
         defaultWorkspace = "workspace 1:一";
-        # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
         output = {
           "${config.swarselsystems.sharescreen}" = {
             bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
@@ -221,7 +226,7 @@
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign =
           let
-            workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput config.swarselsystems.monitors;
+            workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
             workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
           in
           workplaceOutputs;
@@ -370,36 +375,36 @@
           swayfxSettings = config.swarselsystems.swayfxConfig;
         in
         "
-        exec_always autotiling
-        set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+          exec_always autotiling
+          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-        mode $exit {
-          bindsym --to-code {
-            s exec \"systemctl suspend\", mode \"default\"
-            h exec \"systemctl hibernate\", mode \"default\"
-            l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-            p exec \"systemctl poweroff\"
-            r exec \"systemctl reboot\"
-            u exec \"swaymsg exit\"
+          mode $exit {
+            bindsym --to-code {
+              s exec \"systemctl suspend\", mode \"default\"
+              h exec \"systemctl hibernate\", mode \"default\"
+              l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+              p exec \"systemctl poweroff\"
+              r exec \"systemctl reboot\"
+              u exec \"swaymsg exit\"
 
-            Return mode \"default\"
-            Escape mode \"default\"
-            ${modifier}+Escape mode \"default\"
+              Return mode \"default\"
+              Escape mode \"default\"
+              ${modifier}+Escape mode \"default\"
+            }
           }
-        }
 
-        exec systemctl --user import-environment
-        exec swayidle -w
+          exec systemctl --user import-environment
+          exec swayidle -w
 
-        seat * hide_cursor 2000
+          seat * hide_cursor 2000
 
-        exec_always kill -1 $(pidof kanshi)
+          exec_always kill -1 $(pidof kanshi)
 
-        bindswitch --locked lid:on exec kanshictl switch lidclosed
-        bindswitch --locked lid:off exec kanshictl switch lidopen
+          bindswitch --locked lid:on exec kanshictl switch lidclosed
+          bindswitch --locked lid:off exec kanshictl switch lidopen
 
-        ${swayfxSettings}
-        ";
+          ${swayfxSettings}
+          ";
     };
   };
 }

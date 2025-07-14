@@ -43,9 +43,6 @@
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
     };
-    nix-alien = {
-      url = "github:thiagokokada/nix-alien";
-    };
     nswitch-rcm-nix = {
       url = "github:Swarsel/nswitch-rcm-nix";
     };

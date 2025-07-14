@@ -290,22 +290,23 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
 :END:
 
-Handling the flake.nix file used to be a bit of a chore, since it felt like writing so much boilerplate code just to define new systems. The noweb-approach here makes this a little bit less painful.
+Handling the flake.nix file used to be a bit of a chore, since it felt like writing so much boilerplate code just to define new systems. For a while, I used noweb-ref in order to alleviate this problem (see [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]], an example of the repository at that time would be =acc0ad6: Add several NixOS hosts on Proxmox and Oracle Cloud=.). However, the true answer laid in making use of builtin nix functionality.
 
-These blocks are later inserted here: [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix template]]. Adding new flake inputs is very easy, you just add them to [[#h:8a411ee2-a58e-4b5b-99bd-4ba772f8f0a2][Inputs & Inputs@Outputs]] first by name in the first source-block, and then the path in the second source-block. Any variables to be set for the host configuration are done in [[#h:df0072bc-853f-438f-bd85-bfc869501015][let]], and the specific setup is done in either [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] (for NixOS systems), [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][homeConfigurations]] (for home-manager systems), or [[#h:5f6ef553-59f9-4239-b6f3-63d33b57f335][nixOnDroidConfigurations]] (for Nix on Android) and [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]] (for Darwin systems, also known as Macs). There also used to be a [[#h:6a08495a-8566-4bb5-9fac-b03df01f6c81][nixos-generators]] section that used to define a Proxmox LXC image when I was still using Proxmox as my main server. An example of the repository at that time would be =acc0ad6: Add several NixOS hosts on Proxmox and Oracle Cloud=.
+Nowadays, I use flake-parts to manage my flake. It allows me to conveniently split the actual flake into multiple files ("parts") using the following mechanism:
+
+- =imports= are files pulled in to build the flake configuration (similar to the imports in the module system)
+- =systems= defines the architectures that the flake should be provided for - I go here for the four "main" architectures, although true support is only provided for linux systems (see [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] for the main reason)
 
 ** flake.nix skeleton
 :PROPERTIES:
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
 :END:
 
-This sections puts together the =flake.nix= file from the [[#h:d39b8dfb-536d-414f-9fc0-7d67df48cee4][Noweb-Ref blocks]] section. This tangles the flake.nix file; This block only needs to be touched when updating the general structure of the flake. For everything else, see the respective noweb-ref block.
+In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, modules, and more. The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
 
-In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, options, and more. The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
+In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like =emacs-overlay=, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain. It would look cleaner if this were to be used only inside a nix configuration block of an actual system, but I want these caches to be used for e.g. app calls as well.
 
-In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like =emacs-overlay=, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain.
-
-In =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file.
+In many flakes, you see a structure like this: =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file. In fact, I also used to make use of this mechanism. However, using flake-parts, all I really need for the outputs function is inputs, which is why my outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } { [...] ). Note that flake-parts must inherit these inputs and no other arguments are expected.
 
 In this section I am creating some attributes that define general concepts of my configuration:
 
@@ -349,8 +350,6 @@ A short overview over each input and what it does:
   This brings nix to android in an app that is similar to tmux! Of course most of the configuration does not apply to this, but it is still neat to have!
 - [[https://github.com/NixOS/nixos-hardware][nixos-hardware]]
   Provides specific hardware setting for some hardware configurations. For example, this sets some better defaults for my Lenovo Thinkpad P14s Gen2.
-- [[https://github.com/thiagokokada/nix-alien][nix-alien]]
-  This is supposed to allow me to run unpatched libraries directly without a need for ELF patching or resorting to =steam-run=. However, I have not yet gotten this to work.
 - [[https://github.com/nix-community/nixos-generators][nixos-generators]]
   Provides me with images that I can use to create LXCs on Proxmox.
 - [[https://github.com/Swarsel/nswitch-rcm-nix][nswitch-rcm-nix]]
@@ -369,12 +368,12 @@ A short overview over each input and what it does:
   After learning that MacOS systems can also be configured using nix, I managed to get access to an old MacBook for testing. This allows to set most general settings that can otherwise be set using the Mac GUI.
 - [[https://github.com/cachix/git-hooks.nix][pre-commit-hooks]]
   Provides access to several checks that can be hooked to be run before several stages in the process.
-- nix-secrets
-  This is a private repository that I use for settings in modules that do not expose a =secretsFile= (or similar) option. An example is the =LastFM.ApiKey= option in [[#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72][navidrome]]:
-  =LastFM.ApiKey = builtins.readFile "${secretsDirectory}/navidrome/lastfm-secret";=
-When setting this option normally, the password would normally be written world-readable not only in the nix store, but also in the configuration. Hence, I put such passwords into a private repository. This allows me to keep purity of the flake while keeping a level of security on these secrets.
 - [[https://github.com/oddlama/nix-topology][nix-topology]]
   This automatically creates a topology diagram of my configuration.
+- flake-parts
+  The aforementioned system that allows for more convenient flake crafting.
+- devshell
+  This provides devshell support for flake-parts
 
 #+begin_src nix :noweb yes :tangle flake.nix
     {
@@ -421,9 +420,6 @@ When setting this option normally, the password would normally be written world-
         };
         nixos-hardware = {
           url = "github:NixOS/nixos-hardware/master";
-        };
-        nix-alien = {
-          url = "github:thiagokokada/nix-alien";
         };
         nswitch-rcm-nix = {
           url = "github:Swarsel/nswitch-rcm-nix";
@@ -493,10 +489,22 @@ When setting this option normally, the password would normally be written world-
 :PROPERTIES:
 :CUSTOM_ID: h:23602ad9-91f6-4eba-943a-2308070fbaec
 :END:
+
+Here I define some extra files that are crucial for success in building my configurations. These are not pulled in by the flake directly, but I still feel like they should be mentioned at the flake level.
+
 *** extra-builtins
 :PROPERTIES:
 :CUSTOM_ID: h:87c7893e-e946-4fc0-8973-1ca27d15cf0e
 :END:
+
+This file is used by [[https://github.com/shlevy/nix-plugins][nix-plugins]]. nix-plugins generally allows for the introduction of arbitrary functions into the =builtins= set. However, I do not want to allow just any function to be added there. Instead, I only add a single function called =sopsImportEncrypted=. This function is used in order to help me store PII (personally identifiable information) in my repo without having to resort to either:
+
+- [[https://github.com/AGWA/git-crypt][git-crypt]]
+- a separate repo containing my secrets
+
+  As for the second approach, I actually used this up to some point (see for example =7e11641: feat: add initial oauth2-proxy and freshrss oidc= as one of the lasts commits still using this system). However, it is quite bothersome to constantly have to keep two repositories up to date and in sync. Also, having a repo that every configuration relied upon that was also a private repo led to the problem that my demo configuration ([[#h:e1498bef-ec67-483d-bf02-76264e30be8e][ChaosTheatre (Demo Physical/VM)]]) would fail to build with that present, and I had to take several extra steps to make it buildable. Ever since deleting that dependency I also got rid of that problem. The whole system is inspired by [[https://oddlama.org/blog/evaluation-time-secrets-in-nix/][this blog article]] and large parts of it are adapted from [[https://github.com/oddlama/nix-config][oddlama's nix-config]].
+
+The builtin that is added is a simple call to the =exec= function that calls a bash script. In order to keep some sanity, we are checking that we are actually calling it no an encryted nix file (even though there is no syntax check inside) and that the path given is a true nix path. Note that a string path will not be accepted, as that can have impurity implications.
 
 #+begin_src nix-ts :tangle nix/extra-builtins.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/extra-builtins.nix
@@ -532,6 +540,8 @@ When setting this option normally, the password would normally be written world-
 :PROPERTIES:
 :CUSTOM_ID: h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb
 :END:
+
+This is the file that manages the actual decryption of the files mentioned in [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]]. We simply fetch the appropriate system age key from the ssh host key and then call =sops decrypt=. Since it would be a bother to decrypt these files on every build, I keep the result cached and only re-decrypt if it changes. Keeping it cached outside the nix store incurrs a theoretical bit of impurity. However, this is easier to manage and also nothing really relies on these files being present.
 
 #+begin_src shell :tangle nix/sops-decrypt-and-cache.sh :shebang #!/usr/bin/env bash
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/rage-decrypt-and-cache.sh
@@ -579,18 +589,25 @@ When setting this option normally, the password would normally be written world-
 :CUSTOM_ID: h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c
 :END:
 
-This section defines all functions of my own that I add to =lib=. These are used in all places over the config, with many of them being used in =flake.nix=.
+This section defines all functions of my own that I add to =lib=. These are used in all places over the config, however mainly in the files responsible for handling various imports.
 
-A breakdown of each function:
+A breakdown for the functions that have a non-obvious purpose:
 
-The interesting part is in the start:
-- first, I define =pkgsFor=. This function reads all available systems from nixpkgs and generates pkgs for them.
-- next, =forEachSystem= is a function that can be called to declare an output for each such defined system.
-- =forAllSystems= is a crude function that I use for expressions that depend on =system=, as the prior two attributes already consumed it at that stage. This is only really used to generate the checks in their own file.
-- =mkFullHostConfigs= is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in =hosts/= under either the =nixos/= or =darwin/= directory. These directories are being read by =readHosts= and delivered to this funtion in the later call in [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] or [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]].
-- =mkFullHost=:
-  This is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching =nixosSystem= or =darwinSystem=. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options). This is used in mkFullHostConfigs. In more detail, it dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
-  =lib.optionals= evaluates to an empty list (=[]=) in case that the conditional is not met.
+- =pkgsFor=: This function reads all available systems from nixpkgs and generates pkgs for them. This is needed for my generation of home-manager and nix-on-droid systems in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]].
+  - =nixpkgs.lib.genAttrs= is used to generate an attribute set (a dictionary-like structure) from a list of keys and a function that computes the values for those keys: =genAttrs ["a" "b" "c"] (x: "${x}-value")= will produce ={ a = "a-value"; b = "b-value"; c = "c-value"; }=.
+  - Also, in that function I am defining the =pkgs= that should be used when I reference =pkgs= in the actual configuration. I want to make sure that the correct system is used (keep in mind this is for home-manager configurations, which need that info! As a remark, you would not set this for a NixOS host), that I load my [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]] (extra packages and modifications that I add to =pkgs=), as well as a setting that allows me to install unfree software. As a base package set I choose =nixpkgs= from my inputs (and so does nearly every configuration out there. Keep in mind however that you could use any package set here! =nixpkgs= however also comes with a lot of useful =lib= functions (that are not =builtins= to the nix language!))
+- =mkTrueOption=: Defines a nixos module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
+- =mkStrong=: This function uses =nixpkgs.lib.mkOverride= in order to set a priority for an expression that is higher than setting an option normally (i.e. =option = value=;) which has priority 100, while being of lower priority than using =nixpkgs.lib.mkForce=, which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using =nixpkgs.lib.mkDefault= is 1000 (a very low value).
+- =forEachLinuxSystem=: performs the =pkgsFor= function for a set of =systems= (here: =x86_64-linux= and =aarch64-linux=). I need to use this in the [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] section in order to avoid trying to build those packages for darwin systems.
+- =readHosts=: Reads the names of directories under the =hosts/= folder for a particular system type
+  - =builtins.readDir= reads the name of items of a directory as attributes and their type as values. As an example =builtins.readDir ./hosts/nixos= ran on this flake yieled at some point the output ={ bakery = "directory"; chaostheatre = "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }=
+  - =nixpkgs.lib.attrNames= is used to aquire these attribute names (you might think of them as the "keys") from the output of =builtins.readDir=
+- =readNix=: reads all files in a directory that are not =default.nix= (usually used to simply load everything from a folder and is called inside that respective =default.nix=).
+- =mk[Modules,Profiles,Imports]=: These are used to help with importing files mostly:
+  - builtins.listToAttrs converts a list of name-value pairs into an attribute set. =builtins.listToAttrs [{ name = "foo"; value = 1; } { name = "bar"; value = 2; }]= for example returns ={ bar = 2; foo = 1; }=.
+  - =nixpkgs.lib.map= takes a function and applies the elements of a list upon them, e.g. =lib.map (x: x + 1) [1 2 3]= yields =[ 2 3 4 ]=. This is always used in =mkImports= to actually import the list of modules that are generated by the other =mk[...]= options.
+
+
 
 #+begin_src nix-ts :tangle nix/lib.nix
   { self, inputs, ... }:
@@ -636,14 +653,11 @@ The interesting part is in the start:
 
         mkStrong = lib.mkOverride 60;
 
-        forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+        # forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
         forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f pkgsFor.${system});
 
         readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
         readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
-
-
-
 
         mkModules = names: type: builtins.listToAttrs (map
           (name: {
@@ -659,18 +673,7 @@ The interesting part is in the start:
           })
           names);
 
-
         mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
-
-        eachMonitor = _: monitor: {
-          inherit (monitor) name;
-          value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
-        };
-
-        eachOutput = _: monitor: {
-          inherit (monitor) name;
-          value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
-        };
       };
   in
   {
@@ -687,7 +690,9 @@ The interesting part is in the start:
 :CUSTOM_ID: h:6ed1a641-dba8-4e85-a62e-be93264df57a
 :END:
 
-This does not use =perSystem= since some of my custom packages are not able to be built on darwin systems, and I was not yet interested in writing logic for handling that.
+This does not use =perSystem= from =flake-parts= since some of my custom packages are not able to be built on darwin systems, and I was not yet interested in writing logic for handling that. Instead I use =forEachLinuxSystem= as described in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]] in roder to only build this for linux hosts.
+
+More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
 #+begin_src nix-ts :tangle nix/packages.nix
 { self, ... }:
@@ -706,7 +711,16 @@ This does not use =perSystem= since some of my custom packages are not able to b
 :CUSTOM_ID: h:af83893d-c0f9-4b45-b816-4849110d41b3
 :END:
 
-The structure of =globals.nix.enc= requires a toplevel =globals=.
+This file is used to parse each =nixosConfiguration= present in this flake and scan them for options set under the =globals= attribute set. I use =lib.evalModules= to evaluate a mini module system that only consists of these globals options and then load them into the actual configuration by providing a =globals= output to the flake. This treads a dangerous ground of infinite recursions, which is why both the module system as well as the inherited attributes are kept to the minimal size. Each module has a globals option loaded from a module file which will be separately loaded by this mini-evaluation.
+
+  - =nixpkgs.lib.mapAttrsToList= converts an attribute set into a list by applying a given function to each name-value pair: =lib.mapAttrsToList (name: value: "${name} = ${value}) { a = "1"; b = "2"; }= yields the list =[ "a = 1" "b = 2" ]=. It is used on =config.nodes=.
+  - =nixpkgs.lib.flip= is used to reverse the function argument order of the =mapAttrsToList= call, so that we can give the attribute set (=config.nodes=) first. Alternatively, we could have written =lib.mapAttrsToList (name: cfg: [...]) config.nodes= but it would be harder to read since there would be a big block between the arguments.
+  - =nixpkgs.lib.concatLists=, as the name suggests, concatenates lists: =lib.concatLists  [ [ 1 2 ] [ 3 4 ] [ 5 ] ]= yields =[ 1 2 3 4 5 ]=. =options.config._globalDefs= holds the =options.globals.definitions= for each node (which in turn basically holds the information that has been set for each node under the =globals= option), so the concatenated list will look something like  =[ { services.kanidm.domain = "foo"; }; } { services.freshrss.domain = "bar"; } ]=.
+  - =nixpgks.lib.mkMerge= is used to merge these seperate attribute sets in the list into one big attribute set (the above attribute set example would become then ={ services = { kanidm.domain = "foo"; freshrss.domain = "bar"; }; }=. You can see how this can now be referenced as a "global" set.
+
+I also have a file for global values that cannot be attributed to one =nixosConfiguration= alsone; the structure of this =globals.nix.enc= requires a toplevel =globals= - that means, =globals.nix.enc= has the structure ={ globals = [...] }=.
+
+Lastly, in order make this actually available to my configurations, i use the =inherit (globalsSystem.config.globals) [...]= which produces the =globals= output which I will pass to the =specialArgs= of my =nixosConfigurations=, which is when I will be finally able to use these definitions in my config.
 
 #+begin_src nix-ts :tangle nix/globals.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
@@ -777,6 +791,15 @@ The structure of =globals.nix.enc= requires a toplevel =globals=.
 :PROPERTIES:
 :CUSTOM_ID: h:5c5bf78a-9a66-436f-bd85-85871d9d402b
 :END:
+
+Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton]]), I told you how I used to use noweb-ref blocks to achieve this task. You see, a single =nixosConfiguration= uses =nixpkgs.lib.nixosSystem=, passing modules and arguments to define itself. I have automated this process by reading all directories in the =hosts/= directory and then applying =nixpkgs.lib.nixosSystem= as a function on these returns. I also provide a =nixosConfigurationsMinimal= output which is ingested by the flake in =install/flake.nix= to be used during the initial deployment of a new system (it basically just disables most modules).
+
+- =mkNixosHost=: Very much akin to a simple call of =nixpkgs.lib.nixosSystem=, I simply define =specialArgs= and =modules= that I want to use for every configuration. Here, I load all the extra modules from my other input flakes. Also, I add the =globals= output from [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] and the =nodes= output that I define right here (it simply mirrors all "full" configurations - nixOS and darwin. I like to refer to home-manager only and nix-on-droid as a "half" configurations). It is also here that I set the node name for the configuration (I prefer this explicit call over referencing =networking.hostName= or such) and the directory that should be used for secrets of a configuration.
+- =mkDarwinHost= works in the same way but for darwin machines.
+
+- =mkFullHostConfigs= is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in =hosts/= under either the =nixos/= or =darwin/= directory. These directories are being read by =readHosts= and delivered to this funtion in the later call in [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] or [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]].
+- =mkFullHost=:
+  This is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching =nixosSystem= or =darwinSystem=. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options). This is used in mkFullHostConfigs. In more detail, it dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
 
 #+begin_src nix-ts :tangle nix/hosts.nix
   { self, inputs, ... }:
@@ -12937,6 +12960,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 
 #+begin_src nix-ts :tangle modules/home/common/sway.nix
   { self, config, lib, ... }:
+  let
+    eachOutput = _: monitor: {
+      inherit (monitor) name;
+      value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
+    };
+  in
   {
     options.swarselsystems = {
       modules.sway = lib.mkEnableOption "sway settings";
@@ -12992,15 +13021,15 @@ Currently, I am too lazy to explain every option here, but most of it is very se
       swayfxConfig = lib.mkOption {
         type = lib.types.str;
         default = "
-                        blur enable
-                        blur_xray disable
-                        blur_passes 1
-                        blur_radius 1
-                        shadows enable
-                        corner_radius 2
-                        titlebar_separator disable
-                        default_dim_inactive 0.02
-                    ";
+                          blur enable
+                          blur_xray disable
+                          blur_passes 1
+                          blur_radius 1
+                          shadows enable
+                          corner_radius 2
+                          titlebar_separator disable
+                          default_dim_inactive 0.02
+                      ";
         internal = true;
       };
     };
@@ -13147,7 +13176,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             };
           };
           defaultWorkspace = "workspace 1:一";
-          # output = lib.mapAttrs' lib.swarselsystems.eachMonitor monitors;
           output = {
             "${config.swarselsystems.sharescreen}" = {
               bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
@@ -13159,7 +13187,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           input = config.swarselsystems.standardinputs;
           workspaceOutputAssign =
             let
-              workplaceSets = lib.mapAttrs' lib.swarselsystems.eachOutput config.swarselsystems.monitors;
+              workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
               workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
             in
             workplaceOutputs;
@@ -13308,36 +13336,36 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             swayfxSettings = config.swarselsystems.swayfxConfig;
           in
           "
-          exec_always autotiling
-          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+            exec_always autotiling
+            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-          mode $exit {
-            bindsym --to-code {
-              s exec \"systemctl suspend\", mode \"default\"
-              h exec \"systemctl hibernate\", mode \"default\"
-              l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-              p exec \"systemctl poweroff\"
-              r exec \"systemctl reboot\"
-              u exec \"swaymsg exit\"
+            mode $exit {
+              bindsym --to-code {
+                s exec \"systemctl suspend\", mode \"default\"
+                h exec \"systemctl hibernate\", mode \"default\"
+                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+                p exec \"systemctl poweroff\"
+                r exec \"systemctl reboot\"
+                u exec \"swaymsg exit\"
 
-              Return mode \"default\"
-              Escape mode \"default\"
-              ${modifier}+Escape mode \"default\"
+                Return mode \"default\"
+                Escape mode \"default\"
+                ${modifier}+Escape mode \"default\"
+              }
             }
-          }
 
-          exec systemctl --user import-environment
-          exec swayidle -w
+            exec systemctl --user import-environment
+            exec swayidle -w
 
-          seat * hide_cursor 2000
+            seat * hide_cursor 2000
 
-          exec_always kill -1 $(pidof kanshi)
+            exec_always kill -1 $(pidof kanshi)
 
-          bindswitch --locked lid:on exec kanshictl switch lidclosed
-          bindswitch --locked lid:off exec kanshictl switch lidopen
+            bindswitch --locked lid:on exec kanshictl switch lidclosed
+            bindswitch --locked lid:off exec kanshictl switch lidopen
 
-          ${swayfxSettings}
-          ";
+            ${swayfxSettings}
+            ";
       };
     };
   }

@@ -41,14 +41,11 @@ let
 
       mkStrong = lib.mkOverride 60;
 
-      forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
+      # forEachSystem = f: lib.genAttrs (import systems) (system: f pkgsFor.${system});
       forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f pkgsFor.${system});
 
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
       readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
-
-
-
 
       mkModules = names: type: builtins.listToAttrs (map
         (name: {
@@ -64,18 +61,7 @@ let
         })
         names);
 
-
       mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
-
-      eachMonitor = _: monitor: {
-        inherit (monitor) name;
-        value = builtins.removeAttrs monitor [ "workspace" "name" "output" ];
-      };
-
-      eachOutput = _: monitor: {
-        inherit (monitor) name;
-        value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
-      };
     };
 in
 {
