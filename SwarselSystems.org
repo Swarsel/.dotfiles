@@ -28,6 +28,14 @@ This configuration is part of a NixOS system that is (nearly) fully declarative 
 
 This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 
+** How to use this document
+
+When I started out with nix, it was a painful time. For a beginner, the available resources tend to be too detailed or assume too much prior knowledge. Also, it is a (sad) fact that using nix requires the user to understand it pretty well before most things start to make sense.
+
+That is the reason why I keep this configuration as a literate one: so that I am able to explain how everything works. In the start, it was my goal to keep this repo simple, so that it would be easy to understand when seen by a beginner. However, over time I have implemented more and more complicated solutions. Still, I try to keep the prosaic descriptions sufficient.
+
+For a beginner, I recommend to read this file like a book, from start to finish. I will try to explain concepts whenever they first come up, and will regularly link to [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]] when more context is needed. For the first few times that I am using a new function, I will place such a link again. However, to keep the writing of this file manageable, I will generally only do this no more than three times.
+
 ** Structure of this file
 :PROPERTIES:
 :CUSTOM_ID: h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5
@@ -336,6 +344,8 @@ A short overview over each input and what it does:
   This is the base repository that I am following for all packages. I follow the unstable branch.
 - [[https://github.com/nix-community/home-manager][home-manager]]
   This handles user-level configuration and mostly provides dotfiles that are generated and symlinked to =~/.config/=.
+- [[https://github.com/Swarsel/.dotfiles][swarsel]]
+  This pulls in the very dotfiles you are currently reading. I am adding this to the flake registry in order to have easier access to my customizations in nix calls, for example =nix-instantiate=
 - [[https://github.com/nix-community/NUR][NUR]]
   The nix user repository contains user provided modules, packages and expressions. These are not audited by the nix community, so be aware of supply chain vulnerabilities when using those. I am only really using rycee's firefox addons from there which saves me a lot of hassle, and it seems to be a safe resource.
 - [[https://github.com/nix-community/nixGL][nixGL]]
@@ -401,6 +411,7 @@ A short overview over each input and what it does:
           url = "github:nix-community/home-manager";
           inputs.nixpkgs.follows = "nixpkgs";
         };
+        swarsel.url = "github:Swarsel/.dotfiles";
         emacs-overlay = {
           url = "github:nix-community/emacs-overlay";
           inputs.nixpkgs.follows = "nixpkgs";
@@ -594,20 +605,25 @@ This section defines all functions of my own that I add to =lib=. These are used
 A breakdown for the functions that have a non-obvious purpose:
 
 - =pkgsFor=: This function reads all available systems from nixpkgs and generates pkgs for them. This is needed for my generation of home-manager and nix-on-droid systems in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]].
-  - =nixpkgs.lib.genAttrs= is used to generate an attribute set (a dictionary-like structure) from a list of keys and a function that computes the values for those keys: =genAttrs ["a" "b" "c"] (x: "${x}-value")= will produce ={ a = "a-value"; b = "b-value"; c = "c-value"; }=.
+  - uses [[#h:94690fcb-e039-49da-9bd3-610fa80fa08b][nixpkgs.lib.genAttrs]]
   - Also, in that function I am defining the =pkgs= that should be used when I reference =pkgs= in the actual configuration. I want to make sure that the correct system is used (keep in mind this is for home-manager configurations, which need that info! As a remark, you would not set this for a NixOS host), that I load my [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]] (extra packages and modifications that I add to =pkgs=), as well as a setting that allows me to install unfree software. As a base package set I choose =nixpkgs= from my inputs (and so does nearly every configuration out there. Keep in mind however that you could use any package set here! =nixpkgs= however also comes with a lot of useful =lib= functions (that are not =builtins= to the nix language!))
 - =mkTrueOption=: Defines a nixos module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
-- =mkStrong=: This function uses =nixpkgs.lib.mkOverride= in order to set a priority for an expression that is higher than setting an option normally (i.e. =option = value=;) which has priority 100, while being of lower priority than using =nixpkgs.lib.mkForce=, which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using =nixpkgs.lib.mkDefault= is 1000 (a very low value).
+- =mkStrong=:
+  - An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 60), which is higher than setting an option normally (i.e. =option = value=; which has priority 100), but being of lower priority than using [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]], which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] is 1000 (a very low value).
 - =forEachLinuxSystem=: performs the =pkgsFor= function for a set of =systems= (here: =x86_64-linux= and =aarch64-linux=). I need to use this in the [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] section in order to avoid trying to build those packages for darwin systems.
+  - uses [[#h:94690fcb-e039-49da-9bd3-610fa80fa08b][nixpkgs.lib.genAttrs]]
 - =readHosts=: Reads the names of directories under the =hosts/= folder for a particular system type
-  - =builtins.readDir= reads the name of items of a directory as attributes and their type as values. As an example =builtins.readDir ./hosts/nixos= ran on this flake yieled at some point the output ={ bakery = "directory"; chaostheatre = "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }=
-  - =nixpkgs.lib.attrNames= is used to aquire these attribute names (you might think of them as the "keys") from the output of =builtins.readDir=
+  - uses [[#h:1fb6ff92-7cc1-4447-8a63-460f24633053][builtins.readDir]]
+  - uses [[#h:0fded8e7-6160-4fcd-a491-42f0debfec52][nixpkgs.lib.attrNames]] to acquire attribute names from the outputs of =builtins.readDir=
 - =readNix=: reads all files in a directory that are not =default.nix= (usually used to simply load everything from a folder and is called inside that respective =default.nix=).
-- =mk[Modules,Profiles,Imports]=: These are used to help with importing files mostly:
-  - builtins.listToAttrs converts a list of name-value pairs into an attribute set. =builtins.listToAttrs [{ name = "foo"; value = 1; } { name = "bar"; value = 2; }]= for example returns ={ bar = 2; foo = 1; }=.
-  - =nixpkgs.lib.map= takes a function and applies the elements of a list upon them, e.g. =lib.map (x: x + 1) [1 2 3]= yields =[ 2 3 4 ]=. This is always used in =mkImports= to actually import the list of modules that are generated by the other =mk[...]= options.
+  - uses [[#h:1fb6ff92-7cc1-4447-8a63-460f24633053][builtins.readDir]]
+  - uses [[#h:0fded8e7-6160-4fcd-a491-42f0debfec52][nixpkgs.lib.attrNames]] to acquire attribute names from the outputs of =builtins.readDir=
+- =mkImports=: These are used to help with importing files mostly:
+  - uses [[#h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e][nixpkgs.lib.map]] to actually import the list of modules that are passed to =mkImports= in names.
 
-
+Concerning the =flake = _:= part:
+  - this is a mechanism introduced by [[https://flake.parts/][flake-parts]]. A =flake= output is akin to a 'normal' output of a standard nix flake (meaning, it will not be built specifically for each system defined by =mkFlake=)
+  - =lib= is then defined as the merged set of the =nixpkgs= and =home-manager= lib's, as well as some extra functions that I defined in the let-block (the =.extend()= method adds attributes to a set)
 
 #+begin_src nix-ts :tangle nix/lib.nix
   { self, inputs, ... }:
@@ -659,20 +675,6 @@ A breakdown for the functions that have a non-obvious purpose:
         readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
         readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
-        mkModules = names: type: builtins.listToAttrs (map
-          (name: {
-            inherit name;
-            value = import "${self}/modules/${type}/${name}";
-          })
-          names);
-
-        mkProfiles = names: type: builtins.listToAttrs (map
-          (name: {
-            inherit name;
-            value = import "${self}/profiles/${type}/${name}";
-          })
-          names);
-
         mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
       };
   in
@@ -712,11 +714,10 @@ More information on the actual packages build can be found in [[#h:64a5cc16-6b16
 :END:
 
 This file is used to parse each =nixosConfiguration= present in this flake and scan them for options set under the =globals= attribute set. I use =lib.evalModules= to evaluate a mini module system that only consists of these globals options and then load them into the actual configuration by providing a =globals= output to the flake. This treads a dangerous ground of infinite recursions, which is why both the module system as well as the inherited attributes are kept to the minimal size. Each module has a globals option loaded from a module file which will be separately loaded by this mini-evaluation.
-
-  - =nixpkgs.lib.mapAttrsToList= converts an attribute set into a list by applying a given function to each name-value pair: =lib.mapAttrsToList (name: value: "${name} = ${value}) { a = "1"; b = "2"; }= yields the list =[ "a = 1" "b = 2" ]=. It is used on =config.nodes=.
-  - =nixpkgs.lib.flip= is used to reverse the function argument order of the =mapAttrsToList= call, so that we can give the attribute set (=config.nodes=) first. Alternatively, we could have written =lib.mapAttrsToList (name: cfg: [...]) config.nodes= but it would be harder to read since there would be a big block between the arguments.
-  - =nixpkgs.lib.concatLists=, as the name suggests, concatenates lists: =lib.concatLists  [ [ 1 2 ] [ 3 4 ] [ 5 ] ]= yields =[ 1 2 3 4 5 ]=. =options.config._globalDefs= holds the =options.globals.definitions= for each node (which in turn basically holds the information that has been set for each node under the =globals= option), so the concatenated list will look something like  =[ { services.kanidm.domain = "foo"; }; } { services.freshrss.domain = "bar"; } ]=.
-  - =nixpgks.lib.mkMerge= is used to merge these seperate attribute sets in the list into one big attribute set (the above attribute set example would become then ={ services = { kanidm.domain = "foo"; freshrss.domain = "bar"; }; }=. You can see how this can now be referenced as a "global" set.
+  - uses [[#h:b9663237-2232-4554-bc81-843be28a707c][nixpkgs.lib.mapAttrsToList]] on =config.nodes=
+  - uses [[#h:21389cc9-fd89-45ca-9836-592f84a45bb4][nixpkgs.lib.flip]] to reverse the function argument order of the =mapAttrsToList= call, so that we can give the attribute set (=config.nodes=) first. Alternatively, we could have written =lib.mapAttrsToList (name: cfg: [...]) config.nodes= but it would be harder to read since there would be a big block between the arguments.
+  - uses [[#h:22264e49-b6d0-4c1f-8d05-2ef1f3da3d54][nixpkgs.lib.concatLists]]. =options.config._globalDefs= holds the =options.globals.definitions= for each node (which in turn basically holds the information that has been set for each node under the =globals= option), so the concatenated list will look something like  =[ { services.kanidm.domain = "foo"; }; } { services.freshrss.domain = "bar"; } ]=.
+  - uses [[#h:82c26445-2af4-4a6c-ae91-c804325fdf11][nixpkgs.lib.mkMerge]] to merge these seperate attribute sets in the list into one big attribute set (the above attribute set example would become then ={ services = { kanidm.domain = "foo"; freshrss.domain = "bar"; }; }=. You can see how this can now be referenced as a "global" set.
 
 I also have a file for global values that cannot be attributed to one =nixosConfiguration= alsone; the structure of this =globals.nix.enc= requires a toplevel =globals= - that means, =globals.nix.enc= has the structure ={ globals = [...] }=.
 
@@ -797,9 +798,16 @@ Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][f
 - =mkNixosHost=: Very much akin to a simple call of =nixpkgs.lib.nixosSystem=, I simply define =specialArgs= and =modules= that I want to use for every configuration. Here, I load all the extra modules from my other input flakes. Also, I add the =globals= output from [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] and the =nodes= output that I define right here (it simply mirrors all "full" configurations - nixOS and darwin. I like to refer to home-manager only and nix-on-droid as a "half" configurations). It is also here that I set the node name for the configuration (I prefer this explicit call over referencing =networking.hostName= or such) and the directory that should be used for secrets of a configuration.
 - =mkDarwinHost= works in the same way but for darwin machines.
 
-- =mkFullHostConfigs= is the function that dynamically creates all definded hosts. The hosts are defined by placing a directory in =hosts/= under either the =nixos/= or =darwin/= directory. These directories are being read by =readHosts= and delivered to this funtion in the later call in [[#h:9c9b9e3b-8771-44fa-ba9e-5056ae809655][nixosConfigurations]] or [[#h:f881aa05-a670-48dd-a57b-2916abdcb692][darwinConfigurations]].
-- =mkFullHost=:
-  This is a function that takes a hostname as well as a boolean whether it is NixOS or not, and returns a matching =nixosSystem= or =darwinSystem=. This function is only used for systems that can use both NixOS and home-manager options (darwin still counts here as it can use some NixOS options). This is used in mkFullHostConfigs. In more detail, it dynamically creates a nixosConfiguration host, setting its =speciaArgs= and =modules= attributes. The modules are populated based on whether this is a NixOS or darwin host. For the latter, I will only ever use machines that I get for testing from work, and for these my username is different, so I implemented an if-condition for it. This could be done more cleanly using variables, but some care needs to be taken with the home-manager imports and this approach works, so for now this is fine. Thanks to this function, the import sections of the host configs are pretty clean for most hosts.
+- =mkHalfHost= is a function that either creates a pure home-manager configuration or a nix-on-droid one. The type must be explicitly passed when calling the function. Here, again, we make use of =pkgsFor= that we defined in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]]. Also, we make sure to pass =extraSpecialArgs= (the pendant to =specialArgs=, just for home-manager configurations).
+
+- =diskoConfigurations=: specifies a default disko configuration that is to be used if someone pulls in my flake as a disko configuration. This is not used by me, but I think it is kind of neat.
+
+- =nodes=: As stated above, a shorthand for my configurations. Is built using the [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]
+
+The rest of the outputs either define or help define the actual configurations:
+  - =mkHalfHostConfigs= works by calling the =nixpkgs.lib.foldl= function to build an attribute set of home-manager/nix-on-droidd configurations
+    - uses [[#h:e21d17fb-0c98-42d5-b08f-1c7584afa07f][nixpkgs.lib.foldl]]  on the list created by [[#h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e][nixpkgs.lib.map]] over =mkHalfHost=. In each step of the fold, I receive an attribute set. This attribute set is then merged to the resulting set using the =(acc: set: acc // set)= expression
+    - uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to merge the sets of the fold operation.
 
 #+begin_src nix-ts :tangle nix/hosts.nix
   { self, inputs, ... }:
@@ -862,41 +870,41 @@ Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][f
             let
               systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
             in
-            systemFunc
-              {
-                inherit pkgs;
-                extraSpecialArgs = { inherit inputs outputs lib self configName; };
-                modules = [ "${self}/hosts/${type}/${configName}" ];
-              };
+              systemFunc
+                {
+                  inherit pkgs;
+                  extraSpecialArgs = { inherit inputs outputs lib self configName; };
+                  modules = [ "${self}/hosts/${type}/${configName}" ];
+                };
         };
 
         mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (name: mkHalfHost name type pkgs) hosts);
         nixosHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/nixos"));
         darwinHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/darwin"));
       in
-      {
-        nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
-          minimal = false;
-        });
-        nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
-          minimal = true;
-        });
-        darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
-          minimal = false;
-        });
-        darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
-          minimal = true;
-        });
+        {
+          nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
+            minimal = false;
+          });
+          nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
+            minimal = true;
+          });
+          darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
+            minimal = false;
+          });
+          darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
+            minimal = true;
+          });
 
-        # TODO: Build these for all architectures
-        homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
-        nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+          # TODO: Build these for all architectures
+          homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+          nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
-        diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
+          diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-        nodes = config.nixosConfigurations // config.darwinConfigurations;
+          nodes = config.nixosConfigurations // config.darwinConfigurations;
 
-      };
+        };
   }
 #+end_src
 
@@ -904,6 +912,11 @@ Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][f
 :PROPERTIES:
 :CUSTOM_ID: h:391e7712-fef3-4f13-a3ed-d36e228166fd
 :END:
+
+This defines some topology for the [[https://github.com/oddlama/nix-topology][nix-topology]] modole that can not otherwise be parsed from the config (or is global). For example, this is used to define a number of switches, printers and routers. The topology graph is built from left to right, meaning that =nodes.internet = mkInternet { connections = [ (mkConnection "moonside" "wan") ]; };= means that the node =internet= 'initiates' the connection to the node =moonside= (=internet= will be on the left).
+
+Another note concerning [[https://flake.parts/][flake-parts]]:
+  - =perSystem= is a mechanism that tells flake-parts to build the following attribute set for all systems. This replaces the need to handle myself any =system= or =pkgs= variables, this is done by flake-parts.
 
 #+begin_src nix-ts :tangle nix/topology.nix
   { self, inputs, ... }:
@@ -1085,7 +1098,11 @@ Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][f
 :CUSTOM_ID: h:4d0548db-99b2-4e07-b762-6d86fbb26d4c
 :END:
 
-This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=)
+This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=).
+
+The devshell also provides a number of useful shorthand commands, as well as a 'safe' version of nixpkgs that I can use to rebuild from in case a version bump in nixpkgs suddenly breaks [[https://github.com/shlevy/nix-plugins][nix-plugins]].
+
+Lastly, in the =perSystem= attribute set, we see that it is actually passed some values here. These expose to the scoped expressions the enclosed values, which makes it possible to still reference e.g. =system= and =pkgs= even when they are actually handled by flake-parts.
 
 #+begin_src nix-ts :tangle nix/devshell.nix
   { self, inputs, ... }:
@@ -1236,8 +1253,11 @@ This file defines a number of checks that can either be run by calling =nix flak
 :CUSTOM_ID: h:e817f769-9aa9-4192-b649-c269080f4fee
 :END:
 
-This file defines the templates that are being exposed by the flake. These can be used by running =nix flake init -t github:Swarsel/.dotfiles#<TEMPLATE_NAME>=.
+This file defines the templates that are being exposed by the flake. These can be used by running =nix flake init -t github:Swarsel/.dotfiles#<TEMPLATE_NAME>= by others. Personally, I mostly use these as part of the [[#h:154b6df4-dd50-4f60-9794-05a140d02994][project]] utility.
 
+Otherwise, I define the function =mkTemplates= here which builds a named attribute set for each type of template that I have.
+
+- uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
 
 #+begin_src nix-ts :tangle nix/templates.nix
   { self, ... }:
@@ -1273,6 +1293,7 @@ This file defines the templates that are being exposed by the flake. These can b
 :CUSTOM_ID: h:5fce36ae-715d-42d3-9ad4-46137d85083f
 :END:
 
+Defines a formatter that can be called using =nix flake format=. While a nice utility, I have stronger tools to perform this job.
 
 #+begin_src nix-ts :tangle nix/formatter.nix
   _:
@@ -1283,11 +1304,12 @@ This file defines the templates that are being exposed by the flake. These can b
   }
 
 #+end_src
-** Modules
+** TODO Modules
 :PROPERTIES:
 :CUSTOM_ID: h:e8eb0617-3441-421d-9b44-716ed40159ab
 :END:
 
+This exposes all of my modular configuration as modules. Other people can use them in their flake using =imports = [ inputs.<name>.nixosModules ];=. Per default, this enables some mechanisms like config sharing between nodes and the globals system. TODO: make it so that nothing is enabled upon initial import.
 
 #+begin_src nix-ts :tangle nix/modules.nix
   { self, ... }:
@@ -1308,7 +1330,9 @@ This file defines the templates that are being exposed by the flake. These can b
 :CUSTOM_ID: h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3
 :END:
 
-This file defines a number of checks that can either be run by calling =nix flake check= or while in a =nix-shell= or =nix develop=. This helps me make sure that my flake confirms to my self-imposed standards. The GitHub actions perform less checks than are being done here (they are only checking the formatting, as well as =statix= and =deadnix=)
+This defines some apps; they differ from normal packages in that they can be called using =nix run <repo><appName>=. So, for example, I can call my deployment script using =nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>= (here I did not specify =#swarsel-bootstrap= since it is set as the default. In general, whenever the =#...= part is ommitted, the object under the default attribute will be used. This is also true for =nixosConfigurations=: in that case, the default will be the current hostname of the machine).
+
+- uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
 
 #+begin_src nix-ts :tangle nix/apps.nix
   { self, ... }:
@@ -1867,6 +1891,7 @@ My work machine. Built for more security, this is the gold standard of my config
           # improve performance on ssds
           bypassWorkqueues = true;
           preLVM = true;
+          # crypttabExtraOpts = ["fido2-device=auto"];
         };
       };
 
@@ -3773,11 +3798,10 @@ This section is for setting things that should be used on hosts that are using t
   { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/nixos/common";
-    modulesPath = "${self}/modules";
   in
     {
       imports = lib.swarselsystems.mkImports importNames "modules/nixos/common" ++ [
-        "${modulesPath}/home/common/sharedsetup.nix"
+        "${self}/modules/shared/sharedsetup.nix"
       ];
 
 
@@ -4071,7 +4095,9 @@ A breakdown of the flags being set:
           channel.enable = false;
           registry = rec {
             nixpkgs.flake = inputs.nixpkgs;
-            p = nixpkgs;
+            swarsel.flake = inputs.swarsel;
+            n = nixpkgs;
+            s = swarsel;
           };
           nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
         };
@@ -10997,6 +11023,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         swarsel-bootstrap
         swarsel-displaypower
         swarsel-deploy
+        swarsel-instantiate
         swarselzellij
         sshrm
 
@@ -16013,6 +16040,25 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
+*** swarsel-instantiate
+:PROPERTIES:
+:CUSTOM_ID: h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa
+:END:
+
+This is a convenience function that calls =nix-instantiate= with a number of flags that I need in order to evaluate nix expressions in org-src blocks.
+
+#+begin_src nix-ts :tangle pkgs/swarsel-instantiate/default.nix
+    { name, writeShellApplication, ... }:
+    writeShellApplication {
+      inherit name;
+      text = ''
+        set -euo pipefail
+        nix-instantiate --strict --eval --expr "let lib = import <nixpkgs/lib>; in $*"
+      '';
+    }
+
+#+end_src
+
 *** sshrm
 :PROPERTIES:
 :CUSTOM_ID: h:02842543-caca-4d4c-a4d2-7ac749b5c136
@@ -18647,7 +18693,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
 
 - org 9.2 changed the way structure templates work. This brings back the old way it worked.
 
-  Usage: Type =<=, followed by one of the below keywords and press =RET=. The corresponding source block should appear.
+  Usage: Type =<=, followed by one of the below keywords and press =TAB=. The corresponding source block should appear.
 
     #+begin_src emacs-lisp
 
@@ -18656,6 +18702,7 @@ It also offers a very useful utility of exporting org-mode buffers to different 
       (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
       (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
       (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
+      (add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
 
     #+end_src
 
@@ -21018,346 +21065,347 @@ in
 :END:
 
 #+begin_src nix-ts :tangle files/zellij/config.kdl.nix
-{ config }:
-''
-  pane_frames false
-  simplified_ui false
-  default_shell "zsh"
-  copy_on_select true
-  on_force_close "detach"
+  { config }:
+  ''
+    pane_frames false
+    simplified_ui false
+    default_shell "zsh"
+    copy_on_select true
+    on_force_close "detach"
+    show_startup_tips false
 
-  default_layout "default"
-  layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"
-  theme_dir "${config.home.homeDirectory}/.config/zellij/themes"
+    default_layout "default"
+    layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"
+    theme_dir "${config.home.homeDirectory}/.config/zellij/themes"
 
-  keybinds clear-defaults=true {
-      locked {
-          bind "Ctrl g" { SwitchToMode "normal"; }
-      }
-      pane {
-          bind "left" { MoveFocus "left"; }
-          bind "down" { MoveFocus "down"; }
-          bind "up" { MoveFocus "up"; }
-          bind "right" { MoveFocus "right"; }
-          bind "c" { SwitchToMode "renamepane"; PaneNameInput 0; }
-          bind "d" { NewPane "down"; SwitchToMode "normal"; }
-          bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "normal"; }
-          bind "f" { ToggleFocusFullscreen; SwitchToMode "normal"; }
-          bind "h" { MoveFocus "left"; }
-          bind "j" { MoveFocus "down"; }
-          bind "k" { MoveFocus "up"; }
-          bind "l" { MoveFocus "right"; }
-          bind "n" { NewPane; SwitchToMode "normal"; }
-          bind "p" { SwitchFocus; }
-          bind "Ctrl p" { SwitchToMode "normal"; }
-          bind "r" { NewPane "right"; SwitchToMode "normal"; }
-          bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
-          bind "z" { TogglePaneFrames; SwitchToMode "normal"; }
-      }
-      tab {
-          bind "left" { GoToPreviousTab; }
-          bind "down" { GoToNextTab; }
-          bind "up" { GoToPreviousTab; }
-          bind "right" { GoToNextTab; }
-          bind "1" { GoToTab 1; SwitchToMode "normal"; }
-          bind "2" { GoToTab 2; SwitchToMode "normal"; }
-          bind "3" { GoToTab 3; SwitchToMode "normal"; }
-          bind "4" { GoToTab 4; SwitchToMode "normal"; }
-          bind "5" { GoToTab 5; SwitchToMode "normal"; }
-          bind "6" { GoToTab 6; SwitchToMode "normal"; }
-          bind "7" { GoToTab 7; SwitchToMode "normal"; }
-          bind "8" { GoToTab 8; SwitchToMode "normal"; }
-          bind "9" { GoToTab 9; SwitchToMode "normal"; }
-          bind "[" { BreakPaneLeft; SwitchToMode "normal"; }
-          bind "]" { BreakPaneRight; SwitchToMode "normal"; }
-          bind "b" { BreakPane; SwitchToMode "normal"; }
-          bind "h" { GoToPreviousTab; }
-          bind "j" { GoToNextTab; }
-          bind "k" { GoToPreviousTab; }
-          bind "l" { GoToNextTab; }
-          bind "n" { NewTab; SwitchToMode "normal"; }
-          bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
-          bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
-          bind "Ctrl t" { SwitchToMode "normal"; }
-          bind "x" { CloseTab; SwitchToMode "normal"; }
-          bind "tab" { ToggleTab; }
-      }
-      resize {
-          bind "left" { Resize "Increase left"; }
-          bind "down" { Resize "Increase down"; }
-          bind "up" { Resize "Increase up"; }
-          bind "right" { Resize "Increase right"; }
-          bind "+" { Resize "Increase"; }
-          bind "-" { Resize "Decrease"; }
-          bind "=" { Resize "Increase"; }
-          bind "H" { Resize "Decrease left"; }
-          bind "J" { Resize "Decrease down"; }
-          bind "K" { Resize "Decrease up"; }
-          bind "L" { Resize "Decrease right"; }
-          bind "h" { Resize "Increase left"; }
-          bind "j" { Resize "Increase down"; }
-          bind "k" { Resize "Increase up"; }
-          bind "l" { Resize "Increase right"; }
-          bind "Ctrl n" { SwitchToMode "normal"; }
-      }
-      move {
-          bind "left" { MovePane "left"; }
-          bind "down" { MovePane "down"; }
-          bind "up" { MovePane "up"; }
-          bind "right" { MovePane "right"; }
-          bind "h" { MovePane "left"; }
-          bind "Ctrl h" { SwitchToMode "normal"; }
-          bind "j" { MovePane "down"; }
-          bind "k" { MovePane "up"; }
-          bind "l" { MovePane "right"; }
-          bind "n" { MovePane; }
-          bind "p" { MovePaneBackwards; }
-          bind "tab" { MovePane; }
-      }
-      scroll {
-          bind "e" { EditScrollback; SwitchToMode "normal"; }
-          bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
-      }
-      search {
-          bind "c" { SearchToggleOption "CaseSensitivity"; }
-          bind "n" { Search "down"; }
-          bind "o" { SearchToggleOption "WholeWord"; }
-          bind "p" { Search "up"; }
-          bind "w" { SearchToggleOption "Wrap"; }
-      }
-      session {
-          bind "c" {
-              LaunchOrFocusPlugin "configuration" {
-                  floating true
-                  move_to_focused_tab true
-              }
-              SwitchToMode "normal"
-          }
-          bind "Ctrl o" { SwitchToMode "normal"; }
-          bind "p" {
-              LaunchOrFocusPlugin "plugin-manager" {
-                  floating true
-                  move_to_focused_tab true
-              }
-              SwitchToMode "normal"
-          }
-          bind "w" {
-              LaunchOrFocusPlugin "session-manager" {
-                  floating true
-                  move_to_focused_tab true
-              }
-              SwitchToMode "normal"
-          }
-      }
-      shared_except "locked" {
-          bind "Alt left" { MoveFocusOrTab "left"; }
-          bind "Alt down" { MoveFocus "down"; }
-          bind "Alt up" { MoveFocus "up"; }
-          bind "Alt right" { MoveFocusOrTab "right"; }
-          bind "Alt +" { Resize "Increase"; }
-          bind "Alt -" { Resize "Decrease"; }
-          bind "Alt =" { Resize "Increase"; }
-          bind "Alt [" { PreviousSwapLayout; }
-          bind "Alt ]" { NextSwapLayout; }
-          bind "Alt f" { ToggleFloatingPanes; }
-          bind "Ctrl g" { SwitchToMode "locked"; }
-          bind "Alt h" { MoveFocusOrTab "left"; }
-          bind "Alt i" { MoveTab "left"; }
-          bind "Alt j" { MoveFocus "down"; }
-          bind "Alt k" { MoveFocus "up"; }
-          bind "Alt l" { MoveFocusOrTab "right"; }
-          bind "Alt n" { NewPane; }
-          bind "Alt o" { MoveTab "right"; }
-          bind "Ctrl q" { Quit; }
-      }
-      shared_except "locked" "move" {
-          bind "Ctrl h" { SwitchToMode "move"; }
-      }
-      shared_except "locked" "session" {
-          bind "Ctrl o" { SwitchToMode "session"; }
-      }
-      shared_except "locked" "scroll" "search" "tmux" {
-          bind "Ctrl b" { SwitchToMode "tmux"; }
-      }
-      shared_except "locked" "scroll" "search" {
-          bind "Ctrl s" { SwitchToMode "scroll"; }
-      }
-      shared_except "locked" "tab" {
-          bind "Ctrl t" { SwitchToMode "tab"; }
-      }
-      shared_except "locked" "pane" {
-          bind "Ctrl p" { SwitchToMode "pane"; }
-      }
-      shared_except "locked" "resize" {
-          bind "Ctrl n" { SwitchToMode "resize"; }
-      }
-      shared_except "normal" "locked" "entersearch" {
-          bind "enter" { SwitchToMode "normal"; }
-      }
-      shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
-          bind "esc" { SwitchToMode "normal"; }
-      }
-      shared_among "pane" "tmux" {
-          bind "x" { CloseFocus; SwitchToMode "normal"; }
-      }
-      shared_among "scroll" "search" {
-          bind "PageDown" { PageScrollDown; }
-          bind "PageUp" { PageScrollUp; }
-          bind "left" { PageScrollUp; }
-          bind "down" { ScrollDown; }
-          bind "up" { ScrollUp; }
-          bind "right" { PageScrollDown; }
-          bind "Ctrl b" { PageScrollUp; }
-          bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
-          bind "d" { HalfPageScrollDown; }
-          bind "Ctrl f" { PageScrollDown; }
-          bind "h" { PageScrollUp; }
-          bind "j" { ScrollDown; }
-          bind "k" { ScrollUp; }
-          bind "l" { PageScrollDown; }
-          bind "Ctrl s" { SwitchToMode "normal"; }
-          bind "u" { HalfPageScrollUp; }
-      }
-      entersearch {
-          bind "Ctrl c" { SwitchToMode "scroll"; }
-          bind "esc" { SwitchToMode "scroll"; }
-          bind "enter" { SwitchToMode "search"; }
-      }
-      renametab {
-          bind "esc" { UndoRenameTab; SwitchToMode "tab"; }
-      }
-      shared_among "renametab" "renamepane" {
-          bind "Ctrl c" { SwitchToMode "normal"; }
-      }
-      renamepane {
-          bind "esc" { UndoRenamePane; SwitchToMode "pane"; }
-      }
-      shared_among "session" "tmux" {
-          bind "d" { Detach; }
-      }
-      tmux {
-          bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
-          bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
-          bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
-          bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
-          bind "space" { NextSwapLayout; }
-          bind "\"" { NewPane "down"; SwitchToMode "normal"; }
-          bind "%" { NewPane "right"; SwitchToMode "normal"; }
-          bind "," { SwitchToMode "renametab"; }
-          bind "[" { SwitchToMode "scroll"; }
-          bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
-          bind "c" { NewTab; SwitchToMode "normal"; }
-          bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
-          bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
-          bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
-          bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
-          bind "n" { GoToNextTab; SwitchToMode "normal"; }
-          bind "o" { FocusNextPane; }
-          bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
-          bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
-      }
-  }
+    keybinds clear-defaults=true {
+        locked {
+            bind "Ctrl g" { SwitchToMode "normal"; }
+        }
+        pane {
+            bind "left" { MoveFocus "left"; }
+            bind "down" { MoveFocus "down"; }
+            bind "up" { MoveFocus "up"; }
+            bind "right" { MoveFocus "right"; }
+            bind "c" { SwitchToMode "renamepane"; PaneNameInput 0; }
+            bind "d" { NewPane "down"; SwitchToMode "normal"; }
+            bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "normal"; }
+            bind "f" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+            bind "h" { MoveFocus "left"; }
+            bind "j" { MoveFocus "down"; }
+            bind "k" { MoveFocus "up"; }
+            bind "l" { MoveFocus "right"; }
+            bind "n" { NewPane; SwitchToMode "normal"; }
+            bind "p" { SwitchFocus; }
+            bind "Ctrl p" { SwitchToMode "normal"; }
+            bind "r" { NewPane "right"; SwitchToMode "normal"; }
+            bind "w" { ToggleFloatingPanes; SwitchToMode "normal"; }
+            bind "z" { TogglePaneFrames; SwitchToMode "normal"; }
+        }
+        tab {
+            bind "left" { GoToPreviousTab; }
+            bind "down" { GoToNextTab; }
+            bind "up" { GoToPreviousTab; }
+            bind "right" { GoToNextTab; }
+            bind "1" { GoToTab 1; SwitchToMode "normal"; }
+            bind "2" { GoToTab 2; SwitchToMode "normal"; }
+            bind "3" { GoToTab 3; SwitchToMode "normal"; }
+            bind "4" { GoToTab 4; SwitchToMode "normal"; }
+            bind "5" { GoToTab 5; SwitchToMode "normal"; }
+            bind "6" { GoToTab 6; SwitchToMode "normal"; }
+            bind "7" { GoToTab 7; SwitchToMode "normal"; }
+            bind "8" { GoToTab 8; SwitchToMode "normal"; }
+            bind "9" { GoToTab 9; SwitchToMode "normal"; }
+            bind "[" { BreakPaneLeft; SwitchToMode "normal"; }
+            bind "]" { BreakPaneRight; SwitchToMode "normal"; }
+            bind "b" { BreakPane; SwitchToMode "normal"; }
+            bind "h" { GoToPreviousTab; }
+            bind "j" { GoToNextTab; }
+            bind "k" { GoToPreviousTab; }
+            bind "l" { GoToNextTab; }
+            bind "n" { NewTab; SwitchToMode "normal"; }
+            bind "r" { SwitchToMode "renametab"; TabNameInput 0; }
+            bind "s" { ToggleActiveSyncTab; SwitchToMode "normal"; }
+            bind "Ctrl t" { SwitchToMode "normal"; }
+            bind "x" { CloseTab; SwitchToMode "normal"; }
+            bind "tab" { ToggleTab; }
+        }
+        resize {
+            bind "left" { Resize "Increase left"; }
+            bind "down" { Resize "Increase down"; }
+            bind "up" { Resize "Increase up"; }
+            bind "right" { Resize "Increase right"; }
+            bind "+" { Resize "Increase"; }
+            bind "-" { Resize "Decrease"; }
+            bind "=" { Resize "Increase"; }
+            bind "H" { Resize "Decrease left"; }
+            bind "J" { Resize "Decrease down"; }
+            bind "K" { Resize "Decrease up"; }
+            bind "L" { Resize "Decrease right"; }
+            bind "h" { Resize "Increase left"; }
+            bind "j" { Resize "Increase down"; }
+            bind "k" { Resize "Increase up"; }
+            bind "l" { Resize "Increase right"; }
+            bind "Ctrl n" { SwitchToMode "normal"; }
+        }
+        move {
+            bind "left" { MovePane "left"; }
+            bind "down" { MovePane "down"; }
+            bind "up" { MovePane "up"; }
+            bind "right" { MovePane "right"; }
+            bind "h" { MovePane "left"; }
+            bind "Ctrl h" { SwitchToMode "normal"; }
+            bind "j" { MovePane "down"; }
+            bind "k" { MovePane "up"; }
+            bind "l" { MovePane "right"; }
+            bind "n" { MovePane; }
+            bind "p" { MovePaneBackwards; }
+            bind "tab" { MovePane; }
+        }
+        scroll {
+            bind "e" { EditScrollback; SwitchToMode "normal"; }
+            bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
+        }
+        search {
+            bind "c" { SearchToggleOption "CaseSensitivity"; }
+            bind "n" { Search "down"; }
+            bind "o" { SearchToggleOption "WholeWord"; }
+            bind "p" { Search "up"; }
+            bind "w" { SearchToggleOption "Wrap"; }
+        }
+        session {
+            bind "c" {
+                LaunchOrFocusPlugin "configuration" {
+                    floating true
+                    move_to_focused_tab true
+                }
+                SwitchToMode "normal"
+            }
+            bind "Ctrl o" { SwitchToMode "normal"; }
+            bind "p" {
+                LaunchOrFocusPlugin "plugin-manager" {
+                    floating true
+                    move_to_focused_tab true
+                }
+                SwitchToMode "normal"
+            }
+            bind "w" {
+                LaunchOrFocusPlugin "session-manager" {
+                    floating true
+                    move_to_focused_tab true
+                }
+                SwitchToMode "normal"
+            }
+        }
+        shared_except "locked" {
+            bind "Alt left" { MoveFocusOrTab "left"; }
+            bind "Alt down" { MoveFocus "down"; }
+            bind "Alt up" { MoveFocus "up"; }
+            bind "Alt right" { MoveFocusOrTab "right"; }
+            bind "Alt +" { Resize "Increase"; }
+            bind "Alt -" { Resize "Decrease"; }
+            bind "Alt =" { Resize "Increase"; }
+            bind "Alt [" { PreviousSwapLayout; }
+            bind "Alt ]" { NextSwapLayout; }
+            bind "Alt f" { ToggleFloatingPanes; }
+            bind "Ctrl g" { SwitchToMode "locked"; }
+            bind "Alt h" { MoveFocusOrTab "left"; }
+            bind "Alt i" { MoveTab "left"; }
+            bind "Alt j" { MoveFocus "down"; }
+            bind "Alt k" { MoveFocus "up"; }
+            bind "Alt l" { MoveFocusOrTab "right"; }
+            bind "Alt n" { NewPane; }
+            bind "Alt o" { MoveTab "right"; }
+            bind "Ctrl q" { Quit; }
+        }
+        shared_except "locked" "move" {
+            bind "Ctrl h" { SwitchToMode "move"; }
+        }
+        shared_except "locked" "session" {
+            bind "Ctrl o" { SwitchToMode "session"; }
+        }
+        shared_except "locked" "scroll" "search" "tmux" {
+            bind "Ctrl b" { SwitchToMode "tmux"; }
+        }
+        shared_except "locked" "scroll" "search" {
+            bind "Ctrl s" { SwitchToMode "scroll"; }
+        }
+        shared_except "locked" "tab" {
+            bind "Ctrl t" { SwitchToMode "tab"; }
+        }
+        shared_except "locked" "pane" {
+            bind "Ctrl p" { SwitchToMode "pane"; }
+        }
+        shared_except "locked" "resize" {
+            bind "Ctrl n" { SwitchToMode "resize"; }
+        }
+        shared_except "normal" "locked" "entersearch" {
+            bind "enter" { SwitchToMode "normal"; }
+        }
+        shared_except "normal" "locked" "entersearch" "renametab" "renamepane" {
+            bind "esc" { SwitchToMode "normal"; }
+        }
+        shared_among "pane" "tmux" {
+            bind "x" { CloseFocus; SwitchToMode "normal"; }
+        }
+        shared_among "scroll" "search" {
+            bind "PageDown" { PageScrollDown; }
+            bind "PageUp" { PageScrollUp; }
+            bind "left" { PageScrollUp; }
+            bind "down" { ScrollDown; }
+            bind "up" { ScrollUp; }
+            bind "right" { PageScrollDown; }
+            bind "Ctrl b" { PageScrollUp; }
+            bind "Ctrl c" { ScrollToBottom; SwitchToMode "normal"; }
+            bind "d" { HalfPageScrollDown; }
+            bind "Ctrl f" { PageScrollDown; }
+            bind "h" { PageScrollUp; }
+            bind "j" { ScrollDown; }
+            bind "k" { ScrollUp; }
+            bind "l" { PageScrollDown; }
+            bind "Ctrl s" { SwitchToMode "normal"; }
+            bind "u" { HalfPageScrollUp; }
+        }
+        entersearch {
+            bind "Ctrl c" { SwitchToMode "scroll"; }
+            bind "esc" { SwitchToMode "scroll"; }
+            bind "enter" { SwitchToMode "search"; }
+        }
+        renametab {
+            bind "esc" { UndoRenameTab; SwitchToMode "tab"; }
+        }
+        shared_among "renametab" "renamepane" {
+            bind "Ctrl c" { SwitchToMode "normal"; }
+        }
+        renamepane {
+            bind "esc" { UndoRenamePane; SwitchToMode "pane"; }
+        }
+        shared_among "session" "tmux" {
+            bind "d" { Detach; }
+        }
+        tmux {
+            bind "left" { MoveFocus "left"; SwitchToMode "normal"; }
+            bind "down" { MoveFocus "down"; SwitchToMode "normal"; }
+            bind "up" { MoveFocus "up"; SwitchToMode "normal"; }
+            bind "right" { MoveFocus "right"; SwitchToMode "normal"; }
+            bind "space" { NextSwapLayout; }
+            bind "\"" { NewPane "down"; SwitchToMode "normal"; }
+            bind "%" { NewPane "right"; SwitchToMode "normal"; }
+            bind "," { SwitchToMode "renametab"; }
+            bind "[" { SwitchToMode "scroll"; }
+            bind "Ctrl b" { Write 2; SwitchToMode "normal"; }
+            bind "c" { NewTab; SwitchToMode "normal"; }
+            bind "h" { MoveFocus "left"; SwitchToMode "normal"; }
+            bind "j" { MoveFocus "down"; SwitchToMode "normal"; }
+            bind "k" { MoveFocus "up"; SwitchToMode "normal"; }
+            bind "l" { MoveFocus "right"; SwitchToMode "normal"; }
+            bind "n" { GoToNextTab; SwitchToMode "normal"; }
+            bind "o" { FocusNextPane; }
+            bind "p" { GoToPreviousTab; SwitchToMode "normal"; }
+            bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+        }
+    }
 
-  // Plugin aliases - can be used to change the implementation of Zellij
-  // changing these requires a restart to take effect
-  plugins {
-      compact-bar location="zellij:compact-bar"
-      configuration location="zellij:configuration"
-      filepicker location="zellij:strider" {
-          cwd "/"
-      }
-      plugin-manager location="zellij:plugin-manager"
-      session-manager location="zellij:session-manager"
-      status-bar location="zellij:status-bar"
-      strider location="zellij:strider"
-      tab-bar location="zellij:tab-bar"
-      welcome-screen location="zellij:session-manager" {
-          welcome_screen true
-      }
-  }
+    // Plugin aliases - can be used to change the implementation of Zellij
+    // changing these requires a restart to take effect
+    plugins {
+        compact-bar location="zellij:compact-bar"
+        configuration location="zellij:configuration"
+        filepicker location="zellij:strider" {
+            cwd "/"
+        }
+        plugin-manager location="zellij:plugin-manager"
+        session-manager location="zellij:session-manager"
+        status-bar location="zellij:status-bar"
+        strider location="zellij:strider"
+        tab-bar location="zellij:tab-bar"
+        welcome-screen location="zellij:session-manager" {
+            welcome_screen true
+        }
+    }
 
-  // Plugins to load in the background when a new session starts
-  // eg. "file:/path/to/my-plugin.wasm"
-  // eg. "https://example.com/my-plugin.wasm"
-  load_plugins {
-  }
+    // Plugins to load in the background when a new session starts
+    // eg. "file:/path/to/my-plugin.wasm"
+    // eg. "https://example.com/my-plugin.wasm"
+    load_plugins {
+    }
 
-  // Provide a command to execute when copying text. The text will be piped to
-  // the stdin of the program to perform the copy. This can be used with
-  // terminal emulators which do not support the OSC 52 ANSI control sequence
-  // that will be used by default if this option is not set.
-  // Examples:
-  //
-  // copy_command "xclip -selection clipboard" // x11
-  // copy_command "wl-copy"                    // wayland
-  // copy_command "pbcopy"                     // osx
-  //
-  // copy_command "pbcopy"
+    // Provide a command to execute when copying text. The text will be piped to
+    // the stdin of the program to perform the copy. This can be used with
+    // terminal emulators which do not support the OSC 52 ANSI control sequence
+    // that will be used by default if this option is not set.
+    // Examples:
+    //
+    // copy_command "xclip -selection clipboard" // x11
+    // copy_command "wl-copy"                    // wayland
+    // copy_command "pbcopy"                     // osx
+    //
+    // copy_command "pbcopy"
 
-  // Choose the destination for copied text
-  // Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
-  // Does not apply when using copy_command.
-  // Options:
-  //   - system (default)
-  //   - primary
-  //
-  // copy_clipboard "primary"
+    // Choose the destination for copied text
+    // Allows using the primary selection buffer (on x11/wayland) instead of the system clipboard.
+    // Does not apply when using copy_command.
+    // Options:
+    //   - system (default)
+    //   - primary
+    //
+    // copy_clipboard "primary"
 
-  // Path to the default editor to use to edit pane scrollbuffer
-  // Default: $EDITOR or $VISUAL
-  // scrollback_editor "/usr/bin/vim"
+    // Path to the default editor to use to edit pane scrollbuffer
+    // Default: $EDITOR or $VISUAL
+    // scrollback_editor "/usr/bin/vim"
 
-  // Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
-  // Options:
-  //   - true (default)
-  //   - false
-  //
-  // auto_layout false
+    // Toggle between having Zellij lay out panes according to a predefined set of layouts whenever possible
+    // Options:
+    //   - true (default)
+    //   - false
+    //
+    // auto_layout false
 
-  // Whether sessions should be serialized to the cache folder (including their tabs/panes, cwds and running commands) so that they can later be resurrected
-  // Options:
-  //   - true (default)
-  //   - false
-  //
-  // session_serialization false
+    // Whether sessions should be serialized to the cache folder (including their tabs/panes, cwds and running commands) so that they can later be resurrected
+    // Options:
+    //   - true (default)
+    //   - false
+    //
+    // session_serialization false
 
-  // Whether pane viewports are serialized along with the session, default is false
-  // Options:
-  //   - true
-  //   - false (default)
-  //
-  // serialize_pane_viewport false
+    // Whether pane viewports are serialized along with the session, default is false
+    // Options:
+    //   - true
+    //   - false (default)
+    //
+    // serialize_pane_viewport false
 
-  // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
-  // defaults to the scrollback size. If this number is higher than the scrollback size, it will
-  // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
-  //
-  // scrollback_lines_to_serialize 10000
+    // Scrollback lines to serialize along with the pane viewport when serializing sessions, 0
+    // defaults to the scrollback size. If this number is higher than the scrollback size, it will
+    // also default to the scrollback size. This does nothing if `serialize_pane_viewport` is not true.
+    //
+    // scrollback_lines_to_serialize 10000
 
-  // Enable or disable the rendering of styled and colored underlines (undercurl).
-  // May need to be disabled for certain unsupported terminals
-  // (Requires restart)
-  // Default: true
-  //
-  // styled_underlines false
+    // Enable or disable the rendering of styled and colored underlines (undercurl).
+    // May need to be disabled for certain unsupported terminals
+    // (Requires restart)
+    // Default: true
+    //
+    // styled_underlines false
 
-  // How often in seconds sessions are serialized
-  //
-  // serialization_interval 10000
+    // How often in seconds sessions are serialized
+    //
+    // serialization_interval 10000
 
-  // Enable or disable writing of session metadata to disk (if disabled, other sessions might not know
-  // metadata info on this session)
-  // (Requires restart)
-  // Default: false
-  //
-  // disable_session_metadata false
+    // Enable or disable writing of session metadata to disk (if disabled, other sessions might not know
+    // metadata info on this session)
+    // (Requires restart)
+    // Default: false
+    //
+    // disable_session_metadata false
 
-  // Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
-  // (Requires restart)
-  // Default: true (if the host terminal supports it)
-  //
-  // support_kitty_keyboard_protocol false
-''
+    // Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
+    // (Requires restart)
+    // Default: true (if the host terminal supports it)
+    //
+    // support_kitty_keyboard_protocol false
+  ''
 
 #+end_src
 ** Vieb config
@@ -22645,3 +22693,252 @@ Here lies defined the readme for GitHub and Forgejo:
 
 
 #+end_src
+
+* Appendix C: Explanations to nix functions and operators
+:PROPERTIES:
+:CUSTOM_ID: h:8ea35dcc-ef94-4c10-9112-8be8efd6f424
+:END:
+
+This sections explains commonly used functions in nix (both builtins as well as in the nixpkgs library).
+** The '//' operator
+:PROPERTIES:
+:CUSTOM_ID: h:b1fe7a9a-661b-4446-aefa-98373108f8fd
+:END:
+
+The =//= operator in nix is used to merge attribute sets; if an attribute exists in both sets, then the latter set takes precedence:
+
+#+begin_src bash :exports both
+  swarsel-instantiate '{ a = 1; b = 2; } // { b = 3; c = 4; }'
+#+end_src
+
+#+RESULTS:
+: { a = 1; b = 3; c = 4; }
+
+Also, this will not merge nested sets:
+
+#+begin_src bash :exports both
+  swarsel-instantiate '{ a = { a1 = 1; a2 = 2; }; b = { b1 = 1; b2 = 2; }; } // { b = { b1 = 3; b3 = 4;}; c = 4; }'
+#+end_src
+
+#+RESULTS:
+: { a = { a1 = 1; a2 = 2; }; b = { b1 = 3; b3 = 4; }; c = 4; }
+
+ It only took the latter =b= set, even though the =b2= value was not contested. This functionality is provided by [[#h:2227ba24-e3a1-40ba-8fb8-4cab5210692a][nixpkgs.lib.recursiveUpdate]].
+
+** builtins.listToAttrs
+:PROPERTIES:
+:CUSTOM_ID: h:c63cd469-7724-4a05-b932-8843722a00f0
+:END:
+
+builtins.listToAttrs converts a list of name-value pairs into an attribute set.
+
+#+RESULTS:
+: { bar = 2; foo = 1; }
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'builtins.listToAttrs [{ name = "foo"; value = 1; } { name = "bar"; value = 2; }]'
+#+end_src
+
+** builtins.readDir
+:PROPERTIES:
+:CUSTOM_ID: h:1fb6ff92-7cc1-4447-8a63-460f24633053
+:END:
+
+=builtins.readDir= reads the name of items of a directory as attributes and their type as values.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'builtins.readDir ./hosts/nixos'
+#+end_src
+
+#+RESULTS:
+: { bakery = "directory"; chaostheatre = "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }
+** nixpkgs.lib.recursiveUpdate
+:PROPERTIES:
+:CUSTOM_ID: h:2227ba24-e3a1-40ba-8fb8-4cab5210692a
+:END:
+
+If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= instead of [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.recursiveUpdate { a = { a1 = 1; a2 = 2; }; b = { b1 = 1; b2 = 2; }; } { b = { b1 = 3; b3 = 4;}; c = 4; }'
+#+end_src
+
+#+RESULTS:
+: { a = { a1 = 1; a2 = 2; }; b = { b1 = 3; b2 = 2; b3 = 4; }; c = 4; }
+
+** nixpkgs.lib.genAttrs
+:PROPERTIES:
+:CUSTOM_ID: h:94690fcb-e039-49da-9bd3-610fa80fa08b
+:END:
+
+=nixpkgs.lib.genAttrs= is used to generate an attribute set (a dictionary-like structure) from a list of keys and a function that computes the values for those keys.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.genAttrs ["a" "b" "c"] (x: "${x}-value")'
+#+end_src
+
+#+RESULTS:
+: { a = "a-value"; b = "b-value"; c = "c-value"; }
+
+** nixpkgs.lib.attrNames
+:PROPERTIES:
+:CUSTOM_ID: h:0fded8e7-6160-4fcd-a491-42f0debfec52
+:END:
+
+=nixpkgs.lib.attrNames= returns the list of attribute names from an attribute set.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.attrNames { a = 1; b = 2; c = 3; }'
+#+end_src
+
+#+RESULTS:
+: [ "a" "b" "c" ]
+
+** nixpkgs.lib.map
+:PROPERTIES:
+:CUSTOM_ID: h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e
+:END:
+
+=nixpkgs.lib.map= takes a function and applies the elements of a list upon them.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.map (x: x + 1) [1 2 3]'
+#+end_src
+
+#+RESULTS:
+: [ 2 3 4 ]
+
+** nixpkgs.lib.mkOverride
+:PROPERTIES:
+:CUSTOM_ID: h:9e81b727-1436-4228-82b1-1edec5c50e06
+:END:
+=nixpkgs.lib.mkOverride= sets the priority of an expression.
+
+If two expression are defined twice accross the configuration, the evaluator does not know which one should take precedence; this will lead to an error. By default, all option definitions are given priority 100. Lower values take precedence over lower values. For reference, here are some commonly used values:
+
+- [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]] sets the priority to 50, which is a very low value, meaning it will be prioritised in nearly all cases
+- [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] sets the priority to 1000, which is a quite high value that will almost never be used if the same attribute is defined elswheer.
+** nixpkgs.lib.mkForce
+:PROPERTIES:
+:CUSTOM_ID: h:16599d68-0ca5-40fa-810e-76b5c739b2b1
+:END:
+
+An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 50).
+** nixpkgs.lib.mkDefault
+:PROPERTIES:
+:CUSTOM_ID: h:41180e6c-2a13-4b46-89b2-791562b4b816
+:END:
+
+An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 1000).
+** nixpkgs.lib.filter
+:PROPERTIES:
+:CUSTOM_ID: h:38d8aecf-d997-4b50-80a2-c86314b5e67e
+:END:
+
+=nixpkgs.lib.filter= takes a list as input and only keeps elements that fulfill a given function:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.filter (x: x != "a") (lib.attrNames { a = 1; b = 2; c = 3; })'
+#+end_src
+
+#+RESULTS:
+: [ "b" "c" ]
+
+** nixpkgs.lib.mapAttrsToList
+:PROPERTIES:
+:CUSTOM_ID: h:b9663237-2232-4554-bc81-843be28a707c
+:END:
+
+=nixpkgs.lib.mapAttrsToList= converts an attribute set into a list by applying a given function to each name-value pair:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.mapAttrsToList (name: value: "${name} = ${value}") { a = "1"; b = "2"; }'
+#+end_src
+
+#+RESULTS:
+: [ "a = 1" "b = 2" ]
+
+** nixpkgs.lib.flip
+:PROPERTIES:
+:CUSTOM_ID: h:21389cc9-fd89-45ca-9836-592f84a45bb4
+:END:
+
+
+ - =nixpkgs.lib.flip= reverses the argument order passed to an expression (in semantics, that is lib.flip f a b == f b a). This is useful when an expression has one big argument and one small one; in that case it is convenient to have the shorter expression at the start of the function. Take this example of a function that simply prints its attributes as a list:
+
+ #+begin_src bash :exports both
+   swarsel-instantiate 'lib.mapAttrsToList (name: value: "${name} = ${value}") {a = "1"; b = "2";}'
+#+end_src
+
+#+RESULTS:
+: [ "a = 1" "b = 2" ]
+
+It prints the attributs unchanged, as is to be expected. If, however, we call the function using =nixpkgs.lib.flip=:
+
+ #+begin_src bash :exports both
+   swarsel-instantiate 'lib.mapAttrsToList (lib.flip (name: value: "${name} = ${value}")) {a = "1"; b = "2";}'
+#+end_src
+
+#+RESULTS:
+: [ "1 = a" "2 = b" ]
+
+** nixpkgs.lib.concatLists
+:PROPERTIES:
+:CUSTOM_ID: h:22264e49-b6d0-4c1f-8d05-2ef1f3da3d54
+:END:
+
+=nixpkgs.lib.concatLists=, as the name suggests, concatenates lists, while keeping the original order of items:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.concatLists  [ [ 1 2 ] [ 3 4 ] [ 5 ] ]'
+#+end_src
+
+#+RESULTS:
+: [ 1 2 3 4 5 ]
+
+** nixpkgs.lib.mkMerge
+:PROPERTIES:
+:CUSTOM_ID: h:82c26445-2af4-4a6c-ae91-c804325fdf11
+:END:
+
+
+  - =nixpgks.lib.mkMerge= is used to deeply merge values.
+
+#+begin_src bash :exports both
+    swarsel-instantiate '
+      lib.mkMerge [
+        {
+          a = [ 1 ];
+        }
+        {
+          a = [ 3 ];
+        }
+      ]
+    '
+#+end_src
+
+#+RESULTS:
+: { _type = "merge"; contents = [ { a = [ 1 ]; } { a = [ 3 ]; } ]; }
+
+** nixpkgs.lib.foldl
+:PROPERTIES:
+:CUSTOM_ID: h:e21d17fb-0c98-42d5-b08f-1c7584afa07f
+:END:
+
+=nixpkgs.lib.foldl= reduces an attribute set by repeatedly calling a function on an attribute set from the left.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.foldl (acc: x: "(" + acc + " + " + x + ")") "0" ["1" "2" "3"]'
+#+end_src
+
+#+RESULTS:
+: (((0 + 1) + 2) + 3)
+
+similarly, there exists an version that starts from the right.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.foldr (acc: x: "(" + acc + " + " + x + ")") "0" ["1" "2" "3"]'
+#+end_src
+
+#+RESULTS:
+: (1 + (2 + (3 + 0)))

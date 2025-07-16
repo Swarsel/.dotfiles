@@ -47,20 +47,6 @@ let
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
       readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
-      mkModules = names: type: builtins.listToAttrs (map
-        (name: {
-          inherit name;
-          value = import "${self}/modules/${type}/${name}";
-        })
-        names);
-
-      mkProfiles = names: type: builtins.listToAttrs (map
-        (name: {
-          inherit name;
-          value = import "${self}/profiles/${type}/${name}";
-        })
-        names);
-
       mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
     };
 in

@@ -36,7 +36,9 @@ let
         channel.enable = false;
         registry = rec {
           nixpkgs.flake = inputs.nixpkgs;
-          p = nixpkgs;
+          swarsel.flake = inputs.swarsel;
+          n = nixpkgs;
+          s = swarsel;
         };
         nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       };

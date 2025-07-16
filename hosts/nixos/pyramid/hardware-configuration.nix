@@ -32,6 +32,7 @@
         # improve performance on ssds
         bypassWorkqueues = true;
         preLVM = true;
+        # crypttabExtraOpts = ["fido2-device=auto"];
       };
     };
 

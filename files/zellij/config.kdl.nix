@@ -5,6 +5,7 @@
   default_shell "zsh"
   copy_on_select true
   on_force_close "detach"
+  show_startup_tips false
 
   default_layout "default"
   layout_dir "${config.home.homeDirectory}/.config/zellij/layouts"

@@ -25,6 +25,7 @@
       swarsel-bootstrap
       swarsel-displaypower
       swarsel-deploy
+      swarsel-instantiate
       swarselzellij
       sshrm
 

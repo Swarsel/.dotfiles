@@ -23,6 +23,7 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    swarsel.url = "github:Swarsel/.dotfiles";
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
       inputs.nixpkgs.follows = "nixpkgs";

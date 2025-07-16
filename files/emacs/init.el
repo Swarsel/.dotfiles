@@ -877,6 +877,7 @@ create a new one."
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
 (add-to-list 'org-structure-template-alist '("nix" . "src nix-ts :tangle"))
+(add-to-list 'org-structure-template-alist '("ne" . "bash :exports both"))
 
 (use-package auctex)
 (setq TeX-auto-save t)
