@@ -3,14 +3,14 @@ let
   inherit (config.swarselsystems) flakePath;
 in
 {
+  options.swarselmodules.zsh = lib.mkEnableOption "zsh settings";
   options.swarselsystems = {
-    modules.zsh = lib.mkEnableOption "zsh settings";
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.zsh
+  config = lib.mkIf config.swarselmodules.zsh
     {
 
       sops.secrets = {

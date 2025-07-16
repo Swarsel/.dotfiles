@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
-  config = lib.mkIf config.swarselsystems.modules.lid {
+  options.swarselmodules.lid = lib.mkEnableOption "lid config";
+  config = lib.mkIf config.swarselmodules.lid {
     services.logind = {
       lidSwitch = "suspend";
       lidSwitchDocked = "ignore";

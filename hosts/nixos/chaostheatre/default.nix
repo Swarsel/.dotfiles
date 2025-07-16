@@ -6,10 +6,6 @@ let
     isBtrfs = false;
     isLinux = true;
     isPublic = true;
-    profiles = {
-      chaostheatre = lib.mkIf (!minimal) true;
-      minimal = lib.mkIf minimal true;
-    };
   };
 in
 {
@@ -39,6 +35,11 @@ in
     firewall.enable = true;
   };
 
+  swarselprofiles = {
+    chaostheatre = lib.mkIf (!minimal) true;
+    minimal = lib.mkIf minimal true;
+    btrfs = true;
+  };
   swarselsystems = lib.recursiveUpdate
     {
       info = "~SwarselSystems~ demo host";
@@ -49,7 +50,6 @@ in
       isSwap = true;
       swapSize = "4G";
       rootDisk = "/dev/vda";
-      profiles.btrfs = true;
     }
     sharedOptions;
 

@@ -3,8 +3,8 @@
   imports = [
     inputs.fw-fanctrl.nixosModules.default
   ];
-  options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.framework {
+  options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
+  config = lib.mkIf config.swarselmodules.optional.framework {
     services = {
       fwupd = {
         enable = true;

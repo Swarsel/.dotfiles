@@ -4,8 +4,8 @@ let
   inherit (config.swarselsystems) isImpermanence isCrypted;
 in
 {
-  options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
-  config = lib.mkIf config.swarselsystems.modules.impermanence {
+  options.swarselmodules.impermanence = lib.mkEnableOption "impermanence config";
+  config = lib.mkIf config.swarselmodules.impermanence {
 
 
     security.sudo.extraConfig = lib.mkIf isImpermanence ''

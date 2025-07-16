@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) homeDir;
 in
 {
-  options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.work {
+  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
+  config = lib.mkIf config.swarselmodules.optional.work {
     home.packages = with pkgs; [
       stable.teams-for-linux
       shellcheck

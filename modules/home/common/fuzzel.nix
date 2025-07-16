@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.fuzzel = lib.mkEnableOption "fuzzel settings";
-  config = lib.mkIf config.swarselsystems.modules.fuzzel {
+  options.swarselmodules.fuzzel = lib.mkEnableOption "fuzzel settings";
+  config = lib.mkIf config.swarselmodules.fuzzel {
     programs.fuzzel = {
       enable = true;
       settings = {

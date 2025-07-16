@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
-  config = lib.mkIf config.swarselsystems.modules.lowBattery {
+  options.swarselmodules.lowBattery = lib.mkEnableOption "low battery notification config";
+  config = lib.mkIf config.swarselmodules.lowBattery {
     systemd.user.services."battery-low" = {
       enable = true;
       description = "Timer for battery check that alerts at 10% or less";

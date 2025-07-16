@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
-  config = lib.mkIf config.swarselsystems.modules.kanshi {
+  options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
+  config = lib.mkIf config.swarselmodules.kanshi {
     swarselsystems = {
       monitors = {
         homedesktop = {

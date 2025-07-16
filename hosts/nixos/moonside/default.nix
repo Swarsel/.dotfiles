@@ -209,6 +209,9 @@ in
     };
   };
 
+  swarselprofiles = {
+    server.moonside = true;
+  };
   swarselsystems = lib.recursiveUpdate
     {
       info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
@@ -217,9 +220,6 @@ in
       isCrypted = false;
       isSwap = false;
       rootDisk = "/dev/sda";
-      profiles = {
-        server.moonside = true;
-      };
     }
     sharedOptions;
 

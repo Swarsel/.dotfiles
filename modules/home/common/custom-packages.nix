@@ -1,8 +1,8 @@
 { lib, config, pkgs, ... }:
 
 {
-  options.swarselsystems.modules.ownpackages = lib.mkEnableOption "own packages settings";
-  config = lib.mkIf config.swarselsystems.modules.ownpackages {
+  options.swarselmodules.ownpackages = lib.mkEnableOption "own packages settings";
+  config = lib.mkIf config.swarselmodules.ownpackages {
     home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
       pass-fuzzel
       cdw

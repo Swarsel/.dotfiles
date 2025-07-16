@@ -25,8 +25,8 @@ let
   };
 in
 {
+  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
   options.swarselsystems = {
-    modules.optional.work = lib.mkEnableOption "optional work settings";
     hostName = lib.mkOption {
       type = lib.types.str;
       default = "";
@@ -36,7 +36,7 @@ in
       default = "";
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.optional.work {
+  config = lib.mkIf config.swarselmodules.optional.work {
     sops =
       let
         secretNames = [

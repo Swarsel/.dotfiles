@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
-  config = lib.mkIf config.swarselsystems.profiles.framework {
-    swarselsystems.modules = {
+  options.swarselprofiles.framework = lib.mkEnableOption "is this a framework brand host";
+  config = lib.mkIf config.swarselprofiles.framework {
+    swarselmodules = {
       optional = {
         framework = lib.mkDefault true;
       };

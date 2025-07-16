@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.direnv = lib.mkEnableOption "direnv settings";
-  config = lib.mkIf config.swarselsystems.modules.direnv {
+  options.swarselmodules.direnv = lib.mkEnableOption "direnv settings";
+  config = lib.mkIf config.swarselmodules.direnv {
     programs.direnv = {
       enable = true;
       silent = true;

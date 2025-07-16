@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.programs = lib.mkEnableOption "programs settings";
-  config = lib.mkIf config.swarselsystems.modules.programs {
+  options.swarselmodules.programs = lib.mkEnableOption "programs settings";
+  config = lib.mkIf config.swarselmodules.programs {
     programs = {
       bottom.enable = true;
       imv.enable = true;

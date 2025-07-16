@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
-  config = lib.mkIf config.swarselsystems.modules.server.restic {
+  options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
+  config = lib.mkIf config.swarselmodules.server.restic {
 
     sops = {
       secrets = {

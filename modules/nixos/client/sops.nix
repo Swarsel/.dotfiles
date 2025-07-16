@@ -1,7 +1,7 @@
 { config, lib, ... }:
 {
-  options.swarselsystems.modules.sops = lib.mkEnableOption "sops config";
-  config = lib.mkIf config.swarselsystems.modules.sops {
+  options.swarselmodules.sops = lib.mkEnableOption "sops config";
+  config = lib.mkIf config.swarselmodules.sops {
     sops = {
 
       # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];

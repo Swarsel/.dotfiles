@@ -52,8 +52,8 @@ let
   };
 in
 {
-  options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-  config = lib.mkIf config.swarselsystems.modules.general
+  options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+  config = lib.mkIf config.swarselmodules.general
     (lib.recursiveUpdate
       {
         sops.secrets.github-api-token = lib.mkIf (!minimal) {

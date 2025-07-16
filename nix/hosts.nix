@@ -26,6 +26,11 @@
                 name = configName;
                 secretsDir = ../hosts/nixos/${configName}/secrets;
               };
+
+              swarselprofiles = {
+                minimal = lib.mkIf minimal true;
+              };
+
             }
           ];
         };
@@ -49,6 +54,7 @@
             {
               node.name = configName;
               node.secretsDir = ../hosts/darwin/${configName}/secrets;
+
             }
           ];
         };

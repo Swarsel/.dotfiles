@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.virtualbox {
+  options.swarselmodules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
+  config = lib.mkIf config.swarselmodules.optional.virtualbox {
     specialisation = {
       VBox.configuration = {
         virtualisation.virtualbox = {

@@ -13,8 +13,8 @@ let
     };
 in
 {
-  options.swarselsystems.modules.tmux = lib.mkEnableOption "tmux settings";
-  config = lib.mkIf config.swarselsystems.modules.tmux {
+  options.swarselmodules.tmux = lib.mkEnableOption "tmux settings";
+  config = lib.mkIf config.swarselmodules.tmux {
     home.packages = with pkgs; [
       lsof
       sesh

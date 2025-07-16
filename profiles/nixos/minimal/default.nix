@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.minimal = lib.mkEnableOption "declare this a minimal host";
-  config = lib.mkIf config.swarselsystems.profiles.minimal {
-    swarselsystems.modules = {
+  options.swarselprofiles.minimal = lib.mkEnableOption "declare this a minimal host";
+  config = lib.mkIf config.swarselprofiles.minimal {
+    swarselmodules = {
       general = lib.mkDefault true;
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;

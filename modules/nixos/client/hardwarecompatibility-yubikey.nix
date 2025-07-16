@@ -4,8 +4,8 @@ let
   inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
 in
 {
-  options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
-  config = lib.mkIf config.swarselsystems.modules.yubikey {
+  options.swarselmodules.yubikey = lib.mkEnableOption "yubikey config";
+  config = lib.mkIf config.swarselmodules.yubikey {
     programs.ssh.startAgent = false;
 
     services.pcscd.enable = false;

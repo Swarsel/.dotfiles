@@ -1,7 +1,7 @@
 { self, lib, config, ... }:
 {
-  options.swarselsystems.modules.symlink = lib.mkEnableOption "symlink settings";
-  config = lib.mkIf config.swarselsystems.modules.symlink {
+  options.swarselmodules.symlink = lib.mkEnableOption "symlink settings";
+  config = lib.mkIf config.swarselmodules.symlink {
     home.file = {
       "init.el" = lib.mkDefault {
         source = self + /files/emacs/init.el;

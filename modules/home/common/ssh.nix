@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.ssh = lib.mkEnableOption "ssh settings";
-  config = lib.mkIf config.swarselsystems.modules.ssh {
+  options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
+  config = lib.mkIf config.swarselmodules.ssh {
     programs.ssh = {
       enable = true;
       forwardAgent = true;

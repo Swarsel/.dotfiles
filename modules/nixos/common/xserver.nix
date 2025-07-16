@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
-  config = lib.mkIf config.swarselsystems.modules.packages {
+  options.swarselmodules.xserver = lib.mkEnableOption "xserver keymap";
+  config = lib.mkIf config.swarselmodules.packages {
     services.xserver = {
       xkb = {
         layout = "us";

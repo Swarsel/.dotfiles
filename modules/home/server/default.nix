@@ -6,6 +6,5 @@ in
 {
   imports = lib.swarselsystems.mkImports importNames "modules/home/server" ++ [
     "${modulesPath}/home/common/settings.nix"
-    "${modulesPath}/home/common/sharedsetup.nix"
   ];
 }

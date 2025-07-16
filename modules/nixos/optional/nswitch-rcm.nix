@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.nswitch-rcm {
+  options.swarselmodules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
+  config = lib.mkIf config.swarselmodules.optional.nswitch-rcm {
     services.nswitch-rcm = {
       enable = true;
       package = pkgs.fetchurl {

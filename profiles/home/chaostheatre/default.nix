@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
-  config = lib.mkIf config.swarselsystems.profiles.chaostheatre {
-    swarselsystems.modules = {
+  options.swarselprofiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
+  config = lib.mkIf config.swarselprofiles.chaostheatre {
+    swarselmodules = {
       packages = lib.mkDefault true;
       ownpackages = lib.mkDefault true;
       general = lib.mkDefault true;

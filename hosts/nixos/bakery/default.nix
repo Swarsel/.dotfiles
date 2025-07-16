@@ -7,10 +7,6 @@ let
     isBtrfs = true;
     isLinux = true;
     sharescreen = "eDP-1";
-    profiles = {
-      reduced = lib.mkIf (!minimal) true;
-      minimal = lib.mkIf minimal true;
-    };
   };
 in
 {
@@ -23,6 +19,11 @@ in
 
   ];
 
+  swarselprofiles = {
+    reduced = lib.mkIf (!minimal) true;
+    minimal = lib.mkIf minimal true;
+    btrfs = true;
+  };
 
   swarselsystems = lib.recursiveUpdate
     {
@@ -38,13 +39,14 @@ in
       rootDisk = "/dev/nvme0n1";
       swapSize = "4G";
       hostName = config.node.name;
-      profiles = {
-        btrfs = true;
-      };
     }
     sharedOptions;
 
   home-manager.users."${primaryUser}" = {
+    swarselprofiles = {
+      reduced = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
+    };
     # home.stateVersion = lib.mkForce "23.05";
     swarselsystems = lib.recursiveUpdate
       {

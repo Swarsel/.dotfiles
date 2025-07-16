@@ -10,10 +10,10 @@ let
 in
 {
   options.swarselsystems = {
-    modules.network = lib.mkEnableOption "network config";
     firewall = lib.swarselsystems.mkTrueOption;
   };
-  config = lib.mkIf config.swarselsystems.modules.network {
+  options.swarselmodules.network = lib.mkEnableOption "network config";
+  config = lib.mkIf config.swarselmodules.network {
 
     sops = {
       secrets = lib.mkIf (!config.swarselsystems.isPublic) {

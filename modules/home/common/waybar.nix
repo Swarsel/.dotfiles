@@ -22,8 +22,8 @@ let
   ];
 in
 {
+  options.swarselmodules.waybar = lib.mkEnableOption "waybar settings";
   options.swarselsystems = {
-    modules.waybar = lib.mkEnableOption "waybar settings";
     cpuCount = lib.mkOption {
       type = lib.types.int;
       default = 8;
@@ -52,7 +52,7 @@ in
       internal = true;
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.waybar {
+  config = lib.mkIf config.swarselmodules.waybar {
 
     swarselsystems = {
       waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [

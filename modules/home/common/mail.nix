@@ -5,8 +5,8 @@ let
   inherit (config.swarselsystems) xdgDir;
 in
 {
-  options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
-  config = lib.mkIf config.swarselsystems.modules.mail {
+  options.swarselmodules.mail = lib.mkEnableOption "mail settings";
+  config = lib.mkIf config.swarselmodules.mail {
 
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
       address1-token = { path = "${xdgDir}/secrets/address1-token"; };

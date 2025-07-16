@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
-  config = lib.mkIf config.swarselsystems.modules.networkDevices {
+  options.swarselmodules.networkDevices = lib.mkEnableOption "network device config";
+  config = lib.mkIf config.swarselmodules.networkDevices {
     # enable scanners over network
     hardware.sane = {
       enable = true;

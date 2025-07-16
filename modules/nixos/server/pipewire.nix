@@ -1,6 +1,6 @@
 { lib, config, ... }:
 {
-  config = lib.mkIf (config?swarselsystems.modules.server.mpd || config?swarselsystems.modules.server.navidrome) {
+  config = lib.mkIf (config?swarselmodules.server.mpd || config?swarselmodules.server.navidrome) {
 
     security.rtkit.enable = true; # this is required for pipewire real-time access
 

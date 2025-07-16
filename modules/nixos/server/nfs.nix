@@ -3,8 +3,8 @@ let
   nfsUser = globals.user.name;
 in
 {
-  options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
-  config = lib.mkIf config.swarselsystems.modules.server.nfs {
+  options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
+  config = lib.mkIf config.swarselmodules.server.nfs {
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {

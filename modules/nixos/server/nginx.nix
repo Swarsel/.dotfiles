@@ -5,8 +5,8 @@ let
 
 in
 {
-  options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
-  config = lib.mkIf config.swarselsystems.modules.server.nginx {
+  options.swarselmodules.server.nginx = lib.mkEnableOption "enable nginx on server";
+  config = lib.mkIf config.swarselmodules.server.nginx {
     environment.systemPackages = with pkgs; [
       lego
     ];
