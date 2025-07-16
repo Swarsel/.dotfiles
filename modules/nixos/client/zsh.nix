@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
-  config = lib.mkIf config.swarselsystems.modules.zsh {
+  options.swarselmodules.zsh = lib.mkEnableOption "zsh base config";
+  config = lib.mkIf config.swarselmodules.zsh {
     programs.zsh = {
       enable = true;
       enableCompletion = false;

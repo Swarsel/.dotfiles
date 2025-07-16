@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.time = lib.mkEnableOption "time config";
-  config = lib.mkIf config.swarselsystems.modules.time {
+  options.swarselmodules.time = lib.mkEnableOption "time config";
+  config = lib.mkIf config.swarselmodules.time {
     time = {
       timeZone = "Europe/Vienna";
       # hardwareClockInLocalTime = true;

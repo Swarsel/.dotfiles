@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
-  config = lib.mkIf config.swarselsystems.modules.systemdTimeout {
+  options.swarselmodules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
+  config = lib.mkIf config.swarselmodules.systemdTimeout {
     # systemd
     systemd.extraConfig = ''
       DefaultTimeoutStartSec=60s

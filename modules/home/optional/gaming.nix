@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+  options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
+  config = lib.mkIf config.swarselmodules.optional.gaming {
     # specialisation = {
     #   gaming.configuration = {
     home.packages = with pkgs; [

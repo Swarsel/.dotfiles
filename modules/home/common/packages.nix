@@ -1,8 +1,8 @@
 { lib, config, pkgs, ... }:
 
 {
-  options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
-  config = lib.mkIf config.swarselsystems.modules.packages {
+  options.swarselmodules.packages = lib.mkEnableOption "packages settings";
+  config = lib.mkIf config.swarselmodules.packages {
     home.packages = with pkgs; [
 
       # audio stuff

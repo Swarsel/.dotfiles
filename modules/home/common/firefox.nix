@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 {
-  options.swarselsystems.modules.firefox = lib.mkEnableOption "firefox settings";
-  config = lib.mkIf config.swarselsystems.modules.firefox {
+  options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
+  config = lib.mkIf config.swarselmodules.firefox {
     programs.firefox = {
       enable = true;
       package = pkgs.firefox; # uses overrides

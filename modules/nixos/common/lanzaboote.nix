@@ -1,7 +1,7 @@
 { lib, pkgs, config, minimal, ... }:
 {
-  options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
-  config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+  options.swarselmodules.lanzaboote = lib.mkEnableOption "lanzaboote config";
+  config = lib.mkIf config.swarselmodules.lanzaboote {
 
     environment.systemPackages = lib.mkIf config.swarselsystems.isSecureBoot [
       pkgs.sbctl

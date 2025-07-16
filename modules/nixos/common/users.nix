@@ -3,8 +3,8 @@ let
   sopsFile = self + /secrets/general/secrets.yaml;
 in
 {
-  options.swarselsystems.modules.users = lib.mkEnableOption "user config";
-  config = lib.mkIf config.swarselsystems.modules.users {
+  options.swarselmodules.users = lib.mkEnableOption "user config";
+  config = lib.mkIf config.swarselmodules.users {
     sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
     users = {

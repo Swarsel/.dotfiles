@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.login = lib.mkEnableOption "login config";
-  config = lib.mkIf config.swarselsystems.modules.login {
+  options.swarselmodules.login = lib.mkEnableOption "login config";
+  config = lib.mkIf config.swarselmodules.login {
     services.greetd = {
       enable = true;
       settings = {

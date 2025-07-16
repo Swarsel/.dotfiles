@@ -5,8 +5,8 @@ let
   crocDomain = globals.services.croc.domain;
 in
 {
-  options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
-  config = lib.mkIf config.swarselsystems.modules.env {
+  options.swarselmodules.env = lib.mkEnableOption "env settings";
+  config = lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
       EDITOR = "e -w";
       DISPLAY = ":0";

@@ -3,8 +3,8 @@ let
   atuinDomain = globals.services.atuin.domain;
 in
 {
-  options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
-  config = lib.mkIf config.swarselsystems.modules.atuin {
+  options.swarselmodules.atuin = lib.mkEnableOption "atuin settings";
+  config = lib.mkIf config.swarselmodules.atuin {
     programs.atuin = {
       enable = true;
       enableZshIntegration = true;

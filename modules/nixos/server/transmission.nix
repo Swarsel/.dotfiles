@@ -20,8 +20,8 @@ let
   prowlarrPort = 9696;
 in
 {
-  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
-  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     # this user/group section is probably unneeded
     users = {

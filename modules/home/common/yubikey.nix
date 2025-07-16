@@ -3,9 +3,9 @@ let
   inherit (config.swarselsystems) homeDir;
 in
 {
-  options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
+  options.swarselmodules.yubikey = lib.mkEnableOption "yubikey settings";
 
-  config = lib.mkIf config.swarselsystems.modules.yubikey {
+  config = lib.mkIf config.swarselmodules.yubikey {
 
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
       u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };

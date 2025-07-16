@@ -17,8 +17,8 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     sops = {
       secrets = {
@@ -193,7 +193,7 @@ in
               sslVerify = false;
               scrapeUri = "http://localhost/nginx_status";
             };
-            nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
+            nextcloud = lib.mkIf config.swarselmodules.server.nextcloud {
               enable = true;
               port = 9205;
               url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";

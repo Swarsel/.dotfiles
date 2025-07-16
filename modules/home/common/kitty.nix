@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.kitty = lib.mkEnableOption "kitty settings";
-  config = lib.mkIf config.swarselsystems.modules.kitty {
+  options.swarselmodules.kitty = lib.mkEnableOption "kitty settings";
+  config = lib.mkIf config.swarselmodules.kitty {
     programs.kitty = {
       enable = true;
       keybindings = { };

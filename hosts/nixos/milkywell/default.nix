@@ -6,9 +6,6 @@ let
     isLinux = true;
     isNixos = true;
   };
-  profiles = {
-    minimal = lib.mkIf minimal true;
-  };
 in
 {
   imports = [
@@ -32,6 +29,10 @@ in
     enableAllFirmware = lib.mkForce false;
   };
 
+  swarselprofiles = {
+    minimal = lib.mkIf minimal true;
+    server.syncserver = true;
+  };
   swarselsystems = lib.recursiveUpdate
     {
       info = "VM.Standard.E2.1.Micro";
@@ -41,9 +42,6 @@ in
       isSwap = true;
       rootDisk = "/dev/sda";
       swapSize = "4G";
-      profiles = {
-        server.syncserver = true;
-      };
     }
     sharedOptions;
 

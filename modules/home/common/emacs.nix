@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) homeDir isPublic;
 in
 {
-  options.swarselsystems.modules.emacs = lib.mkEnableOption "emacs settings";
-  config = lib.mkIf config.swarselsystems.modules.emacs {
+  options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
+  config = lib.mkIf config.swarselmodules.emacs {
     # needed for elfeed
     sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 

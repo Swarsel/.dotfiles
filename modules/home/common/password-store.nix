@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.passwordstore = lib.mkEnableOption "passwordstore settings";
-  config = lib.mkIf config.swarselsystems.modules.passwordstore {
+  options.swarselmodules.passwordstore = lib.mkEnableOption "passwordstore settings";
+  config = lib.mkIf config.swarselmodules.passwordstore {
     programs.password-store = {
       enable = true;
       settings = {

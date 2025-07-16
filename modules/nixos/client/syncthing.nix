@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) mainUser homeDir;
 in
 {
-  options.swarselsystems.modules.syncthing = lib.mkEnableOption "syncthing config";
-  config = lib.mkIf config.swarselsystems.modules.syncthing {
+  options.swarselmodules.syncthing = lib.mkEnableOption "syncthing config";
+  config = lib.mkIf config.swarselmodules.syncthing {
     services.syncthing = {
       enable = true;
       package = pkgs.stable.syncthing;

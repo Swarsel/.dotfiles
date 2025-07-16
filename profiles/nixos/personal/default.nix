@@ -1,8 +1,8 @@
-{ lib, config, ... }:
+{ lib, config, minimal, ... }:
 {
-  options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
-  config = lib.mkIf config.swarselsystems.profiles.personal {
-    swarselsystems.modules = {
+  options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
+  config = lib.mkIf config.swarselprofiles.personal {
+    swarselmodules = {
       packages = lib.mkDefault true;
       pii = lib.mkDefault true;
       general = lib.mkDefault true;
@@ -53,6 +53,11 @@
 
       server = {
         ssh = lib.mkDefault true;
+      };
+    };
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      swarselprofiles = {
+        personal = lib.mkIf (!minimal) true;
       };
     };
 

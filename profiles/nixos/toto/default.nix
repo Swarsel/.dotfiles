@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
-  config = lib.mkIf config.swarselsystems.profiles.toto {
-    swarselsystems.modules = {
+  options.swarselprofiles.toto = lib.mkEnableOption "is this a toto (setup) host";
+  config = lib.mkIf config.swarselprofiles.toto {
+    swarselmodules = {
       general = lib.mkDefault true;
       packages = lib.mkDefault true;
       home-manager = lib.mkDefault true;

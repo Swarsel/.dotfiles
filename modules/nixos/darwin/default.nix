@@ -6,8 +6,8 @@ in
   imports = [
   ];
 
-  options.swarselsystems.modules.darwin.general = lib.mkEnableOption "darwin config";
-  config = lib.mkIf config.swarselsystems.modules.darwin.general {
+  options.swarselmodules.optional.darwin = lib.mkEnableOption "optional darwin settings";
+  config = lib.mkIf config.swarselmodules.optional.darwin {
     nix.settings.experimental-features = "nix-command flakes";
     nixpkgs = {
       hostPlatform = "x86_64-darwin";

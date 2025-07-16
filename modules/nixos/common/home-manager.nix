@@ -1,7 +1,7 @@
-{ self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
+{ self, inputs, config, lib, outputs, globals, options, nodes, minimal, configName, ... }:
 {
-  options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
-  config = lib.mkIf config.swarselsystems.modules.home-manager {
+  options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
+  config = lib.mkIf config.swarselmodules.home-manager {
     home-manager = lib.mkIf config.swarselsystems.withHomeManager {
       useGlobalPkgs = true;
       useUserPackages = true;
@@ -14,6 +14,11 @@
           imports = [
             "${self}/profiles/home"
             "${self}/modules/home"
+            {
+              swarselprofiles = {
+                minimal = lib.mkIf minimal true;
+              };
+            }
             # "${self}/modules/nixos/common/pii.nix"
             # "${self}/modules/nixos/common/meta.nix"
           ];

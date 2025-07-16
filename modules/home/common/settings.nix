@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) mainUser;
 in
 {
-  options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-  config = lib.mkIf config.swarselsystems.modules.general {
+  options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+  config = lib.mkIf config.swarselmodules.general {
     nix = lib.mkIf (!config.swarselsystems.isNixos) {
       package = lib.mkForce pkgs.nixVersions.nix_2_28;
       extraOptions = ''

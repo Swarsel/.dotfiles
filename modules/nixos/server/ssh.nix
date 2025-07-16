@@ -1,7 +1,7 @@
 { self, lib, config, ... }:
 {
-  options.swarselsystems.modules.server.ssh = lib.mkEnableOption "enable ssh on server";
-  config = lib.mkIf config.swarselsystems.modules.server.ssh {
+  options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
+  config = lib.mkIf config.swarselmodules.server.ssh {
     services.openssh = {
       enable = true;
       startWhenNeeded = lib.mkForce false;

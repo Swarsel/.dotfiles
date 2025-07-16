@@ -9,8 +9,8 @@ let
   inherit (config.swarselsystems) sopsFile;
 in
 {
-  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     users.users.${serviceUser} = {
       extraGroups = [ "users" ];

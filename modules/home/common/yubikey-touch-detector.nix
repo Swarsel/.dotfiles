@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
-  config = lib.mkIf config.swarselsystems.modules.yubikeytouch {
+  options.swarselmodules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
+  config = lib.mkIf config.swarselmodules.yubikeytouch {
     systemd.user.services.yubikey-touch-detector = {
       Unit = {
         Description = "Detects when your YubiKey is waiting for a touch";

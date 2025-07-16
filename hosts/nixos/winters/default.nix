@@ -5,9 +5,6 @@ let
     isBtrfs = false;
     isLinux = true;
     isNixos = true;
-    profiles = {
-      server.local = true;
-    };
   };
 in
 {
@@ -30,6 +27,9 @@ in
   };
 
 
+  swarselprofiles = {
+    server.local = true;
+  };
   swarselsystems = lib.recursiveUpdate
     {
       info = "ASRock J4105-ITX, 32GB RAM";

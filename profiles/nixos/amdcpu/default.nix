@@ -1,8 +1,8 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.profiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
-  config = lib.mkIf config.swarselsystems.profiles.amdcpu {
-    swarselsystems.modules = {
+  options.swarselprofiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
+  config = lib.mkIf config.swarselprofiles.amdcpu {
+    swarselmodules = {
       optional = {
         amdcpu = lib.mkDefault true;
       };

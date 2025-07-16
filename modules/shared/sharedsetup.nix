@@ -1,16 +1,36 @@
-{ self, config, lib, pkgs, globals, minimal, ... }:
+{ self, config, lib, pkgs, ... }:
 {
   options.swarselsystems = {
+    withHomeManager = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    isSwap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    swapSize = lib.mkOption {
+      type = lib.types.str;
+      default = "8G";
+    };
+    rootDisk = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    mainUser = lib.mkOption {
+      type = lib.types.str;
+      default = "swarsel";
+    };
+    isCrypted = lib.mkEnableOption "uses full disk encryption";
+
+    isImpermanence = lib.mkEnableOption "use impermanence on this system";
+    isSecureBoot = lib.mkEnableOption "use secure boot on this system";
     isLaptop = lib.mkEnableOption "laptop host";
     isNixos = lib.mkEnableOption "nixos host";
     isPublic = lib.mkEnableOption "is a public machine (no secrets)";
     isDarwin = lib.mkEnableOption "darwin host";
     isLinux = lib.mkEnableOption "whether this is a linux machine";
     isBtrfs = lib.mkEnableOption "use btrfs filesystem";
-    mainUser = lib.mkOption {
-      type = lib.types.str;
-      default = if (!minimal) then globals.user.name else "swarsel";
-    };
     sopsFile = lib.mkOption {
       type = lib.types.str;
       default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
@@ -264,6 +284,5 @@
         };
       };
     };
-
   };
 }

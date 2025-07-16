@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
-  config = lib.mkIf config.swarselsystems.modules.sway {
+  options.swarselmodules.sway = lib.mkEnableOption "sway config";
+  config = lib.mkIf config.swarselmodules.sway {
     programs.sway = {
       enable = true;
       package = pkgs.dev.swayfx;

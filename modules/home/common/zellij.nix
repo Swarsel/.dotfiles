@@ -1,7 +1,7 @@
 { self, lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.zellij = lib.mkEnableOption "zellij settings";
-  config = lib.mkIf config.swarselsystems.modules.zellij {
+  options.swarselmodules.zellij = lib.mkEnableOption "zellij settings";
+  config = lib.mkIf config.swarselmodules.zellij {
     programs.zellij = {
       enable = true;
       enableZshIntegration = true;

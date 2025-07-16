@@ -11,8 +11,8 @@ let
   cfg = config.services.${serviceName};
 in
 {
-  options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     sops = {
       secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };

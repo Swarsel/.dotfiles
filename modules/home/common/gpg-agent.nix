@@ -3,8 +3,8 @@ let
   inherit (config.swarselsystems) mainUser homeDir;
 in
 {
-  options.swarselsystems.modules.gpgagent = lib.mkEnableOption "gpg agent settings";
-  config = lib.mkIf config.swarselsystems.modules.gpgagent {
+  options.swarselmodules.gpgagent = lib.mkEnableOption "gpg agent settings";
+  config = lib.mkIf config.swarselmodules.gpgagent {
     services.gpg-agent = {
       enable = true;
       enableZshIntegration = true;

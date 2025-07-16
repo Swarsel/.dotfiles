@@ -1,7 +1,7 @@
 { lib, config, ... }:
 {
-  options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix settings";
-  config = lib.mkIf config.swarselsystems.modules.stylix {
+  options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
+  config = lib.mkIf config.swarselmodules.stylix {
     stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
       {
         image = config.swarselsystems.wallpaper;

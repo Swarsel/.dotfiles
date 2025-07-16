@@ -1,7 +1,7 @@
 { lib, config, minimal, ... }:
 {
-  options.swarselsystems.modules.security = lib.mkEnableOption "security config";
-  config = lib.mkIf config.swarselsystems.modules.security {
+  options.swarselmodules.security = lib.mkEnableOption "security config";
+  config = lib.mkIf config.swarselmodules.security {
 
     security = {
       pam.services = lib.mkIf (!minimal) {

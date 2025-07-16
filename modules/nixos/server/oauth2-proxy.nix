@@ -13,7 +13,7 @@ let
 in
 {
   options = {
-    swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
     services.nginx.virtualHosts = lib.mkOption {
       type = lib.types.attrsOf (
@@ -121,7 +121,7 @@ in
       );
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     sops = {
       secrets = {

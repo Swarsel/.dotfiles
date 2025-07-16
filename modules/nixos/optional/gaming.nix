@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 {
-  options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-  config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+  options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
+  config = lib.mkIf config.swarselmodules.optional.gaming {
     programs.steam = {
       enable = true;
       package = pkgs.steam;

@@ -1,7 +1,7 @@
 { lib, config, pkgs, ... }:
 {
-  options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
-  config = lib.mkIf config.swarselsystems.modules.distrobox {
+  options.swarselmodules.distrobox = lib.mkEnableOption "distrobox config";
+  config = lib.mkIf config.swarselmodules.distrobox {
     environment.systemPackages = with pkgs; [
       distrobox
       boxbuddy

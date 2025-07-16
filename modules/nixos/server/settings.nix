@@ -3,14 +3,15 @@ let
   inherit (config.swarselsystems) flakePath;
 in
 {
+
+  options.swarselmodules.server.general = lib.mkEnableOption "general setting on server";
   options.swarselsystems = {
-    modules.server.general = lib.mkEnableOption "general setting on server";
     shellAliases = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.server.general {
+  config = lib.mkIf config.swarselmodules.server.general {
 
     environment.shellAliases = lib.recursiveUpdate
       {

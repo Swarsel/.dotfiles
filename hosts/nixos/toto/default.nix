@@ -4,10 +4,6 @@ let
   sharedOptions = {
     isBtrfs = true;
     isLinux = true;
-    profiles = {
-      toto = lib.mkIf (!minimal) true;
-      minimal = lib.mkIf minimal true;
-    };
   };
 in
 {
@@ -24,6 +20,11 @@ in
     firewall.enable = false;
   };
 
+  swarselprofiles = {
+    toto = lib.mkIf (!minimal) true;
+    minimal = lib.mkIf minimal true;
+    btrfs = true;
+  };
   swarselsystems = lib.recursiveUpdate
     {
       info = "~SwarselSystems~ remote install helper";
@@ -35,7 +36,6 @@ in
       swapSize = "2G";
       # rootDisk = "/dev/nvme0n1";
       rootDisk = "/dev/vda";
-      profiles.btrfs = true;
       # rootDisk = "/dev/vda";
     }
     sharedOptions;

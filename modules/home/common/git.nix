@@ -6,8 +6,8 @@ let
   gitUser = globals.user.name;
 in
 {
-  options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
-  config = lib.mkIf config.swarselsystems.modules.git {
+  options.swarselmodules.git = lib.mkEnableOption "git settings";
+  config = lib.mkIf config.swarselmodules.git {
     programs.git = {
       enable = true;
     } // lib.optionalAttrs (!minimal) {

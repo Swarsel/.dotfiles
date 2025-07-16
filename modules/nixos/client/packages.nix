@@ -1,7 +1,7 @@
 { lib, config, pkgs, minimal, ... }:
 {
-  options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
-  config = lib.mkIf config.swarselsystems.modules.packages {
+  options.swarselmodules.packages = lib.mkEnableOption "install packages";
+  config = lib.mkIf config.swarselmodules.packages {
 
     environment.systemPackages = with pkgs; lib.optionals (!minimal) [
       # yubikey packages

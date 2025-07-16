@@ -838,6 +838,11 @@ The rest of the outputs either define or help define the actual configurations:
                   name = configName;
                   secretsDir = ../hosts/nixos/${configName}/secrets;
                 };
+
+                swarselprofiles = {
+                  minimal = lib.mkIf minimal true;
+                };
+
               }
             ];
           };
@@ -861,6 +866,7 @@ The rest of the outputs either define or help define the actual configurations:
               {
                 node.name = configName;
                 node.secretsDir = ../hosts/darwin/${configName}/secrets;
+
               }
             ];
           };
@@ -1771,19 +1777,6 @@ My work machine. Built for more security, this is the gold standard of my config
   { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
-    sharedOptions = {
-      isLaptop = true;
-      isNixos = true;
-      isBtrfs = true;
-      isLinux = true;
-      sharescreen = "eDP-2";
-      profiles = {
-        personal = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-        work = lib.mkIf (!minimal) true;
-        framework = lib.mkIf (!minimal) true;
-      };
-    };
   in
   {
 
@@ -1796,54 +1789,57 @@ My work machine. Built for more security, this is the gold standard of my config
     ];
 
 
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
-        firewall = lib.mkForce true;
-        wallpaper = self + /files/wallpaper/lenovowp.png;
-        hasBluetooth = true;
-        hasFingerprint = true;
-        isImpermanence = false;
-        isSecureBoot = true;
-        isCrypted = true;
-        inherit (config.repo.secrets.local) hostName;
-        inherit (config.repo.secrets.local) fqdn;
-        hibernation.offset = 533760;
-        profiles = {
-          amdcpu = true;
-          amdgpu = true;
-          hibernation = true;
-          btrfs = true;
-        };
-      }
-      sharedOptions;
+    swarselprofiles = {
+      personal = lib.mkIf (!minimal) true;
+      work = lib.mkIf (!minimal) true;
+      framework = lib.mkIf (!minimal) true;
+      amdcpu = true;
+      amdgpu = true;
+      hibernation = true;
+      btrfs = true;
+    };
+    swarselsystems = {
+      lowResolution = "1280x800";
+      highResolution = "2560x1600";
+      isLaptop = true;
+      isNixos = true;
+      isBtrfs = true;
+      isLinux = true;
+      sharescreen = "eDP-2";
+      info = "Framework Laptop 16, 7940HS, RX7700S, 64GB RAM";
+      firewall = lib.mkForce true;
+      wallpaper = self + /files/wallpaper/lenovowp.png;
+      hasBluetooth = true;
+      hasFingerprint = true;
+      isImpermanence = false;
+      isSecureBoot = true;
+      isCrypted = true;
+      inherit (config.repo.secrets.local) hostName;
+      inherit (config.repo.secrets.local) fqdn;
+      hibernation.offset = 533760;
+    };
 
     home-manager.users."${primaryUser}" = {
-      # home.stateVersion = lib.mkForce "23.05";
-      swarselsystems = lib.recursiveUpdate
-        {
-          isSecondaryGpu = true;
-          SecondaryGpuCard = "pci-0000_03_00_0";
-          cpuCount = 16;
-          temperatureHwmon = {
-            isAbsolutePath = true;
-            path = "/sys/devices/virtual/thermal/thermal_zone0/";
-            input-filename = "temp4_input";
+      swarselsystems = {
+        isSecondaryGpu = true;
+        SecondaryGpuCard = "pci-0000_03_00_0";
+        cpuCount = 16;
+        temperatureHwmon = {
+          isAbsolutePath = true;
+          path = "/sys/devices/virtual/thermal/thermal_zone0/";
+          input-filename = "temp4_input";
+        };
+        monitors = {
+          main = {
+            name = "BOE 0x0BC9 Unknown";
+            mode = "2560x1600"; # TEMPLATE
+            scale = "1";
+            position = "2560,0";
+            workspace = "15:L";
+            output = "eDP-2";
           };
-          lowResolution = "1280x800";
-          highResolution = "2560x1600";
-          monitors = {
-            main = {
-              name = "BOE 0x0BC9 Unknown";
-              mode = "2560x1600"; # TEMPLATE
-              scale = "1";
-              position = "2560,0";
-              workspace = "15:L";
-              output = "eDP-2";
-            };
-          };
-        }
-        sharedOptions;
+        };
+      };
     };
   }
 
@@ -2038,10 +2034,6 @@ My personal laptop.
       isBtrfs = true;
       isLinux = true;
       sharescreen = "eDP-1";
-      profiles = {
-        reduced = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-      };
     };
   in
   {
@@ -2054,6 +2046,11 @@ My personal laptop.
 
     ];
 
+      swarselprofiles = {
+        reduced = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+          btrfs = true;
+      };
 
     swarselsystems = lib.recursiveUpdate
       {
@@ -2069,13 +2066,14 @@ My personal laptop.
         rootDisk = "/dev/nvme0n1";
         swapSize = "4G";
         hostName = config.node.name;
-        profiles = {
-          btrfs = true;
-        };
       }
       sharedOptions;
 
     home-manager.users."${primaryUser}" = {
+      swarselprofiles = {
+        reduced = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+      };
       # home.stateVersion = lib.mkForce "23.05";
       swarselsystems = lib.recursiveUpdate
         {
@@ -2279,9 +2277,6 @@ This is my main server that I run at home. It handles most tasks that require bi
       isBtrfs = false;
       isLinux = true;
       isNixos = true;
-      profiles = {
-        server.local = true;
-      };
     };
   in
   {
@@ -2304,6 +2299,9 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
 
+      swarselprofiles = {
+        server.local = true;
+      };
     swarselsystems = lib.recursiveUpdate
       {
         info = "ASRock J4105-ITX, 32GB RAM";
@@ -2502,9 +2500,6 @@ This machine mainly acts as an external sync helper. It manages the following th
       isLinux = true;
       isNixos = true;
     };
-    profiles = {
-      minimal = lib.mkIf minimal true;
-    };
   in
   {
     imports = [
@@ -2528,6 +2523,10 @@ This machine mainly acts as an external sync helper. It manages the following th
       enableAllFirmware = lib.mkForce false;
     };
 
+    swarselprofiles = {
+      minimal = lib.mkIf minimal true;
+          server.syncserver = true;
+    };
     swarselsystems = lib.recursiveUpdate
       {
         info = "VM.Standard.E2.1.Micro";
@@ -2537,9 +2536,6 @@ This machine mainly acts as an external sync helper. It manages the following th
         isSwap = true;
         rootDisk = "/dev/sda";
         swapSize = "4G";
-        profiles = {
-          server.syncserver = true;
-        };
       }
       sharedOptions;
 
@@ -2909,6 +2905,9 @@ This machine mainly acts as an external sync helper. It manages the following th
       };
     };
 
+        swarselprofiles = {
+          server.moonside = true;
+        };
     swarselsystems = lib.recursiveUpdate
       {
         info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
@@ -2917,9 +2916,6 @@ This machine mainly acts as an external sync helper. It manages the following th
         isCrypted = false;
         isSwap = false;
         rootDisk = "/dev/sda";
-        profiles = {
-          server.moonside = true;
-        };
       }
       sharedOptions;
 
@@ -3110,10 +3106,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
     sharedOptions = {
       isBtrfs = true;
       isLinux = true;
-      profiles = {
-        toto = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-      };
     };
   in
   {
@@ -3130,6 +3122,11 @@ This is a slim setup for developing base configuration. I do not track the hardw
       firewall.enable = false;
     };
 
+      swarselprofiles = {
+        toto = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+        btrfs = true;
+      };
     swarselsystems = lib.recursiveUpdate
       {
         info = "~SwarselSystems~ remote install helper";
@@ -3141,7 +3138,6 @@ This is a slim setup for developing base configuration. I do not track the hardw
         swapSize = "2G";
         # rootDisk = "/dev/nvme0n1";
         rootDisk = "/dev/vda";
-        profiles.btrfs = true;
         # rootDisk = "/dev/vda";
       }
       sharedOptions;
@@ -3544,10 +3540,6 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
       isBtrfs = false;
       isLinux = true;
       isPublic = true;
-      profiles = {
-        chaostheatre = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-      };
     };
   in
     {
@@ -3577,6 +3569,11 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
         firewall.enable = true;
       };
 
+      swarselprofiles = {
+        chaostheatre = lib.mkIf (!minimal) true;
+        minimal = lib.mkIf minimal true;
+        btrfs = true;
+      };
       swarselsystems = lib.recursiveUpdate
         {
           info = "~SwarselSystems~ demo host";
@@ -3587,7 +3584,6 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
           isSwap = true;
           swapSize = "4G";
           rootDisk = "/dev/vda";
-          profiles.btrfs = true;
         }
         sharedOptions;
 
@@ -3966,41 +3962,25 @@ This section is for setting things that should be used on hosts that are using t
   }
 #+end_src
 
-**** Shared Configuration Options (automatically active)
+**** Mirror home-manager shared options (automatically active)
 :PROPERTIES:
-:CUSTOM_ID: h:f4f22166-e345-43e6-b15f-b7f5bb886554
+:CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
 :END:
 
-I usually use =mutableUsers = false= in my NixOS configuration. However, on a new system where sops-keys have not been deployed, this would immediately lock me out of the system. Hence this flag can be used until sops-keys are created.
 
-#+begin_src nix-ts :tangle modules/nixos/common/sharedsetup.nix
-  { lib, ... }:
-  {
-    options = {
-      swarselsystems = {
-        withHomeManager = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-        isSwap = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-        swapSize = lib.mkOption {
-          type = lib.types.str;
-          default = "8G";
-        };
-        rootDisk = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-        };
-        isCrypted = lib.mkEnableOption "uses full disk encryption";
-
-        isImpermanence = lib.mkEnableOption "use impermanence on this system";
-        isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-      };
-    };
-  }
+#+begin_src nix-ts :tangle modules/home/common/sharedoptions.nix
+      { lib, config, nixosConfig, ... }:
+      let
+        # mirrorAttrs = lib.mapAttrs (_: v: lib.mkDefault v) nixosConfig.swarselsystems;
+      inherit (lib) mkDefault mapAttrs filterAttrs;
+        mkDefaultCommonAttrs = base: defaults:
+        lib.mapAttrs (_: v: lib.mkDefault v)
+          (lib.filterAttrs (k: _: base ? ${k}) defaults);
+      in
+      {
+        # config.swarselsystems = mirrorAttrs;
+       config.swarselsystems = mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems;
+      }
 #+end_src
 
 **** Topology (automatically active)
@@ -4111,8 +4091,8 @@ A breakdown of the flags being set:
     };
   in
   {
-    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselsystems.modules.general
+    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselmodules.general
       (lib.recursiveUpdate
         {
           sops.secrets.github-api-token = lib.mkIf (!minimal) {
@@ -4168,10 +4148,10 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
+  { self, inputs, config, lib, outputs, globals, options, nodes, minimal, configName, ... }:
     {
-      options.swarselsystems.modules.home-manager = lib.mkEnableOption "home-manager";
-      config = lib.mkIf config.swarselsystems.modules.home-manager {
+      options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
+      config = lib.mkIf config.swarselmodules.home-manager {
         home-manager = lib.mkIf config.swarselsystems.withHomeManager {
           useGlobalPkgs = true;
           useUserPackages = true;
@@ -4184,6 +4164,11 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
               imports = [
                 "${self}/profiles/home"
                 "${self}/modules/home"
+                {
+                  swarselprofiles = {
+                    minimal = lib.mkIf minimal true;
+                  };
+                }
                 # "${self}/modules/nixos/common/pii.nix"
                 # "${self}/modules/nixos/common/meta.nix"
               ];
@@ -4215,8 +4200,8 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
     sopsFile = self + /secrets/general/secrets.yaml;
   in
     {
-      options.swarselsystems.modules.users = lib.mkEnableOption "user config";
-      config = lib.mkIf config.swarselsystems.modules.users {
+      options.swarselmodules.users = lib.mkEnableOption "user config";
+      config = lib.mkIf config.swarselmodules.users {
         sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
 
         users = {
@@ -4244,8 +4229,8 @@ Next, we setup the keymap in case we are not in a graphical session. At this poi
 #+begin_src nix-ts :tangle modules/nixos/common/xserver.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.xserver = lib.mkEnableOption "xserver keymap";
-    config = lib.mkIf config.swarselsystems.modules.packages {
+    options.swarselmodules.xserver = lib.mkEnableOption "xserver keymap";
+    config = lib.mkIf config.swarselmodules.packages {
       services.xserver = {
         xkb = {
           layout = "us";
@@ -4266,8 +4251,8 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
 #+begin_src nix-ts :tangle modules/nixos/common/time.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.time = lib.mkEnableOption "time config";
-    config = lib.mkIf config.swarselsystems.modules.time {
+    options.swarselmodules.time = lib.mkEnableOption "time config";
+    config = lib.mkIf config.swarselmodules.time {
       time = {
         timeZone = "Europe/Vienna";
         # hardwareClockInLocalTime = true;
@@ -4359,9 +4344,9 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
             description = "Exposes the loaded repo secrets. This option is read-only.";
           };
         };
-        swarselsystems.modules.pii = lib.mkEnableOption "enable pii management";
+        swarselmodules.pii = lib.mkEnableOption "enable pii management";
       };
-    config = lib.mkIf config.swarselsystems.modules.pii {
+    config = lib.mkIf config.swarselmodules.pii {
       repo.secretFiles =
         let
           local = config.node.secretsDir + "/pii.nix.enc";
@@ -4384,8 +4369,8 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
 #+begin_src nix-ts :tangle modules/nixos/common/lanzaboote.nix
   { lib, pkgs, config, minimal, ... }:
   {
-    options.swarselsystems.modules.lanzaboote = lib.mkEnableOption "lanzaboote config";
-    config = lib.mkIf config.swarselsystems.modules.lanzaboote {
+    options.swarselmodules.lanzaboote = lib.mkEnableOption "lanzaboote config";
+    config = lib.mkIf config.swarselmodules.lanzaboote {
 
       environment.systemPackages = lib.mkIf config.swarselsystems.isSecureBoot [
         pkgs.sbctl
@@ -4422,8 +4407,8 @@ Normally, doing that also resets the lecture that happens on the first use of =s
     inherit (config.swarselsystems) isImpermanence isCrypted;
   in
   {
-    options.swarselsystems.modules.impermanence = lib.mkEnableOption "impermanence config";
-    config = lib.mkIf config.swarselsystems.modules.impermanence {
+    options.swarselmodules.impermanence = lib.mkEnableOption "impermanence config";
+    config = lib.mkIf config.swarselmodules.impermanence {
 
 
       security.sudo.extraConfig = lib.mkIf isImpermanence ''
@@ -4544,8 +4529,8 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 #+begin_src nix-ts :tangle modules/nixos/client/packages.nix
   { lib, config, pkgs, minimal, ... }:
   {
-    options.swarselsystems.modules.packages = lib.mkEnableOption "install packages";
-    config = lib.mkIf config.swarselsystems.modules.packages {
+    options.swarselmodules.packages = lib.mkEnableOption "install packages";
+    config = lib.mkIf config.swarselmodules.packages {
 
       environment.systemPackages = with pkgs; lib.optionals (!minimal) [
         # yubikey packages
@@ -4650,8 +4635,8 @@ Next, we will setup some environment variables that need to be set on the system
 #+begin_src nix-ts :tangle modules/nixos/client/env.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.env = lib.mkEnableOption "environment config";
-    config = lib.mkIf config.swarselsystems.modules.env {
+    options.swarselmodules.env = lib.mkEnableOption "environment config";
+    config = lib.mkIf config.swarselmodules.env {
 
       environment = {
         wordlist.enable = true;
@@ -4679,8 +4664,8 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
 #+begin_src nix-ts :tangle modules/nixos/client/polkit.nix
 { lib, config, minimal, ... }:
 {
-  options.swarselsystems.modules.security = lib.mkEnableOption "security config";
-  config = lib.mkIf config.swarselsystems.modules.security {
+  options.swarselmodules.security = lib.mkEnableOption "security config";
+  config = lib.mkIf config.swarselmodules.security {
 
     security = {
       pam.services = lib.mkIf (!minimal) {
@@ -4712,8 +4697,8 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
 #+begin_src nix-ts :tangle modules/nixos/client/systemd.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
-    config = lib.mkIf config.swarselsystems.modules.systemdTimeout {
+    options.swarselmodules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
+    config = lib.mkIf config.swarselmodules.systemdTimeout {
       # systemd
       systemd.extraConfig = ''
         DefaultTimeoutStartSec=60s
@@ -4734,8 +4719,8 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
   { pkgs, config, lib, ... }:
   {
 
+    options.swarselmodules.hardware = lib.mkEnableOption "hardware config";
     options.swarselsystems = {
-      modules.hardware = lib.mkEnableOption "hardware config";
       hasBluetooth = lib.mkEnableOption "bluetooth availability";
       hasFingerprint = lib.mkEnableOption "fingerprint sensor availability";
       trackpoint = {
@@ -4746,7 +4731,7 @@ Enable OpenGL, Sound, Bluetooth and various drivers.
         };
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.hardware {
+    config = lib.mkIf config.swarselmodules.hardware {
       hardware = {
         # opengl.driSupport32Bit = true is replaced with graphics.enable32Bit and hence redundant
         graphics = {
@@ -4792,8 +4777,8 @@ This is only used on systems not running Pipewire.
 #+begin_src nix-ts :tangle modules/nixos/client/pulseaudio.nix
   { config, pkgs, lib, ... }: {
 
-    options.swarselsystems.modules.pulseaudio = lib.mkEnableOption "pulseaudio config";
-    config = lib.mkIf config.swarselsystems.modules.pulseaudio {
+    options.swarselmodules.pulseaudio = lib.mkEnableOption "pulseaudio config";
+    config = lib.mkIf config.swarselmodules.pulseaudio {
       services.pulseaudio = {
         enable = lib.mkIf (!config.services.pipewire.enable) true;
         package = pkgs.pulseaudioFull;
@@ -4812,8 +4797,8 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 #+begin_src nix-ts :tangle modules/nixos/client/pipewire.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.pipewire = lib.mkEnableOption "pipewire config";
-    config = lib.mkIf config.swarselsystems.modules.pipewire {
+    options.swarselmodules.pipewire = lib.mkEnableOption "pipewire config";
+    config = lib.mkIf config.swarselmodules.pipewire {
       security.rtkit.enable = true; # this is required for pipewire real-time access
 
       services.pipewire = {
@@ -4851,10 +4836,10 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
   in
   {
     options.swarselsystems = {
-      modules.network = lib.mkEnableOption "network config";
       firewall = lib.swarselsystems.mkTrueOption;
     };
-    config = lib.mkIf config.swarselsystems.modules.network {
+    options.swarselmodules.network = lib.mkEnableOption "network config";
+    config = lib.mkIf config.swarselmodules.network {
 
       sops = {
         secrets = lib.mkIf (!config.swarselsystems.isPublic) {
@@ -5174,8 +5159,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 #+begin_src nix-ts :tangle modules/nixos/client/sops.nix
   { config, lib, ... }:
   {
-    options.swarselsystems.modules.sops = lib.mkEnableOption "sops config";
-    config = lib.mkIf config.swarselsystems.modules.sops {
+    options.swarselmodules.sops = lib.mkEnableOption "sops config";
+    config = lib.mkIf config.swarselmodules.sops {
       sops = {
 
         # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
@@ -5201,12 +5186,12 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 #+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix config";
+    options.swarselmodules.stylix = lib.mkEnableOption "stylix config";
     config = {
       stylix = {
         enable = true;
         base16Scheme = "${self}/files/stylix/swarsel.yaml";
-      } // lib.optionalAttrs config.swarselsystems.modules.stylix
+      } // lib.optionalAttrs config.swarselmodules.stylix
         (lib.recursiveUpdate
           {
             targets.grub.enable = false; # the styling makes grub more ugly
@@ -5232,8 +5217,8 @@ Some programs profit from being installed through dedicated NixOS settings on sy
 #+begin_src nix-ts :tangle modules/nixos/client/programs.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.programs = lib.mkEnableOption "small program modules config";
-    config = lib.mkIf config.swarselsystems.modules.programs {
+    options.swarselmodules.programs = lib.mkEnableOption "small program modules config";
+    config = lib.mkIf config.swarselmodules.programs {
       programs = {
         dconf.enable = true;
         evince.enable = true;
@@ -5252,8 +5237,8 @@ Here I disable global completion to prevent redundant compinit calls and cache i
 #+begin_src nix-ts :tangle modules/nixos/client/zsh.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.zsh = lib.mkEnableOption "zsh base config";
-    config = lib.mkIf config.swarselsystems.modules.zsh {
+    options.swarselmodules.zsh = lib.mkEnableOption "zsh base config";
+    config = lib.mkIf config.swarselmodules.zsh {
       programs.zsh = {
         enable = true;
         enableCompletion = false;
@@ -5275,8 +5260,8 @@ Here I disable global completion to prevent redundant compinit calls and cache i
     inherit (config.swarselsystems) mainUser homeDir;
   in
   {
-    options.swarselsystems.modules.syncthing = lib.mkEnableOption "syncthing config";
-    config = lib.mkIf config.swarselsystems.modules.syncthing {
+    options.swarselmodules.syncthing = lib.mkEnableOption "syncthing config";
+    config = lib.mkIf config.swarselmodules.syncthing {
       services.syncthing = {
         enable = true;
         package = pkgs.stable.syncthing;
@@ -5349,8 +5334,8 @@ Enables the blueman service including the nice system tray icon.
 #+begin_src nix-ts :tangle modules/nixos/client/blueman.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.blueman = lib.mkEnableOption "blueman config";
-    config = lib.mkIf config.swarselsystems.modules.blueman {
+    options.swarselmodules.blueman = lib.mkEnableOption "blueman config";
+    config = lib.mkIf config.swarselmodules.blueman {
       services.blueman.enable = true;
       services.hardware.bolt.enable = true;
     };
@@ -5371,8 +5356,8 @@ Avahi is the service used for the network discovery.
 #+begin_src nix-ts :tangle modules/nixos/client/networkdevices.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.networkDevices = lib.mkEnableOption "network device config";
-    config = lib.mkIf config.swarselsystems.modules.networkDevices {
+    options.swarselmodules.networkDevices = lib.mkEnableOption "network device config";
+    config = lib.mkIf config.swarselmodules.networkDevices {
       # enable scanners over network
       hardware.sane = {
         enable = true;
@@ -5414,8 +5399,8 @@ This is being set to allow myself to use all functions of nautilus in NixOS
 #+begin_src nix-ts :tangle modules/nixos/client/gvfs.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
-    config = lib.mkIf config.swarselsystems.modules.gvfs {
+    options.swarselmodules.gvfs = lib.mkEnableOption "gvfs config for nautilus";
+    config = lib.mkIf config.swarselmodules.gvfs {
       services.gvfs.enable = true;
     };
   }
@@ -5431,8 +5416,8 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 #+begin_src nix-ts :tangle modules/nixos/client/interceptiontools.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.interceptionTools = lib.mkEnableOption "interception tools config";
-    config = lib.mkIf config.swarselsystems.modules.interceptionTools {
+    options.swarselmodules.interceptionTools = lib.mkEnableOption "interception tools config";
+    config = lib.mkIf config.swarselmodules.interceptionTools {
       # Make CAPS work as a dual function ESC/CTRL key
       services.interception-tools = {
         enable = true;
@@ -5479,8 +5464,8 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
 #+begin_src nix-ts :tangle modules/nixos/client/power-profiles-daemon.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.ppd = lib.mkEnableOption "power profiles daemon config";
-    config = lib.mkIf config.swarselsystems.modules.ppd {
+    options.swarselmodules.ppd = lib.mkEnableOption "power profiles daemon config";
+    config = lib.mkIf config.swarselmodules.ppd {
       services.power-profiles-daemon.enable = true;
     };
   }
@@ -5494,8 +5479,8 @@ Most of the time I am using =power-saver=, however, it is good to be able to cho
 #+begin_src nix-ts :tangle modules/nixos/client/swayosd.nix
   { lib, pkgs, config, ... }:
   {
-    options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
-    config = lib.mkIf config.swarselsystems.modules.swayosd {
+    options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
+    config = lib.mkIf config.swarselmodules.swayosd {
       environment.systemPackages = [ pkgs.dev.swayosd ];
       services.udev.packages = [ pkgs.dev.swayosd ];
       systemd.services.swayosd-libinput-backend = {
@@ -5540,8 +5525,8 @@ Also, since I use a GPG key in sops, it seems that scdaemon creates an instance 
     inherit (config.repo.secrets.common.yubikeys) cfg1 cfg2;
   in
   {
-    options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey config";
-    config = lib.mkIf config.swarselsystems.modules.yubikey {
+    options.swarselmodules.yubikey = lib.mkEnableOption "yubikey config";
+    config = lib.mkIf config.swarselmodules.yubikey {
       programs.ssh.startAgent = false;
 
       services.pcscd.enable = false;
@@ -5581,8 +5566,8 @@ This performs the necessary configuration to support this hardware.
 #+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-ledger.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.ledger = lib.mkEnableOption "ledger config";
-    config = lib.mkIf config.swarselsystems.modules.ledger {
+    options.swarselmodules.ledger = lib.mkEnableOption "ledger config";
+    config = lib.mkIf config.swarselmodules.ledger {
       hardware.ledger.enable = true;
 
       services.udev.packages = with pkgs; [
@@ -5603,8 +5588,8 @@ This loads some udev rules that I need for my split keyboards.
 #+begin_src nix-ts :tangle modules/nixos/client/hardwarecompatibility-keyboards.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.keyboards = lib.mkEnableOption "keyboards config";
-    config = lib.mkIf config.swarselsystems.modules.keyboards {
+    options.swarselmodules.keyboards = lib.mkEnableOption "keyboards config";
+    config = lib.mkIf config.swarselmodules.keyboards {
       services.udev.packages = with pkgs; [
         qmk-udev-rules
         vial
@@ -5624,8 +5609,8 @@ This section houses the greetd related settings. I do not really want to use a d
 #+begin_src nix-ts :tangle modules/nixos/client/login.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.login = lib.mkEnableOption "login config";
-    config = lib.mkIf config.swarselsystems.modules.login {
+    options.swarselmodules.login = lib.mkEnableOption "login config";
+    config = lib.mkIf config.swarselmodules.login {
       services.greetd = {
         enable = true;
         settings = {
@@ -5661,8 +5646,8 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
 #+begin_src nix-ts :tangle modules/nixos/client/nix-ld.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.nix-ld = lib.mkEnableOption "nix-ld config";
-    config = lib.mkIf config.swarselsystems.modules.nix-ld {
+    options.swarselmodules.nix-ld = lib.mkEnableOption "nix-ld config";
+    config = lib.mkIf config.swarselmodules.nix-ld {
       programs.nix-ld = {
         enable = true;
         libraries = with pkgs; [
@@ -5784,8 +5769,8 @@ This snipped is added to the activation script that is run after every rebuild a
 #+begin_src nix-ts :tangle modules/nixos/client/nvd-rebuild.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.nvd = lib.mkEnableOption "nvd config";
-    config = lib.mkIf config.swarselsystems.modules.nvd {
+    options.swarselmodules.nvd = lib.mkEnableOption "nvd config";
+    config = lib.mkIf config.swarselmodules.nvd {
 
       environment.systemPackages = [
         pkgs.nvd
@@ -5812,8 +5797,8 @@ Used for storing sessions in e.g. Nextcloud. Using this on a system level keeps 
 #+begin_src nix-ts :tangle modules/nixos/client/gnome-keyring.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
-    config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
+    options.swarselmodules.gnome-keyring = lib.mkEnableOption "gnome-keyring config";
+    config = lib.mkIf config.swarselmodules.gnome-keyring {
       services.gnome.gnome-keyring = {
         enable = true;
       };
@@ -5833,8 +5818,8 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 #+begin_src nix-ts :tangle modules/nixos/client/sway.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.sway = lib.mkEnableOption "sway config";
-    config = lib.mkIf config.swarselsystems.modules.sway {
+    options.swarselmodules.sway = lib.mkEnableOption "sway config";
+    config = lib.mkIf config.swarselmodules.sway {
       programs.sway = {
         enable = true;
         package = pkgs.dev.swayfx;
@@ -5867,8 +5852,8 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
 #+begin_src nix-ts :tangle modules/nixos/client/xdg-portal.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.xdg-portal = lib.mkEnableOption "xdg portal config";
-    config = lib.mkIf config.swarselsystems.modules.xdg-portal {
+    options.swarselmodules.xdg-portal = lib.mkEnableOption "xdg portal config";
+    config = lib.mkIf config.swarselmodules.xdg-portal {
       xdg.portal = {
         enable = true;
         config = {
@@ -5897,8 +5882,8 @@ I am using distrobox to quickly circumvent isses that I cannot immediately solve
 #+begin_src nix-ts :tangle modules/nixos/client/distrobox.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.distrobox = lib.mkEnableOption "distrobox config";
-    config = lib.mkIf config.swarselsystems.modules.distrobox {
+    options.swarselmodules.distrobox = lib.mkEnableOption "distrobox config";
+    config = lib.mkIf config.swarselmodules.distrobox {
       environment.systemPackages = with pkgs; [
         distrobox
         boxbuddy
@@ -5922,8 +5907,8 @@ Adds the necessary tools to allow .appimage programs easily.
 #+begin_src nix-ts :tangle modules/nixos/client/appimage.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.appimage = lib.mkEnableOption "appimage config";
-    config = lib.mkIf config.swarselsystems.modules.appimage {
+    options.swarselmodules.appimage = lib.mkEnableOption "appimage config";
+    config = lib.mkIf config.swarselmodules.appimage {
       programs.appimage = {
         enable = true;
         binfmt = true;
@@ -5943,8 +5928,8 @@ This turns off the display when the lid is closed.
 #+begin_src nix-ts :tangle modules/nixos/client/lid.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.lid = lib.mkEnableOption "lid config";
-    config = lib.mkIf config.swarselsystems.modules.lid {
+    options.swarselmodules.lid = lib.mkEnableOption "lid config";
+    config = lib.mkIf config.swarselmodules.lid {
       services.logind = {
         lidSwitch = "suspend";
         lidSwitchDocked = "ignore";
@@ -5990,8 +5975,8 @@ Since I hide the waybar completely during normal operation, I run the risk of no
 #+begin_src nix-ts :tangle modules/nixos/client/lowbattery.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.modules.lowBattery = lib.mkEnableOption "low battery notification config";
-    config = lib.mkIf config.swarselsystems.modules.lowBattery {
+    options.swarselmodules.lowBattery = lib.mkEnableOption "low battery notification config";
+    config = lib.mkIf config.swarselmodules.lowBattery {
       systemd.user.services."battery-low" = {
         enable = true;
         description = "Timer for battery check that alerts at 10% or less";
@@ -6032,8 +6017,8 @@ Auto login for the initial session.
     inherit (config.swarselsystems) mainUser;
   in
   {
-    options.swarselsystems.modules.autologin = lib.mkEnableOption "optional autologin settings";
-    config = lib.mkIf config.swarselsystems.modules.autologin {
+    options.swarselmodules.autologin = lib.mkEnableOption "optional autologin settings";
+    config = lib.mkIf config.swarselmodules.autologin {
       services = {
         getty.autologinUser = mainUser;
         greetd.settings.initial_session.user = mainUser;
@@ -6080,14 +6065,15 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     inherit (config.swarselsystems) flakePath;
   in
   {
+
+    options.swarselmodules.server.general = lib.mkEnableOption "general setting on server";
     options.swarselsystems = {
-      modules.server.general = lib.mkEnableOption "general setting on server";
       shellAliases = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = { };
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.server.general {
+    config = lib.mkIf config.swarselmodules.server.general {
 
       environment.shellAliases = lib.recursiveUpdate
         {
@@ -6122,8 +6108,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 #+begin_src nix-ts :tangle modules/nixos/server/packages.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.server.packages = lib.mkEnableOption "enable packages on server";
-    config = lib.mkIf config.swarselsystems.modules.server.packages {
+    options.swarselmodules.server.packages = lib.mkEnableOption "enable packages on server";
+    config = lib.mkIf config.swarselmodules.server.packages {
       environment.systemPackages = with pkgs; [
         gnupg
         nix-index
@@ -6152,8 +6138,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     nfsUser = globals.user.name;
   in
   {
-    options.swarselsystems.modules.server.nfs = lib.mkEnableOption "enable nfs on server";
-    config = lib.mkIf config.swarselsystems.modules.server.nfs {
+    options.swarselmodules.server.nfs = lib.mkEnableOption "enable nfs on server";
+    config = lib.mkIf config.swarselmodules.server.nfs {
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
@@ -6216,8 +6202,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
   in
   {
-    options.swarselsystems.modules.server.nginx = lib.mkEnableOption "enable nginx on server";
-    config = lib.mkIf config.swarselsystems.modules.server.nginx {
+    options.swarselmodules.server.nginx = lib.mkEnableOption "enable nginx on server";
+    config = lib.mkIf config.swarselmodules.server.nginx {
       environment.systemPackages = with pkgs; [
         lego
       ];
@@ -6262,8 +6248,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/ssh.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.modules.server.ssh = lib.mkEnableOption "enable ssh on server";
-    config = lib.mkIf config.swarselsystems.modules.server.ssh {
+    options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
+    config = lib.mkIf config.swarselmodules.server.ssh {
       services.openssh = {
         enable = true;
         startWhenNeeded = lib.mkForce false;
@@ -6310,8 +6296,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         calibre
       ];
@@ -6381,8 +6367,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       users.users.${serviceUser} = {
         extraGroups = [ "video" "render" "users" ];
       };
@@ -6452,8 +6438,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         pciutils
         alsa-utils
@@ -6595,8 +6581,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceGroup = serviceUser;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       users.groups.${serviceGroup} = {
         gid = 65136;
       };
@@ -6646,8 +6632,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceName = "mpd";
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       users = {
         groups = {
           mpd = { };
@@ -6712,7 +6698,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+begin_src nix-ts :tangle modules/nixos/server/pipewire.nix
   { lib, config, ... }:
   {
-    config = lib.mkIf (config?swarselsystems.modules.server.mpd || config?swarselsystems.modules.server.navidrome) {
+    config = lib.mkIf (config?swarselmodules.server.mpd || config?swarselmodules.server.navidrome) {
 
       security.rtkit.enable = true; # this is required for pipewire real-time access
 
@@ -6744,8 +6730,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     postgresVersion = 14;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       services = {
         ${serviceName} = {
           enable = true;
@@ -6786,8 +6772,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     '';
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
       environment.systemPackages = with pkgs; [
         matrix-synapse
         lottieconverter
@@ -7130,8 +7116,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops.secrets = {
         nextcloud-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -7206,8 +7192,8 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users.users.${serviceUser} = {
         extraGroups = [ "video" "render" "users" ];
@@ -7293,8 +7279,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     kanidmDomain = globals.services.kanidm.domain;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users.users.${serviceUser} = {
         extraGroups = [ "users" ];
@@ -7438,8 +7424,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     prowlarrPort = 9696;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} and friends on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       # this user/group section is probably unneeded
       users = {
@@ -7618,8 +7604,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users.users.${serviceUser} = {
         extraGroups = [ "users" ];
@@ -7751,8 +7737,8 @@ This manages backups for my pictures and obsidian files.
     inherit (config.swarselsystems) sopsFile;
     in
   {
-    options.swarselsystems.modules.server.restic = lib.mkEnableOption "enable restic backups on server";
-    config = lib.mkIf config.swarselsystems.modules.server.restic {
+    options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
+    config = lib.mkIf config.swarselmodules.server.restic {
 
       sops = {
         secrets = {
@@ -7833,8 +7819,8 @@ This section exposes several metrics that I use to check the health of my server
     inherit (config.swarselsystems) sopsFile;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops = {
         secrets = {
@@ -8009,7 +7995,7 @@ This section exposes several metrics that I use to check the health of my server
                 sslVerify = false;
                 scrapeUri = "http://localhost/nginx_status";
               };
-              nextcloud = lib.mkIf config.swarselsystems.modules.server.nextcloud {
+              nextcloud = lib.mkIf config.swarselmodules.server.nextcloud {
                 enable = true;
                 port = 9205;
                 url = "https://${serviceDomain}/ocs/v2.php/apps/serverinfo/api/v1/info";
@@ -8076,8 +8062,8 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       services.jenkins = {
         enable = true;
@@ -8131,8 +8117,8 @@ This was an approach of hosting an RSS server from within emacs. That would have
     servicePort = 9812;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} server on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} server on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -8172,8 +8158,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     inherit (config.swarselsystems) sopsFile;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users.users.${serviceUser} = {
         extraGroups = [ "users" ];
@@ -8287,8 +8273,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     kanidmDomain = globals.services.kanidm.domain;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -8450,8 +8436,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     ankiUser = globals.user.name;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -8539,8 +8525,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     nextcloudDomain = globals.services.nextcloud.domain;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users.users.${serviceUser} = {
         group = serviceGroup;
@@ -8798,7 +8784,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   in
   {
     options = {
-      swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
       # largely based on https://github.com/oddlama/nix-config/blob/main/modules/oauth2-proxy.nix
       services.nginx.virtualHosts = lib.mkOption {
         type = lib.types.attrsOf (
@@ -8906,7 +8892,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         );
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops = {
         secrets = {
@@ -9029,8 +9015,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     cfg = config.services.firefly-iii;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users = {
         groups.${serviceGroup} = { };
@@ -9149,8 +9135,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     inherit (config.swarselsystems) sopsFile;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops.secrets = {
         koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
@@ -9272,8 +9258,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
@@ -9335,8 +9321,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops = {
         secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -9459,8 +9445,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     cfg = config.services.croc;
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops = {
         secrets = {
@@ -9531,8 +9517,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     cfg = config.services.${serviceName};
   in
   {
-    options.swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       users = {
         groups.${serviceGroup} = { };
@@ -9669,9 +9655,9 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   in
   {
     options = {
-      swarselsystems.modules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     };
-    config = lib.mkIf config.swarselsystems.modules.server.${serviceName} {
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       sops = {
         secrets = {
@@ -9762,23 +9748,23 @@ This section sets up all the imports that are used in the home-manager section.
     imports = [
     ];
 
-    options.swarselsystems.modules.darwin.general = lib.mkEnableOption "darwin config";
-    config = lib.mkIf config.swarselsystems.modules.darwin.general {
-      nix.settings.experimental-features = "nix-command flakes";
-      nixpkgs = {
-        hostPlatform = "x86_64-darwin";
-        overlays = [ outputs.overlays.default ];
-        config = {
-          allowUnfree = true;
-        };
+    options.swarselmodules.optional.darwin = lib.mkEnableOption "optional darwin settings";
+    config = lib.mkIf config.swarselmodules.optional.darwin {
+    nix.settings.experimental-features = "nix-command flakes";
+    nixpkgs = {
+      hostPlatform = "x86_64-darwin";
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
       };
-
-      home-manager.users."${macUser}".imports = [
-        "${self}/modules/home/darwin"
-      ];
-
-      system.stateVersion = 4;
     };
+
+    home-manager.users."${macUser}".imports = [
+      "${self}/modules/home/darwin"
+    ];
+
+    system.stateVersion = 4;
+      };
   }
 #+end_src
 
@@ -9796,15 +9782,12 @@ These sets of configuration do not need to be deployed on every host, for a mult
 - The work profile is only used on my work laptop.
 
   #+begin_src nix-ts :tangle modules/nixos/optional/default.nix
-    { self, lib, ... }:
+    { lib, ... }:
     let
       importNames = lib.swarselsystems.readNix "modules/nixos/optional";
-      modulesPath = "${self}/modules";
     in
     {
-      imports = lib.swarselsystems.mkImports importNames "modules/nixos/optional" ++ [
-        "${modulesPath}/home/common/sharedsetup.nix"
-      ];
+      imports = lib.swarselsystems.mkImports importNames "modules/nixos/optional";
     }
   #+end_src
 
@@ -9819,8 +9802,8 @@ This opens a few gaming ports and installs the steam configuration suite for gam
 #+begin_src nix-ts :tangle modules/nixos/optional/gaming.nix
   { pkgs, lib, config, ... }:
   {
-    options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+    options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
+    config = lib.mkIf config.swarselmodules.optional.gaming {
       programs.steam = {
         enable = true;
         package = pkgs.steam;
@@ -9871,8 +9854,8 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 #+begin_src nix-ts :tangle modules/nixos/optional/virtualbox.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.virtualbox {
+    options.swarselmodules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
+    config = lib.mkIf config.swarselmodules.optional.virtualbox {
       specialisation = {
         VBox.configuration = {
           virtualisation.virtualbox = {
@@ -9911,8 +9894,8 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
   { lib, config, ... }:
   {
 
-    options.swarselsystems.modules.optional.vmware = lib.mkEnableOption "optional vmware settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.vmware {
+    options.swarselmodules.optional.vmware = lib.mkEnableOption "optional vmware settings";
+    config = lib.mkIf config.swarselmodules.optional.vmware {
       virtualisation.vmware.host.enable = true;
       virtualisation.vmware.guest.enable = true;
     };
@@ -9929,8 +9912,8 @@ This smashes Atmosphere 1.3.2 on the switch, which is what I am currenty using.
 #+begin_src nix-ts :tangle modules/nixos/optional/nswitch-rcm.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.nswitch-rcm {
+    options.swarselmodules.optional.nswitch-rcm = lib.mkEnableOption "optional nswitch-rcm settings";
+    config = lib.mkIf config.swarselmodules.optional.nswitch-rcm {
       services.nswitch-rcm = {
         enable = true;
         package = pkgs.fetchurl {
@@ -9955,8 +9938,8 @@ This holds configuration that is specific to framework laptops.
     imports = [
       inputs.fw-fanctrl.nixosModules.default
     ];
-    options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.framework {
+    options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
+    config = lib.mkIf config.swarselmodules.optional.framework {
       services = {
         fwupd = {
           enable = true;
@@ -9990,8 +9973,8 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/nixos/optional/amdcpu.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.amdcpu {
+    options.swarselmodules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
+    config = lib.mkIf config.swarselmodules.optional.amdcpu {
       hardware = {
         cpu.amd.updateMicrocode = true;
       };
@@ -10008,8 +9991,8 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/nixos/optional/amdgpu.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.amdgpu {
+    options.swarselmodules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
+    config = lib.mkIf config.swarselmodules.optional.amdgpu {
       hardware = {
         amdgpu = {
           opencl.enable = true;
@@ -10031,8 +10014,8 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/nixos/optional/hibernation.nix
   { lib, config, ... }:
   {
+    options.swarselmodules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
     options.swarselsystems = {
-      modules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
       hibernation = {
         offset = lib.mkOption {
           type = lib.types.int;
@@ -10044,7 +10027,7 @@ This holds configuration that is specific to framework laptops.
         };
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.optional.hibernation {
+    config = lib.mkIf config.swarselmodules.optional.hibernation {
       boot = {
         kernelParams = [
           "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"
@@ -10063,8 +10046,8 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/nixos/optional/btrfs.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.btrfs {
+    options.swarselmodules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
+    config = lib.mkIf config.swarselmodules.optional.btrfs {
       boot = {
         supportedFilesystems = [ "btrfs" ];
       };
@@ -10107,8 +10090,8 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     };
   in
   {
+    options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
     options.swarselsystems = {
-      modules.optional.work = lib.mkEnableOption "optional work settings";
       hostName = lib.mkOption {
         type = lib.types.str;
         default = "";
@@ -10118,7 +10101,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         default = "";
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.optional.work {
+    config = lib.mkIf config.swarselmodules.optional.work {
       sops =
         let
           secretNames = [
@@ -10377,12 +10360,14 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix-ts :tangle modules/home/common/default.nix
-  { lib, ... }:
+  { self, lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/home/common";
   in
   {
-    imports = lib.swarselsystems.mkImports importNames "modules/home/common";
+    imports = lib.swarselsystems.mkImports importNames "modules/home/common" ++ [
+      "${self}/modules/shared/sharedsetup.nix"
+    ];
   }
 #+end_src
 
@@ -10402,20 +10387,40 @@ The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/
 
 This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
 
-#+begin_src nix-ts :noweb yes :tangle modules/home/common/sharedsetup.nix
-  { self, config, lib, pkgs, globals, minimal, ... }:
+#+begin_src nix-ts :noweb yes :tangle modules/shared/sharedsetup.nix
+  { self, config, lib, pkgs, ... }:
   {
     options.swarselsystems = {
+      withHomeManager = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      isSwap = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      swapSize = lib.mkOption {
+        type = lib.types.str;
+        default = "8G";
+      };
+      rootDisk = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      mainUser = lib.mkOption {
+        type = lib.types.str;
+        default = "swarsel";
+      };
+      isCrypted = lib.mkEnableOption "uses full disk encryption";
+
+      isImpermanence = lib.mkEnableOption "use impermanence on this system";
+      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
       isLaptop = lib.mkEnableOption "laptop host";
       isNixos = lib.mkEnableOption "nixos host";
       isPublic = lib.mkEnableOption "is a public machine (no secrets)";
       isDarwin = lib.mkEnableOption "darwin host";
       isLinux = lib.mkEnableOption "whether this is a linux machine";
       isBtrfs = lib.mkEnableOption "use btrfs filesystem";
-      mainUser = lib.mkOption {
-        type = lib.types.str;
-        default = if (!minimal) then globals.user.name else "swarsel" ;
-      };
       sopsFile = lib.mkOption {
         type = lib.types.str;
         default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
@@ -10669,7 +10674,6 @@ This is where the theme for the whole OS is defined. Originally, this noweb-ref 
           };
         };
       };
-
     };
   }
 #+end_src
@@ -10687,8 +10691,8 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
     inherit (config.swarselsystems) mainUser;
   in
   {
-    options.swarselsystems.modules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselsystems.modules.general {
+    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselmodules.general {
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
         package = lib.mkForce pkgs.nixVersions.nix_2_28;
         extraOptions = ''
@@ -10755,15 +10759,15 @@ It can be set to either:
 #+begin_src nix-ts :tangle modules/home/common/nixgl.nix
 { lib, config, nixgl, ... }:
 {
+  options.swarselmodules.nixgl = lib.mkEnableOption "nixgl settings";
   options.swarselsystems = {
-    modules.nixgl = lib.mkEnableOption "nixgl settings";
     isSecondaryGpu = lib.mkEnableOption "device has a secondary GPU";
     SecondaryGpuCard = lib.mkOption {
       type = lib.types.str;
       default = "";
     };
   };
-  config = lib.mkIf config.swarselsystems.modules.nixgl {
+  config = lib.mkIf config.swarselmodules.nixgl {
     nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
       inherit (nixgl) packages;
       defaultWrapper = lib.mkDefault "mesa";
@@ -10804,8 +10808,8 @@ This holds packages that I can use as provided, or with small modifications (as 
   { lib, config, pkgs, ... }:
 
   {
-    options.swarselsystems.modules.packages = lib.mkEnableOption "packages settings";
-    config = lib.mkIf config.swarselsystems.modules.packages {
+    options.swarselmodules.packages = lib.mkEnableOption "packages settings";
+    config = lib.mkIf config.swarselmodules.packages {
       home.packages = with pkgs; [
 
         # audio stuff
@@ -10999,8 +11003,8 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
   { lib, config, pkgs, ... }:
 
   {
-    options.swarselsystems.modules.ownpackages = lib.mkEnableOption "own packages settings";
-    config = lib.mkIf config.swarselsystems.modules.ownpackages {
+    options.swarselmodules.ownpackages = lib.mkEnableOption "own packages settings";
+    config = lib.mkIf config.swarselmodules.ownpackages {
       home.packages = with pkgs; lib.mkIf (!config.swarselsystems.isPublic) [
         pass-fuzzel
         cdw
@@ -11053,8 +11057,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     inherit (config.swarselsystems) homeDir;
   in
   {
-    options.swarselsystems.modules.sops = lib.mkEnableOption "sops settings";
-    config = lib.mkIf config.swarselsystems.modules.sops {
+    options.swarselmodules.sops = lib.mkEnableOption "sops settings";
+    config = lib.mkIf config.swarselmodules.sops {
       sops = {
         age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
         defaultSopsFile = "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
@@ -11076,9 +11080,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
     inherit (config.swarselsystems) homeDir;
   in
   {
-    options.swarselsystems.modules.yubikey = lib.mkEnableOption "yubikey settings";
+    options.swarselmodules.yubikey = lib.mkEnableOption "yubikey settings";
 
-    config = lib.mkIf config.swarselsystems.modules.yubikey {
+    config = lib.mkIf config.swarselmodules.yubikey {
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
@@ -11104,8 +11108,8 @@ It is very convenient to have SSH aliases in place for machines that I use. This
 #+begin_src nix-ts :tangle modules/home/common/ssh.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.ssh = lib.mkEnableOption "ssh settings";
-    config = lib.mkIf config.swarselsystems.modules.ssh {
+    options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
+    config = lib.mkIf config.swarselmodules.ssh {
       programs.ssh = {
         enable = true;
         forwardAgent = true;
@@ -11166,8 +11170,8 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/stylix.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.stylix = lib.mkEnableOption "stylix settings";
-    config = lib.mkIf config.swarselsystems.modules.stylix {
+    options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
+    config = lib.mkIf config.swarselmodules.stylix {
       stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
         {
           image = config.swarselsystems.wallpaper;
@@ -11190,8 +11194,8 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
 #+begin_src nix-ts :tangle modules/home/common/desktop.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.desktop = lib.mkEnableOption "desktop settings";
-    config = lib.mkIf config.swarselsystems.modules.desktop {
+    options.swarselmodules.desktop = lib.mkEnableOption "desktop settings";
+    config = lib.mkIf config.swarselmodules.desktop {
       xdg.desktopEntries = {
 
         cura = {
@@ -11308,8 +11312,8 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 #+begin_src nix-ts :tangle modules/home/common/symlink.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.modules.symlink = lib.mkEnableOption "symlink settings";
-    config = lib.mkIf config.swarselsystems.modules.symlink {
+    options.swarselmodules.symlink = lib.mkEnableOption "symlink settings";
+    config = lib.mkIf config.swarselmodules.symlink {
       home.file = {
         "init.el" = lib.mkDefault {
           source = self + /files/emacs/init.el;
@@ -11355,8 +11359,8 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
     crocDomain = globals.services.croc.domain;
   in
   {
-    options.swarselsystems.modules.env = lib.mkEnableOption "env settings";
-    config = lib.mkIf config.swarselsystems.modules.env {
+    options.swarselmodules.env = lib.mkEnableOption "env settings";
+    config = lib.mkIf config.swarselmodules.env {
       home.sessionVariables = {
         EDITOR = "e -w";
         DISPLAY = ":0";
@@ -11386,8 +11390,8 @@ This section is for programs that require no further configuration. zsh Integrat
 #+begin_src nix-ts :tangle modules/home/common/programs.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.programs = lib.mkEnableOption "programs settings";
-    config = lib.mkIf config.swarselsystems.modules.programs {
+    options.swarselmodules.programs = lib.mkEnableOption "programs settings";
+    config = lib.mkIf config.swarselmodules.programs {
       programs = {
         bottom.enable = true;
         imv.enable = true;
@@ -11427,8 +11431,8 @@ nix-index provides a way to find out which packages are provided by which deriva
 #+begin_src nix-ts :tangle modules/home/common/nix-index.nix
   { self, lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.nix-index = lib.mkEnableOption "nix-index settings";
-    config = lib.mkIf config.swarselsystems.modules.nix-index {
+    options.swarselmodules.nix-index = lib.mkEnableOption "nix-index settings";
+    config = lib.mkIf config.swarselmodules.nix-index {
       programs.nix-index =
         let
           commandNotFound = pkgs.runCommandLocal "command-not-found.sh" { } ''
@@ -11461,8 +11465,8 @@ Enables password store with the =pass-otp= extension which allows me to store an
 #+begin_src nix-ts :tangle modules/home/common/password-store.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.passwordstore = lib.mkEnableOption "passwordstore settings";
-    config = lib.mkIf config.swarselsystems.modules.passwordstore {
+    options.swarselmodules.passwordstore = lib.mkEnableOption "passwordstore settings";
+    config = lib.mkIf config.swarselmodules.passwordstore {
       programs.password-store = {
         enable = true;
         settings = {
@@ -11484,8 +11488,8 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 #+begin_src nix-ts :tangle modules/home/common/direnv.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.direnv = lib.mkEnableOption "direnv settings";
-    config = lib.mkIf config.swarselsystems.modules.direnv {
+    options.swarselmodules.direnv = lib.mkEnableOption "direnv settings";
+    config = lib.mkIf config.swarselmodules.direnv {
       programs.direnv = {
         enable = true;
         silent = true;
@@ -11505,8 +11509,8 @@ Eza provides me with a better =ls= command and some other useful aliases.
 #+begin_src nix-ts :tangle modules/home/common/eza.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.eza = lib.mkEnableOption "eza settings";
-    config = lib.mkIf config.swarselsystems.modules.eza {
+    options.swarselmodules.eza = lib.mkEnableOption "eza settings";
+    config = lib.mkIf config.swarselmodules.eza {
       programs.eza = {
         enable = true;
         icons = "auto";
@@ -11531,8 +11535,8 @@ Eza provides me with a better =ls= command and some other useful aliases.
     atuinDomain = globals.services.atuin.domain;
   in
   {
-    options.swarselsystems.modules.atuin = lib.mkEnableOption "atuin settings";
-    config = lib.mkIf config.swarselsystems.modules.atuin {
+    options.swarselmodules.atuin = lib.mkEnableOption "atuin settings";
+    config = lib.mkIf config.swarselmodules.atuin {
       programs.atuin = {
         enable = true;
         enableZshIntegration = true;
@@ -11562,8 +11566,8 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
     gitUser = globals.user.name;
   in
   {
-    options.swarselsystems.modules.git = lib.mkEnableOption "git settings";
-    config = lib.mkIf config.swarselsystems.modules.git {
+    options.swarselmodules.git = lib.mkEnableOption "git settings";
+    config = lib.mkIf config.swarselmodules.git {
       programs.git = {
         enable = true;
         } // lib.optionalAttrs (!minimal) {
@@ -11615,8 +11619,8 @@ Here I only need to set basic layout options - the rest is being managed by styl
 #+begin_src nix-ts :tangle modules/home/common/fuzzel.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.fuzzel = lib.mkEnableOption "fuzzel settings";
-    config = lib.mkIf config.swarselsystems.modules.fuzzel {
+    options.swarselmodules.fuzzel = lib.mkEnableOption "fuzzel settings";
+    config = lib.mkIf config.swarselmodules.fuzzel {
       programs.fuzzel = {
         enable = true;
         settings = {
@@ -11642,8 +11646,8 @@ Starship makes my =zsh= look cooler! I have symbols for most programming languag
 #+begin_src nix-ts :tangle modules/home/common/starship.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.starship = lib.mkEnableOption "starship settings";
-    config = lib.mkIf config.swarselsystems.modules.starship {
+    options.swarselmodules.starship = lib.mkEnableOption "starship settings";
+    config = lib.mkIf config.swarselmodules.starship {
       programs.starship = {
         enable = true;
         enableZshIntegration = true;
@@ -11778,8 +11782,8 @@ The theme is handled by stylix.
 #+begin_src nix-ts :tangle modules/home/common/kitty.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.kitty = lib.mkEnableOption "kitty settings";
-    config = lib.mkIf config.swarselsystems.modules.kitty {
+    options.swarselmodules.kitty = lib.mkEnableOption "kitty settings";
+    config = lib.mkIf config.swarselmodules.kitty {
       programs.kitty = {
         enable = true;
         keybindings = { };
@@ -11830,14 +11834,14 @@ Currently I only use it as before with =initExtra= though.
     inherit (config.swarselsystems) flakePath;
   in
   {
+    options.swarselmodules.zsh = lib.mkEnableOption "zsh settings";
     options.swarselsystems = {
-      modules.zsh = lib.mkEnableOption "zsh settings";
       shellAliases = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = { };
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.zsh
+    config = lib.mkIf config.swarselmodules.zsh
       {
 
         sops.secrets = {
@@ -11961,8 +11965,8 @@ Currently I only use it as before with =initExtra= though.
 #+begin_src nix-ts :tangle modules/home/common/zellij.nix
   { self, lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.zellij = lib.mkEnableOption "zellij settings";
-    config = lib.mkIf config.swarselsystems.modules.zellij {
+    options.swarselmodules.zellij = lib.mkEnableOption "zellij settings";
+    config = lib.mkIf config.swarselmodules.zellij {
       programs.zellij = {
         enable = true;
         enableZshIntegration = true;
@@ -12000,8 +12004,8 @@ Currently I only use it as before with =initExtra= though.
       };
   in
   {
-    options.swarselsystems.modules.tmux = lib.mkEnableOption "tmux settings";
-    config = lib.mkIf config.swarselsystems.modules.tmux {
+    options.swarselmodules.tmux = lib.mkEnableOption "tmux settings";
+    config = lib.mkIf config.swarselmodules.tmux {
       home.packages = with pkgs; [
         lsof
         sesh
@@ -12102,8 +12106,8 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
     inherit (config.swarselsystems) xdgDir;
   in
   {
-    options.swarselsystems.modules.mail = lib.mkEnableOption "mail settings";
-    config = lib.mkIf config.swarselsystems.modules.mail {
+    options.swarselmodules.mail = lib.mkEnableOption "mail settings";
+    config = lib.mkIf config.swarselmodules.mail {
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         address1-token = { path = "${xdgDir}/secrets/address1-token"; };
@@ -12265,8 +12269,8 @@ Lastly, I am defining some more packages here that the parser has problems findi
     inherit (config.swarselsystems) homeDir isPublic;
   in
   {
-    options.swarselsystems.modules.emacs = lib.mkEnableOption "emacs settings";
-    config = lib.mkIf config.swarselsystems.modules.emacs {
+    options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
+    config = lib.mkIf config.swarselmodules.emacs {
       # needed for elfeed
       sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
 
@@ -12381,8 +12385,8 @@ The rest of the related configuration is found here:
     ];
   in
   {
+    options.swarselmodules.waybar = lib.mkEnableOption "waybar settings";
     options.swarselsystems = {
-      modules.waybar = lib.mkEnableOption "waybar settings";
       cpuCount = lib.mkOption {
         type = lib.types.int;
         default = 8;
@@ -12411,7 +12415,7 @@ The rest of the related configuration is found here:
         internal = true;
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.waybar {
+    config = lib.mkIf config.swarselmodules.waybar {
 
       swarselsystems = {
         waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
@@ -12692,8 +12696,8 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
 #+begin_src nix-ts :tangle modules/home/common/firefox.nix
   { config, pkgs, lib, ... }:
   {
-    options.swarselsystems.modules.firefox = lib.mkEnableOption "firefox settings";
-    config = lib.mkIf config.swarselsystems.modules.firefox {
+    options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
+    config = lib.mkIf config.swarselmodules.firefox {
       programs.firefox = {
         enable = true;
         package = pkgs.firefox; # uses overrides
@@ -12859,8 +12863,8 @@ Used for storing sessions in e.g. Nextcloud
 #+begin_src nix-ts :tangle modules/home/common/gnome-keyring.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.gnome-keyring = lib.mkEnableOption "gnome keyring settings";
-    config = lib.mkIf config.swarselsystems.modules.gnome-keyring {
+    options.swarselmodules.gnome-keyring = lib.mkEnableOption "gnome keyring settings";
+    config = lib.mkIf config.swarselmodules.gnome-keyring {
       services.gnome-keyring = lib.mkIf (!config.swarselsystems.isNixos) {
         enable = true;
       };
@@ -12878,8 +12882,8 @@ This enables phone/computer communication, including sending clipboard, files et
 #+begin_src nix-ts :tangle modules/home/common/kdeconnect.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.kdeconnect = lib.mkEnableOption "kdeconnect settings";
-    config = lib.mkIf config.swarselsystems.modules.kdeconnect {
+    options.swarselmodules.kdeconnect = lib.mkEnableOption "kdeconnect settings";
+    config = lib.mkIf config.swarselmodules.kdeconnect {
       services.kdeconnect = {
         enable = true;
         indicator = true;
@@ -12901,8 +12905,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+begin_src nix-ts :tangle modules/home/common/mako.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.mako = lib.mkEnableOption "mako settings";
-    config = lib.mkIf config.swarselsystems.modules.mako {
+    options.swarselmodules.mako = lib.mkEnableOption "mako settings";
+    config = lib.mkIf config.swarselmodules.mako {
       services.mako = {
         enable = true;
         settings = {
@@ -12944,8 +12948,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+begin_src nix-ts :tangle modules/home/common/swayosd.nix
   { lib, pkgs, config, ... }:
   {
-    options.swarselsystems.modules.swayosd = lib.mkEnableOption "swayosd settings";
-    config = lib.mkIf config.swarselsystems.modules.swayosd {
+    options.swarselmodules.swayosd = lib.mkEnableOption "swayosd settings";
+    config = lib.mkIf config.swarselmodules.swayosd {
       services.swayosd = {
         enable = true;
         package = pkgs.dev.swayosd;
@@ -12963,8 +12967,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+begin_src nix-ts :tangle modules/home/common/yubikey-touch-detector.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
-    config = lib.mkIf config.swarselsystems.modules.yubikeytouch {
+    options.swarselmodules.yubikeytouch = lib.mkEnableOption "yubikey touch detector service settings";
+    config = lib.mkIf config.swarselmodules.yubikeytouch {
       systemd.user.services.yubikey-touch-detector = {
         Unit = {
           Description = "Detects when your YubiKey is waiting for a touch";
@@ -13013,8 +13017,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
     };
   in
   {
+    options.swarselmodules.sway = lib.mkEnableOption "sway settings";
     options.swarselsystems = {
-      modules.sway = lib.mkEnableOption "sway settings";
       inputs = lib.mkOption {
         type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
         default = { };
@@ -13079,7 +13083,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         internal = true;
       };
     };
-    config = lib.mkIf config.swarselsystems.modules.sway {
+    config = lib.mkIf config.swarselmodules.sway {
       swarselsystems = {
         touchpad = lib.mkIf config.swarselsystems.isLaptop {
           "type:touchpad" = {
@@ -13426,8 +13430,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+begin_src nix-ts :tangle modules/home/common/kanshi.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.kanshi = lib.mkEnableOption "kanshi settings";
-    config = lib.mkIf config.swarselsystems.modules.kanshi {
+    options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
+    config = lib.mkIf config.swarselmodules.kanshi {
       swarselsystems = {
         monitors = {
           homedesktop = {
@@ -13527,8 +13531,8 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
     inherit (config.swarselsystems) mainUser homeDir;
   in
   {
-    options.swarselsystems.modules.gpgagent = lib.mkEnableOption "gpg agent settings";
-    config = lib.mkIf config.swarselsystems.modules.gpgagent {
+    options.swarselmodules.gpgagent = lib.mkEnableOption "gpg agent settings";
+    config = lib.mkIf config.swarselmodules.gpgagent {
       services.gpg-agent = {
         enable = true;
         enableZshIntegration = true;
@@ -13579,8 +13583,8 @@ This service changes the screen hue at night. I am not sure if that really does 
     inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
   in
   {
-    options.swarselsystems.modules.gammastep = lib.mkEnableOption "gammastep settings";
-    config = lib.mkIf config.swarselsystems.modules.gammastep {
+    options.swarselmodules.gammastep = lib.mkEnableOption "gammastep settings";
+    config = lib.mkIf config.swarselmodules.gammastep {
       services.gammastep = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         enable = true;
         provider = "manual";
@@ -13611,7 +13615,6 @@ This section sets up all the imports that are used in the home-manager section.
   {
     imports = lib.swarselsystems.mkImports importNames "modules/home/server" ++ [
       "${modulesPath}/home/common/settings.nix"
-      "${modulesPath}/home/common/sharedsetup.nix"
     ];
   }
 #+end_src
@@ -13628,8 +13631,8 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 #+begin_src nix-ts :tangle modules/home/server/symlink.nix
   { self, lib, config, ... }:
   {
-    options.swarselsystems.modules.server.dotfiles = lib.mkEnableOption "server dotfiles settings";
-    config = lib.mkIf config.swarselsystems.modules.server.dotfiles {
+    options.swarselmodules.server.dotfiles = lib.mkEnableOption "server dotfiles settings";
+    config = lib.mkIf config.swarselmodules.server.dotfiles {
       home.file = {
         "init.el" = lib.mkForce {
           source = self + /files/emacs/server.el;
@@ -13655,9 +13658,10 @@ This section sets up all the imports that are used in the home-manager section.
 #+begin_src nix-ts :tangle modules/home/darwin/default.nix
   { self, ... }:
   {
+    home.stateVersion = "23.05";
     imports = [
       "${self}/modules/home/common/settings.nix"
-      "${self}/modules/home/common/sharedsetup.nix"
+      "${self}/modules/shared/sharedsetup.nix"
     ];
   }
 #+end_src
@@ -13689,8 +13693,8 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 #+begin_src nix-ts :tangle modules/home/optional/gaming.nix
   { lib, config, pkgs, ... }:
   {
-    options.swarselsystems.modules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.gaming {
+    options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
+    config = lib.mkIf config.swarselmodules.optional.gaming {
       # specialisation = {
       #   gaming.configuration = {
       home.packages = with pkgs; [
@@ -13742,8 +13746,8 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
     inherit (config.swarselsystems) homeDir;
   in
   {
-    options.swarselsystems.modules.optional.work = lib.mkEnableOption "optional work settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.work {
+    options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
+    config = lib.mkIf config.swarselmodules.optional.work {
       home.packages = with pkgs; [
         stable.teams-for-linux
         shellcheck
@@ -14198,8 +14202,8 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/home/optional/framework.nix
   { lib, config, ... }:
   {
-    options.swarselsystems.modules.optional.framework = lib.mkEnableOption "optional framework machine settings";
-    config = lib.mkIf config.swarselsystems.modules.optional.framework {
+    options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
+    config = lib.mkIf config.swarselmodules.optional.framework {
       swarselsystems = {
         inputs = {
           "12972:18:Framework_Laptop_16_Keyboard_Module_-_ANSI_Keyboard" = {
@@ -16119,11 +16123,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/personal/default.nix :mkdirp yes
-  { lib, config, ... }:
+  { lib, config, minimal, ... }:
   {
-    options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
-    config = lib.mkIf config.swarselsystems.profiles.personal {
-      swarselsystems.modules = {
+    options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselprofiles.personal {
+      swarselmodules = {
         packages = lib.mkDefault true;
         pii = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -16176,6 +16180,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           ssh = lib.mkDefault true;
         };
       };
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        swarselprofiles = {
+          personal = lib.mkIf (!minimal) true;
+        };
+      };
 
     };
 
@@ -16191,9 +16200,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/reduced/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.reduced = lib.mkEnableOption "is this a reduced personal host";
-    config = lib.mkIf config.swarselsystems.profiles.reduced {
-      swarselsystems.modules = {
+    options.swarselprofiles.reduced = lib.mkEnableOption "is this a reduced personal host";
+    config = lib.mkIf config.swarselprofiles.reduced {
+      swarselmodules = {
         packages = lib.mkDefault true;
         pii = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -16255,9 +16264,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/minimal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.minimal = lib.mkEnableOption "declare this a minimal host";
-    config = lib.mkIf config.swarselsystems.profiles.minimal {
-      swarselsystems.modules = {
+    options.swarselprofiles.minimal = lib.mkEnableOption "declare this a minimal host";
+    config = lib.mkIf config.swarselprofiles.minimal {
+      swarselmodules = {
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
         xserver = lib.mkDefault true;
@@ -16291,9 +16300,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/chaostheatre/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
-    config = lib.mkIf config.swarselsystems.profiles.chaostheatre {
-      swarselsystems.modules = {
+    options.swarselprofiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
+    config = lib.mkIf config.swarselprofiles.chaostheatre {
+      swarselmodules = {
         packages = lib.mkDefault true;
         general = lib.mkDefault true;
         home-manager = lib.mkDefault true;
@@ -16350,9 +16359,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/toto/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
-    config = lib.mkIf config.swarselsystems.profiles.toto {
-      swarselsystems.modules = {
+    options.swarselprofiles.toto = lib.mkEnableOption "is this a toto (setup) host";
+    config = lib.mkIf config.swarselprofiles.toto {
+      swarselmodules = {
         general = lib.mkDefault true;
         packages = lib.mkDefault true;
         home-manager = lib.mkDefault true;
@@ -16380,13 +16389,18 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/work/default.nix :mkdirp yes
-  { lib, config, ... }:
+  { lib, config, minimal, ... }:
   {
-    options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
-    config = lib.mkIf config.swarselsystems.profiles.work {
-      swarselsystems.modules = {
+    options.swarselprofiles.work = lib.mkEnableOption "is this a work host";
+    config = lib.mkIf config.swarselprofiles.work {
+      swarselmodules = {
         optional = {
           work = lib.mkDefault true;
+        };
+      };
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        swarselprofiles = {
+          work = lib.mkIf (!minimal) true;
         };
       };
 
@@ -16402,13 +16416,18 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/framework/default.nix :mkdirp yes
-  { lib, config, ... }:
+  { lib, config, minimal, ... }:
   {
-    options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
-    config = lib.mkIf config.swarselsystems.profiles.framework {
-      swarselsystems.modules = {
+    options.swarselprofiles.framework = lib.mkEnableOption "is this a framework brand host";
+    config = lib.mkIf config.swarselprofiles.framework {
+      swarselmodules = {
         optional = {
           framework = lib.mkDefault true;
+        };
+      };
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        swarselprofiles = {
+          framework = lib.mkIf (!minimal) true;
         };
       };
 
@@ -16426,9 +16445,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/amdcpu/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
-    config = lib.mkIf config.swarselsystems.profiles.amdcpu {
-      swarselsystems.modules = {
+    options.swarselprofiles.amdcpu = lib.mkEnableOption "is this a host with amd cpu";
+    config = lib.mkIf config.swarselprofiles.amdcpu {
+      swarselmodules = {
         optional = {
           amdcpu = lib.mkDefault true;
         };
@@ -16448,9 +16467,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/amdgpu/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.amdgpu = lib.mkEnableOption "is this a host with amd gpu";
-    config = lib.mkIf config.swarselsystems.profiles.amdgpu {
-      swarselsystems.modules = {
+    options.swarselprofiles.amdgpu = lib.mkEnableOption "is this a host with amd gpu";
+    config = lib.mkIf config.swarselprofiles.amdgpu {
+      swarselmodules = {
         optional = {
           amdgpu = lib.mkDefault true;
         };
@@ -16470,9 +16489,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/hibernation/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.hibernation = lib.mkEnableOption "is this a host using hibernation";
-    config = lib.mkIf config.swarselsystems.profiles.hibernation {
-      swarselsystems.modules = {
+    options.swarselprofiles.hibernation = lib.mkEnableOption "is this a host using hibernation";
+    config = lib.mkIf config.swarselprofiles.hibernation {
+      swarselmodules = {
         optional = {
           hibernation = lib.mkDefault true;
         };
@@ -16492,9 +16511,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/btrfs/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.btrfs = lib.mkEnableOption "is this a host using btrfs";
-    config = lib.mkIf config.swarselsystems.profiles.btrfs {
-      swarselsystems.modules = {
+    options.swarselprofiles.btrfs = lib.mkEnableOption "is this a host using btrfs";
+    config = lib.mkIf config.swarselprofiles.btrfs {
+      swarselmodules = {
         optional = {
           btrfs = lib.mkDefault true;
         };
@@ -16514,10 +16533,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/localserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
-    config = lib.mkIf config.swarselsystems.profiles.server.local {
-      swarselsystems = {
-        modules = {
+    options.swarselprofiles.server.local = lib.mkEnableOption "is this a local server";
+    config = lib.mkIf config.swarselprofiles.server.local {
+      swarselmodules = {
           general = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
@@ -16557,7 +16575,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             ankisync = lib.mkDefault true;
           };
         };
-      };
     };
 
   }
@@ -16571,10 +16588,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/syncserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.syncserver = lib.mkEnableOption "is this a oci syncserver server";
-    config = lib.mkIf config.swarselsystems.profiles.server.syncserver {
-      swarselsystems = {
-        modules = {
+    options.swarselprofiles.server.syncserver = lib.mkEnableOption "is this a oci syncserver server";
+    config = lib.mkIf config.swarselprofiles.server.syncserver {
+      swarselmodules = {
           general = lib.mkDefault true;
           nix-ld = lib.mkDefault true;
           pii = lib.mkDefault true;
@@ -16592,7 +16608,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             ankisync = lib.mkDefault false;
           };
         };
-      };
     };
 
   }
@@ -16606,10 +16621,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+begin_src nix-ts :tangle profiles/nixos/moonside/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.moonside = lib.mkEnableOption "is this a moonside server";
-    config = lib.mkIf config.swarselsystems.profiles.server.moonside {
-      swarselsystems = {
-        modules = {
+    options.swarselprofiles.server.moonside = lib.mkEnableOption "is this a moonside server";
+    config = lib.mkIf config.swarselprofiles.server.moonside {
+      swarselmodules= {
           general = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
@@ -16628,7 +16642,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             microbin = lib.mkDefault true;
             shlink = lib.mkDefault true;
           };
-        };
       };
     };
 
@@ -16660,9 +16673,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/personal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.personal = lib.mkEnableOption "is this a personal host";
-    config = lib.mkIf config.swarselsystems.profiles.personal {
-      swarselsystems.modules = {
+    options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselprofiles.personal {
+      swarselmodules = {
         packages = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -16719,9 +16732,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/reduced/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.reduced = lib.mkEnableOption "is this a reduced personal host";
-    config = lib.mkIf config.swarselsystems.profiles.reduced {
-      swarselsystems.modules = {
+    options.swarselprofiles.reduced = lib.mkEnableOption "is this a reduced personal host";
+    config = lib.mkIf config.swarselprofiles.reduced {
+      swarselmodules = {
         packages = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -16775,9 +16788,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/minimal/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.minimal = lib.mkEnableOption "is this a personal host";
-    config = lib.mkIf config.swarselsystems.profiles.minimal {
-      swarselsystems.modules = {
+    options.swarselprofiles.minimal = lib.mkEnableOption "is this a personal host";
+    config = lib.mkIf config.swarselprofiles.minimal {
+      swarselmodules = {
         general = lib.mkDefault true;
         sops = lib.mkDefault true;
         kitty = lib.mkDefault true;
@@ -16798,9 +16811,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/chaostheatre/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
-    config = lib.mkIf config.swarselsystems.profiles.chaostheatre {
-      swarselsystems.modules = {
+    options.swarselprofiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
+    config = lib.mkIf config.swarselprofiles.chaostheatre {
+      swarselmodules = {
         packages = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
@@ -16851,9 +16864,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/toto/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.toto = lib.mkEnableOption "is this a toto (setup) host";
-    config = lib.mkIf config.swarselsystems.profiles.toto {
-      swarselsystems.modules = {
+    options.swarselprofiles.toto = lib.mkEnableOption "is this a toto (setup) host";
+    config = lib.mkIf config.swarselprofiles.toto {
+      swarselmodules = {
         general = lib.mkDefault true;
         sops = lib.mkDefault true;
         ssh = lib.mkDefault true;
@@ -16874,9 +16887,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/work/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.work = lib.mkEnableOption "is this a work host";
-    config = lib.mkIf config.swarselsystems.profiles.work {
-      swarselsystems.modules = {
+    options.swarselprofiles.work = lib.mkEnableOption "is this a work host";
+    config = lib.mkIf config.swarselprofiles.work {
+      swarselmodules = {
         optional = {
           work = lib.mkDefault true;
         };
@@ -16895,33 +16908,14 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/framework/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.framework = lib.mkEnableOption "is this a framework brand host";
-    config = lib.mkIf config.swarselsystems.profiles.framework {
-      swarselsystems.modules = {
+    options.swarselprofiles.framework = lib.mkEnableOption "is this a framework brand host";
+    config = lib.mkIf config.swarselprofiles.framework {
+      swarselmodules = {
         optional = {
           framework = lib.mkDefault true;
         };
       };
 
-    };
-
-  }
-
-#+end_src
-
-**** Darwin
-:PROPERTIES:
-:CUSTOM_ID: h:24e6d661-f498-478c-9008-e8d8c17432ca
-:END:
-
-#+begin_src nix-ts :tangle profiles/home/darwin/default.nix :mkdirp yes
-  { lib, config, ... }:
-  {
-    options.swarselsystems.profiles.darwin = lib.mkEnableOption "is this a darwin host";
-    config = lib.mkIf config.swarselsystems.profiles.darwin {
-      swarselsystems.modules = {
-        general = lib.mkDefault true;
-      };
     };
 
   }
@@ -16936,9 +16930,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+begin_src nix-ts :tangle profiles/home/localserver/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselsystems.profiles.server.local = lib.mkEnableOption "is this a local server";
-    config = lib.mkIf config.swarselsystems.profiles.server.local {
-      swarselsystems.modules = {
+    options.swarselprofiles.server.local = lib.mkEnableOption "is this a local server";
+    config = lib.mkIf config.swarselprofiles.server.local {
+      swarselmodules = {
         general = lib.mkDefault true;
         server = {
           dotfiles = lib.mkDefault true;
