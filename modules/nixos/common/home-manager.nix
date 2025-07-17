@@ -6,7 +6,7 @@
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;
-      users.swarsel.imports = [
+      users.${config.swarselsystems.mainUser}.imports = [
         inputs.nix-index-database.hmModules.nix-index
         inputs.sops-nix.homeManagerModules.sops
         # inputs.stylix.homeModules.stylix

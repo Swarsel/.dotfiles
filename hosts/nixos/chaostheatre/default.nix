@@ -1,12 +1,6 @@
 { self, config, pkgs, lib, minimal, ... }:
 let
   mainUser = "demo";
-  sharedOptions = {
-    inherit mainUser;
-    isBtrfs = false;
-    isLinux = true;
-    isPublic = true;
-  };
 in
 {
 
@@ -40,25 +34,20 @@ in
     minimal = lib.mkIf minimal true;
     btrfs = true;
   };
-  swarselsystems = lib.recursiveUpdate
-    {
-      info = "~SwarselSystems~ demo host";
-      wallpaper = self + /files/wallpaper/lenovowp.png;
-      isImpermanence = true;
-      isCrypted = true;
-      isSecureBoot = false;
-      isSwap = true;
-      swapSize = "4G";
-      rootDisk = "/dev/vda";
-    }
-    sharedOptions;
-
-  home-manager.users.${mainUser} = {
-    home.stateVersion = lib.mkForce "23.05";
-    swarselsystems = lib.recursiveUpdate
-      {
-        isNixos = true;
-      }
-      sharedOptions;
+  swarselsystems = {
+    info = "~SwarselSystems~ demo host";
+    wallpaper = self + /files/wallpaper/lenovowp.png;
+    isImpermanence = true;
+    isCrypted = true;
+    isSecureBoot = false;
+    isSwap = true;
+    swapSize = "4G";
+    rootDisk = "/dev/vda";
+    isBtrfs = false;
+    inherit mainUser;
+    isLinux = true;
+    isPublic = true;
+    isNixos = true;
   };
+
 }

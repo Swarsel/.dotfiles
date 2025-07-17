@@ -8,6 +8,7 @@
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;
       users = lib.mkDefault true;
+      sops = lib.mkDefault true;
       env = lib.mkDefault true;
       security = lib.mkDefault true;
       systemdTimeout = lib.mkDefault true;
@@ -16,7 +17,6 @@
       pipewire = lib.mkDefault true;
       network = lib.mkDefault true;
       time = lib.mkDefault true;
-      sops = lib.mkDefault false;
       stylix = lib.mkDefault true;
       programs = lib.mkDefault true;
       zsh = lib.mkDefault true;
@@ -27,7 +27,7 @@
       interceptionTools = lib.mkDefault true;
       swayosd = lib.mkDefault true;
       ppd = lib.mkDefault true;
-      yubikey = lib.mkDefault true;
+      yubikey = lib.mkDefault false;
       ledger = lib.mkDefault true;
       keyboards = lib.mkDefault true;
       login = lib.mkDefault true;

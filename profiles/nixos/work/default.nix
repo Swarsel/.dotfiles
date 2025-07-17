@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, config, ... }:
 {
   options.swarselprofiles.work = lib.mkEnableOption "is this a work host";
   config = lib.mkIf config.swarselprofiles.work {
@@ -9,7 +9,7 @@
     };
     home-manager.users."${config.swarselsystems.mainUser}" = {
       swarselprofiles = {
-        work = lib.mkIf (!minimal) true;
+        work = lib.mkDefault true;
       };
     };
 

@@ -28,9 +28,12 @@
               };
 
               swarselprofiles = {
-                minimal = lib.mkIf minimal true;
+                minimal = lib.mkIf minimal (lib.mkDefault true);
               };
 
+              swarselsystems = {
+                mainUser = lib.mkDefault "swarsel";
+              };
             }
           ];
         };

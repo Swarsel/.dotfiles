@@ -1,16 +1,9 @@
 { lib, config, globals, ... }:
 let
-  primaryUser = config.swarselsystems.mainUser;
   inherit (config.repo.secrets.common) workHostName;
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
   inherit (config.swarselsystems) sopsFile;
   serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
-
-  sharedOptions = {
-    isBtrfs = true;
-    isNixos = true;
-    isLinux = true;
-  };
 in
 {
   imports = [
@@ -212,22 +205,16 @@ in
   swarselprofiles = {
     server.moonside = true;
   };
-  swarselsystems = lib.recursiveUpdate
-    {
-      info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
-      isImpermanence = true;
-      isSecureBoot = false;
-      isCrypted = false;
-      isSwap = false;
-      rootDisk = "/dev/sda";
-    }
-    sharedOptions;
 
-  home-manager.users."${primaryUser}" = {
-    home.stateVersion = lib.mkForce "23.11";
-    swarselsystems = lib.recursiveUpdate
-      { }
-      sharedOptions;
+  swarselsystems = {
+    info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
+    isImpermanence = true;
+    isSecureBoot = false;
+    isCrypted = false;
+    isSwap = false;
+    rootDisk = "/dev/sda";
+    isBtrfs = true;
+    isNixos = true;
+    isLinux = true;
   };
-
 }
