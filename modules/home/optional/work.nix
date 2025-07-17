@@ -1,4 +1,4 @@
-{ self, config, pkgs, lib, nixosConfig, ... }:
+{ self, config, pkgs, lib, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) homeDir;
 in

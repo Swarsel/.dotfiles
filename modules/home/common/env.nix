@@ -1,4 +1,4 @@
-{ lib, config, globals, nixosConfig, ... }:
+{ lib, config, globals, nixosConfig ? config, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
   inherit (nixosConfig.repo.secrets.common) fullName;
