@@ -3485,6 +3485,8 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
       inputs.sops-nix.homeManagerModules.sops
       inputs.nix-index-database.hmModules.nix-index
       "${self}/modules/home"
+      "${self}/modules/nixos/common/pii.nix"
+      "${self}/modules/nixos/common/meta.nix"
     ];
 
     nixpkgs = {
@@ -3969,18 +3971,18 @@ This section is for setting things that should be used on hosts that are using t
 
 
 #+begin_src nix-ts :tangle modules/home/common/sharedoptions.nix
-      { lib, config, nixosConfig, ... }:
-      let
-        # mirrorAttrs = lib.mapAttrs (_: v: lib.mkDefault v) nixosConfig.swarselsystems;
-      inherit (lib) mkDefault mapAttrs filterAttrs;
-        mkDefaultCommonAttrs = base: defaults:
-        lib.mapAttrs (_: v: lib.mkDefault v)
-          (lib.filterAttrs (k: _: base ? ${k}) defaults);
-      in
-      {
-        # config.swarselsystems = mirrorAttrs;
-       config.swarselsystems = mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems;
-      }
+  { lib, config, nixosConfig ? null, ... }:
+  let
+    # mirrorAttrs = lib.mapAttrs (_: v: lib.mkDefault v) nixosConfig.swarselsystems;
+    inherit (lib) mkDefault mapAttrs filterAttrs;
+    mkDefaultCommonAttrs = base: defaults:
+      lib.mapAttrs (_: v: lib.mkDefault v)
+        (lib.filterAttrs (k: _: base ? ${k}) defaults);
+  in
+  {
+    # config.swarselsystems = mirrorAttrs;
+    config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems);
+  }
 #+end_src
 
 **** Topology (automatically active)
@@ -4169,8 +4171,6 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
                     minimal = lib.mkIf minimal true;
                   };
                 }
-                # "${self}/modules/nixos/common/pii.nix"
-                # "${self}/modules/nixos/common/meta.nix"
               ];
               # node = {
               #   secretsDir = if (!config.swarselsystems.isNixos) then ../../../hosts/home/${configName}/secrets else ../../../hosts/nixos/${configName}/secrets;
@@ -11075,7 +11075,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -11352,7 +11352,7 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-  { lib, config, globals, nixosConfig, ... }:
+  { lib, config, globals, nixosConfig ? config, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
     inherit (nixosConfig.repo.secrets.common) fullName;
@@ -11558,7 +11558,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using [[#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5][Magit]]) as well as a git template defined in [[#h:5ef03803-e150-41bc-b603-e80d60d96efc][Linking dotfiles]].
 
 #+begin_src nix-ts :tangle modules/home/common/git.nix
-  { lib, config, globals, minimal, nixosConfig, ... }:
+  { lib, config, globals, minimal, nixosConfig ? config, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1;
     inherit (nixosConfig.repo.secrets.common) fullName;
@@ -12099,7 +12099,7 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix-ts :tangle modules/home/common/mail.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, nixosConfig ? config, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
     inherit (nixosConfig.repo.secrets.common) fullName;
@@ -13578,7 +13578,7 @@ Settinfs that are needed for the gpg-agent. Also we are enabling emacs support f
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
 
 #+begin_src nix-ts :tangle modules/home/common/gammastep.nix
-  { lib, config, nixosConfig, ... }:
+  { lib, config, nixosConfig ? config, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
   in
@@ -13741,7 +13741,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, nixosConfig, ... }:
+  { self, config, pkgs, lib, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in

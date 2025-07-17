@@ -19,8 +19,6 @@
                 minimal = lib.mkIf minimal true;
               };
             }
-            # "${self}/modules/nixos/common/pii.nix"
-            # "${self}/modules/nixos/common/meta.nix"
           ];
           # node = {
           #   secretsDir = if (!config.swarselsystems.isNixos) then ../../../hosts/home/${configName}/secrets else ../../../hosts/nixos/${configName}/secrets;

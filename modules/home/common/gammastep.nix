@@ -1,4 +1,4 @@
-{ lib, config, nixosConfig, ... }:
+{ lib, config, nixosConfig ? config, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.location) latitude longitude;
 in

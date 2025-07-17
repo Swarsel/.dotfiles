@@ -6,6 +6,8 @@
     inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.hmModules.nix-index
     "${self}/modules/home"
+    "${self}/modules/nixos/common/pii.nix"
+    "${self}/modules/nixos/common/meta.nix"
   ];
 
   nixpkgs = {
