@@ -24,4 +24,4 @@ dd DRIVE ISO:
   sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 
 sync USER HOST:
-  rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+  rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/

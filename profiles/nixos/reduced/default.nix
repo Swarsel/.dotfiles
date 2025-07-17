@@ -49,6 +49,11 @@
         ssh = lib.mkDefault true;
       };
     };
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      swarselprofiles = {
+        personal = lib.mkDefault true;
+      };
+    };
 
   };
 

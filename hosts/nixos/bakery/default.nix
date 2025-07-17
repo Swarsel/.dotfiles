@@ -1,13 +1,7 @@
 { self, config, inputs, lib, minimal, ... }:
 let
   primaryUser = config.swarselsystems.mainUser;
-  sharedOptions = {
-    isLaptop = true;
-    isNixos = true;
-    isBtrfs = true;
-    isLinux = true;
-    sharescreen = "eDP-1";
-  };
+  sharedOptions = { };
 in
 {
 
@@ -21,12 +15,18 @@ in
 
   swarselprofiles = {
     reduced = lib.mkIf (!minimal) true;
-    minimal = lib.mkIf minimal true;
     btrfs = true;
   };
 
   swarselsystems = lib.recursiveUpdate
     {
+      isLaptop = true;
+      isNixos = true;
+      isBtrfs = true;
+      isLinux = true;
+      lowResolution = "1280x800";
+      highResolution = "1920x1080";
+      sharescreen = "eDP-1";
       info = "Lenovo ThinkPad";
       firewall = lib.mkForce true;
       wallpaper = self + /files/wallpaper/lenovowp.png;
@@ -43,26 +43,18 @@ in
     sharedOptions;
 
   home-manager.users."${primaryUser}" = {
-    swarselprofiles = {
-      reduced = lib.mkIf (!minimal) true;
-      minimal = lib.mkIf minimal true;
-    };
     # home.stateVersion = lib.mkForce "23.05";
-    swarselsystems = lib.recursiveUpdate
-      {
-        lowResolution = "1280x800";
-        highResolution = "1920x1080";
-        monitors = {
-          main = {
-            name = "LG Display 0x04EF Unknown";
-            mode = "1920x1080"; # TEMPLATE
-            scale = "1";
-            position = "1920,0";
-            workspace = "15:L";
-            output = "eDP-1";
-          };
+    swarselsystems = {
+      monitors = {
+        main = {
+          name = "LG Display 0x04EF Unknown";
+          mode = "1920x1080"; # TEMPLATE
+          scale = "1";
+          position = "1920,0";
+          workspace = "15:L";
+          output = "eDP-1";
         };
-      }
-      sharedOptions;
+      };
+    };
   };
 }

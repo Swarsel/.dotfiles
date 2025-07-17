@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, config, ... }:
 {
   options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
   config = lib.mkIf config.swarselprofiles.personal {
@@ -57,7 +57,7 @@
     };
     home-manager.users."${config.swarselsystems.mainUser}" = {
       swarselprofiles = {
-        personal = lib.mkIf (!minimal) true;
+        personal = lib.mkDefault true;
       };
     };
 

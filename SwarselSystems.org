@@ -840,9 +840,12 @@ The rest of the outputs either define or help define the actual configurations:
                 };
 
                 swarselprofiles = {
-                  minimal = lib.mkIf minimal true;
+                  minimal = lib.mkIf minimal (lib.mkDefault true);
                 };
 
+                swarselsystems = {
+                  mainUser = lib.mkDefault "swarsel";
+                };
               }
             ];
           };
@@ -2028,13 +2031,7 @@ My personal laptop.
   { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
-    sharedOptions = {
-      isLaptop = true;
-      isNixos = true;
-      isBtrfs = true;
-      isLinux = true;
-      sharescreen = "eDP-1";
-    };
+    sharedOptions = { };
   in
   {
 
@@ -2046,14 +2043,20 @@ My personal laptop.
 
     ];
 
-      swarselprofiles = {
-        reduced = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-          btrfs = true;
-      };
+    swarselprofiles = {
+      reduced = lib.mkIf (!minimal) true;
+      btrfs = true;
+    };
 
     swarselsystems = lib.recursiveUpdate
       {
+        isLaptop = true;
+        isNixos = true;
+        isBtrfs = true;
+        isLinux = true;
+        lowResolution = "1280x800";
+        highResolution = "1920x1080";
+        sharescreen = "eDP-1";
         info = "Lenovo ThinkPad";
         firewall = lib.mkForce true;
         wallpaper = self + /files/wallpaper/lenovowp.png;
@@ -2070,27 +2073,19 @@ My personal laptop.
       sharedOptions;
 
     home-manager.users."${primaryUser}" = {
-      swarselprofiles = {
-        reduced = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-      };
       # home.stateVersion = lib.mkForce "23.05";
-      swarselsystems = lib.recursiveUpdate
-        {
-          lowResolution = "1280x800";
-          highResolution = "1920x1080";
-          monitors = {
-            main = {
-              name = "LG Display 0x04EF Unknown";
-              mode = "1920x1080"; # TEMPLATE
-              scale = "1";
-              position = "1920,0";
-              workspace = "15:L";
-              output = "eDP-1";
-            };
+      swarselsystems = {
+        monitors = {
+          main = {
+            name = "LG Display 0x04EF Unknown";
+            mode = "1920x1080"; # TEMPLATE
+            scale = "1";
+            position = "1920,0";
+            workspace = "15:L";
+            output = "eDP-1";
           };
-        }
-        sharedOptions;
+        };
+      };
     };
   }
 
@@ -2270,15 +2265,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/winters/default.nix
-  { lib, config, ... }:
-  let
-    primaryUser = config.swarselsystems.mainUser;
-    sharedOptions = {
-      isBtrfs = false;
-      isLinux = true;
-      isNixos = true;
-    };
-  in
+  { config, ... }:
   {
 
     imports = [
@@ -2299,24 +2286,20 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
 
-      swarselprofiles = {
-        server.local = true;
-      };
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "ASRock J4105-ITX, 32GB RAM";
-        isImpermanence = false;
-        isSecureBoot = true;
-        isCrypted = true;
-      }
-      sharedOptions;
-
-    home-manager.users."${primaryUser}" = {
-      home.stateVersion = lib.mkForce "23.05";
-      swarselsystems = lib.recursiveUpdate
-        { }
-        sharedOptions;
+    swarselprofiles = {
+      server.local = true;
     };
+
+    swarselsystems = {
+      info = "ASRock J4105-ITX, 32GB RAM";
+      isImpermanence = false;
+      isSecureBoot = true;
+      isCrypted = true;
+      isBtrfs = false;
+      isLinux = true;
+      isNixos = true;
+    };
+
   }
 
 
@@ -2492,15 +2475,7 @@ This machine mainly acts as an external sync helper. It manages the following th
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/milkywell/default.nix
-  { lib, config, minimal, ... }:
-  let
-    primaryUser = config.swarselsystems.mainUser;
-    sharedOptions = {
-      isBtrfs = true;
-      isLinux = true;
-      isNixos = true;
-    };
-  in
+  { lib, minimal, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -2525,24 +2500,19 @@ This machine mainly acts as an external sync helper. It manages the following th
 
     swarselprofiles = {
       minimal = lib.mkIf minimal true;
-          server.syncserver = true;
+      server.syncserver = true;
     };
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "VM.Standard.E2.1.Micro";
-        isImpermanence = true;
-        isSecureBoot = false;
-        isCrypted = true;
-        isSwap = true;
-        rootDisk = "/dev/sda";
-        swapSize = "4G";
-      }
-      sharedOptions;
-
-    home-manager.users."${primaryUser}" = {
-      swarselsystems = lib.recursiveUpdate
-        { }
-        sharedOptions;
+    swarselsystems = {
+      info = "VM.Standard.E2.1.Micro";
+      isImpermanence = true;
+      isSecureBoot = false;
+      isCrypted = true;
+      isSwap = true;
+      rootDisk = "/dev/sda";
+      swapSize = "4G";
+      isBtrfs = true;
+      isLinux = true;
+      isNixos = true;
     };
 
   }
@@ -2696,17 +2666,10 @@ This machine mainly acts as an external sync helper. It manages the following th
 #+begin_src nix-ts :tangle hosts/nixos/moonside/default.nix
   { lib, config, globals, ... }:
   let
-    primaryUser = config.swarselsystems.mainUser;
     inherit (config.repo.secrets.common) workHostName;
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
     inherit (config.swarselsystems) sopsFile;
     serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
-
-    sharedOptions = {
-      isBtrfs = true;
-      isNixos = true;
-      isLinux = true;
-    };
   in
   {
     imports = [
@@ -2905,27 +2868,21 @@ This machine mainly acts as an external sync helper. It manages the following th
       };
     };
 
-        swarselprofiles = {
-          server.moonside = true;
-        };
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
-        isImpermanence = true;
-        isSecureBoot = false;
-        isCrypted = false;
-        isSwap = false;
-        rootDisk = "/dev/sda";
-      }
-      sharedOptions;
-
-    home-manager.users."${primaryUser}" = {
-      home.stateVersion = lib.mkForce "23.11";
-      swarselsystems = lib.recursiveUpdate
-        { }
-        sharedOptions;
+    swarselprofiles = {
+      server.moonside = true;
     };
 
+    swarselsystems = {
+      info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
+      isImpermanence = true;
+      isSecureBoot = false;
+      isCrypted = false;
+      isSwap = false;
+      rootDisk = "/dev/sda";
+      isBtrfs = true;
+      isNixos = true;
+      isLinux = true;
+    };
   }
 
 #+end_src
@@ -3100,14 +3057,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/toto/default.nix
-  { self, config, lib, minimal, ... }:
-  let
-    primaryUser = config.swarselsystems.mainUser;
-    sharedOptions = {
-      isBtrfs = true;
-      isLinux = true;
-    };
-  in
+  { self, lib, minimal, ... }:
   {
 
     imports = [
@@ -3115,42 +3065,33 @@ This is a slim setup for developing base configuration. I do not track the hardw
       ./hardware-configuration.nix
     ];
 
-
-
     networking = {
       hostName = "toto";
       firewall.enable = false;
     };
 
-      swarselprofiles = {
-        toto = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-        btrfs = true;
-      };
-    swarselsystems = lib.recursiveUpdate
-      {
-        info = "~SwarselSystems~ remote install helper";
-        wallpaper = self + /files/wallpaper/lenovowp.png;
-        isImpermanence = true;
-        isCrypted = true;
-        isSecureBoot = false;
-        isSwap = true;
-        swapSize = "2G";
-        # rootDisk = "/dev/nvme0n1";
-        rootDisk = "/dev/vda";
-        # rootDisk = "/dev/vda";
-      }
-      sharedOptions;
-
-    home-manager.users.${primaryUser} = {
-      home.stateVersion = lib.mkForce "23.05";
-      swarselsystems = lib.recursiveUpdate
-        {
-          isLaptop = false;
-          isNixos = true;
-        }
-        sharedOptions;
+    swarselprofiles = {
+      toto = lib.mkIf (!minimal) true;
+      btrfs = true;
     };
+
+    swarselsystems = {
+      info = "~SwarselSystems~ remote install helper";
+      wallpaper = self + /files/wallpaper/lenovowp.png;
+      isImpermanence = true;
+      isCrypted = true;
+      isSecureBoot = false;
+      isSwap = true;
+      swapSize = "2G";
+      # rootDisk = "/dev/nvme0n1";
+      rootDisk = "/dev/vda";
+      # rootDisk = "/dev/vda";
+      isBtrfs = true;
+      isLinux = true;
+      isLaptop = false;
+      isNixos = true;
+    };
+
   }
 
 
@@ -3537,67 +3478,56 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
   { self, config, pkgs, lib, minimal, ... }:
   let
     mainUser = "demo";
-    sharedOptions = {
-      inherit mainUser;
+  in
+  {
+
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+      {
+        _module.args.diskDevice = config.swarselsystems.rootDisk;
+      }
+    ];
+
+    environment.variables = {
+      WLR_RENDERER_ALLOW_SOFTWARE = 1;
+    };
+
+    services.qemuGuest.enable = true;
+
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
+
+    networking = {
+      hostName = "chaostheatre";
+      firewall.enable = true;
+    };
+
+    swarselprofiles = {
+      chaostheatre = lib.mkIf (!minimal) true;
+      minimal = lib.mkIf minimal true;
+      btrfs = true;
+    };
+    swarselsystems = {
+      info = "~SwarselSystems~ demo host";
+      wallpaper = self + /files/wallpaper/lenovowp.png;
+      isImpermanence = true;
+      isCrypted = true;
+      isSecureBoot = false;
+      isSwap = true;
+      swapSize = "4G";
+      rootDisk = "/dev/vda";
       isBtrfs = false;
+      inherit mainUser;
       isLinux = true;
       isPublic = true;
+      isNixos = true;
     };
-  in
-    {
 
-      imports = [
-        ./hardware-configuration.nix
-        ./disk-config.nix
-        {
-          _module.args.diskDevice = config.swarselsystems.rootDisk;
-        }
-      ];
-
-      environment.variables = {
-        WLR_RENDERER_ALLOW_SOFTWARE = 1;
-      };
-
-      services.qemuGuest.enable = true;
-
-      boot = {
-        loader.systemd-boot.enable = lib.mkForce true;
-        loader.efi.canTouchEfiVariables = true;
-        kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-      };
-
-      networking = {
-        hostName = "chaostheatre";
-        firewall.enable = true;
-      };
-
-      swarselprofiles = {
-        chaostheatre = lib.mkIf (!minimal) true;
-        minimal = lib.mkIf minimal true;
-        btrfs = true;
-      };
-      swarselsystems = lib.recursiveUpdate
-        {
-          info = "~SwarselSystems~ demo host";
-          wallpaper = self + /files/wallpaper/lenovowp.png;
-          isImpermanence = true;
-          isCrypted = true;
-          isSecureBoot = false;
-          isSwap = true;
-          swapSize = "4G";
-          rootDisk = "/dev/vda";
-        }
-        sharedOptions;
-
-      home-manager.users.${mainUser} = {
-        home.stateVersion = lib.mkForce "23.05";
-        swarselsystems = lib.recursiveUpdate
-          {
-            isNixos = true;
-          }
-          sharedOptions;
-      };
-    }
+  }
 
 
 #+end_src
@@ -4158,7 +4088,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
           useGlobalPkgs = true;
           useUserPackages = true;
           verbose = true;
-          users.swarsel.imports = [
+          users.${config.swarselsystems.mainUser}.imports = [
             inputs.nix-index-database.hmModules.nix-index
             inputs.sops-nix.homeManagerModules.sops
             # inputs.stylix.homeModules.stylix
@@ -4209,8 +4139,8 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
           users."${config.swarselsystems.mainUser}" = {
             isNormalUser = true;
             description = "Leon S";
-            password = lib.mkIf minimal "setup";
-            hashedPasswordFile = lib.mkIf (!minimal) config.sops.secrets.main-user-hashed-pw.path;
+            password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
+            hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
             extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
           };
@@ -10273,6 +10203,9 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
         spice-protocol
         win-virtio
         win-spice
+
+        powershell
+        gh
       ];
 
 
@@ -16123,7 +16056,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/personal/default.nix :mkdirp yes
-  { lib, config, minimal, ... }:
+  { lib, config, ... }:
   {
     options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
     config = lib.mkIf config.swarselprofiles.personal {
@@ -16182,7 +16115,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       };
       home-manager.users."${config.swarselsystems.mainUser}" = {
         swarselprofiles = {
-          personal = lib.mkIf (!minimal) true;
+          personal = lib.mkDefault true;
         };
       };
 
@@ -16249,6 +16182,11 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           ssh = lib.mkDefault true;
         };
       };
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        swarselprofiles = {
+          personal = lib.mkDefault true;
+        };
+      };
 
     };
 
@@ -16308,6 +16246,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         home-manager = lib.mkDefault true;
         xserver = lib.mkDefault true;
         users = lib.mkDefault true;
+        sops = lib.mkDefault true;
         env = lib.mkDefault true;
         security = lib.mkDefault true;
         systemdTimeout = lib.mkDefault true;
@@ -16316,7 +16255,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         pipewire = lib.mkDefault true;
         network = lib.mkDefault true;
         time = lib.mkDefault true;
-        sops = lib.mkDefault false;
         stylix = lib.mkDefault true;
         programs = lib.mkDefault true;
         zsh = lib.mkDefault true;
@@ -16327,7 +16265,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         interceptionTools = lib.mkDefault true;
         swayosd = lib.mkDefault true;
         ppd = lib.mkDefault true;
-        yubikey = lib.mkDefault true;
+        yubikey = lib.mkDefault false;
         ledger = lib.mkDefault true;
         keyboards = lib.mkDefault true;
         login = lib.mkDefault true;
@@ -16389,7 +16327,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/work/default.nix :mkdirp yes
-  { lib, config, minimal, ... }:
+  { lib, config, ... }:
   {
     options.swarselprofiles.work = lib.mkEnableOption "is this a work host";
     config = lib.mkIf config.swarselprofiles.work {
@@ -16400,7 +16338,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       };
       home-manager.users."${config.swarselsystems.mainUser}" = {
         swarselprofiles = {
-          work = lib.mkIf (!minimal) true;
+          work = lib.mkDefault true;
         };
       };
 
@@ -16416,7 +16354,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 :END:
 
 #+begin_src nix-ts :tangle profiles/nixos/framework/default.nix :mkdirp yes
-  { lib, config, minimal, ... }:
+  { lib, config, ... }:
   {
     options.swarselprofiles.framework = lib.mkEnableOption "is this a framework brand host";
     config = lib.mkIf config.swarselprofiles.framework {
@@ -16427,7 +16365,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
       };
       home-manager.users."${config.swarselsystems.mainUser}" = {
         swarselprofiles = {
-          framework = lib.mkIf (!minimal) true;
+          framework = lib.mkDefault true;
         };
       };
 
@@ -20847,7 +20785,7 @@ This file defines a few workflows that I often need to run when working on my co
     sudo dd if=$(eza --sort changed {{ISO}} | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
 
   sync USER HOST:
-    rsync -av --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+    rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
 
 #+end_src
 ** aspell.conf

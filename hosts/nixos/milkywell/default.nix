@@ -1,12 +1,4 @@
-{ lib, config, minimal, ... }:
-let
-  primaryUser = config.swarselsystems.mainUser;
-  sharedOptions = {
-    isBtrfs = true;
-    isLinux = true;
-    isNixos = true;
-  };
-in
+{ lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -33,22 +25,17 @@ in
     minimal = lib.mkIf minimal true;
     server.syncserver = true;
   };
-  swarselsystems = lib.recursiveUpdate
-    {
-      info = "VM.Standard.E2.1.Micro";
-      isImpermanence = true;
-      isSecureBoot = false;
-      isCrypted = true;
-      isSwap = true;
-      rootDisk = "/dev/sda";
-      swapSize = "4G";
-    }
-    sharedOptions;
-
-  home-manager.users."${primaryUser}" = {
-    swarselsystems = lib.recursiveUpdate
-      { }
-      sharedOptions;
+  swarselsystems = {
+    info = "VM.Standard.E2.1.Micro";
+    isImpermanence = true;
+    isSecureBoot = false;
+    isCrypted = true;
+    isSwap = true;
+    rootDisk = "/dev/sda";
+    swapSize = "4G";
+    isBtrfs = true;
+    isLinux = true;
+    isNixos = true;
   };
 
 }

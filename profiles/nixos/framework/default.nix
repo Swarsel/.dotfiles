@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, config, ... }:
 {
   options.swarselprofiles.framework = lib.mkEnableOption "is this a framework brand host";
   config = lib.mkIf config.swarselprofiles.framework {
@@ -9,7 +9,7 @@
     };
     home-manager.users."${config.swarselsystems.mainUser}" = {
       swarselprofiles = {
-        framework = lib.mkIf (!minimal) true;
+        framework = lib.mkDefault true;
       };
     };
 

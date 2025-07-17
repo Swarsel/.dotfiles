@@ -1,12 +1,4 @@
-{ lib, config, ... }:
-let
-  primaryUser = config.swarselsystems.mainUser;
-  sharedOptions = {
-    isBtrfs = false;
-    isLinux = true;
-    isNixos = true;
-  };
-in
+{ config, ... }:
 {
 
   imports = [
@@ -30,19 +22,15 @@ in
   swarselprofiles = {
     server.local = true;
   };
-  swarselsystems = lib.recursiveUpdate
-    {
-      info = "ASRock J4105-ITX, 32GB RAM";
-      isImpermanence = false;
-      isSecureBoot = true;
-      isCrypted = true;
-    }
-    sharedOptions;
 
-  home-manager.users."${primaryUser}" = {
-    home.stateVersion = lib.mkForce "23.05";
-    swarselsystems = lib.recursiveUpdate
-      { }
-      sharedOptions;
+  swarselsystems = {
+    info = "ASRock J4105-ITX, 32GB RAM";
+    isImpermanence = false;
+    isSecureBoot = true;
+    isCrypted = true;
+    isBtrfs = false;
+    isLinux = true;
+    isNixos = true;
   };
+
 }
