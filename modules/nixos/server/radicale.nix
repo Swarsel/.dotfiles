@@ -76,7 +76,7 @@ in
     };
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.settings.storage.filesystem_folder}'        0750 ${serviceUser} ${serviceGroup} - -"
+      "d ${cfg.settings.storage.filesystem_folder} 0750 ${serviceUser} ${serviceGroup} - -"
     ];
 
     networking.firewall.allowedTCPPorts = [ servicePort ];

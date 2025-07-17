@@ -20,6 +20,7 @@
         croc = lib.mkDefault true;
         microbin = lib.mkDefault true;
         shlink = lib.mkDefault true;
+        slink = lib.mkDefault true;
       };
     };
   };
