@@ -84,6 +84,7 @@ in
             "freshrss.access" = { };
             "firefly.access" = { };
             "radicale.access" = { };
+            "slink.access" = { };
           };
 
           inherit (config.repo.secrets.local) persons;
@@ -204,6 +205,11 @@ in
                     "email"
                     "profile"
                   ];
+                  "slink.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
                 };
                 preferShortUsername = true;
                 claimMaps.groups = {
@@ -213,6 +219,7 @@ in
                     "navidrome.access" = [ "navidrome_access" ];
                     "firefly.access" = [ "firefly_access" ];
                     "radicale.access" = [ "radicale_access" ];
+                    "slink.access" = [ "slink_access" ];
                   };
                 };
               };
