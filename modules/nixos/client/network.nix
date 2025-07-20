@@ -118,7 +118,7 @@ in
                 wifi-security = {
                   auth-alg = "open";
                   key-mgmt = "wpa-psk";
-                  psk = "WLAN1_PW";
+                  psk = "$WLAN1_PW";
                 };
               };
 
