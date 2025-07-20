@@ -5,6 +5,7 @@ let
   serviceName = "koillection";
   servicePort = 2282;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceDir = "/Vault/data/koillection";
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
@@ -34,6 +35,10 @@ in
 
         ports = [
           "${toString servicePort}:80"
+        ];
+
+        volumes = [
+          "${serviceDir}/uploads:/uploads"
         ];
 
         environment = {
