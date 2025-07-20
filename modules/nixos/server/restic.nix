@@ -31,6 +31,11 @@ in
             passwordFile = config.sops.secrets.resticpw.path;
             paths = [
               "/Vault/data/paperless"
+              "/Vault/data/koillection"
+              "/Vault/data/postgresql"
+              "/Vault/data/firefly-iii"
+              "/Vault/data/radicale"
+              "/Vault/data/matrix-synapse"
               "/Vault/Eternor/Paperless"
               "/Vault/Eternor/Bilder"
               "/Vault/Eternor/Immich"
