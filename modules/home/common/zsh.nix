@@ -26,9 +26,10 @@ in
             hg = "history | grep";
             hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
             # nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-            nswitch = "swarsel-deploy $(hostname) switch";
+            nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+            nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+            ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
             # nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
-            nboot = "swarsel-deploy $(hostname) boot";
             magit = "emacsclient -nc -e \"(magit-status)\"";
             config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
             g = "git";
