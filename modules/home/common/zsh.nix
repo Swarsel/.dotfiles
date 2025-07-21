@@ -1,4 +1,4 @@
-{ config, lib, minimal, ... }:
+{ config, lib, minimal, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) flakePath;
 in
@@ -13,7 +13,7 @@ in
   config = lib.mkIf config.swarselmodules.zsh
     {
 
-      sops.secrets = {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         croc-password = { };
       };
 
@@ -121,7 +121,7 @@ in
           # ctrl + del
           bindkey '^H' my-backward-delete-word
 
-          export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
+          export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
         '';
       };
     };

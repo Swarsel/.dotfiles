@@ -1,12 +1,12 @@
 { self, lib, config, pkgs, ... }:
 let
-  inherit (config.swarselsystems) homeDir isPublic;
+  inherit (config.swarselsystems) homeDir isPublic isNixos;
 in
 {
   options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
   config = lib.mkIf config.swarselmodules.emacs {
     # needed for elfeed
-    sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
+    sops.secrets.fever-pw = lib.mkIf (!isPublic && !isNixos) { path = "${homeDir}/.emacs.d/.fever"; };
 
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
