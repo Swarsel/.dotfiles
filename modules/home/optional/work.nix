@@ -1,4 +1,4 @@
-{ self, config, pkgs, lib, nixosConfig ? config, ... }:
+{ self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) homeDir;
 in
@@ -126,7 +126,7 @@ in
                     "browser.startup.homepage" = "${site1}|${site2}";
                   };
                 }
-                config.swarselsystems.firefox;
+                vars.firefox;
               "${user2}" = lib.recursiveUpdate
                 {
                   inherit isDefault;
@@ -135,13 +135,13 @@ in
                     "browser.startup.homepage" = "${site3}";
                   };
                 }
-                config.swarselsystems.firefox;
+                vars.firefox;
               "${user3}" = lib.recursiveUpdate
                 {
                   inherit isDefault;
                   id = 3;
                 }
-                config.swarselsystems.firefox;
+                vars.firefox;
               work = lib.recursiveUpdate
                 {
                   inherit isDefault;
@@ -150,7 +150,7 @@ in
                     "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
                   };
                 }
-                config.swarselsystems.firefox;
+                vars.firefox;
             };
         };
 

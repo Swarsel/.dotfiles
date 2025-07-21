@@ -3645,17 +3645,15 @@ These are system-level settings specific to NixOS machines. All settings that ar
 This section is for setting things that should be used on hosts that are using the default NixOS configuration. This means that servers should NOT import this, as much of these imported modules are user-configured.
 
 #+begin_src nix-ts :tangle modules/nixos/common/default.nix
-  { self, lib, ... }:
-  let
-    importNames = lib.swarselsystems.readNix "modules/nixos/common";
-  in
-    {
-      imports = lib.swarselsystems.mkImports importNames "modules/nixos/common" ++ [
-        "${self}/modules/shared/sharedsetup.nix"
-      ];
-
-
-    }
+{ lib, ... }:
+let
+  importNames = lib.swarselsystems.readNix "modules/nixos/common";
+  sharedNames = lib.swarselsystems.readNix "modules/shared";
+in
+{
+  imports = lib.swarselsystems.mkImports importNames "modules/nixos/common" ++
+    lib.swarselsystems.mkImports sharedNames "modules/shared";
+}
 
 #+end_src
 
@@ -5036,7 +5034,7 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/nixos/client/stylix.nix
-  { self, lib, config, ... }:
+  { self, lib, config, vars, ... }:
   {
     options.swarselmodules.stylix = lib.mkEnableOption "stylix config";
     config = {
@@ -5049,10 +5047,10 @@ By default, [[https://github.com/danth/stylix][stylix]] wants to style GRUB as w
             targets.grub.enable = false; # the styling makes grub more ugly
             image = config.swarselsystems.wallpaper;
           }
-          config.swarselsystems.stylix);
+          vars.stylix);
       home-manager.users."${config.swarselsystems.mainUser}" = {
         stylix = {
-          targets = config.swarselsystems.stylixHomeTargets;
+          targets = vars.stylixHomeTargets;
         };
       };
     };
@@ -10327,321 +10325,14 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 This section sets up all the imports that are used in the home-manager section.
 
 #+begin_src nix-ts :tangle modules/home/common/default.nix
-  { self, lib, ... }:
+  { lib, ... }:
   let
     importNames = lib.swarselsystems.readNix "modules/home/common";
+    sharedNames = lib.swarselsystems.readNix "modules/shared";
   in
   {
-    imports = lib.swarselsystems.mkImports importNames "modules/home/common" ++ [
-      "${self}/modules/shared/sharedsetup.nix"
-    ];
-  }
-#+end_src
-
-**** Shared Configuration Options (holds firefox & stylix config parts)
-:PROPERTIES:
-:CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
-:END:
-
-Provides settings related to nix-darwin systems. At the moment, I am only making use of a =isDarwin= flag.
-
-At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
-
-For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
-
-The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
-
-This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
-
-#+begin_src nix-ts :noweb yes :tangle modules/shared/sharedsetup.nix
-  { self, config, lib, pkgs, ... }:
-  {
-    options.swarselsystems = {
-      withHomeManager = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      isSwap = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-      swapSize = lib.mkOption {
-        type = lib.types.str;
-        default = "8G";
-      };
-      rootDisk = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      mainUser = lib.mkOption {
-        type = lib.types.str;
-        default = "swarsel";
-      };
-      isCrypted = lib.mkEnableOption "uses full disk encryption";
-
-      isImpermanence = lib.mkEnableOption "use impermanence on this system";
-      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
-      isLaptop = lib.mkEnableOption "laptop host";
-      isNixos = lib.mkEnableOption "nixos host";
-      isPublic = lib.mkEnableOption "is a public machine (no secrets)";
-      isDarwin = lib.mkEnableOption "darwin host";
-      isLinux = lib.mkEnableOption "whether this is a linux machine";
-      isBtrfs = lib.mkEnableOption "use btrfs filesystem";
-      sopsFile = lib.mkOption {
-        type = lib.types.str;
-        default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
-      };
-      homeDir = lib.mkOption {
-        type = lib.types.str;
-        default = "/home/swarsel";
-      };
-      xdgDir = lib.mkOption {
-        type = lib.types.str;
-        default = "/run/user/1000";
-      };
-      flakePath = lib.mkOption {
-        type = lib.types.str;
-        default = "/home/swarsel/.dotfiles";
-      };
-      wallpaper = lib.mkOption {
-        type = lib.types.path;
-        default = "${self}/files/wallpaper/lenovowp.png";
-      };
-      sharescreen = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      lowResolution = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-      highResolution = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-      };
-
-      stylix = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          polarity = "dark";
-          opacity.popups = 0.5;
-          cursor = {
-            package = pkgs.banana-cursor;
-            # package = pkgs.capitaine-cursors;
-            name = "Banana";
-            # name = "capitaine-cursors";
-            size = 16;
-          };
-          fonts = {
-            sizes = {
-              terminal = 10;
-              applications = 11;
-            };
-            serif = {
-              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-              package = pkgs.cantarell-fonts;
-              # package = pkgs.montserrat;
-              name = "Cantarell";
-              # name = "FiraCode Nerd Font Propo";
-              # name = "Montserrat";
-            };
-            sansSerif = {
-              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
-              package = pkgs.cantarell-fonts;
-              # package = pkgs.montserrat;
-              name = "Cantarell";
-              # name = "FiraCode Nerd Font Propo";
-              # name = "Montserrat";
-            };
-            monospace = {
-              package = pkgs.nerd-fonts.fira-mono; # has overrides
-              name = "FiraCode Nerd Font Mono";
-            };
-            emoji = {
-              package = pkgs.noto-fonts-emoji;
-              name = "Noto Color Emoji";
-            };
-          };
-        };
-      };
-      stylixHomeTargets = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          emacs.enable = false;
-          waybar.enable = false;
-          sway.useWallpaper = false;
-          firefox.profileNames = [ "default" ];
-        };
-      };
-
-      firefox = lib.mkOption {
-        type = lib.types.attrs;
-        default = {
-          userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
-          extensions = {
-            packages = with pkgs.nur.repos.rycee.firefox-addons; [
-              tridactyl
-              tampermonkey
-              sidebery
-              browserpass
-              clearurls
-              darkreader
-              enhancer-for-youtube
-              istilldontcareaboutcookies
-              translate-web-pages
-              ublock-origin
-              reddit-enhancement-suite
-              sponsorblock
-              web-archives
-              onepassword-password-manager
-              single-file
-              widegithub
-              enhanced-github
-              unpaywall
-              don-t-fuck-with-paste
-              plasma-integration
-              noscript
-
-              # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
-              (buildFirefoxXpiAddon {
-                pname = "shortkeys";
-                version = "4.0.2";
-                addonId = "Shortkeys@Shortkeys.com";
-                url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
-                sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
-                meta = with lib;
-                  {
-                    description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
-                    mozPermissions = [
-                      "tabs"
-                      "downloads"
-                      "clipboardWrite"
-                      "browsingData"
-                      "storage"
-                      "bookmarks"
-                      "sessions"
-                      "<all_urls>"
-                    ];
-                    platforms = platforms.all;
-                  };
-              })
-            ];
-          };
-
-          settings =
-            {
-              "extensions.autoDisableScopes" = 0;
-              "browser.bookmarks.showMobileBookmarks" = true;
-              "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-              "browser.search.suggest.enabled" = false;
-              "browser.search.suggest.enabled.private" = false;
-              "browser.urlbar.suggest.searches" = false;
-              "browser.urlbar.showSearchSuggestionsFirst" = false;
-              "browser.topsites.contile.enabled" = false;
-              "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
-              "browser.newtabpage.activity-stream.feeds.snippets" = false;
-              "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
-              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
-              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
-              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
-              "browser.newtabpage.activity-stream.showSponsored" = false;
-              "browser.newtabpage.activity-stream.system.showSponsored" = false;
-              "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
-            };
-
-          search = {
-            # default = "Kagi";
-            default = "google";
-            # privateDefault = "Kagi";
-            privateDefault = "google";
-            engines = {
-              "Kagi" = {
-                urls = [{
-                  template = "https://kagi.com/search";
-                  params = [
-                    { name = "q"; value = "{searchTerms}"; }
-                  ];
-                }];
-                icon = "https://kagi.com/favicon.ico";
-                updateInterval = 24 * 60 * 60 * 1000; # every day
-                definedAliases = [ "@k" ];
-              };
-
-              "Nix Packages" = {
-                urls = [{
-                  template = "https://search.nixos.org/packages";
-                  params = [
-                    { name = "type"; value = "packages"; }
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@np" ];
-              };
-
-              "NixOS Wiki" = {
-                urls = [{
-                  template = "https://nixos.wiki/index.php?search={searchTerms}";
-                }];
-                icon = "https://nixos.wiki/favicon.png";
-                updateInterval = 24 * 60 * 60 * 1000; # every day
-                definedAliases = [ "@nw" ];
-              };
-
-              "NixOS Options" = {
-                urls = [{
-                  template = "https://search.nixos.org/options";
-                  params = [
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@no" ];
-              };
-
-              "Home Manager Options" = {
-                urls = [{
-                  template = "https://home-manager-options.extranix.com/";
-                  params = [
-                    { name = "query"; value = "{searchTerms}"; }
-                  ];
-                }];
-
-                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                definedAliases = [ "@hm" "@ho" "@hmo" ];
-              };
-
-              "Confluence search" = {
-                urls = [{
-                  template = "https://vbc.atlassian.net/wiki/search";
-                  params = [
-                    { name = "text"; value = "{searchTerms}"; }
-                  ];
-                }];
-
-                definedAliases = [ "@c" "@cf" "@confluence" ];
-              };
-
-              "Jira search" = {
-                urls = [{
-                  template = "https://vbc.atlassian.net/issues/";
-                  params = [
-                    { name = "jql"; value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true"; }
-                  ];
-                }];
-
-                definedAliases = [ "@j" "@jire" ];
-              };
-
-              "google".metaData.alias = "@g";
-            };
-            force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
-          };
-        };
-      };
-    };
+    imports = lib.swarselsystems.mkImports importNames "modules/home/common" ++
+      lib.swarselsystems.mkImports sharedNames "modules/shared";
   }
 #+end_src
 
@@ -11135,16 +10826,16 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/stylix.nix
-  { lib, config, ... }:
+  { lib, config, vars, ... }:
   {
     options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
     config = lib.mkIf config.swarselmodules.stylix {
       stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
         {
           image = config.swarselsystems.wallpaper;
-          targets = config.swarselsystems.stylixHomeTargets;
+          targets = vars.stylixHomeTargets;
         }
-        config.swarselsystems.stylix);
+        vars.stylix);
     };
   }
 #+end_src
@@ -12661,7 +12352,7 @@ Also, I setup some search aliases for functions I often use, such as NixOS optio
 I used to build the firefox addon =bypass-paywalls-clean= myself here, but the maintainer always deletes old packages, and it became a chore for me to maintain here, so I no longer do that.
 
 #+begin_src nix-ts :tangle modules/home/common/firefox.nix
-  { config, pkgs, lib, ... }:
+  { config, pkgs, lib, vars, ... }:
   {
     options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
     config = lib.mkIf config.swarselmodules.firefox {
@@ -12806,7 +12497,7 @@ I used to build the firefox addon =bypass-paywalls-clean= myself here, but the m
                 "browser.startup.homepage" = "https://lobste.rs";
               };
             }
-            config.swarselsystems.firefox;
+            vars.firefox;
         };
       };
     };
@@ -13628,7 +13319,8 @@ This section sets up all the imports that are used in the home-manager section.
     home.stateVersion = "23.05";
     imports = [
       "${self}/modules/home/common/settings.nix"
-      "${self}/modules/shared/sharedsetup.nix"
+      "${self}/modules/shared/options.nix"
+      "${self}/modules/shared/vars.nix"
     ];
   }
 #+end_src
@@ -13708,7 +13400,7 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, nixosConfig ? config, ... }:
+  { self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -13836,7 +13528,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                       "browser.startup.homepage" = "${site1}|${site2}";
                     };
                   }
-                  config.swarselsystems.firefox;
+                  vars.firefox;
                 "${user2}" = lib.recursiveUpdate
                   {
                     inherit isDefault;
@@ -13845,13 +13537,13 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                       "browser.startup.homepage" = "${site3}";
                     };
                   }
-                  config.swarselsystems.firefox;
+                  vars.firefox;
                 "${user3}" = lib.recursiveUpdate
                   {
                     inherit isDefault;
                     id = 3;
                   }
-                  config.swarselsystems.firefox;
+                  vars.firefox;
                 work = lib.recursiveUpdate
                   {
                     inherit isDefault;
@@ -13860,7 +13552,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                       "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
                     };
                   }
-                  config.swarselsystems.firefox;
+                  vars.firefox;
               };
           };
 
@@ -14182,6 +13874,315 @@ This holds configuration that is specific to framework laptops.
     };
   }
 #+end_src
+** Shared
+*** Configuration options
+:PROPERTIES:
+:CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
+:END:
+
+#+begin_src nix-ts :noweb yes :tangle modules/shared/options.nix
+  { self, config, lib, ... }:
+  {
+    options.swarselsystems = {
+      withHomeManager = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      isSwap = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      swapSize = lib.mkOption {
+        type = lib.types.str;
+        default = "8G";
+      };
+      rootDisk = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      mainUser = lib.mkOption {
+        type = lib.types.str;
+        default = "swarsel";
+      };
+      isCrypted = lib.mkEnableOption "uses full disk encryption";
+
+      isImpermanence = lib.mkEnableOption "use impermanence on this system";
+      isSecureBoot = lib.mkEnableOption "use secure boot on this system";
+      isLaptop = lib.mkEnableOption "laptop host";
+      isNixos = lib.mkEnableOption "nixos host";
+      isPublic = lib.mkEnableOption "is a public machine (no secrets)";
+      isDarwin = lib.mkEnableOption "darwin host";
+      isLinux = lib.mkEnableOption "whether this is a linux machine";
+      isBtrfs = lib.mkEnableOption "use btrfs filesystem";
+      sopsFile = lib.mkOption {
+        type = lib.types.str;
+        default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
+      };
+      homeDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel";
+      };
+      xdgDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/run/user/1000";
+      };
+      flakePath = lib.mkOption {
+        type = lib.types.str;
+        default = "/home/swarsel/.dotfiles";
+      };
+      wallpaper = lib.mkOption {
+        type = lib.types.path;
+        default = "${self}/files/wallpaper/lenovowp.png";
+      };
+      sharescreen = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      lowResolution = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+      highResolution = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
+    };
+  }
+#+end_src
+
+*** Variables (vars; holds firefox & stylix config parts)
+
+At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
+Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
+
+For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
+
+The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
+
+This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
+
+#+begin_src nix-ts :noweb yes :tangle modules/shared/vars.nix
+  { self, lib, pkgs, ... }:
+  {
+    _module.args = {
+      vars = {
+        stylix = {
+          polarity = "dark";
+          opacity.popups = 0.5;
+          cursor = {
+            package = pkgs.banana-cursor;
+            # package = pkgs.capitaine-cursors;
+            name = "Banana";
+            # name = "capitaine-cursors";
+            size = 16;
+          };
+          fonts = {
+            sizes = {
+              terminal = 10;
+              applications = 11;
+            };
+            serif = {
+              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+              package = pkgs.cantarell-fonts;
+              # package = pkgs.montserrat;
+              name = "Cantarell";
+              # name = "FiraCode Nerd Font Propo";
+              # name = "Montserrat";
+            };
+            sansSerif = {
+              # package = (pkgs.nerdfonts.override { fonts = [ "FiraMono" "FiraCode"]; });
+              package = pkgs.cantarell-fonts;
+              # package = pkgs.montserrat;
+              name = "Cantarell";
+              # name = "FiraCode Nerd Font Propo";
+              # name = "Montserrat";
+            };
+            monospace = {
+              package = pkgs.nerd-fonts.fira-mono; # has overrides
+              name = "FiraCode Nerd Font Mono";
+            };
+            emoji = {
+              package = pkgs.noto-fonts-emoji;
+              name = "Noto Color Emoji";
+            };
+          };
+        };
+
+        stylixHomeTargets = {
+          emacs.enable = false;
+          waybar.enable = false;
+          sway.useWallpaper = false;
+          firefox.profileNames = [ "default" ];
+        };
+
+        firefox = {
+          userChrome = builtins.readFile "${self}/files/firefox/chrome/userChrome.css";
+          extensions = {
+            packages = with pkgs.nur.repos.rycee.firefox-addons; [
+              tridactyl
+              tampermonkey
+              sidebery
+              browserpass
+              clearurls
+              darkreader
+              enhancer-for-youtube
+              istilldontcareaboutcookies
+              translate-web-pages
+              ublock-origin
+              reddit-enhancement-suite
+              sponsorblock
+              web-archives
+              onepassword-password-manager
+              single-file
+              widegithub
+              enhanced-github
+              unpaywall
+              don-t-fuck-with-paste
+              plasma-integration
+              noscript
+
+              # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
+              (buildFirefoxXpiAddon {
+                pname = "shortkeys";
+                version = "4.0.2";
+                addonId = "Shortkeys@Shortkeys.com";
+                url = "https://addons.mozilla.org/firefox/downloads/file/3673761/shortkeys-4.0.2.xpi";
+                sha256 = "c6fe12efdd7a871787ac4526eea79ecc1acda8a99724aa2a2a55c88a9acf467c";
+                meta = with lib;
+                  {
+                    description = "Easily customizable custom keyboard shortcuts for Firefox. To configure this addon go to Addons (ctrl+shift+a) ->Shortkeys ->Options. Report issues here (please specify that the issue is found in Firefox): https://github.com/mikecrittenden/shortkeys";
+                    mozPermissions = [
+                      "tabs"
+                      "downloads"
+                      "clipboardWrite"
+                      "browsingData"
+                      "storage"
+                      "bookmarks"
+                      "sessions"
+                      "<all_urls>"
+                    ];
+                    platforms = platforms.all;
+                  };
+              })
+            ];
+          };
+
+          settings =
+            {
+              "extensions.autoDisableScopes" = 0;
+              "browser.bookmarks.showMobileBookmarks" = true;
+              "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+              "browser.search.suggest.enabled" = false;
+              "browser.search.suggest.enabled.private" = false;
+              "browser.urlbar.suggest.searches" = false;
+              "browser.urlbar.showSearchSuggestionsFirst" = false;
+              "browser.topsites.contile.enabled" = false;
+              "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+              "browser.newtabpage.activity-stream.feeds.snippets" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeBookmarks" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeDownloads" = false;
+              "browser.newtabpage.activity-stream.section.highlights.includeVisited" = false;
+              "browser.newtabpage.activity-stream.showSponsored" = false;
+              "browser.newtabpage.activity-stream.system.showSponsored" = false;
+              "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+            };
+
+          search = {
+            # default = "Kagi";
+            default = "google";
+            # privateDefault = "Kagi";
+            privateDefault = "google";
+            engines = {
+              "Kagi" = {
+                urls = [{
+                  template = "https://kagi.com/search";
+                  params = [
+                    { name = "q"; value = "{searchTerms}"; }
+                  ];
+                }];
+                icon = "https://kagi.com/favicon.ico";
+                updateInterval = 24 * 60 * 60 * 1000; # every day
+                definedAliases = [ "@k" ];
+              };
+
+              "Nix Packages" = {
+                urls = [{
+                  template = "https://search.nixos.org/packages";
+                  params = [
+                    { name = "type"; value = "packages"; }
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@np" ];
+              };
+
+              "NixOS Wiki" = {
+                urls = [{
+                  template = "https://nixos.wiki/index.php?search={searchTerms}";
+                }];
+                icon = "https://nixos.wiki/favicon.png";
+                updateInterval = 24 * 60 * 60 * 1000; # every day
+                definedAliases = [ "@nw" ];
+              };
+
+              "NixOS Options" = {
+                urls = [{
+                  template = "https://search.nixos.org/options";
+                  params = [
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@no" ];
+              };
+
+              "Home Manager Options" = {
+                urls = [{
+                  template = "https://home-manager-options.extranix.com/";
+                  params = [
+                    { name = "query"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [ "@hm" "@ho" "@hmo" ];
+              };
+
+              "Confluence search" = {
+                urls = [{
+                  template = "https://vbc.atlassian.net/wiki/search";
+                  params = [
+                    { name = "text"; value = "{searchTerms}"; }
+                  ];
+                }];
+
+                definedAliases = [ "@c" "@cf" "@confluence" ];
+              };
+
+              "Jira search" = {
+                urls = [{
+                  template = "https://vbc.atlassian.net/issues/";
+                  params = [
+                    { name = "jql"; value = "textfields ~ \"{searchTerms}*\"&wildcardFlag=true"; }
+                  ];
+                }];
+
+                definedAliases = [ "@j" "@jire" ];
+              };
+
+              "google".metaData.alias = "@g";
+            };
+            force = true; # this is required because otherwise the search.json.mozlz4 symlink gets replaced on every firefox restart
+          };
+        };
+      };
+    };
+  }
+#+end_src
+
 ** Packages
 :PROPERTIES:
 :CUSTOM_ID: h:64a5cc16-6b16-4802-b421-c67ccef853e1

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, vars, ... }:
 {
   options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
   config = lib.mkIf config.swarselmodules.firefox {
@@ -143,7 +143,7 @@
               "browser.startup.homepage" = "https://lobste.rs";
             };
           }
-          config.swarselsystems.firefox;
+          vars.firefox;
       };
     };
   };

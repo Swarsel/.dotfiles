@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ self, lib, config, vars, ... }:
 {
   options.swarselmodules.stylix = lib.mkEnableOption "stylix config";
   config = {
@@ -11,10 +11,10 @@
           targets.grub.enable = false; # the styling makes grub more ugly
           image = config.swarselsystems.wallpaper;
         }
-        config.swarselsystems.stylix);
+        vars.stylix);
     home-manager.users."${config.swarselsystems.mainUser}" = {
       stylix = {
-        targets = config.swarselsystems.stylixHomeTargets;
+        targets = vars.stylixHomeTargets;
       };
     };
   };
