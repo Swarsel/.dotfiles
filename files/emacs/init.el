@@ -1,8 +1,10 @@
-(defun swarsel/toggle-evil-state ()
-  (interactive)
-  (if (or (evil-emacs-state-p) (evil-insert-state-p))
-      (evil-normal-state)
-    (evil-emacs-state)))
+;; -*- lexical-binding: t; -*-
+
+  (defun swarsel/toggle-evil-state ()
+    (interactive)
+    (if (or (evil-emacs-state-p) (evil-insert-state-p))
+        (evil-normal-state)
+      (evil-emacs-state)))
 
 (defun swarsel/last-buffer () (interactive) (switch-to-buffer nil))
 
@@ -34,7 +36,7 @@
           (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
 
 (defun swarsel/mu4e-restore-default ()
-  (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+  (setq user-mail-address (getenv "SWARSEL_MAIL4")
         user-full-name (getenv "SWARSEL_FULLNAME")))
 
 (defun swarsel/with-buffer-name-prompt-and-make-subdirs ()
@@ -1581,11 +1583,11 @@ create a new one."
   :init
   ;; set org-caldav-sync-initalization
   (setq swarsel-caldav-synced 0)
-  (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsel")
-  (setq org-caldav-calendars
-        '((:calendar-id "personal"
-                        :inbox "~/Calendars/leon_cal.org")))
-  (setq org-caldav-files '("~/Calendars/leon_cal.org"))
+  ;; (setq org-caldav-url "https://schedule.swarsel.win/swarsel/calendar")
+  ;; (setq org-caldav-calendars
+  ;;       '((:calendar-id "personal"
+  ;;                       :inbox "~/Calendars/leon_cal.org")))
+  ;; (setq org-caldav-files '("~/Calendars/leon_cal.org"))
   ;; (setq org-caldav-backup-file "~/org-caldav/org-caldav-backup.org")
   ;; (setq org-caldav-save-directory "~/org-caldav/")
 
@@ -1612,6 +1614,14 @@ create a new one."
   :config
   (bind-key "g" 'cfw:refresh-calendar-buffer cfw:calendar-mode-map)
   (bind-key "q" 'evil-quit cfw:details-mode-map)
+  ;; dont change the order of days in this one, as it will break weekend markings
+  (setq calendar-day-name-array
+        ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
+
+  ;; First day of the week
+  (setq calendar-week-start-day 1) ; 0:Sunday, 1:Monday
+
+
   ;; (custom-set-faces
   ;;  '(cfw:face-title ((t (:foreground "#f0dfaf" :weight bold :height 65))))
   ;; )
@@ -1619,14 +1629,17 @@ create a new one."
 
 (defun swarsel/open-calendar ()
   (interactive)
-  (unless (eq swarsel-caldav-synced 1) (org-caldav-sync) (setq swarsel-caldav-synced 1))
+  ;; (unless (eq swarsel-caldav-synced 1) (org-caldav-sync) (setq swarsel-caldav-synced 1))
   ;;  (select-frame (make-frame '((name . "calendar")))) ; makes a new frame and selects it
   ;; (set-face-attribute 'default (selected-frame) :height 65) ; reduces the font size of the new frame
   (cfw:open-calendar-buffer
    :contents-sources
    (list
-    (cfw:org-create-source "Purple")  ; orgmode source
-    (cfw:ical-create-source "TISS" "https://tiss.tuwien.ac.at/events/rest/calendar/personal?locale=de&token=4463bf7a-87a3-490a-b54c-99b4a65192f3" "Cyan"))))
+    (cfw:org-create-source "Blue")  ; orgmode source
+    (cfw:ical-create-source (getenv "SWARSEL_CAL1NAME") (getenv "SWARSEL_CAL1") "Cyan")
+    (cfw:ical-create-source (getenv "SWARSEL_CAL2NAME") (getenv "SWARSEL_CAL2") "Green")
+    (cfw:ical-create-source (getenv "SWARSEL_CAL3NAME") (getenv "SWARSEL_CAL3") "Magenta")
+    )))
 
 (use-package dashboard
   :ensure t

@@ -1,12 +1,26 @@
-{ self, lib, config, pkgs, ... }:
+{ self, lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) homeDir isPublic isNixos;
+  inherit (config.repo.secrets.common.emacs) radicaleUser;
 in
 {
   options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
   config = lib.mkIf config.swarselmodules.emacs {
     # needed for elfeed
-    sops.secrets.fever-pw = lib.mkIf (!isPublic && !isNixos) { path = "${homeDir}/.emacs.d/.fever"; };
+    sops = lib.mkIf (!isPublic && !isNixos) {
+      secrets = {
+        fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
+        emacs-radicale-pw = { };
+      };
+      templates = {
+        authinfo = {
+          path = "${homeDir}/.emacs.d/.authinfo";
+          content = ''
+            machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+          '';
+        };
+      };
+    };
 
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
