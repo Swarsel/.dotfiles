@@ -60,7 +60,7 @@ in
       ] ++ modulesRight);
     };
 
-    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };
 

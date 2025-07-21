@@ -7,7 +7,7 @@
       ownpackages = lib.mkDefault true;
       general = lib.mkDefault true;
       nixgl = lib.mkDefault true;
-      sops = lib.mkDefault true;
+      sops = lib.mkDefault false;
       yubikey = lib.mkDefault false;
       ssh = lib.mkDefault true;
       stylix = lib.mkDefault true;

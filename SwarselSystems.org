@@ -3789,7 +3789,7 @@ in
     }
 #+end_src
 
-**** Meta options (automatically active)
+**** Meta options (options only)
 :PROPERTIES:
 :CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
 :END:
@@ -3814,20 +3814,31 @@ in
   }
 #+end_src
 
+**** Expose home-manager secrets in NixOS (automatically active)
 
-#+begin_src nix-ts :tangle modules/home/common/sharedoptions.nix
-  { lib, config, nixosConfig ? null, ... }:
-  let
-    # mirrorAttrs = lib.mapAttrs (_: v: lib.mkDefault v) nixosConfig.swarselsystems;
-    inherit (lib) mkDefault mapAttrs filterAttrs;
-    mkDefaultCommonAttrs = base: defaults:
-      lib.mapAttrs (_: v: lib.mkDefault v)
-        (lib.filterAttrs (k: _: base ? ${k}) defaults);
-  in
-  {
-    # config.swarselsystems = mirrorAttrs;
-    config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems);
-  }
+#+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
+{ lib, config, ... }:
+let
+  inherit (config.swarselsystems) mainUser xdgDir homeDir;
+  modules = config.home-manager.users.${mainUser}.swarselmodules;
+in
+{
+  config = lib.mkIf config.swarselsystems.withHomeManager {
+    sops.secrets = (lib.optionalAttrs modules.mail
+      {
+        address1-token = { path = "${xdgDir}/secrets/address1-token"; owner = mainUser; };
+        address2-token = { path = "${xdgDir}/secrets/address2-token"; owner = mainUser; };
+        address3-token = { path = "${xdgDir}/secrets/address3-token"; owner = mainUser; };
+        address4-token = { path = "${xdgDir}/secrets/address4-token"; owner = mainUser; };
+      }) // (lib.optionalAttrs modules.waybar {
+      github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; owner = mainUser; };
+    }) // (lib.optionalAttrs modules.emacs {
+      fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
+    }) // (lib.optionalAttrs modules.zsh {
+      croc-password = { path = "${xdgDir}/secrets/croc-password"; owner = mainUser; };
+    });
+  };
+}
 #+end_src
 
 **** Topology (automatically active)
@@ -11503,7 +11514,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
-  { config, lib, minimal, ... }:
+  { config, lib, minimal, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) flakePath;
   in
@@ -11518,7 +11529,7 @@ Currently I only use it as before with =initExtra= though.
     config = lib.mkIf config.swarselmodules.zsh
       {
 
-        sops.secrets = {
+        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
           croc-password = { };
         };
 
@@ -11626,7 +11637,7 @@ Currently I only use it as before with =initExtra= though.
             # ctrl + del
             bindkey '^H' my-backward-delete-word
 
-            export CROC_PASS="$(cat ${config.sops.secrets.croc-password.path})"
+            export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
           '';
         };
       };
@@ -11784,7 +11795,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
     options.swarselmodules.mail = lib.mkEnableOption "mail settings";
     config = lib.mkIf config.swarselmodules.mail {
 
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         address1-token = { path = "${xdgDir}/secrets/address1-token"; };
         address2-token = { path = "${xdgDir}/secrets/address2-token"; };
         address3-token = { path = "${xdgDir}/secrets/address3-token"; };
@@ -11818,7 +11829,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               address = address1;
               userName = address1;
               realName = fullName;
-              passwordCommand = "cat ${config.sops.secrets.address1-token.path}";
+              passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
               gpg = {
                 key = "0x76FD3810215AE097";
                 signByDefault = true;
@@ -11850,7 +11861,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               address = address4;
               userName = address4-user;
               realName = fullName;
-              passwordCommand = "cat ${config.sops.secrets.address4-token.path}";
+              passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
               smtp = {
                 host = address4-host;
                 port = 587;
@@ -11873,7 +11884,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               address = address2;
               userName = address2;
               realName = address2-name;
-              passwordCommand = "cat ${config.sops.secrets.address2-token.path}";
+              passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
               msmtp.enable = true;
@@ -11900,7 +11911,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               address = address3;
               userName = address3;
               realName = address3-name;
-              passwordCommand = "cat ${config.sops.secrets.address3-token.path}";
+              passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
               imap.host = "imap.gmail.com";
               smtp.host = "smtp.gmail.com";
               msmtp.enable = true;
@@ -11941,13 +11952,13 @@ Lastly, I am defining some more packages here that the parser has problems findi
 #+begin_src nix-ts :tangle modules/home/common/emacs.nix
   { self, lib, config, pkgs, ... }:
   let
-    inherit (config.swarselsystems) homeDir isPublic;
+    inherit (config.swarselsystems) homeDir isPublic isNixos;
   in
   {
     options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
     config = lib.mkIf config.swarselmodules.emacs {
       # needed for elfeed
-      sops.secrets.fever-pw = lib.mkIf (!isPublic) { path = "${homeDir}/.emacs.d/.fever"; };
+      sops.secrets.fever-pw = lib.mkIf (!isPublic && !isNixos) { path = "${homeDir}/.emacs.d/.fever"; };
 
       # enable emacs overlay for bleeding edge features
       # also read init.el file and install use-package packages
@@ -12098,7 +12109,7 @@ The rest of the related configuration is found here:
         ] ++ modulesRight);
       };
 
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
       };
 
@@ -16672,7 +16683,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         ownpackages = lib.mkDefault true;
         general = lib.mkDefault true;
         nixgl = lib.mkDefault true;
-        sops = lib.mkDefault true;
+        sops = lib.mkDefault false;
         yubikey = lib.mkDefault false;
         ssh = lib.mkDefault true;
         stylix = lib.mkDefault true;
