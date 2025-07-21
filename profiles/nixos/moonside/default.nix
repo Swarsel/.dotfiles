@@ -21,6 +21,7 @@
         microbin = lib.mkDefault true;
         shlink = lib.mkDefault true;
         slink = lib.mkDefault true;
+        syncthing = lib.mkDefault true;
       };
     };
   };
