@@ -3817,28 +3817,42 @@ in
 **** Expose home-manager secrets in NixOS (automatically active)
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
-{ lib, config, ... }:
-let
-  inherit (config.swarselsystems) mainUser xdgDir homeDir;
-  modules = config.home-manager.users.${mainUser}.swarselmodules;
-in
-{
-  config = lib.mkIf config.swarselsystems.withHomeManager {
-    sops.secrets = (lib.optionalAttrs modules.mail
-      {
-        address1-token = { path = "${xdgDir}/secrets/address1-token"; owner = mainUser; };
-        address2-token = { path = "${xdgDir}/secrets/address2-token"; owner = mainUser; };
-        address3-token = { path = "${xdgDir}/secrets/address3-token"; owner = mainUser; };
-        address4-token = { path = "${xdgDir}/secrets/address4-token"; owner = mainUser; };
-      }) // (lib.optionalAttrs modules.waybar {
-      github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; owner = mainUser; };
-    }) // (lib.optionalAttrs modules.emacs {
-      fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
-    }) // (lib.optionalAttrs modules.zsh {
-      croc-password = { path = "${xdgDir}/secrets/croc-password"; owner = mainUser; };
-    });
-  };
-}
+  { lib, config, globals, ... }:
+  let
+    inherit (config.swarselsystems) mainUser homeDir;
+    inherit (config.repo.secrets.common.emacs) radicaleUser;
+    modules = config.home-manager.users.${mainUser}.swarselmodules;
+  in
+  {
+    config = lib.mkIf config.swarselsystems.withHomeManager {
+      sops = {
+        secrets = (lib.optionalAttrs modules.mail
+          {
+            address1-token = { owner = mainUser; };
+            address2-token = { owner = mainUser; };
+            address3-token = { owner = mainUser; };
+            address4-token = { owner = mainUser; };
+          }) // (lib.optionalAttrs modules.waybar {
+          github-notifications-token = { owner = mainUser; };
+        }) // (lib.optionalAttrs modules.emacs {
+          fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
+        }) // (lib.optionalAttrs modules.zsh {
+          croc-password = { owner = mainUser; };
+        }) // (lib.optionalAttrs modules.emacs {
+          emacs-radicale-pw = { owner = mainUser; };
+        });
+        templates = {
+          authinfo = {
+            path = "${homeDir}/.emacs.d/.authinfo";
+            content = ''
+              machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+            '';
+            owner = mainUser;
+          };
+        };
+      };
+    };
+  }
 #+end_src
 
 **** Topology (automatically active)
@@ -11037,32 +11051,41 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-  { lib, config, globals, nixosConfig ? config, ... }:
-  let
-    inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-    inherit (nixosConfig.repo.secrets.common) fullName;
-    crocDomain = globals.services.croc.domain;
-  in
-  {
-    options.swarselmodules.env = lib.mkEnableOption "env settings";
-    config = lib.mkIf config.swarselmodules.env {
-      home.sessionVariables = {
-        EDITOR = "e -w";
-        DISPLAY = ":0";
-        CROC_RELAY = crocDomain;
-        SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-        SWARSEL_HI_RES = config.swarselsystems.highResolution;
+    { lib, config, globals, nixosConfig ? config, ... }:
+    let
+      inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+      inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
+      inherit (nixosConfig.repo.secrets.common) fullName;
+      inherit (config.swarselsystems) isPublic;
+      crocDomain = globals.services.croc.domain;
+    in
+    {
+      options.swarselmodules.env = lib.mkEnableOption "env settings";
+      config = lib.mkIf config.swarselmodules.env {
+        home.sessionVariables = {
+          EDITOR = "e -w";
+          DISPLAY = ":0";
+          SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+          SWARSEL_HI_RES = config.swarselsystems.highResolution;
+          CROC_RELAY = lib.mkIf (!isPublic) crocDomain;
+        };
+        systemd.user.sessionVariables = lib.mkIf (!isPublic) {
+          GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
+          SWARSEL_MAIL1 = address1;
+          SWARSEL_MAIL2 = address2;
+          SWARSEL_MAIL3 = address3;
+          SWARSEL_MAIL4 = address4;
+          SWARSEL_CAL1 = source1;
+          SWARSEL_CAL1NAME = source1-name;
+          SWARSEL_CAL2 = source2;
+          SWARSEL_CAL2NAME = source2-name;
+          SWARSEL_CAL3 = source3;
+          SWARSEL_CAL3NAME = source3-name;
+          SWARSEL_FULLNAME = fullName;
+          SWARSEL_MAIL_ALL = allMailAddresses;
+        };
       };
-      systemd.user.sessionVariables = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
-        SWARSEL_MAIL1 = address1;
-        SWARSEL_MAIL2 = address2;
-        SWARSEL_MAIL3 = address3;
-        SWARSEL_MAIL4 = address4;
-        SWARSEL_FULLNAME = fullName;
-        SWARSEL_MAIL_ALL = allMailAddresses;
-      };
-    };
-  }
+    }
 #+end_src
 
 **** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide
@@ -11950,15 +11973,29 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix-ts :tangle modules/home/common/emacs.nix
-  { self, lib, config, pkgs, ... }:
+  { self, lib, config, pkgs, globals, ... }:
   let
     inherit (config.swarselsystems) homeDir isPublic isNixos;
+    inherit (config.repo.secrets.common.emacs) radicaleUser;
   in
   {
     options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
     config = lib.mkIf config.swarselmodules.emacs {
       # needed for elfeed
-      sops.secrets.fever-pw = lib.mkIf (!isPublic && !isNixos) { path = "${homeDir}/.emacs.d/.fever"; };
+      sops = lib.mkIf (!isPublic && !isNixos) {
+        secrets = {
+          fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
+          emacs-radicale-pw = { };
+        };
+        templates = {
+          authinfo = {
+            path = "${homeDir}/.emacs.d/.authinfo";
+            content = ''
+              machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+            '';
+          };
+        };
+      };
 
       # enable emacs overlay for bleeding edge features
       # also read init.el file and install use-package packages
@@ -14772,7 +14809,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
     inherit name;
     runtimeInputs = [ jq ];
     text = ''
-      count=$(curl -u Swarsel:"$(cat "$XDG_RUNTIME_DIR/secrets/github-notifications-token")" https://api.github.com/notifications | jq '. | length')
+      count=$(curl -u Swarsel:"$(cat "$GITHUB_NOTIFICATION_TOKEN_PATH")" https://api.github.com/notifications | jq '. | length')
 
       if [[ "$count" != "0" ]]; then
           echo "{\"text\":\"$count\"}"
@@ -16972,6 +17009,7 @@ In the end, we need to restore those values to values that will work during norm
 Also packed into the hook function is the line =(fset 'epg-wait-for-status 'ignore)=. This line is needed at the end of the configuration in order to allow for my Yubikey to be used to encrypt and decrypt =.gpg= files. Without it, Emacs will just hang forever and basically crash.
 
 #+begin_src emacs-lisp :tangle files/emacs/early-init.el :mkdirp yes
+;; -*- lexical-binding: t; -*-
   (defvar swarsel-file-name-handler-alist file-name-handler-alist)
   (defvar swarsel-vc-handled-backends vc-handled-backends)
 
@@ -17091,6 +17129,7 @@ In this section I define extra functions that I need. Some of these functions I 
 Since I am rebinding the =C-z= hotkey for emacs-evil-state toggling, I want to have a function that still lets me perform this action quickly.
 
 #+begin_src emacs-lisp
+;; -*- lexical-binding: t; -*-
 
   (defun swarsel/toggle-evil-state ()
     (interactive)
@@ -17153,7 +17192,7 @@ Used here: [[#h:b92a18cf-eec3-4605-a8c2-37133ade3574][mu4e]]
             (insert (format "%s <%s>" (or from-user user-full-name) from-addr)))))))
 
   (defun swarsel/mu4e-restore-default ()
-    (setq user-mail-address (getenv "SWARSEL_SWARSEL_MAIL")
+    (setq user-mail-address (getenv "SWARSEL_MAIL4")
           user-full-name (getenv "SWARSEL_FULLNAME")))
 
 
@@ -17481,7 +17520,7 @@ These functions are used here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][Corfu]
 
 #+end_src
 
-**** Disable garbace collection while minibuffer is active
+**** Disable garbage collection while minibuffer is active
 :PROPERTIES:
 :CUSTOM_ID: h:3c436647-71e6-441c-b452-d817ad2f8331
 :END:
@@ -19969,11 +20008,11 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
     :init
     ;; set org-caldav-sync-initalization
     (setq swarsel-caldav-synced 0)
-    (setq org-caldav-url "https://stash.swarsel.win/remote.php/dav/calendars/Swarsel")
-    (setq org-caldav-calendars
-          '((:calendar-id "personal"
-                          :inbox "~/Calendars/leon_cal.org")))
-    (setq org-caldav-files '("~/Calendars/leon_cal.org"))
+    ;; (setq org-caldav-url "https://schedule.swarsel.win/swarsel/calendar")
+    ;; (setq org-caldav-calendars
+    ;;       '((:calendar-id "personal"
+    ;;                       :inbox "~/Calendars/leon_cal.org")))
+    ;; (setq org-caldav-files '("~/Calendars/leon_cal.org"))
     ;; (setq org-caldav-backup-file "~/org-caldav/org-caldav-backup.org")
     ;; (setq org-caldav-save-directory "~/org-caldav/")
 
@@ -20000,6 +20039,14 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
     :config
     (bind-key "g" 'cfw:refresh-calendar-buffer cfw:calendar-mode-map)
     (bind-key "q" 'evil-quit cfw:details-mode-map)
+    ;; dont change the order of days in this one, as it will break weekend markings
+    (setq calendar-day-name-array
+          ["Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"])
+
+    ;; First day of the week
+    (setq calendar-week-start-day 1) ; 0:Sunday, 1:Monday
+
+
     ;; (custom-set-faces
     ;;  '(cfw:face-title ((t (:foreground "#f0dfaf" :weight bold :height 65))))
     ;; )
@@ -20007,14 +20054,17 @@ Yes, I am aware that I am exposing my university-calendar to the public here. I 
 
   (defun swarsel/open-calendar ()
     (interactive)
-    (unless (eq swarsel-caldav-synced 1) (org-caldav-sync) (setq swarsel-caldav-synced 1))
+    ;; (unless (eq swarsel-caldav-synced 1) (org-caldav-sync) (setq swarsel-caldav-synced 1))
     ;;  (select-frame (make-frame '((name . "calendar")))) ; makes a new frame and selects it
     ;; (set-face-attribute 'default (selected-frame) :height 65) ; reduces the font size of the new frame
     (cfw:open-calendar-buffer
      :contents-sources
      (list
-      (cfw:org-create-source "Purple")  ; orgmode source
-      (cfw:ical-create-source "TISS" "https://tiss.tuwien.ac.at/events/rest/calendar/personal?locale=de&token=4463bf7a-87a3-490a-b54c-99b4a65192f3" "Cyan"))))
+      (cfw:org-create-source "Blue")  ; orgmode source
+      (cfw:ical-create-source (getenv "SWARSEL_CAL1NAME") (getenv "SWARSEL_CAL1") "Cyan")
+      (cfw:ical-create-source (getenv "SWARSEL_CAL2NAME") (getenv "SWARSEL_CAL2") "Green")
+      (cfw:ical-create-source (getenv "SWARSEL_CAL3NAME") (getenv "SWARSEL_CAL3") "Magenta")
+      )))
 
 #+end_src
 
