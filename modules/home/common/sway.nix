@@ -117,8 +117,6 @@ in
               "${modifier}+Space" = "exec fuzzel";
               "${modifier}+Shift+Space" = "floating toggle";
               "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-              "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
-              "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
               "${modifier}+m" = "exec swaymsg workspace back_and_forth";
               "${modifier}+a" = "exec swarselcheck -s";
               "${modifier}+x" = "exec swarselcheck -k";
@@ -127,7 +125,10 @@ in
               "${modifier}+Shift+t" = "exec opacitytoggle";
               "${modifier}+Shift+F12" = "move scratchpad";
               "${modifier}+F12" = "scratchpad show";
-              "${modifier}+c" = "exec qalculate-gtk";
+              "${modifier}+Shift+c" = "exec qalculate-gtk";
+              "${modifier}+c" = "emacsclient -e '(prot-window-popup-org-capture)'";
+              "${modifier}+Shift+m" = "emacsclient -e '(prot-window-popup-mu4e)'";
+              "${modifier}+Shift+a" = "emacsclient -e '(prot-window-popup-swarsel/open-calendar)'";
               "${modifier}+p" = "exec pass-fuzzel";
               "${modifier}+o" = "exec pass-fuzzel --otp";
               "${modifier}+Shift+p" = "exec pass-fuzzel --type";
@@ -260,6 +261,7 @@ in
             { title = "^Add$"; }
             { title = "^Picture-in-Picture$"; }
             { title = "Syncthing Tray"; }
+            { title = "Emacs Popup Frame"; }
             { title = "^spotifytui$"; }
             { title = "^kittyterm$"; }
             { app_id = "vesktop"; }
