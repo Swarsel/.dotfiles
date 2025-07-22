@@ -1,4 +1,4 @@
-{ self, pkgs, config, lib, minimal, ... }:
+{ self, pkgs, config, lib, globals, minimal, ... }:
 let
   sopsFile = self + /secrets/general/secrets.yaml;
 in
@@ -9,13 +9,19 @@ in
 
     users = {
       mutableUsers = lib.mkIf (!minimal) false;
-      users."${config.swarselsystems.mainUser}" = {
-        isNormalUser = true;
-        description = "Leon S";
-        password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
-        hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
-        extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
-        packages = with pkgs; [ ];
+      users = {
+        root = {
+          inherit (globals.root) hashedPassword;
+          shell = pkgs.zsh;
+        };
+        "${config.swarselsystems.mainUser}" = {
+          isNormalUser = true;
+          description = "Leon S";
+          password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
+          hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
+          extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
+          packages = with pkgs; [ ];
+        };
       };
     };
   };

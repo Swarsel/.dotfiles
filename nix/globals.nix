@@ -55,6 +55,7 @@
             domains
             services
             user
+            root
             ;
         };
     };

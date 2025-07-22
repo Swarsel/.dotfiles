@@ -11,6 +11,7 @@
       users = lib.mkDefault true;
       impermanence = lib.mkDefault true;
       sops = lib.mkDefault true;
+      boot = lib.mkDefault true;
       server = {
         general = lib.mkDefault true;
         packages = lib.mkDefault true;
