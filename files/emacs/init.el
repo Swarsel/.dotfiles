@@ -1709,3 +1709,41 @@ create a new one."
 (setq message-log-max 30)
 (setq comint-buffer-maximum-size 50)
 (add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
+
+(defun prot-window-delete-popup-frame (&rest _)
+  "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
+Use this function via a hook."
+  (when (frame-parameter nil 'prot-window-popup-frame)
+    (delete-frame)))
+
+(defmacro prot-window-define-with-popup-frame (command)
+  "Define interactive function which calls COMMAND in a new frame.
+Make the new frame have the `prot-window-popup-frame' parameter."
+  `(defun ,(intern (format "prot-window-popup-%s" command)) ()
+     ,(format "Run `%s' in a popup frame with `prot-window-popup-frame' parameter.
+Also see `prot-window-delete-popup-frame'." command)
+     (interactive)
+     (let ((frame (make-frame '((prot-window-popup-frame . t)))))
+       (select-frame frame)
+       (modify-frame-parameters nil '((title . "Emacs Popup Frame")))
+       (switch-to-buffer " prot-window-hidden-buffer-for-popup-frame")
+       (condition-case nil
+           (call-interactively ',command)
+         ((quit error user-error)
+          (delete-frame frame))))))
+
+(declare-function org-capture "org-capture" (&optional goto keys))
+(defvar org-capture-after-finalize-hook)
+;;;###autoload (autoload 'prot-window-popup-org-capture "prot-window")
+(prot-window-define-with-popup-frame org-capture)
+(add-hook 'org-capture-after-finalize-hook #'prot-window-delete-popup-frame)
+
+(declare-function mu4e "mu4e" (&optional goto keys))
+;;;###autoload (autoload 'prot-window-popup-mu4e "prot-window")
+(prot-window-define-with-popup-frame mu4e)
+(advice-add 'mu4e-quit :after #'prot-window-delete-popup-frame)
+
+(declare-function swarsel/open-calendar "swarsel/open-calendar" (&optional goto keys))
+;;;###autoload (autoload 'prot-window-popup-swarsel/open-calendar "prot-window")
+(prot-window-define-with-popup-frame swarsel/open-calendar)
+(advice-add 'bury-buffer :after #'prot-window-delete-popup-frame)

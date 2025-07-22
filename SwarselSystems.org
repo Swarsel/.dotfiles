@@ -12851,8 +12851,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 "${modifier}+Space" = "exec fuzzel";
                 "${modifier}+Shift+Space" = "floating toggle";
                 "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-                "${modifier}+Shift+m" = "exec emacsclient -nquc -a emacs -e \"(mu4e)\"";
-                "${modifier}+Shift+c" = "exec emacsclient -nquc -a emacs -e \"(swarsel/open-calendar)\"";
                 "${modifier}+m" = "exec swaymsg workspace back_and_forth";
                 "${modifier}+a" = "exec swarselcheck -s";
                 "${modifier}+x" = "exec swarselcheck -k";
@@ -12861,7 +12859,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 "${modifier}+Shift+t" = "exec opacitytoggle";
                 "${modifier}+Shift+F12" = "move scratchpad";
                 "${modifier}+F12" = "scratchpad show";
-                "${modifier}+c" = "exec qalculate-gtk";
+                "${modifier}+Shift+c" = "exec qalculate-gtk";
+                "${modifier}+c" = "emacsclient -e '(prot-window-popup-org-capture)'";
+                "${modifier}+Shift+m" = "emacsclient -e '(prot-window-popup-mu4e)'";
+                "${modifier}+Shift+a" = "emacsclient -e '(prot-window-popup-swarsel/open-calendar)'";
                 "${modifier}+p" = "exec pass-fuzzel";
                 "${modifier}+o" = "exec pass-fuzzel --otp";
                 "${modifier}+Shift+p" = "exec pass-fuzzel --type";
@@ -12994,6 +12995,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               { title = "^Add$"; }
               { title = "^Picture-in-Picture$"; }
               { title = "Syncthing Tray"; }
+              { title = "Emacs Popup Frame"; }
               { title = "^spotifytui$"; }
               { title = "^kittyterm$"; }
               { app_id = "vesktop"; }
@@ -20174,6 +20176,49 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   (add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
 
 #+end_src
+*** Popup frames
+
+#+begin_src emacs-lisp
+    (defun prot-window-delete-popup-frame (&rest _)
+      "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
+    Use this function via a hook."
+      (when (frame-parameter nil 'prot-window-popup-frame)
+        (delete-frame)))
+
+    (defmacro prot-window-define-with-popup-frame (command)
+      "Define interactive function which calls COMMAND in a new frame.
+    Make the new frame have the `prot-window-popup-frame' parameter."
+      `(defun ,(intern (format "prot-window-popup-%s" command)) ()
+         ,(format "Run `%s' in a popup frame with `prot-window-popup-frame' parameter.
+    Also see `prot-window-delete-popup-frame'." command)
+         (interactive)
+         (let ((frame (make-frame '((prot-window-popup-frame . t)))))
+           (select-frame frame)
+           (modify-frame-parameters nil '((title . "Emacs Popup Frame")))
+           (switch-to-buffer " prot-window-hidden-buffer-for-popup-frame")
+           (condition-case nil
+               (call-interactively ',command)
+             ((quit error user-error)
+              (delete-frame frame))))))
+
+    (declare-function org-capture "org-capture" (&optional goto keys))
+    (defvar org-capture-after-finalize-hook)
+    ;;;###autoload (autoload 'prot-window-popup-org-capture "prot-window")
+    (prot-window-define-with-popup-frame org-capture)
+    (add-hook 'org-capture-after-finalize-hook #'prot-window-delete-popup-frame)
+
+    (declare-function mu4e "mu4e" (&optional goto keys))
+    ;;;###autoload (autoload 'prot-window-popup-mu4e "prot-window")
+    (prot-window-define-with-popup-frame mu4e)
+    (advice-add 'mu4e-quit :after #'prot-window-delete-popup-frame)
+
+    (declare-function swarsel/open-calendar "swarsel/open-calendar" (&optional goto keys))
+    ;;;###autoload (autoload 'prot-window-popup-swarsel/open-calendar "prot-window")
+    (prot-window-define-with-popup-frame swarsel/open-calendar)
+    (advice-add 'bury-buffer :after #'prot-window-delete-popup-frame)
+
+#+end_src
+
 * Appendix A: Noweb-Ref blocks
 :PROPERTIES:
 :CUSTOM_ID: h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c
