@@ -967,6 +967,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
               (mkConnection "moonside" "wan")
               (mkConnection "pfsense" "wan")
               (mkConnection "milkywell" "wan")
+              (mkConnection "magicant" "wifi")
               (mkConnection "toto" "bootstrapper")
               (mkConnection "chaostheatre" "demo host")
             ];
@@ -1025,6 +1026,10 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
           };
 
           winters.interfaces."eth1" = { };
+          bakery.interfaces = {
+            "eth1" = { };
+            "wifi" = { };
+          };
 
           wifi-ap = mkSwitch "Wi-Fi AP" {
             info = "Huawei";
@@ -1035,6 +1040,9 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                 "wifi"
               ]
             ];
+            connections = {
+              wifi = mkConnection "bakery" "wifi";
+            };
           };
 
           switch-livingroom = mkSwitch "Switch Livingroom" {
@@ -1065,6 +1073,19 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
             interfaces.eth1 = { };
           };
 
+          magicant = mkDevice "magicant" {
+            icon = "${self}/files/topology-images/phone.png";
+            info = "Samsung Z Flip 6";
+            image = "${self}/files/topology-images/zflip6.png";
+            interfaces.wifi = { };
+          };
+
+          machpizza = mkDevice "machpizza" {
+            info = "MacBook Pro 2016";
+            icon = "${self}/files/topology-images/mac.png";
+            interfaces."eth1" = { };
+          };
+
           pc = mkDevice "Windows Gaming Server" {
             info = "i7-4790k, GTX970, 32GB RAM";
             image = "${self}/files/topology-images/pc.png";
@@ -1086,6 +1107,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
               ]
             ];
             connections.eth2 = mkConnection "printer" "eth1";
+            connections.eth3 = mkConnection "machpizza" "eth1";
           };
 
           printer = mkDevice "Printer" {
@@ -2059,7 +2081,7 @@ My personal laptop.
         lowResolution = "1280x800";
         highResolution = "1920x1080";
         sharescreen = "eDP-1";
-        info = "Lenovo ThinkPad";
+        info = "Lenovo Ideapad 720S-13IKB";
         firewall = lib.mkForce true;
         wallpaper = self + /files/wallpaper/lenovowp.png;
         hasBluetooth = true;
@@ -2496,6 +2518,10 @@ This machine mainly acts as an external sync helper. It manages the following th
       domain = "subnet03112148.vcn03112148.oraclevcn.com";
     };
 
+    topology.self = {
+      icon = "devices.cloud-server";
+    };
+
     hardware = {
       enableAllFirmware = lib.mkForce false;
     };
@@ -2694,11 +2720,14 @@ This machine mainly acts as an external sync helper. It manages the following th
       etc."issue".text = "\4";
     };
 
-    topology.self.interfaces.wg = {
-      addresses = [ "192.168.3.4" ];
-      renderer.hidePhysicalConnections = true;
-      virtual = true;
-      type = "wireguard";
+    topology.self = {
+      icon = "devices.cloud-server";
+      interfaces.wg = {
+        addresses = [ "192.168.3.4" ];
+        renderer.hidePhysicalConnections = true;
+        virtual = true;
+        type = "wireguard";
+      };
     };
 
     networking = {
@@ -11094,41 +11123,42 @@ Also in firefox `about:config > toolkit.legacyUserProfileCustomizations.styleshe
 Sets environment variables. Here I am only setting the EDITOR variable, most variables are set in the [[#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20][Sway]] section.
 
 #+begin_src nix-ts :tangle modules/home/common/env.nix
-    { lib, config, globals, nixosConfig ? config, ... }:
-    let
-      inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
-      inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
-      inherit (nixosConfig.repo.secrets.common) fullName;
-      inherit (config.swarselsystems) isPublic;
-      crocDomain = globals.services.croc.domain;
-    in
-    {
-      options.swarselmodules.env = lib.mkEnableOption "env settings";
-      config = lib.mkIf config.swarselmodules.env {
-        home.sessionVariables = {
-          EDITOR = "e -w";
-          DISPLAY = ":0";
-          SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-          SWARSEL_HI_RES = config.swarselsystems.highResolution;
-          CROC_RELAY = lib.mkIf (!isPublic) crocDomain;
-        };
-        systemd.user.sessionVariables = lib.mkIf (!isPublic) {
-          GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
-          SWARSEL_MAIL1 = address1;
-          SWARSEL_MAIL2 = address2;
-          SWARSEL_MAIL3 = address3;
-          SWARSEL_MAIL4 = address4;
-          SWARSEL_CAL1 = source1;
-          SWARSEL_CAL1NAME = source1-name;
-          SWARSEL_CAL2 = source2;
-          SWARSEL_CAL2NAME = source2-name;
-          SWARSEL_CAL3 = source3;
-          SWARSEL_CAL3NAME = source3-name;
-          SWARSEL_FULLNAME = fullName;
-          SWARSEL_MAIL_ALL = allMailAddresses;
-        };
-      };
-    }
+        { lib, config, globals, nixosConfig ? config, ... }:
+        let
+          inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
+          inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
+          inherit (nixosConfig.repo.secrets.common) fullName;
+          inherit (config.swarselsystems) isPublic;
+          crocDomain = globals.services.croc.domain;
+        in
+        {
+          options.swarselmodules.env = lib.mkEnableOption "env settings";
+          config =z lib.mkIf config.swarselmodules.env {
+            home.sessionVariables = {
+              EDITOR = "e -w";
+              DISPLAY = ":0";
+              SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+              SWARSEL_HI_RES = config.swarselsystems.highResolution;
+            } // (lib.optionalAttrs (!isPublic) {
+              CROC_RELAY = crocDomain;
+              GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
+            });
+            systemd.user.sessionVariables = lib.mkIf (!isPublic) {
+              SWARSEL_MAIL1 = address1;
+              SWARSEL_MAIL2 = address2;
+              SWARSEL_MAIL3 = address3;
+              SWARSEL_MAIL4 = address4;
+              SWARSEL_CAL1 = source1;
+              SWARSEL_CAL1NAME = source1-name;
+              SWARSEL_CAL2 = source2;
+              SWARSEL_CAL2NAME = source2-name;
+              SWARSEL_CAL3 = source3;
+              SWARSEL_CAL3NAME = source3-name;
+              SWARSEL_FULLNAME = fullName;
+              SWARSEL_MAIL_ALL = allMailAddresses;
+            };
+          };
+        }
 #+end_src
 
 **** General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide
@@ -11631,6 +11661,8 @@ Currently I only use it as before with =initExtra= though.
               boot-diff = "nix store diff-closures /run/*-system";
               gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
               cc = "wl-copy";
+              topology = "nix build .#topology.x86_64-linux.config.output";
+              iso = "nix build --print-out-paths .#live-iso";
             }
             config.swarselsystems.shellAliases;
           autosuggestion.enable = true;

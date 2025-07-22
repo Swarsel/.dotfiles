@@ -35,6 +35,7 @@
               (mkConnection "moonside" "wan")
               (mkConnection "pfsense" "wan")
               (mkConnection "milkywell" "wan")
+              (mkConnection "magicant" "wifi")
               (mkConnection "toto" "bootstrapper")
               (mkConnection "chaostheatre" "demo host")
             ];
@@ -93,6 +94,10 @@
           };
 
           winters.interfaces."eth1" = { };
+          bakery.interfaces = {
+            "eth1" = { };
+            "wifi" = { };
+          };
 
           wifi-ap = mkSwitch "Wi-Fi AP" {
             info = "Huawei";
@@ -103,6 +108,9 @@
                 "wifi"
               ]
             ];
+            connections = {
+              wifi = mkConnection "bakery" "wifi";
+            };
           };
 
           switch-livingroom = mkSwitch "Switch Livingroom" {
@@ -133,6 +141,19 @@
             interfaces.eth1 = { };
           };
 
+          magicant = mkDevice "magicant" {
+            icon = "${self}/files/topology-images/phone.png";
+            info = "Samsung Z Flip 6";
+            image = "${self}/files/topology-images/zflip6.png";
+            interfaces.wifi = { };
+          };
+
+          machpizza = mkDevice "machpizza" {
+            info = "MacBook Pro 2016";
+            icon = "${self}/files/topology-images/mac.png";
+            interfaces."eth1" = { };
+          };
+
           pc = mkDevice "Windows Gaming Server" {
             info = "i7-4790k, GTX970, 32GB RAM";
             image = "${self}/files/topology-images/pc.png";
@@ -154,6 +175,7 @@
               ]
             ];
             connections.eth2 = mkConnection "printer" "eth1";
+            connections.eth3 = mkConnection "machpizza" "eth1";
           };
 
           printer = mkDevice "Printer" {

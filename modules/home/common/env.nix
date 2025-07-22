@@ -8,16 +8,17 @@ let
 in
 {
   options.swarselmodules.env = lib.mkEnableOption "env settings";
-  config = lib.mkIf config.swarselmodules.env {
+  config = z lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
       EDITOR = "e -w";
       DISPLAY = ":0";
       SWARSEL_LO_RES = config.swarselsystems.lowResolution;
       SWARSEL_HI_RES = config.swarselsystems.highResolution;
-      CROC_RELAY = lib.mkIf (!isPublic) crocDomain;
-    };
-    systemd.user.sessionVariables = lib.mkIf (!isPublic) {
+    } // (lib.optionalAttrs (!isPublic) {
+      CROC_RELAY = crocDomain;
       GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
+    });
+    systemd.user.sessionVariables = lib.mkIf (!isPublic) {
       SWARSEL_MAIL1 = address1;
       SWARSEL_MAIL2 = address2;
       SWARSEL_MAIL3 = address3;

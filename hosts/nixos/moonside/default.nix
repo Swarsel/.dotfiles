@@ -26,11 +26,14 @@ in
     etc."issue".text = "\4";
   };
 
-  topology.self.interfaces.wg = {
-    addresses = [ "192.168.3.4" ];
-    renderer.hidePhysicalConnections = true;
-    virtual = true;
-    type = "wireguard";
+  topology.self = {
+    icon = "devices.cloud-server";
+    interfaces.wg = {
+      addresses = [ "192.168.3.4" ];
+      renderer.hidePhysicalConnections = true;
+      virtual = true;
+      type = "wireguard";
+    };
   };
 
   networking = {

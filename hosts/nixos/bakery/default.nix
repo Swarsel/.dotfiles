@@ -27,7 +27,7 @@ in
       lowResolution = "1280x800";
       highResolution = "1920x1080";
       sharescreen = "eDP-1";
-      info = "Lenovo ThinkPad";
+      info = "Lenovo Ideapad 720S-13IKB";
       firewall = lib.mkForce true;
       wallpaper = self + /files/wallpaper/lenovowp.png;
       hasBluetooth = true;

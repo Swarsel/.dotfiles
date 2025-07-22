@@ -49,6 +49,8 @@ in
             boot-diff = "nix store diff-closures /run/*-system";
             gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
             cc = "wl-copy";
+            topology = "nix build .#topology.x86_64-linux.config.output";
+            iso = "nix build --print-out-paths .#live-iso";
           }
           config.swarselsystems.shellAliases;
         autosuggestion.enable = true;

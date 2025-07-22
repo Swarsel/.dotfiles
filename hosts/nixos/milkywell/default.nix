@@ -17,6 +17,10 @@
     domain = "subnet03112148.vcn03112148.oraclevcn.com";
   };
 
+  topology.self = {
+    icon = "devices.cloud-server";
+  };
+
   hardware = {
     enableAllFirmware = lib.mkForce false;
   };
