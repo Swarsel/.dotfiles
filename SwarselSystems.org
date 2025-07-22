@@ -782,6 +782,7 @@ Lastly, in order make this actually available to my configurations, i use the =i
               domains
               services
               user
+              root
               ;
           };
       };
@@ -3740,53 +3741,59 @@ in
     inherit (lib)
       mkOption
       types
-    ;
+      ;
   in
     {
-      options = {
-        globals = mkOption {
-          default = { };
-          type = types.submodule {
-            options = {
-              user = {
-                name = mkOption {
-                  type = types.str;
-                };
-                work = mkOption {
-                  type = types.str;
-                };
+    options = {
+      globals = mkOption {
+        default = { };
+        type = types.submodule {
+          options = {
+            root = {
+              hashedPassword = mkOption {
+                type = types.str;
               };
+            };
+
+            user = {
+              name = mkOption {
+                type = types.str;
+              };
+              work = mkOption {
+                type = types.str;
+              };
+            };
 
 
-              services = mkOption {
-                type = types.attrsOf (
-                  types.submodule {
-                    options = {
-                      domain = mkOption {
-                        type = types.str;
-                      };
+            services = mkOption {
+              type = types.attrsOf (
+                types.submodule {
+                  options = {
+                    domain = mkOption {
+                      type = types.str;
                     };
-                  }
-                );
-              };
+                  };
+                }
+              );
+            };
 
-              domains = {
-                main = mkOption {
-                  type = types.str;
-                };
+            domains = {
+              main = mkOption {
+                type = types.str;
               };
             };
           };
         };
-
-        _globalsDefs = mkOption {
-          type = types.unspecified;
-          default = options.globals.definitions;
-          readOnly = true;
-          internal = true;
-        };
       };
-    }
+
+      _globalsDefs = mkOption {
+        type = types.unspecified;
+        default = options.globals.definitions;
+        readOnly = true;
+        internal = true;
+      };
+    };
+  }
 #+end_src
 
 **** Meta options (options only)
@@ -4065,7 +4072,7 @@ In case of using a fully setup system, this makes also sure that no further user
 For that reason, make sure that =sops-nix= is properly working before finishing the minimal setup, otherwise we might lose user access. The bootstrapping script takes care of this.
 
 #+begin_src nix-ts :tangle modules/nixos/common/users.nix
-  { self, pkgs, config, lib, minimal, ... }:
+  { self, pkgs, config, lib, globals, minimal, ... }:
   let
     sopsFile = self + /secrets/general/secrets.yaml;
   in
@@ -4076,13 +4083,19 @@ For that reason, make sure that =sops-nix= is properly working before finishing 
 
         users = {
           mutableUsers = lib.mkIf (!minimal) false;
-          users."${config.swarselsystems.mainUser}" = {
+          users = {
+            root = {
+              inherit (globals.root) hashedPassword;
+              shell = pkgs.zsh;
+            };
+            "${config.swarselsystems.mainUser}" = {
             isNormalUser = true;
             description = "Leon S";
             password = lib.mkIf (minimal || config.swarselsystems.isPublic) "setup";
             hashedPasswordFile = lib.mkIf (!minimal && !config.swarselsystems.isPublic) config.sops.secrets.main-user-hashed-pw.path;
             extraGroups = [ "wheel" ] ++ lib.optionals (!minimal) [ "networkmanager" "syncthing" "docker" "lp" "audio" "video" "vboxusers" "libvirtd" "scanner" ];
             packages = with pkgs; [ ];
+            };
           };
         };
       };
@@ -4257,6 +4270,36 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
           configurationLimit = 6;
         };
       };
+    };
+  }
+#+end_src
+
+**** Boot
+
+#+begin_src nix-ts :tangle modules/nixos/common/boot.nix
+  { lib, pkgs, config, globals, ... }:
+  {
+    options.swarselmodules.boot = lib.mkEnableOption "boot config";
+    config = lib.mkIf config.swarselmodules.boot {
+      boot = {
+        initrd.systemd = {
+          enable = true;
+          emergencyAccess = globals.root.hashedPassword;
+          users.root.shell = "${pkgs.bashInteractive}/bin/bash";
+          storePaths = [ "${pkgs.bashInteractive}/bin/bash" ];
+          extraBin = {
+            ip = "${pkgs.iproute2}/bin/ip";
+            ping = "${pkgs.iputils}/bin/ping";
+            cryptsetup = "${pkgs.cryptsetup}/bin/cryptsetup";
+          };
+        };
+        kernelParams = [ "log_buf_len=16M" ];
+        tmp.useTmpfs = true;
+        loader.timeout = lib.mkDefault 2;
+      };
+
+      console.earlySetup = true;
+
     };
   }
 #+end_src
@@ -5730,7 +5773,7 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
   }
 #+end_src
 
-**** Podmam (distrobox)
+**** Podman (distrobox)
 :PROPERTIES:
 :CUSTOM_ID: h:1bef3914-a258-4585-b232-e0fbe9e7a9b5
 :END:
@@ -16204,6 +16247,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lowBattery = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
         autologin = lib.mkDefault true;
+        boot = lib.mkDefault true;
 
         optional = {
           gaming = lib.mkDefault true;
@@ -16279,6 +16323,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lowBattery = lib.mkDefault true;
         lanzaboote = lib.mkDefault true;
         autologin = lib.mkDefault true;
+        boot = lib.mkDefault true;
 
         server = {
           ssh = lib.mkDefault true;
@@ -16320,6 +16365,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         zsh = lib.mkDefault true;
         yubikey = lib.mkDefault true;
         autologin = lib.mkDefault true;
+        boot = lib.mkDefault true;
 
         server = {
           ssh = lib.mkDefault true;
@@ -16583,6 +16629,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           time = lib.mkDefault true;
           users = lib.mkDefault true;
           sops = lib.mkDefault true;
+          boot = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
@@ -16639,6 +16686,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           time = lib.mkDefault true;
           users = lib.mkDefault true;
           sops = lib.mkDefault true;
+          boot = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;
@@ -16672,6 +16720,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           users = lib.mkDefault true;
           impermanence = lib.mkDefault true;
           sops = lib.mkDefault true;
+          boot = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
             packages = lib.mkDefault true;

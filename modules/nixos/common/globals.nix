@@ -11,6 +11,12 @@ in
       default = { };
       type = types.submodule {
         options = {
+          root = {
+            hashedPassword = mkOption {
+              type = types.str;
+            };
+          };
+
           user = {
             name = mkOption {
               type = types.str;

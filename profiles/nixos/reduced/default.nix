@@ -44,6 +44,7 @@
       lowBattery = lib.mkDefault true;
       lanzaboote = lib.mkDefault true;
       autologin = lib.mkDefault true;
+      boot = lib.mkDefault true;
 
       server = {
         ssh = lib.mkDefault true;

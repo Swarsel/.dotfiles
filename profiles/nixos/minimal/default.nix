@@ -16,6 +16,7 @@
       zsh = lib.mkDefault true;
       yubikey = lib.mkDefault true;
       autologin = lib.mkDefault true;
+      boot = lib.mkDefault true;
 
       server = {
         ssh = lib.mkDefault true;
