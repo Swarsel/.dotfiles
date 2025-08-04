@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, configName, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir xdgDir;
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -29,7 +29,7 @@ in
   options.swarselsystems = {
     hostName = lib.mkOption {
       type = lib.types.str;
-      default = "";
+      default = configName;
     };
     fqdn = lib.mkOption {
       type = lib.types.str;

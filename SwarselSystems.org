@@ -4817,6 +4817,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       };
 
       networking = {
+        inherit (config.swarselsystems) hostName;
         wireless.iwd = {
           enable = true;
           settings = {
@@ -10148,7 +10149,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
     options.swarselsystems = {
       hostName = lib.mkOption {
         type = lib.types.str;
-        default = "";
+        default = configName;
       };
       fqdn = lib.mkOption {
         type = lib.types.str;
@@ -11133,7 +11134,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
         in
         {
           options.swarselmodules.env = lib.mkEnableOption "env settings";
-          config =z lib.mkIf config.swarselmodules.env {
+          config = lib.mkIf config.swarselmodules.env {
             home.sessionVariables = {
               EDITOR = "e -w";
               DISPLAY = ":0";

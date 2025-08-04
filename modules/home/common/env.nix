@@ -8,7 +8,7 @@ let
 in
 {
   options.swarselmodules.env = lib.mkEnableOption "env settings";
-  config = z lib.mkIf config.swarselmodules.env {
+  config = lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
       EDITOR = "e -w";
       DISPLAY = ":0";

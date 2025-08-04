@@ -49,6 +49,7 @@ in
     };
 
     networking = {
+      inherit (config.swarselsystems) hostName;
       wireless.iwd = {
         enable = true;
         settings = {
