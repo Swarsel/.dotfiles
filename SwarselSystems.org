@@ -695,6 +695,8 @@ Concerning the =flake = _:= part:
 
 This does not use =perSystem= from =flake-parts= since some of my custom packages are not able to be built on darwin systems, and I was not yet interested in writing logic for handling that. Instead I use =forEachLinuxSystem= as described in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]] in roder to only build this for linux hosts.
 
+Other nix users can make use of these packages either by installing them directly in their config (using my flake as an input and then installing =<packages.<systems>.<name>=) or by making use of the overlay that I provide in  [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. In the latter case all packages will be made available to the consuming flake
+
 More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
 #+begin_src nix-ts :tangle nix/packages.nix
@@ -1344,6 +1346,10 @@ Defines a formatter that can be called using =nix flake format=. While a nice ut
 
 This exposes all of my modular configuration as modules. Other people can use them in their flake using =imports = [ inputs.<name>.nixosModules ];=. Per default, this enables some mechanisms like config sharing between nodes and the globals system. TODO: make it so that nothing is enabled upon initial import.
 
+=nixosModules= is a `defined` flake output, where external tools might expect some sort of structure; hence, I call the default output =default=, which will, in many cases, allow the user to just reference to the flake itself (which will then use =nixosModules.default= automatically.
+
+=homeModules= on the other hand is not standardized in this way (for example, many flakes refere to =homeManagerModules= instead); in order not to unnecessarily break things, I leave it as is.
+
 #+begin_src nix-ts :tangle nix/modules.nix
   { self, ... }:
   {
@@ -1366,6 +1372,7 @@ This exposes all of my modular configuration as modules. Other people can use th
 This defines some apps; they differ from normal packages in that they can be called using =nix run <repo><appName>=. So, for example, I can call my deployment script using =nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles -- -n <CONFIGURATION_NAME> -d <TARGET_IP>= (here I did not specify =#swarsel-bootstrap= since it is set as the default. In general, whenever the =#...= part is ommitted, the object under the default attribute will be used. This is also true for =nixosConfigurations=: in that case, the default will be the current hostname of the machine).
 
 - uses [[#h:c63cd469-7724-4a05-b932-8843722a00f0][builtins.listToAttrs]]
+- uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to add the default output to thte set of built apps.
 
 #+begin_src nix-ts :tangle nix/apps.nix
   { self, ... }:
@@ -1406,20 +1413,28 @@ This defines some apps; they differ from normal packages in that they can be cal
 :CUSTOM_ID: h:7a059bd9-13f8-4005-b270-b41eeb6a4af2
 :END:
 
-In this section I define packages that I manually want to nixpkgs. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
+In this section I define packages that I manually add to nixpkgs, or that I want to use in a modified way. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
 
 As such, I also define three additional overlays:
 
 1) =additions=
-   These are for the aforementioned added packages
+   These are for the aforementioned added packages.
+   NOTE: The packages themselves are built in [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]]; here, we just add them to the overlay that we then use in the configuration.
 2) =modification=
    These are for packages that are on nixpkgs, but do not fit my usecase, meaning I need to perform modifications on them.
-3) =nixpkgs-stable=
-   This is simply a mirror of the most recent stable branch of nixpkgs. Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
+3) =nixpkgs-[stable,...]=
+   These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
+   - TODO: I need to check out if overlays are really the way to go in this case, or if I should just use =packages=, which should make evalutation a good bit faster.
 
 Also, this is where I define all of my own modules. These are mostly used for setting some host-specifics directly than opposed to through multiple options.
 
 Lastly, I add some of my own library functions to be used alongside the functions provided by =nixpkgs= and =home-manager=.
+
+On the structure of overlays: as you notice, all of the attributes within overlays are functions which take =final= and =prev= as arguments. This is a convention (sometimes you also see =super= instead of =final=) that aims to tell you that =final= represents the =pkgs= set after it has gone over all modifications, while =prev= is the =pkgs= set before the current modification.
+  - So, in =additions=, the =final= set is the same as in =modifications=, but their =prev= sets might differ (in this case, I believe they will be the same since all modifications are done at the same step). #TODO: fact check
+  - This starts to make a difference when you use multiple overlays and have one overlay depend on the modifications in another overlay.
+
+- The =_= argument is used like in a number of other programing languages and signals that the argument is never actually used in the function.
 
 #+begin_src nix-ts :tangle nix/overlays.nix
   { self, inputs, ... }:
@@ -1524,6 +1539,12 @@ Lastly, I add some of my own library functions to be used alongside the function
 :CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
 :END:
 
+This sections makes use of [[https://github.com/nix-community/nixos-generators][nixos-generators]] in order to easily allow me to build a live ISO of my installer system. It can be built using =nix build --print-out-paths --no-link <flake path>#images.<target-system>.live-iso=, and can then be copied to a USB drive using, for example, =dd=.
+
+This is an improvement to what I did earlier, where I did not use =nixos-generators= but instead manually imported the needed modules to make this configration into a bootable USB image. Now, I can just write this in the same way that I would to write any other configuration.
+
+- =perSystem= is again a =flake-parts= construct.
+
 #+begin_src nix-ts :tangle nix/iso.nix
   { self, inputs, ... }:
   {
@@ -1552,6 +1573,19 @@ Lastly, I add some of my own library functions to be used alongside the function
 :CUSTOM_ID: h:1d4514b4-e952-4faf-b30e-d89e73a526c6
 :END:
 
+When using tools like (the builtin) =nixos-rebuild= or =nixos-anywhere=, these tools expect the flake to have a certain structure; namely, they expect to find an output named =nixosConfigurations=, which is implicitely used when passing =--flake .#<config name>= (it is used in front of =<config name>=).
+
+When I define my configurations, I am actually defining two versions for each actual system:
+  - One 'regular' config that should be used by all rebuild tools such as =nixos-rebuild=
+  - One 'minimal' config that should be used by =nixos=anywhere= during initial deployment of a system
+
+Now, I could of course define a =<name>= and =<name>-minimal= attribute for each configuration and just put these under =nixosConfigurations=, but that would have several drawbacks:
+  - evaluation time would increase
+  - my =nodes= output (that holds information for all actual systems) would bloat
+  - it is actually not clear that =<name>= and =<name>-minimal= represent the same config
+
+Hence, what I instead do is to define another output =nixosConfigurationsMinimal= as an output to this flakes' config, and then use it to set the =nixosConfigurations= of another, minimal, flake that I keep in =install/=. When using =nixos-anywhere= during initial deployment, I will then point it to that minimal flake, where the minimal configs can be found.
+
 #+begin_src nix-ts :tangle install/flake.nix
   {
     description = "Minimal installer flake - not to be used manually";
@@ -1573,15 +1607,17 @@ This holds most of the NixOS side of configuration.
 :CUSTOM_ID: h:88bf4b90-e94b-46fb-aaf1-a381a512860d
 :END:
 
-This section mainly exists house different `default.nix` files to define some modules that should be loaded on respective systems.
+This section mainly exists to house different =default.nix= files to define some modules that should be loaded on respective systems.
 Every host is housed in the =hosts/= directory, which is then subdivided by each respective system (=nixos/=, =home-manager/=, =nix-on-droid/=, =darwin/=). As described earlier, some of these configurations (nixos and darwin) can be defined automatically in this flake. For home-manager and nix-on-droid, the system architecture must be defined manually.
 
-*** Template
+*** TODO Template
 :PROPERTIES:
 :CUSTOM_ID: h:373bd9e8-616e-434e-bfab-c216ce4470e9
 :END:
 
 This is the template that I use for new deployments of personal machines. Servers are usually highly tailored to their specific task and I do not consider it worth a time to craft a template for that. Also, at least at the current time, I only provide a template for NixOS hosts, as I rarely ever use anything else.
+
+TODO: I dont think this template would currently work out of the box
 
 **** Main Configuration
 :PROPERTIES:
@@ -2045,7 +2081,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:a320569e-7bf0-4552-9039-b2a8e0939a12
 :END:
 
-My personal laptop.
+My personal laptop. Closely follows the =pyramid= config, but leaves out some security features that I consider a bother on my work machine.
 
 ***** Main Configuration
 :PROPERTIES:
@@ -2385,7 +2421,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
 :END:
 
-A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations.
+A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations (the darwin configuration is severely under-developed).
 
 #+begin_src nix-ts :tangle hosts/darwin/machpizza/default.nix
   { lib, config, ... }:
@@ -2475,22 +2511,18 @@ My phone. I use only a minimal config for remote debugging here.
 :CUSTOM_ID: h:4dc59747-9598-4029-aa7d-92bf186d6c06
 :END:
 
-My server setup was originally built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk has suffered a weird failure where it has become unable to be cloned, but it is still functional for now. I was for a long time rewriting all machines on there to use NixOS instead; this process is now finished.
+My server setup was originally built on Proxmox VE; back when I started, I created all kinds of wild Debian/Ubuntu/etc. KVMs and LXCs on there. However, the root disk has suffered a weird failure where it has become unable to be cloned, but was still functional. I was for a long time rewriting all machines on there to use NixOS instead; this process is now finished.
 
-I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI (mostly sync for medium-important data) and one other machine that I left for now as a reference.
+I have removed most of the machines from this section. What remains are some hosts that I have deployed on OCI:
+  - =MilkyWell=: cloud server used for very lightweight sync tasks of non-critical data
+  - =Moonside=: Proxy server + some lightweight services
 
 **** MilkyWell (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
 :END:
 
-This machine mainly acts as an external sync helper. It manages the following things:
-- Anki syncing
-- Forgejo git server
-- Elfeed sync server (RSS)
-- Syncthing backup of replaceable data
-
-  All of these are processes that use little cpu but can take a lot of storage. For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
+For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
 
 
 ***** Main configuration
@@ -2686,6 +2718,9 @@ This machine mainly acts as an external sync helper. It manages the following th
 :PROPERTIES:
 :CUSTOM_ID: h:f547ed16-5e6e-4744-9e33-af090e0a175b
 :END:
+
+This machine mainly acts as my proxy server to stand before my local machines.
+
 ***** Main Configuration
 :PROPERTIES:
 :CUSTOM_ID: h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9
@@ -3186,12 +3221,16 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
 
 #+end_src
-**** Drugstore (ISO installer config)
+**** TODO Drugstore (ISO installer config)
 :PROPERTIES:
 :CUSTOM_ID: h:8583371d-5d47-468b-84ba-210aad7e2c90
 :END:
 
 This is a live environment ISO that I use to bootstrap new systems. It only loads a minimal configuration and no graphical interface. After booting this image on a host, find out its IP and bootstrap the system using the =bootstrap= utility.
+
+NOTE: Yes, the path to this system does not follow the scheme outlined above - I still consider this a 'config' however, so I keep it here.
+
+TODO: cleanup this mess
 
 
 #+begin_src nix-ts :tangle install/installer-config.nix
@@ -4443,6 +4482,9 @@ Normally, doing that also resets the lecture that happens on the first use of =s
 :PROPERTIES:
 :CUSTOM_ID: h:1bb03c4c-7749-47c1-9af6-1b3d748cebf4
 :END:
+
+This section is to be used for modules that are most likely only used on client PCs (like my laptops) but no on servers.
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:4acbe063-188b-42e7-b75c-b6d2e232e784
@@ -5116,7 +5158,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
       };
     };
   }
-#+end_src
+sh#+end_src
 
 **** Theme (stylix)
 :PROPERTIES:
@@ -5962,6 +6004,9 @@ Auto login for the initial session.
 :PROPERTIES:
 :CUSTOM_ID: h:e492c24a-83a0-4bcb-a084-706f49318651
 :END:
+
+In a similar way as the [[#h:1bb03c4c-7749-47c1-9af6-1b3d748cebf4][Client]] section, these modules are to be used mostly on servers.
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:4e64e564-b7cb-469f-bd79-cd3efb3caa62
@@ -9787,6 +9832,9 @@ Deployment notes:
 :PROPERTIES:
 :CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
 :END:
+
+This section is to be used for darwin modules, in case I can ever be bothered to actually write them.
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:25a95a30-8e4f-4fe3-9b8e-508a82e0a1b4
@@ -9823,7 +9871,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-*** Optional
+*** TODO Optional
 :PROPERTIES:
 :CUSTOM_ID: h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589
 :END:
@@ -9835,6 +9883,8 @@ These sets of configuration do not need to be deployed on every host, for a mult
 - There are some hosts that I do not want to autologin to.
 - =nswitch-rcm= is a tool I wrote for easy payload flashing of a Nintendo Switch in RCM mode. However, that is not needed on every machine.
 - The work profile is only used on my work laptop.
+
+TODO: evaluate whether I should keep using this structure.
 
   #+begin_src nix-ts :tangle modules/nixos/optional/default.nix
     { lib, ... }:
@@ -10118,7 +10168,7 @@ This holds configuration that is specific to framework laptops.
 Options that I need specifically at work. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
 #+begin_src nix-ts :tangle modules/nixos/optional/work.nix
-  { self, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, configName, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir xdgDir;
     iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -10393,7 +10443,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
 :CUSTOM_ID: h:08ded95b-9c43-475d-a0b2-fc088a512287
 :END:
 
-The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20d70b3][NixOS]] section.
+The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20d70b3][NixOS]] section.
 
 #+begin_src nix-ts :tangle modules/home/default.nix
   { lib, ... }:
@@ -10406,10 +10456,13 @@ The general structure is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a94f20
 
 #+end_src
 
-*** Common
+*** TODO Common
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
 :END:
+
+TODO: split this into actual common and client sections
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:16fd2e85-fdd4-440a-81f0-65b9b098a43a
@@ -13400,6 +13453,8 @@ This service changes the screen hue at night. I am not sure if that really does 
 :CUSTOM_ID: h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb
 :END:
 
+This is again configuration that is mostly needed on servers. Most things should be done using the NixOS config instead, consider carefully if a home-manager config must be used.
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:7b4ee01a-b505-47da-8fb9-0b41285d0eab
@@ -13449,6 +13504,8 @@ As for the `home.sessionVariables`, it should be noted that environment variable
 :CUSTOM_ID: h:e0536bff-2552-4ac4-a34a-a23937a2c30f
 :END:
 
+Again, mostly a placeholder for future home-manager modules that run on darwin systems.
+
 **** Imports
 :PROPERTIES:
 :CUSTOM_ID: h:cff37bdf-4f22-419a-af4e-2665ede9add0
@@ -13473,7 +13530,7 @@ This section sets up all the imports that are used in the home-manager section.
 :CUSTOM_ID: h:be623200-557e-4bb7-bb11-1ec5d76c6b8b
 :END:
 
-Akin to the optional NixOS modules.
+Akin to the [[#h:f9aa9af0-9b8d-43ff-901d-9ffccdd70589][Optional]] NixOS modules.
 
 #+begin_src nix-ts :tangle modules/home/optional/default.nix
   { lib, ... }:
@@ -14018,10 +14075,17 @@ This holds configuration that is specific to framework laptops.
   }
 #+end_src
 ** Shared
-*** Configuration options
+
+This section is for modules that are to be used on =NixOS= and =home-manager= scopes alike. This is for example needed in order to allow me to define and set my own custom functions only once in the =NixOS= config and then mirror them into the corresponding =home-manager= option.
+
+*** TODO Configuration options
 :PROPERTIES:
 :CUSTOM_ID: h:79f7150f-b162-4f57-abdf-07f40dffd932
 :END:
+
+These are my own configuration options that are used in multiple places throughout the configuration - for which reason I did not put them right where they are used for the first time.
+
+TODO: check which of these can be replaced but builtin functions.
 
 #+begin_src nix-ts :noweb yes :tangle modules/shared/options.nix
   { self, config, lib, ... }:
@@ -14096,13 +14160,15 @@ This holds configuration that is specific to framework laptops.
 *** Variables (vars; holds firefox & stylix config parts)
 
 At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] that are all practically using the same configuration. To save screen space, I template that profile here.
-Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably
+Set in firefox =about:config > toolkit.legacyUserProfileCustomizations.stylesheets= to true. This should in principle be set automatically using the below config, but it seems not to be working reliably.
 
 For styling, I am using the [[https://github.com/danth/stylix][stylix]] NixOS module, loaded by flake. This package is really great, as it adds nix expressions for basically everything. Ever since switching to this, I did not have to play around with theming anywhere else.
 
 The full list of nerd-fonts can be found here: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/data/fonts/nerd-fonts/manifests/fonts.json
 
 This is where the theme for the whole OS is defined. Originally, this noweb-ref section could not be copied to the general NixOS config since they are on different folder structure levels in the config, which would have made the flake impure. By now, I have found out that using the =${self}= method for referencing the flake root, I could circumvent this problem. Also, the noweb-ref block could in general be replaced by a custom attribute set (see for example [[#h:e7f98ad8-74a6-4860-a368-cce154285ff0][firefox]]). The difference here was, for a long time, that this block is used in a NixOS and a home-manager-only configuration, verbatim. If I were to use an attribute set, I would have to duplicate this block once each for NixOS and home-manager. Alas, this block stays (for now). However, I learned how to use an attribute set in a custom home-manager module and pass it to both NixOS and home-manager configurations, which also removed the need for that use of it.
+
+In short, the options defined here are passed to the modules systems using =_modules.args= - they can then be used by passing =vars= as an attribute in the input attribute set of a modules system file (=basically all files in this configuration)
 
 #+begin_src nix-ts :noweb yes :tangle modules/shared/vars.nix
   { self, lib, pkgs, ... }:
@@ -22908,12 +22974,12 @@ Also, this will not merge nested sets:
 
 builtins.listToAttrs converts a list of name-value pairs into an attribute set.
 
-#+RESULTS:
-: { bar = 2; foo = 1; }
-
 #+begin_src bash :exports both
   swarsel-instantiate 'builtins.listToAttrs [{ name = "foo"; value = 1; } { name = "bar"; value = 2; }]'
 #+end_src
+
+#+RESULTS:
+: { bar = 2; foo = 1; }
 
 ** builtins.readDir
 :PROPERTIES:
