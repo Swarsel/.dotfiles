@@ -804,6 +804,22 @@ create a new one."
 (setq auth-sources '( "~/.emacs.d/.authinfo")
       auth-source-cache-expiry nil)
 
+(defun swarsel/org-agenda-done-and-archive ()
+  "Mark TODO at point as DONE, archive it, and save all agenda files."
+  (interactive)
+  (let ((org-archive-location "~/Nextcloud/Org/Archive.org::Archive"))
+    (org-agenda-todo "DONE")
+    (org-agenda-archive)
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (and buffer-file-name
+                   (string-prefix-p (expand-file-name "~/Nextcloud/Org/") (file-truename buffer-file-name))
+                   (derived-mode-p 'org-mode))
+          (save-buffer))))))
+
+(with-eval-after-load 'org-agenda
+  (define-key org-agenda-mode-map (kbd "C-a") #'swarsel/org-agenda-done-and-archive))
+
 (use-package org
   ;;:diminish (org-indent-mode)
   :hook (org-mode . swarsel/org-mode-setup)
@@ -829,6 +845,12 @@ create a new one."
   (setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
                            "/home/swarsel/Nextcloud/Org/Archive.org"
                            ))
+
+  (setq org-capture-templates
+        '(("t" "Todo" entry (file+headline "~/Nextcloud/Org/Tasks.org" "Inbox")
+           "* TODO %?\n  %i\n  %a")
+          ("j" "Journal" entry (file+datetree "~/Nextcloud/Org/Journal.org")
+           "* %?\nEntered on %U\n  %i\n  %a")))
 
   (setq org-refile-targets
         '((swarsel-archive-org-file :maxlevel . 1)
