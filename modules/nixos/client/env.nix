@@ -13,7 +13,9 @@
           gst-plugins-ugly
           gst-libav
         ]);
-      };
+      } // (lib.optionalAttrs (!config.swarselsystems.isPublic) {
+        GITHUB_NOTIFICATION_TOKEN_PATH = config.sops.secrets.github-notifications-token.path;
+      });
     };
   };
 }

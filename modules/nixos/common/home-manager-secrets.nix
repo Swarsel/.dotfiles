@@ -19,6 +19,7 @@ in
         fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
       }) // (lib.optionalAttrs modules.zsh {
         croc-password = { owner = mainUser; };
+        github-nixpkgs-review-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.emacs {
         emacs-radicale-pw = { owner = mainUser; };
       });

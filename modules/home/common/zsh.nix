@@ -15,6 +15,7 @@ in
 
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         croc-password = { };
+        github-nixpkgs-review-token = { };
       };
 
       programs.zsh = {
@@ -49,8 +50,10 @@ in
             boot-diff = "nix store diff-closures /run/*-system";
             gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
             cc = "wl-copy";
-            topology = "nix build .#topology.x86_64-linux.config.output";
-            iso = "nix build --print-out-paths .#live-iso";
+            build-topology = "nix build .#topology.x86_64-linux.config.output";
+            build-iso = "nix build --print-out-paths .#live-iso";
+            nix-review- = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
+            nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
           }
           config.swarselsystems.shellAliases;
         autosuggestion.enable = true;
@@ -124,6 +127,7 @@ in
           bindkey '^H' my-backward-delete-word
 
           export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
+          export GITHUB_TOKEN="$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})"
         '';
       };
     };

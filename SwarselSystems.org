@@ -3889,7 +3889,7 @@ in
   }
 #+end_src
 
-**** Expose home-manager secrets in NixOS (automatically active)
+**** Expose home-manager sops secrets in NixOS (automatically active)
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
   { lib, config, globals, ... }:
@@ -3913,6 +3913,7 @@ in
           fever-pw = { path = "${homeDir}/.emacs.d/.fever"; owner = mainUser; };
         }) // (lib.optionalAttrs modules.zsh {
           croc-password = { owner = mainUser; };
+          github-nixpkgs-review-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.emacs {
           emacs-radicale-pw = { owner = mainUser; };
         });
@@ -4632,7 +4633,9 @@ Next, we will setup some environment variables that need to be set on the system
             gst-plugins-ugly
             gst-libav
           ]);
-        };
+        } // (lib.optionalAttrs (!config.swarselsystems.isPublic) {
+          GITHUB_NOTIFICATION_TOKEN_PATH = config.sops.secrets.github-notifications-token.path;
+        });
       };
     };
   }
@@ -11210,6 +11213,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
               SWARSEL_CAL3NAME = source3-name;
               SWARSEL_FULLNAME = fullName;
               SWARSEL_MAIL_ALL = allMailAddresses;
+              GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
             };
           };
         }
@@ -11681,6 +11685,7 @@ Currently I only use it as before with =initExtra= though.
 
         sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
           croc-password = { };
+          github-nixpkgs-review-token = { };
         };
 
         programs.zsh = {
@@ -11715,8 +11720,10 @@ Currently I only use it as before with =initExtra= though.
               boot-diff = "nix store diff-closures /run/*-system";
               gen-diff = "nix profile diff-closures --profile /nix/var/nix/profiles/system";
               cc = "wl-copy";
-              topology = "nix build .#topology.x86_64-linux.config.output";
-              iso = "nix build --print-out-paths .#live-iso";
+              build-topology = "nix build .#topology.x86_64-linux.config.output";
+              build-iso = "nix build --print-out-paths .#live-iso";
+              nix-review- = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
+              nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
             }
             config.swarselsystems.shellAliases;
           autosuggestion.enable = true;
@@ -11790,6 +11797,7 @@ Currently I only use it as before with =initExtra= though.
             bindkey '^H' my-backward-delete-word
 
             export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
+            export GITHUB_TOKEN="$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})"
           '';
         };
       };
