@@ -7,7 +7,7 @@
       settings = {
         initial_session.command = "sway";
         default_session.command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet \
+          ${pkgs.tuigreet}/bin/tuigreet \
             --time \
             --asterisks \
             --user-menu \

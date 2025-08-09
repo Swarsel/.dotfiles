@@ -3415,7 +3415,7 @@ This is the "reference implementation" of a setup that runs without NixOS, only 
     imports = [
       inputs.stylix.homeManagerModules.stylix
       inputs.sops-nix.homeManagerModules.sops
-      inputs.nix-index-database.hmModules.nix-index
+      inputs.nix-index-database.homeModules.nix-index
       "${self}/modules/home"
       "${self}/modules/nixos/common/pii.nix"
       "${self}/modules/nixos/common/meta.nix"
@@ -4104,7 +4104,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
           useUserPackages = true;
           verbose = true;
           users.${config.swarselsystems.mainUser}.imports = [
-            inputs.nix-index-database.hmModules.nix-index
+            inputs.nix-index-database.homeModules.nix-index
             inputs.sops-nix.homeManagerModules.sops
             # inputs.stylix.homeModules.stylix
             {
@@ -4684,10 +4684,10 @@ There is a persistent bug over Linux kernels that makes the user wait 1m30s on s
     options.swarselmodules.systemdTimeout = lib.mkEnableOption "systemd timeout config";
     config = lib.mkIf config.swarselmodules.systemdTimeout {
       # systemd
-      systemd.extraConfig = ''
-        DefaultTimeoutStartSec=60s
-        DefaultTimeoutStopSec=15s
-      '';
+      systemd.settings.Manager = {
+        DefaultTimeoutStartSec = "60s";
+        DefaultTimeoutStopSec = "15s";
+      };
     };
   }
 #+end_src
@@ -5589,7 +5589,7 @@ This section houses the greetd related settings. I do not really want to use a d
         settings = {
           initial_session.command = "sway";
           default_session.command = ''
-            ${pkgs.greetd.tuigreet}/bin/tuigreet \
+            ${pkgs.tuigreet}/bin/tuigreet \
               --time \
               --asterisks \
               --user-menu \
@@ -5701,7 +5701,7 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
           pixman
           speex
           stdenv.cc.cc
-          steam-fhsenv-without-steam
+          stable.steam-fhsenv-without-steam
           systemd
           tbb
           vulkan-loader
