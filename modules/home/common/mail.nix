@@ -33,121 +33,158 @@ in
     # this is needed so that mbsync can use the passwords from sops
     systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-    accounts = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
-      email = {
-        maildirBasePath = "Mail";
-        accounts = {
-          leon = {
-            primary = true;
-            address = address1;
-            userName = address1;
-            realName = fullName;
-            passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
-            gpg = {
-              key = "0x76FD3810215AE097";
-              signByDefault = true;
-            };
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            mu.enable = true;
-            msmtp = {
-              enable = true;
-            };
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
-                };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
-                };
-              };
-            };
-          };
+    programs.thunderbird = {
+      enable = true;
+      profiles.default = {
+        isDefault = true;
+        withExternalGnupg = true;
+        settings = {
+          "mail.identity.default.archive_enabled" = true;
+          "mail.identity.default.archive_keep_folder_structure" = true;
+          "mail.identity.default.compose_html" = false;
+          "mail.identity.default.protectSubject" = true;
+          "mail.identity.default.reply_on_top" = 1;
+          "mail.identity.default.sig_on_reply" = false;
+          "mail.identity.default.sig_bottom" = false;
 
-          swarsel = {
-            address = address4;
-            userName = address4-user;
-            realName = fullName;
-            passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
-            smtp = {
-              host = address4-host;
-              port = 587;
-              tls = {
-                enable = true;
-                useStartTls = true;
-              };
-            };
-            mu.enable = false;
-            msmtp = {
-              enable = true;
-            };
-            mbsync = {
-              enable = false;
-            };
-          };
-
-          nautilus = {
-            primary = false;
-            address = address2;
-            userName = address2;
-            realName = address2-name;
-            passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            msmtp.enable = true;
-            mu.enable = true;
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
-                };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
-                };
-              };
-            };
-          };
-
-          mrswarsel = {
-            primary = false;
-            address = address3;
-            userName = address3;
-            realName = address3-name;
-            passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
-            imap.host = "imap.gmail.com";
-            smtp.host = "smtp.gmail.com";
-            msmtp.enable = true;
-            mu.enable = true;
-            mbsync = {
-              enable = true;
-              create = "maildir";
-              expunge = "both";
-              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-              extraConfig = {
-                channel = {
-                  Sync = "All";
-                };
-                account = {
-                  Timeout = 120;
-                  PipelineDepth = 1;
-                };
-              };
-            };
-          };
-
+          "gfx.webrender.all" = true;
+          "gfx.webrender.enabled" = true;
         };
       };
+
+      settings = {
+        "mail.server.default.allow_utf8_accept" = true;
+        "mail.server.default.max_articles" = 1000;
+        "mail.server.default.check_all_folders_for_new" = true;
+        "mail.show_headers" = 1;
+        "mail.identity.default.auto_quote" = true;
+        "mail.identity.default.attachPgpKey" = true;
+        "mailnews.default_sort_order" = 2;
+        "mailnews.default_sort_type" = 18;
+        "mailnews.default_view_flags" = 0;
+        "mailnews.sort_threads_by_root" = true;
+        "mailnews.headers.showMessageId" = true;
+        "mailnews.headers.showOrganization" = true;
+        "mailnews.headers.showReferences" = true;
+        "mailnews.headers.showUserAgent" = true;
+        "mail.imap.expunge_after_delete" = true;
+        "mail.server.default.delete_model" = 2;
+        "mail.warn_on_delete_from_trash" = false;
+        "mail.warn_on_shift_delete" = false;
+        "toolkit.telemetry.enabled" = false;
+        "toolkit.telemetry.rejected" = true;
+        "toolkit.telemetry.prompted" = 2;
+        "app.update.auto" = false;
+        "privacy.donottrackheader.enabled" = true;
+      };
+    };
+
+    xdg.mimeApps.defaultApplications = {
+      "x-scheme-handler/mailto" = [ "thunderbird.desktop" ];
+      "x-scheme-handler/mid" = [ "thunderbird.desktop" ];
+      "message/rfc822" = [ "thunderbird.desktop" ];
+    };
+
+    accounts = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
+      email =
+        let
+          defaultSettings = {
+            imap = {
+              host = "imap.gmail.com";
+              port = 993;
+              tls.enable = true; # SSL/TLS
+            };
+            smtp = {
+              host = "smtp.gmail.com";
+              port = 465;
+              tls.enable = true; # SSL/TLS
+            };
+            thunderbird = {
+              enable = true;
+              profiles = [ "default" ];
+            };
+            mu.enable = true;
+            msmtp = {
+              enable = true;
+            };
+            mbsync = {
+              enable = true;
+              create = "maildir";
+              expunge = "both";
+              patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+              extraConfig = {
+                channel = {
+                  Sync = "All";
+                };
+                account = {
+                  Timeout = 120;
+                  PipelineDepth = 1;
+                };
+              };
+            };
+          };
+        in
+        {
+          maildirBasePath = "Mail";
+          accounts = {
+            swarsel = {
+              address = address4;
+              userName = address4-user;
+              realName = fullName;
+              passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
+              smtp = {
+                host = address4-host;
+                port = 587;
+                tls = {
+                  enable = true;
+                  useStartTls = true;
+                };
+              };
+              mu.enable = false;
+              msmtp = {
+                enable = true;
+              };
+              mbsync = {
+                enable = false;
+              };
+            };
+
+            leon = lib.recursiveUpdate
+              {
+                primary = true;
+                address = address1;
+                userName = address1;
+                realName = fullName;
+                passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
+                gpg = {
+                  key = "0x76FD3810215AE097";
+                  signByDefault = true;
+                };
+              }
+              defaultSettings;
+
+            nautilus = lib.recursiveUpdate
+              {
+                primary = false;
+                address = address2;
+                userName = address2;
+                realName = address2-name;
+                passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
+              }
+              defaultSettings;
+
+            mrswarsel = lib.recursiveUpdate
+              {
+                primary = false;
+                address = address3;
+                userName = address3;
+                realName = address3-name;
+                passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
+              }
+              defaultSettings;
+
+          };
+        };
     };
   };
 }

@@ -213,13 +213,12 @@ in
       gh
     ];
 
-
     services = {
       spice-vdagentd.enable = true;
       openssh = {
         enable = true;
         extraConfig = ''
-                                '';
+        '';
       };
 
       syncthing = {
