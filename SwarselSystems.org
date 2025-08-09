@@ -18716,11 +18716,14 @@ Provides previews for embark.
 I set the annotation-mode of marginalia to =heavy=. This gives even more information on the stuff that you are looking at. One thing I am missing from ivy is the highlighting on =mode=-commands based on the current state of the mode. Also, I do not understand all the shorthands used by marginalia yet.
 
 #+begin_src emacs-lisp
-  (use-package marginalia
-    :after vertico
-    :init
-    (marginalia-mode)
-    (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+    (use-package marginalia
+      :after vertico
+      :bind (:map minibuffer-local-map
+                  ("M-A" . marginalia-cycle))
+      :init
+      (marginalia-mode)
+      ;; (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
+      )
 
 #+end_src
 ***** nerd-icons-completion

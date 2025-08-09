@@ -713,9 +713,12 @@ create a new one."
 
 (use-package marginalia
   :after vertico
+  :bind (:map minibuffer-local-map
+              ("M-A" . marginalia-cycle))
   :init
   (marginalia-mode)
-  (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil)))
+  ;; (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
+  )
 
 (use-package nerd-icons-completion
   :after (marginalia nerd-icons)
