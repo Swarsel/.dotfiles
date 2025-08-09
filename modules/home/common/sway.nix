@@ -126,9 +126,10 @@ in
               "${modifier}+Shift+F12" = "move scratchpad";
               "${modifier}+F12" = "scratchpad show";
               "${modifier}+Shift+c" = "exec qalculate-gtk";
-              "${modifier}+c" = "emacsclient -e '(prot-window-popup-org-capture)'";
-              "${modifier}+Shift+m" = "emacsclient -e '(prot-window-popup-mu4e)'";
-              "${modifier}+Shift+a" = "emacsclient -e '(prot-window-popup-swarsel/open-calendar)'";
+              "${modifier}+c" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
+              "${modifier}+t" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
+              "${modifier}+Shift+m" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
+              "${modifier}+Shift+a" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
               "${modifier}+p" = "exec pass-fuzzel";
               "${modifier}+o" = "exec pass-fuzzel --otp";
               "${modifier}+Shift+p" = "exec pass-fuzzel --type";
@@ -261,7 +262,8 @@ in
             { title = "^Add$"; }
             { title = "^Picture-in-Picture$"; }
             { title = "Syncthing Tray"; }
-            { title = "Emacs Popup Frame"; }
+            { title = "^Emacs Popup Frame$"; }
+            { title = "^Emacs Popup Anchor$"; }
             { title = "^spotifytui$"; }
             { title = "^kittyterm$"; }
             { app_id = "vesktop"; }
@@ -310,6 +312,18 @@ in
               command = "sticky enable, shadows enable";
               criteria = {
                 title = "^Picture-in-Picture$";
+              };
+            }
+            {
+              command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
+              criteria = {
+                title = "^Emacs Popup Frame$";
+              };
+            }
+            {
+              command = "move container to scratchpad";
+              criteria = {
+                title = "^Emacs Popup Anchor$";
               };
             }
             {

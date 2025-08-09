@@ -13033,9 +13033,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 "${modifier}+Shift+F12" = "move scratchpad";
                 "${modifier}+F12" = "scratchpad show";
                 "${modifier}+Shift+c" = "exec qalculate-gtk";
-                "${modifier}+c" = "emacsclient -e '(prot-window-popup-org-capture)'";
-                "${modifier}+Shift+m" = "emacsclient -e '(prot-window-popup-mu4e)'";
-                "${modifier}+Shift+a" = "emacsclient -e '(prot-window-popup-swarsel/open-calendar)'";
+                "${modifier}+c" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
+                "${modifier}+t" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
+                "${modifier}+Shift+m" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
+                "${modifier}+Shift+a" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
                 "${modifier}+p" = "exec pass-fuzzel";
                 "${modifier}+o" = "exec pass-fuzzel --otp";
                 "${modifier}+Shift+p" = "exec pass-fuzzel --type";
@@ -13168,7 +13169,8 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               { title = "^Add$"; }
               { title = "^Picture-in-Picture$"; }
               { title = "Syncthing Tray"; }
-              { title = "Emacs Popup Frame"; }
+              { title = "^Emacs Popup Frame$"; }
+              { title = "^Emacs Popup Anchor$"; }
               { title = "^spotifytui$"; }
               { title = "^kittyterm$"; }
               { app_id = "vesktop"; }
@@ -13217,6 +13219,18 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 command = "sticky enable, shadows enable";
                 criteria = {
                   title = "^Picture-in-Picture$";
+                };
+              }
+              {
+                command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
+                criteria = {
+                  title = "^Emacs Popup Frame$";
+                };
+              }
+              {
+                command = "move container to scratchpad";
+                criteria = {
+                  title = "^Emacs Popup Anchor$";
                 };
               }
               {
@@ -20465,46 +20479,56 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
   (add-hook 'comint-output-filter-functions 'comint-truncate-buffer)
 
 #+end_src
+
 *** Popup frames
 
 #+begin_src emacs-lisp
-    (defun prot-window-delete-popup-frame (&rest _)
-      "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
-    Use this function via a hook."
-      (when (frame-parameter nil 'prot-window-popup-frame)
-        (delete-frame)))
+  (defun prot-window-delete-popup-frame (&rest _)
+    "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
+      Use this function via a hook."
+    (when (frame-parameter nil 'prot-window-popup-frame)
+      (delete-frame)))
 
-    (defmacro prot-window-define-with-popup-frame (command)
-      "Define interactive function which calls COMMAND in a new frame.
-    Make the new frame have the `prot-window-popup-frame' parameter."
-      `(defun ,(intern (format "prot-window-popup-%s" command)) ()
-         ,(format "Run `%s' in a popup frame with `prot-window-popup-frame' parameter.
-    Also see `prot-window-delete-popup-frame'." command)
-         (interactive)
-         (let ((frame (make-frame '((prot-window-popup-frame . t)))))
-           (select-frame frame)
-           (modify-frame-parameters nil '((title . "Emacs Popup Frame")))
-           (switch-to-buffer " prot-window-hidden-buffer-for-popup-frame")
-           (condition-case nil
-               (call-interactively ',command)
-             ((quit error user-error)
-              (delete-frame frame))))))
+  (defmacro prot-window-define-with-popup-frame (command)
+    "Define interactive function which calls COMMAND in a new frame.
+  Make the new frame have the `prot-window-popup-frame' parameter."
+    `(defun ,(intern (format "prot-window-popup-%s" command)) ()
+       ,(format "Run `%s' in a popup frame with `prot-window-popup-frame' parameter.
+  Also see `prot-window-delete-popup-frame'." command)
+       (interactive)
+       (let ((frame (make-frame '((prot-window-popup-frame . t)
+                                  (title . "Emacs Popup Frame")))))
+         (unwind-protect
+             (progn
+               (select-frame frame)
+               (switch-to-buffer " prot-window-hidden-buffer-for-popup-frame")
+               (condition-case nil
+                   (call-interactively ',command)
+                 ((quit error user-error)
+                  (delete-frame frame))))
+           (dolist (fr (frame-list))
+             (when (string= (frame-parameter fr 'name) "Emacs Popup Anchor")
+               (delete-frame fr)))))))
 
-    (declare-function org-capture "org-capture" (&optional goto keys))
-    (defvar org-capture-after-finalize-hook)
-    ;;;###autoload (autoload 'prot-window-popup-org-capture "prot-window")
-    (prot-window-define-with-popup-frame org-capture)
-    (add-hook 'org-capture-after-finalize-hook #'prot-window-delete-popup-frame)
+  (declare-function org-capture "org-capture" (&optional goto keys))
+  (defvar org-capture-after-finalize-hook)
+      ;;;###autoload (autoload 'prot-window-popup-org-capture "prot-window")
+  (prot-window-define-with-popup-frame org-capture)
+  (add-hook 'org-capture-after-finalize-hook #'prot-window-delete-popup-frame)
 
-    (declare-function mu4e "mu4e" (&optional goto keys))
-    ;;;###autoload (autoload 'prot-window-popup-mu4e "prot-window")
-    (prot-window-define-with-popup-frame mu4e)
-    (advice-add 'mu4e-quit :after #'prot-window-delete-popup-frame)
+  (declare-function mu4e "mu4e" (&optional goto keys))
+      ;;;###autoload (autoload 'prot-window-popup-mu4e "prot-window")
+  (prot-window-define-with-popup-frame mu4e)
+  (advice-add 'mu4e-quit :after #'prot-window-delete-popup-frame)
 
-    (declare-function swarsel/open-calendar "swarsel/open-calendar" (&optional goto keys))
-    ;;;###autoload (autoload 'prot-window-popup-swarsel/open-calendar "prot-window")
-    (prot-window-define-with-popup-frame swarsel/open-calendar)
-    (advice-add 'bury-buffer :after #'prot-window-delete-popup-frame)
+  (declare-function swarsel/open-calendar "swarsel/open-calendar" (&optional goto keys))
+      ;;;###autoload (autoload 'prot-window-popup-swarsel/open-calendar "prot-window")
+  (prot-window-define-with-popup-frame swarsel/open-calendar)
+  (advice-add 'bury-buffer :after #'prot-window-delete-popup-frame)
+
+  (declare-function org-agenda "org-agenda" (&optional goto keys))
+      ;;;###autoload (autoload 'prot-window-popup-org-agenda "prot-window")
+  (prot-window-define-with-popup-frame org-agenda)
 
 #+end_src
 
