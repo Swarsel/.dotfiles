@@ -18,6 +18,7 @@
             inputs.home-manager.nixosModules.home-manager
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+            inputs.swarsel-modules.nixosModules.default
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"

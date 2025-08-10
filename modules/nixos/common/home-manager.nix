@@ -9,8 +9,8 @@
       users.${config.swarselsystems.mainUser}.imports = [
         inputs.nix-index-database.homeModules.nix-index
         inputs.sops-nix.homeManagerModules.sops
-        # inputs.stylix.homeModules.stylix
         inputs.spicetify-nix.homeManagerModules.default
+        inputs.swarsel-modules.homeModules.default
         {
           imports = [
             "${self}/profiles/home"

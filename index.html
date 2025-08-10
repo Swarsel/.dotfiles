@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-08-09 Sa 14:31 -->
+<!-- 2025-08-10 So 11:35 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configuration</title>
@@ -203,7 +203,7 @@
 <ul>
 <li><a href="#h:a86fe971-f169-4052-aacf-15e0f267c6cd">1. Introduction (no code)</a>
 <ul>
-<li><a href="#org95f3948">1.1. How to use this document</a></li>
+<li><a href="#h:6f4b190c-fe69-47a3-9df2-ee429bd9b48b">1.1. How to use this document</a></li>
 <li><a href="#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">1.2. Structure of this file</a></li>
 <li><a href="#h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64">1.3. <span class="todo TODO">TODO</span> Structure of this flake</a></li>
 <li><a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">1.4. Hosts</a></li>
@@ -319,7 +319,7 @@
 <li><a href="#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5">3.2.1.2. Share configuration between nodes (automatically active)</a></li>
 <li><a href="#h:85c9b83f-40c3-4558-bb28-a37b6f8597b9">3.2.1.3. Global options (automatically active)</a></li>
 <li><a href="#h:30b81bf9-1e69-4ce8-88af-5592896bcee4">3.2.1.4. Meta options (options only)</a></li>
-<li><a href="#org102ae59">3.2.1.5. Expose home-manager sops secrets in NixOS (automatically active)</a></li>
+<li><a href="#h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8">3.2.1.5. Expose home-manager sops secrets in NixOS (automatically active)</a></li>
 <li><a href="#h:e2e7444b-cb85-4719-b154-e5f37274d02d">3.2.1.6. Topology (automatically active)</a></li>
 <li><a href="#h:24c9146f-2147-4fd5-bafc-d5853e15cf12">3.2.1.7. General NixOS settings (nix, stateVersion)</a></li>
 <li><a href="#h:7f6d6908-4d02-4907-9c70-f802f4358520">3.2.1.8. Setup home-manager base</a></li>
@@ -328,7 +328,7 @@
 <li><a href="#h:852d59ab-63c3-4831-993d-b5e23b877796">3.2.1.11. Time, locale settings</a></li>
 <li><a href="#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23">3.2.1.12. PII management</a></li>
 <li><a href="#h:d9a89071-b3ba-44d1-b5e0-e9ca6270d377">3.2.1.13. Lanzaboote (secure boot)</a></li>
-<li><a href="#org895e59b">3.2.1.14. Boot</a></li>
+<li><a href="#h:a1311b07-2a8d-4c1f-addc-8572fc184e0d">3.2.1.14. Boot</a></li>
 <li><a href="#h:e7668594-fa8b-4d36-a695-a58222478988">3.2.1.15. Impermanence</a></li>
 </ul>
 </li>
@@ -418,7 +418,7 @@
 <li><a href="#h:f922e8d6-f6e8-4779-a7ad-4037229c9bf0">3.2.3.33. croc</a></li>
 <li><a href="#h:13071cc3-5cba-44b5-8b5b-2a27be22e021">3.2.3.34. microbin</a></li>
 <li><a href="#h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c">3.2.3.35. shlink</a></li>
-<li><a href="#orgb7ca62f">3.2.3.36. slink</a></li>
+<li><a href="#h:e46c37ac-5610-4603-8afc-2f5f008fc14d">3.2.3.36. slink</a></li>
 </ul>
 </li>
 <li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">3.2.4. Darwin</a>
@@ -493,6 +493,7 @@
 <li><a href="#h:eb94df98-2bcd-4555-9f88-e252f93b924f">3.3.1.32. Kanshi</a></li>
 <li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.33. gpg-agent</a></li>
 <li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.34. gammastep</a></li>
+<li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.35. Spicetify</a></li>
 </ul>
 </li>
 <li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">3.3.2. Server</a>
@@ -510,15 +511,16 @@
 <ul>
 <li><a href="#h:84fd7029-ecb6-4131-9333-289982f24ffa">3.3.4.1. Gaming</a></li>
 <li><a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">3.3.4.2. Work</a></li>
-<li><a href="#h:8a7b1c26-3448-42d3-932a-5d05d54b5490">3.3.4.3. Framework</a></li>
+<li><a href="#h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6">3.3.4.3. Uni</a></li>
+<li><a href="#h:8a7b1c26-3448-42d3-932a-5d05d54b5490">3.3.4.4. Framework</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org7f776e3">3.4. Shared</a>
+<li><a href="#h:3552f06f-07e0-4bb1-a50f-fd1efb2d7778">3.4. Shared</a>
 <ul>
 <li><a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">3.4.1. <span class="todo TODO">TODO</span> Configuration options</a></li>
-<li><a href="#org6e2eee2">3.4.2. Variables (vars; holds firefox &amp; stylix config parts)</a></li>
+<li><a href="#h:ea362c55-97b4-45fd-bf41-ab461c444212">3.4.2. Variables (vars; holds firefox &amp; stylix config parts)</a></li>
 </ul>
 </li>
 <li><a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">3.5. Packages</a>
@@ -568,14 +570,15 @@
 <li><a href="#h:b79fbb59-9cf2-48eb-b469-2589223dda95">3.6.1.4. Chaostheatre</a></li>
 <li><a href="#h:125443fb-deb6-44c9-83ee-bbd10daf78dd">3.6.1.5. toto</a></li>
 <li><a href="#h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">3.6.1.6. Work</a></li>
-<li><a href="#h:eb272c99-842a-4095-bc65-283562749300">3.6.1.7. Framework</a></li>
-<li><a href="#h:b7beb4a5-8808-438d-8799-7f08f38fd1ba">3.6.1.8. AMD CPU</a></li>
-<li><a href="#h:79c71b6d-a1ad-447d-8940-bb5bfd71dced">3.6.1.9. AMD GPU</a></li>
-<li><a href="#h:641d0a2a-0592-448a-a6e3-d0a9c330293e">3.6.1.10. Hibernation</a></li>
-<li><a href="#h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2">3.6.1.11. BTRFS</a></li>
-<li><a href="#h:dfc076fd-ee74-4663-b164-653370c52b75">3.6.1.12. Local Server</a></li>
-<li><a href="#h:9b7b50d1-57ad-41ca-94ab-74393aae01bf">3.6.1.13. OCI Sync Server</a></li>
-<li><a href="#h:cc780ef2-7e5e-4835-b659-c731b306a320">3.6.1.14. Moonside</a></li>
+<li><a href="#h:87a83b10-3c2f-407c-89aa-922ad77748a4">3.6.1.7. Uni</a></li>
+<li><a href="#h:eb272c99-842a-4095-bc65-283562749300">3.6.1.8. Framework</a></li>
+<li><a href="#h:b7beb4a5-8808-438d-8799-7f08f38fd1ba">3.6.1.9. AMD CPU</a></li>
+<li><a href="#h:79c71b6d-a1ad-447d-8940-bb5bfd71dced">3.6.1.10. AMD GPU</a></li>
+<li><a href="#h:641d0a2a-0592-448a-a6e3-d0a9c330293e">3.6.1.11. Hibernation</a></li>
+<li><a href="#h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2">3.6.1.12. BTRFS</a></li>
+<li><a href="#h:dfc076fd-ee74-4663-b164-653370c52b75">3.6.1.13. Local Server</a></li>
+<li><a href="#h:9b7b50d1-57ad-41ca-94ab-74393aae01bf">3.6.1.14. OCI Sync Server</a></li>
+<li><a href="#h:cc780ef2-7e5e-4835-b659-c731b306a320">3.6.1.15. Moonside</a></li>
 </ul>
 </li>
 <li><a href="#h:ced5841f-c088-4d88-b3a1-7d62aad8837b">3.6.2. home-manager</a>
@@ -586,8 +589,9 @@
 <li><a href="#h:36a0209f-2c17-4808-a1d0-a9e1920c307a">3.6.2.4. Chaostheatre</a></li>
 <li><a href="#h:e1d4f141-af11-448a-9796-fc822a8f77ec">3.6.2.5. toto</a></li>
 <li><a href="#h:7b091523-a5b0-48b6-8b03-4dc2405e2d81">3.6.2.6. Work</a></li>
-<li><a href="#h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc">3.6.2.7. Framework</a></li>
-<li><a href="#h:8027b858-369e-4f12-bbaf-f15eeee3d904">3.6.2.8. Local Server</a></li>
+<li><a href="#h:56f509b9-3271-4212-b5ea-482dbe288bda">3.6.2.7. Uni</a></li>
+<li><a href="#h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc">3.6.2.8. Framework</a></li>
+<li><a href="#h:8027b858-369e-4f12-bbaf-f15eeee3d904">3.6.2.9. Local Server</a></li>
 </ul>
 </li>
 </ul>
@@ -757,7 +761,7 @@
 <li><a href="#h:a81fb9de-6b6b-4a4a-b758-5107c6e7f0cb">4.4.42. vterm</a></li>
 <li><a href="#h:1f4d32a0-c1ed-4409-aec4-7b5c96aa21dd">4.4.43. multiple cursors</a></li>
 <li><a href="#h:438d928f-77a8-477a-ac8b-ca54ec673f91">4.4.44. Less logging</a></li>
-<li><a href="#org9515b19">4.4.45. Popup frames</a></li>
+<li><a href="#h:5322b631-a108-49a0-b95a-b61a70070dd9">4.4.45. Popup frames</a></li>
 </ul>
 </li>
 </ul>
@@ -812,7 +816,7 @@
 </div>
 </div>
 <p>
-<b>This file has 91224 words spanning 23377 lines and was last revised on 2025-08-09 14:31:36 +0200.</b>
+<b>This file has 91577 words spanning 23506 lines and was last revised on 2025-08-10 11:35:15 +0200.</b>
 </p>
 
 <p>
@@ -842,9 +846,9 @@ This configuration is part of a NixOS system that is (nearly) fully declarative 
 This literate configuration lets me explain my choices to my future self as well as you, the reader. I go to great lengths to explain the choices for all configuration steps that I take in order for me to pay due diligence in crafting my setup, and not simply copying big chunks of other peoples code. Also, the literate configuration approach is very convenient to me as I only need to keep of (ideally) a single file to manage all of my configuration. I hope that this documentation will make it easier for beginners to get into Emacs and NixOS as I know it can be a struggle in the beginning.
 </p>
 </div>
-<div id="outline-container-org95f3948" class="outline-3">
-<h3 id="org95f3948"><span class="section-number-3">1.1.</span> How to use this document</h3>
-<div class="outline-text-3" id="text-1-1">
+<div id="outline-container-h:6f4b190c-fe69-47a3-9df2-ee429bd9b48b" class="outline-3">
+<h3 id="h:6f4b190c-fe69-47a3-9df2-ee429bd9b48b"><span class="section-number-3">1.1.</span> How to use this document</h3>
+<div class="outline-text-3" id="text-h:6f4b190c-fe69-47a3-9df2-ee429bd9b48b">
 <p>
 When I started out with nix, it was a painful time. For a beginner, the available resources tend to be too detailed or assume too much prior knowledge. Also, it is a (sad) fact that using nix requires the user to understand it pretty well before most things start to make sense.
 </p>
@@ -881,7 +885,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-08-09 14:31:36 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-08-10 11:35:15 +0200)
 </p></li>
 </ul>
 
@@ -1327,8 +1331,10 @@ This provides devshell support for flake-parts</li>
     nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     systems.url = "github:nix-systems/default";
+    swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
     home-manager = {
       url = "github:nix-community/home-manager";
+      # url = "github:Swarsel/home-manager/module/pizauth";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     swarsel.url = "github:Swarsel/.dotfiles";
@@ -1387,6 +1393,10 @@ This provides devshell support for flake-parts</li>
     flake-parts.url = "github:hercules-ci/flake-parts";
     devshell = {
       url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    spicetify-nix = {
+      url = "github:Gerg-l/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -1817,6 +1827,7 @@ The rest of the outputs either define or help define the actual configurations:
             inputs.home-manager.nixosModules.home-manager
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+            inputs.swarsel-modules.nixosModules.default
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
@@ -2920,6 +2931,7 @@ in
   swarselprofiles = {
     personal = lib.mkIf (!minimal) true;
     work = lib.mkIf (!minimal) true;
+    uni = lib.mkIf (!minimal) true;
     framework = lib.mkIf (!minimal) true;
     amdcpu = true;
     amdgpu = true;
@@ -5003,9 +5015,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org102ae59" class="outline-5">
-<h5 id="org102ae59"><span class="section-number-5">3.2.1.5.</span> Expose home-manager sops secrets in NixOS (automatically active)</h5>
-<div class="outline-text-5" id="text-3-2-1-5">
+<div id="outline-container-h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8" class="outline-5">
+<h5 id="h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8"><span class="section-number-5">3.2.1.5.</span> Expose home-manager sops secrets in NixOS (automatically active)</h5>
+<div class="outline-text-5" id="text-h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, globals, ... }:
 let
@@ -5236,7 +5248,8 @@ We enable the use of <code>home-manager</code> as a NixoS module. A nice trick h
         users.${config.swarselsystems.mainUser}.imports = [
           inputs.nix-index-database.homeModules.nix-index
           inputs.sops-nix.homeManagerModules.sops
-          # inputs.stylix.homeModules.stylix
+          inputs.spicetify-nix.homeManagerModules.default
+          inputs.swarsel-modules.homeModules.default
           {
             imports = [
               "${self}/profiles/home"
@@ -5486,9 +5499,9 @@ This dynamically uses systemd boot or Lanzaboote depending on the minimal system
 </div>
 </div>
 </div>
-<div id="outline-container-org895e59b" class="outline-5">
-<h5 id="org895e59b"><span class="section-number-5">3.2.1.14.</span> Boot</h5>
-<div class="outline-text-5" id="text-3-2-1-14">
+<div id="outline-container-h:a1311b07-2a8d-4c1f-addc-8572fc184e0d" class="outline-5">
+<h5 id="h:a1311b07-2a8d-4c1f-addc-8572fc184e0d"><span class="section-number-5">3.2.1.14.</span> Boot</h5>
+<div class="outline-text-5" id="text-h:a1311b07-2a8d-4c1f-addc-8572fc184e0d">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, globals, ... }:
 {
@@ -11025,9 +11038,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgb7ca62f" class="outline-5">
-<h5 id="orgb7ca62f"><span class="section-number-5">3.2.3.36.</span> slink</h5>
-<div class="outline-text-5" id="text-3-2-3-36">
+<div id="outline-container-h:e46c37ac-5610-4603-8afc-2f5f008fc14d" class="outline-5">
+<h5 id="h:e46c37ac-5610-4603-8afc-2f5f008fc14d"><span class="section-number-5">3.2.3.36.</span> slink</h5>
+<div class="outline-text-5" id="text-h:e46c37ac-5610-4603-8afc-2f5f008fc14d">
 <p>
 Deployment notes:
 </p>
@@ -12036,7 +12049,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       libreoffice-qt
       xournalpp
       obsidian
-      spotify
+      # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
       spotify-player
@@ -14943,6 +14956,36 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708" class="outline-5">
+<h5 id="h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708"><span class="section-number-5">3.3.1.35.</span> Spicetify</h5>
+<div class="outline-text-5" id="text-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ inputs, lib, config, pkgs, ... }:
+let
+  moduleName = "spicetify";
+  spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.system};
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.spicetify = {
+      enable = true;
+      spotifyPackage = pkgs.stable24_11.spotify;
+      enabledExtensions = with spicePkgs.extensions; [
+        fullAppDisplay
+        shuffle
+        hidePodcasts
+        fullAlbumDate
+        skipStats
+        history
+      ];
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb" class="outline-4">
 <h4 id="h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb"><span class="section-number-4">3.3.2.</span> Server</h4>
@@ -15129,25 +15172,7 @@ in
         stable.prometheus.cli
         tigervnc
         openstackclient
-        pizauth
       ];
-
-      systemd.user.services.pizauth = {
-        Unit = {
-          Description = "Pizauth OAuth2 token manager";
-        };
-
-        Service = {
-          Type = "simple";
-          ExecStart = "${pkgs.pizauth}/bin/pizauth server -vvvv -d";
-          ExecReload = "${pkgs.pizauth}/bin/pizauth reload";
-          ExecStop = "${pkgs.pizauth}/bin/pizauth shutdown";
-        };
-
-        Install = {
-          WantedBy = [ "default.target" ];
-        };
-      };
 
       home.sessionVariables = {
         DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
@@ -15482,28 +15507,30 @@ in
         };
       };
 
+      swarselservices.pizauth = {
+        enable = true;
+        accounts = {
+          work = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+          };
+        };
+
+      };
+
       xdg =
         let
           inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
         in
         {
-          configFile."pizauth.conf".text = ''
-              account "work" {
-              auth_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-              token_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-              client_id = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-              client_secret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-              scopes = [
-                "https://outlook.office365.com/IMAP.AccessAsUser.All",
-                "https://outlook.office365.com/SMTP.Send",
-                "offline_access"
-              ];
-              // You don't have to specify login_hint, but it does make
-              // authentication a little easier.
-              login_hint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-            }
-          '';
-
           mimeApps = {
             defaultApplications = {
               "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
@@ -15659,8 +15686,41 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6" class="outline-5">
+<h5 id="h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6"><span class="section-number-5">3.3.4.3.</span> Uni</h5>
+<div class="outline-text-5" id="text-h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ config, lib, nixosConfig ? config, ... }:
+{
+  options.swarselmodules.optional.uni = lib.mkEnableOption "optional uni settings";
+  config = lib.mkIf config.swarselmodules.optional.uni
+    {
+      swarselservices.pizauth = {
+        enable = true;
+        accounts = {
+          uni = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            loginHint = "${nixosConfig.repo.secrets.local.uni.mailAddress}";
+          };
+        };
+      };
+    };
+}
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:8a7b1c26-3448-42d3-932a-5d05d54b5490" class="outline-5">
-<h5 id="h:8a7b1c26-3448-42d3-932a-5d05d54b5490"><span class="section-number-5">3.3.4.3.</span> Framework</h5>
+<h5 id="h:8a7b1c26-3448-42d3-932a-5d05d54b5490"><span class="section-number-5">3.3.4.4.</span> Framework</h5>
 <div class="outline-text-5" id="text-h:8a7b1c26-3448-42d3-932a-5d05d54b5490">
 <p>
 This holds configuration that is specific to framework laptops.
@@ -15687,9 +15747,9 @@ This holds configuration that is specific to framework laptops.
 </div>
 </div>
 </div>
-<div id="outline-container-org7f776e3" class="outline-3">
-<h3 id="org7f776e3"><span class="section-number-3">3.4.</span> Shared</h3>
-<div class="outline-text-3" id="text-3-4">
+<div id="outline-container-h:3552f06f-07e0-4bb1-a50f-fd1efb2d7778" class="outline-3">
+<h3 id="h:3552f06f-07e0-4bb1-a50f-fd1efb2d7778"><span class="section-number-3">3.4.</span> Shared</h3>
+<div class="outline-text-3" id="text-h:3552f06f-07e0-4bb1-a50f-fd1efb2d7778">
 <p>
 This section is for modules that are to be used on <code>NixOS</code> and <code>home-manager</code> scopes alike. This is for example needed in order to allow me to define and set my own custom functions only once in the <code>NixOS</code> config and then mirror them into the corresponding <code>home-manager</code> option.
 </p>
@@ -15777,9 +15837,9 @@ TODO: check which of these can be replaced but builtin functions.
 </div>
 </div>
 </div>
-<div id="outline-container-org6e2eee2" class="outline-4">
-<h4 id="org6e2eee2"><span class="section-number-4">3.4.2.</span> Variables (vars; holds firefox &amp; stylix config parts)</h4>
-<div class="outline-text-4" id="text-3-4-2">
+<div id="outline-container-h:ea362c55-97b4-45fd-bf41-ab461c444212" class="outline-4">
+<h4 id="h:ea362c55-97b4-45fd-bf41-ab461c444212"><span class="section-number-4">3.4.2.</span> Variables (vars; holds firefox &amp; stylix config parts)</h4>
+<div class="outline-text-4" id="text-h:ea362c55-97b4-45fd-bf41-ab461c444212">
 <p>
 At work I am using several services that are using SSO login - however, as I am using four different accounts at work, this becomes a chore here. Hence, I have defined multiple profiles in <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> that are all practically using the same configuration. To save screen space, I template that profile here.
 Set in firefox <code>about:config &gt; toolkit.legacyUserProfileCustomizations.stylesheets</code> to true. This should in principle be set automatically using the below config, but it seems not to be working reliably.
@@ -15852,6 +15912,7 @@ In short, the options defined here are passed to the modules systems using <code
         emacs.enable = false;
         waybar.enable = false;
         sway.useWallpaper = false;
+        spicetify.enable = true;
         firefox.profileNames = [ "default" ];
       };
 
@@ -18286,8 +18347,35 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:87a83b10-3c2f-407c-89aa-922ad77748a4" class="outline-5">
+<h5 id="h:87a83b10-3c2f-407c-89aa-922ad77748a4"><span class="section-number-5">3.6.1.7.</span> Uni</h5>
+<div class="outline-text-5" id="text-h:87a83b10-3c2f-407c-89aa-922ad77748a4">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselprofiles.uni = lib.mkEnableOption "is this a uni host";
+  config = lib.mkIf config.swarselprofiles.uni {
+    # swarselmodules = {
+    #   optional = {
+    #     uni = lib.mkDefault true;
+    #   };
+    # };
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      swarselprofiles = {
+        uni = lib.mkDefault true;
+      };
+    };
+
+  };
+
+}
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:eb272c99-842a-4095-bc65-283562749300" class="outline-5">
-<h5 id="h:eb272c99-842a-4095-bc65-283562749300"><span class="section-number-5">3.6.1.7.</span> Framework</h5>
+<h5 id="h:eb272c99-842a-4095-bc65-283562749300"><span class="section-number-5">3.6.1.8.</span> Framework</h5>
 <div class="outline-text-5" id="text-h:eb272c99-842a-4095-bc65-283562749300">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18314,7 +18402,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:b7beb4a5-8808-438d-8799-7f08f38fd1ba" class="outline-5">
-<h5 id="h:b7beb4a5-8808-438d-8799-7f08f38fd1ba"><span class="section-number-5">3.6.1.8.</span> AMD CPU</h5>
+<h5 id="h:b7beb4a5-8808-438d-8799-7f08f38fd1ba"><span class="section-number-5">3.6.1.9.</span> AMD CPU</h5>
 <div class="outline-text-5" id="text-h:b7beb4a5-8808-438d-8799-7f08f38fd1ba">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18336,7 +18424,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:79c71b6d-a1ad-447d-8940-bb5bfd71dced" class="outline-5">
-<h5 id="h:79c71b6d-a1ad-447d-8940-bb5bfd71dced"><span class="section-number-5">3.6.1.9.</span> AMD GPU</h5>
+<h5 id="h:79c71b6d-a1ad-447d-8940-bb5bfd71dced"><span class="section-number-5">3.6.1.10.</span> AMD GPU</h5>
 <div class="outline-text-5" id="text-h:79c71b6d-a1ad-447d-8940-bb5bfd71dced">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18358,7 +18446,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:641d0a2a-0592-448a-a6e3-d0a9c330293e" class="outline-5">
-<h5 id="h:641d0a2a-0592-448a-a6e3-d0a9c330293e"><span class="section-number-5">3.6.1.10.</span> Hibernation</h5>
+<h5 id="h:641d0a2a-0592-448a-a6e3-d0a9c330293e"><span class="section-number-5">3.6.1.11.</span> Hibernation</h5>
 <div class="outline-text-5" id="text-h:641d0a2a-0592-448a-a6e3-d0a9c330293e">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18380,7 +18468,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2" class="outline-5">
-<h5 id="h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2"><span class="section-number-5">3.6.1.11.</span> BTRFS</h5>
+<h5 id="h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2"><span class="section-number-5">3.6.1.12.</span> BTRFS</h5>
 <div class="outline-text-5" id="text-h:0bb401e3-b195-4ff2-bc74-23c5a54d83d2">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18402,7 +18490,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:dfc076fd-ee74-4663-b164-653370c52b75" class="outline-5">
-<h5 id="h:dfc076fd-ee74-4663-b164-653370c52b75"><span class="section-number-5">3.6.1.12.</span> Local Server</h5>
+<h5 id="h:dfc076fd-ee74-4663-b164-653370c52b75"><span class="section-number-5">3.6.1.13.</span> Local Server</h5>
 <div class="outline-text-5" id="text-h:dfc076fd-ee74-4663-b164-653370c52b75">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18459,7 +18547,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:9b7b50d1-57ad-41ca-94ab-74393aae01bf" class="outline-5">
-<h5 id="h:9b7b50d1-57ad-41ca-94ab-74393aae01bf"><span class="section-number-5">3.6.1.13.</span> OCI Sync Server</h5>
+<h5 id="h:9b7b50d1-57ad-41ca-94ab-74393aae01bf"><span class="section-number-5">3.6.1.14.</span> OCI Sync Server</h5>
 <div class="outline-text-5" id="text-h:9b7b50d1-57ad-41ca-94ab-74393aae01bf">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18494,7 +18582,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:cc780ef2-7e5e-4835-b659-c731b306a320" class="outline-5">
-<h5 id="h:cc780ef2-7e5e-4835-b659-c731b306a320"><span class="section-number-5">3.6.1.14.</span> Moonside</h5>
+<h5 id="h:cc780ef2-7e5e-4835-b659-c731b306a320"><span class="section-number-5">3.6.1.15.</span> Moonside</h5>
 <div class="outline-text-5" id="text-h:cc780ef2-7e5e-4835-b659-c731b306a320">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18597,9 +18685,11 @@ in
       kanshi = lib.mkDefault true;
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
+      spicetify = lib.mkDefault true;
 
       optional = {
         gaming = lib.mkDefault true;
+        uni = lib.mkDefault true;
       };
     };
   };
@@ -18786,8 +18876,29 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:56f509b9-3271-4212-b5ea-482dbe288bda" class="outline-5">
+<h5 id="h:56f509b9-3271-4212-b5ea-482dbe288bda"><span class="section-number-5">3.6.2.7.</span> Uni</h5>
+<div class="outline-text-5" id="text-h:56f509b9-3271-4212-b5ea-482dbe288bda">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselprofiles.uni = lib.mkEnableOption "is this a uni host";
+  config = lib.mkIf config.swarselprofiles.uni {
+    swarselmodules = {
+      optional = {
+        uni = lib.mkDefault true;
+      };
+    };
+  };
+
+}
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc" class="outline-5">
-<h5 id="h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc"><span class="section-number-5">3.6.2.7.</span> Framework</h5>
+<h5 id="h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc"><span class="section-number-5">3.6.2.8.</span> Framework</h5>
 <div class="outline-text-5" id="text-h:712b9d7f-16c0-42b3-b02b-6d79ee15cfcc">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -18809,7 +18920,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:8027b858-369e-4f12-bbaf-f15eeee3d904" class="outline-5">
-<h5 id="h:8027b858-369e-4f12-bbaf-f15eeee3d904"><span class="section-number-5">3.6.2.8.</span> Local Server</h5>
+<h5 id="h:8027b858-369e-4f12-bbaf-f15eeee3d904"><span class="section-number-5">3.6.2.9.</span> Local Server</h5>
 <div class="outline-text-5" id="text-h:8027b858-369e-4f12-bbaf-f15eeee3d904">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -22428,9 +22539,9 @@ This sets up the <code>dashboard</code>, which is really quite useless. But, it 
 </div>
 </div>
 </div>
-<div id="outline-container-org9515b19" class="outline-4">
-<h4 id="org9515b19"><span class="section-number-4">4.4.45.</span> Popup frames</h4>
-<div class="outline-text-4" id="text-4-4-45">
+<div id="outline-container-h:5322b631-a108-49a0-b95a-b61a70070dd9" class="outline-4">
+<h4 id="h:5322b631-a108-49a0-b95a-b61a70070dd9"><span class="section-number-4">4.4.45.</span> Popup frames</h4>
+<div class="outline-text-4" id="text-h:5322b631-a108-49a0-b95a-b61a70070dd9">
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">(defun prot-window-delete-popup-frame (&amp;rest _)
   "Kill selected selected frame if it has parameter `prot-window-popup-frame'.
@@ -25461,7 +25572,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-08-09 Sa 14:31</p>
+<p class="date">Created: 2025-08-10 So 11:35</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
