@@ -43,6 +43,7 @@
 
       optional = {
         gaming = lib.mkDefault true;
+        uni = lib.mkDefault true;
       };
     };
   };

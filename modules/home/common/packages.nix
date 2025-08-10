@@ -77,7 +77,7 @@
       libreoffice-qt
       xournalpp
       obsidian
-      spotify
+      # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
       spotify-player

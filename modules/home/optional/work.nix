@@ -18,25 +18,7 @@ in
         stable.prometheus.cli
         tigervnc
         openstackclient
-        pizauth
       ];
-
-      systemd.user.services.pizauth = {
-        Unit = {
-          Description = "Pizauth OAuth2 token manager";
-        };
-
-        Service = {
-          Type = "simple";
-          ExecStart = "${pkgs.pizauth}/bin/pizauth server -vvvv -d";
-          ExecReload = "${pkgs.pizauth}/bin/pizauth reload";
-          ExecStop = "${pkgs.pizauth}/bin/pizauth shutdown";
-        };
-
-        Install = {
-          WantedBy = [ "default.target" ];
-        };
-      };
 
       home.sessionVariables = {
         DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
@@ -371,28 +353,30 @@ in
         };
       };
 
+      swarselservices.pizauth = {
+        enable = true;
+        accounts = {
+          work = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+          };
+        };
+
+      };
+
       xdg =
         let
           inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
         in
         {
-          configFile."pizauth.conf".text = ''
-              account "work" {
-              auth_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-              token_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-              client_id = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-              client_secret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-              scopes = [
-                "https://outlook.office365.com/IMAP.AccessAsUser.All",
-                "https://outlook.office365.com/SMTP.Send",
-                "offline_access"
-              ];
-              // You don't have to specify login_hint, but it does make
-              // authentication a little easier.
-              login_hint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-            }
-          '';
-
           mimeApps = {
             defaultApplications = {
               "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];

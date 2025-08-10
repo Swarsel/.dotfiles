@@ -1855,6 +1855,7 @@ My work machine. Built for more security, this is the gold standard of my config
     swarselprofiles = {
       personal = lib.mkIf (!minimal) true;
       work = lib.mkIf (!minimal) true;
+      uni = lib.mkIf (!minimal) true;
       framework = lib.mkIf (!minimal) true;
       amdcpu = true;
       amdgpu = true;
@@ -13678,25 +13679,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
           stable.prometheus.cli
           tigervnc
           openstackclient
-          pizauth
         ];
-
-        systemd.user.services.pizauth = {
-          Unit = {
-            Description = "Pizauth OAuth2 token manager";
-          };
-
-          Service = {
-            Type = "simple";
-            ExecStart = "${pkgs.pizauth}/bin/pizauth server -vvvv -d";
-            ExecReload = "${pkgs.pizauth}/bin/pizauth reload";
-            ExecStop = "${pkgs.pizauth}/bin/pizauth shutdown";
-          };
-
-          Install = {
-            WantedBy = [ "default.target" ];
-          };
-        };
 
         home.sessionVariables = {
           DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
@@ -14031,28 +14014,30 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
           };
         };
 
+        swarselservices.pizauth = {
+          enable = true;
+          accounts = {
+            work = {
+              authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+              tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+              clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+              clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+              scopes = [
+                "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                "https://outlook.office365.com/SMTP.Send"
+                "offline_access"
+              ];
+              loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+            };
+          };
+
+        };
+
         xdg =
           let
             inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
           in
           {
-            configFile."pizauth.conf".text = ''
-                account "work" {
-                auth_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-                token_uri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-                client_id = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-                client_secret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-                scopes = [
-                  "https://outlook.office365.com/IMAP.AccessAsUser.All",
-                  "https://outlook.office365.com/SMTP.Send",
-                  "offline_access"
-                ];
-                // You don't have to specify login_hint, but it does make
-                // authentication a little easier.
-                login_hint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-              }
-            '';
-
             mimeApps = {
               defaultApplications = {
                 "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
@@ -14202,6 +14187,39 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
         };
       };
 
+  }
+
+#+end_src
+
+**** Uni
+:PROPERTIES:
+:CUSTOM_ID: h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6
+:END:
+
+#+begin_src nix-ts :tangle modules/home/optional/uni.nix :noweb yes
+  { config, lib, nixosConfig ? config, ... }:
+  {
+    options.swarselmodules.optional.uni = lib.mkEnableOption "optional uni settings";
+    config = lib.mkIf config.swarselmodules.optional.uni
+      {
+        swarselservices.pizauth = {
+          enable = true;
+          accounts = {
+            uni = {
+              authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+              tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+              clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+              clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+              scopes = [
+                "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                "https://outlook.office365.com/SMTP.Send"
+                "offline_access"
+              ];
+              loginHint = "${nixosConfig.repo.secrets.local.uni.mailAddress}";
+            };
+          };
+        };
+      };
   }
 
 #+end_src
@@ -16750,6 +16768,33 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+end_src
 
+**** Uni
+:PROPERTIES:
+:CUSTOM_ID: h:87a83b10-3c2f-407c-89aa-922ad77748a4
+:END:
+
+#+begin_src nix-ts :tangle profiles/nixos/uni/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselprofiles.uni = lib.mkEnableOption "is this a uni host";
+    config = lib.mkIf config.swarselprofiles.uni {
+      # swarselmodules = {
+      #   optional = {
+      #     uni = lib.mkDefault true;
+      #   };
+      # };
+      home-manager.users."${config.swarselsystems.mainUser}" = {
+        swarselprofiles = {
+          uni = lib.mkDefault true;
+        };
+      };
+
+    };
+
+  }
+
+#+end_src
+
 **** Framework
 :PROPERTIES:
 :CUSTOM_ID: h:eb272c99-842a-4095-bc65-283562749300
@@ -17061,6 +17106,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 
         optional = {
           gaming = lib.mkDefault true;
+          uni = lib.mkDefault true;
         };
       };
     };
@@ -17237,6 +17283,27 @@ This holds modules that are to be used on most hosts. These are also the most im
       swarselmodules = {
         optional = {
           work = lib.mkDefault true;
+        };
+      };
+    };
+
+  }
+
+#+end_src
+
+**** Uni
+:PROPERTIES:
+:CUSTOM_ID: h:56f509b9-3271-4212-b5ea-482dbe288bda
+:END:
+
+#+begin_src nix-ts :tangle profiles/home/uni/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselprofiles.uni = lib.mkEnableOption "is this a uni host";
+    config = lib.mkIf config.swarselprofiles.uni {
+      swarselmodules = {
+        optional = {
+          uni = lib.mkDefault true;
         };
       };
     };

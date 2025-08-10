@@ -16,6 +16,7 @@ in
   swarselprofiles = {
     personal = lib.mkIf (!minimal) true;
     work = lib.mkIf (!minimal) true;
+    uni = lib.mkIf (!minimal) true;
     framework = lib.mkIf (!minimal) true;
     amdcpu = true;
     amdgpu = true;
