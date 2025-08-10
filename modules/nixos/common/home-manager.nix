@@ -10,6 +10,7 @@
         inputs.nix-index-database.homeModules.nix-index
         inputs.sops-nix.homeManagerModules.sops
         # inputs.stylix.homeModules.stylix
+        inputs.spicetify-nix.homeManagerModules.default
         {
           imports = [
             "${self}/profiles/home"

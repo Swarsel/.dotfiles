@@ -387,115 +387,121 @@ A short overview over each input and what it does:
   This provides devshell support for flake-parts
 
 #+begin_src nix :noweb yes :tangle flake.nix
-    {
-      description = "SwarseFlake - Nix Flake for all SwarselSystems";
+  {
+    description = "SwarseFlake - Nix Flake for all SwarselSystems";
 
-      nixConfig = {
-        extra-substituters = [
-          "https://nix-community.cachix.org"
-          "https://cache.ngi0.nixos.org/"
+    nixConfig = {
+      extra-substituters = [
+        "https://nix-community.cachix.org"
+        "https://cache.ngi0.nixos.org/"
+      ];
+      extra-trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
+      ];
+    };
+    inputs = {
+      nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+      nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
+      nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
+      nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
+      nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+      nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+      systems.url = "github:nix-systems/default";
+      swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
+      home-manager = {
+        url = "github:nix-community/home-manager";
+        # url = "github:Swarsel/home-manager/module/pizauth";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      swarsel.url = "github:Swarsel/.dotfiles";
+      emacs-overlay = {
+        url = "github:nix-community/emacs-overlay";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nur.url = "github:nix-community/NUR";
+      nixgl.url = "github:guibou/nixGL";
+      stylix.url = "github:danth/stylix";
+      sops-nix.url = "github:Mic92/sops-nix";
+      lanzaboote.url = "github:nix-community/lanzaboote";
+      nix-on-droid = {
+        url = "github:nix-community/nix-on-droid/release-24.05";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nixos-generators = {
+        url = "github:nix-community/nixos-generators";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nixos-hardware = {
+        url = "github:NixOS/nixos-hardware/master";
+      };
+      nswitch-rcm-nix = {
+        url = "github:Swarsel/nswitch-rcm-nix";
+      };
+      nix-index-database = {
+        url = "github:nix-community/nix-index-database";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      disko = {
+        url = "github:nix-community/disko";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      impermanence.url = "github:nix-community/impermanence";
+      zjstatus = {
+        url = "github:dj95/zjstatus";
+      };
+      fw-fanctrl = {
+        url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nix-darwin = {
+        url = "github:lnl7/nix-darwin";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      pre-commit-hooks = {
+        url = "github:cachix/git-hooks.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      vbc-nix = {
+        url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      nix-topology.url = "github:oddlama/nix-topology";
+      flake-parts.url = "github:hercules-ci/flake-parts";
+      devshell = {
+        url = "github:numtide/devshell";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+      spicetify-nix = {
+        url = "github:Gerg-l/spicetify-nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
+    };
+    outputs =
+      inputs:
+      inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+        imports = [
+          ./nix/globals.nix
+          ./nix/hosts.nix
+          ./nix/topology.nix
+          ./nix/devshell.nix
+          ./nix/apps.nix
+          ./nix/packages.nix
+          ./nix/overlays.nix
+          ./nix/lib.nix
+          ./nix/templates.nix
+          ./nix/formatter.nix
+          ./nix/modules.nix
+          ./nix/iso.nix
         ];
-        extra-trusted-public-keys = [
-          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-          "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+          "x86_64-darwin"
+          "aarch64-darwin"
         ];
       };
-      inputs = {
-        nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-        nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
-        nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
-        nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
-        nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
-        nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
-        systems.url = "github:nix-systems/default";
-        home-manager = {
-          url = "github:nix-community/home-manager";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        swarsel.url = "github:Swarsel/.dotfiles";
-        emacs-overlay = {
-          url = "github:nix-community/emacs-overlay";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        nur.url = "github:nix-community/NUR";
-        nixgl.url = "github:guibou/nixGL";
-        stylix.url = "github:danth/stylix";
-        sops-nix.url = "github:Mic92/sops-nix";
-        lanzaboote.url = "github:nix-community/lanzaboote";
-        nix-on-droid = {
-          url = "github:nix-community/nix-on-droid/release-24.05";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        nixos-generators = {
-          url = "github:nix-community/nixos-generators";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        nixos-hardware = {
-          url = "github:NixOS/nixos-hardware/master";
-        };
-        nswitch-rcm-nix = {
-          url = "github:Swarsel/nswitch-rcm-nix";
-        };
-        nix-index-database = {
-          url = "github:nix-community/nix-index-database";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        disko = {
-          url = "github:nix-community/disko";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        impermanence.url = "github:nix-community/impermanence";
-        zjstatus = {
-          url = "github:dj95/zjstatus";
-        };
-        fw-fanctrl = {
-          url = "github:TamtamHero/fw-fanctrl/packaging/nix";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        nix-darwin = {
-          url = "github:lnl7/nix-darwin";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        pre-commit-hooks = {
-          url = "github:cachix/git-hooks.nix";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        vbc-nix = {
-          url = "git+ssh://git@github.com/vbc-it/vbc-nix.git?ref=main";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-        nix-topology.url = "github:oddlama/nix-topology";
-        flake-parts.url = "github:hercules-ci/flake-parts";
-        devshell = {
-          url = "github:numtide/devshell";
-          inputs.nixpkgs.follows = "nixpkgs";
-        };
-      };
-      outputs =
-        inputs:
-        inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-          imports = [
-            ./nix/globals.nix
-            ./nix/hosts.nix
-            ./nix/topology.nix
-            ./nix/devshell.nix
-            ./nix/apps.nix
-            ./nix/packages.nix
-            ./nix/overlays.nix
-            ./nix/lib.nix
-            ./nix/templates.nix
-            ./nix/formatter.nix
-            ./nix/modules.nix
-            ./nix/iso.nix
-          ];
-          systems = [
-            "x86_64-linux"
-            "aarch64-linux"
-            "x86_64-darwin"
-            "aarch64-darwin"
-          ];
-        };
-    }
+  }
 #+end_src
 ** Auxiliary files
 :PROPERTIES:
@@ -4109,6 +4115,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
             inputs.nix-index-database.homeModules.nix-index
             inputs.sops-nix.homeManagerModules.sops
             # inputs.stylix.homeModules.stylix
+            inputs.spicetify-nix.homeManagerModules.default
             {
               imports = [
                 "${self}/profiles/home"
@@ -10712,7 +10719,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         libreoffice-qt
         xournalpp
         obsidian
-        spotify
+        # spotify
         vesktop # discord client
         # nextcloud-client # enables a systemd service that I do not want
         spotify-player
@@ -13502,6 +13509,37 @@ This service changes the screen hue at night. I am not sure if that really does 
         enable = true;
         provider = "manual";
         inherit longitude latitude;
+      };
+    };
+  }
+#+end_src
+
+**** Spicetify
+:PROPERTIES:
+:CUSTOM_ID: h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708
+:END:
+
+
+#+begin_src nix-ts :tangle modules/home/common/spicetify.nix
+  { inputs, lib, config, pkgs, ... }:
+  let
+    moduleName = "spicetify";
+    spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.system};
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.spicetify = {
+        enable = true;
+        spotifyPackage = pkgs.stable24_11.spotify;
+        enabledExtensions = with spicePkgs.extensions; [
+          fullAppDisplay
+          shuffle
+          hidePodcasts
+          fullAlbumDate
+          skipStats
+          history
+        ];
       };
     };
   }
@@ -17103,6 +17141,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         kanshi = lib.mkDefault true;
         gpgagent = lib.mkDefault true;
         gammastep = lib.mkDefault true;
+        spicetify = lib.mkDefault true;
 
         optional = {
           gaming = lib.mkDefault true;

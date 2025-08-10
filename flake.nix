@@ -81,6 +81,10 @@
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    spicetify-nix = {
+      url = "github:Gerg-l/spicetify-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs =
     inputs:

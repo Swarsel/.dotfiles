@@ -48,6 +48,7 @@
         emacs.enable = false;
         waybar.enable = false;
         sway.useWallpaper = false;
+        spicetify.enable = true;
         firefox.profileNames = [ "default" ];
       };
 

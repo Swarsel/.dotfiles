@@ -40,6 +40,7 @@
       kanshi = lib.mkDefault true;
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
+      spicetify = lib.mkDefault true;
 
       optional = {
         gaming = lib.mkDefault true;
