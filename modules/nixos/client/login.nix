@@ -5,7 +5,8 @@
     services.greetd = {
       enable = true;
       settings = {
-        initial_session.command = "sway";
+        # initial_session.command = "sway";
+        initial_session.command = "uwsm start -- sway-uwsm.desktop";
         default_session.command = ''
           ${pkgs.tuigreet}/bin/tuigreet \
             --time \
@@ -16,8 +17,8 @@
       };
     };
 
-    environment.etc."greetd/environments".text = ''
-      sway
-    '';
+    # environment.etc."greetd/environments".text = ''
+    #   sway
+    # '';
   };
 }

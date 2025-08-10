@@ -59,9 +59,9 @@ in
           Settings = {
             AutoConnect = true;
           };
-          DriverQuirks = {
-            UseDefaultInterface = true;
-          };
+          # DriverQuirks = {
+          #   UseDefaultInterface = true;
+          # };
         };
       };
       nftables.enable = lib.mkDefault true;

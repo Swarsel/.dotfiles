@@ -1,4 +1,4 @@
-{ self, config, lib, ... }:
+{ self, config, lib, vars, ... }:
 let
   eachOutput = _: monitor: {
     inherit (monitor) name;
@@ -27,8 +27,8 @@ in
         # { command = "nextcloud --background"; }
         { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
         { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+        { command = "anki"; }
+        { command = "obsidian"; }
         { command = "nm-applet"; }
         # { command = "feishin"; }
       ];
@@ -59,16 +59,16 @@ in
     };
     swayfxConfig = lib.mkOption {
       type = lib.types.str;
-      default = "
-                        blur enable
-                        blur_xray disable
-                        blur_passes 1
-                        blur_radius 1
-                        shadows enable
-                        corner_radius 2
-                        titlebar_separator disable
-                        default_dim_inactive 0.02
-                    ";
+      default = ''
+        blur enable
+        blur_xray disable
+        blur_passes 1
+        blur_radius 1
+        shadows enable
+        corner_radius 2
+        titlebar_separator disable
+        default_dim_inactive 0.02
+      '';
       internal = true;
     };
   };
@@ -85,15 +85,29 @@ in
       };
       swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
     };
+
     wayland.windowManager.sway = {
       enable = true;
-      checkConfig = false; # delete this line once SwayFX is fixed upstream
+      # checkConfig = false; # delete this line once SwayFX is fixed upstream
       package = lib.mkIf config.swarselsystems.isNixos null;
       systemd = {
         enable = true;
         xdgAutostart = true;
+        variables = [
+          "DISPLAY"
+          "WAYLAND_DISPLAY"
+          "SWAYSOCK"
+          "XDG_CURRENT_DESKTOP"
+          "XDG_SESSION_TYPE"
+          "NIXOS_OZONE_WL"
+          "XCURSOR_THEME"
+          "XCURSOR_SIZE"
+        ];
       };
-      wrapperFeatures.gtk = true;
+      wrapperFeatures = {
+        base = true;
+        gtk = true;
+      };
       config = rec {
         modifier = "Mod4";
         # terminal = "kitty";
@@ -371,16 +385,10 @@ in
         };
       };
       extraSessionCommands = ''
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
-        export _JAVA_AWT_WM_NONREPARENTING=1
-        export XDG_CURRENT_DESKTOP=sway
-        export XDG_SESSION_DESKTOP=sway
-        export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
-        export ANKI_WAYLAND=1;
-        export OBSIDIAN_USE_WAYLAND=1;
-      '';
+        export XDG_CURRENT_DESKTOP=sway;
+        export XDG_SESSION_DESKTOP=sway;
+        export _JAVA_AWT_WM_NONREPARENTING=1;
+      '' + vars.waylandExports;
       # extraConfigEarly = "
       # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
       # exec hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
@@ -391,36 +399,36 @@ in
           swayfxSettings = config.swarselsystems.swayfxConfig;
         in
         "
-          exec_always autotiling
-          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+exec_always autotiling
+            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-          mode $exit {
-            bindsym --to-code {
-              s exec \"systemctl suspend\", mode \"default\"
-              h exec \"systemctl hibernate\", mode \"default\"
-              l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-              p exec \"systemctl poweroff\"
-              r exec \"systemctl reboot\"
-              u exec \"swaymsg exit\"
+            mode $exit {
+              bindsym --to-code {
+                s exec \"systemctl suspend\", mode \"default\"
+                h exec \"systemctl hibernate\", mode \"default\"
+                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+                p exec \"systemctl poweroff\"
+                r exec \"systemctl reboot\"
+                u exec \"swaymsg exit\"
 
-              Return mode \"default\"
-              Escape mode \"default\"
-              ${modifier}+Escape mode \"default\"
+                Return mode \"default\"
+                Escape mode \"default\"
+                ${modifier}+Escape mode \"default\"
+              }
             }
-          }
 
-          exec systemctl --user import-environment
-          exec swayidle -w
+            exec systemctl --user import-environment
+            exec swayidle -w
 
-          seat * hide_cursor 2000
+            seat * hide_cursor 2000
 
-          exec_always kill -1 $(pidof kanshi)
+            exec_always kill -1 $(pidof kanshi)
 
-          bindswitch --locked lid:on exec kanshictl switch lidclosed
-          bindswitch --locked lid:off exec kanshictl switch lidopen
+            bindswitch --locked lid:on exec kanshictl switch lidclosed
+            bindswitch --locked lid:off exec kanshictl switch lidopen
 
-          ${swayfxSettings}
-          ";
+            ${swayfxSettings}
+            ";
     };
   };
 }

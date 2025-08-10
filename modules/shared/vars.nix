@@ -1,7 +1,22 @@
 { self, lib, pkgs, ... }:
 {
   _module.args = {
-    vars = {
+    vars = rec {
+      waylandSessionVariables = {
+        SDL_VIDEODRIVER = "wayland";
+        QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
+        QT_QPA_PLATFORM = "wayland-egl";
+        ANKI_WAYLAND = "1";
+        OBSIDIAN_USE_WAYLAND = "1";
+        MOZ_ENABLE_WAYLAND = "1";
+      };
+
+      waylandExports =
+        let
+          renderedWaylandExports = map (key: "export ${key}=${waylandSessionVariables.${key}};") (builtins.attrNames waylandSessionVariables);
+        in
+        builtins.concatStringsSep "\n" renderedWaylandExports;
+
       stylix = {
         polarity = "dark";
         opacity.popups = 0.5;

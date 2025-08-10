@@ -1,24 +1,22 @@
-{ lib, config, globals, nixosConfig ? config, ... }:
+{ lib, config, nixosConfig ? config, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
   inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
   inherit (nixosConfig.repo.secrets.common) fullName;
-  inherit (config.swarselsystems) isPublic;
-  crocDomain = globals.services.croc.domain;
+  inherit (config.swarselsystems) isPublic homeDir;
+
+  DISPLAY = ":0";
 in
 {
   options.swarselmodules.env = lib.mkEnableOption "env settings";
   config = lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
+      inherit DISPLAY;
       EDITOR = "e -w";
-      DISPLAY = ":0";
-      SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-      SWARSEL_HI_RES = config.swarselsystems.highResolution;
-    } // (lib.optionalAttrs (!isPublic) {
-      CROC_RELAY = crocDomain;
-      GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
-    });
-    systemd.user.sessionVariables = lib.mkIf (!isPublic) {
+    } // (lib.optionalAttrs (!isPublic) { });
+    systemd.user.sessionVariables = {
+      DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+    } // lib.optionalAttrs (!isPublic) {
       SWARSEL_MAIL1 = address1;
       SWARSEL_MAIL2 = address2;
       SWARSEL_MAIL3 = address3;

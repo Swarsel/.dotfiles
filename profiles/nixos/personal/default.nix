@@ -36,6 +36,7 @@
       impermanence = lib.mkDefault true;
       nvd = lib.mkDefault true;
       gnome-keyring = lib.mkDefault true;
+      uwsm = lib.mkDefault true;
       sway = lib.mkDefault true;
       xdg-portal = lib.mkDefault true;
       distrobox = lib.mkDefault true;

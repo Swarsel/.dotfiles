@@ -20,8 +20,7 @@ in
         openstackclient
       ];
 
-      home.sessionVariables = {
-        DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+      systemd.user.sessionVariables = {
         DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
       };
 
@@ -135,6 +134,19 @@ in
               s = "$HOME/.dotfiles/secrets";
               pr = "$HOME/Documents/Private";
               ac = path1;
+            };
+
+            sessionVariables = {
+              VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
+              VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
+              GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
+              GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
+              GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
+              GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
+              GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
+              GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
+              GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
+              GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
             };
           };
 
@@ -424,8 +436,8 @@ in
           # { command = "nextcloud --background"; }
           { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
           { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "ANKI_WAYLAND=1 anki"; }
-          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
+          { command = "anki"; }
+          { command = "obsidian"; }
           { command = "nm-applet"; }
           # { command = "feishin"; }
           { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }

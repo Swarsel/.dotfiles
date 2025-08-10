@@ -2,6 +2,11 @@
 {
   options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
   config = lib.mkIf config.swarselmodules.firefox {
+
+    programs.zsh.sessionVariables = {
+      MOZ_DISABLE_RDD_SANDBOX = "1";
+    };
+
     programs.firefox = {
       enable = true;
       package = pkgs.firefox; # uses overrides

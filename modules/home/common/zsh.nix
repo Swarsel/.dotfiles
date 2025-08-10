@@ -1,6 +1,7 @@
-{ config, lib, minimal, nixosConfig ? config, ... }:
+{ config, pkgs, lib, minimal, globals, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) flakePath;
+  crocDomain = globals.services.croc.domain;
 in
 {
   options.swarselmodules.zsh = lib.mkEnableOption "zsh settings";
@@ -86,7 +87,7 @@ in
           #   src = pkgs.zsh-fzf-tab;
           # }
         ];
-        initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
+        initContent = ''
           my-forward-word() {
             local WORDCHARS=$WORDCHARS
             WORDCHARS="''${WORDCHARS//:}"
@@ -125,10 +126,14 @@ in
           zle -N my-backward-delete-word
           # ctrl + del
           bindkey '^H' my-backward-delete-word
-
-          export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
-          export GITHUB_TOKEN="$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})"
         '';
+        sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
+          CROC_RELAY = crocDomain;
+          CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path})";
+          GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})";
+          QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+          # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
+        };
       };
     };
 }

@@ -83,18 +83,6 @@ in
     };
 
     programs = {
-      zsh.shellInit = ''
-        export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
-        export VSPHERE_PW="$(cat ${config.sops.secrets.vcpw.path})"
-        export GOVC_USERNAME="$(cat ${config.sops.secrets.govcuser.path})"
-        export GOVC_PASSWORD="$(cat ${config.sops.secrets.govcpw.path})"
-        export GOVC_URL="$(cat ${config.sops.secrets.govcurl.path})"
-        export GOVC_DATACENTER="$(cat ${config.sops.secrets.govcdc.path})"
-        export GOVC_DATASTORE="$(cat ${config.sops.secrets.govcds.path})"
-        export GOVC_HOST="$(cat ${config.sops.secrets.govchost.path})"
-        export GOVC_RESOURCE_POOL="$(cat ${config.sops.secrets.govcpool.path})"
-        export GOVC_NETWORK="$(cat ${config.sops.secrets.govcnetwork.path})"
-      '';
 
       browserpass.enable = true;
       _1password.enable = true;

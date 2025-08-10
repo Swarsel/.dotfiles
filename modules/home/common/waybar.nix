@@ -64,11 +64,13 @@ in
       github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };
 
+    services.playerctld.enable = true;
+
     programs.waybar = {
       enable = true;
       systemd = {
         enable = true;
-        target = "sway-sessions.target";
+        target = "sway-session.target";
       };
       settings = {
         mainBar = {
