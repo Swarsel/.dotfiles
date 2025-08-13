@@ -19,6 +19,7 @@
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             inputs.swarsel-modules.nixosModules.default
+            inputs.niri-flake.nixosModules.niri
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
