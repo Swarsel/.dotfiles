@@ -24,6 +24,10 @@ in
                 ];
               };
 
+              isync = prev.isync.override {
+                withCyrusSaslXoauth2 = true;
+              };
+
               mgba = final.swarsel-mgba;
 
               retroarch = prev.retroarch.withCores (cores: with cores; [
@@ -86,6 +90,7 @@ in
           // (nixpkgs-stable24_05 final prev)
           // (nixpkgs-stable24_11 final prev)
           // (zjstatus final prev)
+          // (inputs.niri-flake.overlays.niri final prev)
           // (inputs.vbc-nix.overlays.default final prev)
           // (inputs.nur.overlays.default final prev)
           // (inputs.emacs-overlay.overlay final prev)
