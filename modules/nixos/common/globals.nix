@@ -39,6 +39,18 @@ in
             );
           };
 
+          hosts = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  ipv4 = mkOption {
+                    type = types.str;
+                  };
+                };
+              }
+            );
+          };
+
           domains = {
             main = mkOption {
               type = types.str;

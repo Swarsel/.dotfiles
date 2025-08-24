@@ -1,9 +1,10 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, globals, ... }:
 let
   servicePort = 8096;
   serviceName = "jellyfin";
   serviceUser = "jellyfin";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -37,7 +38,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

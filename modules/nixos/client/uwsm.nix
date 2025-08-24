@@ -13,6 +13,11 @@ in
           comment = "Sway compositor managed by UWSM";
           binPath = "/run/current-system/sw/bin/sway";
         };
+        niri = {
+          prettyName = "Niri";
+          comment = "Niri compositor managed by UWSM";
+          binPath = "/run/current-system/sw/bin/niri-session";
+        };
       };
     };
   };

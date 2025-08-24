@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, globals, ... }:
+{ self, lib, config, pkgs, globals, inputs, ... }:
 let
   inherit (config.swarselsystems) homeDir isPublic isNixos;
   inherit (config.repo.secrets.common.emacs) radicaleUser;
@@ -56,17 +56,19 @@ in
 
             packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
           })
-          (epkgs.trivialBuild rec {
-            pname = "calfw";
-            version = "1.0.0-20231002";
-            src = pkgs.fetchFromGitHub {
-              owner = "haji-ali";
-              repo = "emacs-calfw";
-              rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-              hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-            };
-            packageRequires = [ epkgs.howm ];
-          })
+          (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
+          # epkgs.calfw
+          # (epkgs.trivialBuild rec {
+          #   pname = "calfw";
+          #   version = "1.0.0-20231002";
+          #   src = pkgs.fetchFromGitHub {
+          #     owner = "haji-ali";
+          #     repo = "emacs-calfw";
+          #     rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+          #     hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+          #   };
+          #   packageRequires = [ epkgs.howm ];
+          # })
 
           (epkgs.trivialBuild rec {
             pname = "fast-scroll";

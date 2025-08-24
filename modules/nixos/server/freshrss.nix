@@ -1,10 +1,11 @@
-{ self, lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
   servicePort = 80;
   serviceName = "freshrss";
   serviceUser = "freshrss";
   serviceGroup = serviceName;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   inherit (config.swarselsystems) sopsFile;
 in
@@ -77,7 +78,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

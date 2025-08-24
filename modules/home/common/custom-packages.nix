@@ -11,6 +11,7 @@
       timer
       e
       swarselcheck
+      swarselcheck-niri
       waybarupdate
       opacitytoggle
       fs-diff

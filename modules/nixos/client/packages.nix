@@ -23,7 +23,6 @@
       dbus
       swaylock-effects
       syncthingtray-minimal
-      wl-mirror
       swayosd
 
       # secure boot
@@ -48,8 +47,6 @@
       # better make for general tasks
       just
 
-      screenshare
-      fullscreen
 
       # keyboards
       qmk
@@ -61,6 +58,7 @@
 
       # kde-connect
       xdg-desktop-portal
+      xdg-desktop-portal-gtk
       xdg-desktop-portal-wlr
 
       # bluetooth

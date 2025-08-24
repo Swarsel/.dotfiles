@@ -1,10 +1,11 @@
-{ self, lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
   servicePort = 80;
   serviceUser = "firefly-iii";
   serviceGroup = serviceUser;
   serviceName = "firefly-iii";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   nginxGroup = "nginx";
 
@@ -81,7 +82,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

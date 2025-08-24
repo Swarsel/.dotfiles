@@ -19,7 +19,7 @@
           user = "root";
         };
         "winters" = {
-          hostname = "192.168.1.2";
+          hostname = "192.168.178.24";
           user = "root";
         };
         "minecraft" = {

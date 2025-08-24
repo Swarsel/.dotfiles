@@ -1,12 +1,14 @@
-{ lib, config, configName, ... }:
+{ lib, config, configName, globals, ... }:
 let
+  inherit (config.swarselsystems.syncthing) serviceDomain;
+  inherit (config.swarselsystems.syncthing) serviceIP;
+
   servicePort = 8384;
   serviceUser = "syncthing";
   serviceGroup = serviceUser;
   serviceName = "syncthing";
+  serviceAddress = globals.hosts.winters.ipv4;
   specificServiceName = "syncthing-${configName}";
-  inherit (config.swarselsystems.syncthing) serviceDomain;
-  inherit (config.swarselsystems.syncthing) serviceIP;
 
   cfg = config.services.${serviceName};
   devices = config.swarselsystems.syncthing.syncDevices;
@@ -22,7 +24,7 @@ in
       };
       serviceIP = lib.mkOption {
         type = lib.types.str;
-        default = "192.168.1.2";
+        default = "${serviceAddress}";
       };
       syncDevices = lib.mkOption {
         type = lib.types.listOf lib.types.str;

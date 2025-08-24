@@ -24,7 +24,7 @@ in
         emacs-radicale-pw = { owner = mainUser; };
       });
       templates = {
-        authinfo = {
+        authinfo = lib.mkIf modules.emacs {
           path = "${homeDir}/.emacs.d/.authinfo";
           content = ''
             machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}

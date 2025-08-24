@@ -1,16 +1,16 @@
-{ lib, config, ... }:
+{ self, lib, pkgs, config, ... }:
 {
   options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
   config = lib.mkIf config.swarselmodules.kanshi {
     swarselsystems = {
       monitors = {
-        homedesktop = {
+        homedesktop = rec {
           name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
           mode = "2560x1440";
           scale = "1";
           position = "0,0";
-          workspace = "1:一";
-          output = "DP-11";
+          workspace = "11:M";
+          output = name;
         };
       };
     };
@@ -36,6 +36,7 @@
         {
           profile = {
             name = "lidopen";
+            exec = [ "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}" ];
             outputs = [
               {
                 criteria = "eDP-2";
@@ -46,41 +47,51 @@
           };
         }
         {
-          profile = {
-            name = "lidopen";
-            outputs = [
-              {
-                criteria = config.swarselsystems.sharescreen;
-                status = "enable";
-                scale = 1.7;
-                position = "2560,0";
-              }
-              {
-                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                scale = 1.0;
-                mode = "2560x1440";
-                position = "0,0";
-              }
-            ];
-          };
+          profile =
+            let
+              monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            in
+            {
+              name = "lidopen";
+              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}" ];
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.7;
+                  position = "2560,0";
+                }
+                {
+                  criteria = monitor;
+                  scale = 1.0;
+                  mode = "2560x1440";
+                  position = "0,0";
+                }
+              ];
+            };
         }
         {
-          profile = {
-            name = "lidclosed";
-            outputs = [
-              {
-                criteria = config.swarselsystems.sharescreen;
-                status = "disable";
-                position = "2560,0";
-              }
-              {
-                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                scale = 1.0;
-                mode = "2560x1440";
-                position = "0,0";
-              }
-            ];
-          };
+          profile =
+            let
+              monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            in
+            {
+              name = "lidclosed";
+              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}" ];
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                  position = "2560,0";
+                }
+                {
+                  criteria = monitor;
+                  scale = 1.0;
+                  mode = "2560x1440";
+                  position = "0,0";
+                }
+              ];
+            };
         }
       ];
     };
