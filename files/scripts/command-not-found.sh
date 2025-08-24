@@ -6,7 +6,7 @@ command_not_found_handle() {
     fi
 
     echo -n "searching nix-index..."
-    ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --top-level --whole-name --at-root "/bin/$1")
+    ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
 
     case $(echo -n "$ATTRS" | grep -c "^") in
     0)

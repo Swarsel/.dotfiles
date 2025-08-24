@@ -54,6 +54,7 @@
           inherit (globalsSystem.config.globals)
             domains
             services
+            hosts
             user
             root
             ;

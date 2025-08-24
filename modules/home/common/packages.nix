@@ -70,6 +70,7 @@
       restic
 
       # "big" programs
+      obs-studio
       gimp
       inkscape
       zoom-us
@@ -80,7 +81,7 @@
       # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
-      spotify-player
+      stable.spotify-player
       element-desktop
       nicotine-plus
       stable.transmission_3
@@ -135,8 +136,8 @@
 
       # wayland stuff
       wtype
+      wl-mirror
       wl-clipboard
-      stable.wl-mirror
       wf-recorder
       kanshi
 

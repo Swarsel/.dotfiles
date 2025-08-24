@@ -8,6 +8,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "kanidm";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
   immichDomain = globals.services.immich.domain;
@@ -237,7 +238,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

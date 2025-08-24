@@ -70,18 +70,27 @@ in
       enable = true;
       systemd = {
         enable = true;
-        target = "sway-session.target";
+        # target = "sway-session.target";
+        inherit (config.wayland.systemd) target;
       };
       settings = {
         mainBar = {
           ipc = true;
           id = "bar-0";
+          # mode = "hide";
+          # mode = "overlay";
+          # passthrough = false;
+          # start_hidden = true;
           layer = "top";
           position = "top";
-          modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
+          modules-left = [ "sway/workspaces" "niri/workspaces" "custom/outer-right-arrow-dark" "niri/window" "sway/window" ];
           modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
           "sway/mode" = {
             format = "<span style=\"italic\" font-weight=\"bold\">{}</span>";
+          };
+
+          "niri/window" = {
+            format = "<span style=\"italic\" font-weight=\"bold\">{title} ({app_id})</span>";
           };
 
           modules-right = config.swarselsystems.waybarModules;

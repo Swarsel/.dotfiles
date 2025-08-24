@@ -1,10 +1,11 @@
-{ pkgs, config, lib, ... }:
+{ pkgs, config, lib, globals, ... }:
 let
   servicePort = 4040;
   serviceName = "navidrome";
   serviceUser = "navidrome";
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -84,7 +85,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

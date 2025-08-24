@@ -59,9 +59,8 @@ in
             };
           };
           msmtp = {
-            enable = false;
+            enable = true;
             extraConfig = {
-              account = "work";
               auth = "xoauth2";
               host = "outlook.office365.com";
               protocol = "smtp";
@@ -73,10 +72,11 @@ in
               passwordeval = "pizauth show work";
             };
           };
-          mu.enable = false;
+          mu.enable = true;
           mbsync = {
-            enable = false;
+            enable = true;
             expunge = "both";
+            patterns = [ "INBOX" ];
             extraConfig = {
               account = {
                 AuthMechs = "XOAUTH2";
@@ -85,19 +85,19 @@ in
           };
         };
 
-      wayland.windowManager.sway.config = {
-        output = {
-          "Applied Creative Technology Transmitter QUATTRO201811" = {
-            bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-          };
-          "Hewlett Packard HP Z24i CN44250RDT" = {
-            bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-          };
-          "HP Inc. HP 732pk CNC4080YL5" = {
-            bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-          };
-        };
-      };
+      # wayland.windowManager.sway.config = {
+      #   output = {
+      #     "Applied Creative Technology Transmitter QUATTRO201811" = {
+      #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+      #     };
+      #     "Hewlett Packard HP Z24i CN44250RDT" = {
+      #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+      #     };
+      #     "HP Inc. HP 732pk CNC4080YL5" = {
+      #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+      #     };
+      #   };
+      # };
 
       stylix = {
         targets.firefox.profileNames =
@@ -278,6 +278,10 @@ in
             {
               profile = {
                 name = "lidopen";
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                ];
                 outputs = [
                   {
                     criteria = config.swarselsystems.sharescreen;
@@ -302,27 +306,39 @@ in
               };
             }
             {
-              profile = {
-                name = "lidopen";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
-                    scale = 1.7;
-                    position = "2560,0";
-                  }
-                  {
-                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                    scale = 1.0;
-                    mode = "1280x720";
-                    position = "10000,10000";
-                  }
-                ];
-              };
+              profile =
+                let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                in
+                {
+                  name = "lidopen";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "enable";
+                      scale = 1.7;
+                      position = "2560,0";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
+                };
             }
             {
               profile = {
                 name = "lidclosed";
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                ];
                 outputs = [
                   {
                     criteria = config.swarselsystems.sharescreen;
@@ -345,28 +361,47 @@ in
               };
             }
             {
-              profile = {
-                name = "lidclosed";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "disable";
-                  }
-                  {
-                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                    scale = 1.0;
-                    mode = "1280x720";
-                    position = "10000,10000";
-                  }
-                ];
-              };
+              profile =
+                let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                in
+                {
+                  name = "lidclosed";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "disable";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
+                };
             }
           ];
         };
       };
 
+      systemd.user.services.pizauth.Service = {
+        ExecStartPost = [
+          "${pkgs.toybox}/bin/sleep 1"
+          "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+        ];
+      };
+
       swarselservices.pizauth = {
         enable = true;
+        extraConfig = ''
+          auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+          token_event_cmd = "pizauth dump > ${homeDir}/.pizauth.state";
+        '';
         accounts = {
           work = {
             authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
@@ -444,70 +479,60 @@ in
           { command = "1password"; }
         ];
         monitors = {
-          main = {
-            name = "BOE 0x0BC9 Unknown";
-            mode = "2560x1600"; # TEMPLATE
-            scale = "1";
-            position = "2560,0";
-            workspace = "15:L";
-            output = "eDP-2";
-          };
-          homedesktop = {
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-            mode = "2560x1440";
-            scale = "1";
-            position = "0,0";
-            workspace = "1:一";
-            output = "DP-11";
-          };
-          work_back_middle = {
+          work_back_middle = rec {
             name = "LG Electronics LG Ultra HD 0x000305A6";
             mode = "2560x1440";
             scale = "1";
             position = "5120,0";
             workspace = "1:一";
-            output = "DP-10";
+            # output = "DP-10";
+            output = name;
           };
-          work_front_left = {
+          work_front_left = rec {
             name = "LG Electronics LG Ultra HD 0x0007AB45";
             mode = "3840x2160";
             scale = "1";
             position = "5120,0";
             workspace = "1:一";
-            output = "DP-7";
+            # output = "DP-7";
+            output = name;
           };
-          work_back_right = {
+          work_back_right = rec {
             name = "HP Inc. HP Z32 CN41212T55";
             mode = "3840x2160";
             scale = "1";
             position = "5120,0";
             workspace = "1:一";
-            output = "DP-3";
+            # output = "DP-3";
+            output = name;
           };
-          work_middle_middle_main = {
+          work_middle_middle_main = rec {
             name = "HP Inc. HP 732pk CNC4080YL5";
             mode = "3840x2160";
             scale = "1";
             position = "-1280,0";
             workspace = "11:M";
-            output = "DP-8";
+            # output = "DP-8";
+            output = name;
           };
-          work_middle_middle_side = {
+          work_middle_middle_side = rec {
             name = "Hewlett Packard HP Z24i CN44250RDT";
             mode = "1920x1200";
             transform = "270";
             scale = "1";
             position = "-2480,0";
             workspace = "12:S";
-            output = "DP-9";
+            # output = "DP-9";
+            output = name;
           };
-          work_seminary = {
+          work_seminary = rec {
             name = "Applied Creative Technology Transmitter QUATTRO201811";
             mode = "1280x720";
             scale = "1";
             position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
             workspace = "14:T";
-            output = "DP-4";
+            # output = "DP-4";
+            output = name;
           };
         };
         inputs = {
@@ -530,9 +555,6 @@ in
             xkb_layout = "us";
             xkb_variant = "altgr-intl";
           };
-        };
-        keybindings = {
-          "Mod4+Ctrl+Shift+p" = "exec screenshare";
         };
 
       };

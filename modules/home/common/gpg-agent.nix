@@ -7,11 +7,14 @@ in
   config = lib.mkIf config.swarselmodules.gpgagent {
     services.gpg-agent = {
       enable = true;
+      verbose = true;
       enableZshIntegration = true;
       enableScDaemon = true;
       enableSshSupport = true;
       enableExtraSocket = true;
-      pinentry.package = pkgs.pinentry.gtk2;
+      pinentry.package = pkgs.wayprompt;
+      pinentry.program = "pinentry-wayprompt";
+      # pinentry.package = pkgs.pinentry.gtk2;
       defaultCacheTtl = 600;
       maxCacheTtl = 7200;
       extraConfig = ''

@@ -1579,6 +1579,7 @@ create a new one."
         '((:maildir "/leon/Inbox"    :key ?1)
           (:maildir "/nautilus/Inbox" :key ?2)
           (:maildir "/mrswarsel/Inbox"     :key ?3)
+          (:maildir "/work/Inbox"     :key ?4)
           (:maildir "/Sent Mail"     :key ?s)
           (:maildir "/Trash"     :key ?t)
           (:maildir "/Drafts"     :key ?d)

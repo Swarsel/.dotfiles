@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
   serviceUser = "koillection";
   serviceDB = "koillection";
@@ -6,6 +6,7 @@ let
   servicePort = 2282;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   serviceDir = "/Vault/data/koillection";
+  serviceAddress = globals.hosts.winters.ipv4;
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
@@ -107,7 +108,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

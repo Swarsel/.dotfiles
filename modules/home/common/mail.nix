@@ -119,6 +119,7 @@ in
                 account = {
                   Timeout = 120;
                   PipelineDepth = 1;
+                  AuthMechs = "LOGIN";
                 };
               };
             };

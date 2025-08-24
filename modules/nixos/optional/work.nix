@@ -1,28 +1,9 @@
 { self, lib, pkgs, config, configName, ... }:
 let
-  inherit (config.swarselsystems) mainUser homeDir xdgDir;
+  inherit (config.swarselsystems) mainUser homeDir;
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
   owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
-  swarselService = name: description: execStart: {
-    "${name}" = {
-      enable = true;
-      inherit description;
-      serviceConfig = {
-        ExecStart = execStart;
-        User = mainUser;
-        Group = "users";
-        Environment = [
-          "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
-          "XDG_RUNTIME_DIR=${xdgDir}"
-          "WAYLAND_DISPLAY=wayland-1"
-        ];
-        Type = "oneshot";
-        StandardOutput = "journal";
-        StandardError = "journal";
-      };
-    };
-  };
 in
 {
   options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
@@ -124,6 +105,7 @@ in
                 mac-address = "E8:65:38:52:63:FF";
                 mac-address-randomization = "1";
                 mode = "infrastructure";
+                band = "a";
                 ssid = "VBC";
               };
               wifi-security = {
@@ -171,10 +153,6 @@ in
     };
 
     environment.systemPackages = with pkgs; [
-      # (python39.withPackages (ps: with ps; [
-      # cryptography
-      # ]))
-      #   docker
       stable24_11.python39
       qemu
       packer
@@ -228,18 +206,11 @@ in
       };
 
       udev.extraRules = ''
-        # share screen when dongle detected
-        SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="343c", ATTRS{idProduct}=="0000", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
-
         # lock screen when yubikey removed
         ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
       '';
 
     };
-
-    systemd.services = lib.mkMerge [
-      (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
-    ];
 
     # cgroups v1 is required for centos7 dockers
     # specialisation = {

@@ -12,7 +12,7 @@ in
       users = {
         root = {
           inherit (globals.root) hashedPassword;
-          shell = pkgs.zsh;
+          # shell = pkgs.zsh;
         };
         "${config.swarselsystems.mainUser}" = {
           isNormalUser = true;

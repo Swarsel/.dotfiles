@@ -5,6 +5,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "grafana";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";
@@ -209,12 +210,12 @@ in
       upstreams = {
         "${grafanaUpstream}" = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
         "${prometheusUpstream}" = {
           servers = {
-            "192.168.1.2:${builtins.toString prometheusPort}" = { };
+            "${serviceAddress}:${builtins.toString prometheusPort}" = { };
           };
         };
       };

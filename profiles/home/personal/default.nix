@@ -37,6 +37,7 @@
       swayosd = lib.mkDefault true;
       yubikeytouch = lib.mkDefault true;
       sway = lib.mkDefault true;
+      niri = lib.mkDefault true;
       kanshi = lib.mkDefault true;
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;

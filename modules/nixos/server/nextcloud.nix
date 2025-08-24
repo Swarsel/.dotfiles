@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, config, globals, ... }:
 let
   inherit (config.repo.secrets.local.nextcloud) adminuser;
   inherit (config.swarselsystems) sopsFile;
@@ -8,6 +8,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "nextcloud";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -51,7 +52,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

@@ -56,7 +56,8 @@ in
       };
       monitors = {
         main = {
-          name = "BOE 0x0BC9 Unknown";
+          # name = "BOE 0x0BC9 Unknown";
+          name = "BOE 0x0BC9";
           mode = "2560x1600"; # TEMPLATE
           scale = "1";
           position = "2560,0";

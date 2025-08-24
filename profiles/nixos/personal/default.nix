@@ -26,6 +26,7 @@
       networkDevices = lib.mkDefault true;
       gvfs = lib.mkDefault true;
       interceptionTools = lib.mkDefault true;
+      # keyd = lib.mkDefault true;
       swayosd = lib.mkDefault true;
       ppd = lib.mkDefault true;
       yubikey = lib.mkDefault true;
@@ -38,6 +39,7 @@
       gnome-keyring = lib.mkDefault true;
       uwsm = lib.mkDefault true;
       sway = lib.mkDefault true;
+      niri = lib.mkDefault true;
       xdg-portal = lib.mkDefault true;
       distrobox = lib.mkDefault true;
       appimage = lib.mkDefault true;

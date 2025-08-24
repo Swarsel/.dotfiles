@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ self, lib, config, globals, ... }:
 let
   sopsFile = self + /secrets/winters/secrets2.yaml;
 
@@ -7,6 +7,7 @@ let
   serviceUser = "radicale";
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   cfg = config.services.${serviceName};
 in
@@ -85,7 +86,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

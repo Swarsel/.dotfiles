@@ -99,25 +99,26 @@ in
               ${wlan1} = {
                 connection = {
                   id = wlan1;
-                  permissions = "";
+                  # permissions = "";
                   type = "wifi";
                 };
                 ipv4 = {
-                  dns-search = "";
+                  # dns-search = "";
                   method = "auto";
                 };
                 ipv6 = {
                   addr-gen-mode = "stable-privacy";
-                  dns-search = "";
+                  # dns-search = "";
                   method = "auto";
                 };
                 wifi = {
-                  mac-address-blacklist = "";
+                  # mac-address-blacklist = "";
                   mode = "infrastructure";
+                  band = "a";
                   ssid = wlan1;
                 };
                 wifi-security = {
-                  auth-alg = "open";
+                  # auth-alg = "open";
                   key-mgmt = "wpa-psk";
                   psk = "$WLAN1_PW";
                 };

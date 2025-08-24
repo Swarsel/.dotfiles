@@ -1,4 +1,4 @@
-{ self, config, lib, vars, ... }:
+{ config, lib, vars, ... }:
 let
   eachOutput = _: monitor: {
     inherit (monitor) name;
@@ -201,22 +201,14 @@ in
               "${modifier}+r" = "mode resize";
               # "${modifier}+Return" = "exec kitty";
               "${modifier}+Return" = "exec swarselzellij";
-              "${modifier}+Print" = "exec screenshare";
-              # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
-              # "XF86AudioRaiseVolume" = "exec pa 5%";
-              # "XF86AudioRaiseVolume" = "exec pamixer -i 5";
               "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
-              # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-              # "XF86AudioLowerVolume" = "exec pamixer -d 5";
               "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
-              # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
-              # "XF86AudioMute" = "exec pamixer -t";
               "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
-              # "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
               "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
-              # "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
               "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
               "XF86Display" = "exec wl-mirror eDP-1";
+              # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
+              # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
             }
             config.swarselsystems.keybindings;
         modes = {
@@ -231,14 +223,14 @@ in
           };
         };
         defaultWorkspace = "workspace 1:一";
-        output = {
-          "${config.swarselsystems.sharescreen}" = {
-            bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
-          };
-          "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-            bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
-          };
-        };
+        # output = {
+        #   "${config.swarselsystems.sharescreen}" = {
+        #     bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+        #   };
+        #   "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
+        #     bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+        #   };
+        # };
         input = config.swarselsystems.standardinputs;
         workspaceOutputAssign =
           let

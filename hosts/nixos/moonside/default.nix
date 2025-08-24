@@ -14,6 +14,7 @@ in
     # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
     secrets = {
       wireguard-private-key = { inherit sopsFile; };
+      wireguard-home-preshared-key = { inherit sopsFile; };
     };
   };
 
@@ -49,16 +50,23 @@ in
       interfaces = {
         home-vpn = {
           privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-          ips = [ "192.168.3.4/32" ];
+          # ips = [ "192.168.3.4/32" ];
+          ips = [ "192.168.178.201/24" ];
           peers = [
             {
-              publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+              # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+              publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
+              presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
               name = "moonside";
               persistentKeepalive = 25;
-              endpoint = "${config.repo.secrets.common.ipv4}:51820";
+              # endpoint = "${config.repo.secrets.common.ipv4}:51820";
+              endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
+              # allowedIPs = [
+              #   "192.168.3.0/24"
+              #   "192.168.1.0/24"
+              # ];
               allowedIPs = [
-                "192.168.3.0/24"
-                "192.168.1.0/24"
+                "192.168.178.0/24"
               ];
             }
           ];
@@ -127,6 +135,7 @@ in
   };
 
   swarselsystems = {
+    flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
     isImpermanence = true;
     isSecureBoot = false;

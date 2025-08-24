@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
@@ -6,6 +6,7 @@ let
   serviceName = "matrix";
   serviceDomain = config.repo.secrets.common.services.domains.matrix;
   serviceUser = "matrix-synapse";
+  serviceAddress = globals.hosts.winters.ipv4;
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -293,7 +294,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

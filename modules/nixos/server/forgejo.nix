@@ -7,6 +7,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "forgejo";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   kanidmDomain = globals.services.kanidm.domain;
 in
@@ -132,7 +133,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

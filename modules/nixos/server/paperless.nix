@@ -7,6 +7,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "paperless";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   tikaPort = 9998;
   gotenbergPort = 3002;
@@ -101,7 +102,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
