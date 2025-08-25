@@ -5479,6 +5479,9 @@ This is a super-convenient package that lets my remap my =CAPS= key to =ESC= if 
 #+end_src
 
 ***** keyd: remap SUPER
+:PROPERTIES:
+:CUSTOM_ID: h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b
+:END:
 
 
 #+begin_src nix-ts :tangle modules/nixos/client/keyd.nix
@@ -6083,6 +6086,9 @@ Auto login for the initial session.
 #+end_src
 
 **** UWSM
+:PROPERTIES:
+:CUSTOM_ID: h:74f5961d-2881-4a42-b99f-94c8f70c8196
+:END:
 
 Auto login for the initial session.
 
@@ -6114,6 +6120,9 @@ Auto login for the initial session.
 #+end_src
 
 **** Niri
+:PROPERTIES:
+:CUSTOM_ID: h:58162d08-3ded-441d-861e-2ebf30e32538
+:END:
 
 Auto login for the initial session.
 
@@ -9996,6 +10005,145 @@ Deployment notes:
   }
 #+end_src
 
+**** Snipe-IT
+:PROPERTIES:
+:CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
+  { self, lib, config, globals, ... }:
+  let
+    sopsFile = self + /secrets/winters/secrets2.yaml;
+
+    serviceDB = "snipeit";
+
+    servicePort = 80;
+    serviceName = "snipeit";
+    serviceUser = "snipeit";
+    serviceGroup = serviceUser;
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+    serviceAddress = globals.hosts.winters.ipv4;
+
+    mysqlPort = 3306;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      sops = {
+        secrets = {
+          snipe-it-appkey = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        };
+      };
+
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
+
+      services.snipe-it = {
+        enable = true;
+        appKeyFile = config.sops.secrets.snipe-it-appkey.path;
+        appURL = "https://${serviceDomain}";
+        hostName = serviceDomain;
+        user = serviceUser;
+        group = serviceGroup;
+        dataDir = "/Vault/data/snipeit";
+        database = {
+          user = serviceUser;
+          port = mysqlPort;
+          name = serviceDB;
+          host = "localhost";
+          createLocally = true;
+        };
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+              };
+            };
+          };
+        };
+      };
+
+    };
+
+  }
+#+end_src
+**** Homebox
+:PROPERTIES:
+:CUSTOM_ID: h:5b4feb1b-e7a3-43f1-9930-8d00012742ad
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/server/homebox.nix
+  { self, lib, pkgs, config, globals, ... }:
+  let
+    servicePort = 7745;
+    serviceName = "homebox";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+    serviceAddress = globals.hosts.winters.ipv4;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+      globals.services.${serviceName}.domain = serviceDomain;
+
+      swarselservices.${serviceName} = {
+        enable = true;
+        package = pkgs.dev.homebox;
+        database.createLocally = true;
+        settings = {
+          HBOX_WEB_PORT = builtins.toString servicePort;
+          HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
+          HBOX_STORAGE_CONN_STRING = "file:///Vault/data/homebox";
+          HBOX_STORAGE_PREFIX_PATH = ".data";
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+              };
+            };
+          };
+        };
+      };
+
+    };
+
+  }
+#+end_src
 *** Darwin
 :PROPERTIES:
 :CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
@@ -13483,6 +13631,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 #+end_src
 
 **** Niri
+:PROPERTIES:
+:CUSTOM_ID: h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/niri.nix
   { config, pkgs, lib, vars, ... }:
@@ -15432,6 +15583,9 @@ This app checks for different apps that I keep around in the scratchpad for quic
 #+end_src
 
 *** swarselcheck-niri
+:PROPERTIES:
+:CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
+:END:
 
 #+begin_src shell :tangle files/scripts/swarselcheck-niri.sh
   while :; do
@@ -15639,6 +15793,9 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 #+end_src
 
 *** kanshare
+:PROPERTIES:
+:CUSTOM_ID: h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5
+:END:
 
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
@@ -17420,6 +17577,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             atuin = lib.mkDefault true;
             forgejo = lib.mkDefault true;
             ankisync = lib.mkDefault true;
+            # snipeit = lib.mkDefault false;
+            homebox = lib.mkDefault true;
           };
         };
     };

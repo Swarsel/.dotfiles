@@ -41,6 +41,8 @@
         atuin = lib.mkDefault true;
         forgejo = lib.mkDefault true;
         ankisync = lib.mkDefault true;
+        # snipeit = lib.mkDefault false;
+        homebox = lib.mkDefault true;
       };
     };
   };

@@ -3,10 +3,10 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-08-10 So 11:35 -->
+<!-- 2025-08-25 Mo 22:51 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SwarselSystems: NixOS + Emacs Configuration</title>
+<title>SwarselSystems: NixOS + Emacs Configurationo</title>
 <meta name="author" content="Leon Schwarzäugl" />
 <meta name="generator" content="Org Mode" />
 <style type="text/css">
@@ -196,7 +196,7 @@
 </head>
 <body>
 <div id="content" class="content">
-<h1 class="title">SwarselSystems: NixOS + Emacs Configuration</h1>
+<h1 class="title">SwarselSystems: NixOS + Emacs Configurationo</h1>
 <div id="table-of-contents" role="doc-toc">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
@@ -357,8 +357,9 @@
 <li><a href="#h:73ed28cb-2f82-47b2-8bc5-208278b55788">3.2.2.13.2. Network devices</a></li>
 <li><a href="#h:f101daa2-604d-4553-99e2-f64b9c207f51">3.2.2.13.3. enable GVfs</a></li>
 <li><a href="#h:08d213d5-a9f4-4309-8635-ba557b01dc7d">3.2.2.13.4. interception-tools: Make CAPS work as ESC/CTRL</a></li>
-<li><a href="#h:82fbba41-3a46-4db7-aade-49e4c23fc475">3.2.2.13.5. power-profiles-daemon</a></li>
-<li><a href="#h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">3.2.2.13.6. SwayOSD</a></li>
+<li><a href="#h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b">3.2.2.13.5. keyd: remap SUPER</a></li>
+<li><a href="#h:82fbba41-3a46-4db7-aade-49e4c23fc475">3.2.2.13.6. power-profiles-daemon</a></li>
+<li><a href="#h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">3.2.2.13.7. SwayOSD</a></li>
 </ul>
 </li>
 <li><a href="#h:7a89b5e3-b700-4167-8b14-2b8172f33936">3.2.2.14. Hardware compatibility settings (Yubikey, Ledger, Keyboards) - udev rules</a>
@@ -368,17 +369,19 @@
 <li><a href="#h:103b68b6-33a1-4369-a534-5f36dfa95e03">3.2.2.14.3. Keyboards</a></li>
 </ul>
 </li>
-<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.2.2.15. System Login</a></li>
+<li><a href="#h:eae45839-223a-4027-bce3-e26e092c9096">3.2.2.15. System Login (greetd)</a></li>
 <li><a href="#h:404cc18b-b5f8-48d9-a407-a0fd70d57f46">3.2.2.16. nix-ld</a></li>
 <li><a href="#h:b751d77d-246c-4bd6-b689-3467d82bf9c3">3.2.2.17. Summary of nixos-rebuild diff</a></li>
 <li><a href="#h:ce50eb90-8bf4-4203-b502-c3165d2fbf1f">3.2.2.18. gnome-keyring</a></li>
 <li><a href="#h:f78ffdd3-232b-4313-bd89-d6fb331fef22">3.2.2.19. Sway</a></li>
-<li><a href="#h:872d5f46-2ffd-4076-9a2c-98783dd29434">3.2.2.20. xdg-portal</a></li>
+<li><a href="#h:872d5f46-2ffd-4076-9a2c-98783dd29434">3.2.2.20. xdg-portal (Screensharing)</a></li>
 <li><a href="#h:1bef3914-a258-4585-b232-e0fbe9e7a9b5">3.2.2.21. Podman (distrobox)</a></li>
 <li><a href="#h:cfc22f8d-251e-4636-98d6-a43cdb112b68">3.2.2.22. Appimage</a></li>
 <li><a href="#h:a5a0d84e-c7b3-4164-a4c7-2e2d8ada69cd">3.2.2.23. Handle lid switch correctly</a></li>
 <li><a href="#h:adf894d7-b3c6-4b8b-b13f-c28b3a5e1e17">3.2.2.24. Low battery notification</a></li>
 <li><a href="#h:fa8d9ec4-3e22-458a-9239-859cffe7f55c">3.2.2.25. Auto-login</a></li>
+<li><a href="#h:74f5961d-2881-4a42-b99f-94c8f70c8196">3.2.2.26. UWSM</a></li>
+<li><a href="#h:58162d08-3ded-441d-861e-2ebf30e32538">3.2.2.27. Niri</a></li>
 </ul>
 </li>
 <li><a href="#h:e492c24a-83a0-4bcb-a084-706f49318651">3.2.3. Server</a>
@@ -419,6 +422,8 @@
 <li><a href="#h:13071cc3-5cba-44b5-8b5b-2a27be22e021">3.2.3.34. microbin</a></li>
 <li><a href="#h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c">3.2.3.35. shlink</a></li>
 <li><a href="#h:e46c37ac-5610-4603-8afc-2f5f008fc14d">3.2.3.36. slink</a></li>
+<li><a href="#h:470f7ee3-3307-4949-b0fa-403171e3859a">3.2.3.37. Snipe-IT</a></li>
+<li><a href="#h:5b4feb1b-e7a3-43f1-9930-8d00012742ad">3.2.3.38. Homebox</a></li>
 </ul>
 </li>
 <li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">3.2.4. Darwin</a>
@@ -490,10 +495,11 @@
 </ul>
 </li>
 <li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.1.31. Sway</a></li>
-<li><a href="#h:eb94df98-2bcd-4555-9f88-e252f93b924f">3.3.1.32. Kanshi</a></li>
-<li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.33. gpg-agent</a></li>
-<li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.34. gammastep</a></li>
-<li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.35. Spicetify</a></li>
+<li><a href="#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb">3.3.1.32. Niri</a></li>
+<li><a href="#h:eb94df98-2bcd-4555-9f88-e252f93b924f">3.3.1.33. Kanshi</a></li>
+<li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.34. gpg-agent</a></li>
+<li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.35. gammastep</a></li>
+<li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.36. Spicetify</a></li>
 </ul>
 </li>
 <li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">3.3.2. Server</a>
@@ -535,13 +541,13 @@
 <li><a href="#h:1834df06-9238-4efa-9af6-851dafe66c68">3.5.8. e</a></li>
 <li><a href="#h:10268005-a9cd-4a00-967c-cbe975c552fa">3.5.9. command-not-found</a></li>
 <li><a href="#h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d">3.5.10. swarselcheck</a></li>
-<li><a href="#h:564c102c-e335-4f17-a613-c5a436bb4864">3.5.11. swarselzellij</a></li>
-<li><a href="#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e">3.5.12. waybarupdate</a></li>
-<li><a href="#h:a1d94db2-837a-40c4-bbd8-81ce847440ee">3.5.13. opacitytoggle</a></li>
-<li><a href="#h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0">3.5.14. fs-diff</a></li>
-<li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">3.5.15. github-notifications</a></li>
-<li><a href="#h:9d49531a-1d9b-4600-b200-18befb5e0f3a">3.5.16. fullscreen</a></li>
-<li><a href="#h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">3.5.17. screenshare</a></li>
+<li><a href="#h:96da8360-2d23-4e86-9602-415fbdb972af">3.5.11. swarselcheck-niri</a></li>
+<li><a href="#h:564c102c-e335-4f17-a613-c5a436bb4864">3.5.12. swarselzellij</a></li>
+<li><a href="#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e">3.5.13. waybarupdate</a></li>
+<li><a href="#h:a1d94db2-837a-40c4-bbd8-81ce847440ee">3.5.14. opacitytoggle</a></li>
+<li><a href="#h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0">3.5.15. fs-diff</a></li>
+<li><a href="#h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">3.5.16. github-notifications</a></li>
+<li><a href="#h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5">3.5.17. kanshare</a></li>
 <li><a href="#h:74db57ae-0bb9-4257-84be-eddbc85130dd">3.5.18. swarsel-bootstrap</a></li>
 <li><a href="#h:1eabdc59-8832-44ca-a22b-11f848ab150a">3.5.19. swarsel-rebuild</a></li>
 <li><a href="#h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435">3.5.20. swarsel-install</a></li>
@@ -816,7 +822,7 @@
 </div>
 </div>
 <p>
-<b>This file has 91577 words spanning 23506 lines and was last revised on 2025-08-10 11:35:15 +0200.</b>
+<b>This file has 93926 words spanning 24087 lines and was last revised on 2025-08-25 22:51:17 +0200.</b>
 </p>
 
 <p>
@@ -885,7 +891,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-08-10 11:35:15 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-08-25 22:51:17 +0200)
 </p></li>
 </ul>
 
@@ -1399,6 +1405,11 @@ This provides devshell support for flake-parts</li>
       url = "github:Gerg-l/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    niri-flake = {
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
   outputs =
     inputs:
@@ -1766,6 +1777,7 @@ Lastly, in order make this actually available to my configurations, i use the <c
           inherit (globalsSystem.config.globals)
             domains
             services
+            hosts
             user
             root
             ;
@@ -1828,6 +1840,7 @@ The rest of the outputs either define or help define the actual configurations:
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             inputs.swarsel-modules.nixosModules.default
+            inputs.niri-flake.nixosModules.niri
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
@@ -2509,6 +2522,10 @@ in
                 ];
               };
 
+              isync = prev.isync.override {
+                withCyrusSaslXoauth2 = true;
+              };
+
               mgba = final.swarsel-mgba;
 
               retroarch = prev.retroarch.withCores (cores: with cores; [
@@ -2571,6 +2588,7 @@ in
           // (nixpkgs-stable24_05 final prev)
           // (nixpkgs-stable24_11 final prev)
           // (zjstatus final prev)
+          // (inputs.niri-flake.overlays.niri final prev)
           // (inputs.vbc-nix.overlays.default final prev)
           // (inputs.nur.overlays.default final prev)
           // (inputs.emacs-overlay.overlay final prev)
@@ -2971,7 +2989,8 @@ in
       };
       monitors = {
         main = {
-          name = "BOE 0x0BC9 Unknown";
+          # name = "BOE 0x0BC9 Unknown";
+          name = "BOE 0x0BC9";
           mode = "2560x1600"; # TEMPLATE
           scale = "1";
           position = "2560,0";
@@ -3422,6 +3441,8 @@ This is my main server that I run at home. It handles most tasks that require bi
     loader.efi.canTouchEfiVariables = true;
   };
 
+  globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+
   networking = {
     inherit (config.repo.secrets.local) hostId;
     hostName = "winters";
@@ -3843,6 +3864,7 @@ in
     # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
     secrets = {
       wireguard-private-key = { inherit sopsFile; };
+      wireguard-home-preshared-key = { inherit sopsFile; };
     };
   };
 
@@ -3878,16 +3900,23 @@ in
       interfaces = {
         home-vpn = {
           privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-          ips = [ "192.168.3.4/32" ];
+          # ips = [ "192.168.3.4/32" ];
+          ips = [ "192.168.178.201/24" ];
           peers = [
             {
-              publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+              # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+              publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
+              presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
               name = "moonside";
               persistentKeepalive = 25;
-              endpoint = "${config.repo.secrets.common.ipv4}:51820";
+              # endpoint = "${config.repo.secrets.common.ipv4}:51820";
+              endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
+              # allowedIPs = [
+              #   "192.168.3.0/24"
+              #   "192.168.1.0/24"
+              # ];
               allowedIPs = [
-                "192.168.3.0/24"
-                "192.168.1.0/24"
+                "192.168.178.0/24"
               ];
             }
           ];
@@ -3956,6 +3985,7 @@ in
   };
 
   swarselsystems = {
+    flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
     isImpermanence = true;
     isSecureBoot = false;
@@ -4970,6 +5000,18 @@ in
             );
           };
 
+          hosts = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  ipv4 = mkOption {
+                    type = types.str;
+                  };
+                };
+              }
+            );
+          };
+
           domains = {
             main = mkOption {
               type = types.str;
@@ -5045,7 +5087,7 @@ in
         emacs-radicale-pw = { owner = mainUser; };
       });
       templates = {
-        authinfo = {
+        authinfo = lib.mkIf modules.emacs {
           path = "${homeDir}/.emacs.d/.authinfo";
           content = ''
             machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
@@ -5301,7 +5343,7 @@ in
         users = {
           root = {
             inherit (globals.root) hashedPassword;
-            shell = pkgs.zsh;
+            # shell = pkgs.zsh;
           };
           "${config.swarselsystems.mainUser}" = {
           isNormalUser = true;
@@ -5703,7 +5745,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       dbus
       swaylock-effects
       syncthingtray-minimal
-      wl-mirror
       swayosd
 
       # secure boot
@@ -5728,8 +5769,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       # better make for general tasks
       just
 
-      screenshare
-      fullscreen
 
       # keyboards
       qmk
@@ -5741,6 +5780,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
       # kde-connect
       xdg-desktop-portal
+      xdg-desktop-portal-gtk
       xdg-desktop-portal-wlr
 
       # bluetooth
@@ -5795,6 +5835,8 @@ Next, we will setup some environment variables that need to be set on the system
       wordlist.enable = true;
       sessionVariables = {
         NIXOS_OZONE_WL = "1";
+        SWARSEL_LO_RES = config.swarselsystems.lowResolution;
+        SWARSEL_HI_RES = config.swarselsystems.highResolution;
         GST_PLUGIN_SYSTEM_PATH_1_0 = lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" (with pkgs.gst_all_1; [
           gst-plugins-good
           gst-plugins-bad
@@ -5802,7 +5844,6 @@ Next, we will setup some environment variables that need to be set on the system
           gst-libav
         ]);
       } // (lib.optionalAttrs (!config.swarselsystems.isPublic) {
-        GITHUB_NOTIFICATION_TOKEN_PATH = config.sops.secrets.github-notifications-token.path;
       });
     };
   };
@@ -6054,9 +6095,9 @@ in
           Settings = {
             AutoConnect = true;
           };
-          DriverQuirks = {
-            UseDefaultInterface = true;
-          };
+          # DriverQuirks = {
+          #   UseDefaultInterface = true;
+          # };
         };
       };
       nftables.enable = lib.mkDefault true;
@@ -6093,25 +6134,26 @@ in
             ${wlan1} = {
               connection = {
                 id = wlan1;
-                permissions = "";
+                # permissions = "";
                 type = "wifi";
               };
               ipv4 = {
-                dns-search = "";
+                # dns-search = "";
                 method = "auto";
               };
               ipv6 = {
                 addr-gen-mode = "stable-privacy";
-                dns-search = "";
+                # dns-search = "";
                 method = "auto";
               };
               wifi = {
-                mac-address-blacklist = "";
+                # mac-address-blacklist = "";
                 mode = "infrastructure";
+                band = "a";
                 ssid = wlan1;
               };
               wifi-security = {
-                auth-alg = "open";
+                # auth-alg = "open";
                 key-mgmt = "wpa-psk";
                 psk = "$WLAN1_PW";
               };
@@ -6330,33 +6372,25 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 <li>update entry for sops.age.sshKeyPaths</li>
 </ul>
 
-<p>
-#+begin<sub>src</sub> nix-ts :tangle modules/nixos/client/sops.nix
-  { config, lib, &#x2026; }:
-  {
-    options.swarselmodules.sops = lib.mkEnableOption "sops config";
-    config = lib.mkIf config.swarselmodules.sops {
-      sops = {
-</p>
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ config, lib, ... }:
+{
+  options.swarselmodules.sops = lib.mkEnableOption "sops config";
+  config = lib.mkIf config.swarselmodules.sops {
+    sops = {
 
-<p>
-age.sshKeyPaths = [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh<sub>host</sub><sub>ed25519</sub><sub>key</sub>" ];
-</p>
+      # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+      age.sshKeyPaths = [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
+      # defaultSopsFile = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs "/persist/.dotfiles/secrets/general/secrets.yaml" "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+      defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
 
-<p>
-defaultSopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
-</p>
+      validateSopsFiles = false;
 
-<p>
-validateSopsFiles = false;
-</p>
-
-<p>
-      };
     };
-  }
-sh#+end<sub>src</sub>
-</p>
+  };
+}
+</pre>
+</div>
 </div>
 </div>
 <div id="outline-container-h:e6e44705-94af-49fe-9ca0-0629d0f7d932" class="outline-5">
@@ -6638,8 +6672,39 @@ This is a super-convenient package that lets my remap my <code>CAPS</code> key t
 </div>
 </div>
 </div>
+<div id="outline-container-h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b" class="outline-6">
+<h6 id="h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b"><span class="section-number-6">3.2.2.13.5.</span> keyd: remap SUPER</h6>
+<div class="outline-text-6" id="text-h:6a0fb66c-dfda-47e9-87b2-8b02d58dd68b">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "keyd";
+in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} tools config";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      services.keyd = {
+        enable = true;
+        keyboards = {
+          default = {
+            ids = [ "*" ];
+            settings = {
+              main = {
+                leftmeta = "overload(meta, macro(rightmeta+z))";
+                rightmeta = "overload(meta, macro(rightmeta+z))";
+              };
+            };
+          };
+        };
+      };
+    };
+  }
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:82fbba41-3a46-4db7-aade-49e4c23fc475" class="outline-6">
-<h6 id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"><span class="section-number-6">3.2.2.13.5.</span> power-profiles-daemon</h6>
+<h6 id="h:82fbba41-3a46-4db7-aade-49e4c23fc475"><span class="section-number-6">3.2.2.13.6.</span> power-profiles-daemon</h6>
 <div class="outline-text-6" id="text-h:82fbba41-3a46-4db7-aade-49e4c23fc475">
 <p>
 This enables power profile management. The available modes are:
@@ -6668,7 +6733,7 @@ Most of the time I am using <code>power-saver</code>, however, it is good to be 
 </div>
 </div>
 <div id="outline-container-h:5db15758-17d8-4bde-811d-d11ccdd3f3d3" class="outline-6">
-<h6 id="h:5db15758-17d8-4bde-811d-d11ccdd3f3d3"><span class="section-number-6">3.2.2.13.6.</span> SwayOSD</h6>
+<h6 id="h:5db15758-17d8-4bde-811d-d11ccdd3f3d3"><span class="section-number-6">3.2.2.13.7.</span> SwayOSD</h6>
 <div class="outline-text-6" id="text-h:5db15758-17d8-4bde-811d-d11ccdd3f3d3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
@@ -6810,7 +6875,7 @@ This loads some udev rules that I need for my split keyboards.
 </div>
 </div>
 <div id="outline-container-h:eae45839-223a-4027-bce3-e26e092c9096" class="outline-5">
-<h5 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-5">3.2.2.15.</span> System Login</h5>
+<h5 id="h:eae45839-223a-4027-bce3-e26e092c9096"><span class="section-number-5">3.2.2.15.</span> System Login (greetd)</h5>
 <div class="outline-text-5" id="text-h:eae45839-223a-4027-bce3-e26e092c9096">
 <p>
 This section houses the greetd related settings. I do not really want to use a display manager, but it is useful to have setup in some ways - in my case for starting sway on system startup. Notably the default user login setting that is commented out here goes into the <b>system specific</b> settings, make sure to update it there
@@ -6824,7 +6889,8 @@ This section houses the greetd related settings. I do not really want to use a d
     services.greetd = {
       enable = true;
       settings = {
-        initial_session.command = "sway";
+        # initial_session.command = "sway";
+        initial_session.command = "uwsm start -- sway-uwsm.desktop";
         default_session.command = ''
           ${pkgs.tuigreet}/bin/tuigreet \
             --time \
@@ -6835,9 +6901,9 @@ This section houses the greetd related settings. I do not really want to use a d
       };
     };
 
-    environment.etc."greetd/environments".text = ''
-      sway
-    '';
+    # environment.etc."greetd/environments".text = ''
+    #   sway
+    # '';
   };
 }
 </pre>
@@ -7039,6 +7105,9 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+let
+  inherit (config.swarselsystems) mainUser;
+in
 {
   options.swarselmodules.sway = lib.mkEnableOption "sway config";
   config = lib.mkIf config.swarselmodules.sway {
@@ -7050,15 +7119,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
         gtk = true;
       };
 
-      extraSessionCommands = ''
-        export XDG_SESSION_DESKTOP=sway
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland-egl
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-        export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
-        export MOZ_ENABLE_WAYLAND=1
-        export MOZ_DISABLE_RDD_SANDBOX=1
-      '';
+      inherit (config.home-manager.users.${mainUser}.wayland.windowManager.sway) extraSessionCommands;
     };
   };
 }
@@ -7067,7 +7128,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
 </div>
 </div>
 <div id="outline-container-h:872d5f46-2ffd-4076-9a2c-98783dd29434" class="outline-5">
-<h5 id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"><span class="section-number-5">3.2.2.20.</span> xdg-portal</h5>
+<h5 id="h:872d5f46-2ffd-4076-9a2c-98783dd29434"><span class="section-number-5">3.2.2.20.</span> xdg-portal (Screensharing)</h5>
 <div class="outline-text-5" id="text-h:872d5f46-2ffd-4076-9a2c-98783dd29434">
 <p>
 This allows me to use screen sharing on Wayland. The implementation is a bit crude and only the whole screen can be shared. However, most of the time that is all I need to do anyways.
@@ -7080,11 +7141,11 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
   config = lib.mkIf config.swarselmodules.xdg-portal {
     xdg.portal = {
       enable = true;
-      config = {
-        common = {
-          default = "wlr";
-        };
-      };
+      # config = {
+      #   common = {
+      #     default = "wlr";
+      #   };
+      # };
       wlr.enable = true;
       wlr.settings.screencast = {
         output_name = "eDP-1";
@@ -7264,6 +7325,79 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:74f5961d-2881-4a42-b99f-94c8f70c8196" class="outline-5">
+<h5 id="h:74f5961d-2881-4a42-b99f-94c8f70c8196"><span class="section-number-5">3.2.2.26.</span> UWSM</h5>
+<div class="outline-text-5" id="text-h:74f5961d-2881-4a42-b99f-94c8f70c8196">
+<p>
+Auto login for the initial session.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "uwsm";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.uwsm = {
+      enable = true;
+      waylandCompositors = {
+        sway = {
+          prettyName = "Sway";
+          comment = "Sway compositor managed by UWSM";
+          binPath = "/run/current-system/sw/bin/sway";
+        };
+        niri = {
+          prettyName = "Niri";
+          comment = "Niri compositor managed by UWSM";
+          binPath = "/run/current-system/sw/bin/niri-session";
+        };
+      };
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:58162d08-3ded-441d-861e-2ebf30e32538" class="outline-5">
+<h5 id="h:58162d08-3ded-441d-861e-2ebf30e32538"><span class="section-number-5">3.2.2.27.</span> Niri</h5>
+<div class="outline-text-5" id="text-h:58162d08-3ded-441d-861e-2ebf30e32538">
+<p>
+Auto login for the initial session.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+let
+  moduleName = "niri";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+
+    environment.systemPackages = with pkgs; [
+      wl-clipboard
+      wayland-utils
+      libsecret
+      cage
+      gamescope
+      xwayland-satellite-unstable
+    ];
+
+    niri-flake.cache.enable = true;
+
+    programs.niri = {
+      enable = true;
+      package = pkgs.niri-unstable; # the actual niri that will be installed and used
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:e492c24a-83a0-4bcb-a084-706f49318651" class="outline-4">
 <h4 id="h:e492c24a-83a0-4bcb-a084-706f49318651"><span class="section-number-4">3.2.3.</span> Server</h4>
@@ -7390,7 +7524,8 @@ in
     services = {
       # add a user with sudo smbpasswd -a &lt;user&gt;
       samba = {
-        package = pkgs.samba4Full;
+        # package = pkgs.samba4Full;
+        package = pkgs.samba4;
         # extraConfig = ''
         #   workgroup = WORKGROUP
         #   server role = standalone server
@@ -7535,7 +7670,7 @@ Here I am forcing <code>startWhenNeeded</code> to false so that the value will n
 <h5 id="h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295"><span class="section-number-5">3.2.3.7.</span> kavita</h5>
 <div class="outline-text-5" id="text-h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
@@ -7543,6 +7678,7 @@ let
   serviceName = "kavita";
   serviceUser = "kavita";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7578,7 +7714,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -7608,12 +7744,13 @@ in
 <h5 id="h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b"><span class="section-number-5">3.2.3.8.</span> jellyfin</h5>
 <div class="outline-text-5" id="text-h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, globals, ... }:
 let
   servicePort = 8096;
   serviceName = "jellyfin";
   serviceUser = "jellyfin";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7647,7 +7784,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -7678,13 +7815,14 @@ in
 <h5 id="h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72"><span class="section-number-5">3.2.3.9.</span> navidrome</h5>
 <div class="outline-text-5" id="text-h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ pkgs, config, lib, ... }:
+<pre class="src src-nix-ts">{ pkgs, config, lib, globals, ... }:
 let
   servicePort = 4040;
   serviceName = "navidrome";
   serviceUser = "navidrome";
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7764,7 +7902,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -7998,7 +8136,7 @@ in
 <h5 id="h:1e68d84a-8f99-422f-89ac-78f664ac0013"><span class="section-number-5">3.2.3.14.</span> matrix</h5>
 <div class="outline-text-5" id="text-h:1e68d84a-8f99-422f-89ac-78f664ac0013">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, globals, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
@@ -8006,6 +8144,7 @@ let
   serviceName = "matrix";
   serviceDomain = config.repo.secrets.common.services.domains.matrix;
   serviceUser = "matrix-synapse";
+  serviceAddress = globals.hosts.winters.ipv4;
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -8293,7 +8432,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -8353,7 +8492,7 @@ in
 <h5 id="h:d11ad8d5-25d7-4691-b319-61c16ccef715"><span class="section-number-5">3.2.3.15.</span> nextcloud</h5>
 <div class="outline-text-5" id="text-h:d11ad8d5-25d7-4691-b319-61c16ccef715">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, globals, ... }:
 let
   inherit (config.repo.secrets.local.nextcloud) adminuser;
   inherit (config.swarselsystems) sopsFile;
@@ -8363,6 +8502,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "nextcloud";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -8406,7 +8546,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -8439,6 +8579,7 @@ let
   serviceUser = "immich";
   serviceName = "immich";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -8468,7 +8609,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -8526,6 +8667,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "paperless";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   tikaPort = 9998;
   gotenbergPort = 3002;
@@ -8620,7 +8762,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -8844,15 +8986,17 @@ in
 <h5 id="h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d"><span class="section-number-5">3.2.3.19.</span> syncthing</h5>
 <div class="outline-text-5" id="text-h:ad2787a2-7b1c-4326-aeff-9d8d6c3f591d">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, configName, ... }:
+<pre class="src src-nix-ts">{ lib, config, configName, globals, ... }:
 let
+  inherit (config.swarselsystems.syncthing) serviceDomain;
+  inherit (config.swarselsystems.syncthing) serviceIP;
+
   servicePort = 8384;
   serviceUser = "syncthing";
   serviceGroup = serviceUser;
   serviceName = "syncthing";
+  serviceAddress = globals.hosts.winters.ipv4;
   specificServiceName = "syncthing-${configName}";
-  inherit (config.swarselsystems.syncthing) serviceDomain;
-  inherit (config.swarselsystems.syncthing) serviceIP;
 
   cfg = config.services.${serviceName};
   devices = config.swarselsystems.syncthing.syncDevices;
@@ -8868,7 +9012,7 @@ in
       };
       serviceIP = lib.mkOption {
         type = lib.types.str;
-        default = "192.168.1.2";
+        default = "${serviceAddress}";
       };
       syncDevices = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -9081,6 +9225,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "grafana";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";
@@ -9285,12 +9430,12 @@ in
       upstreams = {
         "${grafanaUpstream}" = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
         "${prometheusUpstream}" = {
           servers = {
-            "192.168.1.2:${builtins.toString prometheusPort}" = { };
+            "${serviceAddress}:${builtins.toString prometheusPort}" = { };
           };
         };
       };
@@ -9331,11 +9476,12 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ pkgs, lib, config, ... }:
+<pre class="src src-nix-ts">{ pkgs, lib, config, globals, ... }:
 let
   servicePort = 8088;
   serviceName = "jenkins";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -9354,7 +9500,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -9433,13 +9579,14 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, globals, ... }:
 let
   servicePort = 80;
   serviceName = "freshrss";
   serviceUser = "freshrss";
   serviceGroup = serviceName;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   inherit (config.swarselsystems) sopsFile;
 in
@@ -9512,7 +9659,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -9555,6 +9702,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "forgejo";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   kanidmDomain = globals.services.kanidm.domain;
 in
@@ -9680,7 +9828,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -9718,6 +9866,7 @@ let
   servicePort = 27701;
   serviceName = "ankisync";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   ankiUser = globals.user.name;
 in
@@ -9754,7 +9903,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -9808,6 +9957,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "kanidm";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
   immichDomain = globals.services.immich.domain;
@@ -10037,7 +10187,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -10299,13 +10449,14 @@ in
 <h5 id="h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331"><span class="section-number-5">3.2.3.29.</span> Firefly-III</h5>
 <div class="outline-text-5" id="text-h:4248e9eb-4b9f-4771-bbfb-7186ef7a8331">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, globals, ... }:
 let
   servicePort = 80;
   serviceUser = "firefly-iii";
   serviceGroup = serviceUser;
   serviceName = "firefly-iii";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   nginxGroup = "nginx";
 
@@ -10382,7 +10533,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -10418,7 +10569,7 @@ in
 <h5 id="h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2"><span class="section-number-5">3.2.3.30.</span> Koillection</h5>
 <div class="outline-text-5" id="text-h:09c0fed3-b9c6-487f-a5f6-49be039e5fa2">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, globals, ... }:
 let
   serviceUser = "koillection";
   serviceDB = "koillection";
@@ -10426,6 +10577,7 @@ let
   servicePort = 2282;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   serviceDir = "/Vault/data/koillection";
+  serviceAddress = globals.hosts.winters.ipv4;
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
@@ -10527,7 +10679,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -10559,11 +10711,12 @@ in
 <h5 id="h:27eac8b9-c202-4e45-9b80-42592f1e41c8"><span class="section-number-5">3.2.3.31.</span> Atuin</h5>
 <div class="outline-text-5" id="text-h:27eac8b9-c202-4e45-9b80-42592f1e41c8">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ lib, config, globals, ... }:
 let
   servicePort = 8888;
   serviceName = "atuin";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10584,7 +10737,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -10616,7 +10769,7 @@ in
 <h5 id="h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6"><span class="section-number-5">3.2.3.32.</span> Radicale</h5>
 <div class="outline-text-5" id="text-h:c1ca2d28-51d2-45bd-83b5-05007ae94ae6">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, globals, ... }:
 let
   sopsFile = self + /secrets/winters/secrets2.yaml;
 
@@ -10625,6 +10778,7 @@ let
   serviceUser = "radicale";
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
 
   cfg = config.services.${serviceName};
 in
@@ -10703,7 +10857,7 @@ in
       upstreams = {
         ${serviceName} = {
           servers = {
-            "192.168.1.2:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };
@@ -11135,6 +11289,147 @@ in
 </div>
 </div>
 </div>
+<div id="outline-container-h:470f7ee3-3307-4949-b0fa-403171e3859a" class="outline-5">
+<h5 id="h:470f7ee3-3307-4949-b0fa-403171e3859a"><span class="section-number-5">3.2.3.37.</span> Snipe-IT</h5>
+<div class="outline-text-5" id="text-h:470f7ee3-3307-4949-b0fa-403171e3859a">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ self, lib, config, globals, ... }:
+let
+  sopsFile = self + /secrets/winters/secrets2.yaml;
+
+  serviceDB = "snipeit";
+
+  servicePort = 80;
+  serviceName = "snipeit";
+  serviceUser = "snipeit";
+  serviceGroup = serviceUser;
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
+
+  mysqlPort = 3306;
+in
+{
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    sops = {
+      secrets = {
+        snipe-it-appkey = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      };
+    };
+
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
+
+    services.snipe-it = {
+      enable = true;
+      appKeyFile = config.sops.secrets.snipe-it-appkey.path;
+      appURL = "https://${serviceDomain}";
+      hostName = serviceDomain;
+      user = serviceUser;
+      group = serviceGroup;
+      dataDir = "/Vault/data/snipeit";
+      database = {
+        user = serviceUser;
+        port = mysqlPort;
+        name = serviceDB;
+        host = "localhost";
+        createLocally = true;
+      };
+    };
+
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        ${serviceName} = {
+          servers = {
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = false;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+            };
+          };
+        };
+      };
+    };
+
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:5b4feb1b-e7a3-43f1-9930-8d00012742ad" class="outline-5">
+<h5 id="h:5b4feb1b-e7a3-43f1-9930-8d00012742ad"><span class="section-number-5">3.2.3.38.</span> Homebox</h5>
+<div class="outline-text-5" id="text-h:5b4feb1b-e7a3-43f1-9930-8d00012742ad">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, globals, ... }:
+let
+  servicePort = 7745;
+  serviceName = "homebox";
+  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceAddress = globals.hosts.winters.ipv4;
+in
+{
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    topology.self.services.${serviceName}.info = "https://${serviceDomain}";
+    globals.services.${serviceName}.domain = serviceDomain;
+
+    swarselservices.${serviceName} = {
+      enable = true;
+      package = pkgs.dev.homebox;
+      database.createLocally = true;
+      settings = {
+        HBOX_WEB_PORT = builtins.toString servicePort;
+        HBOX_OPTIONS_ALLOW_REGISTRATION = "false";
+        HBOX_STORAGE_CONN_STRING = "file:///Vault/data/homebox";
+        HBOX_STORAGE_PREFIX_PATH = ".data";
+      };
+    };
+
+    networking.firewall.allowedTCPPorts = [ servicePort ];
+
+    nodes.moonside.services.nginx = {
+      upstreams = {
+        ${serviceName} = {
+          servers = {
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = false;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+            };
+          };
+        };
+      };
+    };
+
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47" class="outline-4">
 <h4 id="h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47"><span class="section-number-4">3.2.4.</span> Darwin</h4>
@@ -11493,29 +11788,10 @@ Options that I need specifically at work. There are more options at <a href="#h:
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, pkgs, config, configName, ... }:
 let
-  inherit (config.swarselsystems) mainUser homeDir xdgDir;
+  inherit (config.swarselsystems) mainUser homeDir;
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
   owner = mainUser;
   sopsFile = self + /secrets/work/secrets.yaml;
-  swarselService = name: description: execStart: {
-    "${name}" = {
-      enable = true;
-      inherit description;
-      serviceConfig = {
-        ExecStart = execStart;
-        User = mainUser;
-        Group = "users";
-        Environment = [
-          "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${mainUser}/bin"
-          "XDG_RUNTIME_DIR=${xdgDir}"
-          "WAYLAND_DISPLAY=wayland-1"
-        ];
-        Type = "oneshot";
-        StandardOutput = "journal";
-        StandardError = "journal";
-      };
-    };
-  };
 in
 {
   options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
@@ -11576,18 +11852,6 @@ in
     };
 
     programs = {
-      zsh.shellInit = ''
-        export VSPHERE_USER="$(cat ${config.sops.secrets.vcuser.path})"
-        export VSPHERE_PW="$(cat ${config.sops.secrets.vcpw.path})"
-        export GOVC_USERNAME="$(cat ${config.sops.secrets.govcuser.path})"
-        export GOVC_PASSWORD="$(cat ${config.sops.secrets.govcpw.path})"
-        export GOVC_URL="$(cat ${config.sops.secrets.govcurl.path})"
-        export GOVC_DATACENTER="$(cat ${config.sops.secrets.govcdc.path})"
-        export GOVC_DATASTORE="$(cat ${config.sops.secrets.govcds.path})"
-        export GOVC_HOST="$(cat ${config.sops.secrets.govchost.path})"
-        export GOVC_RESOURCE_POOL="$(cat ${config.sops.secrets.govcpool.path})"
-        export GOVC_NETWORK="$(cat ${config.sops.secrets.govcnetwork.path})"
-      '';
 
       browserpass.enable = true;
       _1password.enable = true;
@@ -11629,6 +11893,7 @@ in
                 mac-address = "E8:65:38:52:63:FF";
                 mac-address-randomization = "1";
                 mode = "infrastructure";
+                band = "a";
                 ssid = "VBC";
               };
               wifi-security = {
@@ -11676,10 +11941,6 @@ in
     };
 
     environment.systemPackages = with pkgs; [
-      # (python39.withPackages (ps: with ps; [
-      # cryptography
-      # ]))
-      #   docker
       stable24_11.python39
       qemu
       packer
@@ -11733,18 +11994,11 @@ in
       };
 
       udev.extraRules = ''
-        # share screen when dongle detected
-        SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="343c", ATTRS{idProduct}=="0000", TAG+="systemd", ENV{SYSTEMD_WANTS}="swarsel-screenshare.service"
-
         # lock screen when yubikey removed
         ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
       '';
 
     };
-
-    systemd.services = lib.mkMerge [
-      (swarselService "swarsel-screenshare" "Start screensharing after HDMI dongle is detected" "${pkgs.screenshare}/bin/screenshare -h")
-    ];
 
     # cgroups v1 is required for centos7 dockers
     # specialisation = {
@@ -12042,6 +12296,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       restic
 
       # "big" programs
+      obs-studio
       gimp
       inkscape
       zoom-us
@@ -12052,7 +12307,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
-      spotify-player
+      stable.spotify-player
       element-desktop
       nicotine-plus
       stable.transmission_3
@@ -12107,8 +12362,8 @@ This holds packages that I can use as provided, or with small modifications (as 
 
       # wayland stuff
       wtype
+      wl-mirror
       wl-clipboard
-      stable.wl-mirror
       wf-recorder
       kanshi
 
@@ -12180,6 +12435,7 @@ This is just a separate container for derivations defined in <a href="#h:64a5cc1
       timer
       e
       swarselcheck
+      swarselcheck-niri
       waybarupdate
       opacitytoggle
       fs-diff
@@ -12305,7 +12561,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
           user = "root";
         };
         "winters" = {
-          hostname = "192.168.1.2";
+          hostname = "192.168.178.24";
           user = "root";
         };
         "minecraft" = {
@@ -12548,27 +12804,26 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, globals, nixosConfig ? config, ... }:
+<pre class="src src-nix-ts">{ lib, config, nixosConfig ? config, ... }:
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
   inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
   inherit (nixosConfig.repo.secrets.common) fullName;
-  inherit (config.swarselsystems) isPublic;
-  crocDomain = globals.services.croc.domain;
+  inherit (config.swarselsystems) isPublic homeDir;
+
+  DISPLAY = ":0";
 in
 {
   options.swarselmodules.env = lib.mkEnableOption "env settings";
   config = lib.mkIf config.swarselmodules.env {
     home.sessionVariables = {
+      inherit DISPLAY;
       EDITOR = "e -w";
-      DISPLAY = ":0";
-      SWARSEL_LO_RES = config.swarselsystems.lowResolution;
-      SWARSEL_HI_RES = config.swarselsystems.highResolution;
     } // (lib.optionalAttrs (!isPublic) {
-      CROC_RELAY = crocDomain;
-      GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
     });
-    systemd.user.sessionVariables = lib.mkIf (!isPublic) {
+    systemd.user.sessionVariables = {
+      DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+    } // lib.optionalAttrs (!isPublic) {
       SWARSEL_MAIL1 = address1;
       SWARSEL_MAIL2 = address2;
       SWARSEL_MAIL3 = address3;
@@ -13071,9 +13326,10 @@ Currently I only use it as before with <code>initExtra</code> though.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ config, lib, minimal, nixosConfig ? config, ... }:
+<pre class="src src-nix-ts">{ config, pkgs, lib, minimal, globals, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) flakePath;
+  crocDomain = globals.services.croc.domain;
 in
 {
   options.swarselmodules.zsh = lib.mkEnableOption "zsh settings";
@@ -13159,7 +13415,7 @@ in
           #   src = pkgs.zsh-fzf-tab;
           # }
         ];
-        initContent = lib.mkIf (!config.swarselsystems.isPublic) ''
+        initContent = ''
           my-forward-word() {
             local WORDCHARS=$WORDCHARS
             WORDCHARS="''${WORDCHARS//:}"
@@ -13198,10 +13454,14 @@ in
           zle -N my-backward-delete-word
           # ctrl + del
           bindkey '^H' my-backward-delete-word
-
-          export CROC_PASS="$(cat ${nixosConfig.sops.secrets.croc-password.path})"
-          export GITHUB_TOKEN="$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})"
         '';
+        sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
+          CROC_RELAY = crocDomain;
+          CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path})";
+          GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})";
+          QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
+          # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
+        };
       };
     };
 }
@@ -13475,6 +13735,7 @@ in
                 account = {
                   Timeout = 120;
                   PipelineDepth = 1;
+                  AuthMechs = "LOGIN";
                 };
               };
             };
@@ -13560,7 +13821,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, config, pkgs, globals, ... }:
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, globals, inputs, ... }:
 let
   inherit (config.swarselsystems) homeDir isPublic isNixos;
   inherit (config.repo.secrets.common.emacs) radicaleUser;
@@ -13618,17 +13879,19 @@ in
 
             packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
           })
-          (epkgs.trivialBuild rec {
-            pname = "calfw";
-            version = "1.0.0-20231002";
-            src = pkgs.fetchFromGitHub {
-              owner = "haji-ali";
-              repo = "emacs-calfw";
-              rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-              hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-            };
-            packageRequires = [ epkgs.howm ];
-          })
+          (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
+          # epkgs.calfw
+          # (epkgs.trivialBuild rec {
+          #   pname = "calfw";
+          #   version = "1.0.0-20231002";
+          #   src = pkgs.fetchFromGitHub {
+          #     owner = "haji-ali";
+          #     repo = "emacs-calfw";
+          #     rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+          #     hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+          #   };
+          #   packageRequires = [ epkgs.howm ];
+          # })
 
           (epkgs.trivialBuild rec {
             pname = "fast-scroll";
@@ -13747,22 +14010,33 @@ in
       github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };
 
+    services.playerctld.enable = true;
+
     programs.waybar = {
       enable = true;
       systemd = {
         enable = true;
-        target = "sway-sessions.target";
+        # target = "sway-session.target";
+        inherit (config.wayland.systemd) target;
       };
       settings = {
         mainBar = {
           ipc = true;
           id = "bar-0";
+          # mode = "hide";
+          # mode = "overlay";
+          # passthrough = false;
+          # start_hidden = true;
           layer = "top";
           position = "top";
-          modules-left = [ "sway/workspaces" "custom/outer-right-arrow-dark" "sway/window" ];
+          modules-left = [ "sway/workspaces" "niri/workspaces" "custom/outer-right-arrow-dark" "niri/window" "sway/window" ];
           modules-center = [ "sway/mode" "privacy" "custom/github" "custom/configwarn" "custom/nix-updates" ];
           "sway/mode" = {
             format = "&lt;span style=\"italic\" font-weight=\"bold\"&gt;{}&lt;/span&gt;";
+          };
+
+          "niri/window" = {
+            format = "&lt;span style=\"italic\" font-weight=\"bold\"&gt;{title} ({app_id})&lt;/span&gt;";
           };
 
           modules-right = config.swarselsystems.waybarModules;
@@ -14026,6 +14300,11 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
 {
   options.swarselmodules.firefox = lib.mkEnableOption "firefox settings";
   config = lib.mkIf config.swarselmodules.firefox {
+
+    programs.zsh.sessionVariables = {
+      MOZ_DISABLE_RDD_SANDBOX = "1";
+    };
+
     programs.firefox = {
       enable = true;
       package = pkgs.firefox; # uses overrides
@@ -14350,430 +14629,642 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, config, lib, ... }:
-let
-  eachOutput = _: monitor: {
-    inherit (monitor) name;
-    value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
-  };
-in
-{
-  options.swarselmodules.sway = lib.mkEnableOption "sway settings";
-  options.swarselsystems = {
-    inputs = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-      default = { };
+<pre class="src src-nix-ts">{ config, lib, vars, ... }:
+  let
+    eachOutput = _: monitor: {
+      inherit (monitor) name;
+      value = builtins.removeAttrs monitor [ "mode" "name" "scale" "transform" "position" ];
     };
-    monitors = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-      default = { };
-    };
-    keybindings = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      default = { };
-    };
+  in
+    {
+      options.swarselmodules.sway = lib.mkEnableOption "sway settings";
+      options.swarselsystems = {
+        inputs = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+          default = { };
+        };
+        monitors = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+          default = { };
+        };
+        keybindings = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+        };
 
-    startup = lib.mkOption {
-      type = lib.types.listOf (lib.types.attrsOf lib.types.str);
-      default = [
-        # { command = "nextcloud --background"; }
-        { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-        { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-        { command = "ANKI_WAYLAND=1 anki"; }
-        { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-        { command = "nm-applet"; }
-        # { command = "feishin"; }
-      ];
-    };
-    kyria = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-      default = {
-        "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-        "7504:24926:Kyria_Keyboard" = {
-          xkb_layout = "us";
-          xkb_variant = "altgr-intl";
-        };
-      };
-      internal = true;
-    };
-    standardinputs = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-      default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
-      internal = true;
-    };
-    touchpad = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-      default = { };
-      internal = true;
-    };
-    swayfxConfig = lib.mkOption {
-      type = lib.types.str;
-      default = "
-                        blur enable
-                        blur_xray disable
-                        blur_passes 1
-                        blur_radius 1
-                        shadows enable
-                        corner_radius 2
-                        titlebar_separator disable
-                        default_dim_inactive 0.02
-                    ";
-      internal = true;
-    };
-  };
-  config = lib.mkIf config.swarselmodules.sway {
-    swarselsystems = {
-      touchpad = lib.mkIf config.swarselsystems.isLaptop {
-        "type:touchpad" = {
-          dwt = "enabled";
-          tap = "enabled";
-          natural_scroll = "enabled";
-          middle_emulation = "enabled";
-          drag_lock = "disabled";
-        };
-      };
-      swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
-    };
-    wayland.windowManager.sway = {
-      enable = true;
-      checkConfig = false; # delete this line once SwayFX is fixed upstream
-      package = lib.mkIf config.swarselsystems.isNixos null;
-      systemd = {
-        enable = true;
-        xdgAutostart = true;
-      };
-      wrapperFeatures.gtk = true;
-      config = rec {
-        modifier = "Mod4";
-        # terminal = "kitty";
-        menu = "fuzzel";
-        bars = [{
-          command = "waybar";
-          mode = "hide";
-          hiddenState = "hide";
-          position = "top";
-          extraConfig = "modifier Mod4";
-        }];
-        keybindings =
-          let
-            inherit (config.wayland.windowManager.sway.config) modifier;
-          in
-          lib.recursiveUpdate
-            {
-              "${modifier}+q" = "kill";
-              "${modifier}+f" = "exec firefox";
-              "${modifier}+Shift+f" = "exec swaymsg fullscreen";
-              "${modifier}+Space" = "exec fuzzel";
-              "${modifier}+Shift+Space" = "floating toggle";
-              "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
-              "${modifier}+m" = "exec swaymsg workspace back_and_forth";
-              "${modifier}+a" = "exec swarselcheck -s";
-              "${modifier}+x" = "exec swarselcheck -k";
-              "${modifier}+d" = "exec swarselcheck -d";
-              "${modifier}+w" = "exec swarselcheck -e";
-              "${modifier}+Shift+t" = "exec opacitytoggle";
-              "${modifier}+Shift+F12" = "move scratchpad";
-              "${modifier}+F12" = "scratchpad show";
-              "${modifier}+Shift+c" = "exec qalculate-gtk";
-              "${modifier}+c" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
-              "${modifier}+t" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
-              "${modifier}+Shift+m" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
-              "${modifier}+Shift+a" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
-              "${modifier}+p" = "exec pass-fuzzel";
-              "${modifier}+o" = "exec pass-fuzzel --otp";
-              "${modifier}+Shift+p" = "exec pass-fuzzel --type";
-              "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
-              "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
-              "${modifier}+Escape" = "mode $exit";
-              "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
-              "${modifier}+h" = "exec hyprpicker | wl-copy";
-              "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
-              "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-              "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
-              "${modifier}+1" = "workspace 1:一";
-              "${modifier}+Shift+1" = "move container to workspace 1:一";
-              "${modifier}+2" = "workspace 2:二";
-              "${modifier}+Shift+2" = "move container to workspace 2:二";
-              "${modifier}+3" = "workspace 3:三";
-              "${modifier}+Shift+3" = "move container to workspace 3:三";
-              "${modifier}+4" = "workspace 4:四";
-              "${modifier}+Shift+4" = "move container to workspace 4:四";
-              "${modifier}+5" = "workspace 5:五";
-              "${modifier}+Shift+5" = "move container to workspace 5:五";
-              "${modifier}+6" = "workspace 6:六";
-              "${modifier}+Shift+6" = "move container to workspace 6:六";
-              "${modifier}+7" = "workspace 7:七";
-              "${modifier}+Shift+7" = "move container to workspace 7:七";
-              "${modifier}+8" = "workspace 8:八";
-              "${modifier}+Shift+8" = "move container to workspace 8:八";
-              "${modifier}+9" = "workspace 9:九";
-              "${modifier}+Shift+9" = "move container to workspace 9:九";
-              "${modifier}+0" = "workspace 10:十";
-              "${modifier}+Shift+0" = "move container to workspace 10:十";
-              "${modifier}+Ctrl+m" = "workspace 11:M";
-              "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
-              "${modifier}+Ctrl+s" = "workspace 12:S";
-              "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
-              "${modifier}+Ctrl+e" = "workspace 13:E";
-              "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
-              "${modifier}+Ctrl+t" = "workspace 14:T";
-              "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
-              "${modifier}+Ctrl+l" = "workspace 15:L";
-              "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
-              "${modifier}+Ctrl+f" = "workspace 16:F";
-              "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
-              "${modifier}+Left" = "focus left";
-              "${modifier}+Right" = "focus right";
-              "${modifier}+Down" = "focus down";
-              "${modifier}+Up" = "focus up";
-              "${modifier}+Shift+Left" = "move left 40px";
-              "${modifier}+Shift+Right" = "move right 40px";
-              "${modifier}+Shift+Down" = "move down 40px";
-              "${modifier}+Shift+Up" = "move up 40px";
-              "${modifier}+Ctrl+Shift+c" = "reload";
-              "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
-              "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
-              "${modifier}+r" = "mode resize";
-              # "${modifier}+Return" = "exec kitty";
-              "${modifier}+Return" = "exec swarselzellij";
-              "${modifier}+Print" = "exec screenshare";
-              # exec swaymsg move workspace to "$(swaymsg -t get_outputs | jq '[.[] | select(.active == true)] | .[(map(.focused) | index(true) + 1) % length].name')"
-              # "XF86AudioRaiseVolume" = "exec pa 5%";
-              # "XF86AudioRaiseVolume" = "exec pamixer -i 5";
-              "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
-              # "XF86AudioLowerVolume" = "exec pactl set-sink-volume @DEFAULT_SINK@ -5%";
-              # "XF86AudioLowerVolume" = "exec pamixer -d 5";
-              "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
-              # "XF86AudioMute" = "exec pactl set-sink-mute @DEFAULT_SINK@ toggle";
-              # "XF86AudioMute" = "exec pamixer -t";
-              "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
-              # "XF86MonBrightnessUp" = "exec brightnessctl set +5%";
-              "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
-              # "XF86MonBrightnessDown" = "exec brightnessctl set 5%-";
-              "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
-              "XF86Display" = "exec wl-mirror eDP-1";
-            }
-            config.swarselsystems.keybindings;
-        modes = {
-          resize = {
-            Down = "resize grow height 10 px or 10 ppt";
-            Escape = "mode default";
-            Left = "resize shrink width 10 px or 10 ppt";
-            Return = "mode default";
-            Right = "resize grow width 10 px or 10 ppt";
-            Up = "resize shrink height 10 px or 10 ppt";
-            Tab = "move position center, resize set width 50 ppt height 50 ppt";
-          };
-        };
-        defaultWorkspace = "workspace 1:一";
-        output = {
-          "${config.swarselsystems.sharescreen}" = {
-            bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
-          };
-          "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
-            bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
-          };
-        };
-        input = config.swarselsystems.standardinputs;
-        workspaceOutputAssign =
-          let
-            workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
-            workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
-          in
-          workplaceOutputs;
-        startup = config.swarselsystems.startup ++ [
-          { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
-          { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
-        ];
-        seat = {
-          "*" = {
-            hide_cursor = "when-typing enable";
-          };
-        };
-        window = {
-          border = 1;
-          titlebar = false;
-        };
-        assigns = {
-          "15:L" = [{ app_id = "teams-for-linux"; }];
-        };
-        floating = {
-          border = 1;
-          criteria = [
-            { app_id = "qalculate-gtk"; }
-            { app_id = "blueman"; }
-            { app_id = "pavucontrol"; }
-            { app_id = "syncthingtray"; }
-            { app_id = "Element"; }
-            { class = "1Password"; }
-            { app_id = "com.nextcloud.desktopclient.nextcloud"; }
-            { title = "(?:Open|Save) (?:File|Folder|As)"; }
-            { title = "^Add$"; }
-            { title = "^Picture-in-Picture$"; }
-            { title = "Syncthing Tray"; }
-            { title = "^Emacs Popup Frame$"; }
-            { title = "^Emacs Popup Anchor$"; }
-            { title = "^spotifytui$"; }
-            { title = "^kittyterm$"; }
-            { app_id = "vesktop"; }
-            { window_role = "pop-up"; }
-            { window_role = "bubble"; }
-            { window_role = "dialog"; }
-            { window_role = "task_dialog"; }
-            { window_role = "menu"; }
-            { window_role = "Preferences"; }
+        startup = lib.mkOption {
+          type = lib.types.listOf (lib.types.attrsOf lib.types.str);
+          default = [
+            # { command = "nextcloud --background"; }
+            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            { command = "anki"; }
+            { command = "obsidian"; }
+            { command = "nm-applet"; }
+            # { command = "feishin"; }
           ];
-          titlebar = false;
         };
-        window = {
-          commands = [
-            {
-              command = "opacity 0.95";
-              criteria = {
-                class = ".*";
-              };
-            }
-            {
-              command = "opacity 1";
-              criteria = {
-                app_id = "at.yrlf.wl_mirror";
-              };
-            }
-            {
-              command = "opacity 1";
-              criteria = {
-                app_id = "Gimp-2.10";
-              };
-            }
-            {
-              command = "opacity 0.99";
-              criteria = {
-                app_id = "firefox";
-              };
-            }
-            {
-              command = "opacity 0.99";
-              criteria = {
-                app_id = "chromium-browser";
-              };
-            }
-            {
-              command = "sticky enable, shadows enable";
-              criteria = {
-                title = "^Picture-in-Picture$";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
-              criteria = {
-                title = "^Emacs Popup Frame$";
-              };
-            }
-            {
-              command = "move container to scratchpad";
-              criteria = {
-                title = "^Emacs Popup Anchor$";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
-              criteria = {
-                title = "^kittyterm$";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
-              criteria = {
-                title = "^spotifytui$";
-              };
-            }
-            {
+        kyria = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+          default = {
+            "36125:53060:splitkb.com_splitkb.com_Kyria_rev3" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            "7504:24926:Kyria_Keyboard" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+          };
+          internal = true;
+        };
+        standardinputs = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+          default = lib.recursiveUpdate (lib.recursiveUpdate config.swarselsystems.touchpad config.swarselsystems.kyria) config.swarselsystems.inputs;
+          internal = true;
+        };
+        touchpad = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+          default = { };
+          internal = true;
+        };
+        swayfxConfig = lib.mkOption {
+          type = lib.types.str;
+          default = ''
+            blur enable
+            blur_xray disable
+            blur_passes 1
+            blur_radius 1
+            shadows enable
+            corner_radius 2
+            titlebar_separator disable
+            default_dim_inactive 0.02
+          '';
+          internal = true;
+        };
+      };
+      config = lib.mkIf config.swarselmodules.sway {
+        swarselsystems = {
+          touchpad = lib.mkIf config.swarselsystems.isLaptop {
+            "type:touchpad" = {
+              dwt = "enabled";
+              tap = "enabled";
+              natural_scroll = "enabled";
+              middle_emulation = "enabled";
+              drag_lock = "disabled";
+            };
+          };
+          swayfxConfig = lib.mkIf (!config.swarselsystems.isNixos) " ";
+        };
 
-              command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-              criteria = {
-                class = "Spotify";
+        wayland.windowManager.sway = {
+          enable = true;
+          # checkConfig = false; # delete this line once SwayFX is fixed upstream
+          package = lib.mkIf config.swarselsystems.isNixos null;
+          systemd = {
+            enable = true;
+            xdgAutostart = true;
+            variables = [
+              "DISPLAY"
+              "WAYLAND_DISPLAY"
+              "SWAYSOCK"
+              "XDG_CURRENT_DESKTOP"
+              "XDG_SESSION_TYPE"
+              "NIXOS_OZONE_WL"
+              "XCURSOR_THEME"
+              "XCURSOR_SIZE"
+            ];
+          };
+          wrapperFeatures = {
+            base = true;
+            gtk = true;
+          };
+          config = rec {
+            modifier = "Mod4";
+            # terminal = "kitty";
+            menu = "fuzzel";
+            bars = [{
+              command = "waybar";
+              mode = "hide";
+              hiddenState = "hide";
+              position = "top";
+              extraConfig = "modifier Mod4";
+            }];
+            keybindings =
+              let
+                inherit (config.wayland.windowManager.sway.config) modifier;
+              in
+                lib.recursiveUpdate
+                  {
+                    "${modifier}+q" = "kill";
+                    "${modifier}+f" = "exec firefox";
+                    "${modifier}+Shift+f" = "exec swaymsg fullscreen";
+                    "${modifier}+Space" = "exec fuzzel";
+                    "${modifier}+Shift+Space" = "floating toggle";
+                    "${modifier}+e" = "exec emacsclient -nquc -a emacs -e \"(dashboard-open)\"";
+                    "${modifier}+m" = "exec swaymsg workspace back_and_forth";
+                    "${modifier}+a" = "exec swarselcheck -s";
+                    "${modifier}+x" = "exec swarselcheck -k";
+                    "${modifier}+d" = "exec swarselcheck -d";
+                    "${modifier}+w" = "exec swarselcheck -e";
+                    "${modifier}+Shift+t" = "exec opacitytoggle";
+                    "${modifier}+Shift+F12" = "move scratchpad";
+                    "${modifier}+F12" = "scratchpad show";
+                    "${modifier}+Shift+c" = "exec qalculate-gtk";
+                    "${modifier}+c" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-capture)'";
+                    "${modifier}+t" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-org-agenda)'";
+                    "${modifier}+Shift+m" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-mu4e)'";
+                    "${modifier}+Shift+a" = "exec emacsclient -cF '((name . \"Emacs Popup Anchor\"))' -e '(prot-window-popup-swarsel/open-calendar)'";
+                    "${modifier}+p" = "exec pass-fuzzel";
+                    "${modifier}+o" = "exec pass-fuzzel --otp";
+                    "${modifier}+Shift+p" = "exec pass-fuzzel --type";
+                    "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
+                    "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
+                    "${modifier}+Escape" = "mode $exit";
+                    "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+                    "${modifier}+h" = "exec hyprpicker | wl-copy";
+                    "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
+                    "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+                    "${modifier}+Shift+v" = "exec wf-recorder -g '$(slurp -f %o -or)' -f ~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
+                    "${modifier}+1" = "workspace 1:一";
+                    "${modifier}+Shift+1" = "move container to workspace 1:一";
+                    "${modifier}+2" = "workspace 2:二";
+                    "${modifier}+Shift+2" = "move container to workspace 2:二";
+                    "${modifier}+3" = "workspace 3:三";
+                    "${modifier}+Shift+3" = "move container to workspace 3:三";
+                    "${modifier}+4" = "workspace 4:四";
+                    "${modifier}+Shift+4" = "move container to workspace 4:四";
+                    "${modifier}+5" = "workspace 5:五";
+                    "${modifier}+Shift+5" = "move container to workspace 5:五";
+                    "${modifier}+6" = "workspace 6:六";
+                    "${modifier}+Shift+6" = "move container to workspace 6:六";
+                    "${modifier}+7" = "workspace 7:七";
+                    "${modifier}+Shift+7" = "move container to workspace 7:七";
+                    "${modifier}+8" = "workspace 8:八";
+                    "${modifier}+Shift+8" = "move container to workspace 8:八";
+                    "${modifier}+9" = "workspace 9:九";
+                    "${modifier}+Shift+9" = "move container to workspace 9:九";
+                    "${modifier}+0" = "workspace 10:十";
+                    "${modifier}+Shift+0" = "move container to workspace 10:十";
+                    "${modifier}+Ctrl+m" = "workspace 11:M";
+                    "${modifier}+Ctrl+Shift+m" = "move container to workspace 11:M";
+                    "${modifier}+Ctrl+s" = "workspace 12:S";
+                    "${modifier}+Ctrl+Shift+s" = "move container to workspace 12:S";
+                    "${modifier}+Ctrl+e" = "workspace 13:E";
+                    "${modifier}+Ctrl+Shift+e" = "move container to workspace 13:E";
+                    "${modifier}+Ctrl+t" = "workspace 14:T";
+                    "${modifier}+Ctrl+Shift+t" = "move container to workspace 14:T";
+                    "${modifier}+Ctrl+l" = "workspace 15:L";
+                    "${modifier}+Ctrl+Shift+l" = "move container to workspace 15:L";
+                    "${modifier}+Ctrl+f" = "workspace 16:F";
+                    "${modifier}+Ctrl+Shift+f" = "move container to workspace 16:F";
+                    "${modifier}+Left" = "focus left";
+                    "${modifier}+Right" = "focus right";
+                    "${modifier}+Down" = "focus down";
+                    "${modifier}+Up" = "focus up";
+                    "${modifier}+Shift+Left" = "move left 40px";
+                    "${modifier}+Shift+Right" = "move right 40px";
+                    "${modifier}+Shift+Down" = "move down 40px";
+                    "${modifier}+Shift+Up" = "move up 40px";
+                    "${modifier}+Ctrl+Shift+c" = "reload";
+                    "${modifier}+Ctrl+Shift+r" = "exec swarsel-displaypower";
+                    "${modifier}+Shift+e" = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+                    "${modifier}+r" = "mode resize";
+                    # "${modifier}+Return" = "exec kitty";
+                    "${modifier}+Return" = "exec swarselzellij";
+                    "XF86AudioRaiseVolume" = "exec swayosd-client --output-volume raise";
+                    "XF86AudioLowerVolume" = "exec swayosd-client --output-volume lower";
+                    "XF86AudioMute" = "exec swayosd-client --output-volume mute-toggle";
+                    "XF86MonBrightnessUp" = "exec swayosd-client --brightness raise";
+                    "XF86MonBrightnessDown" = "exec swayosd-client --brightness lower";
+                    "XF86Display" = "exec wl-mirror eDP-1";
+                    # "--no-repeat Super_L" = "exec killall -SIGUSR1 .waybar-wrapped";
+                    # "${modifier}+z" = "exec killall -SIGUSR1 .waybar-wrapped";
+                  }
+                  config.swarselsystems.keybindings;
+            modes = {
+              resize = {
+                Down = "resize grow height 10 px or 10 ppt";
+                Escape = "mode default";
+                Left = "resize shrink width 10 px or 10 ppt";
+                Return = "mode default";
+                Right = "resize grow width 10 px or 10 ppt";
+                Up = "resize shrink height 10 px or 10 ppt";
+                Tab = "move position center, resize set width 50 ppt height 50 ppt";
               };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, sticky enable";
-              criteria = {
-                app_id = "vesktop";
-              };
-            }
-            {
-              command = "resize set width 60 ppt height 60 ppt, sticky enable";
-              criteria = {
-                class = "Element";
-              };
-            }
-            # {
-            #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
-            #   criteria = {
-            #     app_id="^$";
-            #     class="^$";
+            };
+            defaultWorkspace = "workspace 1:一";
+            # output = {
+            #   "${config.swarselsystems.sharescreen}" = {
+            #     bg = "${self}/files/wallpaper/lenovowp.png ${config.stylix.imageScalingMode}";
+            #   };
+            #   "Philips Consumer Electronics Company PHL BDM3270 AU11806002320" = {
+            #     bg = "${self}/files/wallpaper/standwp.png ${config.stylix.imageScalingMode}";
+            #   };
             # };
-            # }
-          ];
-        };
-        gaps = {
-          inner = 5;
+            input = config.swarselsystems.standardinputs;
+            workspaceOutputAssign =
+              let
+                workplaceSets = lib.mapAttrs' eachOutput config.swarselsystems.monitors;
+                workplaceOutputs = map (key: lib.getAttr key workplaceSets) (lib.attrNames workplaceSets);
+              in
+                workplaceOutputs;
+            startup = config.swarselsystems.startup ++ [
+              { command = "kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm"; }
+              { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
+            ];
+            seat = {
+              "*" = {
+                hide_cursor = "when-typing enable";
+              };
+            };
+            window = {
+              border = 1;
+              titlebar = false;
+            };
+            assigns = {
+              "15:L" = [{ app_id = "teams-for-linux"; }];
+            };
+            floating = {
+              border = 1;
+              criteria = [
+                { app_id = "qalculate-gtk"; }
+                { app_id = "blueman"; }
+                { app_id = "pavucontrol"; }
+                { app_id = "syncthingtray"; }
+                { app_id = "Element"; }
+                { class = "1Password"; }
+                { app_id = "com.nextcloud.desktopclient.nextcloud"; }
+                { title = "(?:Open|Save) (?:File|Folder|As)"; }
+                { title = "^Add$"; }
+                { title = "^Picture-in-Picture$"; }
+                { title = "Syncthing Tray"; }
+                { title = "^Emacs Popup Frame$"; }
+                { title = "^Emacs Popup Anchor$"; }
+                { title = "^spotifytui$"; }
+                { title = "^kittyterm$"; }
+                { app_id = "vesktop"; }
+                { window_role = "pop-up"; }
+                { window_role = "bubble"; }
+                { window_role = "dialog"; }
+                { window_role = "task_dialog"; }
+                { window_role = "menu"; }
+                { window_role = "Preferences"; }
+              ];
+              titlebar = false;
+            };
+            window = {
+              commands = [
+                {
+                  command = "opacity 0.95";
+                  criteria = {
+                    class = ".*";
+                  };
+                }
+                {
+                  command = "opacity 1";
+                  criteria = {
+                    app_id = "at.yrlf.wl_mirror";
+                  };
+                }
+                {
+                  command = "opacity 1";
+                  criteria = {
+                    app_id = "Gimp-2.10";
+                  };
+                }
+                {
+                  command = "opacity 0.99";
+                  criteria = {
+                    app_id = "firefox";
+                  };
+                }
+                {
+                  command = "opacity 0.99";
+                  criteria = {
+                    app_id = "chromium-browser";
+                  };
+                }
+                {
+                  command = "sticky enable, shadows enable";
+                  criteria = {
+                    title = "^Picture-in-Picture$";
+                  };
+                }
+                {
+                  command = "resize set width 60 ppt height 60 ppt, opacity 0.99, sticky enable";
+                  criteria = {
+                    title = "^Emacs Popup Frame$";
+                  };
+                }
+                {
+                  command = "move container to scratchpad";
+                  criteria = {
+                    title = "^Emacs Popup Anchor$";
+                  };
+                }
+                {
+                  command = "resize set width 60 ppt height 60 ppt, opacity 0.8, sticky enable, border normal, move container to scratchpad";
+                  criteria = {
+                    title = "^kittyterm$";
+                  };
+                }
+                {
+                  command = "resize set width 60 ppt height 60 ppt, opacity 0.95, sticky enable, border normal, move container to scratchpad";
+                  criteria = {
+                    title = "^spotifytui$";
+                  };
+                }
+                {
+
+                  command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+                  criteria = {
+                    class = "Spotify";
+                  };
+                }
+                {
+                  command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                  criteria = {
+                    app_id = "vesktop";
+                  };
+                }
+                {
+                  command = "resize set width 60 ppt height 60 ppt, sticky enable";
+                  criteria = {
+                    class = "Element";
+                  };
+                }
+                # {
+                #   command = "resize set width 60 ppt height 60 ppt, sticky enable, move container to scratchpad";
+                #   criteria = {
+                #     app_id="^$";
+                #     class="^$";
+                # };
+                # }
+              ];
+            };
+            gaps = {
+              inner = 5;
+            };
+          };
+          extraSessionCommands = ''
+            export XDG_CURRENT_DESKTOP=sway;
+            export XDG_SESSION_DESKTOP=sway;
+            export _JAVA_AWT_WM_NONREPARENTING=1;
+          '' + vars.waylandExports;
+          # extraConfigEarly = "
+          # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+          # exec hash dbus-update-activation-environment 2&gt;/dev/null &amp;&amp; dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+          # ";
+          extraConfig =
+            let
+              inherit (config.wayland.windowManager.sway.config) modifier;
+              swayfxSettings = config.swarselsystems.swayfxConfig;
+            in
+              "
+exec_always autotiling
+            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+
+            mode $exit {
+              bindsym --to-code {
+                s exec \"systemctl suspend\", mode \"default\"
+                h exec \"systemctl hibernate\", mode \"default\"
+                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+                p exec \"systemctl poweroff\"
+                r exec \"systemctl reboot\"
+                u exec \"swaymsg exit\"
+
+                Return mode \"default\"
+                Escape mode \"default\"
+                ${modifier}+Escape mode \"default\"
+              }
+            }
+
+            exec systemctl --user import-environment
+            exec swayidle -w
+
+            seat * hide_cursor 2000
+
+            exec_always kill -1 $(pidof kanshi)
+
+            bindswitch --locked lid:on exec kanshictl switch lidclosed
+            bindswitch --locked lid:off exec kanshictl switch lidopen
+
+            ${swayfxSettings}
+            ";
         };
       };
-      extraSessionCommands = ''
-        export SDL_VIDEODRIVER=wayland
-        export QT_QPA_PLATFORM=wayland
-        export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
-        export _JAVA_AWT_WM_NONREPARENTING=1
-        export XDG_CURRENT_DESKTOP=sway
-        export XDG_SESSION_DESKTOP=sway
-        export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox";
-        export ANKI_WAYLAND=1;
-        export OBSIDIAN_USE_WAYLAND=1;
-      '';
-      # extraConfigEarly = "
-      # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
-      # exec hash dbus-update-activation-environment 2&gt;/dev/null &amp;&amp; dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
-      # ";
-      extraConfig =
-        let
-          inherit (config.wayland.windowManager.sway.config) modifier;
-          swayfxSettings = config.swarselsystems.swayfxConfig;
-        in
-        "
-          exec_always autotiling
-          set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+    }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb" class="outline-5">
+<h5 id="h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb"><span class="section-number-5">3.3.1.32.</span> Niri</h5>
+<div class="outline-text-5" id="text-h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ config, pkgs, lib, vars, ... }:
+{
+  options.swarselmodules.niri = lib.mkEnableOption "niri settings";
+  config = lib.mkIf config.swarselmodules.niri {
 
-          mode $exit {
-            bindsym --to-code {
-              s exec \"systemctl suspend\", mode \"default\"
-              h exec \"systemctl hibernate\", mode \"default\"
-              l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-              p exec \"systemctl poweroff\"
-              r exec \"systemctl reboot\"
-              u exec \"swaymsg exit\"
-
-              Return mode \"default\"
-              Escape mode \"default\"
-              ${modifier}+Escape mode \"default\"
-            }
+    programs.niri = {
+      package = pkgs.niri-unstable; # which package to use for niri validation
+      settings = {
+        xwayland-satellite = {
+          enable = true;
+          path = "${lib.getExe pkgs.xwayland-satellite-unstable}";
+        };
+        prefer-no-csd = true;
+        layer-rules = [
+          { matches = [ { namespace = "^notifications$"; }]; block-out-from = "screencast";}
+          { matches = [ { namespace = "^wallpaper$"; }]; place-within-backdrop = true;}
+        ];
+        window-rules = [
+          {
+            matches = [{ app-id = ".*"; }];
+            opacity = 0.95;
+            default-column-width = { proportion = 0.5; };
+            shadow = {
+              enable = true;
+              draw-behind-window = true;
+            };
+            geometry-corner-radius = { top-left = 2.0; top-right = 2.0; bottom-left = 2.0; bottom-right = 2.0; };
           }
+          { matches = [{ app-id = "at.yrlf.wl_mirror"; }]; opacity = 1.0; }
+          { matches = [{ app-id = "Gimp"; }]; opacity = 1.0; }
+          { matches = [{ app-id = "firefox"; }]; opacity = 0.99; }
+          { matches = [{ app-id = "^special.*"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; }
+          { matches = [{ app-id = "chromium-browser"; }]; opacity = 0.99; }
+          { matches = [{ app-id = "^qalculate-gtk$"; }]; open-floating = true; }
+          { matches = [{ app-id = "^blueman$"; }]; open-floating = true; }
+          { matches = [{ app-id = "^pavucontrol$"; }]; open-floating = true; }
+          { matches = [{ app-id = "^syncthingtray$"; }]; open-floating = true; }
+          { matches = [{ app-id = "^Element$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screencast"; }
+          # { matches = [{ app-id = "^Element$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
+          { matches = [{ app-id = "^vesktop$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; block-out-from = "screencast"; }
+          # { matches = [{ app-id = "^vesktop$"; }]; default-column-width = { proportion = 0.9; }; open-on-workspace = "Scratchpad"; block-out-from = "screencast"; }
+          { matches = [{ app-id = "^com.nextcloud.desktopclient.nextcloud$"; }]; open-floating = true; }
+          { matches = [{ title = ".*1Password.*"; }]; excludes = [{ app-id = "^firefox$"; } { app-id = "^emacs$"; } { app-id = "^kitty$"; }]; open-floating = true; block-out-from = "screencast"; }
+          { matches = [{ title = "(?:Open|Save) (?:File|Folder|As)"; }]; open-floating = true; }
+          { matches = [{ title = "^Add$"; }]; open-floating = true; }
+          { matches = [{ title = "^Picture-in-Picture$"; }]; open-floating = true; }
+          { matches = [{ title = "Syncthing Tray"; }]; open-floating = true; }
+          { matches = [{ title = "^Emacs Popup Frame$"; }]; open-floating = true; }
+          { matches = [{ title = "^Emacs Popup Anchor$"; }]; open-floating = true; }
+          { matches = [{ app-id = "^spotifytui$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
+          { matches = [{ app-id = "^kittyterm$"; }]; open-floating = true; default-column-width = { proportion = 0.5; }; }
+        ];
+        environment = {
+          DISPLAY = ":0";
+        } // vars.waylandSessionVariables;
+        screenshot-path = "~/Pictures/Screenshots/screenshot_%Y-%m-%d-%H%M%S.png";
+        input = {
+          mod-key = "Super";
+          keyboard = {
+            xkb = {
+              layout = "us";
+              variant = "altgr-intl";
+            };
+          };
+          mouse = {
+            natural-scroll = false;
+          };
+          touchpad = {
+            enable = true;
+            tap = true;
+            tap-button-map = "left-right-middle";
+            natural-scroll = true;
+            scroll-method = "two-finger";
+            click-method = "clickfinger";
+            disabled-on-external-mouse = true;
+            drag = true;
+            drag-lock = false;
+            dwt = true;
+            dwtp = true;
+          };
+        };
+        cursor = {
+          hide-after-inactive-ms = 2000;
+          hide-when-typing = true;
+        };
+        layout = {
+          background-color = "transparent";
+          border = {
+            enable = true;
+            width = 1;
+          };
+          focus-ring = {
+            enable = false;
+          };
+          gaps = 5;
+        };
+        binds = with config.lib.niri.actions; let
+          sh = spawn "sh" "-c";
+        in
+        {
 
-          exec systemctl --user import-environment
-          exec swayidle -w
+          # "Mod+Super_L" = spawn "killall -SIGUSR1 .waybar-wrapped";
+          "Mod+z".action = spawn "killall -SIGUSR1 .waybar-wrapped";
+          "Mod+Shift+t".action = toggle-window-rule-opacity;
+          # "Mod+Escape".action = "mode $exit";
+          "Mod+m".action = focus-workspace-previous;
+          "Mod+Shift+Space".action = toggle-window-floating;
+          "Mod+Shift+f".action = toggle-windowed-fullscreen;
+          "Mod+q".action = close-window;
+          "Mod+f".action = spawn "firefox";
+          "Mod+Space".action = spawn "fuzzel";
+          "Mod+Shift+c".action = spawn "qalculate-gtk";
+          "Mod+Ctrl+p".action = spawn "1password" "--quick-acces";
+          "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
+          "Mod+h".action = sh ''hyprpicker | wl-copy'';
+          # "Mod+s".action = spawn "grim" "-g" "\"$(slurp)\"" "-t" "png" "-" "|" "wl-copy" "-t" "image/png";
+          "Mod+s".action = screenshot { show-pointer = false; };
+          # "Mod+Shift+s".action = spawn "slurp" "|" "grim" "-g" "-" "Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
+          "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+          # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
 
-          seat * hide_cursor 2000
+          "Mod+e".action = sh "emacsclient -nquc -a emacs -e '(dashboard-open)'";
+          "Mod+c".action = sh "emacsclient -ce '(org-capture)'";
+          "Mod+t".action = sh "emacsclient -ce '(org-agenda)'";
+          "Mod+Shift+m".action = sh "emacsclient -ce '(mu4e)'";
+          "Mod+Shift+a".action = sh "emacsclient -ce '(swarsel/open-calendar)'";
 
-          exec_always kill -1 $(pidof kanshi)
+          "Mod+a".action = spawn "swarselcheck-niri" "-s";
+          "Mod+x".action = spawn "swarselcheck-niri" "-k";
+          "Mod+d".action = spawn "swarselcheck-niri" "-d";
+          "Mod+w".action = spawn "swarselcheck-niri" "-e";
 
-          bindswitch --locked lid:on exec kanshictl switch lidclosed
-          bindswitch --locked lid:off exec kanshictl switch lidopen
+          "Mod+p".action = spawn "pass-fuzzel";
+          "Mod+o".action = spawn "pass-fuzzel" "--otp";
+          "Mod+Shift+p".action = spawn "pass-fuzzel" "--type";
+          "Mod+Shift+o".action = spawn "pass-fuzzel" "--otp" "--type";
 
-          ${swayfxSettings}
-          ";
+          "Mod+Left".action = focus-column-or-monitor-left;
+          "Mod+Right".action = focus-column-or-monitor-right;
+          "Mod+Down".action = focus-window-or-workspace-down;
+          "Mod+Up".action = focus-window-or-workspace-up;
+          "Mod+Shift+Left".action = move-column-left;
+          "Mod+Shift+Right".action = move-column-right;
+          "Mod+Shift+Down".action = move-window-down-or-to-workspace-down;
+          "Mod+Shift+Up".action = move-window-up-or-to-workspace-up;
+          # "Mod+Ctrl+Shift+c".action = "reload";
+          # "Mod+Ctrl+Shift+r".action = "exec swarsel-displaypower";
+          # "Mod+Shift+e".action = "exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -b 'Yes, exit sway' 'swaymsg exit'";
+          # "Mod+r".action = "mode resize";
+          # "Mod+Return".action = "exec kitty";
+          "Mod+Return".action = spawn "swarselzellij";
+          "XF86AudioRaiseVolume".action = spawn "swayosd-client" "--output-volume" "raise";
+          "XF86AudioLowerVolume".action = spawn "swayosd-client" "--output-volume" "lower";
+          "XF86AudioMute".action = spawn "swayosd-client" "--output-volume" "mute-toggle";
+          "XF86MonBrightnessUp".action = spawn "swayosd-client" "--brightness raise";
+          "XF86MonBrightnessDown".action = spawn "swayosd-client" "--brightness lower";
+          "XF86Display".action = spawn "wl-mirror" "eDP-1";
+          "Mod+Escape".action = spawn "wlogout";
+          "Mod+Equal".action = set-column-width "+10%";
+          "Mod+Minus".action = set-column-width "-10%";
+
+          "Mod+1".action = focus-workspace 1;
+          "Mod+2".action = focus-workspace 2;
+          "Mod+3".action = focus-workspace 3;
+          "Mod+4".action = focus-workspace 4;
+          "Mod+5".action = focus-workspace 5;
+          "Mod+6".action = focus-workspace 6;
+          "Mod+7".action = focus-workspace 7;
+          "Mod+8".action = focus-workspace 8;
+          "Mod+9".action = focus-workspace 9;
+          "Mod+0".action = focus-workspace 0;
+
+          "Mod+Shift+1".action = move-column-to-index 1;
+          "Mod+Shift+2".action = move-column-to-index 2;
+          "Mod+Shift+3".action = move-column-to-index 3;
+          "Mod+Shift+4".action = move-column-to-index 4;
+          "Mod+Shift+5".action = move-column-to-index 5;
+          "Mod+Shift+6".action = move-column-to-index 6;
+          "Mod+Shift+7".action = move-column-to-index 7;
+          "Mod+Shift+8".action = move-column-to-index 8;
+          "Mod+Shift+9".action = move-column-to-index 9;
+          "Mod+Shift+0".action = move-column-to-index 0;
+        };
+        spawn-at-startup = [
+          { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
+          { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
+          { command = [ "anki" ]; }
+          { command = [ "obsidian" ]; }
+          { command = [ "nm-applet" ]; }
+          { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
+        ];
+        workspaces = {
+          # "01-Main" = {
+          #   name = "Scratchpad";
+          # };
+          "99-Scratchpad" = {
+            name = "";
+          };
+        };
+      };
     };
+
   };
 }
 </pre>
@@ -14781,22 +15272,22 @@ in
 </div>
 </div>
 <div id="outline-container-h:eb94df98-2bcd-4555-9f88-e252f93b924f" class="outline-5">
-<h5 id="h:eb94df98-2bcd-4555-9f88-e252f93b924f"><span class="section-number-5">3.3.1.32.</span> Kanshi</h5>
+<h5 id="h:eb94df98-2bcd-4555-9f88-e252f93b924f"><span class="section-number-5">3.3.1.33.</span> Kanshi</h5>
 <div class="outline-text-5" id="text-h:eb94df98-2bcd-4555-9f88-e252f93b924f">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, ... }:
 {
   options.swarselmodules.kanshi = lib.mkEnableOption "kanshi settings";
   config = lib.mkIf config.swarselmodules.kanshi {
     swarselsystems = {
       monitors = {
-        homedesktop = {
+        homedesktop = rec {
           name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
           mode = "2560x1440";
           scale = "1";
           position = "0,0";
-          workspace = "1:一";
-          output = "DP-11";
+          workspace = "11:M";
+          output = name;
         };
       };
     };
@@ -14822,6 +15313,7 @@ in
         {
           profile = {
             name = "lidopen";
+            exec = [ "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}" ];
             outputs = [
               {
                 criteria = "eDP-2";
@@ -14832,41 +15324,51 @@ in
           };
         }
         {
-          profile = {
-            name = "lidopen";
-            outputs = [
-              {
-                criteria = config.swarselsystems.sharescreen;
-                status = "enable";
-                scale = 1.7;
-                position = "2560,0";
-              }
-              {
-                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                scale = 1.0;
-                mode = "2560x1440";
-                position = "0,0";
-              }
-            ];
-          };
+          profile =
+            let
+              monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            in
+            {
+              name = "lidopen";
+              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}" ];
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "enable";
+                  scale = 1.7;
+                  position = "2560,0";
+                }
+                {
+                  criteria = monitor;
+                  scale = 1.0;
+                  mode = "2560x1440";
+                  position = "0,0";
+                }
+              ];
+            };
         }
         {
-          profile = {
-            name = "lidclosed";
-            outputs = [
-              {
-                criteria = config.swarselsystems.sharescreen;
-                status = "disable";
-                position = "2560,0";
-              }
-              {
-                criteria = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-                scale = 1.0;
-                mode = "2560x1440";
-                position = "0,0";
-              }
-            ];
-          };
+          profile =
+            let
+              monitor = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
+            in
+            {
+              name = "lidclosed";
+              exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}"] ;
+              outputs = [
+                {
+                  criteria = config.swarselsystems.sharescreen;
+                  status = "disable";
+                  position = "2560,0";
+                }
+                {
+                  criteria = monitor;
+                  scale = 1.0;
+                  mode = "2560x1440";
+                  position = "0,0";
+                }
+              ];
+            };
         }
       ];
     };
@@ -14877,7 +15379,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:7d384e3b-1be7-4644-b304-ada4af0b692b" class="outline-5">
-<h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">3.3.1.33.</span> gpg-agent</h5>
+<h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">3.3.1.34.</span> gpg-agent</h5>
 <div class="outline-text-5" id="text-h:7d384e3b-1be7-4644-b304-ada4af0b692b">
 <p>
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
@@ -14893,11 +15395,14 @@ in
   config = lib.mkIf config.swarselmodules.gpgagent {
     services.gpg-agent = {
       enable = true;
+      verbose = true;
       enableZshIntegration = true;
       enableScDaemon = true;
       enableSshSupport = true;
       enableExtraSocket = true;
-      pinentry.package = pkgs.pinentry.gtk2;
+      pinentry.package = pkgs.wayprompt;
+      pinentry.program = "pinentry-wayprompt";
+      # pinentry.package = pkgs.pinentry.gtk2;
       defaultCacheTtl = 600;
       maxCacheTtl = 7200;
       extraConfig = ''
@@ -14931,7 +15436,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:74e236be-a977-4d38-b8c5-0b9feef8af91" class="outline-5">
-<h5 id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"><span class="section-number-5">3.3.1.34.</span> gammastep</h5>
+<h5 id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"><span class="section-number-5">3.3.1.35.</span> gammastep</h5>
 <div class="outline-text-5" id="text-h:74e236be-a977-4d38-b8c5-0b9feef8af91">
 <p>
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
@@ -14957,7 +15462,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708" class="outline-5">
-<h5 id="h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708"><span class="section-number-5">3.3.1.35.</span> Spicetify</h5>
+<h5 id="h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708"><span class="section-number-5">3.3.1.36.</span> Spicetify</h5>
 <div class="outline-text-5" id="text-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ inputs, lib, config, pkgs, ... }:
@@ -15156,531 +15661,561 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
 let
   inherit (config.swarselsystems) homeDir;
 in
-{
-  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
-  config = lib.mkIf config.swarselmodules.optional.work
-    {
-      home.packages = with pkgs; [
-        stable.teams-for-linux
-        shellcheck
-        dig
-        docker
-        postman
-        rclone
-        stable24_05.awscli2
-        libguestfs-with-appliance
-        stable.prometheus.cli
-        tigervnc
-        openstackclient
-      ];
+  {
+    options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
+    config = lib.mkIf config.swarselmodules.optional.work
+      {
+        home.packages = with pkgs; [
+          stable.teams-for-linux
+          shellcheck
+          dig
+          docker
+          postman
+          rclone
+          stable24_05.awscli2
+          libguestfs-with-appliance
+          stable.prometheus.cli
+          tigervnc
+          openstackclient
+        ];
 
-      home.sessionVariables = {
-        DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
-        DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
-      };
+        systemd.user.sessionVariables = {
+          DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+        };
 
-      accounts.email.accounts.work =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
-        in
-        {
-          primary = false;
-          address = mailAddress;
-          userName = mailAddress;
-          realName = mailName;
-          passwordCommand = "pizauth show work";
-          imap = {
-            host = "outlook.office365.com";
-            port = 993;
-            tls.enable = true; # SSL/TLS
-          };
-          smtp = {
-            host = "outlook.office365.com";
-            port = 587;
-            tls = {
-              enable = true; # SSL/TLS
-              useStartTls = true;
-            };
-          };
-          thunderbird = {
-            enable = true;
-            profiles = [ "default" ];
-            settings = id: {
-              "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
-              "mail.server.server_${id}.authMethod" = 10; # oauth
-              # "toolkit.telemetry.enabled" = false;
-              # "toolkit.telemetry.rejected" = true;
-              # "toolkit.telemetry.prompted" = 2;
-            };
-          };
-          msmtp = {
-            enable = false;
-            extraConfig = {
-              account = "work";
-              auth = "xoauth2";
-              host = "outlook.office365.com";
-              protocol = "smtp";
-              port = "587";
-              tls = "on";
-              tls_starttls = "on";
-              from = "${mailAddress}";
-              user = "${mailAddress}";
-              passwordeval = "pizauth show work";
-            };
-          };
-          mu.enable = false;
-          mbsync = {
-            enable = false;
-            expunge = "both";
-            extraConfig = {
-              account = {
-                AuthMechs = "XOAUTH2";
+        accounts.email.accounts.work =
+          let
+            inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
+          in
+            {
+              primary = false;
+              address = mailAddress;
+              userName = mailAddress;
+              realName = mailName;
+              passwordCommand = "pizauth show work";
+              imap = {
+                host = "outlook.office365.com";
+                port = 993;
+                tls.enable = true; # SSL/TLS
+              };
+              smtp = {
+                host = "outlook.office365.com";
+                port = 587;
+                tls = {
+                  enable = true; # SSL/TLS
+                  useStartTls = true;
+                };
+              };
+              thunderbird = {
+                enable = true;
+                profiles = [ "default" ];
+                settings = id: {
+                  "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
+                  "mail.server.server_${id}.authMethod" = 10; # oauth
+                  # "toolkit.telemetry.enabled" = false;
+                  # "toolkit.telemetry.rejected" = true;
+                  # "toolkit.telemetry.prompted" = 2;
+                };
+              };
+              msmtp = {
+                enable = true;
+                extraConfig = {
+                  auth = "xoauth2";
+                  host = "outlook.office365.com";
+                  protocol = "smtp";
+                  port = "587";
+                  tls = "on";
+                  tls_starttls = "on";
+                  from = "${mailAddress}";
+                  user = "${mailAddress}";
+                  passwordeval = "pizauth show work";
+                };
+              };
+              mu.enable = true;
+              mbsync = {
+                enable = true;
+                expunge = "both";
+                patterns = [ "INBOX" ];
+                extraConfig = {
+                  account = {
+                    AuthMechs = "XOAUTH2";
+                  };
+                };
               };
             };
+
+        # wayland.windowManager.sway.config = {
+        #   output = {
+        #     "Applied Creative Technology Transmitter QUATTRO201811" = {
+        #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+        #     };
+        #     "Hewlett Packard HP Z24i CN44250RDT" = {
+        #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+        #     };
+        #     "HP Inc. HP 732pk CNC4080YL5" = {
+        #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+        #     };
+        #   };
+        # };
+
+        stylix = {
+          targets.firefox.profileNames =
+            let
+              inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+            in
+              [
+                "${user1}"
+                "${user2}"
+                "${user3}"
+                "work"
+              ];
+        };
+
+        programs =
+          let
+            inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+          in
+            {
+              git.userEmail = lib.mkForce gitMail;
+
+              zsh = {
+                shellAliases = {
+                  dssh = "ssh -l ${user1Long}";
+                  cssh = "ssh -l ${user2Long}";
+                  wssh = "ssh -l ${user3Long}";
+                };
+                cdpath = [
+                  "~/Documents/Work"
+                ];
+                dirHashes = {
+                  d = "$HOME/.dotfiles";
+                  w = "$HOME/Documents/Work";
+                  s = "$HOME/.dotfiles/secrets";
+                  pr = "$HOME/Documents/Private";
+                  ac = path1;
+                };
+
+                sessionVariables = {
+                  VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
+                  VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
+                  GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
+                  GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
+                  GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
+                  GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
+                  GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
+                  GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
+                  GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
+                  GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
+                };
+              };
+
+              ssh = {
+                matchBlocks = {
+                  "${loc1}" = {
+                    hostname = "${loc1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.stg" = {
+                    hostname = "${loc1}.${lifecycle1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.staging" = {
+                    hostname = "${loc1}.${lifecycle1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.dev" = {
+                    hostname = "${loc1}.${lifecycle2}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc2}" = {
+                    hostname = "${loc2}.${domain1}";
+                    user = user1Long;
+                  };
+                  "${loc2}.stg" = {
+                    hostname = "${loc2}.${lifecycle1}.${domain2}";
+                    user = user1Long;
+                  };
+                  "${loc2}.staging" = {
+                    hostname = "${loc2}.${lifecycle1}.${domain2}";
+                    user = user1Long;
+                  };
+                  "*.${domain1}" = {
+                    user = user1Long;
+                  };
+                };
+              };
+
+              firefox = {
+                profiles =
+                  let
+                    isDefault = false;
+                  in
+                    {
+                      "${user1}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 1;
+                          settings = {
+                            "browser.startup.homepage" = "${site1}|${site2}";
+                          };
+                        }
+                        vars.firefox;
+                      "${user2}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 2;
+                          settings = {
+                            "browser.startup.homepage" = "${site3}";
+                          };
+                        }
+                        vars.firefox;
+                      "${user3}" = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 3;
+                        }
+                        vars.firefox;
+                      work = lib.recursiveUpdate
+                        {
+                          inherit isDefault;
+                          id = 4;
+                          settings = {
+                            "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                          };
+                        }
+                        vars.firefox;
+                    };
+              };
+
+              chromium = {
+                enable = true;
+                package = pkgs.chromium;
+
+                extensions = [
+                  # 1password
+                  "gejiddohjgogedgjnonbofjigllpkmbf"
+                  # dark reader
+                  "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+                  # ublock origin
+                  "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+                  # i still dont care about cookies
+                  "edibdbjcniadpccecjdfdjjppcpchdlm"
+                  # browserpass
+                  "naepdomgkenhinolocfifgehidddafch"
+                ];
+              };
+            };
+
+        services = {
+          kanshi = {
+            settings = [
+              {
+                # seminary room
+                output = {
+                  criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                  scale = 1.0;
+                  mode = "1280x720";
+                };
+              }
+              {
+                # work main screen
+                output = {
+                  criteria = "HP Inc. HP 732pk CNC4080YL5";
+                  scale = 1.0;
+                  mode = "3840x2160";
+                };
+              }
+              {
+                # work side screen
+                output = {
+                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  scale = 1.0;
+                  mode = "1920x1200";
+                  transform = "270";
+                };
+              }
+              {
+                profile = {
+                  name = "lidopen";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "enable";
+                      scale = 1.5;
+                      position = "1462,0";
+                    }
+                    {
+                      criteria = "HP Inc. HP 732pk CNC4080YL5";
+                      scale = 1.4;
+                      mode = "3840x2160";
+                      position = "-1280,0";
+                    }
+                    {
+                      criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                      scale = 1.0;
+                      mode = "1920x1200";
+                      transform = "90";
+                      position = "-2480,0";
+                    }
+                  ];
+                };
+              }
+              {
+                profile = let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                  in {
+                  name = "lidopen";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "enable";
+                      scale = 1.7;
+                      position = "2560,0";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
+                };
+              }
+              {
+                profile = {
+                  name = "lidclosed";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "disable";
+                    }
+                    {
+                      criteria = "HP Inc. HP 732pk CNC4080YL5";
+                      scale = 1.4;
+                      mode = "3840x2160";
+                      position = "-1280,0";
+                    }
+                    {
+                      criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                      scale = 1.0;
+                      mode = "1920x1200";
+                      transform = "270";
+                      position = "-2480,0";
+                    }
+                  ];
+                };
+              }
+              {
+                profile = let
+                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                  in {
+                  name = "lidclosed";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "disable";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
+                };
+              }
+            ];
           };
         };
 
-      wayland.windowManager.sway.config = {
-        output = {
-          "Applied Creative Technology Transmitter QUATTRO201811" = {
-            bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-          };
-          "Hewlett Packard HP Z24i CN44250RDT" = {
-            bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-          };
-          "HP Inc. HP 732pk CNC4080YL5" = {
-            bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-          };
+        systemd.user.services.pizauth.Service = {
+          ExecStartPost= [
+            "${pkgs.toybox}/bin/sleep 1"
+            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
+          ];
         };
-      };
 
-      stylix = {
-        targets.firefox.profileNames =
+        swarselservices.pizauth = {
+          enable = true;
+          extraConfig = ''
+            auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+            error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+            token_event_cmd = "pizauth dump &gt; ${homeDir}/.pizauth.state";
+          '';
+          accounts = {
+            work = {
+              authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+              tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+              clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+              clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+              scopes = [
+                "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                "https://outlook.office365.com/SMTP.Send"
+                "offline_access"
+              ];
+              loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+            };
+          };
+
+        };
+
+        xdg =
           let
             inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
           in
-          [
-            "${user1}"
-            "${user2}"
-            "${user3}"
-            "work"
+            {
+              mimeApps = {
+                defaultApplications = {
+                  "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+                };
+              };
+              desktopEntries =
+                let
+                  terminal = false;
+                  categories = [ "Application" ];
+                  icon = "firefox";
+                in
+                  {
+                    firefox_work = {
+                      name = "Firefox (work)";
+                      genericName = "Firefox work";
+                      exec = "firefox -p work";
+                      inherit terminal categories icon;
+                    };
+                    "firefox_${user1}" = {
+                      name = "Firefox (${user1})";
+                      genericName = "Firefox ${user1}";
+                      exec = "firefox -p ${user1}";
+                      inherit terminal categories icon;
+                    };
+
+                    "firefox_${user2}" = {
+                      name = "Firefox (${user2})";
+                      genericName = "Firefox ${user2}";
+                      exec = "firefox -p ${user2}";
+                      inherit terminal categories icon;
+                    };
+
+                    "firefox_${user3}" = {
+                      name = "Firefox (${user3})";
+                      genericName = "Firefox ${user3}";
+                      exec = "firefox -p ${user3}";
+                      inherit terminal categories icon;
+                    };
+
+
+                  };
+            };
+        swarselsystems = {
+          startup = [
+            # { command = "nextcloud --background"; }
+            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            { command = "anki"; }
+            { command = "obsidian"; }
+            { command = "nm-applet"; }
+            # { command = "feishin"; }
+            { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+            { command = "1password"; }
           ];
-      };
-
-      programs =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
-        in
-        {
-          git.userEmail = lib.mkForce gitMail;
-
-          zsh = {
-            shellAliases = {
-              dssh = "ssh -l ${user1Long}";
-              cssh = "ssh -l ${user2Long}";
-              wssh = "ssh -l ${user3Long}";
+          monitors = {
+            work_back_middle = rec {
+              name = "LG Electronics LG Ultra HD 0x000305A6";
+              mode = "2560x1440";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              # output = "DP-10";
+              output = name;
             };
-            cdpath = [
-              "~/Documents/Work"
-            ];
-            dirHashes = {
-              d = "$HOME/.dotfiles";
-              w = "$HOME/Documents/Work";
-              s = "$HOME/.dotfiles/secrets";
-              pr = "$HOME/Documents/Private";
-              ac = path1;
+            work_front_left = rec {
+              name = "LG Electronics LG Ultra HD 0x0007AB45";
+              mode = "3840x2160";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              # output = "DP-7";
+              output = name;
             };
-          };
-
-          ssh = {
-            matchBlocks = {
-              "${loc1}" = {
-                hostname = "${loc1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.stg" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.staging" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.dev" = {
-                hostname = "${loc1}.${lifecycle2}.${domain2}";
-                user = user4;
-              };
-              "${loc2}" = {
-                hostname = "${loc2}.${domain1}";
-                user = user1Long;
-              };
-              "${loc2}.stg" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "${loc2}.staging" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "*.${domain1}" = {
-                user = user1Long;
-              };
+            work_back_right = rec {
+              name = "HP Inc. HP Z32 CN41212T55";
+              mode = "3840x2160";
+              scale = "1";
+              position = "5120,0";
+              workspace = "1:一";
+              # output = "DP-3";
+              output = name;
+            };
+            work_middle_middle_main = rec {
+              name = "HP Inc. HP 732pk CNC4080YL5";
+              mode = "3840x2160";
+              scale = "1";
+              position = "-1280,0";
+              workspace = "11:M";
+              # output = "DP-8";
+              output = name;
+            };
+            work_middle_middle_side = rec {
+              name = "Hewlett Packard HP Z24i CN44250RDT";
+              mode = "1920x1200";
+              transform = "270";
+              scale = "1";
+              position = "-2480,0";
+              workspace = "12:S";
+              # output = "DP-9";
+              output = name;
+            };
+            work_seminary = rec {
+              name = "Applied Creative Technology Transmitter QUATTRO201811";
+              mode = "1280x720";
+              scale = "1";
+              position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+              workspace = "14:T";
+              # output = "DP-4";
+              output = name;
             };
           };
-
-          firefox = {
-            profiles =
-              let
-                isDefault = false;
-              in
-              {
-                "${user1}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 1;
-                    settings = {
-                      "browser.startup.homepage" = "${site1}|${site2}";
-                    };
-                  }
-                  vars.firefox;
-                "${user2}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 2;
-                    settings = {
-                      "browser.startup.homepage" = "${site3}";
-                    };
-                  }
-                  vars.firefox;
-                "${user3}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 3;
-                  }
-                  vars.firefox;
-                work = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 4;
-                    settings = {
-                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                    };
-                  }
-                  vars.firefox;
-              };
+          inputs = {
+            "1133:45081:MX_Master_2S_Keyboard" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+            #   dwt = "enabled";
+            #   tap = "enabled";
+            #   natural_scroll = "enabled";
+            #   middle_emulation = "enabled";
+            #   drag_lock = "disabled";
+            # };
+            "1133:50504:Logitech_USB_Receiver" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
+            "1133:45944:MX_KEYS_S" = {
+              xkb_layout = "us";
+              xkb_variant = "altgr-intl";
+            };
           };
 
-          chromium = {
-            enable = true;
-            package = pkgs.chromium;
-
-            extensions = [
-              # 1password
-              "gejiddohjgogedgjnonbofjigllpkmbf"
-              # dark reader
-              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-              # ublock origin
-              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-              # i still dont care about cookies
-              "edibdbjcniadpccecjdfdjjppcpchdlm"
-              # browserpass
-              "naepdomgkenhinolocfifgehidddafch"
-            ];
-          };
-        };
-
-      services = {
-        kanshi = {
-          settings = [
-            {
-              # seminary room
-              output = {
-                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                scale = 1.0;
-                mode = "1280x720";
-              };
-            }
-            {
-              # work main screen
-              output = {
-                criteria = "HP Inc. HP 732pk CNC4080YL5";
-                scale = 1.0;
-                mode = "3840x2160";
-              };
-            }
-            {
-              # work side screen
-              output = {
-                criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                scale = 1.0;
-                mode = "1920x1200";
-                transform = "270";
-              };
-            }
-            {
-              profile = {
-                name = "lidopen";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
-                    scale = 1.5;
-                    position = "1462,0";
-                  }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                  {
-                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                    scale = 1.0;
-                    mode = "1920x1200";
-                    transform = "90";
-                    position = "-2480,0";
-                  }
-                ];
-              };
-            }
-            {
-              profile = {
-                name = "lidopen";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
-                    scale = 1.7;
-                    position = "2560,0";
-                  }
-                  {
-                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                    scale = 1.0;
-                    mode = "1280x720";
-                    position = "10000,10000";
-                  }
-                ];
-              };
-            }
-            {
-              profile = {
-                name = "lidclosed";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "disable";
-                  }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                  {
-                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                    scale = 1.0;
-                    mode = "1920x1200";
-                    transform = "270";
-                    position = "-2480,0";
-                  }
-                ];
-              };
-            }
-            {
-              profile = {
-                name = "lidclosed";
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "disable";
-                  }
-                  {
-                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                    scale = 1.0;
-                    mode = "1280x720";
-                    position = "10000,10000";
-                  }
-                ];
-              };
-            }
-          ];
         };
       };
 
-      swarselservices.pizauth = {
-        enable = true;
-        accounts = {
-          work = {
-            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-            scopes = [
-              "https://outlook.office365.com/IMAP.AccessAsUser.All"
-              "https://outlook.office365.com/SMTP.Send"
-              "offline_access"
-            ];
-            loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-          };
-        };
-
-      };
-
-      xdg =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
-        in
-        {
-          mimeApps = {
-            defaultApplications = {
-              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
-            };
-          };
-          desktopEntries =
-            let
-              terminal = false;
-              categories = [ "Application" ];
-              icon = "firefox";
-            in
-            {
-              firefox_work = {
-                name = "Firefox (work)";
-                genericName = "Firefox work";
-                exec = "firefox -p work";
-                inherit terminal categories icon;
-              };
-              "firefox_${user1}" = {
-                name = "Firefox (${user1})";
-                genericName = "Firefox ${user1}";
-                exec = "firefox -p ${user1}";
-                inherit terminal categories icon;
-              };
-
-              "firefox_${user2}" = {
-                name = "Firefox (${user2})";
-                genericName = "Firefox ${user2}";
-                exec = "firefox -p ${user2}";
-                inherit terminal categories icon;
-              };
-
-              "firefox_${user3}" = {
-                name = "Firefox (${user3})";
-                genericName = "Firefox ${user3}";
-                exec = "firefox -p ${user3}";
-                inherit terminal categories icon;
-              };
-
-
-            };
-        };
-      swarselsystems = {
-        startup = [
-          # { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "ANKI_WAYLAND=1 anki"; }
-          { command = "OBSIDIAN_USE_WAYLAND=1 obsidian"; }
-          { command = "nm-applet"; }
-          # { command = "feishin"; }
-          { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-          { command = "1password"; }
-        ];
-        monitors = {
-          main = {
-            name = "BOE 0x0BC9 Unknown";
-            mode = "2560x1600"; # TEMPLATE
-            scale = "1";
-            position = "2560,0";
-            workspace = "15:L";
-            output = "eDP-2";
-          };
-          homedesktop = {
-            name = "Philips Consumer Electronics Company PHL BDM3270 AU11806002320";
-            mode = "2560x1440";
-            scale = "1";
-            position = "0,0";
-            workspace = "1:一";
-            output = "DP-11";
-          };
-          work_back_middle = {
-            name = "LG Electronics LG Ultra HD 0x000305A6";
-            mode = "2560x1440";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-10";
-          };
-          work_front_left = {
-            name = "LG Electronics LG Ultra HD 0x0007AB45";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-7";
-          };
-          work_back_right = {
-            name = "HP Inc. HP Z32 CN41212T55";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            output = "DP-3";
-          };
-          work_middle_middle_main = {
-            name = "HP Inc. HP 732pk CNC4080YL5";
-            mode = "3840x2160";
-            scale = "1";
-            position = "-1280,0";
-            workspace = "11:M";
-            output = "DP-8";
-          };
-          work_middle_middle_side = {
-            name = "Hewlett Packard HP Z24i CN44250RDT";
-            mode = "1920x1200";
-            transform = "270";
-            scale = "1";
-            position = "-2480,0";
-            workspace = "12:S";
-            output = "DP-9";
-          };
-          work_seminary = {
-            name = "Applied Creative Technology Transmitter QUATTRO201811";
-            mode = "1280x720";
-            scale = "1";
-            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-            workspace = "14:T";
-            output = "DP-4";
-          };
-        };
-        inputs = {
-          "1133:45081:MX_Master_2S_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-          #   dwt = "enabled";
-          #   tap = "enabled";
-          #   natural_scroll = "enabled";
-          #   middle_emulation = "enabled";
-          #   drag_lock = "disabled";
-          # };
-          "1133:50504:Logitech_USB_Receiver" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1133:45944:MX_KEYS_S" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-        };
-        keybindings = {
-          "Mod4+Ctrl+Shift+p" = "exec screenshare";
-        };
-
-      };
-    };
-
-}
+  }
 
 </pre>
 </div>
@@ -15865,7 +16400,20 @@ In short, the options defined here are passed to the modules systems using <code
 <pre class="src src-nix-ts">{ self, lib, pkgs, ... }:
 {
   _module.args = {
-    vars = {
+    vars = rec {
+      waylandSessionVariables = {
+        SDL_VIDEODRIVER = "wayland";
+        QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
+        QT_QPA_PLATFORM = "wayland-egl";
+        ANKI_WAYLAND = "1";
+        OBSIDIAN_USE_WAYLAND = "1";
+        MOZ_ENABLE_WAYLAND = "1";
+      };
+
+      waylandExports = let
+        renderedWaylandExports = map (key: "export ${key}=${waylandSessionVariables.${key}};") (builtins.attrNames waylandSessionVariables);
+      in builtins.concatStringsSep "\n" renderedWaylandExports;
+
       stylix = {
         polarity = "dark";
         opacity.popups = 0.5;
@@ -16413,7 +16961,7 @@ command_not_found_handle() {
     fi
 
     echo -n "searching nix-index..."
-    ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --top-level --whole-name --at-root "/bin/$1")
+    ATTRS=$(@nix-locate@ --minimal --no-group --type x --type s --whole-name --at-root "/bin/$1")
 
     case $(echo -n "$ATTRS" | grep -c "^") in
     0)
@@ -16477,7 +17025,7 @@ if [[ $kitty -eq 1 ]]; then
     STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
     CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
     if [ "$CHECK" == "" ]; then
-        exec kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &amp;
+        exec kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &amp;
         sleep 1
     fi
     if [ "$STR" == "" ]; then
@@ -16503,7 +17051,7 @@ elif [[ $spotifyplayer -eq 1 ]]; then
     STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
     CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
     if [ "$CHECK" == "" ]; then
-        exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player &amp;
+        exec kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player &amp;
         sleep 1
     fi
     if [ "$STR" == "" ]; then
@@ -16527,8 +17075,63 @@ writeShellApplication {
 </div>
 </div>
 </div>
+<div id="outline-container-h:96da8360-2d23-4e86-9602-415fbdb972af" class="outline-4">
+<h4 id="h:96da8360-2d23-4e86-9602-415fbdb972af"><span class="section-number-4">3.5.11.</span> swarselcheck-niri</h4>
+<div class="outline-text-4" id="text-h:96da8360-2d23-4e86-9602-415fbdb972af">
+<div class="org-src-container">
+<pre class="src src-shell">while :; do
+    case ${1:-} in
+    -k | --kitty)
+        cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&amp;')
+        searchapp="kittyterm"
+        ;;
+    -e | --element)
+        cmd=(element-desktop)
+        searchapp="Element"
+        ;;
+    -d | --vesktop)
+        cmd=(vesktop)
+        searchapp="vesktop"
+        ;;
+    -s | --spotifyplayer)
+        cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&amp;')
+        searchapp="spotifytui"
+        ;;
+    *) break ;;
+    esac
+    shift
+done
+
+WIN_INFO=$(niri msg -j windows | jq --arg search "$searchapp" '.[] | select (.app_id | test($search)) | { id, is_focused, workspace_id }')
+ID=$(echo "$WIN_INFO" | jq -r '.id // empty')
+IS_FOCUSED=$(echo "$WIN_INFO" | jq -r '.is_focused // empty')
+TARGET_MONITOR=$(niri msg -j workspaces | jq --arg search "" '.[] | select (.name != null and (.name | test($search))) | { output }' | jq -r '.output // empty')
+CURRENT_WORKSPACE=$(niri msg -j workspaces | jq -r '.[] | select (.is_active == true) | .output // empty')
+
+if [ -z "$ID" ]; then
+    niri msg action spawn -- "${cmd[@]}"
+elif [ "$IS_FOCUSED" ]; then
+    niri msg action move-window-to-workspace "" --window-id "$ID" --focus false
+else
+    niri msg action focus-monitor "$TARGET_MONITOR" &amp;&amp; niri msg action move-window-to-workspace "$CURRENT_WORKSPACE" --window-id "$ID" &amp;&amp; niri msg action focus-floating
+fi
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
+writeShellApplication {
+  inherit name;
+  runtimeInputs = [ kitty element-desktop vesktop spotify-player jq ];
+  text = builtins.readFile "${self}/files/scripts/${name}.sh";
+}
+
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:564c102c-e335-4f17-a613-c5a436bb4864" class="outline-4">
-<h4 id="h:564c102c-e335-4f17-a613-c5a436bb4864"><span class="section-number-4">3.5.11.</span> swarselzellij</h4>
+<h4 id="h:564c102c-e335-4f17-a613-c5a436bb4864"><span class="section-number-4">3.5.12.</span> swarselzellij</h4>
 <div class="outline-text-4" id="text-h:564c102c-e335-4f17-a613-c5a436bb4864">
 <div class="org-src-container">
 <pre class="src src-shell"># KITTIES=$(($(pgrep -P 1 kitty | wc -l) - 1))
@@ -16555,7 +17158,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:f93f66f9-6b8b-478e-b139-b2f382c1f25e" class="outline-4">
-<h4 id="h:f93f66f9-6b8b-478e-b139-b2f382c1f25e"><span class="section-number-4">3.5.12.</span> waybarupdate</h4>
+<h4 id="h:f93f66f9-6b8b-478e-b139-b2f382c1f25e"><span class="section-number-4">3.5.13.</span> waybarupdate</h4>
 <div class="outline-text-4" id="text-h:f93f66f9-6b8b-478e-b139-b2f382c1f25e">
 <p>
 This scripts checks if there are uncommited changes in either my dotfile repo, my university repo, or my passfile repo. In that case a warning will be shown in waybar.
@@ -16602,7 +17205,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:a1d94db2-837a-40c4-bbd8-81ce847440ee" class="outline-4">
-<h4 id="h:a1d94db2-837a-40c4-bbd8-81ce847440ee"><span class="section-number-4">3.5.13.</span> opacitytoggle</h4>
+<h4 id="h:a1d94db2-837a-40c4-bbd8-81ce847440ee"><span class="section-number-4">3.5.14.</span> opacitytoggle</h4>
 <div class="outline-text-4" id="text-h:a1d94db2-837a-40c4-bbd8-81ce847440ee">
 <p>
 This app quickly toggles between 5% and 0% transparency.
@@ -16629,7 +17232,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0" class="outline-4">
-<h4 id="h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0"><span class="section-number-4">3.5.14.</span> fs-diff</h4>
+<h4 id="h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0"><span class="section-number-4">3.5.15.</span> fs-diff</h4>
 <div class="outline-text-4" id="text-h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0">
 <p>
 This utility is used to compare the current state of the root directory with the blanket state that is stored in /root-blank (the snapshot that is restored on each reboot of an impermanence machine). Using this, I can find files that I will lose once I reboot - if there are important files in that list, I can then easily add them to the persist options.
@@ -16670,7 +17273,7 @@ writeShellApplication {
 </div>
 </div>
 <div id="outline-container-h:a9398c4e-4d3b-4942-b03c-192f9c0517e5" class="outline-4">
-<h4 id="h:a9398c4e-4d3b-4942-b03c-192f9c0517e5"><span class="section-number-4">3.5.15.</span> github-notifications</h4>
+<h4 id="h:a9398c4e-4d3b-4942-b03c-192f9c0517e5"><span class="section-number-4">3.5.16.</span> github-notifications</h4>
 <div class="outline-text-4" id="text-h:a9398c4e-4d3b-4942-b03c-192f9c0517e5">
 <p>
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
@@ -16695,66 +17298,23 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-h:9d49531a-1d9b-4600-b200-18befb5e0f3a" class="outline-4">
-<h4 id="h:9d49531a-1d9b-4600-b200-18befb5e0f3a"><span class="section-number-4">3.5.16.</span> fullscreen</h4>
-<div class="outline-text-4" id="text-h:9d49531a-1d9b-4600-b200-18befb5e0f3a">
+<div id="outline-container-h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5" class="outline-4">
+<h4 id="h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5"><span class="section-number-4">3.5.17.</span> kanshare</h4>
+<div class="outline-text-4" id="text-h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5">
 <p>
-This application moves the wl-mirror app to the T workspace and makes it fullscreen there.
+This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 </p>
 
+
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ name, writeShellApplication, sway, ... }:
+<pre class="src src-nix-ts">{ name, writeShellApplication, wlr-randr, busybox, wl-mirror, ... }:
 
 writeShellApplication {
   inherit name;
-  runtimeInputs = [ sway ];
+  runtimeInputs = [ wlr-randr busybox wl-mirror];
   text = ''
-    swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
-    swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
+    wlr-randr | grep "$2" | cut -d" " -f1 | xargs -I{} wl-present mirror "$1" --fullscreen-output {}
   '';
-}
-</pre>
-</div>
-</div>
-</div>
-<div id="outline-container-h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda" class="outline-4">
-<h4 id="h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda"><span class="section-number-4">3.5.17.</span> screenshare</h4>
-<div class="outline-text-4" id="text-h:960e539c-2a5a-4e21-b3d4-bcdfc8be8fda">
-<div class="org-src-container">
-<pre class="src src-shell">
-headless="false"
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -h)
-        headless="true"
-        ;;
-    *)
-        echo "Invalid option detected."
-        ;;
-    esac
-    shift
-done
-
-SHARESCREEN="$(nix eval --raw ~/.dotfiles#nixosConfigurations."$(hostname)".config.home-manager.users."$(whoami)".swarselsystems.sharescreen)"
-
-if [[ $headless == "true" ]]; then
-    wl-mirror "$SHARESCREEN"
-else
-    wl-mirror "$SHARESCREEN" &amp;
-    sleep 0.1
-    swaymsg '[app_id=at.yrlf.wl_mirror] move to workspace 14:T'
-    swaymsg '[app_id=at.yrlf.wl_mirror] fullscreen'
-fi
-</pre>
-</div>
-
-
-<div class="org-src-container">
-<pre class="src src-nix-ts">{ self, name, writeShellApplication, sway }:
-writeShellApplication {
-  inherit name;
-  runtimeInputs = [ sway ];
-  text = builtins.readFile "${self}/files/scripts/${name}.sh";
 }
 </pre>
 </div>
@@ -18078,6 +18638,7 @@ in
       networkDevices = lib.mkDefault true;
       gvfs = lib.mkDefault true;
       interceptionTools = lib.mkDefault true;
+      # keyd = lib.mkDefault true;
       swayosd = lib.mkDefault true;
       ppd = lib.mkDefault true;
       yubikey = lib.mkDefault true;
@@ -18088,7 +18649,9 @@ in
       impermanence = lib.mkDefault true;
       nvd = lib.mkDefault true;
       gnome-keyring = lib.mkDefault true;
+      uwsm = lib.mkDefault true;
       sway = lib.mkDefault true;
+      niri = lib.mkDefault true;
       xdg-portal = lib.mkDefault true;
       distrobox = lib.mkDefault true;
       appimage = lib.mkDefault true;
@@ -18536,6 +19099,8 @@ in
           atuin = lib.mkDefault true;
           forgejo = lib.mkDefault true;
           ankisync = lib.mkDefault true;
+          # snipeit = lib.mkDefault false;
+          homebox = lib.mkDefault true;
         };
       };
   };
@@ -18682,6 +19247,7 @@ in
       swayosd = lib.mkDefault true;
       yubikeytouch = lib.mkDefault true;
       sway = lib.mkDefault true;
+      niri = lib.mkDefault true;
       kanshi = lib.mkDefault true;
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
@@ -19858,7 +20424,7 @@ Here I set up some things that are too minor to put under other categories.
       password-cache-expiry nil
       )
 (setq browse-url-browser-function 'browse-url-firefox)
-(setenv "DISPLAY" ":0")
+;; (setenv "DISPLAY" ":0") ;; needed for firefox
 ;; disable a keybind that does more harm than good
 (global-set-key [remap suspend-frame]
                 (lambda ()
@@ -22309,6 +22875,7 @@ The hook functions are defined here: <a href="#h:34506761-06b9-43b5-a818-506d9b3
         '((:maildir "/leon/Inbox"    :key ?1)
           (:maildir "/nautilus/Inbox" :key ?2)
           (:maildir "/mrswarsel/Inbox"     :key ?3)
+          (:maildir "/work/Inbox"     :key ?4)
           (:maildir "/Sent Mail"     :key ?s)
           (:maildir "/Trash"     :key ?t)
           (:maildir "/Drafts"     :key ?d)
@@ -22357,9 +22924,6 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 This provides a beautiful calender to emacs.
 </p>
 
-<p>
-Yes, I am aware that I am exposing my university-calendar to the public here. I can imagine worse things ;) if you however know how to obscure this, let me know!
-</p>
 
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
@@ -24120,24 +24684,42 @@ before-sleep 'swaylock -f --screenshots --clock --effect-blur 7x5 --effect-vigne
 <h3 id="h:2e9b84d7-cb18-4e74-83f8-65ada11a8911"><span class="section-number-3">6.12.</span> stylix color scheme</h3>
 <div class="outline-text-3" id="text-h:2e9b84d7-cb18-4e74-83f8-65ada11a8911">
 <div class="org-src-container">
-<pre class="src src-css"># scheme: "better-contrast"
+<pre class="src src-bash"># scheme: "better-contrast"
 author: "Swarsel"
-base00: "1D252C" # #1d252c passt
-base01: "171D23" # #171d23
-base02: "5EC4FF" # #5EC4FF
-base03: "566C7D" # #566C7D passt
-base04: "5EC4FF" # #5EC4FF passt
-base05: "A0B3C5" # #A0B3C5 passt
-base06: "C06ECE" # #C06ECE passt
-base07: "A0B3C5" # #A0B3C5 passt
-base08: "D95468" # #D95468 passt
-base09: "FFA880" # #ffA880 passt
-base0A: "5EC4FF" # #5EC4FF
-base0B: "8BD49C" # #8BD49C
-base0C: "008B94" # #008B94 passt
-base0D: "5EC4FF" # #5EC4FF passt
-base0E: "C06ECE" # #C06ECE passt
-base0F: "5EC4FF" # #5EC4FF passt
+author: "Swarsel"
+base00: "1d252c" #1d252c"
+base01: "171d23" #171d23"
+base02: "206a86" #206a86"
+base03: "003a66" #003a66"
+base04: "5ec4ff" #5ec4ff"
+base05: "a0b3c5" #a0b3c5"
+base06: "7ed4ff" #7ed4ff"
+base07: "8ef4ff" #8ef4ff"
+base08: "d95468" #d95468"
+base09: "ffa880" #ffa880"
+base0A: "6ed4ff" #6ed4ff"
+base0B: "8bd49c" #8bd49c"
+base0C: "008b94" #008b94"
+base0D: "5ec4ff" #5ec4ff"
+base0E: "c06ece" #c06ece"
+base0F: "3c0044" #3c0044"
+
+# base00: "1D252C" # #1d252c passt
+# base01: "171D23" # #171d23
+# base02: "5EC4FF" # #5EC4FF
+# base03: "566C7D" # #566C7D passt
+# base04: "5EC4FF" # #5EC4FF passt
+# base05: "A0B3C5" # #A0B3C5 passt
+# base06: "C06ECE" # #C06ECE passt
+# base07: "A0B3C5" # #A0B3C5 passt
+# base08: "D95468" # #D95468 passt
+# base09: "FFA880" # #ffA880 passt
+# base0A: "5EC4FF" # #5EC4FF
+# base0B: "8BD49C" # #8BD49C
+# base0C: "008B94" # #008B94 passt
+# base0D: "5EC4FF" # #5EC4FF passt
+# base0E: "C06ECE" # #C06ECE passt
+# base0F: "5EC4FF" # #5EC4FF passt
 
 # base00 - Default Background
 # base01 - Lighter Background (Used for status bars)
@@ -25572,7 +26154,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-08-10 So 11:35</p>
+<p class="date">Created: 2025-08-25 Mo 22:51</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
