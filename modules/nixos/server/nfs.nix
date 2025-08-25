@@ -8,7 +8,8 @@ in
     services = {
       # add a user with sudo smbpasswd -a <user>
       samba = {
-        package = pkgs.samba4Full;
+        # package = pkgs.samba4Full;
+        package = pkgs.samba4;
         # extraConfig = ''
         #   workgroup = WORKGROUP
         #   server role = standalone server

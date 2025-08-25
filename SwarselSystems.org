@@ -6264,7 +6264,8 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       services = {
         # add a user with sudo smbpasswd -a <user>
         samba = {
-          package = pkgs.samba4Full;
+          # package = pkgs.samba4Full;
+          package = pkgs.samba4;
           # extraConfig = ''
           #   workgroup = WORKGROUP
           #   server role = standalone server
@@ -15383,7 +15384,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
       STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep kittyterm || true)
       CHECK=$(swaymsg -t get_tree | grep kittyterm || true)
       if [ "$CHECK" == "" ]; then
-          exec kitty -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &
+          exec kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm &
           sleep 1
       fi
       if [ "$STR" == "" ]; then
@@ -15409,7 +15410,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
       STR=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]) | select(.name == "__i3_scratch")' | grep spotifytui || true)
       CHECK=$(swaymsg -t get_tree | grep spotifytui || true)
       if [ "$CHECK" == "" ]; then
-          exec kitty -T spotifytui -o confirm_os_window_close=0 spotify_player &
+          exec kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player &
           sleep 1
       fi
       if [ "$STR" == "" ]; then
@@ -15436,7 +15437,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   while :; do
       case ${1:-} in
       -k | --kitty)
-          cmd=(sh -c 'kitty --app-id kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&')
+          cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&')
           searchapp="kittyterm"
           ;;
       -e | --element)
@@ -15448,7 +15449,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
           searchapp="vesktop"
           ;;
       -s | --spotifyplayer)
-          cmd=(sh -c 'kitty --add-id spotifytui -o confirm_os_window_close=0 spotify_player' '&')
+          cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
           searchapp="spotifytui"
           ;;
       ,*) break ;;

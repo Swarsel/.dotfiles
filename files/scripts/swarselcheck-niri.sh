@@ -1,7 +1,7 @@
 while :; do
     case ${1:-} in
     -k | --kitty)
-        cmd=(sh -c 'kitty --app-id kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&')
+        cmd=(sh -c 'kitty --app-id kittyterm -T kittyterm -o confirm_os_window_close=0 zellij attach --create kittyterm' '&')
         searchapp="kittyterm"
         ;;
     -e | --element)
@@ -13,7 +13,7 @@ while :; do
         searchapp="vesktop"
         ;;
     -s | --spotifyplayer)
-        cmd=(sh -c 'kitty --add-id spotifytui -o confirm_os_window_close=0 spotify_player' '&')
+        cmd=(sh -c 'kitty --add-id spotifytui -T spotifytui -o confirm_os_window_close=0 spotify_player' '&')
         searchapp="spotifytui"
         ;;
     *) break ;;
