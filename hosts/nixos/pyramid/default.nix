@@ -12,7 +12,6 @@ in
 
   ];
 
-
   swarselprofiles = {
     personal = lib.mkIf (!minimal) true;
     work = lib.mkIf (!minimal) true;

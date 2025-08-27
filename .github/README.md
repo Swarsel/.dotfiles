@@ -172,11 +172,29 @@
 
   - Below is a small list of tips that should be helpful if you are new to the nix ecosystem:
 
-    - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine. Alternatively, use [comma](https://github.com/nix-community/comma)
+    - Temporarily install any package using `nix shell nixpkgs#<PACKAGE_NAME>` - this can be e.g. useful if you accidentally removed home-manager from your packages on a non-NixOS machine.
+      - if you need multiple packages, you can do `nix shell nixpkgs#{<pkg1>,<pkg2>,<pkg3>}`.
+      - you can set `nix.registry` to add more flakes to your registry. I use this to add a `n` shorthand to `nixpkgs`, which allows me to do `nix shell n#{<pkg1>,<pkg2>,<pkg3>}`.
+    - Alternatively, use [comma](https://github.com/nix-community/comma)
       - More info on `nix [...]` commands: https://nixos.org/manual/nix/stable/command-ref/new-cli/nix
+      - some examples:
+        - `nix flake update <input-name>` lets you update a specific input only.
+        - `nix repl <your flake path>` gives quick insight into your written configuration.
+        - `nix eval <your flake path>#<config attribute>` quickly returns an attribute in your written configuration
+        - `nix fmt` formats your flake using the formatter specified under `formatter` in your `flake.nix`
     - When you are trying to setup a new configuration part, [GitHub code search](https://github.com/search?q=language%3ANix&type=code) can really help you to find a working configuration. Just filter for `.nix` files and the options you are trying to set up.
     - getting packages at a different version than your target (or not packaged at all) can be done in most cases easily with fetchFromGithub (https://ryantm.github.io/nixpkgs/builders/fetchers/)
     - you can easily install old revisions of packages using https://lazamar.co.uk/nix-versions/. You can conveniently spawn a shell with a chosen package available using `vershell <NIXPKGS_REVISION> <PACKAGE>`. Just make sure to pick a revision that has flakes enabled, otherwise you will need the legacy way of spawning the shell (see the link for more info)
+    - when developing modules in a dev branch of another flake, you can use `--override-input` to temporarily use the local directory as the flake source.
+    - including `nixosConfig ? config` in your module arguments is a smart way of enabling a module to pull in config from NixOS or home-manager config, no matter if it is a NixOS system or not.
+    - you can have a quick cli evaluation for nix commands with e.g. `nixpgks.lib` available using `nix-instantiate --strict --eval --expr "let lib = import <nixpkgs/lib>; in <expression>"`.
+    - if you are looking for a specific library, `nix-locate` makes it easy to look for them.
+    - to look at the dependencies pulled in by a tool, use `nix-tree`
+      - to find out which derivation uses another derivation, use `nix store --query --referrers <derivation>`
+    - to get a neat overview of your config changes in recent generations, use `nix profile diff-closures --profile /nix/var/nix/profiles/system`
+      - to get instead the changes since the last boot, use `nix profile diff-closures /run/*-system`
+      - if you just need the generation numbers, use `sudo nix-env --list-generations --profile /nix/var/nix/profiles/system`
+      - to then switch to another generation, you can use `sudo nix-env --switch-generation <generation number> -p /nix/var/nix/profiles/system` followed by `sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch`
 
   - These links are your best friends:
     - The nix documentation: https://nix.dev/
