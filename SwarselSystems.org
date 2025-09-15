@@ -454,7 +454,8 @@ A short overview over each input and what it does:
         url = "github:dj95/zjstatus";
       };
       fw-fanctrl = {
-        url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+        # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+        url = "github:Swarsel/fw-fanctrl/packaging/nix";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       nix-darwin = {
@@ -1207,7 +1208,7 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
 
         devshells.default = {
           packages = [
-            (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+            (builtins.trace "alarm: we pinned nix_2_28 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_28) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
             pkgs.git
             pkgs.just
             pkgs.age
@@ -1476,7 +1477,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   nativeMessagingHosts = [
                     prev.tridactyl-native
                     prev.browserpass
-                    prev.plasma5Packages.plasma-browser-integration
+                    # prev.plasma5Packages.plasma-browser-integration
                   ];
                 };
 
@@ -3318,10 +3319,14 @@ TODO: cleanup this mess
       nix = {
         channel.enable = false;
         package = pkgs.nixVersions.nix_2_28;
+        # extraOptions = ''
+        #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+        #   extra-builtins-file = ${../nix/extra-builtins.nix}
+        # '';
         extraOptions = ''
           plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-            buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-            patches = (o.patches or []) ++ [ ../nix/nix-plugins.patch ];
+            buildInputs = [config.nix.package pkgs.boost];
+            patches = o.patches or [];
           })}/lib/nix/plugins
           extra-builtins-file = ${../nix/extra-builtins.nix}
         '';
@@ -4109,13 +4114,15 @@ A breakdown of the flags being set:
               trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
             };
             # extraOptions = ''
-            #   plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+            #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
             #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            # '' + lib.optionalString (!minimal) ''
+            #   !include ${config.sops.secrets.github-api-token.path}
             # '';
             extraOptions = ''
               plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-                patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+                buildInputs = [config.nix.package pkgs.boost];
+                patches = o.patches or [];
               })}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
             '' + lib.optionalString (!minimal) ''
@@ -5838,13 +5845,13 @@ This snipped is added to the activation script that is run after every rebuild a
         pkgs.nvd
       ];
 
-      system.activationScripts.diff = {
-        supportsDryActivation = true;
-        text = ''
-          ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
-               /run/current-system "$systemConfig"
-        '';
-      };
+      # system.activationScripts.diff = {
+      #   supportsDryActivation = true;
+      #   text = ''
+      #     ${pkgs.nvd}/bin/nvd --color=always --nix-bin-dir=${pkgs.nix}/bin diff \
+      #          /run/current-system "$systemConfig"
+      #   '';
+      # };
     };
   }
 #+end_src
@@ -5913,11 +5920,11 @@ This allows me to use screen sharing on Wayland. The implementation is a bit cru
     config = lib.mkIf config.swarselmodules.xdg-portal {
       xdg.portal = {
         enable = true;
-        # config = {
-        #   common = {
-        #     default = "wlr";
-        #   };
-        # };
+        config = {
+          common = {
+            default = "wlr";
+          };
+        };
         wlr.enable = true;
         wlr.settings.screencast = {
           output_name = "eDP-1";
@@ -5987,9 +5994,9 @@ This turns off the display when the lid is closed.
   {
     options.swarselmodules.lid = lib.mkEnableOption "lid config";
     config = lib.mkIf config.swarselmodules.lid {
-      services.logind = {
-        lidSwitch = "suspend";
-        lidSwitchDocked = "ignore";
+      services.logind.settings.Login = {
+        HandleLidSwitch = "suspend";
+        HandleLidSwitchDocked = "ignore";
       };
       services.acpid = {
         enable = true;
@@ -6193,40 +6200,38 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   let
     inherit (config.swarselsystems) flakePath;
   in
-  {
+    {
 
-    options.swarselmodules.server.general = lib.mkEnableOption "general setting on server";
-    options.swarselsystems = {
-      shellAliases = lib.mkOption {
-        type = lib.types.attrsOf lib.types.str;
-        default = { };
+      options.swarselmodules.server.general = lib.mkEnableOption "general setting on server";
+      options.swarselsystems = {
+        shellAliases = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+        };
       };
-    };
-    config = lib.mkIf config.swarselmodules.server.general {
+      config = lib.mkIf config.swarselmodules.server.general {
 
-      environment.shellAliases = lib.recursiveUpdate
-        {
-          npswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch; cd -;";
-          nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch;";
-          npiswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-          nipswitch = "cd ${flakePath}; git pull; sudo nixos-rebuild --flake .#$(hostname) switch --impure; cd -;";
-          niswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) switch --impure;";
-        }
-        config.swarselsystems.shellAliases;
+        environment.shellAliases = lib.recursiveUpdate
+          {
+            nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+            nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+            ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
+          }
+          config.swarselsystems.shellAliases;
 
-      nixpkgs.config.permittedInsecurePackages = [
-        # matrix
-        "olm-3.2.16"
-        # sonarr
-        "aspnetcore-runtime-wrapped-6.0.36"
-        "aspnetcore-runtime-6.0.36"
-        "dotnet-sdk-wrapped-6.0.428"
-        "dotnet-sdk-6.0.428"
-        #
-        "SDL_ttf-2.0.11"
-      ];
-    };
-  }
+        nixpkgs.config.permittedInsecurePackages = [
+          # matrix
+          "olm-3.2.16"
+          # sonarr
+          "aspnetcore-runtime-wrapped-6.0.36"
+          "aspnetcore-runtime-6.0.36"
+          "dotnet-sdk-wrapped-6.0.428"
+          "dotnet-sdk-6.0.428"
+          #
+          "SDL_ttf-2.0.11"
+        ];
+      };
+    }
 #+end_src
 
 **** System Packages
@@ -6347,7 +6352,6 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 
       security.acme = {
         acceptTerms = true;
-        preliminarySelfsigned = false;
         defaults = {
           inherit dnsProvider;
           email = address3;
@@ -7319,7 +7323,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/immich.nix
-  { lib, config, globals, ... }:
+  { lib, pkgs, config, globals, ... }:
   let
     servicePort = 3001;
     serviceUser = "immich";
@@ -7340,6 +7344,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       services.${serviceName} = {
         enable = true;
+        package = pkgs.stable.immich;
         host = "0.0.0.0";
         port = servicePort;
         openFirewall = true;
@@ -8719,7 +8724,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services = {
         ${serviceName} = {
-          package = pkgs.kanidmWithSecretProvisioning;
+          package = pkgs.kanidmWithSecretProvisioning_1_7;
           enableServer = true;
           serverSettings = {
             domain = serviceDomain;
@@ -9825,12 +9830,15 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :CUSTOM_ID: h:4ccdcd5c-a4dd-49e4-94e7-d81db970059c
 :END:
 
+
+
 #+begin_src nix-ts :tangle modules/nixos/server/shlink.nix
   { self, lib, config, ... }:
   let
     servicePort = 8081;
     serviceName = "shlink";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+    serviceDir = "/var/lib/shlink";
 
     containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -9870,12 +9878,23 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
           config.sops.templates.shlink-env.path
         ];
         ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
-        volumes = [ ];
+        volumes = [
+          "${serviceDir}/data:/etc/shlink/data"
+        ];
       };
+
+      systemd.tmpfiles.rules = [
+        "d ${serviceDir}/data 0750 1001 root - -"
+        "d ${serviceDir}/data/cache 0750 1001 root - -"
+        "d ${serviceDir}/data/locks 0750 1001 root - -"
+        "d ${serviceDir}/data/log 0750 1001 root - -"
+        "d ${serviceDir}/data/proxies 0750 1001 root - -"
+      ];
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
       environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        { directory = serviceDir; }
         { directory = "/var/lib/containers"; }
       ];
 
@@ -9989,7 +10008,6 @@ Deployment notes:
             locations = {
               "/" = {
                 proxyPass = "http://${serviceName}";
-                setOauth2Headers = false;
               };
               "/image" = {
                 proxyPass = "http://${serviceName}";
@@ -10793,10 +10811,14 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
     config = lib.mkIf config.swarselmodules.general {
       nix = lib.mkIf (!config.swarselsystems.isNixos) {
         package = lib.mkForce pkgs.nixVersions.nix_2_28;
+        # extraOptions = ''
+        #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+        #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+        # '';
         extraOptions = ''
           plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-            buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-            patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+            buildInputs = [config.nix.package pkgs.boost];
+            patches = o.patches or [];
           })}/lib/nix/plugins
           extra-builtins-file = ${self + /nix/extra-builtins.nix}
         '';
@@ -10986,7 +11008,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         # spotify
         vesktop # discord client
         # nextcloud-client # enables a systemd service that I do not want
-        stable.spotify-player
+        spotify-player
         element-desktop
         nicotine-plus
         stable.transmission_3
@@ -11206,54 +11228,66 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
 #+begin_src nix-ts :tangle modules/home/common/ssh.nix
-  { lib, config, ... }:
-  {
-    options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
-    config = lib.mkIf config.swarselmodules.ssh {
-      programs.ssh = {
-        enable = true;
-        forwardAgent = true;
-        extraConfig = ''
-          SetEnv TERM=xterm-256color
-          ServerAliveInterval 20
-        '';
-        matchBlocks = {
-          "pfsense" = {
-            hostname = "192.168.1.1";
-            user = "root";
-          };
-          "bakery" = {
-            hostname = "192.168.1.136";
-            user = "root";
-          };
-          "winters" = {
-            hostname = "192.168.178.24";
-            user = "root";
-          };
-          "minecraft" = {
-            hostname = "130.61.119.129";
-            user = "opc";
-          };
-          "milkywell" = {
-            hostname = "193.122.53.173";
-            user = "root";
-          };
-          "moonside" = {
-            hostname = "130.61.238.239";
-            user = "root";
-          };
-          "songdiver" = {
-            hostname = "89.168.100.65";
-            user = "ubuntu";
-          };
-          "pkv" = {
-            hostname = "46.232.248.161";
-            user = "root";
+    { lib, config, ... }:
+    {
+      options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
+      config = lib.mkIf config.swarselmodules.ssh {
+        programs.ssh = {
+          enable = true;
+          enableDefaultConfig = false;
+          extraConfig = ''
+            SetEnv TERM=xterm-256color
+            ServerAliveInterval 20
+          '';
+          matchBlocks = {
+            "*" = {
+              forwardAgent = true;
+              addKeysToAgent = "no";
+              compression = false;
+              serverAliveInterval = 0;
+              serverAliveCountMax = 3;
+              hashKnownHosts = false;
+              userKnownHostsFile = "~/.ssh/known_hosts";
+              controlMaster = "no";
+              controlPath = "~/.ssh/master-%r@%n:%p";
+              controlPersist = "no";
+            };
+            "pfsense" = {
+              hostname = "192.168.1.1";
+              user = "root";
+            };
+            "bakery" = {
+              hostname = "192.168.1.136";
+              user = "root";
+            };
+            "winters" = {
+              hostname = "192.168.178.24";
+              user = "root";
+            };
+            "minecraft" = {
+              hostname = "130.61.119.129";
+              user = "opc";
+            };
+            "milkywell" = {
+              hostname = "193.122.53.173";
+              user = "root";
+            };
+            "moonside" = {
+              hostname = "130.61.238.239";
+              user = "root";
+            };
+            "songdiver" = {
+              hostname = "89.168.100.65";
+              user = "ubuntu";
+            };
+            "pkv" = {
+              hostname = "46.232.248.161";
+              user = "root";
+            };
           };
         };
       };
-    };
-  }
+    }
 #+end_src
 
 **** Theme (stylix)
@@ -13465,7 +13499,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                   { app_id = "pavucontrol"; }
                   { app_id = "syncthingtray"; }
                   { app_id = "Element"; }
-                  { class = "1Password"; }
+                  { app_id = "1Password"; }
                   { app_id = "com.nextcloud.desktopclient.nextcloud"; }
                   { title = "(?:Open|Save) (?:File|Folder|As)"; }
                   { title = "^Add$"; }
@@ -14045,7 +14079,8 @@ This service changes the screen hue at night. I am not sure if that really does 
     config = lib.mkIf config.swarselmodules.${moduleName} {
       programs.spicetify = {
         enable = true;
-        spotifyPackage = pkgs.stable24_11.spotify;
+        # spotifyPackage = pkgs.stable24_11.spotify;
+        spotifyPackage = pkgs.spotify;
         enabledExtensions = with spicePkgs.extensions; [
           fullAppDisplay
           shuffle
@@ -15009,7 +15044,7 @@ In short, the options defined here are passed to the modules systems using =_mod
               browserpass
               clearurls
               darkreader
-              enhancer-for-youtube
+              # enhancer-for-youtube
               istilldontcareaboutcookies
               translate-web-pages
               ublock-origin
@@ -15022,7 +15057,7 @@ In short, the options defined here are passed to the modules systems using =_mod
               enhanced-github
               unpaywall
               don-t-fuck-with-paste
-              plasma-integration
+              # plasma-integration
               noscript
 
               # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut
@@ -22840,114 +22875,108 @@ See the above repository for updates as well as full license text. */
  */
 
 :root{
-    --uc-autohide-toolbox-delay: 0ms; /* Wait 0.1s before hiding toolbars */
-    --uc-toolbox-rotation: 107deg;  /* This may need to be lower on mac - like 75 or so */
+  --uc-autohide-toolbox-delay: 200ms; /* Wait 0.1s before hiding toolbars */
+  --uc-toolbox-rotation: 82deg;  /* This may need to be lower on mac - like 75 or so */
 
-    --base00: #1D252C;
-    --base01: #171D23;
-    --base02: #5EC4FF;
-    --base03: #566C7D;
-    --base04: #5EC4FF;
-    --base05: #A0B3C5;
-    --base06: #C06ECE;
-    --base07: #A0B3C5;
-    --base08: #D95468;
-    --base09: #FFA880;
-    --base0A: #5EC4FF;
-    --base0B: #8BD49C;
-    --base0C: #008B94;
-    --base0D: #5EC4FF;
-    --base0E: #C06ECE;
-    --base0F: #5EC4FF;
+  --base00: #1D252C;
+  --base01: #171D23;
+  --base02: #5EC4FF;
+  --base03: #566C7D;
+  --base04: #5EC4FF;
+  --base05: #A0B3C5;
+  --base06: #C06ECE;
+  --base07: #A0B3C5;
+  --base08: #D95468;
+  --base09: #FFA880;
+  --base0A: #5EC4FF;
+  --base0B: #8BD49C;
+  --base0C: #008B94;
+  --base0D: #5EC4FF;
+  --base0E: #C06ECE;
+  --base0F: #5EC4FF;
 
 }
 
 :root[sizemode="maximized"]{
-    --uc-toolbox-rotation: 88.5deg;
+  --uc-toolbox-rotation: 88.5deg;
 }
 
 @media  (-moz-platform: windows){
-    :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
+  :root:not([lwtheme]) #navigator-toolbox{ background-color: -moz-dialog !important; }
 }
 
 :root[sizemode="fullscreen"],
 :root[sizemode="fullscreen"] #navigator-toolbox{ margin-top: 0 !important; }
 
 #navigator-toolbox{
-    --browser-area-z-index-toolbox: 3;
-    position: fixed !important;
-    background-color: var(--lwt-accent-color,black) !important;
-    transition: transform 0ms linear, opacity 0ms linear !important;
-    transition-delay: var(--uc-autohide-toolbox-delay) !important;
-    transform-origin: top;
-    transform: rotateX(var(--uc-toolbox-rotation));
-    opacity: 0;
-    line-height: 0;
-    z-index: 1;
-    pointer-events: none;
+  --browser-area-z-index-toolbox: 3;
+  position: fixed !important;
+  background-color: var(--lwt-accent-color,black) !important;
+  transition: transform 82ms linear, opacity 82ms linear !important;
+  transition-delay: var(--uc-autohide-toolbox-delay) !important;
+  transform-origin: top;
+  transform: rotateX(var(--uc-toolbox-rotation));
+  opacity: 0;
+  line-height: 0;
+  z-index: 1;
+  pointer-events: none;
+  width: 100vw;
 }
 :root[sessionrestored] #urlbar[popover]{
-    pointer-events: none;
-    opacity: 0;
-    transition: transform 0ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 0ms);
-    transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
-    transform: rotateX(89.9deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 82ms linear var(--uc-autohide-toolbox-delay), opacity 0ms calc(var(--uc-autohide-toolbox-delay) + 82ms);
+  transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
+  transform: rotateX(89.9deg);
 }
-#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox #urlbar[popover],
-#navigator-toolbox:is(:hover,:focus-within) #urlbar[popover],
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel)) ~ toolbox #urlbar[popover],
+#navigator-toolbox:is(:hover,:focus-within,[movingtab]) #urlbar[popover],
 #urlbar-container > #urlbar[popover]:is([focused],[open]){
-    pointer-events: auto;
-    opacity: 1;
-    transition-delay: 0ms;
-    transform: rotateX(0deg);
+  pointer-events: auto;
+  opacity: 1;
+  transition-delay: 33ms;
+  transform: rotateX(0deg);
 }
-#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts)) ~ toolbox,
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel)) ~ toolbox,
 #navigator-toolbox:has(#urlbar:is([open],[focus-within])),
-#navigator-toolbox:hover,
-#navigator-toolbox:focus-within{
-    transition-delay: 0ms !important;
-    transform: rotateX(0);
-    opacity: 1;
+#navigator-toolbox:is(:hover,:focus-within,[movingtab]){
+  transition-delay: 33ms !important;
+  transform: rotateX(0);
+  opacity: 1;
 }
 /* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
  * Unfortunately it also means that other OS native surfaces (such as context menu on macos)
  * and other always-on-top applications will trigger toolbox to show up. */
-@media (-moz-bool-pref: "userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
-    :root[sizemode="maximized"]:not(:hover){
-        #navigator-toolbox:not(:-moz-window-inactive),
+@media (-moz-bool-pref: "userchrome.autohide-toolbox.unhide-by-native-ui.enabled"),
+       -moz-pref("userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
+  :root[sizemode="maximized"]:not(:hover){
+    #navigator-toolbox:not(:-moz-window-inactive),
     #urlbar[popover]:not(:-moz-window-inactive){
-        transition-delay: 0ms !important;
-        transform: rotateX(0);
-        opacity: 1;
+      transition-delay: 33ms !important;
+      transform: rotateX(0);
+      opacity: 1;
     }
-    }
+  }
 }
 
 #navigator-toolbox > *{ line-height: normal; pointer-events: auto }
 
-#navigator-toolbox,
-#navigator-toolbox > *{
-    width: 100vw;
-    -moz-appearance: none !important;
-}
-
-/* These two exist for oneliner compatibility */
-#nav-bar{ width: var(--uc-navigationbar-width,100vw) }
-#TabsToolbar
-{
-    visibility: collapse;
-}
 /* Don't apply transform before window has been fully created */
 :root:not([sessionrestored]) #navigator-toolbox{ transform:none !important }
 
 :root[customizing] #navigator-toolbox{
-    position: relative !important;
-    transform: none !important;
-    opacity: 1 !important;
+  position: relative !important;
+  transform: none !important;
+  opacity: 1 !important;
 }
 
 #navigator-toolbox[inFullscreen] > #PersonalToolbar,
-#PersonalToolbar[collapsed="true"]{ display: none }
+#PersonalToolbar:is([collapsed=""],[collapsed="true"]){ display: none }
+
+/* This is a bit hacky fix for an issue that will make urlbar zero pixels tall after you enter customize mode */
+#urlbar[breakout][breakout-extend] > .urlbar-input-container{
+  padding-block: calc(min(4px,(var(--urlbar-container-height) - var(--urlbar-height)) / 2) + var(--urlbar-container-padding)) !important;
+}
 
 /* Uncomment this if tabs toolbar is hidden with hide_tabs_toolbar.css */
  /*#titlebar{ margin-bottom: -9px }*/
@@ -22957,101 +22986,6 @@ See the above repository for updates as well as full license text. */
 #navigator-toolbox{ flex-direction: column; display: flex; }
 #titlebar{ order: 2 }
 */
-#sidebar-header {
-    display: none;
-}
-#sidebar-header {
-    /* display: none; */
-    visibility: collapse !important;
-}
-/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_sidebar.css made available under Mozilla Public License v. 2.0
-See the above repository for updates as well as full license text. */
-
-/* Show sidebar only when the cursor is over it  */
-/* The border controlling sidebar width will be removed so you'll need to modify these values to change width */
-
-#sidebar-box{
-    --uc-sidebar-width: 30px;
-    --uc-sidebar-hover-width: 210px;
-    --uc-autohide-sidebar-delay: 0ms; /* Wait 0.6s before hiding sidebar */
-    --uc-autohide-transition-duration: 0ms;
-    --uc-autohide-transition-type: linear;
-    --browser-area-z-index-sidebar: 3;
-    position: relative;
-    min-width: var(--uc-sidebar-width) !important;
-    width: var(--uc-sidebar-width) !important;
-    max-width: var(--uc-sidebar-width) !important;
-    z-index: var(--browser-area-z-index-sidebar,3);
-}
-#sidebar-box[positionend]{ direction: rtl }
-#sidebar-box[positionend] > *{ direction: ltr }
-
-#sidebar-box[positionend]:-moz-locale-dir(rtl){ direction: ltr }
-#sidebar-box[positionend]:-moz-locale-dir(rtl) > *{ direction: rtl }
-
-#main-window[sizemode="fullscreen"] #sidebar-box{ --uc-sidebar-width: 1px; }
-
-#sidebar-splitter{ display: none }
-
-#sidebar-header{
-    overflow: hidden;
-    color: var(--chrome-color, inherit) !important;
-    padding-inline: 0 !important;
-}
-
-#sidebar-header::before,
-#sidebar-header::after{
-    content: "";
-    display: flex;
-    padding-left: 8px;
-}
-
-#sidebar-header,
-#sidebar{
-    transition: min-width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
-    min-width: var(--uc-sidebar-width) !important;
-    will-change: min-width;
-}
-#sidebar-box:hover > #sidebar-header,
-#sidebar-box:hover > #sidebar{
-    min-width: var(--uc-sidebar-hover-width) !important;
-    transition-delay: 0ms !important;
-}
-
-.sidebar-panel{
-    background-color: transparent !important;
-    color: var(--newtab-text-primary-color) !important;
-}
-
-.sidebar-panel #search-box{
-    -moz-appearance: none !important;
-    background-color: rgba(249,249,250,0.1) !important;
-    color: inherit !important;
-}
-
-/* Add sidebar divider and give it background */
-
-#sidebar,
-#sidebar-header{
-    background-color: inherit !important;
-    border-inline: 1px solid rgb(80,80,80);
-    border-inline-width: 0px 1px;
-}
-
-#sidebar-box:not([positionend]) > :-moz-locale-dir(rtl),
-#sidebar-box[positionend] > *{
-    border-inline-width: 1px 0px;
-}
-
-/* Move statuspanel to the other side when sidebar is hovered so it doesn't get covered by sidebar */
-
-#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel{
-    inset-inline: auto 0px !important;
-}
-#sidebar-box:not([positionend]):hover ~ #appcontent #statuspanel-label{
-    margin-inline: 0px !important;
-    border-left-style: solid !important;
-}
 
 #+end_src
 ** Default Flake Template

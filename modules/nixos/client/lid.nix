@@ -2,9 +2,9 @@
 {
   options.swarselmodules.lid = lib.mkEnableOption "lid config";
   config = lib.mkIf config.swarselmodules.lid {
-    services.logind = {
-      lidSwitch = "suspend";
-      lidSwitchDocked = "ignore";
+    services.logind.settings.Login = {
+      HandleLidSwitch = "suspend";
+      HandleLidSwitchDocked = "ignore";
     };
     services.acpid = {
       enable = true;

@@ -77,7 +77,7 @@
             browserpass
             clearurls
             darkreader
-            enhancer-for-youtube
+            # enhancer-for-youtube
             istilldontcareaboutcookies
             translate-web-pages
             ublock-origin
@@ -90,7 +90,7 @@
             enhanced-github
             unpaywall
             don-t-fuck-with-paste
-            plasma-integration
+            # plasma-integration
             noscript
 
             # configure a shortcut 'ctrl+shift+c' with behaviour 'do nothing' in order to disable the dev console shortcut

@@ -8,7 +8,8 @@ in
   config = lib.mkIf config.swarselmodules.${moduleName} {
     programs.spicetify = {
       enable = true;
-      spotifyPackage = pkgs.stable24_11.spotify;
+      # spotifyPackage = pkgs.stable24_11.spotify;
+      spotifyPackage = pkgs.spotify;
       enabledExtensions = with spicePkgs.extensions; [
         fullAppDisplay
         shuffle

@@ -7,10 +7,14 @@ in
   config = lib.mkIf config.swarselmodules.general {
     nix = lib.mkIf (!config.swarselsystems.isNixos) {
       package = lib.mkForce pkgs.nixVersions.nix_2_28;
+      # extraOptions = ''
+      #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+      #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+      # '';
       extraOptions = ''
         plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-          buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-          patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+          buildInputs = [config.nix.package pkgs.boost];
+          patches = o.patches or [];
         })}/lib/nix/plugins
         extra-builtins-file = ${self + /nix/extra-builtins.nix}
       '';

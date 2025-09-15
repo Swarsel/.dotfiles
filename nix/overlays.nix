@@ -20,7 +20,7 @@ in
                 nativeMessagingHosts = [
                   prev.tridactyl-native
                   prev.browserpass
-                  prev.plasma5Packages.plasma-browser-integration
+                  # prev.plasma5Packages.plasma-browser-integration
                 ];
               };
 

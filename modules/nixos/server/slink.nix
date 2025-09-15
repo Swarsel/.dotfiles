@@ -65,7 +65,6 @@ in
           locations = {
             "/" = {
               proxyPass = "http://${serviceName}";
-              setOauth2Headers = false;
             };
             "/image" = {
               proxyPass = "http://${serviceName}";

@@ -48,10 +48,14 @@ in
     nix = {
       channel.enable = false;
       package = pkgs.nixVersions.nix_2_28;
+      # extraOptions = ''
+      #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+      #   extra-builtins-file = ${../nix/extra-builtins.nix}
+      # '';
       extraOptions = ''
         plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-          buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-          patches = (o.patches or []) ++ [ ../nix/nix-plugins.patch ];
+          buildInputs = [config.nix.package pkgs.boost];
+          patches = o.patches or [];
         })}/lib/nix/plugins
         extra-builtins-file = ${../nix/extra-builtins.nix}
       '';

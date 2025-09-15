@@ -73,13 +73,15 @@ in
             trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
           };
           # extraOptions = ''
-          #   plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+          #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
           #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+          # '' + lib.optionalString (!minimal) ''
+          #   !include ${config.sops.secrets.github-api-token.path}
           # '';
           extraOptions = ''
             plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-              buildInputs = [pkgs.nixVersions.nix_2_28 pkgs.boost];
-              patches = (o.patches or []) ++ ["${self}/nix/nix-plugins.patch"];
+              buildInputs = [config.nix.package pkgs.boost];
+              patches = o.patches or [];
             })}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '' + lib.optionalString (!minimal) ''

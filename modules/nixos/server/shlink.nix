@@ -3,6 +3,7 @@ let
   servicePort = 8081;
   serviceName = "shlink";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  serviceDir = "/var/lib/shlink";
 
   containerRev = "sha256:1a697baca56ab8821783e0ce53eb4fb22e51bb66749ec50581adc0cb6d031d7a";
 
@@ -42,12 +43,23 @@ in
         config.sops.templates.shlink-env.path
       ];
       ports = [ "${builtins.toString servicePort}:${builtins.toString servicePort}" ];
-      volumes = [ ];
+      volumes = [
+        "${serviceDir}/data:/etc/shlink/data"
+      ];
     };
+
+    systemd.tmpfiles.rules = [
+      "d ${serviceDir}/data 0750 1001 root - -"
+      "d ${serviceDir}/data/cache 0750 1001 root - -"
+      "d ${serviceDir}/data/locks 0750 1001 root - -"
+      "d ${serviceDir}/data/log 0750 1001 root - -"
+      "d ${serviceDir}/data/proxies 0750 1001 root - -"
+    ];
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
     environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+      { directory = serviceDir; }
       { directory = "/var/lib/containers"; }
     ];
 

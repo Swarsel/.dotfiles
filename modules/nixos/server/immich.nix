@@ -1,4 +1,4 @@
-{ lib, config, globals, ... }:
+{ lib, pkgs, config, globals, ... }:
 let
   servicePort = 3001;
   serviceUser = "immich";
@@ -19,6 +19,7 @@ in
 
     services.${serviceName} = {
       enable = true;
+      package = pkgs.stable.immich;
       host = "0.0.0.0";
       port = servicePort;
       openFirewall = true;

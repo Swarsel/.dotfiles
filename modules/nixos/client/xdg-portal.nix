@@ -4,11 +4,11 @@
   config = lib.mkIf config.swarselmodules.xdg-portal {
     xdg.portal = {
       enable = true;
-      # config = {
-      #   common = {
-      #     default = "wlr";
-      #   };
-      # };
+      config = {
+        common = {
+          default = "wlr";
+        };
+      };
       wlr.enable = true;
       wlr.settings.screencast = {
         output_name = "eDP-1";

@@ -48,7 +48,7 @@
 
       devshells.default = {
         packages = [
-          (builtins.trace "alarm: we pinned nix_2_24 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_24) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+          (builtins.trace "alarm: we pinned nix_2_28 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_28) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
           pkgs.git
           pkgs.just
           pkgs.age

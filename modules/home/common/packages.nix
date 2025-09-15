@@ -81,7 +81,7 @@
       # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
-      stable.spotify-player
+      spotify-player
       element-desktop
       nicotine-plus
       stable.transmission_3

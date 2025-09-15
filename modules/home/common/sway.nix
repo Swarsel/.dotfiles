@@ -262,7 +262,7 @@ in
             { app_id = "pavucontrol"; }
             { app_id = "syncthingtray"; }
             { app_id = "Element"; }
-            { class = "1Password"; }
+            { app_id = "1Password"; }
             { app_id = "com.nextcloud.desktopclient.nextcloud"; }
             { title = "(?:Open|Save) (?:File|Folder|As)"; }
             { title = "^Add$"; }

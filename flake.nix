@@ -62,7 +62,8 @@
       url = "github:dj95/zjstatus";
     };
     fw-fanctrl = {
-      url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+      # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+      url = "github:Swarsel/fw-fanctrl/packaging/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-darwin = {

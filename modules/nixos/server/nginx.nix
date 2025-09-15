@@ -20,7 +20,6 @@ in
 
     security.acme = {
       acceptTerms = true;
-      preliminarySelfsigned = false;
       defaults = {
         inherit dnsProvider;
         email = address3;
