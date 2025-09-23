@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, globals, ... }:
+{ lib, pkgs, config, globals, ... }:
 let
   servicePort = 7745;
   serviceName = "homebox";

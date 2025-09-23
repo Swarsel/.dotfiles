@@ -12,16 +12,14 @@ in
 
   ];
 
-  swarselprofiles = {
-    personal = lib.mkIf (!minimal) true;
-    work = lib.mkIf (!minimal) true;
-    uni = lib.mkIf (!minimal) true;
-    framework = lib.mkIf (!minimal) true;
-    amdcpu = true;
-    amdgpu = true;
-    hibernation = true;
-    btrfs = true;
+  swarselmodules = {
+    optional = {
+      amdcpu = true;
+      amdgpu = true;
+      hibernation = true;
+    };
   };
+
   swarselsystems = {
     lowResolution = "1280x800";
     highResolution = "2560x1600";
@@ -65,5 +63,13 @@ in
         };
       };
     };
+  };
+} // lib.optionalAttrs (!minimal) {
+  swarselprofiles = {
+    personal = true;
+    optionals = true;
+    work = true;
+    uni = true;
+    framework = true;
   };
 }

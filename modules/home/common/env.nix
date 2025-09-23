@@ -2,7 +2,7 @@
 let
   inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address3 address4 allMailAddresses;
   inherit (nixosConfig.repo.secrets.common.calendar) source1 source1-name source2 source2-name source3 source3-name;
-  inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (nixosConfig.repo.secrets.common) fullName openrouterApi;
   inherit (config.swarselsystems) isPublic homeDir;
 
   DISPLAY = ":0";
@@ -30,6 +30,7 @@ in
       SWARSEL_FULLNAME = fullName;
       SWARSEL_MAIL_ALL = allMailAddresses;
       GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
+      OPENROUTER_API_KEY = openrouterApi;
     };
   };
 }

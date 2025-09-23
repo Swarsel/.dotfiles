@@ -29,6 +29,7 @@
       swarsel-instantiate
       swarselzellij
       sshrm
+      endme
 
       rustdesk-vbc
     ];

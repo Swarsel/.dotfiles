@@ -29,11 +29,6 @@ in
     firewall.enable = true;
   };
 
-  swarselprofiles = {
-    chaostheatre = lib.mkIf (!minimal) true;
-    minimal = lib.mkIf minimal true;
-    btrfs = true;
-  };
   swarselsystems = {
     info = "~SwarselSystems~ demo host";
     wallpaper = self + /files/wallpaper/lenovowp.png;
@@ -50,4 +45,9 @@ in
     isNixos = true;
   };
 
+} // lib.optionalAttrs (!minimal) {
+  swarselprofiles = {
+    chaostheatre = true;
+    minimal = true;
+  };
 }

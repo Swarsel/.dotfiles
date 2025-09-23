@@ -1,7 +1,6 @@
 # NOTE: ... is needed because dikso passes diskoFile
 { lib
 , config
-, rootDisk
 , ...
 }:
 let

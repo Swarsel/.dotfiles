@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ lib, config, ... }:
 {
   options.swarselsystems.info = lib.mkOption {
     type = lib.types.str;

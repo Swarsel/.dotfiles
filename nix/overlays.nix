@@ -4,7 +4,7 @@ let
   inherit (outputs) lib;
 in
 {
-  flake = { config, ... }:
+  flake = _:
     {
       overlays = {
         default = final: prev:

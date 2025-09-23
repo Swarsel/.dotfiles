@@ -3,7 +3,6 @@ let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
 
-  inherit (config.swarselsystems) mainUser;
   inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 
   iwd = config.networking.networkmanager.wifi.backend == "iwd";

@@ -1,4 +1,4 @@
-{ self, inputs, config, lib, outputs, globals, options, nodes, minimal, configName, ... }:
+{ self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
 {
   options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
   config = lib.mkIf config.swarselmodules.home-manager {

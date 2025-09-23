@@ -43,10 +43,6 @@
       gammastep = lib.mkDefault true;
       spicetify = lib.mkDefault true;
 
-      optional = {
-        gaming = lib.mkDefault true;
-        uni = lib.mkDefault true;
-      };
     };
   };
 

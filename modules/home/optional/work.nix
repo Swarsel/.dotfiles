@@ -18,6 +18,8 @@ in
         stable.prometheus.cli
         tigervnc
         openstackclient
+
+        vscode
       ];
 
       systemd.user.sessionVariables = {

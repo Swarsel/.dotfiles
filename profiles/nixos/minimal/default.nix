@@ -17,6 +17,7 @@
       yubikey = lib.mkDefault true;
       autologin = lib.mkDefault true;
       boot = lib.mkDefault true;
+      btrfs = lib.mkDefault true;
 
       server = {
         ssh = lib.mkDefault true;

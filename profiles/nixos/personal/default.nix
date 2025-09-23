@@ -48,16 +48,8 @@
       lanzaboote = lib.mkDefault true;
       autologin = lib.mkDefault true;
       boot = lib.mkDefault true;
+      btrfs = lib.mkDefault true;
 
-      optional = {
-        gaming = lib.mkDefault true;
-        virtualbox = lib.mkDefault true;
-        nswitch-rcm = lib.mkDefault true;
-      };
-
-      server = {
-        ssh = lib.mkDefault true;
-      };
     };
     home-manager.users."${config.swarselsystems.mainUser}" = {
       swarselprofiles = {

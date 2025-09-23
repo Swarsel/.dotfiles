@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, minimal, ... }:
 let
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
   inherit (config.swarselsystems) sopsFile;
@@ -130,10 +130,6 @@ in
     };
   };
 
-  swarselprofiles = {
-    server.moonside = true;
-  };
-
   swarselsystems = {
     flakePath = "/root/.dotfiles";
     info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
@@ -149,5 +145,18 @@ in
       serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
       serviceIP = "localhost";
     };
+  };
+} // lib.optionalAttrs (!minimal) {
+  swarselprofiles = {
+    server = true;
+  };
+
+  swarselmodules.server = {
+    oauth2-proxy = lib.mkDefault true;
+    croc = lib.mkDefault true;
+    microbin = lib.mkDefault true;
+    shlink = lib.mkDefault true;
+    slink = lib.mkDefault true;
+    syncthing = lib.mkDefault true;
   };
 }

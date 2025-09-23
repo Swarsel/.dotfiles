@@ -1,7 +1,6 @@
 { self, config, inputs, lib, minimal, ... }:
 let
   primaryUser = config.swarselsystems.mainUser;
-  sharedOptions = { };
 in
 {
 
@@ -13,34 +12,27 @@ in
 
   ];
 
-  swarselprofiles = {
-    reduced = lib.mkIf (!minimal) true;
-    btrfs = true;
+  swarselsystems = {
+    isLaptop = true;
+    isNixos = true;
+    isBtrfs = true;
+    isLinux = true;
+    lowResolution = "1280x800";
+    highResolution = "1920x1080";
+    sharescreen = "eDP-1";
+    info = "Lenovo Ideapad 720S-13IKB";
+    firewall = lib.mkForce true;
+    wallpaper = self + /files/wallpaper/lenovowp.png;
+    hasBluetooth = true;
+    hasFingerprint = true;
+    isImpermanence = true;
+    isSecureBoot = false;
+    isCrypted = true;
+    isSwap = true;
+    rootDisk = "/dev/nvme0n1";
+    swapSize = "4G";
+    hostName = config.node.name;
   };
-
-  swarselsystems = lib.recursiveUpdate
-    {
-      isLaptop = true;
-      isNixos = true;
-      isBtrfs = true;
-      isLinux = true;
-      lowResolution = "1280x800";
-      highResolution = "1920x1080";
-      sharescreen = "eDP-1";
-      info = "Lenovo Ideapad 720S-13IKB";
-      firewall = lib.mkForce true;
-      wallpaper = self + /files/wallpaper/lenovowp.png;
-      hasBluetooth = true;
-      hasFingerprint = true;
-      isImpermanence = true;
-      isSecureBoot = false;
-      isCrypted = true;
-      isSwap = true;
-      rootDisk = "/dev/nvme0n1";
-      swapSize = "4G";
-      hostName = config.node.name;
-    }
-    sharedOptions;
 
   home-manager.users."${primaryUser}" = {
     # home.stateVersion = lib.mkForce "23.05";
@@ -56,5 +48,9 @@ in
         };
       };
     };
+  };
+} // lib.optionalAttrs (!minimal) {
+  swarselprofiles = {
+    personal = true;
   };
 }

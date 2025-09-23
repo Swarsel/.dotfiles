@@ -1,4 +1,4 @@
-{ lib, pkgs, config, rootDisk, ... }:
+{ lib, pkgs, config, ... }:
 let
   type = "btrfs";
   extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite

@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, lib, ... }:
 {
 
   imports = [
@@ -12,8 +12,7 @@
   };
 
   swarselprofiles = {
-    toto = lib.mkIf (!minimal) true;
-    btrfs = true;
+    minimal = lib.mkForce true;
   };
 
   swarselsystems = {

@@ -33,6 +33,10 @@
                 minimal = lib.mkIf minimal (lib.mkDefault true);
               };
 
+              swarselmodules.server = {
+                ssh = lib.mkIf (!minimal) (lib.mkDefault true);
+              };
+
               swarselsystems = {
                 mainUser = lib.mkDefault "swarsel";
               };

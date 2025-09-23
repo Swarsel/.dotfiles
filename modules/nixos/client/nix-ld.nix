@@ -47,6 +47,7 @@
         libdbusmenu-gtk2
         libdrm
         libelf
+        libgbm
         libgcrypt
         libglvnd
         libidn

@@ -1,9 +1,9 @@
 { lib, config, ... }:
 {
-  options.swarselmodules.optional.btrfs = lib.mkEnableOption "optional btrfs settings";
-  config = lib.mkIf config.swarselmodules.optional.btrfs {
+  options.swarselmodules.btrfs = lib.mkEnableOption "optional btrfs settings";
+  config = lib.mkIf config.swarselmodules.btrfs {
     boot = {
-      supportedFilesystems = [ "btrfs" ];
+      supportedFilesystems = lib.mkIf config.swarselsystems.isBtrfs [ "btrfs" ];
     };
   };
 }

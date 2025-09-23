@@ -25,10 +25,6 @@
     enableAllFirmware = lib.mkForce false;
   };
 
-  swarselprofiles = {
-    minimal = lib.mkIf minimal true;
-    server.syncserver = true;
-  };
   swarselsystems = {
     info = "VM.Standard.E2.1.Micro";
     isImpermanence = true;
@@ -42,4 +38,13 @@
     isNixos = true;
   };
 
+} // lib.optionalAttrs (!minimal) {
+  swarselprofiles = {
+    server = true;
+  };
+
+  swarselmodules.server = {
+    forgejo = lib.mkDefault false;
+    ankisync = lib.mkDefault false;
+  };
 }
