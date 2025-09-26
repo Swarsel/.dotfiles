@@ -451,11 +451,12 @@ A short overview over each input and what it does:
       zjstatus = {
         url = "github:dj95/zjstatus";
       };
-      fw-fanctrl = {
-        # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
-        url = "github:Swarsel/fw-fanctrl/packaging/nix";
-        inputs.nixpkgs.follows = "nixpkgs";
-      };
+      # has been upstreamed
+      # fw-fanctrl = {
+      #   # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+      #   url = "github:Swarsel/fw-fanctrl/packaging/nix";
+      #   inputs.nixpkgs.follows = "nixpkgs";
+      # };
       nix-darwin = {
         url = "github:lnl7/nix-darwin";
         inputs.nixpkgs.follows = "nixpkgs";
@@ -10414,9 +10415,9 @@ This holds configuration that is specific to framework laptops.
 #+begin_src nix-ts :tangle modules/nixos/optional/framework.nix
   { lib, config, inputs, ... }:
   {
-    imports = [
-      inputs.fw-fanctrl.nixosModules.default
-    ];
+    # imports = [
+    #   inputs.fw-fanctrl.nixosModules.default
+    # ];
     options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
     config = lib.mkIf config.swarselmodules.optional.framework {
       services = {
@@ -10434,7 +10435,7 @@ This holds configuration that is specific to framework laptops.
           ACTION=="add", SUBSYSTEM=="i2c", DRIVERS=="i2c_hid_acpi", ATTRS{name}=="PIXA3854:00", ATTR{power/wakeup}="disabled"
         '';
       };
-      programs.fw-fanctrl = {
+      hardware.fw-fanctrl = {
         enable = true;
         config = {
           defaultStrategy = "lazy";
