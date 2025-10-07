@@ -199,7 +199,7 @@ in
           folders = {
             "Documents" = {
               path = "${homeDir}/Documents";
-              devices = [ "magicant" "winters" "moonside@oracle" ];
+              devices = [ "moonside@oracle" ];
               id = "hgr3d-pfu3w";
             };
           };
