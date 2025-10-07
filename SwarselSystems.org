@@ -483,6 +483,10 @@ A short overview over each input and what it does:
         url = "github:sodiboo/niri-flake";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      microvm = {
+        url = "github:astro/microvm.nix";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
 
     };
     outputs =
@@ -851,10 +855,15 @@ The rest of the outputs either define or help define the actual configurations:
               inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
               inputs.swarsel-modules.nixosModules.default
               inputs.niri-flake.nixosModules.niri
+              inputs.microvm.nixosModules.host
+              inputs.microvm.nixosModules.microvm
               "${self}/hosts/nixos/${configName}"
               "${self}/profiles/nixos"
               "${self}/modules/nixos"
               {
+
+                microvm.guest.enable = lib.mkDefault false;
+
                 node = {
                   name = configName;
                   secretsDir = ../hosts/nixos/${configName}/secrets;
@@ -10771,6 +10780,100 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
   }
 #+end_src
 
+**** microvm-host
+
+Some standard options that should be set for every microvm host.
+
+#+begin_src nix-ts :tangle modules/nixos/optional/microvm-host.nix
+  { lib, config, ... }:
+  {
+    options.swarselmodules.optional.microvmHost = lib.mkEnableOption "optional microvmHost settings";
+    # imports = [
+    #   inputs.microvm.nixosModules.host
+    # ];
+
+    config = lib.mkIf (config.swarselmodules.optional.microvmHost && config.swarselsystems.withMicroVMs) {
+
+      microvm = {
+        hypervisor = lib.mkDefault "qemu";
+      };
+    };
+
+  }
+#+end_src
+
+**** microvm-guest
+
+Some standard options that should be set vor every microvm guest. We set the default
+
+#+begin_src nix-ts :tangle modules/nixos/optional/microvm-guest.nix
+  { lib, config, ... }:
+  {
+    options.swarselmodules.optional.microvmGuest = lib.mkEnableOption "optional microvmGuest settings";
+    # imports = [
+    #   inputs.microvm.nixosModules.microvm
+    #   "${self}/profiles/nixos"
+    #   "${self}/modules/nixos"
+    # ];
+    config = lib.mkIf config.swarselmodules.optional.microvmGuest
+      {
+        # imports = [
+        #   inputs.microvm.nixosModules.microvm
+
+        #   "${self}/profiles/nixos"
+        #   "${self}/modules/nixos"
+        # ];
+
+        boot.kernelParams = [ "systemd.hostname=${config.networking.hostName}" ];
+
+        node.name = config;
+        documentation.enable = lib.mkForce false;
+
+        microvm = {
+          guest.enable = lib.mkForce true;
+          hypervisor = lib.mkDefault "qemu";
+          mem = lib.mkDefault 1024 * 4;
+          vcpu = lib.mkDefault 4;
+          optimize.enable = false;
+          writableStoreOverlay = "/nix/.rw-store";
+
+          # interfaces = flip lib.mapAttrsToList guestCfg.microvm.interfaces (
+          #   _: { mac, hostLink, ...}:
+          #   {
+          #     type = "macvtap";
+          #     id = "vm-${replaceStrings [ ":" ] [ "" ] mac}";
+          #     inherit mac;
+          #     macvtap = {
+          #       link = hostLink;
+          #       mode = "bridge";
+          #     };
+          #   }
+          # );
+          shares =
+            [
+              {
+                source = "/nix/store";
+                mountPoint = "/nix/.ro-store";
+                tag = "ro-store";
+                proto = "virtiofs";
+              }
+            ];
+        };
+        # systemd.network.networks = lib.flip lib.concatMapAttrs guestCfg.microvm.interfaces (
+        #   name:
+        #   { mac, ... }:
+        #   {
+        #     "10-${name}".matchConfig = mkForce {
+        #       MACAddress = mac;
+        #     };
+        #   }
+        # );
+
+      };
+  }
+
+#+end_src
+
 ** Home-manager
 :PROPERTIES:
 :CUSTOM_ID: h:08ded95b-9c43-475d-a0b2-fc088a512287
@@ -14953,6 +15056,7 @@ TODO: check which of these can be replaced but builtin functions.
         default = "swarsel";
       };
       isCrypted = lib.mkEnableOption "uses full disk encryption";
+      withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
 
       isImpermanence = lib.mkEnableOption "use impermanence on this system";
       isSecureBoot = lib.mkEnableOption "use secure boot on this system";
