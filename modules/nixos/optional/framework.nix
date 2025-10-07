@@ -1,8 +1,5 @@
-{ lib, config, inputs, ... }:
+{ lib, config, ... }:
 {
-  imports = [
-    inputs.fw-fanctrl.nixosModules.default
-  ];
   options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
   config = lib.mkIf config.swarselmodules.optional.framework {
     services = {
@@ -20,7 +17,7 @@
         ACTION=="add", SUBSYSTEM=="i2c", DRIVERS=="i2c_hid_acpi", ATTRS{name}=="PIXA3854:00", ATTR{power/wakeup}="disabled"
       '';
     };
-    programs.fw-fanctrl = {
+    hardware.fw-fanctrl = {
       enable = true;
       config = {
         defaultStrategy = "lazy";

@@ -18,7 +18,11 @@
       jq.enable = true;
       ripgrep.enable = true;
       pandoc.enable = true;
-      # fzf.enable = true;
+      fzf = {
+        enable = true;
+        enableBashIntegration = false;
+        enableZshIntegration = false;
+      };
       zoxide = {
         enable = true;
         enableZshIntegration = true;

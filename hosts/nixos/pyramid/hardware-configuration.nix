@@ -22,7 +22,8 @@
   #   '';
 
   boot = {
-    kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
