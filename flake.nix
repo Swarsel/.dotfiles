@@ -59,11 +59,12 @@
     zjstatus = {
       url = "github:dj95/zjstatus";
     };
-    fw-fanctrl = {
-      # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
-      url = "github:Swarsel/fw-fanctrl/packaging/nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # has been upstreamed
+    # fw-fanctrl = {
+    #   # url = "github:TamtamHero/fw-fanctrl/packaging/nix";
+    #   url = "github:Swarsel/fw-fanctrl/packaging/nix";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
     nix-darwin = {
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";

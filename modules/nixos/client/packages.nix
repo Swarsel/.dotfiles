@@ -68,7 +68,6 @@
       nixd
       zig
       zls
-      ansible-language-server
 
       elk-to-svg
 
