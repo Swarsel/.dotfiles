@@ -3,7 +3,7 @@ let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
 
-  inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+  inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
 in
@@ -103,6 +103,7 @@ in
                   id = wlan1;
                   # permissions = "";
                   type = "wifi";
+                  autoconnect-priority = "999";
                 };
                 ipv4 = {
                   # dns-search = "";
@@ -190,32 +191,11 @@ in
                 proxy = { };
               };
 
-              ${wlan2} = {
-                connection = {
-                  id = wlan2;
-                  type = "wifi";
-                };
-                ipv4 = { method = "auto"; };
-                ipv6 = {
-                  addr-gen-mode = "stable-privacy";
-                  method = "auto";
-                };
-                proxy = { };
-                wifi = {
-                  band = "bg";
-                  mode = "infrastructure";
-                  ssid = wlan2;
-                };
-                wifi-security = {
-                  key-mgmt = "wpa-psk";
-                  psk = "$WLAN2_PW";
-                };
-              };
-
               ${mobile1} = {
                 connection = {
                   id = mobile1;
                   type = "wifi";
+                  autoconnect-priority = "500";
                 };
                 ipv4 = { method = "auto"; };
                 ipv6 = {

@@ -93,6 +93,8 @@ in
               connection = {
                 id = "VBC";
                 type = "wifi";
+                autoconnect-priority = "500";
+                secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
               };
               ipv4 = { method = "auto"; };
               ipv6 = {

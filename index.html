@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-09-26 Fr 08:49 -->
+<!-- 2025-10-07 Di 21:23 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configurationo</title>
@@ -443,6 +443,8 @@
 <li><a href="#h:15b581ab-09fe-4f84-af26-2f1fbf7d726b">3.2.5.8. Hibernation</a></li>
 <li><a href="#h:86fb3236-9e18-43f0-8a08-3a2acd61cc98">3.2.5.9. BTRFS</a></li>
 <li><a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">3.2.5.10. work</a></li>
+<li><a href="#orgeec7429">3.2.5.11. microvm-host</a></li>
+<li><a href="#org6d940c0">3.2.5.12. microvm-guest</a></li>
 </ul>
 </li>
 </ul>
@@ -492,6 +494,12 @@
 <li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">3.3.1.30.3. Mako</a></li>
 <li><a href="#h:388e71be-f00a-4d45-ade1-218ce942057d">3.3.1.30.4. SwayOSD</a></li>
 <li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">3.3.1.30.5. yubikey-touch-detector</a></li>
+<li><a href="#org7be9024">3.3.1.30.6. blueman-applet</a></li>
+<li><a href="#orgaf613e6">3.3.1.30.7. network-manager-applet</a></li>
+<li><a href="#orgcdbb2b4">3.3.1.30.8. obsidian service for tray</a></li>
+<li><a href="#org43bece4">3.3.1.30.9. anki service for tray</a></li>
+<li><a href="#org6a2c6a6">3.3.1.30.10. element service for tray</a></li>
+<li><a href="#org7f443cf">3.3.1.30.11. vesktop service for tray</a></li>
 </ul>
 </li>
 <li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.1.31. Sway</a></li>
@@ -564,7 +572,7 @@
 <li><a href="#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e">3.5.31. swarsel-build</a></li>
 <li><a href="#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa">3.5.32. swarsel-instantiate</a></li>
 <li><a href="#h:02842543-caca-4d4c-a4d2-7ac749b5c136">3.5.33. sshrm</a></li>
-<li><a href="#org28ae36a">3.5.34. endme</a></li>
+<li><a href="#org3fec506">3.5.34. endme</a></li>
 </ul>
 </li>
 <li><a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">3.6. Profiles</a>
@@ -573,7 +581,7 @@
 <ul>
 <li><a href="#h:32d654de-8db2-403a-9a27-4c46d7b9172d">3.6.1.1. Personal</a></li>
 <li><a href="#h:b926f0c8-7968-4079-924c-a5d0ae4d3a45">3.6.1.2. Minimal</a></li>
-<li><a href="#org696836b">3.6.1.3. Optionals</a></li>
+<li><a href="#orge31a252">3.6.1.3. Optionals</a></li>
 <li><a href="#h:b79fbb59-9cf2-48eb-b469-2589223dda95">3.6.1.4. Chaostheatre</a></li>
 <li><a href="#h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">3.6.1.5. Work</a></li>
 <li><a href="#h:87a83b10-3c2f-407c-89aa-922ad77748a4">3.6.1.6. Uni</a></li>
@@ -816,7 +824,7 @@
 </div>
 </div>
 <p>
-<b>This file has 93279 words spanning 23800 lines and was last revised on 2025-09-26 08:49:32 +0200.</b>
+<b>This file has 94167 words spanning 24116 lines and was last revised on 2025-10-07 21:23:03 +0200.</b>
 </p>
 
 <p>
@@ -885,7 +893,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-09-26 08:49:32 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-10-07 21:23:03 +0200)
 </p></li>
 </ul>
 
@@ -897,7 +905,7 @@ system-configuration-options
 </div>
 
 <pre class="example">
---prefix=/nix/store/4gbb3sfa5p6l3lhhnf0khvfj6w7qbqk5-emacs-git-pgtk-20250914.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --without-xwidgets --with-dbus --with-selinux
+--prefix=/nix/store/qrqw5n6fivwcqfpg83x28bj1klpgfzg8-emacs-git-pgtk-20250928.0 --disable-build-details --with-modules --with-pgtk --with-compress-install --with-toolkit-scroll-bars --with-native-compilation --without-imagemagick --with-mailutils --without-small-ja-dic --with-tree-sitter --without-xinput2 --without-xwidgets --with-dbus --with-selinux
 </pre>
 
 
@@ -1403,6 +1411,10 @@ This provides devshell support for flake-parts</li>
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
   };
   outputs =
@@ -1835,10 +1847,15 @@ The rest of the outputs either define or help define the actual configurations:
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             inputs.swarsel-modules.nixosModules.default
             inputs.niri-flake.nixosModules.niri
+            inputs.microvm.nixosModules.host
+            inputs.microvm.nixosModules.microvm
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
             {
+
+              microvm.guest.enable = lib.mkDefault false;
+
               node = {
                 name = configName;
                 secretsDir = ../hosts/nixos/${configName}/secrets;
@@ -3036,7 +3053,8 @@ in
   #   '';
 
   boot = {
-    kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
@@ -3448,6 +3466,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
   swarselsystems = {
     info = "ASRock J4105-ITX, 32GB RAM";
+    flakePath = "/root/.dotfiles";
     isImpermanence = false;
     isSecureBoot = true;
     isCrypted = true;
@@ -5832,7 +5851,6 @@ Mostly used to install some compilers and lsp's that I want to have available wh
       nixd
       zig
       zls
-      ansible-language-server
 
       elk-to-svg
 
@@ -6080,7 +6098,7 @@ let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
 
-  inherit (config.repo.secrets.common.network) wlan1 wlan2 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
+  inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
 in
@@ -6126,6 +6144,9 @@ in
 
     networking = {
       inherit (config.swarselsystems) hostName;
+      hosts = {
+        "192.168.178.24" = [ "store.swarsel.win" ];
+      };
       wireless.iwd = {
         enable = true;
         settings = {
@@ -6177,6 +6198,7 @@ in
                   id = wlan1;
                   # permissions = "";
                   type = "wifi";
+                  autoconnect-priority = "999";
                 };
                 ipv4 = {
                   # dns-search = "";
@@ -6264,32 +6286,11 @@ in
                 proxy = { };
               };
 
-              ${wlan2} = {
-                connection = {
-                  id = wlan2;
-                  type = "wifi";
-                };
-                ipv4 = { method = "auto"; };
-                ipv6 = {
-                  addr-gen-mode = "stable-privacy";
-                  method = "auto";
-                };
-                proxy = { };
-                wifi = {
-                  band = "bg";
-                  mode = "infrastructure";
-                  ssid = wlan2;
-                };
-                wifi-security = {
-                  key-mgmt = "wpa-psk";
-                  psk = "$WLAN2_PW";
-                };
-              };
-
               ${mobile1} = {
                 connection = {
                   id = mobile1;
                   type = "wifi";
+                  autoconnect-priority = "500";
                 };
                 ipv4 = { method = "auto"; };
                 ipv6 = {
@@ -8024,6 +8025,13 @@ in
 
     services.pipewire.systemWide = true;
 
+    # https://github.com/Spotifyd/spotifyd/issues/1366
+    networking.hosts."0.0.0.0" = [ "apresolve.spotify.com" ];
+
+    # hacky way to enable multi-session
+    # when another user connects, the service will crash and the new user will login
+    systemd.services.spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
+
     services.spotifyd = {
       enable = true;
       settings = {
@@ -8031,8 +8039,11 @@ in
           dbus_type = "session";
           use_mpris = false;
           device = "sysdefault:CARD=PCH";
+          # device = "default";
           device_name = "SwarselSpot";
-          mixer = "alsa";
+          # backend = "pulseaudio";
+          backend = "alsa";
+          # mixer = "alsa";
           zeroconf_port = servicePort;
         };
       };
@@ -8392,14 +8403,14 @@ in
             address = "http://localhost:${builtins.toString servicePort}";
             domain = serviceDomain;
           };
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+          };
           appservice = {
             address = "http://localhost:${builtins.toString whatsappPort}";
             hostname = "0.0.0.0";
             port = whatsappPort;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-            };
           };
           bridge = {
             displayname_template = "{{or .FullName .PushName .JID}} (WA)";
@@ -8439,14 +8450,14 @@ in
             address = "http://localhost:${builtins.toString servicePort}";
             domain = serviceDomain;
           };
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+          };
           appservice = {
             address = "http://localhost:${builtins.toString signalPort}";
             hostname = "0.0.0.0";
             port = signalPort;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-            };
           };
           bridge = {
             displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
@@ -8570,7 +8581,7 @@ in
         configureRedis = true;
         maxUploadSize = "4G";
         extraApps = {
-          inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+          inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
         };
         extraAppsEnable = true;
         config = {
@@ -8597,6 +8608,9 @@ in
           locations = {
             "/" = {
               proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size    0;
+              '';
             };
           };
         };
@@ -11624,27 +11638,35 @@ This sets the VirtualBox configuration. Guest should not be enabled if not direl
 {
   options.swarselmodules.optional.virtualbox = lib.mkEnableOption "optional VBox settings";
   config = lib.mkIf config.swarselmodules.optional.virtualbox {
-    specialisation = {
-      VBox.configuration = {
-        virtualisation.virtualbox = {
-          host = {
-            enable = true;
-            enableExtensionPack = true;
-          };
-          # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
-          guest = {
-            enable = false;
-          };
-        };
-        # run an older kernel to provide compatibility with windows vm
-        boot = {
-          kernelPackages = lib.mkForce pkgs.stable24_05.linuxPackages;
-          # kernelParams = [
-          #   "amd_iommu=on"
-          # ];
-        };
+    # specialisation = {
+    #   VBox.configuration = {
+    virtualisation.virtualbox = {
+      host = {
+        enable = true;
+        enableKvm = true;
+        addNetworkInterface = lib.mkIf config.virtualisation.virtualbox.host.enableKvm false;
+        package = pkgs.stable.virtualbox;
+        enableExtensionPack = true;
+      };
+      # leaving this here for future notice. setting guest.enable = true will make 'restarting sysinit-reactivation.target' take till timeout on nixos-rebuild switch
+      guest = {
+        enable = false;
       };
     };
+    # run an older kernel to provide compatibility with windows vm
+    # boot = {
+    #   kernelPackages = lib.mkForce pkgs.stable24_05.linuxPackages;
+    #   # kernelParams = [
+    #   #   "amd_iommu=on"
+    #   # ];
+    # };
+
+
+    # fixes the issue of running together with QEMU
+    # NOTE: once you start a QEMU VM (use kvm) VirtualBox will fail to start VMs
+    # boot.kernelParams = [ "kvm.enable_virt_at_load=0" ];
+    #   };
+    # };
   };
 
 }
@@ -11706,11 +11728,8 @@ This holds configuration that is specific to framework laptops.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, inputs, ... }:
+<pre class="src src-nix-ts">{ lib, config, ... }:
 {
-  # imports = [
-  #   inputs.fw-fanctrl.nixosModules.default
-  # ];
   options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
   config = lib.mkIf config.swarselmodules.optional.framework {
     services = {
@@ -11768,10 +11787,11 @@ This holds configuration that is specific to framework laptops.
     hardware = {
       amdgpu = {
         opencl.enable = true;
-        amdvlk = {
-          enable = true;
-          support32Bit.enable = true;
-        };
+        initrd.enable = true;
+        # amdvlk = {
+        #   enable = true;
+        #   support32Bit.enable = true;
+        # };
       };
     };
   };
@@ -11932,6 +11952,8 @@ in
               connection = {
                 id = "VBC";
                 type = "wifi";
+                autoconnect-priority = "500";
+                secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
               };
               ipv4 = { method = "auto"; };
               ipv6 = {
@@ -12000,7 +12022,8 @@ in
       govc
       terraform
       opentofu
-      dev.terragrunt
+      # dev.terragrunt
+      terragrunt
       graphviz
       azure-cli
 
@@ -12037,7 +12060,7 @@ in
           folders = {
             "Documents" = {
               path = "${homeDir}/Documents";
-              devices = [ "magicant" "winters" "moonside@oracle" ];
+              devices = [ "moonside@oracle" ];
               id = "hgr3d-pfu3w";
             };
           };
@@ -12063,6 +12086,110 @@ in
   };
 
 }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgeec7429" class="outline-5">
+<h5 id="orgeec7429"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
+<div class="outline-text-5" id="text-3-2-5-11">
+<p>
+Some standard options that should be set for every microvm host.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselmodules.optional.microvmHost = lib.mkEnableOption "optional microvmHost settings";
+  # imports = [
+  #   inputs.microvm.nixosModules.host
+  # ];
+
+  config = lib.mkIf (config.swarselmodules.optional.microvmHost &amp;&amp; config.swarselsystems.withMicroVMs) {
+
+    microvm = {
+      hypervisor = lib.mkDefault "qemu";
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6d940c0" class="outline-5">
+<h5 id="org6d940c0"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
+<div class="outline-text-5" id="text-3-2-5-12">
+<p>
+Some standard options that should be set vor every microvm guest. We set the default
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselmodules.optional.microvmGuest = lib.mkEnableOption "optional microvmGuest settings";
+  # imports = [
+  #   inputs.microvm.nixosModules.microvm
+  #   "${self}/profiles/nixos"
+  #   "${self}/modules/nixos"
+  # ];
+  config = lib.mkIf config.swarselmodules.optional.microvmGuest
+    {
+      # imports = [
+      #   inputs.microvm.nixosModules.microvm
+
+      #   "${self}/profiles/nixos"
+      #   "${self}/modules/nixos"
+      # ];
+
+      boot.kernelParams = [ "systemd.hostname=${config.networking.hostName}" ];
+
+      node.name = config;
+      documentation.enable = lib.mkForce false;
+
+      microvm = {
+        guest.enable = lib.mkForce true;
+        hypervisor = lib.mkDefault "qemu";
+        mem = lib.mkDefault 1024 * 4;
+        vcpu = lib.mkDefault 4;
+        optimize.enable = false;
+        writableStoreOverlay = "/nix/.rw-store";
+
+        # interfaces = flip lib.mapAttrsToList guestCfg.microvm.interfaces (
+        #   _: { mac, hostLink, ...}:
+        #   {
+        #     type = "macvtap";
+        #     id = "vm-${replaceStrings [ ":" ] [ "" ] mac}";
+        #     inherit mac;
+        #     macvtap = {
+        #       link = hostLink;
+        #       mode = "bridge";
+        #     };
+        #   }
+        # );
+        shares =
+          [
+            {
+              source = "/nix/store";
+              mountPoint = "/nix/.ro-store";
+              tag = "ro-store";
+              proto = "virtiofs";
+            }
+          ];
+      };
+      # systemd.network.networks = lib.flip lib.concatMapAttrs guestCfg.microvm.interfaces (
+      #   name:
+      #   { mac, ... }:
+      #   {
+      #     "10-${name}".matchConfig = mkForce {
+      #       MACAddress = mac;
+      #     };
+      #   }
+      # );
+
+    };
+}
+
 </pre>
 </div>
 </div>
@@ -12761,46 +12888,47 @@ TODO: Non-NixOS machines (=sp3) should not use these by default, but instead the
     };
 
     xdg.mimeApps = {
-
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
-        "text/plain" = [ "emacsclient.desktop" ];
-        "text/csv" = [ "emacsclient.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
+        "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
+        "application/metalink+xml" = [ "emacsclient.desktop" ];
+        "application/msword" = [ "writer.desktop" ];
+        "application/pdf" = [ "org.gnome.Evince.desktop" ];
+        "application/sql" = [ "emacsclient.desktop" ];
+        "application/vnd.ms-excel" = [ "calc.desktop" ];
+        "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
         "application/x-extension-htm" = [ "firefox.desktop" ];
         "application/x-extension-html" = [ "firefox.desktop" ];
         "application/x-extension-shtml" = [ "firefox.desktop" ];
-        "application/xhtml+xml" = [ "firefox.desktop" ];
-        "application/x-extension-xhtml" = [ "firefox.desktop" ];
         "application/x-extension-xht" = [ "firefox.desktop" ];
-        "image/png" = [ "imv.desktop" ];
-        "image/jpeg" = [ "imv.desktop" ];
-        "image/gif" = [ "imv.desktop" ];
-        "image/svg" = [ "imv.desktop" ];
-        "image/webp" = [ "firefox.desktop" ];
-        "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
-        "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
+        "application/x-extension-xhtml" = [ "firefox.desktop" ];
+        "application/xhtml+xml" = [ "firefox.desktop" ];
         "audio/flac" = [ "mpv.desktop" ];
         "audio/mp3" = [ "mpv.desktop" ];
         "audio/ogg" = [ "mpv.desktop" ];
         "audio/wav" = [ "mpv.desktop" ];
-        "video/mp4" = [ "umpv.desktop" ];
-        "video/mkv" = [ "umpv.desktop" ];
-        "video/flv" = [ "umpv.desktop" ];
+        "image/gif" = [ "imv.desktop" ];
+        "image/jpeg" = [ "imv.desktop" ];
+        "image/png" = [ "imv.desktop" ];
+        "image/svg" = [ "imv.desktop" ];
+        "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
+        "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
+        "image/webp" = [ "firefox.desktop" ];
+        "text/csv" = [ "emacsclient.desktop" ];
+        "text/html" = [ "firefox.desktop" ];
+        "text/plain" = [ "emacsclient.desktop" ];
         "video/3gp" = [ "umpv.desktop" ];
-        "application/pdf" = [ "org.gnome.Evince.desktop" ];
-        "application/metalink+xml" = [ "emacsclient.desktop" ];
-        "application/sql" = [ "emacsclient.desktop" ];
-        "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
-        "application/msword" = [ "writer.desktop" ];
-        "application/vnd.ms-excel" = [ "calc.desktop" ];
+        "video/flv" = [ "umpv.desktop" ];
+        "video/mkv" = [ "umpv.desktop" ];
+        "video/mp4" = [ "umpv.desktop" ];
+        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+        "x-scheme-handler/http" = [ "firefox.desktop" ];
+        "x-scheme-handler/https" = [ "firefox.desktop" ];
       };
       associations = {
         added = {
           "application/x-zerosize" = [ "emacsclient.desktop" ];
+          "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
         };
       };
     };
@@ -12939,7 +13067,11 @@ This section is for programs that require no further configuration. zsh Integrat
       jq.enable = true;
       ripgrep.enable = true;
       pandoc.enable = true;
-      # fzf.enable = true;
+      fzf = {
+        enable = true;
+        enableBashIntegration = false;
+        enableZshIntegration = false;
+      };
       zoxide = {
         enable = true;
         enableZshIntegration = true;
@@ -14683,6 +14815,177 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
+<div id="outline-container-org7be9024" class="outline-6">
+<h6 id="org7be9024"><span class="section-number-6">3.3.1.30.6.</span> blueman-applet</h6>
+<div class="outline-text-6" id="text-3-3-1-30-6">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselmodules.blueman-applet = lib.mkEnableOption "enable blueman applet for tray";
+  config = lib.mkIf config.swarselmodules.blueman-applet {
+    services.blueman-applet.enable = true;
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgaf613e6" class="outline-6">
+<h6 id="orgaf613e6"><span class="section-number-6">3.3.1.30.7.</span> network-manager-applet</h6>
+<div class="outline-text-6" id="text-3-3-1-30-7">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+{
+  options.swarselmodules.nm-applet = lib.mkEnableOption "enable network manager applet for tray";
+  config = lib.mkIf config.swarselmodules.nm-applet {
+    services.network-manager-applet.enable = true;
+    xsession.preferStatusNotifierItems = true; # needed for indicator icon to show
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgcdbb2b4" class="outline-6">
+<h6 id="orgcdbb2b4"><span class="section-number-6">3.3.1.30.8.</span> obsidian service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-30-8">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+{
+  options.swarselmodules.obsidian-tray = lib.mkEnableOption "enable obsidian applet for tray";
+  config = lib.mkIf config.swarselmodules.obsidian-tray {
+
+    systemd.user.services.obsidian-applet = {
+      Unit = {
+        Description = "Obsidian applet";
+        Requires = [ "tray.target" ];
+        After = [
+          "graphical-session.target"
+          "tray.target"
+        ];
+        PartOf = [ "graphical-session.target" ];
+      };
+
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+
+      Service = {
+        ExecStart = "${pkgs.obsidian}/bin/obsidian";
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org43bece4" class="outline-6">
+<h6 id="org43bece4"><span class="section-number-6">3.3.1.30.9.</span> anki service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-30-9">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+{
+  options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
+  config = lib.mkIf config.swarselmodules.anki-tray {
+
+    systemd.user.services.anki-applet = {
+      Unit = {
+        Description = "Anki applet";
+        Requires = [ "tray.target" ];
+        After = [
+          "graphical-session.target"
+          "tray.target"
+        ];
+        PartOf = [ "graphical-session.target" ];
+      };
+
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+
+      Service = {
+        ExecStart = "${pkgs.anki-bin}/bin/anki-bin";
+      };
+    };
+
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6a2c6a6" class="outline-6">
+<h6 id="org6a2c6a6"><span class="section-number-6">3.3.1.30.10.</span> element service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-30-10">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+{
+  options.swarselmodules.element-tray = lib.mkEnableOption "enable element applet for tray";
+  config = lib.mkIf config.swarselmodules.element-tray {
+
+    systemd.user.services.element-applet = {
+      Unit = {
+        Description = "Element applet";
+        Requires = [ "tray.target" ];
+        After = [
+          "graphical-session.target"
+          "tray.target"
+        ];
+        PartOf = [ "graphical-session.target" ];
+      };
+
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+
+      Service = {
+        ExecStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org7f443cf" class="outline-6">
+<h6 id="org7f443cf"><span class="section-number-6">3.3.1.30.11.</span> vesktop service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-30-11">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+{
+  options.swarselmodules.vesktop-tray = lib.mkEnableOption "enable vesktop applet for tray";
+  config = lib.mkIf config.swarselmodules.vesktop-tray {
+
+    systemd.user.services.vesktop-applet = {
+      Unit = {
+        Description = "Vesktop applet";
+        Requires = [ "tray.target" ];
+        After = [
+          "graphical-session.target"
+          "tray.target"
+        ];
+        PartOf = [ "graphical-session.target" ];
+      };
+
+      Install = {
+        WantedBy = [ "graphical-session.target" ];
+      };
+
+      Service = {
+        ExecStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-5">
 <h5 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-5">3.3.1.31.</span> Sway</h5>
@@ -14723,11 +15026,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
           type = lib.types.listOf (lib.types.attrsOf lib.types.str);
           default = [
             # { command = "nextcloud --background"; }
-            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-            { command = "anki"; }
-            { command = "obsidian"; }
-            { command = "nm-applet"; }
+            # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+            # { command = "element-desktop --hidden  --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            # { command = "anki"; }
+            # { command = "obsidian"; }
+            # { command = "nm-applet"; }
             # { command = "feishin"; }
           ];
         };
@@ -15314,11 +15617,11 @@ exec_always autotiling
           "Mod+Shift+0".action = move-column-to-index 0;
         };
         spawn-at-startup = [
-          { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
-          { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
-          { command = [ "anki" ]; }
-          { command = [ "obsidian" ]; }
-          { command = [ "nm-applet" ]; }
+          # { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
+          # { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
+          # { command = [ "anki" ]; }
+          # { command = [ "obsidian" ]; }
+          # { command = [ "nm-applet" ]; }
           { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
         ];
         workspaces = {
@@ -16117,11 +16420,54 @@ in
         };
       };
 
-      systemd.user.services.pizauth.Service = {
-        ExecStartPost = [
-          "${pkgs.toybox}/bin/sleep 1"
-          "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
-        ];
+      systemd.user.services = {
+        pizauth.Service = {
+          ExecStartPost = [
+            "${pkgs.toybox}/bin/sleep 1"
+            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
+          ];
+        };
+
+        teams-applet = {
+          Unit = {
+            Description = "teams applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+          };
+        };
+
+        onepassword-applet = {
+          Unit = {
+            Description = "1password applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs._1password-gui}/bin/1password";
+          };
+        };
+
       };
 
       swarselservices.pizauth = {
@@ -16198,14 +16544,14 @@ in
       swarselsystems = {
         startup = [
           # { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "anki"; }
-          { command = "obsidian"; }
-          { command = "nm-applet"; }
+          # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          # { command = "anki"; }
+          # { command = "obsidian"; }
+          # { command = "nm-applet"; }
           # { command = "feishin"; }
-          { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-          { command = "1password"; }
+          # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+          # { command = "1password"; }
         ];
         monitors = {
           work_back_middle = rec {
@@ -16399,6 +16745,7 @@ TODO: check which of these can be replaced but builtin functions.
       default = "swarsel";
     };
     isCrypted = lib.mkEnableOption "uses full disk encryption";
+    withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
 
     isImpermanence = lib.mkEnableOption "use impermanence on this system";
     isSecureBoot = lib.mkEnableOption "use secure boot on this system";
@@ -18652,8 +18999,8 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org28ae36a" class="outline-4">
-<h4 id="org28ae36a"><span class="section-number-4">3.5.34.</span> endme</h4>
+<div id="outline-container-org3fec506" class="outline-4">
+<h4 id="org3fec506"><span class="section-number-4">3.5.34.</span> endme</h4>
 <div class="outline-text-4" id="text-3-5-34">
 <p>
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
@@ -18813,8 +19160,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org696836b" class="outline-5">
-<h5 id="org696836b"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
+<div id="outline-container-orge31a252" class="outline-5">
+<h5 id="orge31a252"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
 <div class="outline-text-5" id="text-3-6-1-3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -19083,7 +19430,12 @@ in
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
       spicetify = lib.mkDefault true;
-
+      blueman-applet = lib.mkDefault true;
+      nm-applet = lib.mkDefault true;
+      obsidian-tray = lib.mkDefault true;
+      anki-tray = lib.mkDefault true;
+      element-tray = lib.mkDefault true;
+      vesktop-tray = lib.mkDefault true;
     };
   };
 
@@ -25866,7 +26218,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-09-26 Fr 08:49</p>
+<p class="date">Created: 2025-10-07 Di 21:23</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
