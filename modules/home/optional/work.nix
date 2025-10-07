@@ -390,11 +390,54 @@ in
         };
       };
 
-      systemd.user.services.pizauth.Service = {
-        ExecStartPost = [
-          "${pkgs.toybox}/bin/sleep 1"
-          "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
-        ];
+      systemd.user.services = {
+        pizauth.Service = {
+          ExecStartPost = [
+            "${pkgs.toybox}/bin/sleep 1"
+            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+          ];
+        };
+
+        teams-applet = {
+          Unit = {
+            Description = "teams applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+          };
+        };
+
+        onepassword-applet = {
+          Unit = {
+            Description = "1password applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs._1password-gui}/bin/1password";
+          };
+        };
+
       };
 
       swarselservices.pizauth = {
@@ -469,17 +512,17 @@ in
             };
         };
       swarselsystems = {
-        startup = [
-          # { command = "nextcloud --background"; }
-          { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          { command = "anki"; }
-          { command = "obsidian"; }
-          { command = "nm-applet"; }
-          # { command = "feishin"; }
-          { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-          { command = "1password"; }
-        ];
+        # startup = [
+        # { command = "nextcloud --background"; }
+        # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+        # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+        # { command = "anki"; }
+        # { command = "obsidian"; }
+        # { command = "nm-applet"; }
+        # { command = "feishin"; }
+        # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+        # { command = "1password"; }
+        # ];
         monitors = {
           work_back_middle = rec {
             name = "LG Electronics LG Ultra HD 0x000305A6";

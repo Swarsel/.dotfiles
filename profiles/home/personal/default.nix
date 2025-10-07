@@ -42,7 +42,11 @@
       gpgagent = lib.mkDefault true;
       gammastep = lib.mkDefault true;
       spicetify = lib.mkDefault true;
-
+      nm-applet = lib.mkDefault true;
+      obsidian-tray = lib.mkDefault true;
+      anki-tray = lib.mkDefault true;
+      element-tray = lib.mkDefault true;
+      vesktop-tray = lib.mkDefault true;
     };
   };
 

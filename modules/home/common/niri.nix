@@ -182,11 +182,11 @@
           "Mod+Shift+0".action = move-column-to-index 0;
         };
         spawn-at-startup = [
-          { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
-          { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
-          { command = [ "anki" ]; }
-          { command = [ "obsidian" ]; }
-          { command = [ "nm-applet" ]; }
+          # { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
+          # { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
+          # { command = [ "anki" ]; }
+          # { command = [ "obsidian" ]; }
+          # { command = [ "nm-applet" ]; }
           { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
         ];
         workspaces = {

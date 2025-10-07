@@ -13370,6 +13370,146 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
+***** network-manager-applet
+
+#+begin_src nix-ts :tangle modules/home/common/network-manager-applet.nix
+  { lib, config, ... }:
+  {
+    options.swarselmodules.nm-applet = lib.mkEnableOption "enable network manager applet for tray";
+    config = lib.mkIf config.swarselmodules.nm-applet {
+      services.network-manager-applet.enable = true;
+    };
+  }
+#+end_src
+
+***** obsidian service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/obsidian-tray.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.obsidian-tray = lib.mkEnableOption "enable obsidian applet for tray";
+    config = lib.mkIf config.swarselmodules.obsidian-tray {
+
+      systemd.user.services.obsidian-applet = {
+        Unit = {
+          Description = "Obsidian applet";
+          Requires = [ "tray.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+
+        Service = {
+          ExecStart = "${pkgs.obsidian}/bin/obsidian";
+        };
+      };
+    };
+
+  }
+#+end_src
+
+***** anki service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/anki-tray.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
+    config = lib.mkIf config.swarselmodules.anki-tray {
+
+      systemd.user.services.anki-applet = {
+        Unit = {
+          Description = "Anki applet";
+          Requires = [ "tray.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+
+        Service = {
+          ExecStart = "${pkgs.anki-bin}/bin/anki-bin";
+        };
+      };
+
+    };
+  }
+#+end_src
+
+***** element service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/element-tray.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.element-tray = lib.mkEnableOption "enable element applet for tray";
+    config = lib.mkIf config.swarselmodules.element-tray {
+
+      systemd.user.services.element-applet = {
+        Unit = {
+          Description = "Element applet";
+          Requires = [ "tray.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+
+        Service = {
+          ExecStart = "${pkgs.element-desktop}/bin/element-desktop --hidden --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds";
+        };
+      };
+    };
+
+  }
+#+end_src
+
+***** vesktop service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/vesktop-tray.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.vesktop-tray = lib.mkEnableOption "enable vesktop applet for tray";
+    config = lib.mkIf config.swarselmodules.vesktop-tray {
+
+      systemd.user.services.vesktop-applet = {
+        Unit = {
+          Description = "Vesktop applet";
+          Requires = [ "tray.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+
+        Service = {
+          ExecStart = "${pkgs.vesktop}/bin/vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime";
+        };
+      };
+    };
+
+  }
+#+end_src
+
 **** Sway
 :PROPERTIES:
 :CUSTOM_ID: h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20
@@ -13407,11 +13547,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             type = lib.types.listOf (lib.types.attrsOf lib.types.str);
             default = [
               # { command = "nextcloud --background"; }
-              { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-              { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-              { command = "anki"; }
-              { command = "obsidian"; }
-              { command = "nm-applet"; }
+              # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+              # { command = "element-desktop --hidden  --enable-features=useozoneplatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+              # { command = "anki"; }
+              # { command = "obsidian"; }
+              # { command = "nm-applet"; }
               # { command = "feishin"; }
             ];
           };
@@ -13998,11 +14138,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "Mod+Shift+0".action = move-column-to-index 0;
           };
           spawn-at-startup = [
-            { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
-            { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
-            { command = [ "anki" ]; }
-            { command = [ "obsidian" ]; }
-            { command = [ "nm-applet" ]; }
+            # { command = [ "vesktop" "--start-minimized" "--enable-speech-dispatcher" "--ozone-platform-hint=auto" "--enable-features=WaylandWindowDecorations" "--enable-wayland-ime" ]; }
+            # { command = [ "element-desktop" "--hidden" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--disable-gpu-driver-bug-workarounds" ]; }
+            # { command = [ "anki" ]; }
+            # { command = [ "obsidian" ]; }
+            # { command = [ "nm-applet" ]; }
             { command = [ "niri" "msg" "action" "focus-workspace" "2" ]; }
           ];
           workspaces = {
@@ -14783,11 +14923,54 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
           };
         };
 
-        systemd.user.services.pizauth.Service = {
-          ExecStartPost = [
-            "${pkgs.toybox}/bin/sleep 1"
-            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
-          ];
+        systemd.user.services = {
+          pizauth.Service = {
+            ExecStartPost = [
+              "${pkgs.toybox}/bin/sleep 1"
+              "//bin/sh -c '${lib.getExe pkgs.pizauth} restore < ${homeDir}/.pizauth.state'"
+            ];
+          };
+
+          teams-applet = {
+            Unit = {
+              Description = "teams applet";
+              Requires = [ "tray.target" ];
+              After = [
+                "graphical-session.target"
+                "tray.target"
+              ];
+              PartOf = [ "graphical-session.target" ];
+            };
+
+            Install = {
+              WantedBy = [ "graphical-session.target" ];
+            };
+
+            Service = {
+              ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+            };
+          };
+
+          onepassword-applet = {
+            Unit = {
+              Description = "1password applet";
+              Requires = [ "tray.target" ];
+              After = [
+                "graphical-session.target"
+                "tray.target"
+              ];
+              PartOf = [ "graphical-session.target" ];
+            };
+
+            Install = {
+              WantedBy = [ "graphical-session.target" ];
+            };
+
+            Service = {
+              ExecStart = "${pkgs._1password-gui}/bin/1password";
+            };
+          };
+
         };
 
         swarselservices.pizauth = {
@@ -14862,17 +15045,17 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
               };
           };
         swarselsystems = {
-          startup = [
+          # startup = [
             # { command = "nextcloud --background"; }
-            { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-            { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-            { command = "anki"; }
-            { command = "obsidian"; }
-            { command = "nm-applet"; }
+            # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+            # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+            # { command = "anki"; }
+            # { command = "obsidian"; }
+            # { command = "nm-applet"; }
             # { command = "feishin"; }
-            { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-            { command = "1password"; }
-          ];
+            # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+            # { command = "1password"; }
+          # ];
           monitors = {
             work_back_middle = rec {
               name = "LG Electronics LG Ultra HD 0x000305A6";
@@ -17661,7 +17844,11 @@ This holds modules that are to be used on most hosts. These are also the most im
         gpgagent = lib.mkDefault true;
         gammastep = lib.mkDefault true;
         spicetify = lib.mkDefault true;
-
+        nm-applet = lib.mkDefault true;
+        obsidian-tray = lib.mkDefault true;
+        anki-tray = lib.mkDefault true;
+        element-tray = lib.mkDefault true;
+        vesktop-tray = lib.mkDefault true;
       };
     };
 
