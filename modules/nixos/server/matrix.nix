@@ -215,14 +215,14 @@ in
             address = "http://localhost:${builtins.toString servicePort}";
             domain = serviceDomain;
           };
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+          };
           appservice = {
             address = "http://localhost:${builtins.toString whatsappPort}";
             hostname = "0.0.0.0";
             port = whatsappPort;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-            };
           };
           bridge = {
             displayname_template = "{{or .FullName .PushName .JID}} (WA)";
@@ -262,14 +262,14 @@ in
             address = "http://localhost:${builtins.toString servicePort}";
             domain = serviceDomain;
           };
+          database = {
+            type = "postgres";
+            uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+          };
           appservice = {
             address = "http://localhost:${builtins.toString signalPort}";
             hostname = "0.0.0.0";
             port = signalPort;
-            database = {
-              type = "postgres";
-              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-            };
           };
           bridge = {
             displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";

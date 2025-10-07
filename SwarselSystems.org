@@ -2383,6 +2383,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselsystems = {
       info = "ASRock J4105-ITX, 32GB RAM";
+      flakePath = "/root/.dotfiles";
       isImpermanence = false;
       isSecureBoot = true;
       isCrypted = true;
@@ -4971,6 +4972,9 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 
       networking = {
         inherit (config.swarselsystems) hostName;
+        hosts = {
+          "192.168.178.24" = [ "store.swarsel.win" ];
+        };
         wireless.iwd = {
           enable = true;
           settings = {
@@ -6786,6 +6790,13 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 
       services.pipewire.systemWide = true;
 
+      # https://github.com/Spotifyd/spotifyd/issues/1366
+      networking.hosts."0.0.0.0" = [ "apresolve.spotify.com" ];
+
+      # hacky way to enable multi-session
+      # when another user connects, the service will crash and the new user will login
+      systemd.services.spotifyd.serviceConfig.RestartSec = lib.mkForce 1;
+
       services.spotifyd = {
         enable = true;
         settings = {
@@ -6793,8 +6804,11 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             dbus_type = "session";
             use_mpris = false;
             device = "sysdefault:CARD=PCH";
+            # device = "default";
             device_name = "SwarselSpot";
-            mixer = "alsa";
+            # backend = "pulseaudio";
+            backend = "alsa";
+            # mixer = "alsa";
             zeroconf_port = servicePort;
           };
         };
@@ -7154,14 +7168,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               address = "http://localhost:${builtins.toString servicePort}";
               domain = serviceDomain;
             };
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
+            };
             appservice = {
               address = "http://localhost:${builtins.toString whatsappPort}";
               hostname = "0.0.0.0";
               port = whatsappPort;
-              database = {
-                type = "postgres";
-                uri = "postgresql:///mautrix-whatsapp?host=/run/postgresql";
-              };
             };
             bridge = {
               displayname_template = "{{or .FullName .PushName .JID}} (WA)";
@@ -7201,14 +7215,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
               address = "http://localhost:${builtins.toString servicePort}";
               domain = serviceDomain;
             };
+            database = {
+              type = "postgres";
+              uri = "postgresql:///mautrix-signal?host=/run/postgresql";
+            };
             appservice = {
               address = "http://localhost:${builtins.toString signalPort}";
               hostname = "0.0.0.0";
               port = signalPort;
-              database = {
-                type = "postgres";
-                uri = "postgresql:///mautrix-signal?host=/run/postgresql";
-              };
             };
             bridge = {
               displayname_template = "{{or .ContactName .ProfileName .PhoneNumber}} (Signal)";
@@ -7332,7 +7346,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
           configureRedis = true;
           maxUploadSize = "4G";
           extraApps = {
-            inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+            inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
           };
           extraAppsEnable = true;
           config = {
@@ -7359,6 +7373,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             locations = {
               "/" = {
                 proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
               };
             };
           };

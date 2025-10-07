@@ -37,7 +37,7 @@ in
         configureRedis = true;
         maxUploadSize = "4G";
         extraApps = {
-          inherit (pkgs.nextcloud30Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+          inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
         };
         extraAppsEnable = true;
         config = {
@@ -64,6 +64,9 @@ in
           locations = {
             "/" = {
               proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size    0;
+              '';
             };
           };
         };
