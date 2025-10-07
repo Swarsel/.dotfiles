@@ -22,6 +22,7 @@
       default = "swarsel";
     };
     isCrypted = lib.mkEnableOption "uses full disk encryption";
+    withMicroVMs = lib.mkEnableOption "enable MicroVMs on this host";
 
     isImpermanence = lib.mkEnableOption "use impermanence on this system";
     isSecureBoot = lib.mkEnableOption "use secure boot on this system";

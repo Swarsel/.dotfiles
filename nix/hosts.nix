@@ -20,10 +20,15 @@
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             inputs.swarsel-modules.nixosModules.default
             inputs.niri-flake.nixosModules.niri
+            inputs.microvm.nixosModules.host
+            inputs.microvm.nixosModules.microvm
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
             {
+
+              microvm.guest.enable = lib.mkDefault false;
+
               node = {
                 name = configName;
                 secretsDir = ../hosts/nixos/${configName}/secrets;
