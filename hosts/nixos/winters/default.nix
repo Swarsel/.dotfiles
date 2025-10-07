@@ -22,6 +22,7 @@
 
   swarselsystems = {
     info = "ASRock J4105-ITX, 32GB RAM";
+    flakePath = "/root/.dotfiles";
     isImpermanence = false;
     isSecureBoot = true;
     isCrypted = true;

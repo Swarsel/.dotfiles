@@ -49,6 +49,9 @@ in
 
     networking = {
       inherit (config.swarselsystems) hostName;
+      hosts = {
+        "192.168.178.24" = [ "store.swarsel.win" ];
+      };
       wireless.iwd = {
         enable = true;
         settings = {
