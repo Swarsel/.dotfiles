@@ -410,6 +410,7 @@ A short overview over each input and what it does:
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
       systems.url = "github:nix-systems/default";
       swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
+      swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       home-manager = {
         url = "github:nix-community/home-manager";
         # url = "github:Swarsel/home-manager/module/pizauth";
@@ -1546,6 +1547,12 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 };
               };
 
+              swarsel-nix = _: prev: {
+                swarsel-nix = import inputs.swarsel-nix {
+                  pkgs = prev;
+                };
+              };
+
               zjstatus = _: prev: {
                 zjstatus = inputs.zjstatus.packages.${prev.system}.default;
               };
@@ -1558,6 +1565,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
             // (nixpkgs-kernel final prev)
             // (nixpkgs-stable24_05 final prev)
             // (nixpkgs-stable24_11 final prev)
+            // (swarsel-nix final prev)
             // (zjstatus final prev)
             // (inputs.niri-flake.overlays.niri final prev)
             // (inputs.vbc-nix.overlays.default final prev)
@@ -11154,7 +11162,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         # nomacs
         libreoffice-qt
         xournalpp
-        obsidian
+        # obsidian
         # spotify
         vesktop # discord client
         # nextcloud-client # enables a systemd service that I do not want
@@ -13409,7 +13417,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 ***** obsidian service for tray
 
 #+begin_src nix-ts :tangle modules/home/common/obsidian-tray.nix
-  { lib, config, pkgs, ... }:
+  { lib, config, ... }:
   {
     options.swarselmodules.obsidian-tray = lib.mkEnableOption "enable obsidian applet for tray";
     config = lib.mkIf config.swarselmodules.obsidian-tray {
@@ -13430,7 +13438,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
         };
 
         Service = {
-          ExecStart = "${pkgs.obsidian}/bin/obsidian";
+          ExecStart = "${lib.getExe config.programs.obsidian.package}";
         };
       };
     };
@@ -13470,7 +13478,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
   }
 #+end_src
 
-***** element service for tray
+***** element service for tr
 
 #+begin_src nix-ts :tangle modules/home/common/element-tray.nix
   { lib, config, pkgs, ... }:
@@ -14401,6 +14409,143 @@ This service changes the screen hue at night. I am not sure if that really does 
       };
     };
   }
+#+end_src
+
+**** Obsidian
+
+#+begin_src nix-ts :tangle modules/home/common/obsidian.nix
+  { lib, config, pkgs, nixosConfig ? config, ... }:
+    let
+      moduleName = "obsidian";
+      inherit (nixosConfig.repo.secrets.common.obsidian) userIgnoreFilters;
+    in
+    {
+      options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} with settings";
+      config = lib.mkIf config.swarselmodules.${moduleName} {
+        programs.obsidian =
+          let
+            name = "Main";
+          in
+          {
+            enable = true;
+            package = pkgs.obsidian;
+            defaultSettings = {
+              app = {
+                attachmentFolderPath = "attachments";
+                alwaysUpdateLinks = true;
+                spellcheck = false;
+                inherit userIgnoreFilters;
+                vimMode = false;
+                newFileLocation = "current";
+              };
+              corePlugins = [
+                "backlink"
+                "bookmarks"
+                "canvas"
+                "command-palette"
+                "daily-notes"
+                "editor-status"
+                "file-explorer"
+                "file-recovery"
+                "global-search"
+                "graph"
+                "note-composer"
+                "outgoing-link"
+                "outline"
+                "page-preview"
+                "properties"
+                "slides"
+                "switcher"
+                "tag-pane"
+                "templates"
+                "word-count"
+              ];
+              communityPlugins = with pkgs.swarsel-nix; [
+                advanced-tables
+                calendar
+                file-hider
+                linter
+                omnisearch
+                sort-and-permute-lines
+                tag-wrangler
+                tray
+              ];
+            };
+            vaults = {
+              ${name} = {
+                target = "./Obsidian/${name}";
+                settings = {
+                  appearance = {
+                    baseFontSize = lib.mkForce 19;
+                  };
+                  communityPlugins = with pkgs.swarsel-nix; [
+                    {
+                      pkg = advanced-tables;
+                      enable = true;
+                    }
+                    {
+                      pkg = calendar;
+                      enable = true;
+                    }
+                    {
+                      pkg = sort-and-permute-lines;
+                      enable = true;
+                    }
+                    {
+                      pkg = tag-wrangler;
+                      enable = true;
+                    }
+                    {
+                      pkg = tray;
+                      enable = true;
+                      settings = {
+                        launchOnStartup = false;
+                        hideOnLaunch = true;
+                        runInBackground = true;
+                        hideTaskbarIcon = false;
+                        createTrayIcon = true;
+                      };
+                    }
+                    {
+                      pkg = file-hider;
+                      enable = true;
+                      settings =
+                        {
+                          hidden = true;
+                          hiddenList = [
+                            "attachments"
+                            "images"
+                            "ltximg"
+                            "logseq"
+                          ];
+                        };
+                    }
+                    {
+                      pkg = linter;
+                      enable = true;
+                      settings = {
+                        auto-correct-common-misspellings = {
+                          skip-words-with-multiple-capitals = true;
+                        };
+                        convert-bullet-list-markers = {
+                          enabled = true;
+                        };
+                      };
+                    }
+                    {
+                      pkg = omnisearch;
+                      enable = true;
+                      settings = {
+                        hideExcluded = true;
+                      };
+                    }
+                  ];
+                };
+              };
+            };
+          };
+      };
+    }
 #+end_src
 
 *** Server
@@ -17871,6 +18016,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         blueman-applet = lib.mkDefault true;
         nm-applet = lib.mkDefault true;
         obsidian-tray = lib.mkDefault true;
+        obsidian = lib.mkDefault true;
         anki-tray = lib.mkDefault true;
         element-tray = lib.mkDefault true;
         vesktop-tray = lib.mkDefault true;

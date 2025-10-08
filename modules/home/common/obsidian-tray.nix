@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 {
   options.swarselmodules.obsidian-tray = lib.mkEnableOption "enable obsidian applet for tray";
   config = lib.mkIf config.swarselmodules.obsidian-tray {
@@ -19,7 +19,7 @@
       };
 
       Service = {
-        ExecStart = "${pkgs.obsidian}/bin/obsidian";
+        ExecStart = "${lib.getExe config.programs.obsidian.package}";
       };
     };
   };

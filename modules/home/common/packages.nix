@@ -77,7 +77,7 @@
       # nomacs
       libreoffice-qt
       xournalpp
-      obsidian
+      # obsidian
       # spotify
       vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want

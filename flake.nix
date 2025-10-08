@@ -18,6 +18,7 @@
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
     systems.url = "github:nix-systems/default";
     swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
+    swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     home-manager = {
       url = "github:nix-community/home-manager";
       # url = "github:Swarsel/home-manager/module/pizauth";

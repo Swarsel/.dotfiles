@@ -77,6 +77,12 @@ in
               };
             };
 
+            swarsel-nix = _: prev: {
+              swarsel-nix = import inputs.swarsel-nix {
+                pkgs = prev;
+              };
+            };
+
             zjstatus = _: prev: {
               zjstatus = inputs.zjstatus.packages.${prev.system}.default;
             };
@@ -89,6 +95,7 @@ in
           // (nixpkgs-kernel final prev)
           // (nixpkgs-stable24_05 final prev)
           // (nixpkgs-stable24_11 final prev)
+          // (swarsel-nix final prev)
           // (zjstatus final prev)
           // (inputs.niri-flake.overlays.niri final prev)
           // (inputs.vbc-nix.overlays.default final prev)
