@@ -117,7 +117,7 @@ in
                 wifi = {
                   # mac-address-blacklist = "";
                   mode = "infrastructure";
-                  band = "a";
+                  # band = "a";
                   ssid = wlan1;
                 };
                 wifi-security = {
