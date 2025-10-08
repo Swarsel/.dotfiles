@@ -807,13 +807,13 @@ create a new one."
 (defun swarsel/org-agenda-done-and-archive ()
   "Mark TODO at point as DONE, archive it, and save all agenda files."
   (interactive)
-  (let ((org-archive-location "~/Nextcloud/Org/Archive.org::Archive"))
+  (let ((org-archive-location "~/Org/Archive.org::Archive"))
     (org-agenda-todo "DONE")
     (org-agenda-archive)
     (dolist (buf (buffer-list))
       (with-current-buffer buf
         (when (and buffer-file-name
-                   (string-prefix-p (expand-file-name "~/Nextcloud/Org/") (file-truename buffer-file-name))
+                   (string-prefix-p (expand-file-name "~/Org/") (file-truename buffer-file-name))
                    (derived-mode-p 'org-mode))
           (save-buffer))))))
 
@@ -842,14 +842,14 @@ create a new one."
   (setq org-image-actual-width nil)
   (setq org-format-latex-options '(:foreground "White" :background default :scale 2.0 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers ("begin" "$1" "$" "$$" "\\(" "\\[")))
 
-  (setq org-agenda-files '("/home/swarsel/Nextcloud/Org/Tasks.org"
-                           "/home/swarsel/Nextcloud/Org/Archive.org"
+  (setq org-agenda-files '("/home/swarsel/Org/Tasks.org"
+                           "/home/swarsel/Org/Archive.org"
                            ))
 
   (setq org-capture-templates
-        '(("t" "Todo" entry (file+headline "~/Nextcloud/Org/Tasks.org" "Inbox")
+        '(("t" "Todo" entry (file+headline "~/Org/Tasks.org" "Inbox")
            "* TODO %?\n  %i\n  %a")
-          ("j" "Journal" entry (file+datetree "~/Nextcloud/Org/Journal.org")
+          ("j" "Journal" entry (file+datetree "~/Org/Journal.org")
            "* %?\nEntered on %U\n  %i\n  %a")))
 
   (setq org-refile-targets

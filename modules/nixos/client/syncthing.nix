@@ -27,12 +27,12 @@ in
             id = "default";
           };
           "Obsidian" = {
-            path = "${homeDir}/Nextcloud/Obsidian";
+            path = "${homeDir}/Obsidian";
             inherit devices;
             id = "yjvni-9eaa7";
           };
           "Org" = {
-            path = "${homeDir}/Nextcloud/Org";
+            path = "${homeDir}/Org";
             inherit devices;
             id = "a7xnl-zjj3d";
           };
