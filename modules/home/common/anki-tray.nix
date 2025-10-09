@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 {
   options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
   config = lib.mkIf config.swarselmodules.anki-tray {
@@ -19,7 +19,11 @@
       };
 
       Service = {
-        ExecStart = "${pkgs.anki-bin}/bin/anki-bin";
+        # ExecStart = "${lib.getExe config.programs.anki.package}";
+        ExecStart = "/etc/profiles/per-user/swarsel/bin/anki";
+        Environment = [
+          "QT_QPA_PLATFORM=xcb"
+        ];
       };
     };
 

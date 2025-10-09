@@ -4031,6 +4031,9 @@ in
           github-nixpkgs-review-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.emacs {
           emacs-radicale-pw = { owner = mainUser; };
+        }) // (lib.optionalAttrs modules.anki {
+          anki-user = { owner = mainUser; };
+          anki-pw = { owner = mainUser; };
         });
         templates = {
           authinfo = lib.mkIf modules.emacs {
@@ -11203,7 +11206,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         # specifically needed for anki
         # mpv
-        anki-bin
+        # anki-bin
 
         # dirvish file previews
         fd
@@ -13449,36 +13452,40 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 ***** anki service for tray
 
 #+begin_src nix-ts :tangle modules/home/common/anki-tray.nix
-  { lib, config, pkgs, ... }:
-  {
-    options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
-    config = lib.mkIf config.swarselmodules.anki-tray {
+   { lib, config, ... }:
+   {
+     options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
+     config = lib.mkIf config.swarselmodules.anki-tray {
 
-      systemd.user.services.anki-applet = {
-        Unit = {
-          Description = "Anki applet";
-          Requires = [ "tray.target" ];
-          After = [
-            "graphical-session.target"
-            "tray.target"
-          ];
-          PartOf = [ "graphical-session.target" ];
-        };
+       systemd.user.services.anki-applet = {
+         Unit = {
+           Description = "Anki applet";
+           Requires = [ "tray.target" ];
+           After = [
+             "graphical-session.target"
+             "tray.target"
+           ];
+           PartOf = [ "graphical-session.target" ];
+         };
 
-        Install = {
-          WantedBy = [ "graphical-session.target" ];
-        };
+         Install = {
+           WantedBy = [ "graphical-session.target" ];
+         };
 
-        Service = {
-          ExecStart = "${pkgs.anki-bin}/bin/anki-bin";
-        };
-      };
+         Service = {
+           # ExecStart = "${lib.getExe config.programs.anki.package}";
+           ExecStart = "/etc/profiles/per-user/swarsel/bin/anki";
+           Environment = [
+             "QT_QPA_PLATFORM=xcb"
+           ];
+         };
+       };
 
-    };
-  }
+     };
+   }
 #+end_src
 
-***** element service for tr
+***** element service for tray
 
 #+begin_src nix-ts :tangle modules/home/common/element-tray.nix
   { lib, config, pkgs, ... }:
@@ -14546,6 +14553,76 @@ This service changes the screen hue at night. I am not sure if that really does 
           };
       };
     }
+#+end_src
+
+**** Anki
+
+
+#+begin_src nix-ts :tangle modules/home/common/anki.nix
+  { lib, config, pkgs, globals, nixosConfig ? config, ... }:
+  let
+    moduleName = "anki";
+    inherit (config.swarselsystems) isPublic isNixos;
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+
+      sops = lib.mkIf (!isPublic && !isNixos) {
+        secrets = {
+          anki-user = { };
+          anki-pw = { };
+        };
+      };
+
+      programs.anki = {
+        enable = true;
+        package = pkgs.anki;
+        hideBottomBar = true;
+        hideBottomBarMode = "always";
+        hideTopBar = true;
+        hideTopBarMode = "always";
+        reduceMotion = true;
+        spacebarRatesCard = true;
+        # videoDriver = "opengl";
+        sync = {
+          autoSync = true;
+          syncMedia = true;
+          url = "https://${globals.services.ankisync.domain}";
+          usernameFile = nixosConfig.sops.secrets.anki-user.path;
+          # this is not the password but the syncKey
+          # get it by logging in or out, saving preferences and then
+          # show details on the "settings wont be saved" dialog
+          keyFile = nixosConfig.sops.secrets.anki-pw.path;
+        };
+        addons =
+          let
+            minimize-to-tray = pkgs.anki-utils.buildAnkiAddon
+              (finalAttrs: {
+                pname = "minimize-to-tray";
+                version = "2.0.1";
+                src = pkgs.fetchFromGitHub {
+                  owner = "simgunz";
+                  repo = "anki21-addons_minimize-to-tray";
+                  rev = finalAttrs.version;
+                  sparseCheckout = [ "src" ];
+                  hash = "sha256-xmvbIOfi9K0yEUtUNKtuvv2Vmqrkaa4Jie6J1s+FuqY=";
+                };
+                sourceRoot = "${finalAttrs.src.name}/src";
+              });
+          in
+          [
+            (minimize-to-tray.withConfig
+            {
+              config = {
+                hide_on_startup = "true";
+              };
+            })
+          ];
+      };
+    };
+
+  }
 #+end_src
 
 *** Server
@@ -18020,6 +18097,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         anki-tray = lib.mkDefault true;
         element-tray = lib.mkDefault true;
         vesktop-tray = lib.mkDefault true;
+        anki = lib.mkDefault true;
       };
     };
 

@@ -49,6 +49,7 @@
       anki-tray = lib.mkDefault true;
       element-tray = lib.mkDefault true;
       vesktop-tray = lib.mkDefault true;
+      anki = lib.mkDefault true;
     };
   };
 

@@ -22,6 +22,9 @@ in
         github-nixpkgs-review-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.emacs {
         emacs-radicale-pw = { owner = mainUser; };
+      }) // (lib.optionalAttrs modules.anki {
+        anki-user = { owner = mainUser; };
+        anki-pw = { owner = mainUser; };
       });
       templates = {
         authinfo = lib.mkIf modules.emacs {

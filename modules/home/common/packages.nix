@@ -118,7 +118,7 @@
 
       # specifically needed for anki
       # mpv
-      anki-bin
+      # anki-bin
 
       # dirvish file previews
       fd
