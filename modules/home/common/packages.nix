@@ -87,7 +87,6 @@
       nicotine-plus
       stable.transmission_3
       mktorrent
-      hexchat
       hugo
 
       # kyria
