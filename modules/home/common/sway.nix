@@ -149,8 +149,9 @@ in
               "${modifier}+Shift+p" = "exec pass-fuzzel --type";
               "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
               "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
-              "${modifier}+Escape" = "mode $exit";
+              # "${modifier}+Escape" = "mode $exit";
               "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+              "${modifier}+Escape" = "exec wlogout";
               "${modifier}+h" = "exec hyprpicker | wl-copy";
               "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
               "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
@@ -392,22 +393,22 @@ in
         in
         "
 # exec_always autotiling
-            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+            # set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-            mode $exit {
-              bindsym --to-code {
-                s exec \"systemctl suspend\", mode \"default\"
-                h exec \"systemctl hibernate\", mode \"default\"
-                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-                p exec \"systemctl poweroff\"
-                r exec \"systemctl reboot\"
-                u exec \"swaymsg exit\"
+            # mode $exit {
+            #   bindsym --to-code {
+            #     s exec \"systemctl suspend\", mode \"default\"
+            #     h exec \"systemctl hibernate\", mode \"default\"
+            #     l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+            #     p exec \"systemctl poweroff\"
+            #     r exec \"systemctl reboot\"
+            #     u exec \"swaymsg exit\"
 
-                Return mode \"default\"
-                Escape mode \"default\"
-                ${modifier}+Escape mode \"default\"
-              }
-            }
+            #     Return mode \"default\"
+            #     Escape mode \"default\"
+            #     ${modifier}+Escape mode \"default\"
+            #   }
+            # }
 
             exec systemctl --user import-environment
             # exec swayidle -w
