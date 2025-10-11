@@ -42,7 +42,14 @@ in
 
     nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
 
-    programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+    programs = {
+      home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+      man = {
+        enable = true;
+        generateCaches = true;
+      };
+    };
+
     targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
     home = {
@@ -53,6 +60,11 @@ in
       sessionVariables = {
         FLAKE = "/home/${mainUser}/.dotfiles";
       };
+      extraOutputsToInstall = [
+        "doc"
+        "info"
+        "devdoc"
+      ];
     };
   };
 
