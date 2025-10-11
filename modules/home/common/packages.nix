@@ -79,7 +79,7 @@
       xournalpp
       # obsidian
       # spotify
-      vesktop # discord client
+      # vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
       spotify-player
       element-desktop

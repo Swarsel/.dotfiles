@@ -12,9 +12,9 @@ in
             additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; };
 
             modifications = final: prev: {
-              vesktop = prev.vesktop.override {
-                withSystemVencord = true;
-              };
+              # vesktop = prev.vesktop.override {
+              #   withSystemVencord = true;
+              # };
 
               firefox = prev.firefox.override {
                 nativeMessagingHosts = [
