@@ -25,7 +25,7 @@ in
       spacebarRatesCard = true;
       # videoDriver = "opengl";
       sync = {
-        autoSync = true;
+        autoSync = false; # sync on profile close will delay system shutdown
         syncMedia = true;
         url = "https://${globals.services.ankisync.domain}";
         usernameFile = nixosConfig.sops.secrets.anki-user.path;
