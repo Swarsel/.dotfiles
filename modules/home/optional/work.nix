@@ -12,15 +12,15 @@ in
         dig
         docker
         postman
-        rclone
-        stable24_05.awscli2
+        # rclone
         libguestfs-with-appliance
         stable.prometheus.cli
         tigervnc
-        openstackclient
+        # openstackclient
 
         vscode
       ];
+
 
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
@@ -116,9 +116,27 @@ in
 
       programs =
         let
-          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
+          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
         in
         {
+          openstackclient = {
+            enable = true;
+            inherit clouds;
+          };
+          awscli = {
+            enable = true;
+            package = pkgs.stable24_05.awscli2;
+            settings = {
+              "default" = { };
+              "profile s3-imagebuilder-prod" = { };
+            };
+            credentials = {
+              "s3-imagebuilder-prod" = {
+                aws_access_key_id = "5OYXY4879EJG9I91K1B6";
+                credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
+              };
+            };
+          };
           git.userEmail = lib.mkForce gitMail;
 
           zsh = {
