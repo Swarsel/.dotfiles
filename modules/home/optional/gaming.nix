@@ -1,11 +1,14 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, nixosConfig ? config, ... }:
+let
+  inherit (config.swarselsystems) isNixos;
+in
 {
   options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
   config = lib.mkIf config.swarselmodules.optional.gaming {
     # specialisation = {
     #   gaming.configuration = {
     home.packages = with pkgs; [
-      lutris
+      # lutris
       wine
       protonplus
       winetricks
@@ -33,6 +36,22 @@
       retroarch
       flips
     ];
+
+    programs.lutris = {
+      enable = true;
+      extraPackages = with pkgs; [
+        winetricks
+        gamescope
+        umu-launcher
+      ];
+      steamPackage = if isNixos then nixosConfig.programs.steam.package else pkgs.steam;
+      winePackages = with pkgs; [
+        wineWow64Packages.waylandFull
+      ];
+      protonPackages = with pkgs; [
+        proton-ge-bin
+      ];
+    };
     #   };
     # };
   };
