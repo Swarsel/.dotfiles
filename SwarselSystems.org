@@ -11185,6 +11185,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         # nextcloud-client # enables a systemd service that I do not want
         # spotify-player
         # element-desktop
+
         nicotine-plus
         stable.transmission_3
         mktorrent
@@ -14721,6 +14722,24 @@ This service changes the screen hue at night. I am not sure if that really does 
   { lib, config, ... }:
   let
     moduleName = "obs-studio";
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.${moduleName} = {
+        enable = true;
+        };
+      };
+
+    }
+#+end_src
+
+**** spotify-player
+
+#+begin_src nix-ts :tangle modules/home/common/spotify-player.nix
+  { lib, config, ... }:
+  let
+    moduleName = "spotify-player";
   in
   {
     options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
