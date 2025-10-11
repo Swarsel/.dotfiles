@@ -4661,7 +4661,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
         # pinentry
         dbus
-        swaylock-effects
+        # swaylock-effects
         syncthingtray-minimal
         swayosd
 
@@ -14710,6 +14710,34 @@ This service changes the screen hue at night. I am not sure if that really does 
 
   }
 #+end_src
+
+
+**** swaylock
+
+#+begin_src nix-ts :tangle modules/home/common/swaylock.nix
+  { lib, config, pkgs, ... }:
+  let
+    moduleName = "swaylock";
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.${moduleName} = {
+        enable = true;
+        package = pkgs.swaylock-effects;
+        settings = {
+          screenshots = true;
+          clock = true;
+          effect-blur = "7x5";
+          effect-vignette = "0.5:0.5";
+          fade-in = "0.2";
+        };
+      };
+    };
+
+  }
+#+end_src
+
 
 *** Server
 :PROPERTIES:

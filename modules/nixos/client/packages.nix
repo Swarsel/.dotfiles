@@ -21,7 +21,7 @@
 
       # pinentry
       dbus
-      swaylock-effects
+      # swaylock-effects
       syncthingtray-minimal
       swayosd
 
