@@ -45,7 +45,6 @@ bind gwe tab_or_tabopen_local exivity.vbc.ac.at
 bind gwg tab_or_tabopen_local github.com
 bind gwG tab_or_tabopen_local goc.egi.eu
 bind gwh tab_or_tabopen_local jupyterhub.vbc.ac.at
-bind gwH tab_or_tabopen_local test-jupyterhub.vbc.ac.at
 bind gwj tab_or_tabopen_local jenkins.vbc.ac.at
 bind gwJ tab_or_tabopen_local test-jenkins.vbc.ac.at
 bind gwl tab_or_tabopen_local lucid.app
@@ -58,6 +57,20 @@ bind gws tab_or_tabopen_local satellite.vbc.ac.at
 bind gwt tab_or_tabopen_local tower.vbc.ac.at
 bind gwv tab_or_tabopen_local vc-impimba-1.m.imp.ac.at/ui
 bind gwx tab_or_tabopen_local xclarity.vbc.ac.at
+
+unbind --mode=normal gh
+bind ghp tab_or_tabopen_local https://github.com/pulls
+bind ghi tab_or_tabopen_local https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc
+bind ghv tab_or_tabopen_local github.com/orgs/vbc-it/repositories
+bind ghc tab_or_tabopen_local github.com/orgs/CLIP-HPC/repositories
+bind ghd tab_or_tabopen_local github.com/Swarsel/.dotfiles
+bind ghni tab_or_tabopen_local github.com/NixOS/nixpkgs/issues
+bind ghnp tab_or_tabopen_local github.com/NixOS/nixpkgs/pulls
+
+unbind --mode=normal gp
+bind gprn tab_or_tabopen_local www.reddit.com/r/NixOS/
+bind gpd tab_or_tabopen_local discourse.nixos.org/
+bind gpp tab_or_tabopen_local parkour.wien/categories
 
 " Search in page
 set findcase smart
@@ -112,6 +125,15 @@ set hintdelay 100
 
 " Some pages like github break on the tridactyl quick search. have this as a fallback
 unbind <C-f>
+
+" Do not let websites steal sitefocus
+set allowautofocus false
+
+" whitelist sites
+" :seturl [URL regex for sites with text editors you use] allowautofocus true
+
+" stronger blacklist for specific sites
+seturl vbc.atlassian.net preventautofocusjackhammer true
 
 " Subconfig Settings
 seturl www.google.com followpagepatterns.next Next

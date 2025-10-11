@@ -123,6 +123,7 @@
           {
             "extensions.autoDisableScopes" = 0;
             "browser.bookmarks.showMobileBookmarks" = true;
+            "browser.autofocus" = false;
             "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
             "browser.search.suggest.enabled" = false;
             "browser.search.suggest.enabled.private" = false;
