@@ -11171,8 +11171,8 @@ This holds packages that I can use as provided, or with small modifications (as 
         # spotify
         # vesktop # discord client
         # nextcloud-client # enables a systemd service that I do not want
-        spotify-player
-        element-desktop
+        # spotify-player
+        # element-desktop
         nicotine-plus
         stable.transmission_3
         mktorrent
@@ -14621,6 +14621,41 @@ This service changes the screen hue at night. I am not sure if that really does 
               };
             })
           ];
+      };
+    };
+
+  }
+#+end_src
+
+**** Element-desktop
+
+
+#+begin_src nix-ts :tangle modules/home/common/element.nix
+  { lib, config, ... }:
+  let
+    moduleName = "element-desktop";
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.element-desktop = {
+        enable = true;
+        settings = {
+          default_server_config = {
+            "m.homeserver" = {
+              base_url = "https://swatrix.swarsel.win/";
+            };
+          };
+          UIFeature = {
+            feedback = false;
+            voip = false;
+            widgets = false;
+            shareSocial = false;
+            registration = false;
+            passwordReset = false;
+            deactivate = false;
+          };
+        };
       };
     };
 
