@@ -391,7 +391,7 @@ in
           swayfxSettings = config.swarselsystems.swayfxConfig;
         in
         "
-exec_always autotiling
+# exec_always autotiling
             set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
             mode $exit {

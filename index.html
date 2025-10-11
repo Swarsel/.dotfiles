@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-10-09 Do 02:38 -->
+<!-- 2025-10-11 Sa 21:50 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configurationo</title>
@@ -443,8 +443,8 @@
 <li><a href="#h:15b581ab-09fe-4f84-af26-2f1fbf7d726b">3.2.5.8. Hibernation</a></li>
 <li><a href="#h:86fb3236-9e18-43f0-8a08-3a2acd61cc98">3.2.5.9. BTRFS</a></li>
 <li><a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">3.2.5.10. work</a></li>
-<li><a href="#org9c71125">3.2.5.11. microvm-host</a></li>
-<li><a href="#org67f229f">3.2.5.12. microvm-guest</a></li>
+<li><a href="#org7710514">3.2.5.11. microvm-host</a></li>
+<li><a href="#orga896f27">3.2.5.12. microvm-guest</a></li>
 </ul>
 </li>
 </ul>
@@ -470,46 +470,56 @@
 <li><a href="#h:867556e6-5a24-4c43-9d47-3edca2f16488">3.3.1.10. Desktop Entries, MIME types (xdg)</a></li>
 <li><a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">3.3.1.11. Linking dotfiles (Symlinks home.file)</a></li>
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.1.12. Sourcing environment variables</a></li>
-<li><a href="#h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">3.3.1.13. General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide</a></li>
+<li><a href="#h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">3.3.1.13. General Programs: bottom, imv, less, lesspipe, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide, timidity</a></li>
 <li><a href="#h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748">3.3.1.14. nix-index</a></li>
-<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.1.15. password-store</a></li>
-<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.1.16. direnv</a></li>
-<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.1.17. eza</a></li>
-<li><a href="#h:38f127f3-003b-418b-85ba-a3bcf44bf16c">3.3.1.18. atuin</a></li>
-<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.3.1.19. git</a></li>
-<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.3.1.20. Fuzzel</a></li>
-<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.1.21. Starship</a></li>
-<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.1.22. Kitty</a></li>
-<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.1.23. zsh</a></li>
-<li><a href="#h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">3.3.1.24. zellij</a></li>
-<li><a href="#h:45de9430-f925-4df6-9db6-bffb5b8f1604">3.3.1.25. tmux</a></li>
-<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.3.1.26. Mail</a></li>
-<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.3.1.27. Home-manager: Emacs</a></li>
-<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.3.1.28. Waybar</a></li>
-<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.3.1.29. Firefox</a></li>
-<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.3.1.30. Services</a>
+<li><a href="#orgfe5261d">3.3.1.15. nix-your-shell</a></li>
+<li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.1.16. password-store</a></li>
+<li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.1.17. direnv</a></li>
+<li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.1.18. eza</a></li>
+<li><a href="#h:38f127f3-003b-418b-85ba-a3bcf44bf16c">3.3.1.19. atuin</a></li>
+<li><a href="#h:419675ec-3310-438e-80ae-9eaa798a319d">3.3.1.20. git</a></li>
+<li><a href="#h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">3.3.1.21. Fuzzel</a></li>
+<li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.1.22. Starship</a></li>
+<li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.1.23. Kitty</a></li>
+<li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.1.24. zsh</a></li>
+<li><a href="#h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">3.3.1.25. zellij</a></li>
+<li><a href="#h:45de9430-f925-4df6-9db6-bffb5b8f1604">3.3.1.26. tmux</a></li>
+<li><a href="#h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">3.3.1.27. Mail</a></li>
+<li><a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">3.3.1.28. Home-manager: Emacs</a></li>
+<li><a href="#h:0bf51f63-01c0-4053-a591-7f0c5697c690">3.3.1.29. Waybar</a></li>
+<li><a href="#h:fbec0bd4-690b-4f79-8b2b-a40263760a96">3.3.1.30. Firefox</a></li>
+<li><a href="#h:387c3a82-1fb1-4c0f-8051-874e2acb8804">3.3.1.31. Services</a>
 <ul>
-<li><a href="#h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">3.3.1.30.1. gnome-keyring</a></li>
-<li><a href="#h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">3.3.1.30.2. KDE Connect</a></li>
-<li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">3.3.1.30.3. Mako</a></li>
-<li><a href="#h:388e71be-f00a-4d45-ade1-218ce942057d">3.3.1.30.4. SwayOSD</a></li>
-<li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">3.3.1.30.5. yubikey-touch-detector</a></li>
-<li><a href="#orgc5993f7">3.3.1.30.6. blueman-applet</a></li>
-<li><a href="#org723e643">3.3.1.30.7. network-manager-applet</a></li>
-<li><a href="#orgbaac666">3.3.1.30.8. obsidian service for tray</a></li>
-<li><a href="#orgde8469c">3.3.1.30.9. anki service for tray</a></li>
-<li><a href="#orgc08401b">3.3.1.30.10. element service for tray</a></li>
-<li><a href="#orgaefa149">3.3.1.30.11. vesktop service for tray</a></li>
+<li><a href="#h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">3.3.1.31.1. gnome-keyring</a></li>
+<li><a href="#h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">3.3.1.31.2. KDE Connect</a></li>
+<li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">3.3.1.31.3. Mako</a></li>
+<li><a href="#h:388e71be-f00a-4d45-ade1-218ce942057d">3.3.1.31.4. SwayOSD</a></li>
+<li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">3.3.1.31.5. yubikey-touch-detector</a></li>
+<li><a href="#orgee3e80b">3.3.1.31.6. blueman-applet</a></li>
+<li><a href="#org33276e4">3.3.1.31.7. network-manager-applet</a></li>
+<li><a href="#orgf92fcdc">3.3.1.31.8. obsidian service for tray</a></li>
+<li><a href="#org631e604">3.3.1.31.9. anki service for tray</a></li>
+<li><a href="#org38cc906">3.3.1.31.10. element service for tray</a></li>
+<li><a href="#orgd0e6784">3.3.1.31.11. vesktop service for tray</a></li>
 </ul>
 </li>
-<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.1.31. Sway</a></li>
-<li><a href="#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb">3.3.1.32. Niri</a></li>
-<li><a href="#h:eb94df98-2bcd-4555-9f88-e252f93b924f">3.3.1.33. Kanshi</a></li>
-<li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.34. gpg-agent</a></li>
-<li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.35. gammastep</a></li>
-<li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.36. Spicetify</a></li>
-<li><a href="#org7e8000d">3.3.1.37. Obsidian</a></li>
-<li><a href="#org9efd839">3.3.1.38. Anki</a></li>
+<li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.1.32. Sway</a></li>
+<li><a href="#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb">3.3.1.33. Niri</a></li>
+<li><a href="#h:eb94df98-2bcd-4555-9f88-e252f93b924f">3.3.1.34. Kanshi</a></li>
+<li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.35. gpg-agent</a></li>
+<li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.36. gammastep</a></li>
+<li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.37. Spicetify</a></li>
+<li><a href="#org73d4d6d">3.3.1.38. Obsidian</a></li>
+<li><a href="#org1cd2041">3.3.1.39. Anki</a></li>
+<li><a href="#orga0180d0">3.3.1.40. Element-desktop</a></li>
+<li><a href="#org3ef9ecb">3.3.1.41. Hexchat</a></li>
+<li><a href="#org192c559">3.3.1.42. obs-studio</a></li>
+<li><a href="#orgf40fc2d">3.3.1.43. spotify-player</a></li>
+<li><a href="#orga774427">3.3.1.44. vesktop</a></li>
+<li><a href="#org0d9685c">3.3.1.45. batsignal</a></li>
+<li><a href="#org5dc5b46">3.3.1.46. autotiling</a></li>
+<li><a href="#org715fc6a">3.3.1.47. swayidle</a></li>
+<li><a href="#org9915a44">3.3.1.48. swaylock</a></li>
 </ul>
 </li>
 <li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">3.3.2. Server</a>
@@ -574,7 +584,7 @@
 <li><a href="#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e">3.5.31. swarsel-build</a></li>
 <li><a href="#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa">3.5.32. swarsel-instantiate</a></li>
 <li><a href="#h:02842543-caca-4d4c-a4d2-7ac749b5c136">3.5.33. sshrm</a></li>
-<li><a href="#org7608fec">3.5.34. endme</a></li>
+<li><a href="#org81ceb96">3.5.34. endme</a></li>
 </ul>
 </li>
 <li><a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">3.6. Profiles</a>
@@ -583,7 +593,7 @@
 <ul>
 <li><a href="#h:32d654de-8db2-403a-9a27-4c46d7b9172d">3.6.1.1. Personal</a></li>
 <li><a href="#h:b926f0c8-7968-4079-924c-a5d0ae4d3a45">3.6.1.2. Minimal</a></li>
-<li><a href="#org62904d9">3.6.1.3. Optionals</a></li>
+<li><a href="#orgbf433bf">3.6.1.3. Optionals</a></li>
 <li><a href="#h:b79fbb59-9cf2-48eb-b469-2589223dda95">3.6.1.4. Chaostheatre</a></li>
 <li><a href="#h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">3.6.1.5. Work</a></li>
 <li><a href="#h:87a83b10-3c2f-407c-89aa-922ad77748a4">3.6.1.6. Uni</a></li>
@@ -826,7 +836,7 @@
 </div>
 </div>
 <p>
-<b>This file has 94619 words spanning 24340 lines and was last revised on 2025-10-09 02:38:15 +0200.</b>
+<b>This file has 95685 words spanning 24730 lines and was last revised on 2025-10-11 21:49:58 +0200.</b>
 </p>
 
 <p>
@@ -895,7 +905,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-10-09 02:38:15 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-10-11 21:49:58 +0200)
 </p></li>
 </ul>
 
@@ -1848,7 +1858,8 @@ The rest of the outputs either define or help define the actual configurations:
             inputs.home-manager.nixosModules.home-manager
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-            inputs.swarsel-modules.nixosModules.default
+            # inputs.swarsel-modules.nixosModules.default
+            inputs.swarsel-nix.nixosModules.default
             inputs.niri-flake.nixosModules.niri
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
@@ -2528,9 +2539,9 @@ in
             additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; };
 
             modifications = final: prev: {
-              vesktop = prev.vesktop.override {
-                withSystemVencord = true;
-              };
+              # vesktop = prev.vesktop.override {
+              #   withSystemVencord = true;
+              # };
 
               firefox = prev.firefox.override {
                 nativeMessagingHosts = [
@@ -5365,7 +5376,8 @@ We enable the use of <code>home-manager</code> as a NixoS module. A nice trick h
         inputs.nix-index-database.homeModules.nix-index
         inputs.sops-nix.homeManagerModules.sops
         inputs.spicetify-nix.homeManagerModules.default
-        inputs.swarsel-modules.homeModules.default
+        # inputs.swarsel-modules.homeModules.default
+        inputs.swarsel-nix.homeModules.default
         {
           imports = [
             "${self}/profiles/home"
@@ -5817,7 +5829,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
 
       # pinentry
       dbus
-      swaylock-effects
+      # swaylock-effects
       syncthingtray-minimal
       swayosd
 
@@ -12103,8 +12115,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9c71125" class="outline-5">
-<h5 id="org9c71125"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
+<div id="outline-container-org7710514" class="outline-5">
+<h5 id="org7710514"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
 <div class="outline-text-5" id="text-3-2-5-11">
 <p>
 Some standard options that should be set for every microvm host.
@@ -12130,8 +12142,8 @@ Some standard options that should be set for every microvm host.
 </div>
 </div>
 </div>
-<div id="outline-container-org67f229f" class="outline-5">
-<h5 id="org67f229f"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
+<div id="outline-container-orga896f27" class="outline-5">
+<h5 id="orga896f27"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
 <div class="outline-text-5" id="text-3-2-5-12">
 <p>
 Some standard options that should be set vor every microvm guest. We set the default
@@ -12327,7 +12339,14 @@ in
 
     nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
 
-    programs.home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+    programs = {
+      home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+      man = {
+        enable = true;
+        generateCaches = true;
+      };
+    };
+
     targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
 
     home = {
@@ -12338,6 +12357,11 @@ in
       sessionVariables = {
         FLAKE = "/home/${mainUser}/.dotfiles";
       };
+      extraOutputsToInstall = [
+        "doc"
+        "info"
+        "devdoc"
+      ];
     };
   };
 
@@ -12490,7 +12514,7 @@ This holds packages that I can use as provided, or with small modifications (as 
       restic
 
       # "big" programs
-      obs-studio
+      # obs-studio
       gimp
       inkscape
       zoom-us
@@ -12499,14 +12523,13 @@ This holds packages that I can use as provided, or with small modifications (as 
       xournalpp
       # obsidian
       # spotify
-      vesktop # discord client
+      # vesktop # discord client
       # nextcloud-client # enables a systemd service that I do not want
-      spotify-player
-      element-desktop
+      # spotify-player
+      # element-desktop
       nicotine-plus
       stable.transmission_3
       mktorrent
-      hexchat
       hugo
 
       # kyria
@@ -12996,7 +13019,7 @@ Also in firefox `about:config &gt; toolkit.legacyUserProfileCustomizations.style
       "tridactyl/tridactylrc".source = self + /files/firefox/tridactyl/tridactylrc;
       "tridactyl/themes/base16-codeschool.css".source = self + /files/firefox/tridactyl/themes/base16-codeschool.css;
       "tridactyl/themes/swarsel.css".source = self + /files/firefox/tridactyl/themes/swarsel.css;
-      "swayidle/config".source = self + /files/swayidle/config;
+      # "swayidle/config".source = self + /files/swayidle/config;
     };
   };
 }
@@ -13053,7 +13076,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde" class="outline-5">
-<h5 id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"><span class="section-number-5">3.3.1.13.</span> General Programs: bottom, imv, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide</h5>
+<h5 id="h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde"><span class="section-number-5">3.3.1.13.</span> General Programs: bottom, imv, less, lesspipe, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide, timidity</h5>
 <div class="outline-text-5" id="text-h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">
 <p>
 This section is for programs that require no further configuration. zsh Integration is enabled by default for these.
@@ -13065,26 +13088,30 @@ This section is for programs that require no further configuration. zsh Integrat
   options.swarselmodules.programs = lib.mkEnableOption "programs settings";
   config = lib.mkIf config.swarselmodules.programs {
     programs = {
-      bottom.enable = true;
-      imv.enable = true;
-      sioyek.enable = true;
       bat = {
         enable = true;
         extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
       };
+      bottom.enable = true;
       carapace.enable = true;
-      wlogout.enable = true;
-      swayr.enable = true;
-      yt-dlp.enable = true;
-      mpv.enable = true;
-      jq.enable = true;
-      ripgrep.enable = true;
-      pandoc.enable = true;
       fzf = {
         enable = true;
         enableBashIntegration = false;
         enableZshIntegration = false;
       };
+      imv.enable = true;
+      jq.enable = true;
+      less.enable = true;
+      lesspipe.enable = true;
+      mpv.enable = true;
+      pandoc.enable = true;
+      rclone.enable = true;
+      ripgrep.enable = true;
+      sioyek.enable = true;
+      swayr.enable = true;
+      timidity.enable = true;
+      wlogout.enable = true;
+      yt-dlp.enable = true;
       zoxide = {
         enable = true;
         enableZshIntegration = true;
@@ -13135,8 +13162,29 @@ nix-index provides a way to find out which packages are provided by which deriva
 </div>
 </div>
 </div>
+<div id="outline-container-orgfe5261d" class="outline-5">
+<h5 id="orgfe5261d"><span class="section-number-5">3.3.1.15.</span> nix-your-shell</h5>
+<div class="outline-text-5" id="text-3-3-1-15">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
+let
+  moduleName = "nix-your-shell";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      enableZshIntegration = true;
+    };
+  };
+}
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae" class="outline-5">
-<h5 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-5">3.3.1.15.</span> password-store</h5>
+<h5 id="h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae"><span class="section-number-5">3.3.1.16.</span> password-store</h5>
 <div class="outline-text-5" id="text-h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">
 <p>
 Enables password store with the <code>pass-otp</code> extension which allows me to store and generate one-time-passwords.
@@ -13161,7 +13209,7 @@ Enables password store with the <code>pass-otp</code> extension which allows me 
 </div>
 </div>
 <div id="outline-container-h:1ab84307-b3fb-4c32-9def-4b89a53a8547" class="outline-5">
-<h5 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-5">3.3.1.16.</span> direnv</h5>
+<h5 id="h:1ab84307-b3fb-4c32-9def-4b89a53a8547"><span class="section-number-5">3.3.1.17.</span> direnv</h5>
 <div class="outline-text-5" id="text-h:1ab84307-b3fb-4c32-9def-4b89a53a8547">
 <p>
 Enables direnv, which I use for nearly all of my nix dev flakes.
@@ -13184,7 +13232,7 @@ Enables direnv, which I use for nearly all of my nix dev flakes.
 </div>
 </div>
 <div id="outline-container-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6" class="outline-5">
-<h5 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-5">3.3.1.17.</span> eza</h5>
+<h5 id="h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6"><span class="section-number-5">3.3.1.18.</span> eza</h5>
 <div class="outline-text-5" id="text-h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">
 <p>
 Eza provides me with a better <code>ls</code> command and some other useful aliases.
@@ -13211,7 +13259,7 @@ Eza provides me with a better <code>ls</code> command and some other useful alia
 </div>
 </div>
 <div id="outline-container-h:38f127f3-003b-418b-85ba-a3bcf44bf16c" class="outline-5">
-<h5 id="h:38f127f3-003b-418b-85ba-a3bcf44bf16c"><span class="section-number-5">3.3.1.18.</span> atuin</h5>
+<h5 id="h:38f127f3-003b-418b-85ba-a3bcf44bf16c"><span class="section-number-5">3.3.1.19.</span> atuin</h5>
 <div class="outline-text-5" id="text-h:38f127f3-003b-418b-85ba-a3bcf44bf16c">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, globals, ... }:
@@ -13237,7 +13285,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:419675ec-3310-438e-80ae-9eaa798a319d" class="outline-5">
-<h5 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-5">3.3.1.19.</span> git</h5>
+<h5 id="h:419675ec-3310-438e-80ae-9eaa798a319d"><span class="section-number-5">3.3.1.20.</span> git</h5>
 <div class="outline-text-5" id="text-h:419675ec-3310-438e-80ae-9eaa798a319d">
 <p>
 Here I set up my git config, automatic signing of commits, useful aliases for my ost used commands (for when I am not using <a href="#h:d2c7323d-f8c6-4f23-b70a-930e3e4ecce5">Magit</a>) as well as a git template defined in <a href="#h:5ef03803-e150-41bc-b603-e80d60d96efc">Linking dotfiles</a>.
@@ -13298,7 +13346,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf" class="outline-5">
-<h5 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-5">3.3.1.20.</span> Fuzzel</h5>
+<h5 id="h:069cabf3-df14-49ba-8d17-75f2bcf34fbf"><span class="section-number-5">3.3.1.21.</span> Fuzzel</h5>
 <div class="outline-text-5" id="text-h:069cabf3-df14-49ba-8d17-75f2bcf34fbf">
 <p>
 Here I only need to set basic layout options - the rest is being managed by stylix.
@@ -13327,7 +13375,7 @@ Here I only need to set basic layout options - the rest is being managed by styl
 </div>
 </div>
 <div id="outline-container-h:55212502-c8f6-43af-ae99-55c8377ef34e" class="outline-5">
-<h5 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-5">3.3.1.21.</span> Starship</h5>
+<h5 id="h:55212502-c8f6-43af-ae99-55c8377ef34e"><span class="section-number-5">3.3.1.22.</span> Starship</h5>
 <div class="outline-text-5" id="text-h:55212502-c8f6-43af-ae99-55c8377ef34e">
 <p>
 Starship makes my <code>zsh</code> look cooler! I have symbols for most programming languages and toolchains, also I build my own powerline.
@@ -13463,7 +13511,7 @@ Starship makes my <code>zsh</code> look cooler! I have symbols for most programm
 </div>
 </div>
 <div id="outline-container-h:5f1287db-d2e8-49aa-8c58-730129c7795c" class="outline-5">
-<h5 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-5">3.3.1.22.</span> Kitty</h5>
+<h5 id="h:5f1287db-d2e8-49aa-8c58-730129c7795c"><span class="section-number-5">3.3.1.23.</span> Kitty</h5>
 <div class="outline-text-5" id="text-h:5f1287db-d2e8-49aa-8c58-730129c7795c">
 <p>
 Kitty is the terminal emulator of choice for me, it is nice to configure using nix, fast, and has a nice style.
@@ -13494,7 +13542,7 @@ The theme is handled by stylix.
 </div>
 </div>
 <div id="outline-container-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5" class="outline-5">
-<h5 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-5">3.3.1.23.</span> zsh</h5>
+<h5 id="h:91dd4cc4-aada-4e74-be23-0cc69ed85af5"><span class="section-number-5">3.3.1.24.</span> zsh</h5>
 <div class="outline-text-5" id="text-h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">
 <p>
 zsh is the most convenient shell for me and it happens to be super neat to configure within home manager.
@@ -13682,7 +13730,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7" class="outline-5">
-<h5 id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"><span class="section-number-5">3.3.1.24.</span> zellij</h5>
+<h5 id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"><span class="section-number-5">3.3.1.25.</span> zellij</h5>
 <div class="outline-text-5" id="text-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
@@ -13710,7 +13758,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:45de9430-f925-4df6-9db6-bffb5b8f1604" class="outline-5">
-<h5 id="h:45de9430-f925-4df6-9db6-bffb5b8f1604"><span class="section-number-5">3.3.1.25.</span> tmux</h5>
+<h5 id="h:45de9430-f925-4df6-9db6-bffb5b8f1604"><span class="section-number-5">3.3.1.26.</span> tmux</h5>
 <div class="outline-text-5" id="text-h:45de9430-f925-4df6-9db6-bffb5b8f1604">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -13819,7 +13867,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3" class="outline-5">
-<h5 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-5">3.3.1.26.</span> Mail</h5>
+<h5 id="h:506d01fc-c20b-473a-ac78-bce4b53fe0e3"><span class="section-number-5">3.3.1.27.</span> Mail</h5>
 <div class="outline-text-5" id="text-h:506d01fc-c20b-473a-ac78-bce4b53fe0e3">
 <p>
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
@@ -14022,7 +14070,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:c05d1b64-7110-4151-b436-46bc447113b4" class="outline-5">
-<h5 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-5">3.3.1.27.</span> Home-manager: Emacs</h5>
+<h5 id="h:c05d1b64-7110-4151-b436-46bc447113b4"><span class="section-number-5">3.3.1.28.</span> Home-manager: Emacs</h5>
 <div class="outline-text-5" id="text-h:c05d1b64-7110-4151-b436-46bc447113b4">
 <p>
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my <code>init.el</code> file to the configuration which will then be parsed upon system rebuild, looking for <code>use-package</code> sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (<code>emacs-pgtk</code>). All of the nice options such as <code>tree-sitter</code> support are enabled by default, so I do not need to adjust the build process.
@@ -14133,7 +14181,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:0bf51f63-01c0-4053-a591-7f0c5697c690" class="outline-5">
-<h5 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-5">3.3.1.28.</span> Waybar</h5>
+<h5 id="h:0bf51f63-01c0-4053-a591-7f0c5697c690"><span class="section-number-5">3.3.1.29.</span> Waybar</h5>
 <div class="outline-text-5" id="text-h:0bf51f63-01c0-4053-a591-7f0c5697c690">
 <p>
 Again I am just using the first bar option here that I was able to find good understandable documentation for. Of note is that the `cpu` section's `format` is not defined here, but in section 1 (since not every machine has the same number of cores)
@@ -14489,7 +14537,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:fbec0bd4-690b-4f79-8b2b-a40263760a96" class="outline-5">
-<h5 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-5">3.3.1.29.</span> Firefox</h5>
+<h5 id="h:fbec0bd4-690b-4f79-8b2b-a40263760a96"><span class="section-number-5">3.3.1.30.</span> Firefox</h5>
 <div class="outline-text-5" id="text-h:fbec0bd4-690b-4f79-8b2b-a40263760a96">
 <p>
 Setting up firefox along with some policies that are important to me (mostly disabling telemetry related stuff as well as Pocket). I also enable some integrations that enable super useful packages, namely <code>tridactyl</code> and <code>browserpass</code>.
@@ -14668,14 +14716,14 @@ I used to build the firefox addon <code>bypass-paywalls-clean</code> myself here
 </div>
 </div>
 <div id="outline-container-h:387c3a82-1fb1-4c0f-8051-874e2acb8804" class="outline-5">
-<h5 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-5">3.3.1.30.</span> Services</h5>
+<h5 id="h:387c3a82-1fb1-4c0f-8051-874e2acb8804"><span class="section-number-5">3.3.1.31.</span> Services</h5>
 <div class="outline-text-5" id="text-h:387c3a82-1fb1-4c0f-8051-874e2acb8804">
 <p>
 Services that can be defined through home-manager should be defined here.
 </p>
 </div>
 <div id="outline-container-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9" class="outline-6">
-<h6 id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"><span class="section-number-6">3.3.1.30.1.</span> gnome-keyring</h6>
+<h6 id="h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9"><span class="section-number-6">3.3.1.31.1.</span> gnome-keyring</h6>
 <div class="outline-text-6" id="text-h:cb812c8a-247c-4ce5-a00c-59332c2f5fb9">
 <p>
 Used for storing sessions in e.g. Nextcloud
@@ -14696,7 +14744,7 @@ Used for storing sessions in e.g. Nextcloud
 </div>
 </div>
 <div id="outline-container-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d" class="outline-6">
-<h6 id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"><span class="section-number-6">3.3.1.30.2.</span> KDE Connect</h6>
+<h6 id="h:be6afd89-9e1e-40b6-8542-5c07a0ab780d"><span class="section-number-6">3.3.1.31.2.</span> KDE Connect</h6>
 <div class="outline-text-6" id="text-h:be6afd89-9e1e-40b6-8542-5c07a0ab780d">
 <p>
 This enables phone/computer communication, including sending clipboard, files etc. Sadly on Wayland many of the features are broken (like remote control).
@@ -14719,7 +14767,7 @@ This enables phone/computer communication, including sending clipboard, files et
 </div>
 </div>
 <div id="outline-container-h:99d05729-df35-4958-9940-3319d6a41359" class="outline-6">
-<h6 id="h:99d05729-df35-4958-9940-3319d6a41359"><span class="section-number-6">3.3.1.30.3.</span> Mako</h6>
+<h6 id="h:99d05729-df35-4958-9940-3319d6a41359"><span class="section-number-6">3.3.1.31.3.</span> Mako</h6>
 <div class="outline-text-6" id="text-h:99d05729-df35-4958-9940-3319d6a41359">
 <p>
 Desktop notifications!
@@ -14770,7 +14818,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 <div id="outline-container-h:388e71be-f00a-4d45-ade1-218ce942057d" class="outline-6">
-<h6 id="h:388e71be-f00a-4d45-ade1-218ce942057d"><span class="section-number-6">3.3.1.30.4.</span> SwayOSD</h6>
+<h6 id="h:388e71be-f00a-4d45-ade1-218ce942057d"><span class="section-number-6">3.3.1.31.4.</span> SwayOSD</h6>
 <div class="outline-text-6" id="text-h:388e71be-f00a-4d45-ade1-218ce942057d">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
@@ -14789,7 +14837,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 <div id="outline-container-h:1598c90b-f195-41a0-9132-94612edf3586" class="outline-6">
-<h6 id="h:1598c90b-f195-41a0-9132-94612edf3586"><span class="section-number-6">3.3.1.30.5.</span> yubikey-touch-detector</h6>
+<h6 id="h:1598c90b-f195-41a0-9132-94612edf3586"><span class="section-number-6">3.3.1.31.5.</span> yubikey-touch-detector</h6>
 <div class="outline-text-6" id="text-h:1598c90b-f195-41a0-9132-94612edf3586">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -14828,9 +14876,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgc5993f7" class="outline-6">
-<h6 id="orgc5993f7"><span class="section-number-6">3.3.1.30.6.</span> blueman-applet</h6>
-<div class="outline-text-6" id="text-3-3-1-30-6">
+<div id="outline-container-orgee3e80b" class="outline-6">
+<h6 id="orgee3e80b"><span class="section-number-6">3.3.1.31.6.</span> blueman-applet</h6>
+<div class="outline-text-6" id="text-3-3-1-31-6">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -14843,9 +14891,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org723e643" class="outline-6">
-<h6 id="org723e643"><span class="section-number-6">3.3.1.30.7.</span> network-manager-applet</h6>
-<div class="outline-text-6" id="text-3-3-1-30-7">
+<div id="outline-container-org33276e4" class="outline-6">
+<h6 id="org33276e4"><span class="section-number-6">3.3.1.31.7.</span> network-manager-applet</h6>
+<div class="outline-text-6" id="text-3-3-1-31-7">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -14859,9 +14907,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgbaac666" class="outline-6">
-<h6 id="orgbaac666"><span class="section-number-6">3.3.1.30.8.</span> obsidian service for tray</h6>
-<div class="outline-text-6" id="text-3-3-1-30-8">
+<div id="outline-container-orgf92fcdc" class="outline-6">
+<h6 id="orgf92fcdc"><span class="section-number-6">3.3.1.31.8.</span> obsidian service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-31-8">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -14894,9 +14942,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgde8469c" class="outline-6">
-<h6 id="orgde8469c"><span class="section-number-6">3.3.1.30.9.</span> anki service for tray</h6>
-<div class="outline-text-6" id="text-3-3-1-30-9">
+<div id="outline-container-org631e604" class="outline-6">
+<h6 id="org631e604"><span class="section-number-6">3.3.1.31.9.</span> anki service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-31-9">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -14933,9 +14981,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgc08401b" class="outline-6">
-<h6 id="orgc08401b"><span class="section-number-6">3.3.1.30.10.</span> element service for tray</h6>
-<div class="outline-text-6" id="text-3-3-1-30-10">
+<div id="outline-container-org38cc906" class="outline-6">
+<h6 id="org38cc906"><span class="section-number-6">3.3.1.31.10.</span> element service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-31-10">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
@@ -14968,9 +15016,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgaefa149" class="outline-6">
-<h6 id="orgaefa149"><span class="section-number-6">3.3.1.30.11.</span> vesktop service for tray</h6>
-<div class="outline-text-6" id="text-3-3-1-30-11">
+<div id="outline-container-orgd0e6784" class="outline-6">
+<h6 id="orgd0e6784"><span class="section-number-6">3.3.1.31.11.</span> vesktop service for tray</h6>
+<div class="outline-text-6" id="text-3-3-1-31-11">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
@@ -15005,7 +15053,7 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 <div id="outline-container-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20" class="outline-5">
-<h5 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-5">3.3.1.31.</span> Sway</h5>
+<h5 id="h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20"><span class="section-number-5">3.3.1.32.</span> Sway</h5>
 <div class="outline-text-5" id="text-h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">
 <p>
 I am currently using SwayFX, which adds some nice effects to sway, like rounded corners and hiding the separator between title and content of a window.
@@ -15167,8 +15215,9 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                     "${modifier}+Shift+p" = "exec pass-fuzzel --type";
                     "${modifier}+Shift+o" = "exec pass-fuzzel --otp --type";
                     "${modifier}+Ctrl+p" = "exec 1password --quick-acces";
-                    "${modifier}+Escape" = "mode $exit";
+                    # "${modifier}+Escape" = "mode $exit";
                     "${modifier}+Shift+Escape" = "exec kitty -o confirm_os_window_close=0 btm";
+                    "${modifier}+Escape" = "exec wlogout";
                     "${modifier}+h" = "exec hyprpicker | wl-copy";
                     "${modifier}+s" = "exec grim -g \"$(slurp)\" -t png - | wl-copy -t image/png";
                     "${modifier}+Shift+s" = "exec slurp | grim -g - Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
@@ -15261,9 +15310,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               { command = "sleep 60; kitty -T spotifytui -o confirm_os_window_close=0 spotify_player"; }
             ];
             seat = {
-              "*" = {
-                hide_cursor = "when-typing enable";
-              };
+              "*" = [
+                { hide_cursor = "when-typing enable"; }
+                { hide_cursor = "2000"; }
+              ];
             };
             window = {
               border = 1;
@@ -15409,28 +15459,28 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               swayfxSettings = config.swarselsystems.swayfxConfig;
             in
               "
-exec_always autotiling
-            set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
+# exec_always autotiling
+            # set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
-            mode $exit {
-              bindsym --to-code {
-                s exec \"systemctl suspend\", mode \"default\"
-                h exec \"systemctl hibernate\", mode \"default\"
-                l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
-                p exec \"systemctl poweroff\"
-                r exec \"systemctl reboot\"
-                u exec \"swaymsg exit\"
+            # mode $exit {
+            #   bindsym --to-code {
+            #     s exec \"systemctl suspend\", mode \"default\"
+            #     h exec \"systemctl hibernate\", mode \"default\"
+            #     l exec \"swaylock --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2 --daemonize\", mode \"default\
+            #     p exec \"systemctl poweroff\"
+            #     r exec \"systemctl reboot\"
+            #     u exec \"swaymsg exit\"
 
-                Return mode \"default\"
-                Escape mode \"default\"
-                ${modifier}+Escape mode \"default\"
-              }
-            }
+            #     Return mode \"default\"
+            #     Escape mode \"default\"
+            #     ${modifier}+Escape mode \"default\"
+            #   }
+            # }
 
             exec systemctl --user import-environment
-            exec swayidle -w
+            # exec swayidle -w
 
-            seat * hide_cursor 2000
+            # seat * hide_cursor 2000
 
             exec_always kill -1 $(pidof kanshi)
 
@@ -15447,7 +15497,7 @@ exec_always autotiling
 </div>
 </div>
 <div id="outline-container-h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb" class="outline-5">
-<h5 id="h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb"><span class="section-number-5">3.3.1.32.</span> Niri</h5>
+<h5 id="h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb"><span class="section-number-5">3.3.1.33.</span> Niri</h5>
 <div class="outline-text-5" id="text-h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ config, pkgs, lib, vars, ... }:
@@ -15659,7 +15709,7 @@ exec_always autotiling
 </div>
 </div>
 <div id="outline-container-h:eb94df98-2bcd-4555-9f88-e252f93b924f" class="outline-5">
-<h5 id="h:eb94df98-2bcd-4555-9f88-e252f93b924f"><span class="section-number-5">3.3.1.33.</span> Kanshi</h5>
+<h5 id="h:eb94df98-2bcd-4555-9f88-e252f93b924f"><span class="section-number-5">3.3.1.34.</span> Kanshi</h5>
 <div class="outline-text-5" id="text-h:eb94df98-2bcd-4555-9f88-e252f93b924f">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, pkgs, config, ... }:
@@ -15766,7 +15816,7 @@ exec_always autotiling
 </div>
 </div>
 <div id="outline-container-h:7d384e3b-1be7-4644-b304-ada4af0b692b" class="outline-5">
-<h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">3.3.1.34.</span> gpg-agent</h5>
+<h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">3.3.1.35.</span> gpg-agent</h5>
 <div class="outline-text-5" id="text-h:7d384e3b-1be7-4644-b304-ada4af0b692b">
 <p>
 Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
@@ -15823,7 +15873,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:74e236be-a977-4d38-b8c5-0b9feef8af91" class="outline-5">
-<h5 id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"><span class="section-number-5">3.3.1.35.</span> gammastep</h5>
+<h5 id="h:74e236be-a977-4d38-b8c5-0b9feef8af91"><span class="section-number-5">3.3.1.36.</span> gammastep</h5>
 <div class="outline-text-5" id="text-h:74e236be-a977-4d38-b8c5-0b9feef8af91">
 <p>
 This service changes the screen hue at night. I am not sure if that really does something, but I like the color anyways.
@@ -15849,7 +15899,7 @@ in
 </div>
 </div>
 <div id="outline-container-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708" class="outline-5">
-<h5 id="h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708"><span class="section-number-5">3.3.1.36.</span> Spicetify</h5>
+<h5 id="h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708"><span class="section-number-5">3.3.1.37.</span> Spicetify</h5>
 <div class="outline-text-5" id="text-h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ inputs, lib, config, pkgs, ... }:
@@ -15879,9 +15929,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org7e8000d" class="outline-5">
-<h5 id="org7e8000d"><span class="section-number-5">3.3.1.37.</span> Obsidian</h5>
-<div class="outline-text-5" id="text-3-3-1-37">
+<div id="outline-container-org73d4d6d" class="outline-5">
+<h5 id="org73d4d6d"><span class="section-number-5">3.3.1.38.</span> Obsidian</h5>
+<div class="outline-text-5" id="text-3-3-1-38">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, nixosConfig ? config, ... }:
   let
@@ -16019,11 +16069,11 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9efd839" class="outline-5">
-<h5 id="org9efd839"><span class="section-number-5">3.3.1.38.</span> Anki</h5>
-<div class="outline-text-5" id="text-3-3-1-38">
+<div id="outline-container-org1cd2041" class="outline-5">
+<h5 id="org1cd2041"><span class="section-number-5">3.3.1.39.</span> Anki</h5>
+<div class="outline-text-5" id="text-3-3-1-39">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ inputs, lib, config, pkgs, globals, nixosConfig ? config, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, globals, nixosConfig ? config, ... }:
 let
   moduleName = "anki";
   inherit (config.swarselsystems) isPublic isNixos;
@@ -16050,7 +16100,7 @@ in
       spacebarRatesCard = true;
       # videoDriver = "opengl";
       sync = {
-        autoSync = true;
+        autoSync = false; # sync on profile close will delay system shutdown
         syncMedia = true;
         url = "https://${globals.services.ankisync.domain}";
         usernameFile = nixosConfig.sops.secrets.anki-user.path;
@@ -16083,6 +16133,312 @@ in
             };
           })
         ];
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga0180d0" class="outline-5">
+<h5 id="orga0180d0"><span class="section-number-5">3.3.1.40.</span> Element-desktop</h5>
+<div class="outline-text-5" id="text-3-3-1-40">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "element-desktop";
+  inherit (config.swarselsystems) isPublic isNixos;
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.element-desktop = {
+      enable = true;
+      settings = {
+        default_server_config = {
+          "m.homeserver" = {
+            base_url = "https://swatrix.swarsel.win/";
+          };
+        };
+        UIFeature = {
+          feedback = false;
+          voip = false;
+          widgets = false;
+          shareSocial = false;
+          registration = false;
+          passwordReset = false;
+          deactivate = false;
+        };
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org3ef9ecb" class="outline-5">
+<h5 id="org3ef9ecb"><span class="section-number-5">3.3.1.41.</span> Hexchat</h5>
+<div class="outline-text-5" id="text-3-3-1-41">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, nixosConfig ? config, ... }:
+let
+  moduleName = "hexchat";
+  inherit (nixosConfig.repo.secrets.common.irc) irc_nick1;
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      settings = {
+        inherit irc_nick1;
+        };
+      };
+    };
+
+  }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org192c559" class="outline-5">
+<h5 id="org192c559"><span class="section-number-5">3.3.1.42.</span> obs-studio</h5>
+<div class="outline-text-5" id="text-3-3-1-42">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "obs-studio";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      };
+    };
+
+  }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf40fc2d" class="outline-5">
+<h5 id="orgf40fc2d"><span class="section-number-5">3.3.1.43.</span> spotify-player</h5>
+<div class="outline-text-5" id="text-3-3-1-43">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, nixosConfig ? config, ... }:
+let
+  moduleName = "spotify-player";
+  inherit (nixosConfig.repo.secrets.common.irc) irc_nick1;
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      };
+    };
+
+  }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga774427" class="outline-5">
+<h5 id="orga774427"><span class="section-number-5">3.3.1.44.</span> vesktop</h5>
+<div class="outline-text-5" id="text-3-3-1-44">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "vesktop";
+in
+  {
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      settings = {
+        appBadge = false;
+        arRPC = false;
+        checkUpdates = false;
+        customTitleBar = false;
+        disableMinSize = true;
+        minimizeToTray = true;
+        tray = true;
+        staticTitle = true;
+        hardwareAcceleration = true;
+        discordBranch = "stable";
+      };
+      vencord = {
+        useSystem = true;
+        settings = {
+          autoUpdate = false;
+          autoUpdateNotification = false;
+          enableReactDevtools = false;
+          frameless = false;
+          transparent = false;
+          winCtrlQ = false;
+          notifyAboutUpdates = false;
+          useQuickCss = true;
+          disableMinSize = true;
+          winNativeTitleBar = false;
+          plugins = {
+            MessageLogger = {
+              enabled = true;
+              ignoreSelf = true;
+            };
+            ChatInputButtonAPI = {
+              enabled = false;
+            };
+            CommandsAPI = {
+              enabled = true;
+            };
+            MemberListDecoratorsAPI = {
+              enabled = false;
+            };
+            MessageAccessoriesAPI = {
+              enabled = true;
+            };
+            MessageDecorationsAPI = {
+              enabled = false;
+            };
+            MessageEventsAPI = {
+              enabled = false;
+            };
+            MessagePopoverAPI = {
+              enabled = false;
+            };
+            MessageUpdaterAPI = {
+              enabled = false;
+            };
+            ServerListAPI = {
+              enabled = false;
+            };
+            UserSettingsAPI = {
+              enabled = true;
+            };
+            FakeNitro = {
+              enabled = true;
+            };
+          };
+        };
+      };
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org0d9685c" class="outline-5">
+<h5 id="org0d9685c"><span class="section-number-5">3.3.1.45.</span> batsignal</h5>
+<div class="outline-text-5" id="text-3-3-1-45">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "batsignal";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    services.${moduleName} = {
+      enable = true;
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org5dc5b46" class="outline-5">
+<h5 id="org5dc5b46"><span class="section-number-5">3.3.1.46.</span> autotiling</h5>
+<div class="outline-text-5" id="text-3-3-1-46">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, ... }:
+let
+  moduleName = "autotiling";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    swarselservices.${moduleName} = {
+      enable = true;
+      systemdTarget = config.wayland.systemd.target;
+    };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org715fc6a" class="outline-5">
+<h5 id="org715fc6a"><span class="section-number-5">3.3.1.47.</span> swayidle</h5>
+<div class="outline-text-5" id="text-3-3-1-47">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+let
+  moduleName = "swayidle";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    services.${moduleName} =
+      let
+        brightnessctl = "${lib.getExe pkgs.brightnessctl}";
+        swaylock = "${lib.getExe pkgs.swaylock-effects}";
+        suspend = "${pkgs.systemd}/bin/systemctl";
+      in
+      {
+        enable = true;
+        systemdTarget = config.wayland.systemd.target;
+        extraArgs = [ "-w" ];
+        timeouts = [
+          { timeout = 60; command = "${brightnessctl} -s; ${brightnessctl} set 80%-"; resumeCommand = "${brightnessctl} -r"; }
+          # { timeout = 300; command =  "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
+          { timeout = 300; command = "${swaylock} -f"; }
+          # { timeout = 600; command = ''${pkgs.sway}/bin/swaymsg "output * dpms off"; resumeCommand = "${pkgs.sway}/bin/swaymsg output * dpms on'';  }
+          { timeout = 600; command = "${suspend}"; }
+        ];
+        events = [
+          # { event = "before-sleep"; command = "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
+          { event = "before-sleep"; command = "${swaylock} -f "; }
+          { event = "lock"; command = "${swaylock} -f "; }
+        ];
+      };
+  };
+
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org9915a44" class="outline-5">
+<h5 id="org9915a44"><span class="section-number-5">3.3.1.48.</span> swaylock</h5>
+<div class="outline-text-5" id="text-3-3-1-48">
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+let
+  moduleName = "swaylock";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
+    programs.${moduleName} = {
+      enable = true;
+      package = pkgs.swaylock-effects;
+      settings = {
+        screenshots = true;
+        clock = true;
+        effect-blur = "7x5";
+        effect-vignette = "0.5:0.5";
+        fade-in = "0.2";
+      };
     };
   };
 
@@ -16205,14 +16561,17 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, nixosConfig ? config,  ... }:
+let
+  inherit (config.swarselsystems) isNixos;
+in
 {
   options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
   config = lib.mkIf config.swarselmodules.optional.gaming {
     # specialisation = {
     #   gaming.configuration = {
     home.packages = with pkgs; [
-      lutris
+      # lutris
       wine
       protonplus
       winetricks
@@ -16240,6 +16599,22 @@ The rest of the settings is at <a href="#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431"
       retroarch
       flips
     ];
+
+    programs.lutris = {
+      enable = true;
+      extraPackages = with pkgs; [
+        winetricks
+        gamescope
+        umu-launcher
+      ];
+      steamPackage = if (isNixos) then nixosConfig.programs.steam.package else pkgs.steam;
+      winePackages = with pkgs; [
+        wineWow64Packages.waylandFull
+      ];
+      protonPackages = with pkgs; [
+        proton-ge-bin
+      ];
+    };
     #   };
     # };
   };
@@ -16258,613 +16633,631 @@ The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf"
 
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
-let
-  inherit (config.swarselsystems) homeDir;
-in
-{
-  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
-  config = lib.mkIf config.swarselmodules.optional.work
+    let
+      inherit (config.swarselsystems) homeDir;
+    in
     {
-      home.packages = with pkgs; [
-        stable.teams-for-linux
-        shellcheck
-        dig
-        docker
-        postman
-        rclone
-        stable24_05.awscli2
-        libguestfs-with-appliance
-        stable.prometheus.cli
-        tigervnc
-        openstackclient
-
-        vscode
-      ];
-
-      systemd.user.sessionVariables = {
-        DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
-      };
-
-      accounts.email.accounts.work =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
-        in
+      options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
+      config = lib.mkIf config.swarselmodules.optional.work
         {
-          primary = false;
-          address = mailAddress;
-          userName = mailAddress;
-          realName = mailName;
-          passwordCommand = "pizauth show work";
-          imap = {
-            host = "outlook.office365.com";
-            port = 993;
-            tls.enable = true; # SSL/TLS
-          };
-          smtp = {
-            host = "outlook.office365.com";
-            port = 587;
-            tls = {
-              enable = true; # SSL/TLS
-              useStartTls = true;
-            };
-          };
-          thunderbird = {
-            enable = true;
-            profiles = [ "default" ];
-            settings = id: {
-              "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
-              "mail.server.server_${id}.authMethod" = 10; # oauth
-              # "toolkit.telemetry.enabled" = false;
-              # "toolkit.telemetry.rejected" = true;
-              # "toolkit.telemetry.prompted" = 2;
-            };
-          };
-          msmtp = {
-            enable = true;
-            extraConfig = {
-              auth = "xoauth2";
-              host = "outlook.office365.com";
-              protocol = "smtp";
-              port = "587";
-              tls = "on";
-              tls_starttls = "on";
-              from = "${mailAddress}";
-              user = "${mailAddress}";
-              passwordeval = "pizauth show work";
-            };
-          };
-          mu.enable = true;
-          mbsync = {
-            enable = true;
-            expunge = "both";
-            patterns = [ "INBOX" ];
-            extraConfig = {
-              account = {
-                AuthMechs = "XOAUTH2";
-              };
-            };
-          };
-        };
+          home.packages = with pkgs; [
+            stable.teams-for-linux
+            shellcheck
+            dig
+            docker
+            postman
+            # rclone
+            libguestfs-with-appliance
+            stable.prometheus.cli
+            tigervnc
+            # openstackclient
 
-      # wayland.windowManager.sway.config = {
-      #   output = {
-      #     "Applied Creative Technology Transmitter QUATTRO201811" = {
-      #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "Hewlett Packard HP Z24i CN44250RDT" = {
-      #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #     "HP Inc. HP 732pk CNC4080YL5" = {
-      #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-      #     };
-      #   };
-      # };
-
-      stylix = {
-        targets.firefox.profileNames =
-          let
-            inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
-          in
-          [
-            "${user1}"
-            "${user2}"
-            "${user3}"
-            "work"
+            vscode
           ];
-      };
 
-      programs =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail;
-        in
-        {
-          git.userEmail = lib.mkForce gitMail;
 
-          zsh = {
-            shellAliases = {
-              dssh = "ssh -l ${user1Long}";
-              cssh = "ssh -l ${user2Long}";
-              wssh = "ssh -l ${user3Long}";
-            };
-            cdpath = [
-              "~/Documents/Work"
-            ];
-            dirHashes = {
-              d = "$HOME/.dotfiles";
-              w = "$HOME/Documents/Work";
-              s = "$HOME/.dotfiles/secrets";
-              pr = "$HOME/Documents/Private";
-              ac = path1;
-            };
-
-            sessionVariables = {
-              VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
-              VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
-              GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
-              GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
-              GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
-              GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
-              GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
-              GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
-              GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
-              GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
-            };
+          systemd.user.sessionVariables = {
+            DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
           };
 
-          ssh = {
-            matchBlocks = {
-              "${loc1}" = {
-                hostname = "${loc1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.stg" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.staging" = {
-                hostname = "${loc1}.${lifecycle1}.${domain2}";
-                user = user4;
-              };
-              "${loc1}.dev" = {
-                hostname = "${loc1}.${lifecycle2}.${domain2}";
-                user = user4;
-              };
-              "${loc2}" = {
-                hostname = "${loc2}.${domain1}";
-                user = user1Long;
-              };
-              "${loc2}.stg" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "${loc2}.staging" = {
-                hostname = "${loc2}.${lifecycle1}.${domain2}";
-                user = user1Long;
-              };
-              "*.${domain1}" = {
-                user = user1Long;
-              };
-            };
-          };
-
-          firefox = {
-            profiles =
-              let
-                isDefault = false;
-              in
-              {
-                "${user1}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 1;
-                    settings = {
-                      "browser.startup.homepage" = "${site1}|${site2}";
-                    };
-                  }
-                  vars.firefox;
-                "${user2}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 2;
-                    settings = {
-                      "browser.startup.homepage" = "${site3}";
-                    };
-                  }
-                  vars.firefox;
-                "${user3}" = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 3;
-                  }
-                  vars.firefox;
-                work = lib.recursiveUpdate
-                  {
-                    inherit isDefault;
-                    id = 4;
-                    settings = {
-                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                    };
-                  }
-                  vars.firefox;
-              };
-          };
-
-          chromium = {
-            enable = true;
-            package = pkgs.chromium;
-
-            extensions = [
-              # 1password
-              "gejiddohjgogedgjnonbofjigllpkmbf"
-              # dark reader
-              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-              # ublock origin
-              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-              # i still dont care about cookies
-              "edibdbjcniadpccecjdfdjjppcpchdlm"
-              # browserpass
-              "naepdomgkenhinolocfifgehidddafch"
-            ];
-          };
-        };
-
-      services = {
-        kanshi = {
-          settings = [
+          accounts.email.accounts.work =
+            let
+              inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
+            in
             {
-              # seminary room
-              output = {
-                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                scale = 1.0;
-                mode = "1280x720";
+              primary = false;
+              address = mailAddress;
+              userName = mailAddress;
+              realName = mailName;
+              passwordCommand = "pizauth show work";
+              imap = {
+                host = "outlook.office365.com";
+                port = 993;
+                tls.enable = true; # SSL/TLS
               };
-            }
-            {
-              # work main screen
-              output = {
-                criteria = "HP Inc. HP 732pk CNC4080YL5";
-                scale = 1.0;
-                mode = "3840x2160";
-              };
-            }
-            {
-              # work side screen
-              output = {
-                criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                scale = 1.0;
-                mode = "1920x1200";
-                transform = "270";
-              };
-            }
-            {
-              profile = {
-                name = "lidopen";
-                exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
-                ];
-                outputs = [
-                  {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "enable";
-                    scale = 1.5;
-                    position = "1462,0";
-                  }
-                  {
-                    criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
-                    mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                  {
-                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                    scale = 1.0;
-                    mode = "1920x1200";
-                    transform = "90";
-                    position = "-2480,0";
-                  }
-                ];
-              };
-            }
-            {
-              profile =
-                let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                in
-                {
-                  name = "lidopen";
-                  exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
-                  ];
-                  outputs = [
-                    {
-                      criteria = config.swarselsystems.sharescreen;
-                      status = "enable";
-                      scale = 1.7;
-                      position = "2560,0";
-                    }
-                    {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      scale = 1.0;
-                      mode = "1280x720";
-                      position = "10000,10000";
-                    }
-                  ];
+              smtp = {
+                host = "outlook.office365.com";
+                port = 587;
+                tls = {
+                  enable = true; # SSL/TLS
+                  useStartTls = true;
                 };
-            }
+              };
+              thunderbird = {
+                enable = true;
+                profiles = [ "default" ];
+                settings = id: {
+                  "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
+                  "mail.server.server_${id}.authMethod" = 10; # oauth
+                  # "toolkit.telemetry.enabled" = false;
+                  # "toolkit.telemetry.rejected" = true;
+                  # "toolkit.telemetry.prompted" = 2;
+                };
+              };
+              msmtp = {
+                enable = true;
+                extraConfig = {
+                  auth = "xoauth2";
+                  host = "outlook.office365.com";
+                  protocol = "smtp";
+                  port = "587";
+                  tls = "on";
+                  tls_starttls = "on";
+                  from = "${mailAddress}";
+                  user = "${mailAddress}";
+                  passwordeval = "pizauth show work";
+                };
+              };
+              mu.enable = true;
+              mbsync = {
+                enable = true;
+                expunge = "both";
+                patterns = [ "INBOX" ];
+                extraConfig = {
+                  account = {
+                    AuthMechs = "XOAUTH2";
+                  };
+                };
+              };
+            };
+
+          # wayland.windowManager.sway.config = {
+          #   output = {
+          #     "Applied Creative Technology Transmitter QUATTRO201811" = {
+          #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+          #     };
+          #     "Hewlett Packard HP Z24i CN44250RDT" = {
+          #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+          #     };
+          #     "HP Inc. HP 732pk CNC4080YL5" = {
+          #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+          #     };
+          #   };
+          # };
+
+          stylix = {
+            targets.firefox.profileNames =
+              let
+                inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+              in
+              [
+                "${user1}"
+                "${user2}"
+                "${user3}"
+                "work"
+              ];
+          };
+
+          programs =
+            let
+              inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
+            in
             {
-              profile = {
-                name = "lidclosed";
-                exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+              openstackclient = {
+                enable = true;
+                inherit clouds;
+};
+              awscli = {
+                enable = true;
+                package = pkgs.stable24_05.awscli2;
+                settings = {
+                  "default" = { };
+                  "profile s3-imagebuilder-prod" = { };
+                };
+                credentials = {
+                  "s3-imagebuilder-prod" = {
+                    aws_access_key_id = "5OYXY4879EJG9I91K1B6";
+                    credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
+                  };
+                };
+              };
+              git.userEmail = lib.mkForce gitMail;
+
+              zsh = {
+                shellAliases = {
+                  dssh = "ssh -l ${user1Long}";
+                  cssh = "ssh -l ${user2Long}";
+                  wssh = "ssh -l ${user3Long}";
+                };
+                cdpath = [
+                  "~/Documents/Work"
                 ];
-                outputs = [
+                dirHashes = {
+                  d = "$HOME/.dotfiles";
+                  w = "$HOME/Documents/Work";
+                  s = "$HOME/.dotfiles/secrets";
+                  pr = "$HOME/Documents/Private";
+                  ac = path1;
+                };
+
+                sessionVariables = {
+                  VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
+                  VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
+                  GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
+                  GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
+                  GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
+                  GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
+                  GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
+                  GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
+                  GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
+                  GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
+                };
+              };
+
+              ssh = {
+                matchBlocks = {
+                  "${loc1}" = {
+                    hostname = "${loc1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.stg" = {
+                    hostname = "${loc1}.${lifecycle1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.staging" = {
+                    hostname = "${loc1}.${lifecycle1}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc1}.dev" = {
+                    hostname = "${loc1}.${lifecycle2}.${domain2}";
+                    user = user4;
+                  };
+                  "${loc2}" = {
+                    hostname = "${loc2}.${domain1}";
+                    user = user1Long;
+                  };
+                  "${loc2}.stg" = {
+                    hostname = "${loc2}.${lifecycle1}.${domain2}";
+                    user = user1Long;
+                  };
+                  "${loc2}.staging" = {
+                    hostname = "${loc2}.${lifecycle1}.${domain2}";
+                    user = user1Long;
+                  };
+                  "*.${domain1}" = {
+                    user = user1Long;
+                  };
+                };
+              };
+
+              firefox = {
+                profiles =
+                  let
+                    isDefault = false;
+                  in
                   {
-                    criteria = config.swarselsystems.sharescreen;
-                    status = "disable";
-                  }
-                  {
+                    "${user1}" = lib.recursiveUpdate
+                      {
+                        inherit isDefault;
+                        id = 1;
+                        settings = {
+                          "browser.startup.homepage" = "${site1}|${site2}";
+                        };
+                      }
+                      vars.firefox;
+                    "${user2}" = lib.recursiveUpdate
+                      {
+                        inherit isDefault;
+                        id = 2;
+                        settings = {
+                          "browser.startup.homepage" = "${site3}";
+                        };
+                      }
+                      vars.firefox;
+                    "${user3}" = lib.recursiveUpdate
+                      {
+                        inherit isDefault;
+                        id = 3;
+                      }
+                      vars.firefox;
+                    work = lib.recursiveUpdate
+                      {
+                        inherit isDefault;
+                        id = 4;
+                        settings = {
+                          "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                        };
+                      }
+                      vars.firefox;
+                  };
+              };
+
+              chromium = {
+                enable = true;
+                package = pkgs.chromium;
+
+                extensions = [
+                  # 1password
+                  "gejiddohjgogedgjnonbofjigllpkmbf"
+                  # dark reader
+                  "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+                  # ublock origin
+                  "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+                  # i still dont care about cookies
+                  "edibdbjcniadpccecjdfdjjppcpchdlm"
+                  # browserpass
+                  "naepdomgkenhinolocfifgehidddafch"
+                ];
+              };
+            };
+
+          services = {
+            kanshi = {
+              settings = [
+                {
+                  # seminary room
+                  output = {
+                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                    scale = 1.0;
+                    mode = "1280x720";
+                  };
+                }
+                {
+                  # work main screen
+                  output = {
                     criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
+                    scale = 1.0;
                     mode = "3840x2160";
-                    position = "-1280,0";
-                  }
-                  {
+                  };
+                }
+                {
+                  # work side screen
+                  output = {
                     criteria = "Hewlett Packard HP Z24i CN44250RDT";
                     scale = 1.0;
                     mode = "1920x1200";
                     transform = "270";
-                    position = "-2480,0";
-                  }
-                ];
-              };
-            }
-            {
-              profile =
-                let
-                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                in
+                  };
+                }
                 {
-                  name = "lidclosed";
-                  exec = [
-                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                  ];
-                  outputs = [
+                  profile = {
+                    name = "lidopen";
+                    exec = [
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    ];
+                    outputs = [
+                      {
+                        criteria = config.swarselsystems.sharescreen;
+                        status = "enable";
+                        scale = 1.5;
+                        position = "1462,0";
+                      }
+                      {
+                        criteria = "HP Inc. HP 732pk CNC4080YL5";
+                        scale = 1.4;
+                        mode = "3840x2160";
+                        position = "-1280,0";
+                      }
+                      {
+                        criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                        scale = 1.0;
+                        mode = "1920x1200";
+                        transform = "90";
+                        position = "-2480,0";
+                      }
+                    ];
+                  };
+                }
+                {
+                  profile =
+                    let
+                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    in
                     {
-                      criteria = config.swarselsystems.sharescreen;
-                      status = "disable";
-                    }
+                      name = "lidopen";
+                      exec = [
+                        "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                        "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                      ];
+                      outputs = [
+                        {
+                          criteria = config.swarselsystems.sharescreen;
+                          status = "enable";
+                          scale = 1.7;
+                          position = "2560,0";
+                        }
+                        {
+                          criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                          scale = 1.0;
+                          mode = "1280x720";
+                          position = "10000,10000";
+                        }
+                      ];
+                    };
+                }
+                {
+                  profile = {
+                    name = "lidclosed";
+                    exec = [
+                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                      "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                    ];
+                    outputs = [
+                      {
+                        criteria = config.swarselsystems.sharescreen;
+                        status = "disable";
+                      }
+                      {
+                        criteria = "HP Inc. HP 732pk CNC4080YL5";
+                        scale = 1.4;
+                        mode = "3840x2160";
+                        position = "-1280,0";
+                      }
+                      {
+                        criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                        scale = 1.0;
+                        mode = "1920x1200";
+                        transform = "270";
+                        position = "-2480,0";
+                      }
+                    ];
+                  };
+                }
+                {
+                  profile =
+                    let
+                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                    in
                     {
-                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                      scale = 1.0;
-                      mode = "1280x720";
-                      position = "10000,10000";
-                    }
-                  ];
-                };
-            }
-          ];
-        };
-      };
-
-      systemd.user.services = {
-        pizauth.Service = {
-          ExecStartPost = [
-            "${pkgs.toybox}/bin/sleep 1"
-            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
-          ];
-        };
-
-        teams-applet = {
-          Unit = {
-            Description = "teams applet";
-            Requires = [ "tray.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [ "graphical-session.target" ];
-          };
-
-          Install = {
-            WantedBy = [ "graphical-session.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-          };
-        };
-
-        onepassword-applet = {
-          Unit = {
-            Description = "1password applet";
-            Requires = [ "tray.target" ];
-            After = [
-              "graphical-session.target"
-              "tray.target"
-            ];
-            PartOf = [ "graphical-session.target" ];
-          };
-
-          Install = {
-            WantedBy = [ "graphical-session.target" ];
-          };
-
-          Service = {
-            ExecStart = "${pkgs._1password-gui}/bin/1password";
-          };
-        };
-
-      };
-
-      swarselservices.pizauth = {
-        enable = true;
-        extraConfig = ''
-          auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
-          token_event_cmd = "pizauth dump &gt; ${homeDir}/.pizauth.state";
-        '';
-        accounts = {
-          work = {
-            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-            scopes = [
-              "https://outlook.office365.com/IMAP.AccessAsUser.All"
-              "https://outlook.office365.com/SMTP.Send"
-              "offline_access"
-            ];
-            loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-          };
-        };
-
-      };
-
-      xdg =
-        let
-          inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
-        in
-        {
-          mimeApps = {
-            defaultApplications = {
-              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+                      name = "lidclosed";
+                      exec = [
+                        "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                      ];
+                      outputs = [
+                        {
+                          criteria = config.swarselsystems.sharescreen;
+                          status = "disable";
+                        }
+                        {
+                          criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                          scale = 1.0;
+                          mode = "1280x720";
+                          position = "10000,10000";
+                        }
+                      ];
+                    };
+                }
+              ];
             };
           };
-          desktopEntries =
+
+          systemd.user.services = {
+            pizauth.Service = {
+              ExecStartPost = [
+                "${pkgs.toybox}/bin/sleep 1"
+                "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
+              ];
+            };
+
+            teams-applet = {
+              Unit = {
+                Description = "teams applet";
+                Requires = [ "tray.target" ];
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                PartOf = [ "graphical-session.target" ];
+              };
+
+              Install = {
+                WantedBy = [ "graphical-session.target" ];
+              };
+
+              Service = {
+                ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
+              };
+            };
+
+            onepassword-applet = {
+              Unit = {
+                Description = "1password applet";
+                Requires = [ "tray.target" ];
+                After = [
+                  "graphical-session.target"
+                  "tray.target"
+                ];
+                PartOf = [ "graphical-session.target" ];
+              };
+
+              Install = {
+                WantedBy = [ "graphical-session.target" ];
+              };
+
+              Service = {
+                ExecStart = "${pkgs._1password-gui}/bin/1password";
+              };
+            };
+
+          };
+
+          swarselservices.pizauth = {
+            enable = true;
+            extraConfig = ''
+              auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+              error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+              token_event_cmd = "pizauth dump &gt; ${homeDir}/.pizauth.state";
+            '';
+            accounts = {
+              work = {
+                authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+                tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+                clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+                clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+                scopes = [
+                  "https://outlook.office365.com/IMAP.AccessAsUser.All"
+                  "https://outlook.office365.com/SMTP.Send"
+                  "offline_access"
+                ];
+                loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+              };
+            };
+
+          };
+
+          xdg =
             let
-              terminal = false;
-              categories = [ "Application" ];
-              icon = "firefox";
+              inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
             in
             {
-              firefox_work = {
-                name = "Firefox (work)";
-                genericName = "Firefox work";
-                exec = "firefox -p work";
-                inherit terminal categories icon;
+              mimeApps = {
+                defaultApplications = {
+                  "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+                };
               };
-              "firefox_${user1}" = {
-                name = "Firefox (${user1})";
-                genericName = "Firefox ${user1}";
-                exec = "firefox -p ${user1}";
-                inherit terminal categories icon;
-              };
+              desktopEntries =
+                let
+                  terminal = false;
+                  categories = [ "Application" ];
+                  icon = "firefox";
+                in
+                {
+                  firefox_work = {
+                    name = "Firefox (work)";
+                    genericName = "Firefox work";
+                    exec = "firefox -p work";
+                    inherit terminal categories icon;
+                  };
+                  "firefox_${user1}" = {
+                    name = "Firefox (${user1})";
+                    genericName = "Firefox ${user1}";
+                    exec = "firefox -p ${user1}";
+                    inherit terminal categories icon;
+                  };
 
-              "firefox_${user2}" = {
-                name = "Firefox (${user2})";
-                genericName = "Firefox ${user2}";
-                exec = "firefox -p ${user2}";
-                inherit terminal categories icon;
-              };
+                  "firefox_${user2}" = {
+                    name = "Firefox (${user2})";
+                    genericName = "Firefox ${user2}";
+                    exec = "firefox -p ${user2}";
+                    inherit terminal categories icon;
+                  };
 
-              "firefox_${user3}" = {
-                name = "Firefox (${user3})";
-                genericName = "Firefox ${user3}";
-                exec = "firefox -p ${user3}";
-                inherit terminal categories icon;
-              };
+                  "firefox_${user3}" = {
+                    name = "Firefox (${user3})";
+                    genericName = "Firefox ${user3}";
+                    exec = "firefox -p ${user3}";
+                    inherit terminal categories icon;
+                  };
 
 
+                };
             };
-        };
-      swarselsystems = {
-        startup = [
-          # { command = "nextcloud --background"; }
-          # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-          # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-          # { command = "anki"; }
-          # { command = "obsidian"; }
-          # { command = "nm-applet"; }
-          # { command = "feishin"; }
-          # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-          # { command = "1password"; }
-        ];
-        monitors = {
-          work_back_middle = rec {
-            name = "LG Electronics LG Ultra HD 0x000305A6";
-            mode = "2560x1440";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            # output = "DP-10";
-            output = name;
-          };
-          work_front_left = rec {
-            name = "LG Electronics LG Ultra HD 0x0007AB45";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            # output = "DP-7";
-            output = name;
-          };
-          work_back_right = rec {
-            name = "HP Inc. HP Z32 CN41212T55";
-            mode = "3840x2160";
-            scale = "1";
-            position = "5120,0";
-            workspace = "1:一";
-            # output = "DP-3";
-            output = name;
-          };
-          work_middle_middle_main = rec {
-            name = "HP Inc. HP 732pk CNC4080YL5";
-            mode = "3840x2160";
-            scale = "1";
-            position = "-1280,0";
-            workspace = "11:M";
-            # output = "DP-8";
-            output = name;
-          };
-          work_middle_middle_side = rec {
-            name = "Hewlett Packard HP Z24i CN44250RDT";
-            mode = "1920x1200";
-            transform = "270";
-            scale = "1";
-            position = "-2480,0";
-            workspace = "12:S";
-            # output = "DP-9";
-            output = name;
-          };
-          work_seminary = rec {
-            name = "Applied Creative Technology Transmitter QUATTRO201811";
-            mode = "1280x720";
-            scale = "1";
-            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-            workspace = "14:T";
-            # output = "DP-4";
-            output = name;
-          };
-        };
-        inputs = {
-          "1133:45081:MX_Master_2S_Keyboard" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-          #   dwt = "enabled";
-          #   tap = "enabled";
-          #   natural_scroll = "enabled";
-          #   middle_emulation = "enabled";
-          #   drag_lock = "disabled";
-          # };
-          "1133:50504:Logitech_USB_Receiver" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
-          };
-          "1133:45944:MX_KEYS_S" = {
-            xkb_layout = "us";
-            xkb_variant = "altgr-intl";
+          swarselsystems = {
+            startup = [
+              # { command = "nextcloud --background"; }
+              # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+              # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+              # { command = "anki"; }
+              # { command = "obsidian"; }
+              # { command = "nm-applet"; }
+              # { command = "feishin"; }
+              # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+              # { command = "1password"; }
+            ];
+            monitors = {
+              work_back_middle = rec {
+                name = "LG Electronics LG Ultra HD 0x000305A6";
+                mode = "2560x1440";
+                scale = "1";
+                position = "5120,0";
+                workspace = "1:一";
+                # output = "DP-10";
+                output = name;
+              };
+              work_front_left = rec {
+                name = "LG Electronics LG Ultra HD 0x0007AB45";
+                mode = "3840x2160";
+                scale = "1";
+                position = "5120,0";
+                workspace = "1:一";
+                # output = "DP-7";
+                output = name;
+              };
+              work_back_right = rec {
+                name = "HP Inc. HP Z32 CN41212T55";
+                mode = "3840x2160";
+                scale = "1";
+                position = "5120,0";
+                workspace = "1:一";
+                # output = "DP-3";
+                output = name;
+              };
+              work_middle_middle_main = rec {
+                name = "HP Inc. HP 732pk CNC4080YL5";
+                mode = "3840x2160";
+                scale = "1";
+                position = "-1280,0";
+                workspace = "11:M";
+                # output = "DP-8";
+                output = name;
+              };
+              work_middle_middle_side = rec {
+                name = "Hewlett Packard HP Z24i CN44250RDT";
+                mode = "1920x1200";
+                transform = "270";
+                scale = "1";
+                position = "-2480,0";
+                workspace = "12:S";
+                # output = "DP-9";
+                output = name;
+              };
+              work_seminary = rec {
+                name = "Applied Creative Technology Transmitter QUATTRO201811";
+                mode = "1280x720";
+                scale = "1";
+                position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+                workspace = "14:T";
+                # output = "DP-4";
+                output = name;
+              };
+            };
+            inputs = {
+              "1133:45081:MX_Master_2S_Keyboard" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
+              };
+              # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+              #   dwt = "enabled";
+              #   tap = "enabled";
+              #   natural_scroll = "enabled";
+              #   middle_emulation = "enabled";
+              #   drag_lock = "disabled";
+              # };
+              "1133:50504:Logitech_USB_Receiver" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
+              };
+              "1133:45944:MX_KEYS_S" = {
+                xkb_layout = "us";
+                xkb_variant = "altgr-intl";
+              };
+            };
+
           };
         };
 
-      };
-    };
-
-}
+    }
 
 </pre>
 </div>
@@ -17172,6 +17565,7 @@ In short, the options defined here are passed to the modules systems using <code
           {
             "extensions.autoDisableScopes" = 0;
             "browser.bookmarks.showMobileBookmarks" = true;
+            "browser.autofocus" = false;
             "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
             "browser.search.suggest.enabled" = false;
             "browser.search.suggest.enabled.private" = false;
@@ -19228,8 +19622,8 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org7608fec" class="outline-4">
-<h4 id="org7608fec"><span class="section-number-4">3.5.34.</span> endme</h4>
+<div id="outline-container-org81ceb96" class="outline-4">
+<h4 id="org81ceb96"><span class="section-number-4">3.5.34.</span> endme</h4>
 <div class="outline-text-4" id="text-3-5-34">
 <p>
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
@@ -19289,52 +19683,52 @@ in
   options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
   config = lib.mkIf config.swarselprofiles.personal {
     swarselmodules = {
-      packages = lib.mkDefault true;
-      pii = lib.mkDefault true;
-      general = lib.mkDefault true;
-      home-manager = lib.mkDefault true;
-      xserver = lib.mkDefault true;
-      users = lib.mkDefault true;
-      env = lib.mkDefault true;
-      security = lib.mkDefault true;
-      systemdTimeout = lib.mkDefault true;
-      hardware = lib.mkDefault true;
-      pulseaudio = lib.mkDefault true;
-      pipewire = lib.mkDefault true;
-      network = lib.mkDefault true;
-      time = lib.mkDefault true;
-      sops = lib.mkDefault true;
-      stylix = lib.mkDefault true;
-      programs = lib.mkDefault true;
-      zsh = lib.mkDefault true;
-      syncthing = lib.mkDefault true;
-      blueman = lib.mkDefault true;
-      networkDevices = lib.mkDefault true;
-      gvfs = lib.mkDefault true;
-      interceptionTools = lib.mkDefault true;
       # keyd = lib.mkDefault true;
-      swayosd = lib.mkDefault true;
-      ppd = lib.mkDefault true;
-      yubikey = lib.mkDefault true;
-      ledger = lib.mkDefault true;
-      keyboards = lib.mkDefault true;
-      login = lib.mkDefault true;
-      nix-ld = lib.mkDefault true;
-      impermanence = lib.mkDefault true;
-      nvd = lib.mkDefault true;
-      gnome-keyring = lib.mkDefault true;
-      uwsm = lib.mkDefault true;
-      sway = lib.mkDefault true;
-      niri = lib.mkDefault true;
-      xdg-portal = lib.mkDefault true;
-      distrobox = lib.mkDefault true;
       appimage = lib.mkDefault true;
-      lid = lib.mkDefault true;
-      lowBattery = lib.mkDefault true;
-      lanzaboote = lib.mkDefault true;
       autologin = lib.mkDefault true;
+      blueman = lib.mkDefault true;
       boot = lib.mkDefault true;
       btrfs = lib.mkDefault true;
+      distrobox = lib.mkDefault true;
+      env = lib.mkDefault true;
+      general = lib.mkDefault true;
+      gnome-keyring = lib.mkDefault true;
+      gvfs = lib.mkDefault true;
+      hardware = lib.mkDefault true;
+      home-manager = lib.mkDefault true;
+      impermanence = lib.mkDefault true;
+      interceptionTools = lib.mkDefault true;
+      keyboards = lib.mkDefault true;
+      lanzaboote = lib.mkDefault true;
+      ledger = lib.mkDefault true;
+      lid = lib.mkDefault true;
+      login = lib.mkDefault true;
+      lowBattery = lib.mkDefault false;
+      network = lib.mkDefault true;
+      networkDevices = lib.mkDefault true;
+      niri = lib.mkDefault true;
+      nix-ld = lib.mkDefault true;
+      nvd = lib.mkDefault true;
+      packages = lib.mkDefault true;
+      pii = lib.mkDefault true;
+      pipewire = lib.mkDefault true;
+      ppd = lib.mkDefault true;
+      programs = lib.mkDefault true;
+      pulseaudio = lib.mkDefault true;
+      security = lib.mkDefault true;
+      sops = lib.mkDefault true;
+      stylix = lib.mkDefault true;
+      sway = lib.mkDefault true;
+      swayosd = lib.mkDefault true;
+      syncthing = lib.mkDefault true;
+      systemdTimeout = lib.mkDefault true;
+      time = lib.mkDefault true;
+      users = lib.mkDefault true;
+      uwsm = lib.mkDefault true;
+      xdg-portal = lib.mkDefault true;
+      xserver = lib.mkDefault true;
+      yubikey = lib.mkDefault true;
+      zsh = lib.mkDefault true;
 
     };
     home-manager.users."${config.swarselsystems.mainUser}" = {
@@ -19389,8 +19783,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org62904d9" class="outline-5">
-<h5 id="org62904d9"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
+<div id="outline-container-orgbf433bf" class="outline-5">
+<h5 id="orgbf433bf"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
 <div class="outline-text-5" id="text-3-6-1-3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -19620,53 +20014,63 @@ in
   options.swarselprofiles.personal = lib.mkEnableOption "is this a personal host";
   config = lib.mkIf config.swarselprofiles.personal {
     swarselmodules = {
-      packages = lib.mkDefault true;
-      ownpackages = lib.mkDefault true;
-      general = lib.mkDefault true;
-      nixgl = lib.mkDefault true;
-      sops = lib.mkDefault false;
-      yubikey = lib.mkDefault false;
-      ssh = lib.mkDefault true;
-      stylix = lib.mkDefault true;
-      desktop = lib.mkDefault true;
-      symlink = lib.mkDefault true;
-      env = lib.mkDefault true;
-      programs = lib.mkDefault true;
-      nix-index = lib.mkDefault true;
-      passwordstore = lib.mkDefault true;
-      direnv = lib.mkDefault true;
-      eza = lib.mkDefault true;
-      atuin = lib.mkDefault true;
-      git = lib.mkDefault true;
-      fuzzel = lib.mkDefault true;
-      starship = lib.mkDefault true;
-      kitty = lib.mkDefault true;
-      zsh = lib.mkDefault true;
-      zellij = lib.mkDefault true;
-      tmux = lib.mkDefault true;
-      mail = lib.mkDefault true;
-      emacs = lib.mkDefault true;
-      waybar = lib.mkDefault true;
-      firefox = lib.mkDefault true;
-      gnome-keyring = lib.mkDefault true;
-      kdeconnect = lib.mkDefault true;
-      mako = lib.mkDefault true;
-      swayosd = lib.mkDefault true;
-      yubikeytouch = lib.mkDefault true;
-      sway = lib.mkDefault true;
-      niri = lib.mkDefault true;
-      kanshi = lib.mkDefault true;
-      gpgagent = lib.mkDefault true;
-      gammastep = lib.mkDefault true;
-      spicetify = lib.mkDefault true;
-      blueman-applet = lib.mkDefault true;
-      nm-applet = lib.mkDefault true;
-      obsidian-tray = lib.mkDefault true;
-      obsidian = lib.mkDefault true;
-      anki-tray = lib.mkDefault true;
-      element-tray = lib.mkDefault true;
-      vesktop-tray = lib.mkDefault true;
       anki = lib.mkDefault true;
+      anki-tray = lib.mkDefault true;
+      atuin = lib.mkDefault true;
+      autotiling = lib.mkDefault true;
+      batsignal = lib.mkDefault true;
+      blueman-applet = lib.mkDefault true;
+      desktop = lib.mkDefault true;
+      direnv = lib.mkDefault true;
+      element-desktop = lib.mkDefault true;
+      element-tray = lib.mkDefault true;
+      emacs = lib.mkDefault true;
+      env = lib.mkDefault true;
+      eza = lib.mkDefault true;
+      firefox = lib.mkDefault true;
+      fuzzel = lib.mkDefault true;
+      gammastep = lib.mkDefault true;
+      general = lib.mkDefault true;
+      git = lib.mkDefault true;
+      gnome-keyring = lib.mkDefault true;
+      gpgagent = lib.mkDefault true;
+      hexchat = lib.mkDefault true;
+      kanshi = lib.mkDefault true;
+      kdeconnect = lib.mkDefault true;
+      kitty = lib.mkDefault true;
+      mail = lib.mkDefault true;
+      mako = lib.mkDefault true;
+      niri = lib.mkDefault true;
+      nix-index = lib.mkDefault true;
+      nixgl = lib.mkDefault true;
+      nix-your-shell = lib.mkDefault true;
+      nm-applet = lib.mkDefault true;
+      obs-studio = lib.mkDefault true;
+      obsidian = lib.mkDefault true;
+      obsidian-tray = lib.mkDefault true;
+      ownpackages = lib.mkDefault true;
+      packages = lib.mkDefault true;
+      passwordstore = lib.mkDefault true;
+      programs = lib.mkDefault true;
+      sops = lib.mkDefault false;
+      spicetify = lib.mkDefault true;
+      spotify-player = lib.mkDefault true;
+      ssh = lib.mkDefault true;
+      starship = lib.mkDefault true;
+      stylix = lib.mkDefault true;
+      sway = lib.mkDefault true;
+      swayidle = lib.mkDefault true;
+      swaylock = lib.mkDefault true;
+      swayosd = lib.mkDefault true;
+      symlink = lib.mkDefault true;
+      tmux = lib.mkDefault true;
+      vesktop = lib.mkDefault true;
+      vesktop-tray = lib.mkDefault true;
+      waybar = lib.mkDefault true;
+      yubikey = lib.mkDefault false;
+      yubikeytouch = lib.mkDefault true;
+      zellij = lib.mkDefault true;
+      zsh = lib.mkDefault true;
     };
   };
 
@@ -23705,7 +24109,6 @@ bind gwe tab_or_tabopen_local exivity.vbc.ac.at
 bind gwg tab_or_tabopen_local github.com
 bind gwG tab_or_tabopen_local goc.egi.eu
 bind gwh tab_or_tabopen_local jupyterhub.vbc.ac.at
-bind gwH tab_or_tabopen_local test-jupyterhub.vbc.ac.at
 bind gwj tab_or_tabopen_local jenkins.vbc.ac.at
 bind gwJ tab_or_tabopen_local test-jenkins.vbc.ac.at
 bind gwl tab_or_tabopen_local lucid.app
@@ -23718,6 +24121,20 @@ bind gws tab_or_tabopen_local satellite.vbc.ac.at
 bind gwt tab_or_tabopen_local tower.vbc.ac.at
 bind gwv tab_or_tabopen_local vc-impimba-1.m.imp.ac.at/ui
 bind gwx tab_or_tabopen_local xclarity.vbc.ac.at
+
+unbind --mode=normal gh
+bind ghp tab_or_tabopen_local https://github.com/pulls
+bind ghi tab_or_tabopen_local https://github.com/issues/assigned?q=is%3Aissue%20state%3Aopen%20archived%3Afalse%20(assignee%3A%40me%20OR%20author%3A%40me)%20sort%3Aupdated-desc
+bind ghv tab_or_tabopen_local github.com/orgs/vbc-it/repositories
+bind ghc tab_or_tabopen_local github.com/orgs/CLIP-HPC/repositories
+bind ghd tab_or_tabopen_local github.com/Swarsel/.dotfiles
+bind ghni tab_or_tabopen_local github.com/NixOS/nixpkgs/issues
+bind ghnp tab_or_tabopen_local github.com/NixOS/nixpkgs/pulls
+
+unbind --mode=normal gp
+bind gprn tab_or_tabopen_local www.reddit.com/r/NixOS/
+bind gpd tab_or_tabopen_local discourse.nixos.org/
+bind gpp tab_or_tabopen_local parkour.wien/categories
 
 " Search in page
 set findcase smart
@@ -23772,6 +24189,15 @@ set hintdelay 100
 
 " Some pages like github break on the tridactyl quick search. have this as a fallback
 unbind &lt;C-f&gt;
+
+" Do not let websites steal sitefocus
+set allowautofocus false
+
+" whitelist sites
+" :seturl [URL regex for sites with text editors you use] allowautofocus true
+
+" stronger blacklist for specific sites
+seturl vbc.atlassian.net preventautofocusjackhammer true
 
 " Subconfig Settings
 seturl www.google.com followpagepatterns.next Next
@@ -26449,7 +26875,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-10-09 Do 02:38</p>
+<p class="date">Created: 2025-10-11 Sa 21:50</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

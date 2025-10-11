@@ -18,7 +18,8 @@
             inputs.home-manager.nixosModules.home-manager
             inputs.stylix.nixosModules.stylix
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-            inputs.swarsel-modules.nixosModules.default
+            # inputs.swarsel-modules.nixosModules.default
+            inputs.swarsel-nix.nixosModules.default
             inputs.niri-flake.nixosModules.niri
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm

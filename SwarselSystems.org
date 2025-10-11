@@ -854,7 +854,8 @@ The rest of the outputs either define or help define the actual configurations:
               inputs.home-manager.nixosModules.home-manager
               inputs.stylix.nixosModules.stylix
               inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-              inputs.swarsel-modules.nixosModules.default
+              # inputs.swarsel-modules.nixosModules.default
+              inputs.swarsel-nix.nixosModules.default
               inputs.niri-flake.nixosModules.niri
               inputs.microvm.nixosModules.host
               inputs.microvm.nixosModules.microvm
@@ -4228,7 +4229,8 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
           inputs.nix-index-database.homeModules.nix-index
           inputs.sops-nix.homeManagerModules.sops
           inputs.spicetify-nix.homeManagerModules.default
-          inputs.swarsel-modules.homeModules.default
+          # inputs.swarsel-modules.homeModules.default
+          inputs.swarsel-nix.homeModules.default
           {
             imports = [
               "${self}/profiles/home"
@@ -13952,7 +13954,6 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                 swayfxSettings = config.swarselsystems.swayfxConfig;
               in
                 "
-  exec_always autotiling
               set $exit \"exit: [s]leep, [l]ock, [p]oweroff, [r]eboot, [u]ser logout\"
 
               mode $exit {
@@ -13969,6 +13970,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
                   ${modifier}+Escape mode \"default\"
                 }
               }
+  # exec_always autotiling
 
               exec systemctl --user import-environment
               exec swayidle -w
