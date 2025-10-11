@@ -410,7 +410,7 @@ in
             }
 
             exec systemctl --user import-environment
-            exec swayidle -w
+            # exec swayidle -w
 
             seat * hide_cursor 2000
 
