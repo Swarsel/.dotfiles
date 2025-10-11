@@ -70,7 +70,7 @@
       restic
 
       # "big" programs
-      obs-studio
+      # obs-studio
       gimp
       inkscape
       zoom-us

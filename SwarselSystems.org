@@ -11172,7 +11172,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         restic
 
         # "big" programs
-        obs-studio
+        # obs-studio
         gimp
         inkscape
         zoom-us
@@ -14708,6 +14708,25 @@ This service changes the screen hue at night. I am not sure if that really does 
         settings = {
           inherit irc_nick1;
           };
+        };
+      };
+
+    }
+#+end_src
+
+**** obs-studio
+
+
+#+begin_src nix-ts :tangle modules/home/common/obs-studio.nix
+  { lib, config, ... }:
+  let
+    moduleName = "obs-studio";
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.${moduleName} = {
+        enable = true;
         };
       };
 
