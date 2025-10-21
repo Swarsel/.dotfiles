@@ -1605,6 +1605,28 @@ create a new one."
 
 (mu4e t)
 
+(let ((work (getenv "SWARSEL_MAIL_WORK")))
+  (when (and work (not (string-empty-p work)))
+
+    (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
+    (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
+    (setq mml-secure-prefer-scheme 'smime)
+    (setq mml-secure-smime-sign-with-sender t)
+    (add-hook 'mu4e-compose-mode-hook
+              (lambda ()
+                (when (and (boundp 'user-mail-address)
+                           (stringp user-mail-address)
+                           (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                  (mml-secure-message-sign-smime))))
+
+    (setq smime-keys
+          `((,(getenv "SWARSEL_MAIL_WORK")
+             ,swarsel-smime-cert-path
+             ("~/Certificates/harica-root.pem"
+              "~/Certificates/harica-intermediate.pem"
+              ))))
+    ))
+
 (use-package org-caldav
   :init
   ;; set org-caldav-sync-initalization

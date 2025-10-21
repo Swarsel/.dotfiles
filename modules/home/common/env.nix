@@ -28,7 +28,7 @@ in
       SWARSEL_CAL3 = source3;
       SWARSEL_CAL3NAME = source3-name;
       SWARSEL_FULLNAME = fullName;
-      SWARSEL_MAIL_ALL = allMailAddresses;
+      SWARSEL_MAIL_ALL = lib.mkDefault allMailAddresses;
       GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
       OPENROUTER_API_KEY = openrouterApi;
     };

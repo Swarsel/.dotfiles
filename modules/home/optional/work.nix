@@ -1,6 +1,8 @@
 { self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) homeDir;
+  inherit (nixosConfig.repo.secrets.local.mail) allMailAddresses;
+  inherit (nixosConfig.repo.secrets.local.work) mailAddress;
 in
 {
   options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
@@ -21,14 +23,16 @@ in
         vscode
       ];
 
-
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+      } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
+        SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+        SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
       };
 
       accounts.email.accounts.work =
         let
-          inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
+          inherit (nixosConfig.repo.secrets.local.work) mailName;
         in
         {
           primary = false;
