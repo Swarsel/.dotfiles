@@ -30,6 +30,7 @@
       swarselzellij
       sshrm
       endme
+      git-replace
 
       rustdesk-vbc
     ];

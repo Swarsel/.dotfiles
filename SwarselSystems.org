@@ -11328,6 +11328,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         swarselzellij
         sshrm
         endme
+        git-replace
 
         rustdesk-vbc
       ];
@@ -18044,6 +18045,25 @@ Sometimes my DE crashes after putting it to suspend - to be precise, it happens 
       systemctl --user stop graphical-session-pre.target
     '';
   }
+
+#+end_src
+
+*** git-replace
+
+This script allows for quick git replace of a string.
+
+
+#+begin_src nix-ts :tangle pkgs/git-replace/default.nix
+  { name, writeShellApplication, git, gnugrep, findutils, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ git gnugrep findutils ];
+    text = ''
+      git grep -l "$1" | xargs sed -i "s/$1/$2/g"
+    '';
+  }
+
 
 #+end_src
 
