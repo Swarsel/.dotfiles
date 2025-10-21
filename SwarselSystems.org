@@ -13555,38 +13555,45 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 
 ***** anki service for tray
 
+Sets up a systemd user service for anki that does not stall the shutdown process. Note that the outcommented =ExecStart= does not work because the home-manager anki package builds a separate anki package that - I think - cannot be referenced as no such expression exists in the module.
+
 #+begin_src nix-ts :tangle modules/home/common/anki-tray.nix
-   { lib, config, ... }:
-   {
-     options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
-     config = lib.mkIf config.swarselmodules.anki-tray {
+  { lib, config, ... }:
+  {
+    options.swarselmodules.anki-tray = lib.mkEnableOption "enable anki applet for tray";
+    config = lib.mkIf config.swarselmodules.anki-tray {
 
-       systemd.user.services.anki-applet = {
-         Unit = {
-           Description = "Anki applet";
-           Requires = [ "tray.target" ];
-           After = [
-             "graphical-session.target"
-             "tray.target"
-           ];
-           PartOf = [ "graphical-session.target" ];
-         };
+      systemd.user.services.anki-applet = {
+        Unit = {
+          Description = "Anki applet";
+          Requires = [ "tray.target" ];
+          After = [
+            "graphical-session.target"
+            "tray.target"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
 
-         Install = {
-           WantedBy = [ "graphical-session.target" ];
-         };
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
 
-         Service = {
-           # ExecStart = "${lib.getExe config.programs.anki.package}";
-           ExecStart = "/etc/profiles/per-user/swarsel/bin/anki";
-           Environment = [
-             "QT_QPA_PLATFORM=xcb"
-           ];
-         };
-       };
+        Service = {
+          # ExecStart = "${lib.getExe config.programs.anki.package}";
+          Type = "simple";
+          ExecStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
+          Environment = [
+            "QT_QPA_PLATFORM=xcb"
+          ];
+          TimeoutStopSec = "2s";
+          KillMode = "mixed";
+          KillSignal = "SIGTERM";
+          SendSIGKILL = "yes";
+        };
+      };
 
-     };
-   }
+    };
+  }
 #+end_src
 
 ***** element service for tray
