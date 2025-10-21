@@ -9,7 +9,7 @@ in
       let
         brightnessctl = "${lib.getExe pkgs.brightnessctl}";
         swaylock = "${lib.getExe pkgs.swaylock-effects}";
-        suspend = "${pkgs.systemd}/bin/systemctl";
+        suspend = "${pkgs.systemd}/bin/systemctl suspend";
       in
       {
         enable = true;
@@ -24,6 +24,7 @@ in
         ];
         events = [
           # { event = "before-sleep"; command = "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
+          # { event = "after-resume"; command = "${swaylock} -f "; }
           { event = "before-sleep"; command = "${swaylock} -f "; }
           { event = "lock"; command = "${swaylock} -f "; }
         ];

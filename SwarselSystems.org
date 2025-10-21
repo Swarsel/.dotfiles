@@ -1988,8 +1988,8 @@ My work machine. Built for more security, this is the gold standard of my config
     #   '';
 
     boot = {
-      # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
-      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+      kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+      # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
       binfmt.emulatedSystems = [ "aarch64-linux" ];
       initrd = {
         availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
@@ -2005,7 +2005,8 @@ My work machine. Built for more security, this is the gold standard of my config
 
       kernelModules = [ "kvm-amd" ];
       kernelParams = [
-        "mem_sleep_default=deep"
+        # deep sleep is discontinued by amd
+        # "mem_sleep_default=deep"
         # supposedly, this helps save power on laptops
         # in reality (at least on this model), this just generate excessive heat on the CPUs
         # "amd_pstate=passive"
@@ -10518,29 +10519,36 @@ This holds configuration that is specific to framework laptops.
 
 #+begin_src nix-ts :tangle modules/nixos/optional/hibernation.nix
   { lib, config, ... }:
-  {
-    options.swarselmodules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
-    options.swarselsystems = {
-      hibernation = {
-        offset = lib.mkOption {
-          type = lib.types.int;
-          default = 0;
-        };
-        resumeDevice = lib.mkOption {
-          type = lib.types.str;
-          default = "/dev/disk/by-label/nixos";
+    {
+      options.swarselmodules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
+      options.swarselsystems = {
+        hibernation = {
+          offset = lib.mkOption {
+            type = lib.types.int;
+            default = 0;
+          };
+          resumeDevice = lib.mkOption {
+            type = lib.types.str;
+            default = "/dev/disk/by-label/nixos";
+          };
         };
       };
-    };
-    config = lib.mkIf config.swarselmodules.optional.hibernation {
-      boot = {
-        kernelParams = [
-          "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"
-        ];
-        inherit (config.swarselsystems.hibernation) resumeDevice;
+      config = lib.mkIf config.swarselmodules.optional.hibernation {
+        boot = {
+          kernelParams = [
+            "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"
+            # "mem_sleep_default=deep"
+          ];
+          inherit (config.swarselsystems.hibernation) resumeDevice;
+        };
+        systemd.services."systemd-suspend-then-hibernate".aliases = [ "systemd-suspend.service" ];
+        powerManagement.enable = true;
+        systemd.sleep.extraConfig = ''
+          HibernateDelaySec=120m
+          SuspendState=freeze
+        '';
       };
-    };
-  }
+    }
 #+end_src
 
 **** BTRFS
@@ -10778,6 +10786,7 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
           };
         };
 
+        # ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.kanshi}/bin/kanshictl switch laptoponly"
         udev.extraRules = ''
           # lock screen when yubikey removed
           ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"
@@ -11711,44 +11720,90 @@ This section is for programs that require no further configuration. zsh Integrat
 
 #+begin_src nix-ts :tangle modules/home/common/programs.nix
   { lib, config, pkgs, ... }:
-  {
-    options.swarselmodules.programs = lib.mkEnableOption "programs settings";
-    config = lib.mkIf config.swarselmodules.programs {
-      programs = {
-        bat = {
-          enable = true;
-          extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+      {
+        options.swarselmodules.programs = lib.mkEnableOption "programs settings";
+        config = lib.mkIf config.swarselmodules.programs {
+          programs = {
+            bat = {
+              enable = true;
+              extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+            };
+            bottom.enable = true;
+            carapace.enable = true;
+            fzf = {
+              enable = true;
+              enableBashIntegration = false;
+              enableZshIntegration = false;
+            };
+            imv.enable = true;
+            jq.enable = true;
+            less.enable = true;
+            lesspipe.enable = true;
+            mpv.enable = true;
+            pandoc.enable = true;
+            rclone.enable = true;
+            ripgrep.enable = true;
+            sioyek.enable = true;
+            swayr.enable = true;
+            timidity.enable = true;
+            wlogout ={
+              enable = true;
+              layout = [
+                {
+                  label = "lock";
+                  action = "loginctl lock-session";
+                  text = "Lock";
+                  keybind = "l";
+                  circular = true;
+                }
+                {
+                  label = "hibernate";
+                  action = "systemctl hibernate";
+                  text = "Hibernate";
+                  keybind = "h";
+                  circular = true;
+                }
+                {
+                  label = "logout";
+                  action = "loginctl terminate-user $USER";
+                  text = "Logout";
+                  keybind = "u";
+                  circular = true;
+                }
+                {
+                  label = "shutdown";
+                  action = "systemctl poweroff";
+                  text = "Shutdown";
+                  keybind = "p";
+                  circular = true;
+                }
+                {
+                  label = "suspend";
+                  action = "systemctl suspend";
+                  text = "Suspend";
+                  keybind = "s";
+                  circular = true;
+                }
+                {
+                  label = "reboot";
+                  action = "systemctl reboot";
+                  text = "Reboot";
+                  keybind = "r";
+                  circular = true;
+                }
+              ];
+            };
+            yt-dlp.enable = true;
+            zoxide = {
+              enable = true;
+              enableZshIntegration = true;
+              options = [
+                "--cmd cd"
+              ];
+            };
+          };
         };
-        bottom.enable = true;
-        carapace.enable = true;
-        fzf = {
-          enable = true;
-          enableBashIntegration = false;
-          enableZshIntegration = false;
-        };
-        imv.enable = true;
-        jq.enable = true;
-        less.enable = true;
-        lesspipe.enable = true;
-        mpv.enable = true;
-        pandoc.enable = true;
-        rclone.enable = true;
-        ripgrep.enable = true;
-        sioyek.enable = true;
-        swayr.enable = true;
-        timidity.enable = true;
-        wlogout.enable = true;
-        yt-dlp.enable = true;
-        zoxide = {
-          enable = true;
-          enableZshIntegration = true;
-          options = [
-            "--cmd cd"
-          ];
-        };
-      };
-    };
-  }
+      }
 #+end_src
 
 **** nix-index
@@ -14299,7 +14354,10 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               in
               {
                 name = "lidopen";
-                exec = [ "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}" ];
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/standwp.png --mode ${config.stylix.imageScalingMode}"
+                ];
                 outputs = [
                   {
                     criteria = config.swarselsystems.sharescreen;
@@ -14849,15 +14907,27 @@ This service changes the screen hue at night. I am not sure if that really does 
   let
     moduleName = "batsignal";
   in
-  {
-    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-    config = lib.mkIf config.swarselmodules.${moduleName} {
-      services.${moduleName} = {
-        enable = true;
+    {
+      options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+      config = lib.mkIf config.swarselmodules.${moduleName} {
+        services.${moduleName} = {
+          enable = true;
+          extraArgs = [
+            "-W"
+            " Consider charging the battery"
+            "-C"
+            " Battery is low; plug in charger now"
+            "-D"
+            " Device will lose power in a few seconds"
+            "-c"
+            "10"
+            "-d"
+            "5"
+          ];
+        };
       };
-    };
 
-  }
+    }
 #+end_src
 
 **** autotiling
@@ -14893,7 +14963,7 @@ This service changes the screen hue at night. I am not sure if that really does 
         let
           brightnessctl = "${lib.getExe pkgs.brightnessctl}";
           swaylock = "${lib.getExe pkgs.swaylock-effects}";
-          suspend = "${pkgs.systemd}/bin/systemctl";
+          suspend = "${pkgs.systemd}/bin/systemctl suspend";
         in
         {
           enable = true;
@@ -14908,6 +14978,7 @@ This service changes the screen hue at night. I am not sure if that really does 
           ];
           events = [
             # { event = "before-sleep"; command = "${lib.getExe pkgs.swaylock-effects} -f --screenshots --clock --effect-blur 7x5 --effect-vignette 0.5:0.5 --fade-in 0.2"; }
+            # { event = "after-resume"; command = "${swaylock} -f "; }
             { event = "before-sleep"; command = "${swaylock} -f "; }
             { event = "lock"; command = "${swaylock} -f "; }
           ];
@@ -15416,6 +15487,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                     profile = {
                       name = "lidopen";
                       exec = [
+                        "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                         "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
                         "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
                       ];
@@ -15450,6 +15522,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
                       {
                         name = "lidopen";
                         exec = [
+                          "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                           "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
                           "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
                         ];

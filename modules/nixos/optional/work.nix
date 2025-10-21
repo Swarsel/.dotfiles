@@ -208,6 +208,7 @@ in
         };
       };
 
+      # ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.kanshi}/bin/kanshictl switch laptoponly"
       udev.extraRules = ''
         # lock screen when yubikey removed
         ACTION=="remove", ENV{PRODUCT}=="3/1050/407/110", RUN+="${pkgs.systemd}/bin/systemctl suspend"

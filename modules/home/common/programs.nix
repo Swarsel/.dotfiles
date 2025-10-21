@@ -25,7 +25,53 @@
       sioyek.enable = true;
       swayr.enable = true;
       timidity.enable = true;
-      wlogout.enable = true;
+      wlogout = {
+        enable = true;
+        layout = [
+          {
+            label = "lock";
+            action = "loginctl lock-session";
+            text = "Lock";
+            keybind = "l";
+            circular = true;
+          }
+          {
+            label = "hibernate";
+            action = "systemctl hibernate";
+            text = "Hibernate";
+            keybind = "h";
+            circular = true;
+          }
+          {
+            label = "logout";
+            action = "loginctl terminate-user $USER";
+            text = "Logout";
+            keybind = "u";
+            circular = true;
+          }
+          {
+            label = "shutdown";
+            action = "systemctl poweroff";
+            text = "Shutdown";
+            keybind = "p";
+            circular = true;
+          }
+          {
+            label = "suspend";
+            action = "systemctl suspend";
+            text = "Suspend";
+            keybind = "s";
+            circular = true;
+          }
+          {
+            label = "reboot";
+            action = "systemctl reboot";
+            text = "Reboot";
+            keybind = "r";
+            circular = true;
+          }
+        ];
+      };
       yt-dlp.enable = true;
       zoxide = {
         enable = true;

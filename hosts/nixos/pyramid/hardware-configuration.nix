@@ -22,8 +22,8 @@
   #   '';
 
   boot = {
-    # kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
-    kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    kernelPackages = lib.mkDefault pkgs.kernel.linuxPackages;
+    # kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
     binfmt.emulatedSystems = [ "aarch64-linux" ];
     initrd = {
       availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "cryptd" "usbhid" "sd_mod" "r8152" ];
@@ -39,7 +39,8 @@
 
     kernelModules = [ "kvm-amd" ];
     kernelParams = [
-      "mem_sleep_default=deep"
+      # deep sleep is discontinued by amd
+      # "mem_sleep_default=deep"
       # supposedly, this helps save power on laptops
       # in reality (at least on this model), this just generate excessive heat on the CPUs
       # "amd_pstate=passive"

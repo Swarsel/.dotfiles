@@ -299,6 +299,7 @@ in
               profile = {
                 name = "lidopen";
                 exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                   "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
                   "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
@@ -333,6 +334,7 @@ in
                 {
                   name = "lidopen";
                   exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
                     "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
                     "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
                   ];
