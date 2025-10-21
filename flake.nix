@@ -20,8 +20,9 @@
     swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
     swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     home-manager = {
-      url = "github:nix-community/home-manager";
-      # url = "github:Swarsel/home-manager/module/pizauth";
+      # url = "github:nix-community/home-manager";
+      # url = "github:Swarsel/home-manager/main";
+      url = "github:JuneStepp/home-manager/anki-fix-booleans";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     swarsel.url = "github:Swarsel/.dotfiles";

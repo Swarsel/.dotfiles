@@ -141,20 +141,22 @@ in
           runAsRoot = true;
           swtpm.enable = true;
           vhostUserPackages = with pkgs; [ virtiofsd ];
-          ovmf = {
-            enable = true;
-            packages = [
-              (pkgs.OVMFFull.override {
-                secureBoot = true;
-                tpmSupport = true;
-              }).fd
-            ];
-          };
+          # ovmf = {
+          #   enable = true;
+          #   packages = [
+          #     (pkgs.OVMFFull.override {
+          #       secureBoot = true;
+          #       tpmSupport = true;
+          #     }).fd
+          #   ];
+          # };
         };
       };
     };
 
     environment.systemPackages = with pkgs; [
+      remmina
+      # gp-onsaml-gui
       stable24_11.python39
       qemu
       packer

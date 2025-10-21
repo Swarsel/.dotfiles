@@ -88,6 +88,9 @@
       "jitsi-meet-1.0.8043"
       "electron-29.4.6"
       "SDL_ttf-2.0.11"
+      # audacity?
+      "mbedtls-2.28.10"
+      # "qtwebengine-5.15.19"
     ];
   };
 }

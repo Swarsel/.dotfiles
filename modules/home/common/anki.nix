@@ -16,7 +16,7 @@ in
 
     programs.anki = {
       enable = true;
-      package = pkgs.anki;
+      # # package = pkgs.anki;
       hideBottomBar = true;
       hideBottomBarMode = "always";
       hideTopBar = true;
@@ -27,6 +27,7 @@ in
       sync = {
         autoSync = false; # sync on profile close will delay system shutdown
         syncMedia = true;
+        autoSyncMediaMinutes = 5;
         url = "https://${globals.services.ankisync.domain}";
         usernameFile = nixosConfig.sops.secrets.anki-user.path;
         # this is not the password but the syncKey

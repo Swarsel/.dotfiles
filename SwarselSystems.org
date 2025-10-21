@@ -412,8 +412,9 @@ A short overview over each input and what it does:
       swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       home-manager = {
-        url = "github:nix-community/home-manager";
-        # url = "github:Swarsel/home-manager/module/pizauth";
+        # url = "github:nix-community/home-manager";
+        # url = "github:Swarsel/home-manager/main";
+        url = "github:JuneStepp/home-manager/anki-fix-booleans";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       swarsel.url = "github:Swarsel/.dotfiles";
@@ -4639,99 +4640,102 @@ This section is for setting things that should be used on hosts that are using t
 Mostly used to install some compilers and lsp's that I want to have available when not using a devShell flake. Most other packages should go in [[#h:893a7f33-7715-415b-a895-2687ded31c18][Installed packages]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/packages.nix
-  { lib, config, pkgs, minimal, ... }:
-  {
-    options.swarselmodules.packages = lib.mkEnableOption "install packages";
-    config = lib.mkIf config.swarselmodules.packages {
+    { lib, config, pkgs, minimal, ... }:
+    {
+      options.swarselmodules.packages = lib.mkEnableOption "install packages";
+      config = lib.mkIf config.swarselmodules.packages {
 
-      environment.systemPackages = with pkgs; lib.optionals (!minimal) [
-        # yubikey packages
-        gnupg
-        yubikey-personalization
-        yubico-pam
-        yubioath-flutter
-        yubikey-manager
-        yubikey-touch-detector
-        yubico-piv-tool
-        cfssl
-        pcsctools
-        pcscliteWithPolkit.out
+        environment.systemPackages = with pkgs; lib.optionals (!minimal) [
+          # yubikey packages
+          gnupg
+          yubikey-personalization
+          yubico-pam
+          yubioath-flutter
+          yubikey-manager
+          yubikey-touch-detector
+          yubico-piv-tool
+          cfssl
+          pcsctools
+          pcscliteWithPolkit.out
 
-        # ledger packages
-        ledger-live-desktop
+          # ledger packages
+          ledger-live-desktop
 
-        # pinentry
-        dbus
-        # swaylock-effects
-        syncthingtray-minimal
-        swayosd
+          # pinentry
+          dbus
+          # swaylock-effects
+          syncthingtray-minimal
+          swayosd
 
-        # secure boot
-        sbctl
+          # secure boot
+          sbctl
 
-        libsForQt5.qt5.qtwayland
+          libsForQt5.qt5.qtwayland
 
-        # nix package database
-        nix-index
-        nixos-generators
+          # nix package database
+          nix-index
+          nixos-generators
 
-        # commit hooks
-        pre-commit
+          # commit hooks
+          pre-commit
 
-        # proc info
-        acpi
+          # proc info
+          acpi
 
-        # pci info
-        pciutils
-        usbutils
+          # pci info
+          pciutils
+          usbutils
 
-        # better make for general tasks
-        just
+          # better make for general tasks
+          just
 
 
-        # keyboards
-        qmk
-        vial
-        via
+          # keyboards
+          qmk
+          vial
+          via
 
-        # theme related
-        adwaita-icon-theme
+          # theme related
+          adwaita-icon-theme
 
-        # kde-connect
-        xdg-desktop-portal
-        xdg-desktop-portal-gtk
-        xdg-desktop-portal-wlr
+          # kde-connect
+          xdg-desktop-portal
+          xdg-desktop-portal-gtk
+          xdg-desktop-portal-wlr
 
-        # bluetooth
-        bluez
-        ghostscript_headless
-        wireguard-tools
-        nixd
-        zig
-        zls
+          # bluetooth
+          bluez
+          ghostscript_headless
+          wireguard-tools
+          nixd
+          zig
+          zls
 
-        elk-to-svg
+          elk-to-svg
 
-      ] ++ lib.optionals minimal [
-        networkmanager
-        curl
-        git
-        gnupg
-        rsync
-        ssh-to-age
-        sops
-        vim
-        just
-        sbctl
-      ];
+        ] ++ lib.optionals minimal [
+          networkmanager
+          curl
+          git
+          gnupg
+          rsync
+          ssh-to-age
+          sops
+          vim
+          just
+          sbctl
+        ];
 
-      nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
-        "jitsi-meet-1.0.8043"
-        "electron-29.4.6"
-        "SDL_ttf-2.0.11"
-      ];
-    };
-  }
+        nixpkgs.config.permittedInsecurePackages = lib.mkIf (!minimal) [
+          "jitsi-meet-1.0.8043"
+          "electron-29.4.6"
+          "SDL_ttf-2.0.11"
+          # audacity?
+          "mbedtls-2.28.10"
+          # "qtwebengine-5.15.19"
+        ];
+      };
+    }
 #+end_src
 
 **** Environment setup
@@ -10719,20 +10723,22 @@ Options that I need specifically at work. There are more options at [[#h:f0b2ea9
             runAsRoot = true;
             swtpm.enable = true;
             vhostUserPackages = with pkgs; [ virtiofsd ];
-            ovmf = {
-              enable = true;
-              packages = [
-                (pkgs.OVMFFull.override {
-                  secureBoot = true;
-                  tpmSupport = true;
-                }).fd
-              ];
-            };
+            # ovmf = {
+            #   enable = true;
+            #   packages = [
+            #     (pkgs.OVMFFull.override {
+            #       secureBoot = true;
+            #       tpmSupport = true;
+            #     }).fd
+            #   ];
+            # };
           };
         };
       };
 
       environment.systemPackages = with pkgs; [
+        remmina
+        # gp-onsaml-gui
         stable24_11.python39
         qemu
         packer
@@ -14500,7 +14506,7 @@ This service changes the screen hue at night. I am not sure if that really does 
       programs.spicetify = {
         enable = true;
         # spotifyPackage = pkgs.stable24_11.spotify;
-        spotifyPackage = pkgs.spotify;
+        spotifyPackage = pkgs.stable.spotify;
         enabledExtensions = with spicePkgs.extensions; [
           fullAppDisplay
           shuffle
@@ -14673,7 +14679,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 
       programs.anki = {
         enable = true;
-        package = pkgs.anki;
+        # # package = pkgs.anki;
         hideBottomBar = true;
         hideBottomBarMode = "always";
         hideTopBar = true;
@@ -14684,6 +14690,7 @@ This service changes the screen hue at night. I am not sure if that really does 
         sync = {
           autoSync = false; # sync on profile close will delay system shutdown
           syncMedia = true;
+          autoSyncMediaMinutes = 5;
           url = "https://${globals.services.ankisync.domain}";
           usernameFile = nixosConfig.sops.secrets.anki-user.path;
           # this is not the password but the syncKey
