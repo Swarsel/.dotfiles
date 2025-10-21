@@ -1564,6 +1564,10 @@ create a new one."
   (setq mu4e-mu-binary (executable-find "mu"))
   (setq mu4e-hide-index-messages t)
 
+  ;; this is so that messages that target multiple addresses still are individually shown in the unreads
+  ;; this is needed because otherwise after closing the view there will still be an unread message
+  (setq mu4e-search-skip-duplicates nil)
+
   (setq mu4e-update-interval 60)
   (setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-maildir "~/Mail")
@@ -1603,9 +1607,20 @@ create a new one."
 
 (use-package mu4e-alert
   :config
-  (setq mu4e-alert-set-default-style 'libnotify))
+  (mu4e-alert-enable-notifications)
+  (mu4e-alert-set-default-style 'libnotify)
+  (setq mu4e-alert-interesting-mail-query
+        (concat "(maildir:/leon/Inbox AND date:today..now"
+                " OR maildir:/work/Inbox AND date:today..now)"
+                " AND flag:unread"))
+  (alert-add-rule
+   :category "mu4e-alert"
+   :predicate (lambda (_) (string-match-p "^mu4e-" (symbol-name major-mode)))
+   :continue t)
 
-(add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+
+  (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+  )
 
 (mu4e t)
 

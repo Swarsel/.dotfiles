@@ -21836,6 +21836,10 @@ The hook functions are defined here: [[#h:34506761-06b9-43b5-a818-506d9b3faf28][
     (setq mu4e-mu-binary (executable-find "mu"))
     (setq mu4e-hide-index-messages t)
 
+    ;; this is so that messages that target multiple addresses still are individually shown in the unreads
+    ;; this is needed because otherwise after closing the view there will still be an unread message
+    (setq mu4e-search-skip-duplicates nil)
+
     (setq mu4e-update-interval 60)
     (setq mu4e-get-mail-command "mbsync -a")
     (setq mu4e-maildir "~/Mail")
@@ -21885,9 +21889,20 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 
   (use-package mu4e-alert
     :config
-    (setq mu4e-alert-set-default-style 'libnotify))
+    (mu4e-alert-enable-notifications)
+    (mu4e-alert-set-default-style 'libnotify)
+    (setq mu4e-alert-interesting-mail-query
+          (concat "(maildir:/leon/Inbox AND date:today..now"
+                  " OR maildir:/work/Inbox AND date:today..now)"
+                  " AND flag:unread"))
+    (alert-add-rule
+     :category "mu4e-alert"
+     :predicate (lambda (_) (string-match-p "^mu4e-" (symbol-name major-mode)))
+     :continue t)
 
-  (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+
+    (add-hook 'after-init-hook #'mu4e-alert-enable-notifications)
+    )
 
   (mu4e t)
 #+end_src
