@@ -30,6 +30,10 @@
       (when-let ((dest (swarsel/mu4e-rfs--matching-address)))
         (cl-destructuring-bind (from-user from-addr) dest
           (setq user-mail-address from-addr)
+          (when (and (boundp 'user-mail-address)
+                     (stringp user-mail-address)
+                     (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+            (mml-secure-message-sign-smime))
           (message-position-on-field "From")
           (message-beginning-of-line)
           (delete-region (point) (line-end-position))
@@ -1560,7 +1564,7 @@ create a new one."
   (setq mu4e-mu-binary (executable-find "mu"))
   (setq mu4e-hide-index-messages t)
 
-  (setq mu4e-update-interval 180)
+  (setq mu4e-update-interval 60)
   (setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-maildir "~/Mail")
 
