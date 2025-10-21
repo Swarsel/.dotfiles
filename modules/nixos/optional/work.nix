@@ -94,11 +94,13 @@ in
                 id = "VBC";
                 type = "wifi";
                 autoconnect-priority = "500";
+                uuid = "3988f10e-6451-381f-9330-a12e66f45051";
                 secondaries = "48d09de4-0521-47d7-9bd5-43f97e23ff82"; # vpn uuid
               };
               ipv4 = { method = "auto"; };
               ipv6 = {
-                addr-gen-mode = "default";
+                # addr-gen-mode = "default";
+                addr-gen-mode = "stable-privacy";
                 method = "auto";
               };
               proxy = { };
@@ -111,7 +113,7 @@ in
                 ssid = "VBC";
               };
               wifi-security = {
-                auth-alg = "open";
+                # auth-alg = "open";
                 key-mgmt = "wpa-eap";
               };
             };
