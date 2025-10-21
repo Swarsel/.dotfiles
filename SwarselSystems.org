@@ -297,6 +297,18 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   |🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                            |
 #+end_src
 
+** Manual steps when setting up a new machine
+
+#+begin_src markdown :noweb yes :exports both :results html
+
+  <<setup>>
+
+  If the new machine is a work machine, these steps are additionally needed:
+
+  <<worksetup>>
+
+#+end_src
+
 * flake.nix
 :PROPERTIES:
 :CUSTOM_ID: h:c7588c0d-2528-485d-b2df-04d6336428d7
@@ -10580,6 +10592,14 @@ This holds configuration that is specific to framework laptops.
 
 Options that I need specifically at work. There are more options at [[#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6][Work]] (home-manager side).
 
+When setting up a new machine:
+
+#+begin_src markdown :noweb-ref worksetup :exports both :results html
+  - setup the work VPN:
+    - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
+    - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
+#+end_src
+
 #+begin_src nix-ts :tangle modules/nixos/optional/work.nix
   { self, lib, pkgs, config, configName, ... }:
   let
@@ -14427,7 +14447,18 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 :CUSTOM_ID: h:7d384e3b-1be7-4644-b304-ada4af0b692b
 :END:
 
-Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
+Settings that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
+
+When setting up a new machine:
+
+#+begin_src markdown :noweb-ref setup :exports both :results html
+  - setup gpgsm for signing of mails using S/MIME:
+    - `gpgsm --import ~/Certificates/<certname>.p12`
+    - `gpgsm --import ~/Certificates/harica-root.pem`
+    - `gpgsm --import ~/Certificates/harica-intermediate.pem`
+    - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
+      - trust the certificate and set passphrase
+#+end_src
 
 #+begin_src nix-ts :tangle modules/home/common/gpg-agent.nix
   { self, lib, config, pkgs, ... }:
@@ -15216,12 +15247,20 @@ The rest of the settings is at [[#h:fb3f3e01-7df4-4b06-9e91-aa9cac61a431][gaming
 
 #+end_src
 
-**** Work
+**** Work (pizauth)
 :PROPERTIES:
 :CUSTOM_ID: h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6
 :END:
 
 The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
+
+When setting up a new machine:
+
+#+begin_src markdown :noweb-ref setup :exports both :results html
+  - setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
+    - `pizauth auth <account name, e.g. 'work'>`
+    - `pizauth dump > ~/.pizauth.state`
+#+end_src
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
   { self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
@@ -22120,6 +22159,14 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 :END:
 
 This sections is no longer used really. An introduction can be found in [[#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5][Structure of this file]] under the historical note. The little noweb-ref blocks that I still use are found in [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]] and [[#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32][Services]].
+** General steps when setting up a new machine
+
+These general steps are needed when setting up a new machine and do not fit into another block well:
+
+#+begin_src markdown :noweb-ref setup :exports both :results html
+  - setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
+    - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
+#+end_src
 
 * Appendix B: Supplementary Files
 :PROPERTIES:

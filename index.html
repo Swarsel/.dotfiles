@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-10-21 Di 13:09 -->
+<!-- 2025-10-21 Di 21:37 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configurationo</title>
@@ -209,6 +209,7 @@
 <li><a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">1.4. Hosts</a></li>
 <li><a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">1.5. Programs</a></li>
 <li><a href="#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9">1.6. Services</a></li>
+<li><a href="#org1e210f0">1.7. Manual steps when setting up a new machine</a></li>
 </ul>
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2. flake.nix</a>
@@ -443,8 +444,8 @@
 <li><a href="#h:15b581ab-09fe-4f84-af26-2f1fbf7d726b">3.2.5.8. Hibernation</a></li>
 <li><a href="#h:86fb3236-9e18-43f0-8a08-3a2acd61cc98">3.2.5.9. BTRFS</a></li>
 <li><a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">3.2.5.10. work</a></li>
-<li><a href="#orgcb2fcb7">3.2.5.11. microvm-host</a></li>
-<li><a href="#orgcf7e090">3.2.5.12. microvm-guest</a></li>
+<li><a href="#org3b29611">3.2.5.11. microvm-host</a></li>
+<li><a href="#org5500ccc">3.2.5.12. microvm-guest</a></li>
 </ul>
 </li>
 </ul>
@@ -472,7 +473,7 @@
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.1.12. Sourcing environment variables</a></li>
 <li><a href="#h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">3.3.1.13. General Programs: bottom, imv, less, lesspipe, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide, timidity</a></li>
 <li><a href="#h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748">3.3.1.14. nix-index</a></li>
-<li><a href="#org0bc7fbc">3.3.1.15. nix-your-shell</a></li>
+<li><a href="#orgef57e77">3.3.1.15. nix-your-shell</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.1.16. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.1.17. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.1.18. eza</a></li>
@@ -495,12 +496,12 @@
 <li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">3.3.1.31.3. Mako</a></li>
 <li><a href="#h:388e71be-f00a-4d45-ade1-218ce942057d">3.3.1.31.4. SwayOSD</a></li>
 <li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">3.3.1.31.5. yubikey-touch-detector</a></li>
-<li><a href="#org2568de8">3.3.1.31.6. blueman-applet</a></li>
-<li><a href="#org84c1201">3.3.1.31.7. network-manager-applet</a></li>
-<li><a href="#org43f6e21">3.3.1.31.8. obsidian service for tray</a></li>
-<li><a href="#orgaa41ee3">3.3.1.31.9. anki service for tray</a></li>
-<li><a href="#orgcb4f253">3.3.1.31.10. element service for tray</a></li>
-<li><a href="#orgb766ab8">3.3.1.31.11. vesktop service for tray</a></li>
+<li><a href="#org44c9877">3.3.1.31.6. blueman-applet</a></li>
+<li><a href="#org163a2af">3.3.1.31.7. network-manager-applet</a></li>
+<li><a href="#orgd6b832c">3.3.1.31.8. obsidian service for tray</a></li>
+<li><a href="#org7b3c601">3.3.1.31.9. anki service for tray</a></li>
+<li><a href="#orgaea42f4">3.3.1.31.10. element service for tray</a></li>
+<li><a href="#org030b0b2">3.3.1.31.11. vesktop service for tray</a></li>
 </ul>
 </li>
 <li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.1.32. Sway</a></li>
@@ -509,17 +510,17 @@
 <li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.1.35. gpg-agent</a></li>
 <li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.1.36. gammastep</a></li>
 <li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.1.37. Spicetify</a></li>
-<li><a href="#org3f19616">3.3.1.38. Obsidian</a></li>
-<li><a href="#orgd0e6499">3.3.1.39. Anki</a></li>
-<li><a href="#orgb6ac1d9">3.3.1.40. Element-desktop</a></li>
-<li><a href="#org68fbf73">3.3.1.41. Hexchat</a></li>
-<li><a href="#orgea285a9">3.3.1.42. obs-studio</a></li>
-<li><a href="#orgd003fee">3.3.1.43. spotify-player</a></li>
-<li><a href="#org8616bfa">3.3.1.44. vesktop</a></li>
-<li><a href="#orgab3d85e">3.3.1.45. batsignal</a></li>
-<li><a href="#orgde9dc92">3.3.1.46. autotiling</a></li>
-<li><a href="#orge7185ca">3.3.1.47. swayidle</a></li>
-<li><a href="#org4e801e4">3.3.1.48. swaylock</a></li>
+<li><a href="#org2444730">3.3.1.38. Obsidian</a></li>
+<li><a href="#org7ee88af">3.3.1.39. Anki</a></li>
+<li><a href="#org4137b9c">3.3.1.40. Element-desktop</a></li>
+<li><a href="#orge83b29c">3.3.1.41. Hexchat</a></li>
+<li><a href="#orgc6e077d">3.3.1.42. obs-studio</a></li>
+<li><a href="#org61af274">3.3.1.43. spotify-player</a></li>
+<li><a href="#orga884d29">3.3.1.44. vesktop</a></li>
+<li><a href="#org86c0973">3.3.1.45. batsignal</a></li>
+<li><a href="#org503cbe5">3.3.1.46. autotiling</a></li>
+<li><a href="#orgf1d300b">3.3.1.47. swayidle</a></li>
+<li><a href="#org3b0dfc9">3.3.1.48. swaylock</a></li>
 </ul>
 </li>
 <li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">3.3.2. Server</a>
@@ -536,7 +537,7 @@
 <li><a href="#h:be623200-557e-4bb7-bb11-1ec5d76c6b8b">3.3.4. Optional</a>
 <ul>
 <li><a href="#h:84fd7029-ecb6-4131-9333-289982f24ffa">3.3.4.1. Gaming</a></li>
-<li><a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">3.3.4.2. Work</a></li>
+<li><a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">3.3.4.2. Work (pizauth)</a></li>
 <li><a href="#h:52b41e73-46f3-4c2c-af64-eafb51e3b6b6">3.3.4.3. Uni</a></li>
 <li><a href="#h:8a7b1c26-3448-42d3-932a-5d05d54b5490">3.3.4.4. Framework</a></li>
 </ul>
@@ -584,8 +585,8 @@
 <li><a href="#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e">3.5.31. swarsel-build</a></li>
 <li><a href="#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa">3.5.32. swarsel-instantiate</a></li>
 <li><a href="#h:02842543-caca-4d4c-a4d2-7ac749b5c136">3.5.33. sshrm</a></li>
-<li><a href="#org6a36b50">3.5.34. endme</a></li>
-<li><a href="#orgb3faf9e">3.5.35. git-replace</a></li>
+<li><a href="#orgc62e7de">3.5.34. endme</a></li>
+<li><a href="#orge3590e8">3.5.35. git-replace</a></li>
 </ul>
 </li>
 <li><a href="#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc">3.6. Profiles</a>
@@ -594,7 +595,7 @@
 <ul>
 <li><a href="#h:32d654de-8db2-403a-9a27-4c46d7b9172d">3.6.1.1. Personal</a></li>
 <li><a href="#h:b926f0c8-7968-4079-924c-a5d0ae4d3a45">3.6.1.2. Minimal</a></li>
-<li><a href="#orgefd2161">3.6.1.3. Optionals</a></li>
+<li><a href="#org30fc974">3.6.1.3. Optionals</a></li>
 <li><a href="#h:b79fbb59-9cf2-48eb-b469-2589223dda95">3.6.1.4. Chaostheatre</a></li>
 <li><a href="#h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">3.6.1.5. Work</a></li>
 <li><a href="#h:87a83b10-3c2f-407c-89aa-922ad77748a4">3.6.1.6. Uni</a></li>
@@ -775,6 +776,7 @@
 <ul>
 <li><a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">4.4.39.1. mu4e</a></li>
 <li><a href="#h:43209eeb-5d46-472e-b7c2-58a3fb465199">4.4.39.2. mu4e-alert</a></li>
+<li><a href="#org234e39c">4.4.39.3. Work: Signing Mails (S/MIME, smime)</a></li>
 </ul>
 </li>
 <li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.40. Calendar</a></li>
@@ -787,7 +789,11 @@
 </li>
 </ul>
 </li>
-<li><a href="#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c">5. Appendix A: Noweb-Ref blocks</a></li>
+<li><a href="#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c">5. Appendix A: Noweb-Ref blocks</a>
+<ul>
+<li><a href="#orge8ed16b">5.1. General steps when setting up a new machine</a></li>
+</ul>
+</li>
 <li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">6. Appendix B: Supplementary Files</a>
 <ul>
 <li><a href="#h:c1e53aed-fb47-4aff-930c-dc52f3c5dcb8">6.1. Server Emacs config</a></li>
@@ -837,7 +843,7 @@
 </div>
 </div>
 <p>
-<b>This file has 96128 words spanning 24842 lines and was last revised on 2025-10-21 13:09:36 +0200.</b>
+<b>This file has 96609 words spanning 24942 lines and was last revised on 2025-10-21 21:36:59 +0200.</b>
 </p>
 
 <p>
@@ -906,7 +912,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-10-21 13:09:36 +0200)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-10-21 21:36:59 +0200)
 </p></li>
 </ul>
 
@@ -1205,6 +1211,33 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 |✂️ **Paste Tool**      | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                        |
 |📸 **Image Sharing**   | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/slink.nix)                              |
 |🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                            |
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org1e210f0" class="outline-3">
+<h3 id="org1e210f0"><span class="section-number-3">1.7.</span> Manual steps when setting up a new machine</h3>
+<div class="outline-text-3" id="text-1-7">
+<div class="org-src-container">
+<pre class="src src-markdown">
+- setup gpgsm for signing of mails using S/MIME:
+  - `gpgsm --import ~/Certificates/&lt;certname&gt;.p12`
+  - `gpgsm --import ~/Certificates/harica-root.pem`
+  - `gpgsm --import ~/Certificates/harica-intermediate.pem`
+  - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
+    - trust the certificate and set passphrase
+- setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
+  - `pizauth auth &lt;account name, e.g. 'work'&gt;`
+  - `pizauth dump &gt; ~/.pizauth.state`
+- setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
+  - `systemd-cryptenroll --fido2-device=auto /dev/&lt;device, e.g. 'nvme0n1p2'&gt;`
+
+If the new machine is a work machine, these steps are additionally needed:
+
+- setup the work VPN:
+  - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
+  - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
+
 </pre>
 </div>
 </div>
@@ -11895,6 +11928,17 @@ This holds configuration that is specific to framework laptops.
 Options that I need specifically at work. There are more options at <a href="#h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">Work</a> (home-manager side).
 </p>
 
+<p>
+When setting up a new machine:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">- setup the work VPN:
+  - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
+  - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
+</pre>
+</div>
+
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, pkgs, config, configName, ... }:
 let
@@ -12134,8 +12178,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgcb2fcb7" class="outline-5">
-<h5 id="orgcb2fcb7"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
+<div id="outline-container-org3b29611" class="outline-5">
+<h5 id="org3b29611"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
 <div class="outline-text-5" id="text-3-2-5-11">
 <p>
 Some standard options that should be set for every microvm host.
@@ -12161,8 +12205,8 @@ Some standard options that should be set for every microvm host.
 </div>
 </div>
 </div>
-<div id="outline-container-orgcf7e090" class="outline-5">
-<h5 id="orgcf7e090"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
+<div id="outline-container-org5500ccc" class="outline-5">
+<h5 id="org5500ccc"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
 <div class="outline-text-5" id="text-3-2-5-12">
 <p>
 Some standard options that should be set vor every microvm guest. We set the default
@@ -13089,7 +13133,7 @@ in
       SWARSEL_CAL3 = source3;
       SWARSEL_CAL3NAME = source3-name;
       SWARSEL_FULLNAME = fullName;
-      SWARSEL_MAIL_ALL = allMailAddresses;
+      SWARSEL_MAIL_ALL = lib.mkDefault allMailAddresses;
       GITHUB_NOTIFICATION_TOKEN_PATH = nixosConfig.sops.secrets.github-notifications-token.path;
       OPENROUTER_API_KEY = openrouterApi;
     };
@@ -13232,8 +13276,8 @@ nix-index provides a way to find out which packages are provided by which deriva
 </div>
 </div>
 </div>
-<div id="outline-container-org0bc7fbc" class="outline-5">
-<h5 id="org0bc7fbc"><span class="section-number-5">3.3.1.15.</span> nix-your-shell</h5>
+<div id="outline-container-orgef57e77" class="outline-5">
+<h5 id="orgef57e77"><span class="section-number-5">3.3.1.15.</span> nix-your-shell</h5>
 <div class="outline-text-5" id="text-3-3-1-15">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -14946,8 +14990,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org2568de8" class="outline-6">
-<h6 id="org2568de8"><span class="section-number-6">3.3.1.31.6.</span> blueman-applet</h6>
+<div id="outline-container-org44c9877" class="outline-6">
+<h6 id="org44c9877"><span class="section-number-6">3.3.1.31.6.</span> blueman-applet</h6>
 <div class="outline-text-6" id="text-3-3-1-31-6">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -14961,8 +15005,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org84c1201" class="outline-6">
-<h6 id="org84c1201"><span class="section-number-6">3.3.1.31.7.</span> network-manager-applet</h6>
+<div id="outline-container-org163a2af" class="outline-6">
+<h6 id="org163a2af"><span class="section-number-6">3.3.1.31.7.</span> network-manager-applet</h6>
 <div class="outline-text-6" id="text-3-3-1-31-7">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -14977,8 +15021,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org43f6e21" class="outline-6">
-<h6 id="org43f6e21"><span class="section-number-6">3.3.1.31.8.</span> obsidian service for tray</h6>
+<div id="outline-container-orgd6b832c" class="outline-6">
+<h6 id="orgd6b832c"><span class="section-number-6">3.3.1.31.8.</span> obsidian service for tray</h6>
 <div class="outline-text-6" id="text-3-3-1-31-8">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -15012,9 +15056,13 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgaa41ee3" class="outline-6">
-<h6 id="orgaa41ee3"><span class="section-number-6">3.3.1.31.9.</span> anki service for tray</h6>
+<div id="outline-container-org7b3c601" class="outline-6">
+<h6 id="org7b3c601"><span class="section-number-6">3.3.1.31.9.</span> anki service for tray</h6>
 <div class="outline-text-6" id="text-3-3-1-31-9">
+<p>
+Sets up a systemd user service for anki that does not stall the shutdown process. Note that the outcommented <code>ExecStart</code> does not work because the home-manager anki package builds a separate anki package that - I think - cannot be referenced as no such expression exists in the module.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -15038,10 +15086,15 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 
       Service = {
         # ExecStart = "${lib.getExe config.programs.anki.package}";
-        ExecStart = "/etc/profiles/per-user/swarsel/bin/anki";
+        Type = "simple";
+        ExecStart = "/etc/profiles/per-user/${config.swarselsystems.mainUser}/bin/anki";
         Environment = [
           "QT_QPA_PLATFORM=xcb"
         ];
+        TimeoutStopSec = "2s";
+        KillMode = "mixed";
+        KillSignal = "SIGTERM";
+        SendSIGKILL = "yes";
       };
     };
 
@@ -15051,8 +15104,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgcb4f253" class="outline-6">
-<h6 id="orgcb4f253"><span class="section-number-6">3.3.1.31.10.</span> element service for tray</h6>
+<div id="outline-container-orgaea42f4" class="outline-6">
+<h6 id="orgaea42f4"><span class="section-number-6">3.3.1.31.10.</span> element service for tray</h6>
 <div class="outline-text-6" id="text-3-3-1-31-10">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -15086,8 +15139,8 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgb766ab8" class="outline-6">
-<h6 id="orgb766ab8"><span class="section-number-6">3.3.1.31.11.</span> vesktop service for tray</h6>
+<div id="outline-container-org030b0b2" class="outline-6">
+<h6 id="org030b0b2"><span class="section-number-6">3.3.1.31.11.</span> vesktop service for tray</h6>
 <div class="outline-text-6" id="text-3-3-1-31-11">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -15891,8 +15944,22 @@ Currently, I am too lazy to explain every option here, but most of it is very se
 <h5 id="h:7d384e3b-1be7-4644-b304-ada4af0b692b"><span class="section-number-5">3.3.1.35.</span> gpg-agent</h5>
 <div class="outline-text-5" id="text-h:7d384e3b-1be7-4644-b304-ada4af0b692b">
 <p>
-Settinfs that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
+Settings that are needed for the gpg-agent. Also we are enabling emacs support for unlocking my Yubikey here.
 </p>
+
+<p>
+When setting up a new machine:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">- setup gpgsm for signing of mails using S/MIME:
+  - `gpgsm --import ~/Certificates/&lt;certname&gt;.p12`
+  - `gpgsm --import ~/Certificates/harica-root.pem`
+  - `gpgsm --import ~/Certificates/harica-intermediate.pem`
+  - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
+    - trust the certificate and set passphrase
+</pre>
+</div>
 
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, config, pkgs, ... }:
@@ -16001,153 +16068,166 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org3f19616" class="outline-5">
-<h5 id="org3f19616"><span class="section-number-5">3.3.1.38.</span> Obsidian</h5>
+<div id="outline-container-org2444730" class="outline-5">
+<h5 id="org2444730"><span class="section-number-5">3.3.1.38.</span> Obsidian</h5>
 <div class="outline-text-5" id="text-3-3-1-38">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, nixosConfig ? config, ... }:
-  let
-    moduleName = "obsidian";
-    inherit (nixosConfig.repo.secrets.common.obsidian) userIgnoreFilters;
-    name = "Main";
-  in
-  {
-    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} with settings";
-    config = lib.mkIf config.swarselmodules.${moduleName} {
+let
+  moduleName = "obsidian";
+  inherit (nixosConfig.repo.secrets.common.obsidian) userIgnoreFilters;
+  name = "Main";
+in
+{
+  options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} with settings";
+  config = lib.mkIf config.swarselmodules.${moduleName} {
 
-      home.file = {
-        "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;
-        "${config.programs.obsidian.vaults.${name}.target}/.obsidian/appearance.json".force = true;
-        "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
-      };
+    home.file = {
+      "${config.programs.obsidian.vaults.${name}.target}/.obsidian/app.json".force = true;
+      "${config.programs.obsidian.vaults.${name}.target}/.obsidian/appearance.json".force = true;
+      "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
+    };
 
-      programs.obsidian =
-        {
-          enable = true;
-          package = pkgs.obsidian;
-          defaultSettings = {
-            app = {
-              attachmentFolderPath = "attachments";
-              alwaysUpdateLinks = true;
-              spellcheck = false;
-              inherit userIgnoreFilters;
-              vimMode = false;
-              newFileLocation = "current";
-            };
-            corePlugins = [
-              "backlink"
-              "bookmarks"
-              "canvas"
-              "command-palette"
-              "daily-notes"
-              "editor-status"
-              "file-explorer"
-              "file-recovery"
-              "global-search"
-              "graph"
-              "note-composer"
-              "outgoing-link"
-              "outline"
-              "page-preview"
-              "properties"
-              "slides"
-              "switcher"
-              "tag-pane"
-              "templates"
-              "word-count"
-            ];
-            communityPlugins = with pkgs.swarsel-nix; [
-              advanced-tables
-              calendar
-              file-hider
-              linter
-              omnisearch
-              sort-and-permute-lines
-              tag-wrangler
-              tray
-            ];
+    programs.obsidian =
+      {
+        enable = true;
+        package = pkgs.obsidian;
+        defaultSettings = {
+          app = {
+            attachmentFolderPath = "attachments";
+            alwaysUpdateLinks = true;
+            spellcheck = false;
+            inherit userIgnoreFilters;
+            vimMode = false;
+            newFileLocation = "current";
           };
-          vaults = {
-            ${name} = {
-              target = "./Obsidian/${name}";
-              settings = {
-                appearance = {
-                  baseFontSize = lib.mkForce 19;
-                };
-                communityPlugins = with pkgs.swarsel-nix; [
-                  {
-                    pkg = advanced-tables;
-                    enable = true;
-                  }
-                  {
-                    pkg = calendar;
-                    enable = true;
-                  }
-                  {
-                    pkg = sort-and-permute-lines;
-                    enable = true;
-                  }
-                  {
-                    pkg = tag-wrangler;
-                    enable = true;
-                  }
-                  {
-                    pkg = tray;
-                    enable = true;
-                    settings = {
-                      launchOnStartup = false;
-                      hideOnLaunch = true;
-                      runInBackground = true;
-                      hideTaskbarIcon = false;
-                      createTrayIcon = true;
-                    };
-                  }
-                  {
-                    pkg = file-hider;
-                    enable = true;
-                    settings =
-                      {
-                        hidden = true;
-                        hiddenList = [
-                          "attachments"
-                          "images"
-                          "ltximg"
-                          "logseq"
-                        ];
-                      };
-                  }
-                  {
-                    pkg = linter;
-                    enable = true;
-                    settings = {
-                      auto-correct-common-misspellings = {
-                        skip-words-with-multiple-capitals = true;
-                      };
-                      convert-bullet-list-markers = {
-                        enabled = true;
-                      };
-                    };
-                  }
-                  {
-                    pkg = omnisearch;
-                    enable = true;
-                    settings = {
-                      hideExcluded = true;
-                    };
-                  }
+          hotkeys = {
+            "graph:open" = [ ];
+            "omnisearch:show-modal" = [
+              {
+                modifiers = [
+                  "Mod"
                 ];
+                key = "S";
+              }
+            ];
+            "editor:save-file" = [ ];
+            "editor:delete-paragraph" = [ ];
+          };
+          corePlugins = [
+            "backlink"
+            "bookmarks"
+            "canvas"
+            "command-palette"
+            "daily-notes"
+            "editor-status"
+            "file-explorer"
+            "file-recovery"
+            "global-search"
+            "graph"
+            "note-composer"
+            "outgoing-link"
+            "outline"
+            "page-preview"
+            "properties"
+            "slides"
+            "switcher"
+            "tag-pane"
+            "templates"
+            "word-count"
+          ];
+          communityPlugins = with pkgs.swarsel-nix; [
+            advanced-tables
+            calendar
+            file-hider
+            linter
+            omnisearch
+            sort-and-permute-lines
+            tag-wrangler
+            tray
+          ];
+        };
+        vaults = {
+          ${name} = {
+            target = "./Obsidian/${name}";
+            settings = {
+              appearance = {
+                baseFontSize = lib.mkForce 19;
               };
+              communityPlugins = with pkgs.swarsel-nix; [
+                {
+                  pkg = advanced-tables;
+                  enable = true;
+                }
+                {
+                  pkg = calendar;
+                  enable = true;
+                }
+                {
+                  pkg = sort-and-permute-lines;
+                  enable = true;
+                }
+                {
+                  pkg = tag-wrangler;
+                  enable = true;
+                }
+                {
+                  pkg = tray;
+                  enable = true;
+                  settings = {
+                    launchOnStartup = false;
+                    hideOnLaunch = true;
+                    runInBackground = true;
+                    hideTaskbarIcon = false;
+                    createTrayIcon = true;
+                  };
+                }
+                {
+                  pkg = file-hider;
+                  enable = true;
+                  settings =
+                    {
+                      hidden = true;
+                      hiddenList = [
+                        "attachments"
+                        "images"
+                        "ltximg"
+                        "logseq"
+                      ];
+                    };
+                }
+                {
+                  pkg = linter;
+                  enable = true;
+                  settings = {
+                    auto-correct-common-misspellings = {
+                      skip-words-with-multiple-capitals = true;
+                    };
+                    convert-bullet-list-markers = {
+                      enabled = true;
+                    };
+                  };
+                }
+                {
+                  pkg = omnisearch;
+                  enable = true;
+                  settings = {
+                    hideExcluded = true;
+                  };
+                }
+              ];
             };
           };
         };
-    };
-  }
+      };
+  };
+}
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-orgd0e6499" class="outline-5">
-<h5 id="orgd0e6499"><span class="section-number-5">3.3.1.39.</span> Anki</h5>
+<div id="outline-container-org7ee88af" class="outline-5">
+<h5 id="org7ee88af"><span class="section-number-5">3.3.1.39.</span> Anki</h5>
 <div class="outline-text-5" id="text-3-3-1-39">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, globals, nixosConfig ? config, ... }:
@@ -16219,8 +16299,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgb6ac1d9" class="outline-5">
-<h5 id="orgb6ac1d9"><span class="section-number-5">3.3.1.40.</span> Element-desktop</h5>
+<div id="outline-container-org4137b9c" class="outline-5">
+<h5 id="org4137b9c"><span class="section-number-5">3.3.1.40.</span> Element-desktop</h5>
 <div class="outline-text-5" id="text-3-3-1-40">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16256,8 +16336,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org68fbf73" class="outline-5">
-<h5 id="org68fbf73"><span class="section-number-5">3.3.1.41.</span> Hexchat</h5>
+<div id="outline-container-orge83b29c" class="outline-5">
+<h5 id="orge83b29c"><span class="section-number-5">3.3.1.41.</span> Hexchat</h5>
 <div class="outline-text-5" id="text-3-3-1-41">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, nixosConfig ? config, ... }:
@@ -16281,8 +16361,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgea285a9" class="outline-5">
-<h5 id="orgea285a9"><span class="section-number-5">3.3.1.42.</span> obs-studio</h5>
+<div id="outline-container-orgc6e077d" class="outline-5">
+<h5 id="orgc6e077d"><span class="section-number-5">3.3.1.42.</span> obs-studio</h5>
 <div class="outline-text-5" id="text-3-3-1-42">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16302,8 +16382,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgd003fee" class="outline-5">
-<h5 id="orgd003fee"><span class="section-number-5">3.3.1.43.</span> spotify-player</h5>
+<div id="outline-container-org61af274" class="outline-5">
+<h5 id="org61af274"><span class="section-number-5">3.3.1.43.</span> spotify-player</h5>
 <div class="outline-text-5" id="text-3-3-1-43">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16323,8 +16403,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org8616bfa" class="outline-5">
-<h5 id="org8616bfa"><span class="section-number-5">3.3.1.44.</span> vesktop</h5>
+<div id="outline-container-orga884d29" class="outline-5">
+<h5 id="orga884d29"><span class="section-number-5">3.3.1.44.</span> vesktop</h5>
 <div class="outline-text-5" id="text-3-3-1-44">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16410,8 +16490,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgab3d85e" class="outline-5">
-<h5 id="orgab3d85e"><span class="section-number-5">3.3.1.45.</span> batsignal</h5>
+<div id="outline-container-org86c0973" class="outline-5">
+<h5 id="org86c0973"><span class="section-number-5">3.3.1.45.</span> batsignal</h5>
 <div class="outline-text-5" id="text-3-3-1-45">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16443,8 +16523,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgde9dc92" class="outline-5">
-<h5 id="orgde9dc92"><span class="section-number-5">3.3.1.46.</span> autotiling</h5>
+<div id="outline-container-org503cbe5" class="outline-5">
+<h5 id="org503cbe5"><span class="section-number-5">3.3.1.46.</span> autotiling</h5>
 <div class="outline-text-5" id="text-3-3-1-46">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -16465,8 +16545,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orge7185ca" class="outline-5">
-<h5 id="orge7185ca"><span class="section-number-5">3.3.1.47.</span> swayidle</h5>
+<div id="outline-container-orgf1d300b" class="outline-5">
+<h5 id="orgf1d300b"><span class="section-number-5">3.3.1.47.</span> swayidle</h5>
 <div class="outline-text-5" id="text-3-3-1-47">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -16507,8 +16587,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org4e801e4" class="outline-5">
-<h5 id="org4e801e4"><span class="section-number-5">3.3.1.48.</span> swaylock</h5>
+<div id="outline-container-org3b0dfc9" class="outline-5">
+<h5 id="org3b0dfc9"><span class="section-number-5">3.3.1.48.</span> swaylock</h5>
 <div class="outline-text-5" id="text-3-3-1-48">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
@@ -16714,641 +16794,656 @@ in
 </div>
 </div>
 <div id="outline-container-h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6" class="outline-5">
-<h5 id="h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6"><span class="section-number-5">3.3.4.2.</span> Work</h5>
+<h5 id="h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6"><span class="section-number-5">3.3.4.2.</span> Work (pizauth)</h5>
 <div class="outline-text-5" id="text-h:f0b2ea93-94c8-48d8-8d47-6fe58f58e0e6">
 <p>
 The rest of the settings is at <a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">work</a>. Here, I am setting up the different firefox profiles that I need for the SSO sites that I need to access at work as well as a few ssh shorthands.
 </p>
 
+<p>
+When setting up a new machine:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">- setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
+  - `pizauth auth &lt;account name, e.g. 'work'&gt;`
+  - `pizauth dump &gt; ~/.pizauth.state`
+</pre>
+</div>
+
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
-    let
-      inherit (config.swarselsystems) homeDir;
-    in
+let
+  inherit (config.swarselsystems) homeDir;
+  inherit (nixosConfig.repo.secrets.local.mail) allMailAddresses;
+  inherit (nixosConfig.repo.secrets.local.work) mailAddress;
+in
+{
+  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
+  config = lib.mkIf config.swarselmodules.optional.work
     {
-      options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
-      config = lib.mkIf config.swarselmodules.optional.work
+      home.packages = with pkgs; [
+        stable.teams-for-linux
+        shellcheck
+        dig
+        docker
+        postman
+        # rclone
+        libguestfs-with-appliance
+        stable.prometheus.cli
+        tigervnc
+        # openstackclient
+
+        vscode
+      ];
+
+      systemd.user.sessionVariables = {
+        DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+      } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
+        SWARSEL_MAIL_ALL = lib.mkForce allMailAddresses;
+        SWARSEL_MAIL_WORK = lib.mkForce mailAddress;
+      };
+
+      accounts.email.accounts.work =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) mailName;
+        in
         {
-          home.packages = with pkgs; [
-            stable.teams-for-linux
-            shellcheck
-            dig
-            docker
-            postman
-            # rclone
-            libguestfs-with-appliance
-            stable.prometheus.cli
-            tigervnc
-            # openstackclient
+          primary = false;
+          address = mailAddress;
+          userName = mailAddress;
+          realName = mailName;
+          passwordCommand = "pizauth show work";
+          imap = {
+            host = "outlook.office365.com";
+            port = 993;
+            tls.enable = true; # SSL/TLS
+          };
+          smtp = {
+            host = "outlook.office365.com";
+            port = 587;
+            tls = {
+              enable = true; # SSL/TLS
+              useStartTls = true;
+            };
+          };
+          thunderbird = {
+            enable = true;
+            profiles = [ "default" ];
+            settings = id: {
+              "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
+              "mail.server.server_${id}.authMethod" = 10; # oauth
+              # "toolkit.telemetry.enabled" = false;
+              # "toolkit.telemetry.rejected" = true;
+              # "toolkit.telemetry.prompted" = 2;
+            };
+          };
+          msmtp = {
+            enable = true;
+            extraConfig = {
+              auth = "xoauth2";
+              host = "outlook.office365.com";
+              protocol = "smtp";
+              port = "587";
+              tls = "on";
+              tls_starttls = "on";
+              from = "${mailAddress}";
+              user = "${mailAddress}";
+              passwordeval = "pizauth show work";
+            };
+          };
+          mu.enable = true;
+          mbsync = {
+            enable = true;
+            expunge = "both";
+            patterns = [ "INBOX" ];
+            extraConfig = {
+              account = {
+                AuthMechs = "XOAUTH2";
+              };
+            };
+          };
+        };
 
-            vscode
+      # wayland.windowManager.sway.config = {
+      #   output = {
+      #     "Applied Creative Technology Transmitter QUATTRO201811" = {
+      #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
+      #     };
+      #     "Hewlett Packard HP Z24i CN44250RDT" = {
+      #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
+      #     };
+      #     "HP Inc. HP 732pk CNC4080YL5" = {
+      #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
+      #     };
+      #   };
+      # };
+
+      stylix = {
+        targets.firefox.profileNames =
+          let
+            inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+          in
+          [
+            "${user1}"
+            "${user2}"
+            "${user3}"
+            "work"
           ];
+      };
 
-
-          systemd.user.sessionVariables = {
-            DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
+      programs =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
+        in
+        {
+          openstackclient = {
+            enable = true;
+            inherit clouds;
           };
+          awscli = {
+            enable = true;
+            package = pkgs.stable24_05.awscli2;
+            # settings = {
+            #   "default" = { };
+            #   "profile s3-imagebuilder-prod" = { };
+            # };
+            # credentials = {
+            #   "s3-imagebuilder-prod" = {
+            #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
+            #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
+            #   };
+            # };
+          };
+          git.userEmail = lib.mkForce gitMail;
 
-          accounts.email.accounts.work =
-            let
-              inherit (nixosConfig.repo.secrets.local.work) mailAddress mailName;
-            in
-            {
-              primary = false;
-              address = mailAddress;
-              userName = mailAddress;
-              realName = mailName;
-              passwordCommand = "pizauth show work";
-              imap = {
-                host = "outlook.office365.com";
-                port = 993;
-                tls.enable = true; # SSL/TLS
-              };
-              smtp = {
-                host = "outlook.office365.com";
-                port = 587;
-                tls = {
-                  enable = true; # SSL/TLS
-                  useStartTls = true;
-                };
-              };
-              thunderbird = {
-                enable = true;
-                profiles = [ "default" ];
-                settings = id: {
-                  "mail.smtpserver.smtp_${id}.authMethod" = 10; # oauth
-                  "mail.server.server_${id}.authMethod" = 10; # oauth
-                  # "toolkit.telemetry.enabled" = false;
-                  # "toolkit.telemetry.rejected" = true;
-                  # "toolkit.telemetry.prompted" = 2;
-                };
-              };
-              msmtp = {
-                enable = true;
-                extraConfig = {
-                  auth = "xoauth2";
-                  host = "outlook.office365.com";
-                  protocol = "smtp";
-                  port = "587";
-                  tls = "on";
-                  tls_starttls = "on";
-                  from = "${mailAddress}";
-                  user = "${mailAddress}";
-                  passwordeval = "pizauth show work";
-                };
-              };
-              mu.enable = true;
-              mbsync = {
-                enable = true;
-                expunge = "both";
-                patterns = [ "INBOX" ];
-                extraConfig = {
-                  account = {
-                    AuthMechs = "XOAUTH2";
-                  };
-                };
-              };
+          zsh = {
+            shellAliases = {
+              dssh = "ssh -l ${user1Long}";
+              cssh = "ssh -l ${user2Long}";
+              wssh = "ssh -l ${user3Long}";
+            };
+            cdpath = [
+              "~/Documents/Work"
+            ];
+            dirHashes = {
+              d = "$HOME/.dotfiles";
+              w = "$HOME/Documents/Work";
+              s = "$HOME/.dotfiles/secrets";
+              pr = "$HOME/Documents/Private";
+              ac = path1;
             };
 
-          # wayland.windowManager.sway.config = {
-          #   output = {
-          #     "Applied Creative Technology Transmitter QUATTRO201811" = {
-          #       bg = "${self}/files/wallpaper/navidrome.png ${config.stylix.imageScalingMode}";
-          #     };
-          #     "Hewlett Packard HP Z24i CN44250RDT" = {
-          #       bg = "${self}/files/wallpaper/op6wp.png ${config.stylix.imageScalingMode}";
-          #     };
-          #     "HP Inc. HP 732pk CNC4080YL5" = {
-          #       bg = "${self}/files/wallpaper/botanicswp.png ${config.stylix.imageScalingMode}";
-          #     };
-          #   };
-          # };
+            sessionVariables = {
+              VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
+              VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
+              GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
+              GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
+              GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
+              GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
+              GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
+              GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
+              GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
+              GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
+            };
+          };
 
-          stylix = {
-            targets.firefox.profileNames =
+          ssh = {
+            matchBlocks = {
+              "${loc1}" = {
+                hostname = "${loc1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.stg" = {
+                hostname = "${loc1}.${lifecycle1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.staging" = {
+                hostname = "${loc1}.${lifecycle1}.${domain2}";
+                user = user4;
+              };
+              "${loc1}.dev" = {
+                hostname = "${loc1}.${lifecycle2}.${domain2}";
+                user = user4;
+              };
+              "${loc2}" = {
+                hostname = "${loc2}.${domain1}";
+                user = user1Long;
+              };
+              "${loc2}.stg" = {
+                hostname = "${loc2}.${lifecycle1}.${domain2}";
+                user = user1Long;
+              };
+              "${loc2}.staging" = {
+                hostname = "${loc2}.${lifecycle1}.${domain2}";
+                user = user1Long;
+              };
+              "*.${domain1}" = {
+                user = user1Long;
+              };
+            };
+          };
+
+          firefox = {
+            profiles =
               let
-                inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+                isDefault = false;
               in
-              [
-                "${user1}"
-                "${user2}"
-                "${user3}"
-                "work"
-              ];
+              {
+                "${user1}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 1;
+                    settings = {
+                      "browser.startup.homepage" = "${site1}|${site2}";
+                    };
+                  }
+                  vars.firefox;
+                "${user2}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 2;
+                    settings = {
+                      "browser.startup.homepage" = "${site3}";
+                    };
+                  }
+                  vars.firefox;
+                "${user3}" = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 3;
+                  }
+                  vars.firefox;
+                work = lib.recursiveUpdate
+                  {
+                    inherit isDefault;
+                    id = 4;
+                    settings = {
+                      "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
+                    };
+                  }
+                  vars.firefox;
+              };
           };
 
-          programs =
-            let
-              inherit (nixosConfig.repo.secrets.local.work) user1 user1Long user2 user2Long user3 user3Long user4 path1 loc1 loc2 site1 site2 site3 site4 site5 site6 site7 lifecycle1 lifecycle2 domain1 domain2 gitMail clouds;
-            in
+          chromium = {
+            enable = true;
+            package = pkgs.chromium;
+
+            extensions = [
+              # 1password
+              "gejiddohjgogedgjnonbofjigllpkmbf"
+              # dark reader
+              "eimadpbcbfnmbkopoojfekhnkhdbieeh"
+              # ublock origin
+              "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+              # i still dont care about cookies
+              "edibdbjcniadpccecjdfdjjppcpchdlm"
+              # browserpass
+              "naepdomgkenhinolocfifgehidddafch"
+            ];
+          };
+        };
+
+      services = {
+        kanshi = {
+          settings = [
             {
-              openstackclient = {
-                enable = true;
-                inherit clouds;
-};
-              awscli = {
-                enable = true;
-                package = pkgs.stable24_05.awscli2;
-                # settings = {
-                #   "default" = { };
-                #   "profile s3-imagebuilder-prod" = { };
-                # };
-                # credentials = {
-                #   "s3-imagebuilder-prod" = {
-                #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
-                #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
-                #   };
-                # };
+              # seminary room
+              output = {
+                criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                scale = 1.0;
+                mode = "1280x720";
               };
-              git.userEmail = lib.mkForce gitMail;
-
-              zsh = {
-                shellAliases = {
-                  dssh = "ssh -l ${user1Long}";
-                  cssh = "ssh -l ${user2Long}";
-                  wssh = "ssh -l ${user3Long}";
-                };
-                cdpath = [
-                  "~/Documents/Work"
+            }
+            {
+              # work main screen
+              output = {
+                criteria = "HP Inc. HP 732pk CNC4080YL5";
+                scale = 1.0;
+                mode = "3840x2160";
+              };
+            }
+            {
+              # work side screen
+              output = {
+                criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                scale = 1.0;
+                mode = "1920x1200";
+                transform = "270";
+              };
+            }
+            {
+              profile = {
+                name = "lidopen";
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
-                dirHashes = {
-                  d = "$HOME/.dotfiles";
-                  w = "$HOME/Documents/Work";
-                  s = "$HOME/.dotfiles/secrets";
-                  pr = "$HOME/Documents/Private";
-                  ac = path1;
-                };
-
-                sessionVariables = {
-                  VSPHERE_USER = "$(cat ${nixosConfig.sops.secrets.vcuser.path})";
-                  VSPHERE_PW = "$(cat ${nixosConfig.sops.secrets.vcpw.path})";
-                  GOVC_USERNAME = "$(cat ${nixosConfig.sops.secrets.govcuser.path})";
-                  GOVC_PASSWORD = "$(cat ${nixosConfig.sops.secrets.govcpw.path})";
-                  GOVC_URL = "$(cat ${nixosConfig.sops.secrets.govcurl.path})";
-                  GOVC_DATACENTER = "$(cat ${nixosConfig.sops.secrets.govcdc.path})";
-                  GOVC_DATASTORE = "$(cat ${nixosConfig.sops.secrets.govcds.path})";
-                  GOVC_HOST = "$(cat ${nixosConfig.sops.secrets.govchost.path})";
-                  GOVC_RESOURCE_POOL = "$(cat ${nixosConfig.sops.secrets.govcpool.path})";
-                  GOVC_NETWORK = "$(cat ${nixosConfig.sops.secrets.govcnetwork.path})";
-                };
-              };
-
-              ssh = {
-                matchBlocks = {
-                  "${loc1}" = {
-                    hostname = "${loc1}.${domain2}";
-                    user = user4;
-                  };
-                  "${loc1}.stg" = {
-                    hostname = "${loc1}.${lifecycle1}.${domain2}";
-                    user = user4;
-                  };
-                  "${loc1}.staging" = {
-                    hostname = "${loc1}.${lifecycle1}.${domain2}";
-                    user = user4;
-                  };
-                  "${loc1}.dev" = {
-                    hostname = "${loc1}.${lifecycle2}.${domain2}";
-                    user = user4;
-                  };
-                  "${loc2}" = {
-                    hostname = "${loc2}.${domain1}";
-                    user = user1Long;
-                  };
-                  "${loc2}.stg" = {
-                    hostname = "${loc2}.${lifecycle1}.${domain2}";
-                    user = user1Long;
-                  };
-                  "${loc2}.staging" = {
-                    hostname = "${loc2}.${lifecycle1}.${domain2}";
-                    user = user1Long;
-                  };
-                  "*.${domain1}" = {
-                    user = user1Long;
-                  };
-                };
-              };
-
-              firefox = {
-                profiles =
-                  let
-                    isDefault = false;
-                  in
+                outputs = [
                   {
-                    "${user1}" = lib.recursiveUpdate
-                      {
-                        inherit isDefault;
-                        id = 1;
-                        settings = {
-                          "browser.startup.homepage" = "${site1}|${site2}";
-                        };
-                      }
-                      vars.firefox;
-                    "${user2}" = lib.recursiveUpdate
-                      {
-                        inherit isDefault;
-                        id = 2;
-                        settings = {
-                          "browser.startup.homepage" = "${site3}";
-                        };
-                      }
-                      vars.firefox;
-                    "${user3}" = lib.recursiveUpdate
-                      {
-                        inherit isDefault;
-                        id = 3;
-                      }
-                      vars.firefox;
-                    work = lib.recursiveUpdate
-                      {
-                        inherit isDefault;
-                        id = 4;
-                        settings = {
-                          "browser.startup.homepage" = "${site4}|${site5}|${site6}|${site7}";
-                        };
-                      }
-                      vars.firefox;
-                  };
-              };
-
-              chromium = {
-                enable = true;
-                package = pkgs.chromium;
-
-                extensions = [
-                  # 1password
-                  "gejiddohjgogedgjnonbofjigllpkmbf"
-                  # dark reader
-                  "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-                  # ublock origin
-                  "cjpalhdlnbpafiamejdnhcphjbkeiagm"
-                  # i still dont care about cookies
-                  "edibdbjcniadpccecjdfdjjppcpchdlm"
-                  # browserpass
-                  "naepdomgkenhinolocfifgehidddafch"
+                    criteria = config.swarselsystems.sharescreen;
+                    status = "enable";
+                    scale = 1.5;
+                    position = "1462,0";
+                  }
+                  {
+                    criteria = "HP Inc. HP 732pk CNC4080YL5";
+                    scale = 1.4;
+                    mode = "3840x2160";
+                    position = "-1280,0";
+                  }
+                  {
+                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                    scale = 1.0;
+                    mode = "1920x1200";
+                    transform = "90";
+                    position = "-2480,0";
+                  }
                 ];
               };
-            };
-
-          services = {
-            kanshi = {
-              settings = [
+            }
+            {
+              profile =
+                let
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
+                in
                 {
-                  # seminary room
-                  output = {
-                    criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                    scale = 1.0;
-                    mode = "1280x720";
-                  };
-                }
-                {
-                  # work main screen
-                  output = {
+                  name = "lidopen";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                    "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "enable";
+                      scale = 1.7;
+                      position = "2560,0";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
+                };
+            }
+            {
+              profile = {
+                name = "lidclosed";
+                exec = [
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                ];
+                outputs = [
+                  {
+                    criteria = config.swarselsystems.sharescreen;
+                    status = "disable";
+                  }
+                  {
                     criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.0;
+                    scale = 1.4;
                     mode = "3840x2160";
-                  };
-                }
-                {
-                  # work side screen
-                  output = {
+                    position = "-1280,0";
+                  }
+                  {
                     criteria = "Hewlett Packard HP Z24i CN44250RDT";
                     scale = 1.0;
                     mode = "1920x1200";
                     transform = "270";
-                  };
-                }
-                {
-                  profile = {
-                    name = "lidopen";
-                    exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
-                    ];
-                    outputs = [
-                      {
-                        criteria = config.swarselsystems.sharescreen;
-                        status = "enable";
-                        scale = 1.5;
-                        position = "1462,0";
-                      }
-                      {
-                        criteria = "HP Inc. HP 732pk CNC4080YL5";
-                        scale = 1.4;
-                        mode = "3840x2160";
-                        position = "-1280,0";
-                      }
-                      {
-                        criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                        scale = 1.0;
-                        mode = "1920x1200";
-                        transform = "90";
-                        position = "-2480,0";
-                      }
-                    ];
-                  };
-                }
-                {
-                  profile =
-                    let
-                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                    in
-                    {
-                      name = "lidopen";
-                      exec = [
-                        "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                        "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                        "${pkgs.kanshare}/bin/kanshare ${config.swarselsystems.sharescreen} '${monitor}'"
-                      ];
-                      outputs = [
-                        {
-                          criteria = config.swarselsystems.sharescreen;
-                          status = "enable";
-                          scale = 1.7;
-                          position = "2560,0";
-                        }
-                        {
-                          criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                          scale = 1.0;
-                          mode = "1280x720";
-                          position = "10000,10000";
-                        }
-                      ];
-                    };
-                }
-                {
-                  profile = {
-                    name = "lidclosed";
-                    exec = [
-                      "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                      "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
-                    ];
-                    outputs = [
-                      {
-                        criteria = config.swarselsystems.sharescreen;
-                        status = "disable";
-                      }
-                      {
-                        criteria = "HP Inc. HP 732pk CNC4080YL5";
-                        scale = 1.4;
-                        mode = "3840x2160";
-                        position = "-1280,0";
-                      }
-                      {
-                        criteria = "Hewlett Packard HP Z24i CN44250RDT";
-                        scale = 1.0;
-                        mode = "1920x1200";
-                        transform = "270";
-                        position = "-2480,0";
-                      }
-                    ];
-                  };
-                }
-                {
-                  profile =
-                    let
-                      monitor = "Applied Creative Technology Transmitter QUATTRO201811";
-                    in
-                    {
-                      name = "lidclosed";
-                      exec = [
-                        "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
-                      ];
-                      outputs = [
-                        {
-                          criteria = config.swarselsystems.sharescreen;
-                          status = "disable";
-                        }
-                        {
-                          criteria = "Applied Creative Technology Transmitter QUATTRO201811";
-                          scale = 1.0;
-                          mode = "1280x720";
-                          position = "10000,10000";
-                        }
-                      ];
-                    };
-                }
-              ];
-            };
-          };
-
-          systemd.user.services = {
-            pizauth.Service = {
-              ExecStartPost = [
-                "${pkgs.toybox}/bin/sleep 1"
-                "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
-              ];
-            };
-
-            teams-applet = {
-              Unit = {
-                Description = "teams applet";
-                Requires = [ "tray.target" ];
-                After = [
-                  "graphical-session.target"
-                  "tray.target"
+                    position = "-2480,0";
+                  }
                 ];
-                PartOf = [ "graphical-session.target" ];
               };
-
-              Install = {
-                WantedBy = [ "graphical-session.target" ];
-              };
-
-              Service = {
-                ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
-              };
-            };
-
-            onepassword-applet = {
-              Unit = {
-                Description = "1password applet";
-                Requires = [ "tray.target" ];
-                After = [
-                  "graphical-session.target"
-                  "tray.target"
-                ];
-                PartOf = [ "graphical-session.target" ];
-              };
-
-              Install = {
-                WantedBy = [ "graphical-session.target" ];
-              };
-
-              Service = {
-                ExecStart = "${pkgs._1password-gui}/bin/1password";
-              };
-            };
-
-          };
-
-          swarselservices.pizauth = {
-            enable = true;
-            extraConfig = ''
-              auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
-              error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
-              token_event_cmd = "pizauth dump &gt; ${homeDir}/.pizauth.state";
-            '';
-            accounts = {
-              work = {
-                authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-                tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
-                clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
-                clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
-                scopes = [
-                  "https://outlook.office365.com/IMAP.AccessAsUser.All"
-                  "https://outlook.office365.com/SMTP.Send"
-                  "offline_access"
-                ];
-                loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
-              };
-            };
-
-          };
-
-          xdg =
-            let
-              inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
-            in
+            }
             {
-              mimeApps = {
-                defaultApplications = {
-                  "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
-                };
-              };
-              desktopEntries =
+              profile =
                 let
-                  terminal = false;
-                  categories = [ "Application" ];
-                  icon = "firefox";
+                  monitor = "Applied Creative Technology Transmitter QUATTRO201811";
                 in
                 {
-                  firefox_work = {
-                    name = "Firefox (work)";
-                    genericName = "Firefox work";
-                    exec = "firefox -p work";
-                    inherit terminal categories icon;
-                  };
-                  "firefox_${user1}" = {
-                    name = "Firefox (${user1})";
-                    genericName = "Firefox ${user1}";
-                    exec = "firefox -p ${user1}";
-                    inherit terminal categories icon;
-                  };
-
-                  "firefox_${user2}" = {
-                    name = "Firefox (${user2})";
-                    genericName = "Firefox ${user2}";
-                    exec = "firefox -p ${user2}";
-                    inherit terminal categories icon;
-                  };
-
-                  "firefox_${user3}" = {
-                    name = "Firefox (${user3})";
-                    genericName = "Firefox ${user3}";
-                    exec = "firefox -p ${user3}";
-                    inherit terminal categories icon;
-                  };
-
-
+                  name = "lidclosed";
+                  exec = [
+                    "${pkgs.swaybg}/bin/swaybg --output '${monitor}' --image ${self}/files/wallpaper/navidrome.png --mode ${config.stylix.imageScalingMode}"
+                  ];
+                  outputs = [
+                    {
+                      criteria = config.swarselsystems.sharescreen;
+                      status = "disable";
+                    }
+                    {
+                      criteria = "Applied Creative Technology Transmitter QUATTRO201811";
+                      scale = 1.0;
+                      mode = "1280x720";
+                      position = "10000,10000";
+                    }
+                  ];
                 };
-            };
-          swarselsystems = {
-            startup = [
-              # { command = "nextcloud --background"; }
-              # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
-              # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
-              # { command = "anki"; }
-              # { command = "obsidian"; }
-              # { command = "nm-applet"; }
-              # { command = "feishin"; }
-              # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
-              # { command = "1password"; }
-            ];
-            monitors = {
-              work_back_middle = rec {
-                name = "LG Electronics LG Ultra HD 0x000305A6";
-                mode = "2560x1440";
-                scale = "1";
-                position = "5120,0";
-                workspace = "1:一";
-                # output = "DP-10";
-                output = name;
-              };
-              work_front_left = rec {
-                name = "LG Electronics LG Ultra HD 0x0007AB45";
-                mode = "3840x2160";
-                scale = "1";
-                position = "5120,0";
-                workspace = "1:一";
-                # output = "DP-7";
-                output = name;
-              };
-              work_back_right = rec {
-                name = "HP Inc. HP Z32 CN41212T55";
-                mode = "3840x2160";
-                scale = "1";
-                position = "5120,0";
-                workspace = "1:一";
-                # output = "DP-3";
-                output = name;
-              };
-              work_middle_middle_main = rec {
-                name = "HP Inc. HP 732pk CNC4080YL5";
-                mode = "3840x2160";
-                scale = "1";
-                position = "-1280,0";
-                workspace = "11:M";
-                # output = "DP-8";
-                output = name;
-              };
-              work_middle_middle_side = rec {
-                name = "Hewlett Packard HP Z24i CN44250RDT";
-                mode = "1920x1200";
-                transform = "270";
-                scale = "1";
-                position = "-2480,0";
-                workspace = "12:S";
-                # output = "DP-9";
-                output = name;
-              };
-              work_seminary = rec {
-                name = "Applied Creative Technology Transmitter QUATTRO201811";
-                mode = "1280x720";
-                scale = "1";
-                position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
-                workspace = "14:T";
-                # output = "DP-4";
-                output = name;
-              };
-            };
-            inputs = {
-              "1133:45081:MX_Master_2S_Keyboard" = {
-                xkb_layout = "us";
-                xkb_variant = "altgr-intl";
-              };
-              # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
-              #   dwt = "enabled";
-              #   tap = "enabled";
-              #   natural_scroll = "enabled";
-              #   middle_emulation = "enabled";
-              #   drag_lock = "disabled";
-              # };
-              "1133:50504:Logitech_USB_Receiver" = {
-                xkb_layout = "us";
-                xkb_variant = "altgr-intl";
-              };
-              "1133:45944:MX_KEYS_S" = {
-                xkb_layout = "us";
-                xkb_variant = "altgr-intl";
-              };
-            };
+            }
+          ];
+        };
+      };
 
+      systemd.user.services = {
+        pizauth.Service = {
+          ExecStartPost = [
+            "${pkgs.toybox}/bin/sleep 1"
+            "//bin/sh -c '${lib.getExe pkgs.pizauth} restore &lt; ${homeDir}/.pizauth.state'"
+          ];
+        };
+
+        teams-applet = {
+          Unit = {
+            Description = "teams applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs.stable.teams-for-linux}/bin/teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true";
           };
         };
 
-    }
+        onepassword-applet = {
+          Unit = {
+            Description = "1password applet";
+            Requires = [ "tray.target" ];
+            After = [
+              "graphical-session.target"
+              "tray.target"
+            ];
+            PartOf = [ "graphical-session.target" ];
+          };
+
+          Install = {
+            WantedBy = [ "graphical-session.target" ];
+          };
+
+          Service = {
+            ExecStart = "${pkgs._1password-gui}/bin/1password";
+          };
+        };
+
+      };
+
+      swarselservices.pizauth = {
+        enable = true;
+        extraConfig = ''
+          auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
+          error_notify_cmd = "notify-send -t 90000 \"pizauth error for $PIZAUTH_ACCOUNT\" \"$PIZAUTH_MSG\"";
+          token_event_cmd = "pizauth dump &gt; ${homeDir}/.pizauth.state";
+        '';
+        accounts = {
+          work = {
+            authUri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+            tokenUri = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+            clientId = "08162f7c-0fd2-4200-a84a-f25a4db0b584";
+            clientSecret = "TxRBilcHdC6WGBee]fs?QR:SJ8nI[g82";
+            scopes = [
+              "https://outlook.office365.com/IMAP.AccessAsUser.All"
+              "https://outlook.office365.com/SMTP.Send"
+              "offline_access"
+            ];
+            loginHint = "${nixosConfig.repo.secrets.local.work.mailAddress}";
+          };
+        };
+
+      };
+
+      xdg =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user2 user3;
+        in
+        {
+          mimeApps = {
+            defaultApplications = {
+              "x-scheme-handler/msteams" = [ "teams-for-linux.desktop" ];
+            };
+          };
+          desktopEntries =
+            let
+              terminal = false;
+              categories = [ "Application" ];
+              icon = "firefox";
+            in
+            {
+              firefox_work = {
+                name = "Firefox (work)";
+                genericName = "Firefox work";
+                exec = "firefox -p work";
+                inherit terminal categories icon;
+              };
+              "firefox_${user1}" = {
+                name = "Firefox (${user1})";
+                genericName = "Firefox ${user1}";
+                exec = "firefox -p ${user1}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user2}" = {
+                name = "Firefox (${user2})";
+                genericName = "Firefox ${user2}";
+                exec = "firefox -p ${user2}";
+                inherit terminal categories icon;
+              };
+
+              "firefox_${user3}" = {
+                name = "Firefox (${user3})";
+                genericName = "Firefox ${user3}";
+                exec = "firefox -p ${user3}";
+                inherit terminal categories icon;
+              };
+
+
+            };
+        };
+      swarselsystems = {
+        startup = [
+          # { command = "nextcloud --background"; }
+          # { command = "vesktop --start-minimized --enable-speech-dispatcher --ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime"; }
+          # { command = "element-desktop --hidden  --enable-features=UseOzonePlatform --ozone-platform=wayland --disable-gpu-driver-bug-workarounds"; }
+          # { command = "anki"; }
+          # { command = "obsidian"; }
+          # { command = "nm-applet"; }
+          # { command = "feishin"; }
+          # { command = "teams-for-linux --disableGpu=true --minimized=true --trayIconEnabled=true"; }
+          # { command = "1password"; }
+        ];
+        monitors = {
+          work_back_middle = rec {
+            name = "LG Electronics LG Ultra HD 0x000305A6";
+            mode = "2560x1440";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            # output = "DP-10";
+            output = name;
+          };
+          work_front_left = rec {
+            name = "LG Electronics LG Ultra HD 0x0007AB45";
+            mode = "3840x2160";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            # output = "DP-7";
+            output = name;
+          };
+          work_back_right = rec {
+            name = "HP Inc. HP Z32 CN41212T55";
+            mode = "3840x2160";
+            scale = "1";
+            position = "5120,0";
+            workspace = "1:一";
+            # output = "DP-3";
+            output = name;
+          };
+          work_middle_middle_main = rec {
+            name = "HP Inc. HP 732pk CNC4080YL5";
+            mode = "3840x2160";
+            scale = "1";
+            position = "-1280,0";
+            workspace = "11:M";
+            # output = "DP-8";
+            output = name;
+          };
+          work_middle_middle_side = rec {
+            name = "Hewlett Packard HP Z24i CN44250RDT";
+            mode = "1920x1200";
+            transform = "270";
+            scale = "1";
+            position = "-2480,0";
+            workspace = "12:S";
+            # output = "DP-9";
+            output = name;
+          };
+          work_seminary = rec {
+            name = "Applied Creative Technology Transmitter QUATTRO201811";
+            mode = "1280x720";
+            scale = "1";
+            position = "10000,10000"; # i.e. this screen is inaccessible by moving the mouse
+            workspace = "14:T";
+            # output = "DP-4";
+            output = name;
+          };
+        };
+        inputs = {
+          "1133:45081:MX_Master_2S_Keyboard" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          # "2362:628:PIXA3854:00_093A:0274_Touchpad" = {
+          #   dwt = "enabled";
+          #   tap = "enabled";
+          #   natural_scroll = "enabled";
+          #   middle_emulation = "enabled";
+          #   drag_lock = "disabled";
+          # };
+          "1133:50504:Logitech_USB_Receiver" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+          "1133:45944:MX_KEYS_S" = {
+            xkb_layout = "us";
+            xkb_variant = "altgr-intl";
+          };
+        };
+
+      };
+    };
+
+}
 
 </pre>
 </div>
@@ -19713,8 +19808,8 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org6a36b50" class="outline-4">
-<h4 id="org6a36b50"><span class="section-number-4">3.5.34.</span> endme</h4>
+<div id="outline-container-orgc62e7de" class="outline-4">
+<h4 id="orgc62e7de"><span class="section-number-4">3.5.34.</span> endme</h4>
 <div class="outline-text-4" id="text-3-5-34">
 <p>
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
@@ -19735,8 +19830,8 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orgb3faf9e" class="outline-4">
-<h4 id="orgb3faf9e"><span class="section-number-4">3.5.35.</span> git-replace</h4>
+<div id="outline-container-orge3590e8" class="outline-4">
+<h4 id="orge3590e8"><span class="section-number-4">3.5.35.</span> git-replace</h4>
 <div class="outline-text-4" id="text-3-5-35">
 <p>
 This script allows for quick git replace of a string.
@@ -19898,8 +19993,8 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgefd2161" class="outline-5">
-<h5 id="orgefd2161"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
+<div id="outline-container-org30fc974" class="outline-5">
+<h5 id="org30fc974"><span class="section-number-5">3.6.1.3.</span> Optionals</h5>
 <div class="outline-text-5" id="text-3-6-1-3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
@@ -23811,6 +23906,40 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </div>
 </div>
 </div>
+<div id="outline-container-org234e39c" class="outline-5">
+<h5 id="org234e39c"><span class="section-number-5">4.4.39.3.</span> Work: Signing Mails (S/MIME, smime)</h5>
+<div class="outline-text-5" id="text-4-4-39-3">
+<p>
+Used to automatically sign messages sent from my work email address using S/MIME certificate.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(let ((work (getenv "SWARSEL_MAIL_WORK")))
+  (when (and work (not (string-empty-p work)))
+
+    (setq swarsel-smime-cert-path "~/.Certificates/$SWARSEL_MAIL_WORK.pem")
+    (setq swarsel-smime-cert-path (substitute-env-vars swarsel-smime-cert-path))
+    (setq mml-secure-prefer-scheme 'smime)
+    (setq mml-secure-smime-sign-with-sender t)
+    (add-hook 'mu4e-compose-mode-hook
+              (lambda ()
+                (when (and (boundp 'user-mail-address)
+                           (stringp user-mail-address)
+                           (string-equal user-mail-address (getenv "SWARSEL_MAIL_WORK")))
+                  (mml-secure-message-sign-smime))))
+
+    (setq smime-keys
+          `((,(getenv "SWARSEL_MAIL_WORK")
+             ,swarsel-smime-cert-path
+             ("~/Certificates/harica-root.pem"
+              "~/Certificates/harica-intermediate.pem"
+              ))))
+    ))
+
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:c760f04e-622f-4b3e-8916-53ca8cce6edc" class="outline-4">
 <h4 id="h:c760f04e-622f-4b3e-8916-53ca8cce6edc"><span class="section-number-4">4.4.40.</span> Calendar</h4>
@@ -24062,6 +24191,20 @@ Also see `prot-window-delete-popup-frame'." command)
 This sections is no longer used really. An introduction can be found in <a href="#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">Structure of this file</a> under the historical note. The little noweb-ref blocks that I still use are found in <a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">Hosts</a> and <a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">Services</a>.
 </p>
 </div>
+<div id="outline-container-orge8ed16b" class="outline-3">
+<h3 id="orge8ed16b"><span class="section-number-3">5.1.</span> General steps when setting up a new machine</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+These general steps are needed when setting up a new machine and do not fit into another block well:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-markdown">- setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
+  - `systemd-cryptenroll --fido2-device=auto /dev/&lt;device, e.g. 'nvme0n1p2'&gt;`
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-h:8fc9f66a-7412-4091-8dee-a06f897baf67" class="outline-2">
 <h2 id="h:8fc9f66a-7412-4091-8dee-a06f897baf67"><span class="section-number-2">6.</span> Appendix B: Supplementary Files</h2>
@@ -24303,7 +24446,7 @@ set allowautofocus false
 jsb browser.webRequest.onHeadersReceived.addListener(tri.request.clobberCSP,{urls:["&lt;all_urls&gt;"],types:["main_frame"]},["blocking","responseHeaders"])
 
 " default is 300ms
-set hintdelay 100
+set hintdelay 500
 
 " Some pages like github break on the tridactyl quick search. have this as a fallback
 unbind &lt;C-f&gt;
@@ -26993,7 +27136,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-10-21 Di 13:09</p>
+<p class="date">Created: 2025-10-21 Di 21:37</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
