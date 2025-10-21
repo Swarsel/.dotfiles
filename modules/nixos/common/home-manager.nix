@@ -6,6 +6,7 @@
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;
+      backupFileExtension = "hm-bak";
       users.${config.swarselsystems.mainUser}.imports = [
         inputs.nix-index-database.homeModules.nix-index
         inputs.sops-nix.homeManagerModules.sops

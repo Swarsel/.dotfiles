@@ -55,48 +55,51 @@
 
     };
 
-    xdg.mimeApps = {
-      enable = true;
-      defaultApplications = {
-        "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
-        "application/metalink+xml" = [ "emacsclient.desktop" ];
-        "application/msword" = [ "writer.desktop" ];
-        "application/pdf" = [ "org.gnome.Evince.desktop" ];
-        "application/sql" = [ "emacsclient.desktop" ];
-        "application/vnd.ms-excel" = [ "calc.desktop" ];
-        "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
-        "application/x-extension-htm" = [ "firefox.desktop" ];
-        "application/x-extension-html" = [ "firefox.desktop" ];
-        "application/x-extension-shtml" = [ "firefox.desktop" ];
-        "application/x-extension-xht" = [ "firefox.desktop" ];
-        "application/x-extension-xhtml" = [ "firefox.desktop" ];
-        "application/xhtml+xml" = [ "firefox.desktop" ];
-        "audio/flac" = [ "mpv.desktop" ];
-        "audio/mp3" = [ "mpv.desktop" ];
-        "audio/ogg" = [ "mpv.desktop" ];
-        "audio/wav" = [ "mpv.desktop" ];
-        "image/gif" = [ "imv.desktop" ];
-        "image/jpeg" = [ "imv.desktop" ];
-        "image/png" = [ "imv.desktop" ];
-        "image/svg" = [ "imv.desktop" ];
-        "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
-        "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
-        "image/webp" = [ "firefox.desktop" ];
-        "text/csv" = [ "emacsclient.desktop" ];
-        "text/html" = [ "firefox.desktop" ];
-        "text/plain" = [ "emacsclient.desktop" ];
-        "video/3gp" = [ "umpv.desktop" ];
-        "video/flv" = [ "umpv.desktop" ];
-        "video/mkv" = [ "umpv.desktop" ];
-        "video/mp4" = [ "umpv.desktop" ];
-        "x-scheme-handler/chrome" = [ "firefox.desktop" ];
-        "x-scheme-handler/http" = [ "firefox.desktop" ];
-        "x-scheme-handler/https" = [ "firefox.desktop" ];
-      };
-      associations = {
-        added = {
-          "application/x-zerosize" = [ "emacsclient.desktop" ];
+    xdg = {
+      configFile."mimeapps.list".force = true;
+      mimeApps = {
+        enable = true;
+        defaultApplications = {
           "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
+          "application/metalink+xml" = [ "emacsclient.desktop" ];
+          "application/msword" = [ "writer.desktop" ];
+          "application/pdf" = [ "org.gnome.Evince.desktop" ];
+          "application/sql" = [ "emacsclient.desktop" ];
+          "application/vnd.ms-excel" = [ "calc.desktop" ];
+          "application/vnd.ms-powerpoint" = [ "impress.desktop" ];
+          "application/x-extension-htm" = [ "firefox.desktop" ];
+          "application/x-extension-html" = [ "firefox.desktop" ];
+          "application/x-extension-shtml" = [ "firefox.desktop" ];
+          "application/x-extension-xht" = [ "firefox.desktop" ];
+          "application/x-extension-xhtml" = [ "firefox.desktop" ];
+          "application/xhtml+xml" = [ "firefox.desktop" ];
+          "audio/flac" = [ "mpv.desktop" ];
+          "audio/mp3" = [ "mpv.desktop" ];
+          "audio/ogg" = [ "mpv.desktop" ];
+          "audio/wav" = [ "mpv.desktop" ];
+          "image/gif" = [ "imv.desktop" ];
+          "image/jpeg" = [ "imv.desktop" ];
+          "image/png" = [ "imv.desktop" ];
+          "image/svg" = [ "imv.desktop" ];
+          "image/vnd.adobe.photoshop" = [ "gimp.desktop" ];
+          "image/vnd.dxf" = [ "org.inkscape.Inkscape.desktop" ];
+          "image/webp" = [ "firefox.desktop" ];
+          "text/csv" = [ "emacsclient.desktop" ];
+          "text/html" = [ "firefox.desktop" ];
+          "text/plain" = [ "emacsclient.desktop" ];
+          "video/3gp" = [ "umpv.desktop" ];
+          "video/flv" = [ "umpv.desktop" ];
+          "video/mkv" = [ "umpv.desktop" ];
+          "video/mp4" = [ "umpv.desktop" ];
+          "x-scheme-handler/chrome" = [ "firefox.desktop" ];
+          "x-scheme-handler/http" = [ "firefox.desktop" ];
+          "x-scheme-handler/https" = [ "firefox.desktop" ];
+        };
+        associations = {
+          added = {
+            "application/x-zerosize" = [ "emacsclient.desktop" ];
+            "application/epub+zip" = [ "calibre-ebook-viewer.desktop" ];
+          };
         };
       };
     };
