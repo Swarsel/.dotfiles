@@ -27,6 +27,19 @@ in
             vimMode = false;
             newFileLocation = "current";
           };
+          hotkeys = {
+            "graph:open" = [ ];
+            "omnisearch:show-modal" = [
+              {
+                modifiers = [
+                  "Mod"
+                ];
+                key = "S";
+              }
+            ];
+            "editor:save-file" = [ ];
+            "editor:delete-paragraph" = [ ];
+          };
           corePlugins = [
             "backlink"
             "bookmarks"
