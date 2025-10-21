@@ -7,8 +7,11 @@
       pam.services = lib.mkIf (!minimal) {
         login.u2fAuth = true;
         sudo.u2fAuth = true;
-        swaylock.u2fAuth = true;
-        swaylock.fprintAuth = false;
+        sshd.u2fAuth = false;
+        swaylock = {
+          u2fAuth = true;
+          fprintAuth = false;
+        };
       };
       polkit.enable = lib.mkIf (!minimal) true;
 
