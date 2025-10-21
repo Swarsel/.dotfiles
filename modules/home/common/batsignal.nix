@@ -9,11 +9,11 @@ in
       enable = true;
       extraArgs = [
         "-W"
-        " Consider charging the battery"
+        "  Consider charging the battery"
         "-C"
-        " Battery is low; plug in charger now"
+        "  Battery is low; plug in charger now"
         "-D"
-        " Device will lose power in a few seconds"
+        "  Device will lose power in a few seconds"
         "-c"
         "10"
         "-d"

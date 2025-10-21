@@ -8,7 +8,7 @@
         border-radius = 15;
         border-size = 1;
         default-timeout = 5000;
-        ignore-timeout = 1;
+        ignore-timeout = false;
         icons = 1;
         layer = "overlay";
         sort = "-time";
