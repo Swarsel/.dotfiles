@@ -126,16 +126,16 @@ in
           awscli = {
             enable = true;
             package = pkgs.stable24_05.awscli2;
-            settings = {
-              "default" = { };
-              "profile s3-imagebuilder-prod" = { };
-            };
-            credentials = {
-              "s3-imagebuilder-prod" = {
-                aws_access_key_id = "5OYXY4879EJG9I91K1B6";
-                credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
-              };
-            };
+            # settings = {
+            #   "default" = { };
+            #   "profile s3-imagebuilder-prod" = { };
+            # };
+            # credentials = {
+            #   "s3-imagebuilder-prod" = {
+            #     aws_access_key_id = "5OYXY4879EJG9I91K1B6";
+            #     credential_process = "${pkgs.pass}/bin/pass show work/awscli/s3-imagebuilder-prod/secret-key";
+            #   };
+            # };
           };
           git.userEmail = lib.mkForce gitMail;
 
