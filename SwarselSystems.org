@@ -714,7 +714,8 @@ Concerning the =flake = _:= part:
   {
     flake = _:
       {
-        lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend (_: _: {
+        lib = inputs.nixpkgs.lib.extend (_: _: {
+          inherit (inputs.home-manager.lib) hm;
           inherit swarselsystems;
         });
       };
@@ -901,7 +902,10 @@ The rest of the outputs either define or help define the actual configurations:
 
         mkDarwinHost = { minimal }: configName:
           inputs.nix-darwin.lib.darwinSystem {
-            specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+            specialArgs = {
+              inherit inputs outputs lib self minimal configName;
+              inherit (config) globals nodes;
+            };
             modules = [
               # inputs.disko.nixosModules.disko
               # inputs.sops-nix.nixosModules.sops
@@ -931,8 +935,20 @@ The rest of the outputs either define or help define the actual configurations:
             systemFunc
               {
                 inherit pkgs;
-                extraSpecialArgs = { inherit inputs outputs lib self configName; };
-                modules = [ "${self}/hosts/${type}/${configName}" ];
+                extraSpecialArgs = {
+                  inherit inputs outputs lib self configName;
+                  inherit (config) globals nodes;
+                  minimal = false;
+                };
+                modules = [
+                  inputs.niri-flake.homeModules.niri
+                  inputs.nix-index-database.homeModules.nix-index
+                  inputs.sops-nix.homeManagerModules.sops
+                  inputs.spicetify-nix.homeManagerModules.default
+                  inputs.swarsel-nix.homeModules.default
+                  "${self}/hosts/${type}/${configName}"
+                  "${self}/profiles/home"
+                ];
               };
         };
 
@@ -955,7 +971,7 @@ The rest of the outputs either define or help define the actual configurations:
         });
 
         # TODO: Build these for all architectures
-        homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+        homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux // mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.aarch64-linux;
         nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
         diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
@@ -2598,6 +2614,56 @@ My phone. I use only a minimal config for remote debugging here.
 
 #+end_src
 
+**** Treehouse (DGX Spark)
+
+#+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
+  { self, inputs, outputs, ... }:
+  {
+
+    imports = [
+      inputs.stylix.homeManagerModules.stylix
+      inputs.sops-nix.homeManagerModules.sops
+      inputs.nix-index-database.homeModules.nix-index
+      "${self}/modules/home"
+      "${self}/modules/nixos/common/pii.nix"
+      "${self}/modules/nixos/common/meta.nix"
+    ];
+
+    nixpkgs = {
+      overlays = [ outputs.overlays.default ];
+      config = {
+        allowUnfree = true;
+      };
+    };
+
+    services.xcape = {
+      enable = true;
+      mapExpression = {
+        Control_L = "Escape";
+      };
+    };
+
+    # programs.zsh.initContent = "
+    #   export GPG_TTY=\"$(tty)\"
+    # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    # gpgconf --launch gpg-agent
+    #       ";
+
+    swarselsystems = {
+      isLaptop = false;
+      isNixos = false;
+      wallpaper = self + /files/wallpaper/surfacewp.png;
+    };
+
+    swarselprofiles = {
+      dgxspark = true;
+    };
+
+  }
+
+
+#+end_src
+
 *** Virtual hosts
 :PROPERTIES:
 :CUSTOM_ID: h:4dc59747-9598-4029-aa7d-92bf186d6c06
@@ -3515,57 +3581,6 @@ TODO: cleanup this mess
 
 
         #+end_src
-
-**** Treehouse (home-manager only example)
-:PROPERTIES:
-:CUSTOM_ID: h:7056b9a0-f38b-4bca-b2ba-ab34e2d73493
-:END:
-
-This is the "reference implementation" of a setup that runs without NixOS, only relying on home-manager. I try to test this every now and then and keep it supported. However, manual steps are needed to get the system to work fully, depending on what distribution you are running on.
-
-#+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
-  { self, inputs, outputs, ... }:
-  {
-
-    imports = [
-      inputs.stylix.homeManagerModules.stylix
-      inputs.sops-nix.homeManagerModules.sops
-      inputs.nix-index-database.homeModules.nix-index
-      "${self}/modules/home"
-      "${self}/modules/nixos/common/pii.nix"
-      "${self}/modules/nixos/common/meta.nix"
-    ];
-
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
-
-    services.xcape = {
-      enable = true;
-      mapExpression = {
-        Control_L = "Escape";
-      };
-    };
-
-    programs.zsh.initContent = "
-      export GPG_TTY=\"$(tty)\"
-    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-    gpgconf --launch gpg-agent
-          ";
-
-    swarselsystems = {
-      isLaptop = true;
-      isNixos = false;
-      wallpaper = self + /files/wallpaper/surfacewp.png;
-    };
-
-  }
-
-
-#+end_src
 
 **** ChaosTheatre (Demo Physical/VM)
 :PROPERTIES:
@@ -10994,7 +11009,7 @@ This section sets up all the imports that are used in the home-manager section.
   in
   {
     # config.swarselsystems = mirrorAttrs;
-    config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems);
+    config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems (nixosConfig.swarselsystems or {}));
   }
 #+end_src
 
@@ -18639,6 +18654,78 @@ This holds modules that are to be used on most hosts. These are also the most im
         waybar = lib.mkDefault true;
         yubikey = lib.mkDefault false;
         yubikeytouch = lib.mkDefault true;
+        zellij = lib.mkDefault true;
+        zsh = lib.mkDefault true;
+      };
+    };
+
+  }
+
+#+end_src
+
+**** DGX Spark
+
+#+begin_src nix-ts :tangle profiles/home/dgxspark/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselprofiles.dgxspark = lib.mkEnableOption "is this a dgx spark host";
+    config = lib.mkIf config.swarselprofiles.dgxspark {
+      swarselmodules = {
+        anki = lib.mkDefault false;
+        anki-tray = lib.mkDefault false;
+        atuin = lib.mkDefault true;
+        autotiling = lib.mkDefault false;
+        batsignal = lib.mkDefault false;
+        blueman-applet = lib.mkDefault true;
+        desktop = lib.mkDefault false;
+        direnv = lib.mkDefault true;
+        element-desktop = lib.mkDefault false;
+        element-tray = lib.mkDefault false;
+        emacs = lib.mkDefault false;
+        env = lib.mkDefault false;
+        eza = lib.mkDefault true;
+        firefox = lib.mkDefault true;
+        fuzzel = lib.mkDefault true;
+        gammastep = lib.mkDefault false;
+        general = lib.mkDefault true;
+        git = lib.mkDefault true;
+        gnome-keyring = lib.mkDefault false;
+        gpgagent = lib.mkDefault true;
+        hexchat = lib.mkDefault false;
+        kanshi = lib.mkDefault false;
+        kdeconnect = lib.mkDefault false;
+        kitty = lib.mkDefault true;
+        mail = lib.mkDefault false;
+        mako = lib.mkDefault false;
+        niri = lib.mkDefault false;
+        nix-index = lib.mkDefault true;
+        nixgl = lib.mkDefault true;
+        nix-your-shell = lib.mkDefault true;
+        nm-applet = lib.mkDefault true;
+        obs-studio = lib.mkDefault false;
+        obsidian = lib.mkDefault false;
+        obsidian-tray = lib.mkDefault false;
+        ownpackages = lib.mkDefault false;
+        packages = lib.mkDefault false;
+        passwordstore = lib.mkDefault false;
+        programs = lib.mkDefault false;
+        sops = lib.mkDefault true;
+        spicetify = lib.mkDefault false;
+        spotify-player = lib.mkDefault false;
+        ssh = lib.mkDefault false;
+        starship = lib.mkDefault true;
+        stylix = lib.mkDefault true;
+        sway = lib.mkDefault false;
+        swayidle = lib.mkDefault false;
+        swaylock = lib.mkDefault false;
+        swayosd = lib.mkDefault false;
+        symlink = lib.mkDefault false;
+        tmux = lib.mkDefault true;
+        vesktop = lib.mkDefault false;
+        vesktop-tray = lib.mkDefault false;
+        waybar = lib.mkDefault false;
+        yubikey = lib.mkDefault false;
+        yubikeytouch = lib.mkDefault false;
         zellij = lib.mkDefault true;
         zsh = lib.mkDefault true;
       };

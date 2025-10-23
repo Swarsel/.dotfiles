@@ -52,7 +52,10 @@
 
       mkDarwinHost = { minimal }: configName:
         inputs.nix-darwin.lib.darwinSystem {
-          specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+          specialArgs = {
+            inherit inputs outputs lib self minimal configName;
+            inherit (config) globals nodes;
+          };
           modules = [
             # inputs.disko.nixosModules.disko
             # inputs.sops-nix.nixosModules.sops
@@ -82,8 +85,20 @@
           systemFunc
             {
               inherit pkgs;
-              extraSpecialArgs = { inherit inputs outputs lib self configName; };
-              modules = [ "${self}/hosts/${type}/${configName}" ];
+              extraSpecialArgs = {
+                inherit inputs outputs lib self configName;
+                inherit (config) globals nodes;
+                minimal = false;
+              };
+              modules = [
+                inputs.niri-flake.homeModules.niri
+                inputs.nix-index-database.homeModules.nix-index
+                inputs.sops-nix.homeManagerModules.sops
+                inputs.spicetify-nix.homeManagerModules.default
+                inputs.swarsel-nix.homeModules.default
+                "${self}/hosts/${type}/${configName}"
+                "${self}/profiles/home"
+              ];
             };
       };
 
@@ -106,7 +121,7 @@
       });
 
       # TODO: Build these for all architectures
-      homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux;
+      homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux // mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.aarch64-linux;
       nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
 
       diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";

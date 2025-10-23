@@ -7,5 +7,5 @@ let
 in
 {
   # config.swarselsystems = mirrorAttrs;
-  config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems nixosConfig.swarselsystems);
+  config.swarselsystems = lib.mkIf (nixosConfig != null) (mkDefaultCommonAttrs config.swarselsystems (nixosConfig.swarselsystems or { }));
 }

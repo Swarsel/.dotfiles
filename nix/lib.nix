@@ -53,7 +53,8 @@ in
 {
   flake = _:
     {
-      lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend (_: _: {
+      lib = inputs.nixpkgs.lib.extend (_: _: {
+        inherit (inputs.home-manager.lib) hm;
         inherit swarselsystems;
       });
     };
