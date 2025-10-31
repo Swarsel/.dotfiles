@@ -19,6 +19,9 @@ writeShellApplication {
         exit 0
     }
 
+    target_files=false
+    target_repo=false
+    target_dirs=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
         -f | --filenames)
