@@ -30,6 +30,10 @@
           hostname = "192.168.1.136";
           user = "root";
         };
+        "dgx" = {
+          hostname = "192.168.48.200";
+          user = "swarsel";
+        };
         "winters" = {
           hostname = "192.168.178.24";
           user = "root";

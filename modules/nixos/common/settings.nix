@@ -60,34 +60,49 @@ in
           sopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
         };
 
-        nix = {
-          package = pkgs.nixVersions.nix_2_28;
-          settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-              "ca-derivations"
-              "cgroups"
-              "pipe-operators"
-            ];
-            trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+        nix =
+          let
+            nix-version = "2_30";
+          in
+          {
+            package = pkgs.nixVersions."nix_${nix-version}";
+            settings = {
+              experimental-features = [
+                "nix-command"
+                "flakes"
+                "ca-derivations"
+                "cgroups"
+                "pipe-operators"
+              ];
+              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+            };
+            # extraOptions = ''
+            #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+            #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            # '' + lib.optionalString (!minimal) ''
+            #   !include ${config.sops.secrets.github-api-token.path}
+            # '';
+            # extraOptions = ''
+            #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+            #     buildInputs = [config.nix.package pkgs.boost];
+            #     patches = o.patches or [];
+            #   })}/lib/nix/plugins
+            #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            # '';
+
+            extraOptions =
+              let
+                nix-plugins = pkgs.nix-plugins.override {
+                  nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                };
+              in
+              ''
+                plugin-files = ${nix-plugins}/lib/nix/plugins
+                extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              '' + lib.optionalString (!minimal) ''
+                !include ${config.sops.secrets.github-api-token.path}
+              '';
           };
-          # extraOptions = ''
-          #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-          #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-          # '' + lib.optionalString (!minimal) ''
-          #   !include ${config.sops.secrets.github-api-token.path}
-          # '';
-          extraOptions = ''
-            plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-              buildInputs = [config.nix.package pkgs.boost];
-              patches = o.patches or [];
-            })}/lib/nix/plugins
-            extra-builtins-file = ${self + /nix/extra-builtins.nix}
-          '' + lib.optionalString (!minimal) ''
-            !include ${config.sops.secrets.github-api-token.path}
-          '';
-        };
 
         system.stateVersion = lib.mkDefault "23.05";
 

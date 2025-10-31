@@ -1,4 +1,4 @@
-{ lib, config, nixgl, ... }:
+{ lib, config, inputs, ... }:
 {
   options.swarselmodules.nixgl = lib.mkEnableOption "nixgl settings";
   options.swarselsystems = {
@@ -10,11 +10,11 @@
   };
   config = lib.mkIf config.swarselmodules.nixgl {
     nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
-      inherit (nixgl) packages;
+      inherit (inputs.nixgl) packages;
       defaultWrapper = lib.mkDefault "mesa";
       vulkan.enable = lib.mkDefault false;
-      prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
-        card = config.swarselsystem.secondaryGpuCard;
+      prime = lib.mkIf config.swarselsystems.isSecondaryGpu {
+        card = config.swarselsystems.secondaryGpuCard;
         installScript = "mesa";
       };
       offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";

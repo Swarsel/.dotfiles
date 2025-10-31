@@ -93,7 +93,7 @@
               modules = [
                 inputs.niri-flake.homeModules.niri
                 inputs.nix-index-database.homeModules.nix-index
-                inputs.sops-nix.homeManagerModules.sops
+                # inputs.sops-nix.homeManagerModules.sops
                 inputs.spicetify-nix.homeManagerModules.default
                 inputs.swarsel-nix.homeModules.default
                 "${self}/hosts/${type}/${configName}"

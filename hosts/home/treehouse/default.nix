@@ -2,8 +2,8 @@
 {
 
   imports = [
-    inputs.stylix.homeManagerModules.stylix
-    inputs.sops-nix.homeManagerModules.sops
+    inputs.stylix.homeModules.stylix
+    # inputs.sops-nix.homeManagerModules.sops
     inputs.nix-index-database.homeModules.nix-index
     "${self}/modules/home"
     "${self}/modules/nixos/common/pii.nix"

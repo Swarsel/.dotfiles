@@ -7,12 +7,13 @@
       settings = {
         # initial_session.command = "sway";
         initial_session.command = "uwsm start -- sway-uwsm.desktop";
+        # --cmd sway
         default_session.command = ''
           ${pkgs.tuigreet}/bin/tuigreet \
             --time \
             --asterisks \
             --user-menu \
-            --cmd sway
+            --cmd "uwsm start -- sway-uwsm.desktop"
         '';
       };
     };

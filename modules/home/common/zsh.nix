@@ -1,4 +1,4 @@
-{ config, pkgs, lib, minimal, globals, nixosConfig ? config, ... }:
+{ config, pkgs, lib, minimal, inputs, globals, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) flakePath;
   crocDomain = globals.services.croc.domain;
@@ -12,12 +12,7 @@ in
     };
   };
   config = lib.mkIf config.swarselmodules.zsh
-    {
-
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-        croc-password = { };
-        github-nixpkgs-review-token = { };
-      };
+    ({
 
       programs.zsh = {
         enable = true;
@@ -129,11 +124,18 @@ in
         '';
         sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
           CROC_RELAY = crocDomain;
-          CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path})";
-          GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})";
+          CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path or ""})";
+          GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
           QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
           # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
         };
       };
-    };
+    } // lib.optionalAttrs (inputs ? sops) {
+
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+        croc-password = { };
+        github-nixpkgs-review-token = { };
+      };
+
+    });
 }

@@ -1,4 +1,4 @@
-{ self, config, lib, pkgs, ... }:
+{ self, config, lib, inputs, pkgs, ... }:
 let
   inherit (config.swarselsystems) xdgDir;
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
@@ -52,7 +52,7 @@ in
       internal = true;
     };
   };
-  config = lib.mkIf config.swarselmodules.waybar {
+  config = lib.mkIf config.swarselmodules.waybar ({
 
     swarselsystems = {
       waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
@@ -60,16 +60,12 @@ in
       ] ++ modulesRight);
     };
 
-    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-      github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
-    };
-
     services.playerctld.enable = true;
 
     programs.waybar = {
       enable = true;
       systemd = {
-        enable = true;
+        enable = false;
         # target = "sway-session.target";
         inherit (config.wayland.systemd) target;
       };
@@ -324,5 +320,9 @@ in
       };
       style = builtins.readFile (self + /files/waybar/style.css);
     };
-  };
+  } // lib.optionalAttrs (inputs ? sops) {
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+      github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
+    };
+  });
 }

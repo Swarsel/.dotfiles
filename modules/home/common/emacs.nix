@@ -5,23 +5,8 @@ let
 in
 {
   options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
-  config = lib.mkIf config.swarselmodules.emacs {
+  config = lib.mkIf config.swarselmodules.emacs ({
     # needed for elfeed
-    sops = lib.mkIf (!isPublic && !isNixos) {
-      secrets = {
-        fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
-        emacs-radicale-pw = { };
-      };
-      templates = {
-        authinfo = {
-          path = "${homeDir}/.emacs.d/.authinfo";
-          content = ''
-            machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
-          '';
-        };
-      };
-    };
-
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
     programs.emacs = {
@@ -91,5 +76,23 @@ in
       socketActivation.enable = false;
       startWithUserSession = "graphical";
     };
-  };
+
+  } // lib.optionalAttrs (inputs ? sops) {
+
+    sops = lib.mkIf (!isPublic && !isNixos) {
+      secrets = {
+        fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
+        emacs-radicale-pw = { };
+      };
+      templates = {
+        authinfo = {
+          path = "${homeDir}/.emacs.d/.authinfo";
+          content = ''
+            machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+          '';
+        };
+      };
+    };
+
+  });
 }

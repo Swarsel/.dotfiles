@@ -943,7 +943,7 @@ The rest of the outputs either define or help define the actual configurations:
                 modules = [
                   inputs.niri-flake.homeModules.niri
                   inputs.nix-index-database.homeModules.nix-index
-                  inputs.sops-nix.homeManagerModules.sops
+                  # inputs.sops-nix.homeManagerModules.sops
                   inputs.spicetify-nix.homeManagerModules.default
                   inputs.swarsel-nix.homeModules.default
                   "${self}/hosts/${type}/${configName}"
@@ -1249,9 +1249,11 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
           };
         };
 
-        devshells.default = {
+        devshells.default = let
+          nix-version = "2_30";
+        in {
           packages = [
-            (builtins.trace "alarm: we pinned nix_2_28 because of https://github.com/shlevy/nix-plugins/issues/20" pkgs.nixVersions.nix_2_28) # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+            (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.nixVersions."nix_${nix-version}")
             pkgs.git
             pkgs.just
             pkgs.age
@@ -1287,12 +1289,12 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
             {
               package = pkgs.nix-output-monitor;
               help = "Nix Output Monitor (a drop-in alternative for `nix` which shows a build graph)";
-              name = "nom";
+              name = "nom \"$@\"";
             }
             {
               name = "hm";
               help = "Manage home-manager config";
-              command = "home-manager";
+              command = "home-manager \"$@\"";
             }
             {
               name = "fmt";
@@ -1317,7 +1319,7 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
             {
               name = "bld";
               help = "Build a number of configurations";
-              command = "swarel-build \"$@\"";
+              command = "swarsel-build \"$@\"";
             }
             {
               name = "c";
@@ -1328,13 +1330,17 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
 
           devshell.startup.pre-commit-install.text = "pre-commit install";
 
-          env = [
+          env = let
+            nix-plugins = pkgs.nix-plugins.override {
+              nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+            };
+          in [
             {
               # Additionally configure nix-plugins with our extra builtins file.
               # We need this for our repo secrets.
               name = "NIX_CONFIG";
               value = ''
-                plugin-files = ${pkgs.nix-plugins}/lib/nix/plugins
+                plugin-files = ${nix-plugins}/lib/nix/plugins
                 extra-builtins-file = ${self + /nix/extra-builtins.nix}
               '';
             }
@@ -2621,8 +2627,8 @@ My phone. I use only a minimal config for remote debugging here.
   {
 
     imports = [
-      inputs.stylix.homeManagerModules.stylix
-      inputs.sops-nix.homeManagerModules.sops
+      inputs.stylix.homeModules.stylix
+      # inputs.sops-nix.homeManagerModules.sops
       inputs.nix-index-database.homeModules.nix-index
       "${self}/modules/home"
       "${self}/modules/nixos/common/pii.nix"
@@ -4195,34 +4201,49 @@ A breakdown of the flags being set:
             sopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
           };
 
-          nix = {
-            package = pkgs.nixVersions.nix_2_28;
-            settings = {
-              experimental-features = [
-                "nix-command"
-                "flakes"
-                "ca-derivations"
-                "cgroups"
-                "pipe-operators"
-              ];
-              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+          nix =
+            let
+              nix-version = "2_30";
+            in
+            {
+              package = pkgs.nixVersions."nix_${nix-version}";
+              settings = {
+                experimental-features = [
+                  "nix-command"
+                  "flakes"
+                  "ca-derivations"
+                  "cgroups"
+                  "pipe-operators"
+                ];
+                trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+              };
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '' + lib.optionalString (!minimal) ''
+              #   !include ${config.sops.secrets.github-api-token.path}
+              # '';
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+              #     buildInputs = [config.nix.package pkgs.boost];
+              #     patches = o.patches or [];
+              #   })}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '';
+
+              extraOptions =
+                let
+                  nix-plugins = pkgs.nix-plugins.override {
+                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  };
+                in
+                ''
+                  plugin-files = ${nix-plugins}/lib/nix/plugins
+                  extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                '' + lib.optionalString (!minimal) ''
+                  !include ${config.sops.secrets.github-api-token.path}
+                '';
             };
-            # extraOptions = ''
-            #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-            #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-            # '' + lib.optionalString (!minimal) ''
-            #   !include ${config.sops.secrets.github-api-token.path}
-            # '';
-            extraOptions = ''
-              plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                buildInputs = [config.nix.package pkgs.boost];
-                patches = o.patches or [];
-              })}/lib/nix/plugins
-              extra-builtins-file = ${self + /nix/extra-builtins.nix}
-            '' + lib.optionalString (!minimal) ''
-              !include ${config.sops.secrets.github-api-token.path}
-            '';
-          };
 
           system.stateVersion = lib.mkDefault "23.05";
 
@@ -5767,12 +5788,13 @@ This section houses the greetd related settings. I do not really want to use a d
         settings = {
           # initial_session.command = "sway";
           initial_session.command = "uwsm start -- sway-uwsm.desktop";
+              # --cmd sway
           default_session.command = ''
             ${pkgs.tuigreet}/bin/tuigreet \
               --time \
               --asterisks \
               --user-menu \
-              --cmd sway
+              --cmd "uwsm start -- sway-uwsm.desktop"
           '';
         };
       };
@@ -11021,77 +11043,81 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { self, lib, pkgs, config, ... }:
-  let
-    inherit (config.swarselsystems) mainUser;
-  in
-  {
-    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-    config = lib.mkIf config.swarselmodules.general {
-      nix = lib.mkIf (!config.swarselsystems.isNixos) {
-        package = lib.mkForce pkgs.nixVersions.nix_2_28;
-        # extraOptions = ''
-        #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-        #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-        # '';
-        extraOptions = ''
-          plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-            buildInputs = [config.nix.package pkgs.boost];
-            patches = o.patches or [];
-          })}/lib/nix/plugins
-          extra-builtins-file = ${self + /nix/extra-builtins.nix}
-        '';
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-            "ca-derivations"
-            "cgroups"
-            "pipe-operators"
-          ];
-          trusted-users = [ "@wheel" "${mainUser}" ];
-          connect-timeout = 5;
-          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-          fallback = true;
-          min-free = 128000000;
-          max-free = 1000000000;
-          auto-optimise-store = true;
-          warn-dirty = false;
-          max-jobs = 1;
-          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+      { self, lib, pkgs, config, ... }:
+      let
+        inherit (config.swarselsystems) mainUser;
+      in
+      {
+        options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+        config = let
+          nix-version = "2_30";
+        in lib.mkIf config.swarselmodules.general {
+          nix = lib.mkIf (!config.swarselsystems.isNixos) {
+            package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
+            # extraOptions = ''
+            #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+            #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            # '';
+            extraOptions = let
+              nix-plugins = pkgs.nix-plugins.override {
+                nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+              };
+            in
+              ''
+              plugin-files = ${nix-plugins}/lib/nix/plugins
+              extra-builtins-file = ${self + /nix/extra-builtins.nix}
+            '';
+            settings = {
+              experimental-features = [
+                "nix-command"
+                "flakes"
+                "ca-derivations"
+                "cgroups"
+                "pipe-operators"
+              ];
+              trusted-users = [ "@wheel" "${mainUser}" ];
+              connect-timeout = 5;
+              bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+              bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+              fallback = true;
+              min-free = 128000000;
+              max-free = 1000000000;
+              auto-optimise-store = true;
+              warn-dirty = false;
+              max-jobs = 1;
+              use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+            };
+          };
+
+          nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+
+          programs = {
+            home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+            man = {
+              enable = true;
+              generateCaches = true;
+            };
+          };
+
+          targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+
+          home = {
+            username = lib.mkDefault mainUser;
+            homeDirectory = lib.mkDefault "/home/${mainUser}";
+            stateVersion = lib.mkDefault "23.05";
+            keyboard.layout = "us";
+            sessionVariables = {
+              FLAKE = "/home/${mainUser}/.dotfiles";
+            };
+            extraOutputsToInstall = [
+              "doc"
+              "info"
+              "devdoc"
+            ];
+          };
         };
-      };
 
-      nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
-
-      programs = {
-        home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
-        man = {
-          enable = true;
-          generateCaches = true;
-        };
-      };
-
-      targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
-
-      home = {
-        username = lib.mkDefault mainUser;
-        homeDirectory = lib.mkDefault "/home/${mainUser}";
-        stateVersion = lib.mkDefault "23.05";
-        keyboard.layout = "us";
-        sessionVariables = {
-          FLAKE = "/home/${mainUser}/.dotfiles";
-        };
-        extraOutputsToInstall = [
-          "doc"
-          "info"
-          "devdoc"
-        ];
-      };
-    };
-
-  }
+      }
 #+end_src
 
 **** nixGL
@@ -11108,7 +11134,7 @@ It can be set to either:
   - a PCI id in the form =vendor_id:device_id=
 
 #+begin_src nix-ts :tangle modules/home/common/nixgl.nix
-  { lib, config, nixgl, ... }:
+  { lib, config, inputs, ... }:
   {
     options.swarselmodules.nixgl = lib.mkEnableOption "nixgl settings";
     options.swarselsystems = {
@@ -11120,11 +11146,11 @@ It can be set to either:
     };
     config = lib.mkIf config.swarselmodules.nixgl {
       nixGL = lib.mkIf (!config.swarselsystems.isNixos) {
-        inherit (nixgl) packages;
+        inherit (inputs.nixgl) packages;
         defaultWrapper = lib.mkDefault "mesa";
         vulkan.enable = lib.mkDefault false;
-        prime = lib.mkIf config.swarselsystem.isSecondaryGpu {
-          card = config.swarselsystem.secondaryGpuCard;
+        prime = lib.mkIf config.swarselsystems.isSecondaryGpu {
+          card = config.swarselsystems.secondaryGpuCard;
           installScript = "mesa";
         };
         offloadWrapper = lib.mkIf config.swarselsystem.isSecondaryGpu "mesaPrime";
@@ -11407,13 +11433,13 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   Since we are using the home-manager implementation here, we need to specify the runtime path.
 
 #+begin_src nix-ts :tangle modules/home/common/sops.nix
-  { config, lib, ... }:
+  { config, lib, inputs, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
   {
     options.swarselmodules.sops = lib.mkEnableOption "sops settings";
-    config = lib.mkIf config.swarselmodules.sops {
+    config = lib.optionalAttrs (inputs ? sops)  {
       sops = {
         age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
         defaultSopsFile = "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
@@ -11430,18 +11456,14 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
-  { lib, config, nixosConfig ? config, ... }:
+  { lib, config, inputs, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
   {
     options.swarselmodules.yubikey = lib.mkEnableOption "yubikey settings";
 
-    config = lib.mkIf config.swarselmodules.yubikey {
-
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
-        u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
-      };
+    config = lib.mkIf config.swarselmodules.yubikey ({
 
       pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
         ids = [
@@ -11449,7 +11471,11 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           nixosConfig.repo.secrets.common.yubikeys.dev2
         ];
       };
-    };
+    } // lib.optionalAttrs (inputs ? sops) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
+        u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
+      };
+    });
   }
 #+end_src
 
@@ -11492,6 +11518,10 @@ It is very convenient to have SSH aliases in place for machines that I use. This
             "bakery" = {
               hostname = "192.168.1.136";
               user = "root";
+            };
+            "dgx" = {
+              hostname = "192.168.48.200";
+              user = "swarsel";
             };
             "winters" = {
               hostname = "192.168.178.24";
@@ -12282,7 +12312,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
-  { config, pkgs, lib, minimal, globals, nixosConfig ? config, ... }:
+  { config, pkgs, lib, minimal, inputs, globals, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) flakePath;
     crocDomain = globals.services.croc.domain;
@@ -12296,12 +12326,7 @@ Currently I only use it as before with =initExtra= though.
       };
     };
     config = lib.mkIf config.swarselmodules.zsh
-      {
-
-        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-          croc-password = { };
-          github-nixpkgs-review-token = { };
-        };
+      ({
 
         programs.zsh = {
           enable = true;
@@ -12413,13 +12438,20 @@ Currently I only use it as before with =initExtra= though.
           '';
           sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
             CROC_RELAY = crocDomain;
-            CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path})";
-            GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path})";
+            CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path or ""})";
+            GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
             QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
             # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
           };
         };
-      };
+      } // lib.optionalAttrs (inputs ? sops) {
+
+        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+          croc-password = { };
+          github-nixpkgs-review-token = { };
+        };
+
+        });
   }
 #+end_src
 
@@ -12564,7 +12596,7 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix-ts :tangle modules/home/common/mail.nix
-  { lib, config, nixosConfig ? config, ... }:
+  { lib, config, inputs, nixosConfig ? config, ... }:
   let
     inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
     inherit (nixosConfig.repo.secrets.common) fullName;
@@ -12572,188 +12604,189 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
   in
   {
     options.swarselmodules.mail = lib.mkEnableOption "mail settings";
-    config = lib.mkIf config.swarselmodules.mail {
+    config = lib.mkIf config.swarselmodules.mail
+      ({
 
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-        address1-token = { path = "${xdgDir}/secrets/address1-token"; };
-        address2-token = { path = "${xdgDir}/secrets/address2-token"; };
-        address3-token = { path = "${xdgDir}/secrets/address3-token"; };
-        address4-token = { path = "${xdgDir}/secrets/address4-token"; };
-      };
-
-      programs = {
-        mbsync = {
-          enable = true;
-        };
-        msmtp = {
-          enable = true;
-        };
-        mu = {
-          enable = true;
-        };
-      };
-
-      services.mbsync = {
-        enable = true;
-      };
-      # this is needed so that mbsync can use the passwords from sops
-      systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
-
-      programs.thunderbird = {
-        enable = true;
-        profiles.default = {
-          isDefault = true;
-          withExternalGnupg = true;
-          settings = {
-            "mail.identity.default.archive_enabled" = true;
-            "mail.identity.default.archive_keep_folder_structure" = true;
-            "mail.identity.default.compose_html" = false;
-            "mail.identity.default.protectSubject" = true;
-            "mail.identity.default.reply_on_top" = 1;
-            "mail.identity.default.sig_on_reply" = false;
-            "mail.identity.default.sig_bottom" = false;
-
-            "gfx.webrender.all" = true;
-            "gfx.webrender.enabled" = true;
+        programs = {
+          mbsync = {
+            enable = true;
+          };
+          msmtp = {
+            enable = true;
+          };
+          mu = {
+            enable = true;
           };
         };
 
-        settings = {
-          "mail.server.default.allow_utf8_accept" = true;
-          "mail.server.default.max_articles" = 1000;
-          "mail.server.default.check_all_folders_for_new" = true;
-          "mail.show_headers" = 1;
-          "mail.identity.default.auto_quote" = true;
-          "mail.identity.default.attachPgpKey" = true;
-          "mailnews.default_sort_order" = 2;
-          "mailnews.default_sort_type" = 18;
-          "mailnews.default_view_flags" = 0;
-          "mailnews.sort_threads_by_root" = true;
-          "mailnews.headers.showMessageId" = true;
-          "mailnews.headers.showOrganization" = true;
-          "mailnews.headers.showReferences" = true;
-          "mailnews.headers.showUserAgent" = true;
-          "mail.imap.expunge_after_delete" = true;
-          "mail.server.default.delete_model" = 2;
-          "mail.warn_on_delete_from_trash" = false;
-          "mail.warn_on_shift_delete" = false;
-          "toolkit.telemetry.enabled" = false;
-          "toolkit.telemetry.rejected" = true;
-          "toolkit.telemetry.prompted" = 2;
-          "app.update.auto" = false;
-          "privacy.donottrackheader.enabled" = true;
+        services.mbsync = {
+          enable = true;
         };
-      };
+        # this is needed so that mbsync can use the passwords from sops
+        systemd.user.services.mbsync.Unit.After = [ "sops-nix.service" ];
 
-      xdg.mimeApps.defaultApplications = {
-        "x-scheme-handler/mailto" = [ "thunderbird.desktop" ];
-        "x-scheme-handler/mid" = [ "thunderbird.desktop" ];
-        "message/rfc822" = [ "thunderbird.desktop" ];
-      };
+        programs.thunderbird = {
+          enable = true;
+          profiles.default = {
+            isDefault = true;
+            withExternalGnupg = true;
+            settings = {
+              "mail.identity.default.archive_enabled" = true;
+              "mail.identity.default.archive_keep_folder_structure" = true;
+              "mail.identity.default.compose_html" = false;
+              "mail.identity.default.protectSubject" = true;
+              "mail.identity.default.reply_on_top" = 1;
+              "mail.identity.default.sig_on_reply" = false;
+              "mail.identity.default.sig_bottom" = false;
 
-      accounts = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
-        email =
-          let
-            defaultSettings = {
-              imap = {
-                host = "imap.gmail.com";
-                port = 993;
-                tls.enable = true; # SSL/TLS
-              };
-              smtp = {
-                host = "smtp.gmail.com";
-                port = 465;
-                tls.enable = true; # SSL/TLS
-              };
-              thunderbird = {
-                enable = true;
-                profiles = [ "default" ];
-              };
-              mu.enable = true;
-              msmtp = {
-                enable = true;
-              };
-              mbsync = {
-                enable = true;
-                create = "maildir";
-                expunge = "both";
-                patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
-                extraConfig = {
-                  channel = {
-                    Sync = "All";
-                  };
-                  account = {
-                    Timeout = 120;
-                    PipelineDepth = 1;
-                    AuthMechs = "LOGIN";
-                  };
-                };
-              };
+              "gfx.webrender.all" = true;
+              "gfx.webrender.enabled" = true;
             };
-          in
-          {
-            maildirBasePath = "Mail";
-            accounts = {
-              swarsel = {
-                address = address4;
-                userName = address4-user;
-                realName = fullName;
-                passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
-                smtp = {
-                  host = address4-host;
-                  port = 587;
-                  tls = {
-                    enable = true;
-                    useStartTls = true;
-                  };
+          };
+
+          settings = {
+            "mail.server.default.allow_utf8_accept" = true;
+            "mail.server.default.max_articles" = 1000;
+            "mail.server.default.check_all_folders_for_new" = true;
+            "mail.show_headers" = 1;
+            "mail.identity.default.auto_quote" = true;
+            "mail.identity.default.attachPgpKey" = true;
+            "mailnews.default_sort_order" = 2;
+            "mailnews.default_sort_type" = 18;
+            "mailnews.default_view_flags" = 0;
+            "mailnews.sort_threads_by_root" = true;
+            "mailnews.headers.showMessageId" = true;
+            "mailnews.headers.showOrganization" = true;
+            "mailnews.headers.showReferences" = true;
+            "mailnews.headers.showUserAgent" = true;
+            "mail.imap.expunge_after_delete" = true;
+            "mail.server.default.delete_model" = 2;
+            "mail.warn_on_delete_from_trash" = false;
+            "mail.warn_on_shift_delete" = false;
+            "toolkit.telemetry.enabled" = false;
+            "toolkit.telemetry.rejected" = true;
+            "toolkit.telemetry.prompted" = 2;
+            "app.update.auto" = false;
+            "privacy.donottrackheader.enabled" = true;
+          };
+        };
+
+        xdg.mimeApps.defaultApplications = {
+          "x-scheme-handler/mailto" = [ "thunderbird.desktop" ];
+          "x-scheme-handler/mid" = [ "thunderbird.desktop" ];
+          "message/rfc822" = [ "thunderbird.desktop" ];
+        };
+
+        accounts = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
+          email =
+            let
+              defaultSettings = {
+                imap = {
+                  host = "imap.gmail.com";
+                  port = 993;
+                  tls.enable = true; # SSL/TLS
                 };
-                mu.enable = false;
+                smtp = {
+                  host = "smtp.gmail.com";
+                  port = 465;
+                  tls.enable = true; # SSL/TLS
+                };
+                thunderbird = {
+                  enable = true;
+                  profiles = [ "default" ];
+                };
+                mu.enable = true;
                 msmtp = {
                   enable = true;
                 };
                 mbsync = {
-                  enable = false;
+                  enable = true;
+                  create = "maildir";
+                  expunge = "both";
+                  patterns = [ "*" "![Gmail]*" "[Gmail]/Sent Mail" "[Gmail]/Starred" "[Gmail]/All Mail" ];
+                  extraConfig = {
+                    channel = {
+                      Sync = "All";
+                    };
+                    account = {
+                      Timeout = 120;
+                      PipelineDepth = 1;
+                      AuthMechs = "LOGIN";
+                    };
+                  };
                 };
               };
-
-              leon = lib.recursiveUpdate
-                {
-                  primary = true;
-                  address = address1;
-                  userName = address1;
+            in
+            {
+              maildirBasePath = "Mail";
+              accounts = {
+                swarsel = {
+                  address = address4;
+                  userName = address4-user;
                   realName = fullName;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
-                  gpg = {
-                    key = "0x76FD3810215AE097";
-                    signByDefault = true;
+                  passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
+                  smtp = {
+                    host = address4-host;
+                    port = 587;
+                    tls = {
+                      enable = true;
+                      useStartTls = true;
+                    };
                   };
-                }
-                defaultSettings;
+                  mu.enable = false;
+                  msmtp = {
+                    enable = true;
+                  };
+                  mbsync = {
+                    enable = false;
+                  };
+                };
 
-              nautilus = lib.recursiveUpdate
-                {
-                  primary = false;
-                  address = address2;
-                  userName = address2;
-                  realName = address2-name;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
-                }
-                defaultSettings;
+                leon = lib.recursiveUpdate
+                  {
+                    primary = true;
+                    address = address1;
+                    userName = address1;
+                    realName = fullName;
+                    passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
+                    gpg = {
+                      key = "0x76FD3810215AE097";
+                      signByDefault = true;
+                    };
+                  }
+                  defaultSettings;
 
-              mrswarsel = lib.recursiveUpdate
-                {
-                  primary = false;
-                  address = address3;
-                  userName = address3;
-                  realName = address3-name;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
-                }
-                defaultSettings;
+                nautilus = lib.recursiveUpdate
+                  {
+                    primary = false;
+                    address = address2;
+                    userName = address2;
+                    realName = address2-name;
+                    passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
+                  }
+                  defaultSettings;
 
+                mrswarsel = lib.recursiveUpdate
+                  {
+                    primary = false;
+                    address = address3;
+                    userName = address3;
+                    realName = address3-name;
+                    passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
+                  }
+                  defaultSettings;
+
+              };
             };
-          };
-      };
-    };
+        };
+      } // lib.optionalAttrs (inputs ? sops) {
+        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+          address1-token = { path = "${xdgDir}/secrets/address1-token"; };
+          address2-token = { path = "${xdgDir}/secrets/address2-token"; };
+          address3-token = { path = "${xdgDir}/secrets/address3-token"; };
+          address4-token = { path = "${xdgDir}/secrets/address4-token"; };
+        };
+      });
   }
 #+end_src
 
@@ -12767,101 +12800,104 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix-ts :tangle modules/home/common/emacs.nix
-    { self, lib, config, pkgs, globals, inputs, ... }:
-    let
-      inherit (config.swarselsystems) homeDir isPublic isNixos;
-      inherit (config.repo.secrets.common.emacs) radicaleUser;
-    in
-    {
-      options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
-      config = lib.mkIf config.swarselmodules.emacs {
-        # needed for elfeed
-        sops = lib.mkIf (!isPublic && !isNixos) {
-          secrets = {
-            fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
-            emacs-radicale-pw = { };
-          };
-          templates = {
-            authinfo = {
-              path = "${homeDir}/.emacs.d/.authinfo";
-              content = ''
-                machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
-              '';
-            };
-          };
-        };
+  { self, lib, config, pkgs, globals, inputs, ... }:
+  let
+    inherit (config.swarselsystems) homeDir isPublic isNixos;
+    inherit (config.repo.secrets.common.emacs) radicaleUser;
+  in
+  {
+    options.swarselmodules.emacs = lib.mkEnableOption "emacs settings";
+    config = lib.mkIf config.swarselmodules.emacs ({
+      # needed for elfeed
+      # enable emacs overlay for bleeding edge features
+      # also read init.el file and install use-package packages
+      programs.emacs = {
+        enable = true;
+        package = pkgs.emacsWithPackagesFromUsePackage {
+          config = self + /files/emacs/init.el;
+          package = pkgs.emacs-git-pgtk;
+          alwaysEnsure = true;
+          alwaysTangle = true;
+          extraEmacsPackages = epkgs: [
+            epkgs.mu4e
+            epkgs.use-package
+            epkgs.lsp-bridge
+            epkgs.doom-themes
+            epkgs.vterm
+            epkgs.treesit-grammars.with-all-grammars
 
-        # enable emacs overlay for bleeding edge features
-        # also read init.el file and install use-package packages
-        programs.emacs = {
-          enable = true;
-          package = pkgs.emacsWithPackagesFromUsePackage {
-            config = self + /files/emacs/init.el;
-            package = pkgs.emacs-git-pgtk;
-            alwaysEnsure = true;
-            alwaysTangle = true;
-            extraEmacsPackages = epkgs: [
-              epkgs.mu4e
-              epkgs.use-package
-              epkgs.lsp-bridge
-              epkgs.doom-themes
-              epkgs.vterm
-              epkgs.treesit-grammars.with-all-grammars
+            # build the rest of the packages myself
+            # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
+            # build the package from the haji-ali fork, which is well-maintained
 
-              # build the rest of the packages myself
-              # org-calfw is severely outdated on MELPA and throws many warnings on emacs startup
-              # build the package from the haji-ali fork, which is well-maintained
+            (epkgs.trivialBuild rec {
+              pname = "eglot-booster";
+              version = "main-29-10-2024";
 
-              (epkgs.trivialBuild rec {
-                pname = "eglot-booster";
-                version = "main-29-10-2024";
+              src = pkgs.fetchFromGitHub {
+                owner = "jdtsmith";
+                repo = "eglot-booster";
+                rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
+                hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
+              };
 
-                src = pkgs.fetchFromGitHub {
-                  owner = "jdtsmith";
-                  repo = "eglot-booster";
-                  rev = "e6daa6bcaf4aceee29c8a5a949b43eb1b89900ed";
-                  hash = "sha256-PLfaXELkdX5NZcSmR1s/kgmU16ODF8bn56nfTh9g6bs=";
-                };
+              packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
+            })
+            (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
+            # epkgs.calfw
+            # (epkgs.trivialBuild rec {
+            #   pname = "calfw";
+            #   version = "1.0.0-20231002";
+            #   src = pkgs.fetchFromGitHub {
+            #     owner = "haji-ali";
+            #     repo = "emacs-calfw";
+            #     rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
+            #     hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
+            #   };
+            #   packageRequires = [ epkgs.howm ];
+            # })
 
-                packageRequires = [ epkgs.jsonrpc epkgs.eglot ];
-              })
-              (inputs.nixpkgs-dev.legacyPackages.${pkgs.system}.emacsPackagesFor pkgs.emacs-git-pgtk).calfw
-              # epkgs.calfw
-              # (epkgs.trivialBuild rec {
-              #   pname = "calfw";
-              #   version = "1.0.0-20231002";
-              #   src = pkgs.fetchFromGitHub {
-              #     owner = "haji-ali";
-              #     repo = "emacs-calfw";
-              #     rev = "bc99afee611690f85f0cd0bd33300f3385ddd3d3";
-              #     hash = "sha256-0xMII1KJhTBgQ57tXJks0ZFYMXIanrOl9XyqVmu7a7Y=";
-              #   };
-              #   packageRequires = [ epkgs.howm ];
-              # })
+            (epkgs.trivialBuild rec {
+              pname = "fast-scroll";
+              version = "1.0.0-20191016";
+              src = pkgs.fetchFromGitHub {
+                owner = "ahungry";
+                repo = "fast-scroll";
+                rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
+                hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
+              };
+              packageRequires = [ ];
+            })
 
-              (epkgs.trivialBuild rec {
-                pname = "fast-scroll";
-                version = "1.0.0-20191016";
-                src = pkgs.fetchFromGitHub {
-                  owner = "ahungry";
-                  repo = "fast-scroll";
-                  rev = "3f6ca0d5556fe9795b74714304564f2295dcfa24";
-                  hash = "sha256-w1wmJW7YwXyjvXJOWdN2+k+QmhXr4IflES/c2bCX3CI=";
-                };
-                packageRequires = [ ];
-              })
-
-            ];
-          };
-        };
-
-        services.emacs = {
-          enable = true;
-          socketActivation.enable = false;
-          startWithUserSession = "graphical";
+          ];
         };
       };
-    }
+
+      services.emacs = {
+        enable = true;
+        socketActivation.enable = false;
+        startWithUserSession = "graphical";
+      };
+
+    } // lib.optionalAttrs (inputs ? sops) {
+
+      sops = lib.mkIf (!isPublic && !isNixos) {
+        secrets = {
+          fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
+          emacs-radicale-pw = { };
+        };
+        templates = {
+          authinfo = {
+            path = "${homeDir}/.emacs.d/.authinfo";
+            content = ''
+              machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+            '';
+          };
+        };
+      };
+
+    });
+  }
 #+end_src
 
 **** Waybar
@@ -12880,7 +12916,7 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix-ts :tangle modules/home/common/waybar.nix
-  { self, config, lib, pkgs, ... }:
+  { self, config, lib, inputs, pkgs, ... }:
   let
     inherit (config.swarselsystems) xdgDir;
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
@@ -12934,7 +12970,7 @@ The rest of the related configuration is found here:
         internal = true;
       };
     };
-    config = lib.mkIf config.swarselmodules.waybar {
+    config = lib.mkIf config.swarselmodules.waybar ({
 
       swarselsystems = {
         waybarModules = lib.mkIf config.swarselsystems.isLaptop (modulesLeft ++ [
@@ -12942,16 +12978,12 @@ The rest of the related configuration is found here:
         ] ++ modulesRight);
       };
 
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
-        github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
-      };
-
       services.playerctld.enable = true;
 
       programs.waybar = {
         enable = true;
         systemd = {
-          enable = true;
+          enable = false;
           # target = "sway-session.target";
           inherit (config.wayland.systemd) target;
         };
@@ -13206,7 +13238,11 @@ The rest of the related configuration is found here:
         };
         style = builtins.readFile (self + /files/waybar/style.css);
       };
-    };
+    } // lib.optionalAttrs (inputs ? sops) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+        github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
+      };
+    });
   }
 #+end_src
 
@@ -13711,7 +13747,7 @@ I am currently using SwayFX, which adds some nice effects to sway, like rounded 
 Currently, I am too lazy to explain every option here, but most of it is very self-explaining in any case.
 
 #+begin_src nix-ts :tangle modules/home/common/sway.nix
-  { config, lib, vars, ... }:
+  { config, lib, vars, nixosConfig ? config, ... }:
     let
       eachOutput = _: monitor: {
         inherit (monitor) name;
@@ -14094,6 +14130,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               export XDG_CURRENT_DESKTOP=sway;
               export XDG_SESSION_DESKTOP=sway;
               export _JAVA_AWT_WM_NONREPARENTING=1;
+              export GITHUB_NOTIFICATION_TOKEN_PATH=${nixosConfig.sops.secrets.github-notifications-token.path};
             '' + vars.waylandExports;
             # extraConfigEarly = "
             # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
@@ -14744,69 +14781,70 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 
 #+begin_src nix-ts :tangle modules/home/common/anki.nix
-  { lib, config, pkgs, globals, nixosConfig ? config, ... }:
+  { lib, config, pkgs, globals, inputs, nixosConfig ? config, ... }:
   let
     moduleName = "anki";
     inherit (config.swarselsystems) isPublic isNixos;
   in
   {
     options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
-    config = lib.mkIf config.swarselmodules.${moduleName} {
+    config = lib.mkIf config.swarselmodules.${moduleName}
+      ({
 
-      sops = lib.mkIf (!isPublic && !isNixos) {
-        secrets = {
-          anki-user = { };
-          anki-pw = { };
+        programs.anki = {
+          enable = true;
+          # # package = pkgs.anki;
+          hideBottomBar = true;
+          hideBottomBarMode = "always";
+          hideTopBar = true;
+          hideTopBarMode = "always";
+          reduceMotion = true;
+          spacebarRatesCard = true;
+          # videoDriver = "opengl";
+          sync = {
+            autoSync = false; # sync on profile close will delay system shutdown
+            syncMedia = true;
+            autoSyncMediaMinutes = 5;
+            url = "https://${globals.services.ankisync.domain}";
+            usernameFile = nixosConfig.sops.secrets.anki-user.path;
+            # this is not the password but the syncKey
+            # get it by logging in or out, saving preferences and then
+            # show details on the "settings wont be saved" dialog
+            keyFile = nixosConfig.sops.secrets.anki-pw.path;
+          };
+          addons =
+            let
+              minimize-to-tray = pkgs.anki-utils.buildAnkiAddon
+                (finalAttrs: {
+                  pname = "minimize-to-tray";
+                  version = "2.0.1";
+                  src = pkgs.fetchFromGitHub {
+                    owner = "simgunz";
+                    repo = "anki21-addons_minimize-to-tray";
+                    rev = finalAttrs.version;
+                    sparseCheckout = [ "src" ];
+                    hash = "sha256-xmvbIOfi9K0yEUtUNKtuvv2Vmqrkaa4Jie6J1s+FuqY=";
+                  };
+                  sourceRoot = "${finalAttrs.src.name}/src";
+                });
+            in
+            [
+              (minimize-to-tray.withConfig
+                {
+                  config = {
+                    hide_on_startup = "true";
+                  };
+                })
+            ];
         };
-      };
-
-      programs.anki = {
-        enable = true;
-        # # package = pkgs.anki;
-        hideBottomBar = true;
-        hideBottomBarMode = "always";
-        hideTopBar = true;
-        hideTopBarMode = "always";
-        reduceMotion = true;
-        spacebarRatesCard = true;
-        # videoDriver = "opengl";
-        sync = {
-          autoSync = false; # sync on profile close will delay system shutdown
-          syncMedia = true;
-          autoSyncMediaMinutes = 5;
-          url = "https://${globals.services.ankisync.domain}";
-          usernameFile = nixosConfig.sops.secrets.anki-user.path;
-          # this is not the password but the syncKey
-          # get it by logging in or out, saving preferences and then
-          # show details on the "settings wont be saved" dialog
-          keyFile = nixosConfig.sops.secrets.anki-pw.path;
+      } // lib.optionalAttrs (inputs ? sops) {
+        sops = lib.mkIf (!isPublic && !isNixos) {
+          secrets = {
+            anki-user = { };
+            anki-pw = { };
+          };
         };
-        addons =
-          let
-            minimize-to-tray = pkgs.anki-utils.buildAnkiAddon
-              (finalAttrs: {
-                pname = "minimize-to-tray";
-                version = "2.0.1";
-                src = pkgs.fetchFromGitHub {
-                  owner = "simgunz";
-                  repo = "anki21-addons_minimize-to-tray";
-                  rev = finalAttrs.version;
-                  sparseCheckout = [ "src" ];
-                  hash = "sha256-xmvbIOfi9K0yEUtUNKtuvv2Vmqrkaa4Jie6J1s+FuqY=";
-                };
-                sourceRoot = "${finalAttrs.src.name}/src";
-              });
-          in
-          [
-            (minimize-to-tray.withConfig
-            {
-              config = {
-                hide_on_startup = "true";
-              };
-            })
-          ];
-      };
-    };
+      });
 
   }
 #+end_src

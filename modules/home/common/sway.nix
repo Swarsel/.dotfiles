@@ -1,4 +1,4 @@
-{ config, lib, vars, ... }:
+{ config, lib, vars, nixosConfig ? config, ... }:
 let
   eachOutput = _: monitor: {
     inherit (monitor) name;
@@ -381,6 +381,7 @@ in
         export XDG_CURRENT_DESKTOP=sway;
         export XDG_SESSION_DESKTOP=sway;
         export _JAVA_AWT_WM_NONREPARENTING=1;
+        export GITHUB_NOTIFICATION_TOKEN_PATH=${nixosConfig.sops.secrets.github-notifications-token.path};
       '' + vars.waylandExports;
       # extraConfigEarly = "
       # exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
