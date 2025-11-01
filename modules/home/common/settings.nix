@@ -50,7 +50,19 @@ in
       nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
 
       programs = {
-        home-manager.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+        home-manager = lib.mkIf (!config.swarselsystems.isNixos)
+          {
+            enable = true;
+            package = pkgs.symlinkJoin {
+              name = "home-manager";
+              buildInputs = [ pkgs.makeWrapper ];
+              paths = [ pkgs.home-manager ];
+              postBuild = ''
+                wrapProgram $out/bin/home-manager \
+                --append-flags '--flake .#$(hostname)'
+              '';
+            };
+          };
         man = {
           enable = true;
           generateCaches = true;

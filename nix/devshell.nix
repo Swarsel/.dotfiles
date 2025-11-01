@@ -58,10 +58,18 @@
             pkgs.age
             pkgs.ssh-to-age
             pkgs.sops
-            pkgs.home-manager
             pkgs.nixpkgs-fmt
             self.packages.${system}.swarsel-build
             self.packages.${system}.swarsel-deploy
+            (pkgs.symlinkJoin {
+              name = "home-manager";
+              buildInputs = [ pkgs.makeWrapper ];
+              paths = [ pkgs.home-manager ];
+              postBuild = ''
+                wrapProgram $out/bin/home-manager \
+                --append-flags '--flake .#$(hostname)'
+              '';
+            })
           ];
 
           commands = [
