@@ -8,7 +8,7 @@ in
   config = lib.mkIf config.swarselmodules.syncthing {
     services.syncthing = {
       enable = true;
-      package = pkgs.stable.syncthing;
+      package = pkgs.syncthing;
       user = mainUser;
       dataDir = homeDir;
       configDir = "${homeDir}/.config/syncthing";

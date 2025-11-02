@@ -22,6 +22,7 @@ in
           epkgs.lsp-bridge
           epkgs.doom-themes
           epkgs.vterm
+          # pkgs.stable.emacs.pkgs.elpaPackages.tramp # use the unstable version from elpa
           epkgs.treesit-grammars.with-all-grammars
 
           # build the rest of the packages myself

@@ -13,7 +13,7 @@
       yubikey-touch-detector
       yubico-piv-tool
       cfssl
-      pcsctools
+      pcsc-tools
       pcscliteWithPolkit.out
 
       # ledger packages

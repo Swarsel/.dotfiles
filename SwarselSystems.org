@@ -300,6 +300,7 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 ** Manual steps when setting up a new machine
 
 #+begin_src markdown :noweb yes :exports both :results html
+  These steps are required when setting up a normal NixOS host:
 
   <<setup>>
 
@@ -307,6 +308,17 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 
   <<worksetup>>
 
+  If the new machine is home-manager only, perform these steps:
+
+  <<homemanageronlysetup>>
+#+end_src
+
+** Current issues
+
+#+begin_src markdown :noweb yes :exports both :results html
+  Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
+
+  <<fixes>>
 #+end_src
 
 * flake.nix
@@ -420,18 +432,19 @@ A short overview over each input and what it does:
       nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
       nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
       nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+      nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
       systems.url = "github:nix-systems/default";
       swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       home-manager = {
-        # url = "github:nix-community/home-manager";
+        url = "github:nix-community/home-manager";
         # url = "github:Swarsel/home-manager/main";
-        url = "github:JuneStepp/home-manager/anki-fix-booleans";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       swarsel.url = "github:Swarsel/.dotfiles";
       emacs-overlay = {
-        url = "github:nix-community/emacs-overlay";
+        # url = "github:nix-community/emacs-overlay";
+        url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       nur.url = "github:nix-community/NUR";
@@ -941,6 +954,7 @@ The rest of the outputs either define or help define the actual configurations:
                   minimal = false;
                 };
                 modules = [
+                  inputs.stylix.homeModules.stylix
                   inputs.niri-flake.homeModules.niri
                   inputs.nix-index-database.homeModules.nix-index
                   # inputs.sops-nix.homeManagerModules.sops
@@ -1497,9 +1511,8 @@ As such, I also define three additional overlays:
    NOTE: The packages themselves are built in [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]]; here, we just add them to the overlay that we then use in the configuration.
 2) =modification=
    These are for packages that are on nixpkgs, but do not fit my usecase, meaning I need to perform modifications on them.
-3) =nixpkgs-[stable,...]=
-   These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways.
-   - TODO: I need to check out if overlays are really the way to go in this case, or if I should just use =packages=, which should make evalutation a good bit faster.
+3) =nixpkgs-stable-versions=
+   These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways. Automatically fetches all inputs names =nixpkgs-<suffix>= and adds them under the name in =<suffix>=.
 
 Also, this is where I define all of my own modules. These are mostly used for setting some host-specifics directly than opposed to through multiple options.
 
@@ -1523,7 +1536,13 @@ On the structure of overlays: as you notice, all of the attributes within overla
         overlays = {
           default = final: prev:
             let
-              additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; };
+              additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; }
+                // {
+                swarsel-nix = import inputs.swarsel-nix {
+                  pkgs = prev;
+                };
+                zjstatus = inputs.zjstatus.packages.${prev.system}.default;
+              };
 
               modifications = final: prev: {
                 # vesktop = prev.vesktop.override {
@@ -1554,63 +1573,35 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   melonds # ds
                   dolphin # gc/wii
                 ]);
+
               };
 
-              nixpkgs-stable = final: _: {
-                stable = import inputs.nixpkgs-stable {
-                  inherit (final) system;
-                  config.allowUnfree = true;
-                };
-              };
+              nixpkgs-stable-versions = final: _:
+                let
+                  nixpkgsInputs =
+                    lib.filterAttrs
+                      (name: _v: builtins.match "^nixpkgs-.*" name != null)
+                      inputs;
 
-              nixpkgs-dev = final: _: {
-                dev = import inputs.nixpkgs-dev {
-                  inherit (final) system;
-                  config.allowUnfree = true;
-                };
-              };
+                  rename = name: builtins.replaceStrings [ "nixpkgs-" ] [ "" ] name;
 
-              nixpkgs-kernel = final: _: {
-                kernel = import inputs.nixpkgs-kernel {
-                  inherit (final) system;
-                  config.allowUnfree = true;
-                };
-              };
-
-              nixpkgs-stable24_05 = final: _: {
-                stable24_05 = import inputs.nixpkgs-stable24_05 {
-                  inherit (final) system;
-                  config.allowUnfree = true;
-                };
-              };
-
-              nixpkgs-stable24_11 = final: _: {
-                stable24_11 = import inputs.nixpkgs-stable24_11 {
-                  inherit (final) system;
-                  config.allowUnfree = true;
-                };
-              };
-
-              swarsel-nix = _: prev: {
-                swarsel-nix = import inputs.swarsel-nix {
-                  pkgs = prev;
-                };
-              };
-
-              zjstatus = _: prev: {
-                zjstatus = inputs.zjstatus.packages.${prev.system}.default;
-              };
+                  mkPkgs = src:
+                    import src {
+                      inherit (final) system;
+                      config.allowUnfree = true;
+                    };
+                in
+                builtins.listToAttrs (map
+                  (name: {
+                    name = rename name;
+                    value = mkPkgs nixpkgsInputs.${name};
+                  })
+                  (builtins.attrNames nixpkgsInputs));
 
             in
             (additions final prev)
             // (modifications final prev)
-            // (nixpkgs-stable final prev)
-            // (nixpkgs-dev final prev)
-            // (nixpkgs-kernel final prev)
-            // (nixpkgs-stable24_05 final prev)
-            // (nixpkgs-stable24_11 final prev)
-            // (swarsel-nix final prev)
-            // (zjstatus final prev)
+            // (nixpkgs-stable-versions final prev)
             // (inputs.niri-flake.overlays.niri final prev)
             // (inputs.vbc-nix.overlays.default final prev)
             // (inputs.nur.overlays.default final prev)
@@ -2631,13 +2622,11 @@ My phone. I use only a minimal config for remote debugging here.
 **** Treehouse (DGX Spark)
 
 #+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
-  { self, inputs, outputs, ... }:
+  { self, outputs, ... }:
   {
 
     imports = [
-      inputs.stylix.homeModules.stylix
       # inputs.sops-nix.homeManagerModules.sops
-      inputs.nix-index-database.homeModules.nix-index
       "${self}/modules/home"
       "${self}/modules/nixos/common/pii.nix"
       "${self}/modules/nixos/common/meta.nix"
@@ -4712,7 +4701,7 @@ Mostly used to install some compilers and lsp's that I want to have available wh
           yubikey-touch-detector
           yubico-piv-tool
           cfssl
-          pcsctools
+          pcsc-tools
           pcscliteWithPolkit.out
 
           # ledger packages
@@ -5425,7 +5414,7 @@ Here I disable global completion to prevent redundant compinit calls and cache i
     config = lib.mkIf config.swarselmodules.syncthing {
       services.syncthing = {
         enable = true;
-        package = pkgs.stable.syncthing;
+        package = pkgs.syncthing;
         user = mainUser;
         dataDir = homeDir;
         configDir = "${homeDir}/.config/syncthing";
@@ -5861,7 +5850,7 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
           gdk-pixbuf
           glew110
           glib
-          stable.gnome2.GConf
+          gnome2.GConf
           pango
           gtk2
           gtk3
@@ -5910,8 +5899,8 @@ When a program does not work, start with =nix-ldd <program>=. This will tell you
           pipewire
           pixman
           speex
-          stdenv.cc.cc
-          stable.steam-fhsenv-without-steam
+          # stable.cc.cc
+          stable25_05.steam-fhsenv-without-steam
           systemd
           tbb
           vulkan-loader
@@ -6008,7 +5997,7 @@ This is used to better integrate Sway into the system on NixOS hosts. On the hom
     config = lib.mkIf config.swarselmodules.sway {
       programs.sway = {
         enable = true;
-        package = pkgs.dev.swayfx;
+        package = pkgs.swayfx;
         wrapperFeatures = {
           base = true;
           gtk = true;
@@ -10247,7 +10236,7 @@ Deployment notes:
       topology.self.services.${serviceName}.info = "https://${serviceDomain}";
       globals.services.${serviceName}.domain = serviceDomain;
 
-      swarselservices.${serviceName} = {
+      services.${serviceName} = {
         enable = true;
         package = pkgs.dev.homebox;
         database.createLocally = true;
@@ -10830,7 +10819,7 @@ When setting up a new machine:
         spice
         spice-gtk
         spice-protocol
-        win-virtio
+        virtio-win
         win-spice
 
         powershell
@@ -10997,6 +10986,26 @@ The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a
 
 #+end_src
 
+*** Steps to setup/upgrade home-manager only
+Steps to get a home-manager only setup up and running:
+
+#+begin_src markdown :noweb-ref homemanageronlysetup :exports both :results html
+
+  - (Optional) Install openssh-server
+  - Set hostname to the name specified in the home-manager configuration
+  - Install nix, either:
+    - (if upgrading existing nix) Install nix version matching with version that `nix-plugins` is compiled against: `nix-env --install --file '<nixpkgs>' cacert -I nixpkgs=channel:nixpkgs-unstable --attr nixVersions.nix_x_yy`
+    - (or installing nix freshly):
+      - Grab the link to the install script of the needed nix version from https://releases.nixos.org/?prefix=nix, e.g. https://releases.nixos.org/nix/nix-2.30.1/install
+      - `bash <(curl -L https://releases.nixos.org/nix/nix-x-yy-y/install) --daemon`
+  - add the following to /etc/nix/nix.conf to become a trusted user: `trusted-users = @wheel root swarsel`
+  - For the first build:
+    1) Clone dotfile repo & change into it
+    2) `nix --extra-experimental-features 'nix-command flakes' develop`
+    3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
+
+#+end_src
+
 *** TODO Common
 :PROPERTIES:
 :CUSTOM_ID: h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e
@@ -11053,7 +11062,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
   { self, lib, pkgs, config, ... }:
   let
-    inherit (config.swarselsystems) mainUser;
+    inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
   in
   {
     options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -11096,33 +11105,21 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
             auto-optimise-store = true;
             warn-dirty = false;
             max-jobs = 1;
-            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+            use-cgroups = lib.mkIf isLinux true;
           };
         };
 
-        nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+        nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
 
         programs = {
-          home-manager = lib.mkIf (!config.swarselsystems.isNixos)
-            {
-              enable = true;
-              package = pkgs.symlinkJoin {
-                name = "home-manager";
-                buildInputs = [ pkgs.makeWrapper ];
-                paths = [ pkgs.home-manager ];
-                postBuild = ''
-                  wrapProgram $out/bin/home-manager \
-                  --append-flags '--flake .#$(hostname)'
-                '';
-              };
-            };
+          # home-manager.enable = lib.mkIf (!isNixos) true;
           man = {
             enable = true;
             generateCaches = true;
           };
         };
 
-        targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+        targets.genericLinux.enable = lib.mkIf (!isNixos) true;
 
         home = {
           username = lib.mkDefault mainUser;
@@ -11136,6 +11133,17 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
             "doc"
             "info"
             "devdoc"
+          ];
+          packages = lib.mkIf (!isNixos) [
+            (pkgs.symlinkJoin {
+              name = "home-manager";
+              buildInputs = [ pkgs.makeWrapper ];
+              paths = [ pkgs.home-manager ];
+              postBuild = ''
+                wrapProgram $out/bin/home-manager \
+                --append-flags '--flake ${flakePath}#$(hostname)'
+              '';
+            })
           ];
         };
       };
@@ -11249,7 +11257,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         sshfs
         fuse
         # ventoy
-        poppler_utils
+        poppler-utils
         vdhcoapp
 
         # nix
@@ -11337,7 +11345,7 @@ This holds packages that I can use as provided, or with small modifications (as 
         unzip
 
         #nautilus
-        stable.nautilus
+        nautilus
         xfce.tumbler
         libgsf
 
@@ -11354,7 +11362,7 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         # the following packages are used (in some way) by waybar
         # playerctl
-        stable.pavucontrol
+        pavucontrol
         # stable.pamixer
         # gnome.gnome-clocks
         # wlogout
@@ -11376,22 +11384,22 @@ This holds packages that I can use as provided, or with small modifications (as 
         # latex and related packages
         (texlive.combine {
           inherit (pkgs.texlive) scheme-full
-            dvisvgm dvipng# for preview and export as html
-            wrapfig amsmath ulem hyperref capt-of;
+          dvisvgm dvipng# for preview and export as html
+          wrapfig amsmath ulem hyperref capt-of;
         })
 
         # font stuff
         nerd-fonts.fira-mono
         nerd-fonts.fira-code
         nerd-fonts.symbols-only
-        noto-fonts-emoji
+        noto-fonts-color-emoji
         font-awesome_5
         noto-fonts
         noto-fonts-cjk-sans
       ];
     };
   }
-#+end_src
+        #+end_src
 
 ***** Self-defined
 :PROPERTIES:
@@ -11460,17 +11468,17 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   let
     inherit (config.swarselsystems) homeDir;
   in
-  {
-    options.swarselmodules.sops = lib.mkEnableOption "sops settings";
-    config = lib.optionalAttrs (inputs ? sops)  {
-      sops = {
-        age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
-        defaultSopsFile = "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+    {
+      options.swarselmodules.sops = lib.mkEnableOption "sops settings";
+      config = lib.optionalAttrs (inputs ? sops)  {
+        sops = {
+          age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${homeDir}/.ssh/ssh_host_ed25519_key" ];
+          defaultSopsFile = "${homeDir}/.dotfiles/secrets/general/secrets.yaml";
 
-        validateSopsFiles = false;
+          validateSopsFiles = false;
+        };
       };
-    };
-  }
+    }
 #+end_src
 
 **** Yubikey
@@ -11510,70 +11518,70 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
 #+begin_src nix-ts :tangle modules/home/common/ssh.nix
-    { lib, config, ... }:
-    {
-      options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
-      config = lib.mkIf config.swarselmodules.ssh {
-        programs.ssh = {
-          enable = true;
-          enableDefaultConfig = false;
-          extraConfig = ''
-            SetEnv TERM=xterm-256color
-            ServerAliveInterval 20
-          '';
-          matchBlocks = {
-            "*" = {
-              forwardAgent = true;
-              addKeysToAgent = "no";
-              compression = false;
-              serverAliveInterval = 0;
-              serverAliveCountMax = 3;
-              hashKnownHosts = false;
-              userKnownHostsFile = "~/.ssh/known_hosts";
-              controlMaster = "no";
-              controlPath = "~/.ssh/master-%r@%n:%p";
-              controlPersist = "no";
-            };
-            "pfsense" = {
-              hostname = "192.168.1.1";
-              user = "root";
-            };
-            "bakery" = {
-              hostname = "192.168.1.136";
-              user = "root";
-            };
-            "dgx" = {
-              hostname = "192.168.48.200";
-              user = "swarsel";
-            };
-            "winters" = {
-              hostname = "192.168.178.24";
-              user = "root";
-            };
-            "minecraft" = {
-              hostname = "130.61.119.129";
-              user = "opc";
-            };
-            "milkywell" = {
-              hostname = "193.122.53.173";
-              user = "root";
-            };
-            "moonside" = {
-              hostname = "130.61.238.239";
-              user = "root";
-            };
-            "songdiver" = {
-              hostname = "89.168.100.65";
-              user = "ubuntu";
-            };
-            "pkv" = {
-              hostname = "46.232.248.161";
-              user = "root";
-            };
+  { lib, config, ... }:
+  {
+    options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
+    config = lib.mkIf config.swarselmodules.ssh {
+      programs.ssh = {
+        enable = true;
+        enableDefaultConfig = false;
+        extraConfig = ''
+          SetEnv TERM=xterm-256color
+          ServerAliveInterval 20
+        '';
+        matchBlocks = {
+          "*" = {
+            forwardAgent = true;
+            addKeysToAgent = "no";
+            compression = false;
+            serverAliveInterval = 0;
+            serverAliveCountMax = 3;
+            hashKnownHosts = false;
+            userKnownHostsFile = "~/.ssh/known_hosts";
+            controlMaster = "no";
+            controlPath = "~/.ssh/master-%r@%n:%p";
+            controlPersist = "no";
+          };
+          "pfsense" = {
+            hostname = "192.168.1.1";
+            user = "root";
+          };
+          "bakery" = {
+            hostname = "192.168.1.136";
+            user = "root";
+          };
+          "dgx" = {
+            hostname = "192.168.48.200";
+            user = "swarsel";
+          };
+          "winters" = {
+            hostname = "192.168.178.24";
+            user = "root";
+          };
+          "minecraft" = {
+            hostname = "130.61.119.129";
+            user = "opc";
+          };
+          "milkywell" = {
+            hostname = "193.122.53.173";
+            user = "root";
+          };
+          "moonside" = {
+            hostname = "130.61.238.239";
+            user = "root";
+          };
+          "songdiver" = {
+            hostname = "89.168.100.65";
+            user = "ubuntu";
+          };
+          "pkv" = {
+            hostname = "46.232.248.161";
+            user = "root";
           };
         };
       };
-    }
+    };
+  }
 #+end_src
 
 **** Theme (stylix)
@@ -11588,13 +11596,14 @@ This section has been notably empty ever since switching to stylix. Only Emacs i
 =theme= is defined in [[#h:5bc1b0c9-dc59-4c81-b5b5-e60699deda78][Theme (stylix)]].
 
 #+begin_src nix-ts :noweb yes :tangle modules/home/common/stylix.nix
-  { lib, config, vars, ... }:
+  { self, lib, config, vars, ... }:
   {
     options.swarselmodules.stylix = lib.mkEnableOption "stylix settings";
     config = lib.mkIf config.swarselmodules.stylix {
-      stylix = lib.mkIf (!config.swarselsystems.isNixos) (lib.recursiveUpdate
+      stylix = lib.mkIf (!config.swarselsystems.isNixos && config.swarselmodules.stylix) (lib.recursiveUpdate
         {
-          image = config.swarselsystems.wallpaper;
+          enable = true;
+          base16Scheme = "${self}/files/stylix/swarsel.yaml";
           targets = vars.stylixHomeTargets;
         }
         vars.stylix);
@@ -11823,90 +11832,97 @@ This section is for programs that require no further configuration. zsh Integrat
 
 #+begin_src nix-ts :tangle modules/home/common/programs.nix
   { lib, config, pkgs, ... }:
-      {
-        options.swarselmodules.programs = lib.mkEnableOption "programs settings";
-        config = lib.mkIf config.swarselmodules.programs {
-          programs = {
-            bat = {
-              enable = true;
-              extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
-            };
-            bottom.enable = true;
-            carapace.enable = true;
-            fzf = {
-              enable = true;
-              enableBashIntegration = false;
-              enableZshIntegration = false;
-            };
-            imv.enable = true;
-            jq.enable = true;
-            less.enable = true;
-            lesspipe.enable = true;
-            mpv.enable = true;
-            pandoc.enable = true;
-            rclone.enable = true;
-            ripgrep.enable = true;
-            sioyek.enable = true;
-            swayr.enable = true;
-            timidity.enable = true;
-            wlogout ={
-              enable = true;
-              layout = [
-                {
-                  label = "lock";
-                  action = "loginctl lock-session";
-                  text = "Lock";
-                  keybind = "l";
-                  circular = true;
-                }
-                {
-                  label = "hibernate";
-                  action = "systemctl hibernate";
-                  text = "Hibernate";
-                  keybind = "h";
-                  circular = true;
-                }
-                {
-                  label = "logout";
-                  action = "loginctl terminate-user $USER";
-                  text = "Logout";
-                  keybind = "u";
-                  circular = true;
-                }
-                {
-                  label = "shutdown";
-                  action = "systemctl poweroff";
-                  text = "Shutdown";
-                  keybind = "p";
-                  circular = true;
-                }
-                {
-                  label = "suspend";
-                  action = "systemctl suspend";
-                  text = "Suspend";
-                  keybind = "s";
-                  circular = true;
-                }
-                {
-                  label = "reboot";
-                  action = "systemctl reboot";
-                  text = "Reboot";
-                  keybind = "r";
-                  circular = true;
-                }
-              ];
-            };
-            yt-dlp.enable = true;
-            zoxide = {
-              enable = true;
-              enableZshIntegration = true;
-              options = [
-                "--cmd cd"
-              ];
-            };
-          };
+  {
+    options.swarselmodules.programs = lib.mkEnableOption "programs settings";
+    config = lib.mkIf config.swarselmodules.programs {
+      programs = {
+        bat = {
+          enable = true;
+          extraPackages = [
+            pkgs.bat-extras.batdiff
+            pkgs.bat-extras.batman
+            pkgs.bat-extras.batwatch
+          ] ++ [
+            pkgs.stable.bat-extras.batgrep
+          ];
+          # extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
         };
-      }
+        bottom.enable = true;
+        carapace.enable = true;
+        fzf = {
+          enable = true;
+          enableBashIntegration = false;
+          enableZshIntegration = false;
+        };
+        imv.enable = true;
+        jq.enable = true;
+        less.enable = true;
+        lesspipe.enable = true;
+        mpv.enable = true;
+        pandoc.enable = true;
+        rclone.enable = true;
+        ripgrep.enable = true;
+        sioyek.enable = true;
+        swayr.enable = true;
+        timidity.enable = true;
+        wlogout = {
+          enable = true;
+          layout = [
+            {
+              label = "lock";
+              action = "loginctl lock-session";
+              text = "Lock";
+              keybind = "l";
+              circular = true;
+            }
+            {
+              label = "hibernate";
+              action = "systemctl hibernate";
+              text = "Hibernate";
+              keybind = "h";
+              circular = true;
+            }
+            {
+              label = "logout";
+              action = "loginctl terminate-user $USER";
+              text = "Logout";
+              keybind = "u";
+              circular = true;
+            }
+            {
+              label = "shutdown";
+              action = "systemctl poweroff";
+              text = "Shutdown";
+              keybind = "p";
+              circular = true;
+            }
+            {
+              label = "suspend";
+              action = "systemctl suspend";
+              text = "Suspend";
+              keybind = "s";
+              circular = true;
+            }
+            {
+              label = "reboot";
+              action = "systemctl reboot";
+              text = "Reboot";
+              keybind = "r";
+              circular = true;
+            }
+          ];
+        };
+        yt-dlp.enable = true;
+        zoxide = {
+          enable = true;
+          enableZshIntegration = true;
+          options = [
+            "--cmd cd"
+          ];
+        };
+      };
+    };
+  }
 #+end_src
 
 **** nix-index
@@ -11932,13 +11948,13 @@ nix-index provides a way to find out which packages are provided by which deriva
           '';
         in
 
-        {
-          enable = true;
-          package = pkgs.symlinkJoin {
-            name = "nix-index";
-            paths = [ commandNotFound ];
+          {
+            enable = true;
+            package = pkgs.symlinkJoin {
+              name = "nix-index";
+              paths = [ commandNotFound ];
+            };
           };
-        };
     };
   }
 #+end_src
@@ -12077,26 +12093,29 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
       programs.git = {
         enable = true;
       } // lib.optionalAttrs (!minimal) {
-        aliases = {
-          a = "add";
-          c = "commit";
-          cl = "clone";
-          co = "checkout";
-          b = "branch";
-          i = "init";
-          m = "merge";
-          s = "status";
-          r = "restore";
-          p = "pull";
-          pp = "push";
+        settings = {
+          alias = {
+            a = "add";
+            c = "commit";
+            cl = "clone";
+            co = "checkout";
+            b = "branch";
+            i = "init";
+            m = "merge";
+            s = "status";
+            r = "restore";
+            p = "pull";
+            pp = "push";
+          };
+          user = {
+            email = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
+            name = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
+          };
         };
         signing = {
           key = "0x76FD3810215AE097";
           signByDefault = true;
         };
-        userEmail = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
-        userName = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
-        difftastic.enable = true;
         lfs.enable = true;
         includes = [
           {
@@ -12111,6 +12130,7 @@ Here I set up my git config, automatic signing of commits, useful aliases for my
           }
         ];
       };
+      programs.difftastic.enable = lib.mkIf (!minimal) true;
     };
   }
 #+end_src
@@ -12337,7 +12357,7 @@ Currently I only use it as before with =initExtra= though.
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
   { config, pkgs, lib, minimal, inputs, globals, nixosConfig ? config, ... }:
   let
-    inherit (config.swarselsystems) flakePath;
+    inherit (config.swarselsystems) flakePath isNixos;
     crocDomain = globals.services.croc.domain;
   in
   {
@@ -12358,12 +12378,10 @@ Currently I only use it as before with =initExtra= though.
           shellAliases = lib.recursiveUpdate
             {
               hg = "history | grep";
-              hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
-              # nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-              nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
-              nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
-              ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
-              # nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+              hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
+              nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+              nboot = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+              ndry = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
               magit = "emacsclient -nc -e \"(magit-status)\"";
               config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
               g = "git";
@@ -12385,7 +12403,7 @@ Currently I only use it as before with =initExtra= though.
               cc = "wl-copy";
               build-topology = "nix build .#topology.x86_64-linux.config.output";
               build-iso = "nix build --print-out-paths .#live-iso";
-              nix-review- = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
+              nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
               nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
             }
             config.swarselsystems.shellAliases;
@@ -12847,6 +12865,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
             epkgs.lsp-bridge
             epkgs.doom-themes
             epkgs.vterm
+            # pkgs.stable.emacs.pkgs.elpaPackages.tramp # use the unstable version from elpa
             epkgs.treesit-grammars.with-all-grammars
 
             # build the rest of the packages myself
@@ -14322,9 +14341,11 @@ Currently, I am too lazy to explain every option here, but most of it is very se
             "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
             "Mod+h".action = sh ''hyprpicker | wl-copy'';
             # "Mod+s".action = spawn "grim" "-g" "\"$(slurp)\"" "-t" "png" "-" "|" "wl-copy" "-t" "image/png";
-            "Mod+s".action = screenshot { show-pointer = false; };
+            # "Mod+s".action = screenshot { show-pointer = false; };
+            "Mod+s".action.screenshot = { show-pointer = false; };
             # "Mod+Shift+s".action = spawn "slurp" "|" "grim" "-g" "-" "Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-            "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+            # "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+            "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
             # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
 
             "Mod+e".action = sh "emacsclient -nquc -a emacs -e '(dashboard-open)'";
@@ -14631,7 +14652,7 @@ This service changes the screen hue at night. I am not sure if that really does 
       programs.spicetify = {
         enable = true;
         # spotifyPackage = pkgs.stable24_11.spotify;
-        spotifyPackage = pkgs.stable.spotify;
+        spotifyPackage = pkgs.spotify;
         enabledExtensions = with spicePkgs.extensions; [
           fullAppDisplay
           shuffle
@@ -14664,8 +14685,9 @@ This service changes the screen hue at night. I am not sure if that really does 
         "${config.programs.obsidian.vaults.${name}.target}/.obsidian/core-plugins.json".force = true;
       };
 
-      programs.obsidian =
-        {
+      programs.obsidian = let
+        pluginSource = pkgs.nur.repos.swarsel;
+        in {
           enable = true;
           package = pkgs.obsidian;
           defaultSettings = {
@@ -14712,7 +14734,8 @@ This service changes the screen hue at night. I am not sure if that really does 
               "templates"
               "word-count"
             ];
-            communityPlugins = with pkgs.swarsel-nix; [
+            # communityPlugins = with pkgs.swarsel-nix; [
+            communityPlugins = with pluginSource; [
               advanced-tables
               calendar
               file-hider
@@ -14730,7 +14753,8 @@ This service changes the screen hue at night. I am not sure if that really does 
                 appearance = {
                   baseFontSize = lib.mkForce 19;
                 };
-                communityPlugins = with pkgs.swarsel-nix; [
+                # communityPlugins = with pkgs.swarsel-nix; [
+                communityPlugins = with pluginSource; [
                   {
                     pkg = advanced-tables;
                     enable = true;
@@ -14970,7 +14994,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 **** vesktop
 
 #+begin_src nix-ts :tangle modules/home/common/vesktop.nix
-  { lib, config, ... }:
+  { lib, pkgs, config, ... }:
   let
     moduleName = "vesktop";
   in
@@ -14979,6 +15003,7 @@ This service changes the screen hue at night. I am not sure if that really does 
     config = lib.mkIf config.swarselmodules.${moduleName} {
       programs.${moduleName} = {
         enable = true;
+        package = pkgs.stable.vesktop;
         settings = {
           appBadge = false;
           arRPC = false;
@@ -15091,7 +15116,7 @@ This service changes the screen hue at night. I am not sure if that really does 
   {
     options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
     config = lib.mkIf config.swarselmodules.${moduleName} {
-      swarselservices.${moduleName} = {
+      services.${moduleName} = {
         enable = true;
         systemdTarget = config.wayland.systemd.target;
       };
@@ -15164,7 +15189,6 @@ This service changes the screen hue at night. I am not sure if that really does 
 
   }
 #+end_src
-
 
 *** Server
 :PROPERTIES:
@@ -15363,7 +15387,7 @@ When setting up a new machine:
           postman
           # rclone
           libguestfs-with-appliance
-          stable.prometheus.cli
+          prometheus.cli
           tigervnc
           # openstackclient
 
@@ -15488,7 +15512,7 @@ When setting up a new machine:
               #   };
               # };
             };
-            git.userEmail = lib.mkForce gitMail;
+            git.settings.user.email = lib.mkForce gitMail;
 
             zsh = {
               shellAliases = {
@@ -15811,7 +15835,7 @@ When setting up a new machine:
 
         };
 
-        swarselservices.pizauth = {
+        services.pizauth = {
           enable = true;
           extraConfig = ''
             auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";
@@ -15991,7 +16015,7 @@ When setting up a new machine:
     options.swarselmodules.optional.uni = lib.mkEnableOption "optional uni settings";
     config = lib.mkIf config.swarselmodules.optional.uni
       {
-        swarselservices.pizauth = {
+        services.pizauth = {
           enable = true;
           accounts = {
             uni = {
@@ -16195,7 +16219,7 @@ In short, the options defined here are passed to the modules systems using =_mod
               name = "FiraCode Nerd Font Mono";
             };
             emoji = {
-              package = pkgs.noto-fonts-emoji;
+              package = pkgs.noto-fonts-color-emoji;
               name = "Noto Color Emoji";
             };
           };
@@ -21676,6 +21700,7 @@ Tramp allows for SSH access of files over Emacs. I have no ideas what the option
 
 
   (use-package tramp
+    ;; :ensure nil
     :init
     (setq vc-ignore-dir-regexp
           (format "\\(%s\\)\\|\\(%s\\)"
@@ -22395,6 +22420,31 @@ These general steps are needed when setting up a new machine and do not fit into
 #+begin_src markdown :noweb-ref setup :exports both :results html
   - setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
     - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
+#+end_src
+
+** Current patches and fixes
+
+These are current deviations from the standard settings that I take while some things are broken upstream
+
+#+begin_src markdown :noweb-ref fixes :exports both :results html
+- 202501102:
+  - flake:
+    - emacs-overlay:
+      - : version pinned because emacsclient is currently broken on latest
+    - niri-flake:
+      - currently not using the sugared version of screenshot-[,window], as it is currently broken
+  - home-manager:
+    - emacs-tramp:
+      - using stable version in extraPackages (broken in unstable)
+      - :ensure nil in emacs tramp settings to use package in extraPackages
+    - emacs-calfwL
+      - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
+    - vesktop:
+      - running stable version (broken in unstable)
+    - batgrep:
+      - running stable version (broken in unstable)
+    - swayosd:
+      - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
 #+end_src
 
 * Appendix B: Supplementary Files

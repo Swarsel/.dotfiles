@@ -5,7 +5,14 @@
     programs = {
       bat = {
         enable = true;
-        extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+        extraPackages = [
+          pkgs.bat-extras.batdiff
+          pkgs.bat-extras.batman
+          pkgs.bat-extras.batwatch
+        ] ++ [
+          pkgs.stable.bat-extras.batgrep
+        ];
+        # extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
       };
       bottom.enable = true;
       carapace.enable = true;

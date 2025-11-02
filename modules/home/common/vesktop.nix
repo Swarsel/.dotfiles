@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, pkgs, config, ... }:
 let
   moduleName = "vesktop";
 in
@@ -7,6 +7,7 @@ in
   config = lib.mkIf config.swarselmodules.${moduleName} {
     programs.${moduleName} = {
       enable = true;
+      package = pkgs.stable.vesktop;
       settings = {
         appBadge = false;
         arRPC = false;

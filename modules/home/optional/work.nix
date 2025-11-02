@@ -16,7 +16,7 @@ in
         postman
         # rclone
         libguestfs-with-appliance
-        stable.prometheus.cli
+        prometheus.cli
         tigervnc
         # openstackclient
 
@@ -141,7 +141,7 @@ in
             #   };
             # };
           };
-          git.userEmail = lib.mkForce gitMail;
+          git.settings.user.email = lib.mkForce gitMail;
 
           zsh = {
             shellAliases = {
@@ -464,7 +464,7 @@ in
 
       };
 
-      swarselservices.pizauth = {
+      services.pizauth = {
         enable = true;
         extraConfig = ''
           auth_notify_cmd = "if [[ \"$(notify-send -A \"Open $PIZAUTH_ACCOUNT\" -t 30000 'pizauth authorisation')\" == \"0\" ]]; then open \"$PIZAUTH_URL\"; fi";

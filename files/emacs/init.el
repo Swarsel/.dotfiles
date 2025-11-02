@@ -1358,6 +1358,7 @@ create a new one."
 ;;  :mode ("\\.rs" . rustic-mode))
 
 (use-package tramp
+  ;; :ensure nil
   :init
   (setq vc-ignore-dir-regexp
         (format "\\(%s\\)\\|\\(%s\\)"

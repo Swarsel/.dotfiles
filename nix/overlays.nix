@@ -9,7 +9,13 @@ in
       overlays = {
         default = final: prev:
           let
-            additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; };
+            additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; }
+              // {
+              swarsel-nix = import inputs.swarsel-nix {
+                pkgs = prev;
+              };
+              zjstatus = inputs.zjstatus.packages.${prev.system}.default;
+            };
 
             modifications = final: prev: {
               # vesktop = prev.vesktop.override {
@@ -40,63 +46,35 @@ in
                 melonds # ds
                 dolphin # gc/wii
               ]);
+
             };
 
-            nixpkgs-stable = final: _: {
-              stable = import inputs.nixpkgs-stable {
-                inherit (final) system;
-                config.allowUnfree = true;
-              };
-            };
+            nixpkgs-stable-versions = final: _:
+              let
+                nixpkgsInputs =
+                  lib.filterAttrs
+                    (name: _v: builtins.match "^nixpkgs-.*" name != null)
+                    inputs;
 
-            nixpkgs-dev = final: _: {
-              dev = import inputs.nixpkgs-dev {
-                inherit (final) system;
-                config.allowUnfree = true;
-              };
-            };
+                rename = name: builtins.replaceStrings [ "nixpkgs-" ] [ "" ] name;
 
-            nixpkgs-kernel = final: _: {
-              kernel = import inputs.nixpkgs-kernel {
-                inherit (final) system;
-                config.allowUnfree = true;
-              };
-            };
-
-            nixpkgs-stable24_05 = final: _: {
-              stable24_05 = import inputs.nixpkgs-stable24_05 {
-                inherit (final) system;
-                config.allowUnfree = true;
-              };
-            };
-
-            nixpkgs-stable24_11 = final: _: {
-              stable24_11 = import inputs.nixpkgs-stable24_11 {
-                inherit (final) system;
-                config.allowUnfree = true;
-              };
-            };
-
-            swarsel-nix = _: prev: {
-              swarsel-nix = import inputs.swarsel-nix {
-                pkgs = prev;
-              };
-            };
-
-            zjstatus = _: prev: {
-              zjstatus = inputs.zjstatus.packages.${prev.system}.default;
-            };
+                mkPkgs = src:
+                  import src {
+                    inherit (final) system;
+                    config.allowUnfree = true;
+                  };
+              in
+              builtins.listToAttrs (map
+                (name: {
+                  name = rename name;
+                  value = mkPkgs nixpkgsInputs.${name};
+                })
+                (builtins.attrNames nixpkgsInputs));
 
           in
           (additions final prev)
           // (modifications final prev)
-          // (nixpkgs-stable final prev)
-          // (nixpkgs-dev final prev)
-          // (nixpkgs-kernel final prev)
-          // (nixpkgs-stable24_05 final prev)
-          // (nixpkgs-stable24_11 final prev)
-          // (swarsel-nix final prev)
-          // (zjstatus final prev)
+          // (nixpkgs-stable-versions final prev)
           // (inputs.niri-flake.overlays.niri final prev)
           // (inputs.vbc-nix.overlays.default final prev)
           // (inputs.nur.overlays.default final prev)

@@ -1,6 +1,6 @@
 { config, pkgs, lib, minimal, inputs, globals, nixosConfig ? config, ... }:
 let
-  inherit (config.swarselsystems) flakePath;
+  inherit (config.swarselsystems) flakePath isNixos;
   crocDomain = globals.services.croc.domain;
 in
 {
@@ -21,12 +21,10 @@ in
         shellAliases = lib.recursiveUpdate
           {
             hg = "history | grep";
-            hmswitch = "home-manager --flake ${flakePath}#$(whoami)@$(hostname) switch |& nom";
-            # nswitch = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v switch |& nom --json";
-            nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
-            nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
-            ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
-            # nboot = "sudo nixos-rebuild --flake ${flakePath}#$(hostname) --show-trace --log-format internal-json -v boot |& nom --json";
+            hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
+            nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+            nboot = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
+            ndry = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
             magit = "emacsclient -nc -e \"(magit-status)\"";
             config = "git --git-dir=$HOME/.cfg/ --work-tree=$HOME";
             g = "git";
@@ -48,7 +46,7 @@ in
             cc = "wl-copy";
             build-topology = "nix build .#topology.x86_64-linux.config.output";
             build-iso = "nix build --print-out-paths .#live-iso";
-            nix-review- = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
+            nix-review-local = "nix run nixpkgs#nixpkgs-review -- rev HEAD";
             nix-review-post = "nix run nixpkgs#nixpkgs-review -- pr --post-result --systems linux";
           }
           config.swarselsystems.shellAliases;

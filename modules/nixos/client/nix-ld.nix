@@ -33,7 +33,7 @@
         gdk-pixbuf
         glew110
         glib
-        stable.gnome2.GConf
+        gnome2.GConf
         pango
         gtk2
         gtk3
@@ -82,8 +82,8 @@
         pipewire
         pixman
         speex
-        stdenv.cc.cc
-        stable.steam-fhsenv-without-steam
+        # stable.cc.cc
+        stable25_05.steam-fhsenv-without-steam
         systemd
         tbb
         vulkan-loader

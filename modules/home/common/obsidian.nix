@@ -15,6 +15,9 @@ in
     };
 
     programs.obsidian =
+      let
+        pluginSource = pkgs.nur.repos.swarsel;
+      in
       {
         enable = true;
         package = pkgs.obsidian;
@@ -62,7 +65,8 @@ in
             "templates"
             "word-count"
           ];
-          communityPlugins = with pkgs.swarsel-nix; [
+          # communityPlugins = with pkgs.swarsel-nix; [
+          communityPlugins = with pluginSource; [
             advanced-tables
             calendar
             file-hider
@@ -80,7 +84,8 @@ in
               appearance = {
                 baseFontSize = lib.mkForce 19;
               };
-              communityPlugins = with pkgs.swarsel-nix; [
+              # communityPlugins = with pkgs.swarsel-nix; [
+              communityPlugins = with pluginSource; [
                 {
                   pkg = advanced-tables;
                   enable = true;

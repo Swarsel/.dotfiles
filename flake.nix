@@ -16,18 +16,19 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     systems.url = "github:nix-systems/default";
     swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
     swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
     home-manager = {
-      # url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager";
       # url = "github:Swarsel/home-manager/main";
-      url = "github:JuneStepp/home-manager/anki-fix-booleans";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     swarsel.url = "github:Swarsel/.dotfiles";
     emacs-overlay = {
-      url = "github:nix-community/emacs-overlay";
+      # url = "github:nix-community/emacs-overlay";
+      url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nur.url = "github:nix-community/NUR";

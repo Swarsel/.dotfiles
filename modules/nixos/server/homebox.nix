@@ -12,7 +12,7 @@ in
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
     globals.services.${serviceName}.domain = serviceDomain;
 
-    swarselservices.${serviceName} = {
+    services.${serviceName} = {
       enable = true;
       package = pkgs.dev.homebox;
       database.createLocally = true;

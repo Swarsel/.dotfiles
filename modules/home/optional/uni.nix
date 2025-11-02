@@ -3,7 +3,7 @@
   options.swarselmodules.optional.uni = lib.mkEnableOption "optional uni settings";
   config = lib.mkIf config.swarselmodules.optional.uni
     {
-      swarselservices.pizauth = {
+      services.pizauth = {
         enable = true;
         accounts = {
           uni = {

@@ -91,6 +91,7 @@
                 minimal = false;
               };
               modules = [
+                inputs.stylix.homeModules.stylix
                 inputs.niri-flake.homeModules.niri
                 inputs.nix-index-database.homeModules.nix-index
                 # inputs.sops-nix.homeManagerModules.sops

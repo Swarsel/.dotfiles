@@ -114,9 +114,11 @@
           "Mod+Shift+Escape".action = spawn "kitty" "-o" "confirm_os_window_close=0" "btm";
           "Mod+h".action = sh ''hyprpicker | wl-copy'';
           # "Mod+s".action = spawn "grim" "-g" "\"$(slurp)\"" "-t" "png" "-" "|" "wl-copy" "-t" "image/png";
-          "Mod+s".action = screenshot { show-pointer = false; };
+          # "Mod+s".action = screenshot { show-pointer = false; };
+          "Mod+s".action.screenshot = { show-pointer = false; };
           # "Mod+Shift+s".action = spawn "slurp" "|" "grim" "-g" "-" "Pictures/Screenshots/$(date +'screenshot_%Y-%m-%d-%H%M%S.png')";
-          "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+          # "Mod+Shift+s".action = screenshot-window { write-to-disk = true; };
+          "Mod+Shift+s".action.screenshot-window = { write-to-disk = true; };
           # "Mod+Shift+v".action = spawn "wf-recorder" "-g" "'$(slurp -f %o -or)'" "-f" "~/Videos/screenrecord_$(date +%Y-%m-%d-%H%M%S).mkv";
 
           "Mod+e".action = sh "emacsclient -nquc -a emacs -e '(dashboard-open)'";

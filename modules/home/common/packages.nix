@@ -42,7 +42,7 @@
       sshfs
       fuse
       # ventoy
-      poppler_utils
+      poppler-utils
       vdhcoapp
 
       # nix
@@ -130,7 +130,7 @@
       unzip
 
       #nautilus
-      stable.nautilus
+      nautilus
       xfce.tumbler
       libgsf
 
@@ -147,7 +147,7 @@
 
       # the following packages are used (in some way) by waybar
       # playerctl
-      stable.pavucontrol
+      pavucontrol
       # stable.pamixer
       # gnome.gnome-clocks
       # wlogout
@@ -177,7 +177,7 @@
       nerd-fonts.fira-mono
       nerd-fonts.fira-code
       nerd-fonts.symbols-only
-      noto-fonts-emoji
+      noto-fonts-color-emoji
       font-awesome_5
       noto-fonts
       noto-fonts-cjk-sans

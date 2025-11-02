@@ -1,6 +1,6 @@
 { self, lib, pkgs, config, ... }:
 let
-  inherit (config.swarselsystems) mainUser;
+  inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
 in
 {
   options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -43,33 +43,21 @@ in
           auto-optimise-store = true;
           warn-dirty = false;
           max-jobs = 1;
-          use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
+          use-cgroups = lib.mkIf isLinux true;
         };
       };
 
-      nixpkgs.overlays = lib.mkIf config.swarselsystems.isNixos (lib.mkForce null);
+      nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
 
       programs = {
-        home-manager = lib.mkIf (!config.swarselsystems.isNixos)
-          {
-            enable = true;
-            package = pkgs.symlinkJoin {
-              name = "home-manager";
-              buildInputs = [ pkgs.makeWrapper ];
-              paths = [ pkgs.home-manager ];
-              postBuild = ''
-                wrapProgram $out/bin/home-manager \
-                --append-flags '--flake .#$(hostname)'
-              '';
-            };
-          };
+        # home-manager.enable = lib.mkIf (!isNixos) true;
         man = {
           enable = true;
           generateCaches = true;
         };
       };
 
-      targets.genericLinux.enable = lib.mkIf (!config.swarselsystems.isNixos) true;
+      targets.genericLinux.enable = lib.mkIf (!isNixos) true;
 
       home = {
         username = lib.mkDefault mainUser;
@@ -83,6 +71,17 @@ in
           "doc"
           "info"
           "devdoc"
+        ];
+        packages = lib.mkIf (!isNixos) [
+          (pkgs.symlinkJoin {
+            name = "home-manager";
+            buildInputs = [ pkgs.makeWrapper ];
+            paths = [ pkgs.home-manager ];
+            postBuild = ''
+              wrapProgram $out/bin/home-manager \
+              --append-flags '--flake ${flakePath}#$(hostname)'
+            '';
+          })
         ];
       };
     };

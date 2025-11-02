@@ -11,26 +11,29 @@ in
     programs.git = {
       enable = true;
     } // lib.optionalAttrs (!minimal) {
-      aliases = {
-        a = "add";
-        c = "commit";
-        cl = "clone";
-        co = "checkout";
-        b = "branch";
-        i = "init";
-        m = "merge";
-        s = "status";
-        r = "restore";
-        p = "pull";
-        pp = "push";
+      settings = {
+        alias = {
+          a = "add";
+          c = "commit";
+          cl = "clone";
+          co = "checkout";
+          b = "branch";
+          i = "init";
+          m = "merge";
+          s = "status";
+          r = "restore";
+          p = "pull";
+          pp = "push";
+        };
+        user = {
+          email = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
+          name = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
+        };
       };
       signing = {
         key = "0x76FD3810215AE097";
         signByDefault = true;
       };
-      userEmail = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) (lib.mkDefault address1);
-      userName = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) fullName;
-      difftastic.enable = true;
       lfs.enable = true;
       includes = [
         {
@@ -45,5 +48,6 @@ in
         }
       ];
     };
+    programs.difftastic.enable = lib.mkIf (!minimal) true;
   };
 }
