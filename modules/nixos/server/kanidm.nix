@@ -16,6 +16,12 @@ let
   forgejoDomain = globals.services.forgejo.domain;
   grafanaDomain = globals.services.grafana.domain;
   nextcloudDomain = globals.services.nextcloud.domain;
+
+  certBase = "/etc/ssl";
+  certsDir = "${certBase}/certs";
+  privateDir = "${certBase}/private";
+  certPath = "${certsDir}/${serviceName}.crt";
+  keyPath = "${privateDir}/${serviceName}.key";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -48,6 +54,47 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
+    system.activationScripts."generateSSLCert-${serviceName}" =
+      let
+        daysValid = 3650;
+        renewBeforeDays = 365;
+      in
+      {
+        text = ''
+          set -eu
+
+          ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
+          ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+
+          need_gen=0
+          if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
+            need_gen=1
+          else
+            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
+            end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
+            now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
+            seconds_left=$(( end_epoch - now_epoch ))
+            days_left=$(( seconds_left / 86400 ))
+            if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+              need_gen=1
+            fi
+          fi
+
+          if [ "$need_gen" -eq 1 ]; then
+            ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
+              -keyout "${keyPath}" \
+              -out "${certPath}" \
+              -subj "/CN=${serviceDomain}" \
+              -addext "subjectAltName=DNS:${serviceDomain}"
+
+            chmod 0644 "${certPath}"
+            chmod 0600 "${keyPath}"
+            chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
+          fi
+        '';
+        deps = [ "etc" ];
+      };
+
     services = {
       ${serviceName} = {
         package = pkgs.kanidmWithSecretProvisioning_1_7;
@@ -55,8 +102,10 @@ in
         serverSettings = {
           domain = serviceDomain;
           origin = "https://${serviceDomain}";
-          tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-          tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+          # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
+          tls_chain = certPath;
+          # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+          tls_key = keyPath;
           bindaddress = "0.0.0.0:${toString servicePort}";
           trust_x_forward_for = true;
         };
