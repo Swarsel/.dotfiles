@@ -19,7 +19,7 @@ in
 
     services.${serviceName} = {
       enable = true;
-      package = pkgs.stable.immich;
+      package = pkgs.immich;
       host = "0.0.0.0";
       port = servicePort;
       openFirewall = true;
