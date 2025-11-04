@@ -22,6 +22,9 @@
       simple-scan
       cura-appimage
 
+      # ssh login using idm
+      opkssh
+
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 

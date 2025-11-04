@@ -29,10 +29,22 @@ in
       ];
     };
 
-    systemd.tmpfiles.rules = [
-      "d ${serviceDir}/var/data 0750 root root - -"
-      "d ${serviceDir}/images   0750 root root - -"
-    ];
+    systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
+      map
+        (path: {
+          name = "${serviceDir}/${path}";
+          value = {
+            d = {
+              group = "root";
+              user = "root";
+              mode = "0750";
+            };
+          };
+        }) [
+        "${serviceDir}/var/data"
+        "${serviceDir}/images"
+      ]
+    );
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 

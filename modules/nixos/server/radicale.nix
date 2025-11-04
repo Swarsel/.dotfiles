@@ -76,9 +76,15 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [
-      "d ${cfg.settings.storage.filesystem_folder} 0750 ${serviceUser} ${serviceGroup} - -"
-    ];
+    systemd.tmpfiles.settings."10-radicale" = {
+      "${cfg.settings.storage.filesystem_folder}" = {
+        d = {
+          group = serviceGroup;
+          user = serviceUser;
+          mode = "0750";
+        };
+      };
+    };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 

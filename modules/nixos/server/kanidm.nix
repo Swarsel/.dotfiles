@@ -135,6 +135,7 @@ in
             "firefly.access" = { };
             "radicale.access" = { };
             "slink.access" = { };
+            "opkssh.access" = { };
           };
 
           inherit (config.repo.secrets.local) persons;
@@ -228,6 +229,23 @@ in
                     "nextcloud.admins" = [ "admin" ];
                   };
                 };
+              };
+              opkssh = {
+                displayName = "OPKSSH";
+                originUrl = [
+                  "http://localhost:3000"
+                  "http://localhost:3000/login-callback"
+                  "http://localhost:10001/login-callback"
+                  "http://localhost:11110/login-callback"
+                ];
+                originLanding = "http://localhost:3000";
+                public = true;
+                enableLocalhostRedirects = true;
+                scopeMaps."opkssh.access" = [
+                  "openid"
+                  "email"
+                  "profile"
+                ];
               };
               oauth2-proxy = {
                 displayName = "Oauth2-Proxy";

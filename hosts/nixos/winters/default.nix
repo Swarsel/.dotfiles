@@ -66,6 +66,7 @@
     ankisync = lib.mkDefault true;
     # snipeit = lib.mkDefault false;
     homebox = lib.mkDefault true;
+    opkssh = lib.mkDefault true;
   };
 
 }

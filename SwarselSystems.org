@@ -437,8 +437,8 @@ A short overview over each input and what it does:
       swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
       swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
       home-manager = {
-        url = "github:nix-community/home-manager";
-        # url = "github:Swarsel/home-manager/main";
+        # url = "github:nix-community/home-manager";
+        url = "github:Swarsel/home-manager/main";
         inputs.nixpkgs.follows = "nixpkgs";
       };
       swarsel.url = "github:Swarsel/.dotfiles";
@@ -2472,6 +2472,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       ankisync = lib.mkDefault true;
       # snipeit = lib.mkDefault false;
       homebox = lib.mkDefault true;
+      opkssh = lib.mkDefault true;
     };
 
   }
@@ -8788,317 +8789,335 @@ A stupid (but simple) way to get the =originUrl= is to simply set any URL there 
 To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://<kanidmDomain>/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
 
 #+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
-{ self, lib, pkgs, config, globals, ... }:
-let
-  certsSopsFile = self + /secrets/certs/secrets.yaml;
-  inherit (config.swarselsystems) sopsFile;
+  { self, lib, pkgs, config, globals, ... }:
+  let
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    inherit (config.swarselsystems) sopsFile;
 
-  servicePort = 8300;
-  serviceUser = "kanidm";
-  serviceGroup = serviceUser;
-  serviceName = "kanidm";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+    servicePort = 8300;
+    serviceUser = "kanidm";
+    serviceGroup = serviceUser;
+    serviceName = "kanidm";
+    serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+    serviceAddress = globals.hosts.winters.ipv4;
 
-  oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
-  immichDomain = globals.services.immich.domain;
-  paperlessDomain = globals.services.paperless.domain;
-  forgejoDomain = globals.services.forgejo.domain;
-  grafanaDomain = globals.services.grafana.domain;
-  nextcloudDomain = globals.services.nextcloud.domain;
+    oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
+    immichDomain = globals.services.immich.domain;
+    paperlessDomain = globals.services.paperless.domain;
+    forgejoDomain = globals.services.forgejo.domain;
+    grafanaDomain = globals.services.grafana.domain;
+    nextcloudDomain = globals.services.nextcloud.domain;
 
-  certBase = "/etc/ssl";
-  certsDir = "${certBase}/certs";
-  privateDir = "${certBase}/private";
-  certPath = "${certsDir}/${serviceName}.crt";
-  keyPath = "${privateDir}/${serviceName}.key";
-in
-{
-  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
-  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    certBase = "/etc/ssl";
+    certsDir = "${certBase}/certs";
+    privateDir = "${certBase}/private";
+    certPath = "${certsDir}/${serviceName}.crt";
+    keyPath = "${privateDir}/${serviceName}.key";
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    users.users.${serviceUser} = {
-      group = serviceGroup;
-      isSystemUser = true;
-    };
-
-    users.groups.${serviceGroup} = { };
-
-    sops = {
-      secrets = {
-        "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-immich" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-paperless" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-forgejo" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-grafana" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-nextcloud" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        "kanidm-oauth2-proxy" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+      users.users.${serviceUser} = {
+        group = serviceGroup;
+        isSystemUser = true;
       };
-    };
 
-    networking.firewall.allowedTCPPorts = [ servicePort ];
+      users.groups.${serviceGroup} = { };
 
-    globals.services.${serviceName}.domain = serviceDomain;
+      sops = {
+        secrets = {
+          "kanidm-self-signed-crt" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-self-signed-key" = { sopsFile = certsSopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-idm-admin-pw" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-immich" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-paperless" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-forgejo" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-grafana" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-nextcloud" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-freshrss" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          "kanidm-oauth2-proxy" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+        };
+      };
 
-    system.activationScripts."generateSSLCert-${serviceName}" =
-      let
-        daysValid = 3650;
-        renewBeforeDays = 365;
-      in
-      {
-        text = ''
-          set -eu
+      networking.firewall.allowedTCPPorts = [ servicePort ];
 
-          ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
-          ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+      globals.services.${serviceName}.domain = serviceDomain;
 
-          need_gen=0
-          if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
-            need_gen=1
-          else
-            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
-            end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
-            now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
-            seconds_left=$(( end_epoch - now_epoch ))
-            days_left=$(( seconds_left / 86400 ))
-            if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+      system.activationScripts."generateSSLCert-${serviceName}" =
+        let
+          daysValid = 3650;
+          renewBeforeDays = 365;
+        in
+        {
+          text = ''
+            set -eu
+
+            ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
+            ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+
+            need_gen=0
+            if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
               need_gen=1
+            else
+              enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
+              end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
+              now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
+              seconds_left=$(( end_epoch - now_epoch ))
+              days_left=$(( seconds_left / 86400 ))
+              if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+                need_gen=1
+              fi
             fi
-          fi
 
-          if [ "$need_gen" -eq 1 ]; then
-            ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
-              -keyout "${keyPath}" \
-              -out "${certPath}" \
-              -subj "/CN=${serviceDomain}" \
-              -addext "subjectAltName=DNS:${serviceDomain}"
+            if [ "$need_gen" -eq 1 ]; then
+              ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
+                -keyout "${keyPath}" \
+                -out "${certPath}" \
+                -subj "/CN=${serviceDomain}" \
+                -addext "subjectAltName=DNS:${serviceDomain}"
 
-            chmod 0644 "${certPath}"
-            chmod 0600 "${keyPath}"
-            chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
-          fi
-        '';
-        deps = [ "etc" ];
-      };
-
-    services = {
-      ${serviceName} = {
-        package = pkgs.kanidmWithSecretProvisioning_1_7;
-        enableServer = true;
-        serverSettings = {
-          domain = serviceDomain;
-          origin = "https://${serviceDomain}";
-          # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-          tls_chain = certPath;
-          # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-          tls_key = keyPath;
-          bindaddress = "0.0.0.0:${toString servicePort}";
-          trust_x_forward_for = true;
-        };
-        enableClient = true;
-        clientSettings = {
-          uri = config.services.kanidm.serverSettings.origin;
-          verify_ca = true;
-          verify_hostnames = true;
-        };
-        provision = {
-          enable = true;
-          adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
-          idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
-          groups = {
-            "immich.access" = { };
-            "paperless.access" = { };
-            "forgejo.access" = { };
-            "forgejo.admins" = { };
-            "grafana.access" = { };
-            "grafana.editors" = { };
-            "grafana.admins" = { };
-            "grafana.server-admins" = { };
-            "nextcloud.access" = { };
-            "nextcloud.admins" = { };
-            "navidrome.access" = { };
-            "freshrss.access" = { };
-            "firefly.access" = { };
-            "radicale.access" = { };
-            "slink.access" = { };
-          };
-
-          inherit (config.repo.secrets.local) persons;
-
-          systems = {
-            oauth2 = {
-              immich = {
-                displayName = "Immich";
-                originUrl = [
-                  "https://${immichDomain}/auth/login"
-                  "https://${immichDomain}/user-settings"
-                  "app.immich:///oauth-callback"
-                  "https://${immichDomain}/api/oauth/mobile-redirect"
-                ];
-                originLanding = "https://${immichDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-immich.path;
-                preferShortUsername = true;
-                enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
-                scopeMaps."immich.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              paperless = {
-                displayName = "Paperless";
-                originUrl = "https://${paperlessDomain}/accounts/oidc/kanidm/login/callback/";
-                originLanding = "https://${paperlessDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-paperless.path;
-                preferShortUsername = true;
-                scopeMaps."paperless.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-              };
-              forgejo = {
-                displayName = "Forgejo";
-                originUrl = "https://${forgejoDomain}/user/oauth2/kanidm/callback";
-                originLanding = "https://${forgejoDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
-                scopeMaps."forgejo.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                # XXX: PKCE is currently not supported by gitea/forgejo,
-                # see https://github.com/go-gitea/gitea/issues/21376.
-                allowInsecureClientDisablePkce = true;
-                preferShortUsername = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup."forgejo.admins" = [ "admin" ];
-                };
-              };
-              grafana = {
-                displayName = "Grafana";
-                originUrl = "https://${grafanaDomain}/login/generic_oauth";
-                originLanding = "https://${grafanaDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-grafana.path;
-                preferShortUsername = true;
-                scopeMaps."grafana.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "grafana.editors" = [ "editor" ];
-                    "grafana.admins" = [ "admin" ];
-                    "grafana.server-admins" = [ "server_admin" ];
-                  };
-                };
-              };
-              nextcloud = {
-                displayName = "Nextcloud";
-                originUrl = " https://${nextcloudDomain}/apps/sociallogin/custom_oidc/kanidm";
-                originLanding = "https://${nextcloudDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
-                allowInsecureClientDisablePkce = true;
-                scopeMaps."nextcloud.access" = [
-                  "openid"
-                  "email"
-                  "profile"
-                ];
-                preferShortUsername = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "nextcloud.admins" = [ "admin" ];
-                  };
-                };
-              };
-              oauth2-proxy = {
-                displayName = "Oauth2-Proxy";
-                originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
-                originLanding = "https://${oauth2ProxyDomain}/";
-                basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
-                scopeMaps = {
-                  "freshrss.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  "navidrome.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  "firefly.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  "radicale.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                  "slink.access" = [
-                    "openid"
-                    "email"
-                    "profile"
-                  ];
-                };
-                preferShortUsername = true;
-                claimMaps.groups = {
-                  joinType = "array";
-                  valuesByGroup = {
-                    "freshrss.access" = [ "ttrss_access" ];
-                    "navidrome.access" = [ "navidrome_access" ];
-                    "firefly.access" = [ "firefly_access" ];
-                    "radicale.access" = [ "radicale_access" ];
-                    "slink.access" = [ "slink_access" ];
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-
-    systemd.services = {
-      ${serviceName}.serviceConfig.RestartSec = "30";
-    };
-
-    nodes.moonside.services.nginx = {
-      upstreams = {
-        ${serviceName} = {
-          servers = {
-            "${serviceAddress}:${builtins.toString servicePort}" = { };
-          };
-        };
-      };
-      virtualHosts = {
-        "${serviceDomain}" = {
-          enableACME = true;
-          forceSSL = true;
-          acmeRoot = null;
-          locations = {
-            "/" = {
-              proxyPass = "https://${serviceName}";
-            };
-          };
-          extraConfig = ''
-            proxy_ssl_verify off;
+              chmod 0644 "${certPath}"
+              chmod 0600 "${keyPath}"
+              chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
+            fi
           '';
+          deps = [ "etc" ];
+        };
+
+      services = {
+        ${serviceName} = {
+          package = pkgs.kanidmWithSecretProvisioning_1_7;
+          enableServer = true;
+          serverSettings = {
+            domain = serviceDomain;
+            origin = "https://${serviceDomain}";
+            # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
+            tls_chain = certPath;
+            # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
+            tls_key = keyPath;
+            bindaddress = "0.0.0.0:${toString servicePort}";
+            trust_x_forward_for = true;
+          };
+          enableClient = true;
+          clientSettings = {
+            uri = config.services.kanidm.serverSettings.origin;
+            verify_ca = true;
+            verify_hostnames = true;
+          };
+          provision = {
+            enable = true;
+            adminPasswordFile = config.sops.secrets.kanidm-admin-pw.path;
+            idmAdminPasswordFile = config.sops.secrets.kanidm-idm-admin-pw.path;
+            groups = {
+              "immich.access" = { };
+              "paperless.access" = { };
+              "forgejo.access" = { };
+              "forgejo.admins" = { };
+              "grafana.access" = { };
+              "grafana.editors" = { };
+              "grafana.admins" = { };
+              "grafana.server-admins" = { };
+              "nextcloud.access" = { };
+              "nextcloud.admins" = { };
+              "navidrome.access" = { };
+              "freshrss.access" = { };
+              "firefly.access" = { };
+              "radicale.access" = { };
+              "slink.access" = { };
+              "opkssh.access" = { };
+            };
+
+            inherit (config.repo.secrets.local) persons;
+
+            systems = {
+              oauth2 = {
+                immich = {
+                  displayName = "Immich";
+                  originUrl = [
+                    "https://${immichDomain}/auth/login"
+                    "https://${immichDomain}/user-settings"
+                    "app.immich:///oauth-callback"
+                    "https://${immichDomain}/api/oauth/mobile-redirect"
+                  ];
+                  originLanding = "https://${immichDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-immich.path;
+                  preferShortUsername = true;
+                  enableLegacyCrypto = true; # can use RS256 / HS256, not ES256
+                  scopeMaps."immich.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                paperless = {
+                  displayName = "Paperless";
+                  originUrl = "https://${paperlessDomain}/accounts/oidc/kanidm/login/callback/";
+                  originLanding = "https://${paperlessDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-paperless.path;
+                  preferShortUsername = true;
+                  scopeMaps."paperless.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                forgejo = {
+                  displayName = "Forgejo";
+                  originUrl = "https://${forgejoDomain}/user/oauth2/kanidm/callback";
+                  originLanding = "https://${forgejoDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-forgejo.path;
+                  scopeMaps."forgejo.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  # XXX: PKCE is currently not supported by gitea/forgejo,
+                  # see https://github.com/go-gitea/gitea/issues/21376.
+                  allowInsecureClientDisablePkce = true;
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup."forgejo.admins" = [ "admin" ];
+                  };
+                };
+                grafana = {
+                  displayName = "Grafana";
+                  originUrl = "https://${grafanaDomain}/login/generic_oauth";
+                  originLanding = "https://${grafanaDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-grafana.path;
+                  preferShortUsername = true;
+                  scopeMaps."grafana.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "grafana.editors" = [ "editor" ];
+                      "grafana.admins" = [ "admin" ];
+                      "grafana.server-admins" = [ "server_admin" ];
+                    };
+                  };
+                };
+                nextcloud = {
+                  displayName = "Nextcloud";
+                  originUrl = " https://${nextcloudDomain}/apps/sociallogin/custom_oidc/kanidm";
+                  originLanding = "https://${nextcloudDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-nextcloud.path;
+                  allowInsecureClientDisablePkce = true;
+                  scopeMaps."nextcloud.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "nextcloud.admins" = [ "admin" ];
+                    };
+                  };
+                };
+                opkssh = {
+                  displayName = "OPKSSH";
+                  originUrl = [
+                    "http://localhost:3000"
+                    "http://localhost:3000/login-callback"
+                    "http://localhost:10001/login-callback"
+                    "http://localhost:11110/login-callback"
+                  ];
+                  originLanding = "http://localhost:3000";
+                  public = true;
+                  enableLocalhostRedirects = true;
+                  scopeMaps."opkssh.access" = [
+                    "openid"
+                    "email"
+                    "profile"
+                  ];
+                };
+                oauth2-proxy = {
+                  displayName = "Oauth2-Proxy";
+                  originUrl = "https://${oauth2ProxyDomain}/oauth2/callback";
+                  originLanding = "https://${oauth2ProxyDomain}/";
+                  basicSecretFile = config.sops.secrets.kanidm-oauth2-proxy.path;
+                  scopeMaps = {
+                    "freshrss.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "navidrome.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "firefly.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "radicale.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                    "slink.access" = [
+                      "openid"
+                      "email"
+                      "profile"
+                    ];
+                  };
+                  preferShortUsername = true;
+                  claimMaps.groups = {
+                    joinType = "array";
+                    valuesByGroup = {
+                      "freshrss.access" = [ "ttrss_access" ];
+                      "navidrome.access" = [ "navidrome_access" ];
+                      "firefly.access" = [ "firefly_access" ];
+                      "radicale.access" = [ "radicale_access" ];
+                      "slink.access" = [ "slink_access" ];
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+
+      systemd.services = {
+        ${serviceName}.serviceConfig.RestartSec = "30";
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://${serviceName}";
+              };
+            };
+            extraConfig = ''
+              proxy_ssl_verify off;
+            '';
+          };
         };
       };
     };
-  };
-}
+  }
 #+end_src
 
 **** oauth2-proxy
@@ -9738,9 +9757,15 @@ in
         };
       };
 
-      systemd.tmpfiles.rules = [
-        "d ${cfg.settings.storage.filesystem_folder} 0750 ${serviceUser} ${serviceGroup} - -"
-      ];
+      systemd.tmpfiles.settings."10-radicale" = {
+        "${cfg.settings.storage.filesystem_folder}" = {
+          d = {
+            group = serviceGroup;
+            user = serviceUser;
+            mode = "0750";
+          };
+        };
+      };
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -10048,13 +10073,25 @@ in
         ];
       };
 
-      systemd.tmpfiles.rules = [
-        "d ${serviceDir}/data 0750 1001 root - -"
-        "d ${serviceDir}/data/cache 0750 1001 root - -"
-        "d ${serviceDir}/data/locks 0750 1001 root - -"
-        "d ${serviceDir}/data/log 0750 1001 root - -"
-        "d ${serviceDir}/data/proxies 0750 1001 root - -"
-      ];
+      systemd.tmpfiles.settings."11-shlink" = builtins.listToAttrs (
+        map
+          (path: {
+            name = "${serviceDir}/${path}";
+            value = {
+              d = {
+                group = "root";
+                user = "1001";
+                mode = "0750";
+              };
+            };
+          }) [
+          "${serviceDir}/data"
+          "${serviceDir}/data/cache"
+          "${serviceDir}/data/locks"
+          "${serviceDir}/data/log"
+          "${serviceDir}/data/proxies"
+        ]
+      );
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -10137,10 +10174,22 @@ Deployment notes:
         ];
       };
 
-      systemd.tmpfiles.rules = [
-        "d ${serviceDir}/var/data 0750 root root - -"
-        "d ${serviceDir}/images   0750 root root - -"
-      ];
+      systemd.tmpfiles.settings."12-slink" = builtins.listToAttrs (
+        map
+          (path: {
+            name = "${serviceDir}/${path}";
+            value = {
+              d = {
+                group = "root";
+                user = "root";
+                mode = "0750";
+              };
+            };
+          }) [
+          "${serviceDir}/var/data"
+          "${serviceDir}/images"
+        ]
+      );
 
       networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -10320,6 +10369,48 @@ Deployment notes:
             };
           };
         };
+      };
+
+    };
+
+  }
+#+end_src
+**** OPKSSH
+
+#+begin_src nix-ts :tangle modules/nixos/server/opkssh.nix
+  { lib, config, globals, ... }:
+  let
+    serviceName = "opkssh";
+    serviceUser = "opksshuser";
+    serviceGroup = serviceUser;
+
+    kanidmDomain = globals.services.kanidm.domain;
+
+    inherit (config.swarselsystems) mainUser;
+    inherit (config.repo.secrets.local) persons;
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      services.${serviceName} = {
+        enable = true;
+        user = serviceUser;
+        group = serviceGroup;
+        providers = {
+          kanidm = {
+            lifetime = "oidc";
+            issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+            clientId = serviceName;
+          };
+        };
+        authorizations = [
+          {
+            user = mainUser;
+            principal = builtins.head persons.${mainUser}.mailAddresses;
+            inherit (config.services.opkssh.providers.kanidm) issuer;
+          }
+        ];
       };
 
     };
@@ -11285,6 +11376,9 @@ This holds packages that I can use as provided, or with small modifications (as 
         cups
         simple-scan
         cura-appimage
+
+        # ssh login using idm
+        opkssh
 
         # dict
         (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -14651,9 +14745,15 @@ When setting up a new machine:
       };
 
       # assure correct permissions
-      systemd.user.tmpfiles.rules = [
-        "d ${homeDir}/.gnupg 700 ${mainUser} users"
-      ];
+      systemd.user.tmpfiles.settings."30-gpgagent".rules = {
+        "${homeDir}/.gnupg" = {
+          d = {
+            group = "users";
+            user = mainUser;
+            mode = "0700";
+          };
+        };
+      };
     };
 
   }
@@ -15232,6 +15332,41 @@ This service changes the screen hue at night. I am not sure if that really does 
           effect-blur = "7x5";
           effect-vignette = "0.5:0.5";
           fade-in = "0.2";
+        };
+      };
+    };
+
+  }
+#+end_src
+
+**** opkssh
+
+#+begin_src nix-ts :tangle modules/home/common/opkssh.nix
+  { lib, config, ... }:
+  let
+    moduleName = "opkssh";
+  in
+  {
+    options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";
+    config = lib.mkIf config.swarselmodules.${moduleName} {
+      programs.${moduleName} = {
+        enable = true;
+        settings = {
+          default_provider = "kanidm";
+
+          providers = [
+            {
+              alias = "kanidm";
+              issuer = "https://sso.swarsel.win/oauth2/openid/opkssh";
+              client_id = "opkssh";
+              scopes = "openid email profile";
+              redirect_uris = [
+                "http://localhost:3000/login-callback"
+                "http://localhost:10001/login-callback"
+                "http://localhost:11110/login-callback"
+              ];
+            }
+          ];
         };
       };
     };
@@ -18826,6 +18961,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         obs-studio = lib.mkDefault true;
         obsidian = lib.mkDefault true;
         obsidian-tray = lib.mkDefault true;
+        opkssh = lib.mkDefault true;
         ownpackages = lib.mkDefault true;
         packages = lib.mkDefault true;
         passwordstore = lib.mkDefault true;

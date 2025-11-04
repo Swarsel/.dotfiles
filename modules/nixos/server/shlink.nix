@@ -48,13 +48,25 @@ in
       ];
     };
 
-    systemd.tmpfiles.rules = [
-      "d ${serviceDir}/data 0750 1001 root - -"
-      "d ${serviceDir}/data/cache 0750 1001 root - -"
-      "d ${serviceDir}/data/locks 0750 1001 root - -"
-      "d ${serviceDir}/data/log 0750 1001 root - -"
-      "d ${serviceDir}/data/proxies 0750 1001 root - -"
-    ];
+    systemd.tmpfiles.settings."11-shlink" = builtins.listToAttrs (
+      map
+        (path: {
+          name = "${serviceDir}/${path}";
+          value = {
+            d = {
+              group = "root";
+              user = "1001";
+              mode = "0750";
+            };
+          };
+        }) [
+        "${serviceDir}/data"
+        "${serviceDir}/data/cache"
+        "${serviceDir}/data/locks"
+        "${serviceDir}/data/log"
+        "${serviceDir}/data/proxies"
+      ]
+    );
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 

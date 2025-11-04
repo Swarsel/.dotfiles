@@ -1,0 +1,38 @@
+{ lib, config, globals, ... }:
+let
+  serviceName = "opkssh";
+  serviceUser = "opksshuser";
+  serviceGroup = serviceUser;
+
+  kanidmDomain = globals.services.kanidm.domain;
+
+  inherit (config.swarselsystems) mainUser;
+  inherit (config.repo.secrets.local) persons;
+in
+{
+  options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    services.${serviceName} = {
+      enable = true;
+      user = serviceUser;
+      group = serviceGroup;
+      providers = {
+        kanidm = {
+          lifetime = "oidc";
+          issuer = "https://${kanidmDomain}/oauth2/openid/${serviceName}";
+          clientId = serviceName;
+        };
+      };
+      authorizations = [
+        {
+          user = mainUser;
+          principal = builtins.head persons.${mainUser}.mailAddresses;
+          inherit (config.services.opkssh.providers.kanidm) issuer;
+        }
+      ];
+    };
+
+  };
+
+}

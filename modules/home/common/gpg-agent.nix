@@ -37,9 +37,15 @@ in
     };
 
     # assure correct permissions
-    systemd.user.tmpfiles.rules = [
-      "d ${homeDir}/.gnupg 700 ${mainUser} users"
-    ];
+    systemd.user.tmpfiles.settings."30-gpgagent".rules = {
+      "${homeDir}/.gnupg" = {
+        d = {
+          group = "users";
+          user = mainUser;
+          mode = "0700";
+        };
+      };
+    };
   };
 
 }

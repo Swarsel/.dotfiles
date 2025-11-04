@@ -37,6 +37,7 @@
       obs-studio = lib.mkDefault true;
       obsidian = lib.mkDefault true;
       obsidian-tray = lib.mkDefault true;
+      opkssh = lib.mkDefault true;
       ownpackages = lib.mkDefault true;
       packages = lib.mkDefault true;
       passwordstore = lib.mkDefault true;
