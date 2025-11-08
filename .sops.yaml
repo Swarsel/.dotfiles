@@ -49,48 +49,58 @@ creation_rules:
       - *surface
       - *winters
       - *moonside
-  - path_regex: secrets/pyramid/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *nbl
-  - path_regex: secrets/moonside/secrets.yaml
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *moonside
-  - path_regex: secrets/bakery/secrets.yaml
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *bakery
-  - path_regex: secrets/winters/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *winters
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *nbl
-  - path_regex: secrets/milkywell/[^/]+\.(yaml|json|env|ini)$
+
+  - path_regex: secrets/pyramid/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *milkywell
+      - *nbl
   - path_regex: hosts/nixos/pyramid/secrets/pii.nix.enc
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *nbl
+
+  - path_regex: secrets/moonside/secrets.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *moonside
+  - path_regex: hosts/nixos/moonside/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *moonside
+
+  - path_regex: secrets/bakery/secrets.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *bakery
+  - path_regex: hosts/nixos/bakery/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *bakery
+
+  - path_regex: secrets/winters/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *winters
   - path_regex: hosts/nixos/winters/secrets/pii.nix.enc
     key_groups:
     - pgp:
@@ -98,24 +108,25 @@ creation_rules:
       age:
       - *winters
       - *moonside
+
+  - path_regex: secrets/milkywell/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *milkywell
   - path_regex: hosts/nixos/milkywell/secrets/pii.nix.enc
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *milkywell
-  - path_regex: hosts/nixos/bakery/secrets/pii.nix.enc
+
+  - path_regex: hosts/nixos/summers/secrets/
     key_groups:
     - pgp:
       - *swarsel
-      age:
-      - *bakery
-  - path_regex: hosts/nixos/moonside/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *moonside
+
   - path_regex: hosts/darwin/nbm-imba-166/secrets/pii.nix.enc
     key_groups:
     - pgp:

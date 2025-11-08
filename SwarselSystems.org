@@ -233,16 +233,21 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   | Name               | Hardware                                            | Use                                                  |
   |--------------------|-----------------------------------------------------|------------------------------------------------------|
   |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal lapto                                       |
-  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS sandbox                                        |
-  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
-  |🖥️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
-  |🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
+  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
+  |🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
+  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
+  |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
+  |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
+  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+  |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+  |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
+  |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
+  |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
   |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
   |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
   |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
   |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
-  |🏠 **treehouse**    | -                                                   | Reference configuration for a home-manager only host |
 #+end_src
 
 ** Programs
@@ -510,6 +515,10 @@ A short overview over each input and what it does:
         url = "github:sodiboo/niri-flake";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      nixos-extra-modules = {
+        url = "github:oddlama/nixos-extra-modules";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
       microvm = {
         url = "github:astro/microvm.nix";
         inputs.nixpkgs.follows = "nixpkgs";
@@ -559,7 +568,7 @@ This file is used by [[https://github.com/shlevy/nix-plugins][nix-plugins]]. nix
 - [[https://github.com/AGWA/git-crypt][git-crypt]]
 - a separate repo containing my secrets
 
-  As for the second approach, I actually used this up to some point (see for example =7e11641: feat: add initial oauth2-proxy and freshrss oidc= as one of the lasts commits still using this system). However, it is quite bothersome to constantly have to keep two repositories up to date and in sync. Also, having a repo that every configuration relied upon that was also a private repo led to the problem that my demo configuration ([[#h:e1498bef-ec67-483d-bf02-76264e30be8e][ChaosTheatre (Demo Physical/VM)]]) would fail to build with that present, and I had to take several extra steps to make it buildable. Ever since deleting that dependency I also got rid of that problem. The whole system is inspired by [[https://oddlama.org/blog/evaluation-time-secrets-in-nix/][this blog article]] and large parts of it are adapted from [[https://github.com/oddlama/nix-config][oddlama's nix-config]].
+  As for the second approach, I actually used this up to some point (see for example =7e11641: feat: add initial oauth2-proxy and freshrss oidc= as one of the lasts commits still using this system). However, it is quite bothersome to constantly have to keep two repositories up to date and in sync. Also, having a repo that every configuration relied upon that was also a private repo led to the problem that my demo configuration ([[#h:e1498bef-ec67-483d-bf02-76264e30be8e][Hotel (Demo Physical/VM)]]) would fail to build with that present, and I had to take several extra steps to make it buildable. Ever since deleting that dependency I also got rid of that problem. The whole system is inspired by [[https://oddlama.org/blog/evaluation-time-secrets-in-nix/][this blog article]] and large parts of it are adapted from [[https://github.com/oddlama/nix-config][oddlama's nix-config]].
 
 The builtin that is added is a simple call to the =exec= function that calls a bash script. In order to keep some sanity, we are checking that we are actually calling it no an encryted nix file (even though there is no syntax check inside) and that the path given is a true nix path. Note that a string path will not be accepted, as that can have impurity implications.
 
@@ -731,6 +740,9 @@ Concerning the =flake = _:= part:
           inherit (inputs.home-manager.lib) hm;
           inherit swarselsystems;
         });
+
+        swarselsystemsLib = swarselsystems;
+        homeLib = self.outputs.lib;
       };
   }
 #+end_src
@@ -746,14 +758,39 @@ Other nix users can make use of these packages either by installing them directl
 More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
 #+begin_src nix-ts :tangle nix/packages.nix
-{ self, ... }:
+{ self, inputs, ... }:
 {
+  imports = [
+    (
+      { lib, flake-parts-lib, ... }:
+      flake-parts-lib.mkTransposedPerSystemModule {
+        name = "pkgs";
+        file = ./packages.nix;
+        option = lib.mkOption {
+          type = lib.types.unspecified;
+        };
+      }
+    )
+  ];
   flake = _:
     let
       inherit (self.outputs) lib;
     in
     {
       packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import "${self}/pkgs" { inherit self lib pkgs; });
+    };
+
+  perSystem = { pkgs, system, ... }:
+    {
+      # see https://flake.parts/module-arguments.html?highlight=modulewith#persystem-module-parameters
+      _module.args.pkgs = import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+        overlays = [
+          self.overlays.default
+        ];
+      };
+      inherit pkgs;
     };
 }
 #+end_src
@@ -866,12 +903,29 @@ The rest of the outputs either define or help define the actual configurations:
     flake = { config, ... }:
       let
         inherit (self) outputs;
-        inherit (outputs) lib;
+        inherit (outputs) lib homeLib;
         # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
         mkNixosHost = { minimal }: configName:
-          lib.nixosSystem {
-            specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+          let
+            sys = "x86_64-linux";
+            # lib = config.pkgsPre.${sys}.lib // {
+            #   inherit (inputs.home-manager.lib) hm;
+            #   swarselsystems = self.outputs.swarselsystemsLib;
+            # };
+
+            # lib = config.pkgsPre.${sys}.lib // {
+            #   inherit (inputs.home-manager.lib) hm;
+            #   swarselsystems = self.outputs.swarselsystemsLib;
+            # };
+            inherit (config.pkgs.${sys}) lib;
+          in
+          inputs.nixpkgs.lib.nixosSystem {
+            specialArgs = {
+              inherit inputs outputs self minimal configName;
+              inherit lib homeLib;
+              inherit (config) globals nodes;
+            };
             modules = [
               inputs.disko.nixosModules.disko
               inputs.sops-nix.nixosModules.sops
@@ -886,6 +940,7 @@ The rest of the outputs either define or help define the actual configurations:
               inputs.niri-flake.nixosModules.niri
               inputs.microvm.nixosModules.host
               inputs.microvm.nixosModules.microvm
+              (inputs.nixos-extra-modules + "/modules/guests")
               "${self}/hosts/nixos/${configName}"
               "${self}/profiles/nixos"
               "${self}/modules/nixos"
@@ -894,7 +949,7 @@ The rest of the outputs either define or help define the actual configurations:
                 microvm.guest.enable = lib.mkDefault false;
 
                 node = {
-                  name = configName;
+                  name = lib.mkForce configName;
                   secretsDir = ../hosts/nixos/${configName}/secrets;
                 };
 
@@ -916,7 +971,7 @@ The rest of the outputs either define or help define the actual configurations:
         mkDarwinHost = { minimal }: configName:
           inputs.nix-darwin.lib.darwinSystem {
             specialArgs = {
-              inherit inputs outputs lib self minimal configName;
+              inherit inputs lib outputs self minimal configName;
               inherit (config) globals nodes;
             };
             modules = [
@@ -933,7 +988,7 @@ The rest of the outputs either define or help define the actual configurations:
               "${self}/modules/nixos/common/meta.nix"
               "${self}/modules/nixos/common/globals.nix"
               {
-                node.name = configName;
+                node.name = lib.mkForce configName;
                 node.secretsDir = ../hosts/darwin/${configName}/secrets;
 
               }
@@ -949,7 +1004,7 @@ The rest of the outputs either define or help define the actual configurations:
               {
                 inherit pkgs;
                 extraSpecialArgs = {
-                  inherit inputs outputs lib self configName;
+                  inherit inputs lib outputs self configName;
                   inherit (config) globals nodes;
                   minimal = false;
                 };
@@ -984,14 +1039,32 @@ The rest of the outputs either define or help define the actual configurations:
           minimal = true;
         });
 
-        # TODO: Build these for all architectures
-        homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux // mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.aarch64-linux;
-        nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+        homeConfigurations =
+          let
+            inherit (lib.swarselsystems) pkgsFor readHosts;
+          in
+          mkHalfHostConfigs (readHosts "home") "home" pkgsFor.x86_64-linux
+          // mkHalfHostConfigs (readHosts "home") "home" pkgsFor.aarch64-linux;
+
+        nixOnDroidConfigurations =
+          let
+            inherit (lib.swarselsystems) pkgsFor readHosts;
+          in
+          mkHalfHostConfigs (readHosts "android") "android" pkgsFor.aarch64-linux;
+
+        guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
+          _: node:
+            lib.flip lib.mapAttrs' (node.config.microvm.vms or { }) (
+              guestName: guestDef:
+                lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
+            )
+        );
 
         diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-        nodes = config.nixosConfigurations // config.darwinConfigurations;
-
+        nodes = config.nixosConfigurations
+          // config.darwinConfigurations
+          // config.guestConfigurations;
       };
   }
 #+end_src
@@ -1046,11 +1119,11 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
                 (mkConnection "milkywell" "wan")
                 (mkConnection "magicant" "wifi")
                 (mkConnection "toto" "bootstrapper")
-                (mkConnection "chaostheatre" "demo host")
+                (mkConnection "hotel" "demo host")
               ];
             };
 
-            chaostheatre.interfaces."demo host" = { };
+            hotel.interfaces."demo host" = { };
             toto.interfaces."bootstrapper" = { };
             milkywell.interfaces.wan = { };
             moonside.interfaces.wan = { };
@@ -1549,6 +1622,11 @@ On the structure of overlays: as you notice, all of the attributes within overla
                 #   withSystemVencord = true;
                 # };
 
+                lib = prev.lib // {
+                  swarselsystems = self.outputs.swarselsystemsLib;
+                  hm = self.outputs.homeLib;
+                };
+
                 firefox = prev.firefox.override {
                   nativeMessagingHosts = [
                     prev.tridactyl-native
@@ -1599,15 +1677,19 @@ On the structure of overlays: as you notice, all of the attributes within overla
                   (builtins.attrNames nixpkgsInputs));
 
             in
-            (additions final prev)
-            // (modifications final prev)
-            // (nixpkgs-stable-versions final prev)
-            // (inputs.niri-flake.overlays.niri final prev)
-            // (inputs.vbc-nix.overlays.default final prev)
-            // (inputs.nur.overlays.default final prev)
-            // (inputs.emacs-overlay.overlay final prev)
-            // (inputs.nix-topology.overlays.default final prev)
-            // (inputs.nixgl.overlay final prev);
+            lib.recursiveUpdate
+              (
+                (additions final prev)
+                // (nixpkgs-stable-versions final prev)
+                // (inputs.niri-flake.overlays.niri final prev)
+                // (inputs.vbc-nix.overlays.default final prev)
+                // (inputs.nur.overlays.default final prev)
+                // (inputs.emacs-overlay.overlay final prev)
+                // (inputs.nix-topology.overlays.default final prev)
+                // (inputs.nixgl.overlay final prev)
+                // (inputs.nixos-extra-modules.overlays.default final prev)
+              )
+              (modifications final prev);
         };
       };
   }
@@ -2392,7 +2474,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
   }
 
 #+end_src
-**** Winters (Server)
+**** Winters (Server: ASRock J4105-ITX)
 :PROPERTIES:
 :CUSTOM_ID: h:932ef6b0-4c14-4200-8e3f-2e208e748746
 :END:
@@ -2435,6 +2517,14 @@ This is my main server that I run at home. It handles most tasks that require bi
       isBtrfs = false;
       isLinux = true;
       isNixos = true;
+      server.garage = {
+        data_dir = [
+          {
+            capacity = "200G";
+            path = "/Vault/data/garage/main";
+          }
+        ];
+      };
     };
 
   } // lib.optionalAttrs (!minimal) {
@@ -2473,6 +2563,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       # snipeit = lib.mkDefault false;
       homebox = lib.mkDefault true;
       opkssh = lib.mkDefault true;
+      garage = lib.mkDefault false;
     };
 
   }
@@ -2530,6 +2621,305 @@ This is my main server that I run at home. It handles most tasks that require bi
     hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   }
 #+end_src
+**** Summers (Server: ASUS Z10PA-D8)
+
+***** Main Configuration
+#+begin_src nix-ts :tangle hosts/nixos/summers/default.nix
+  { inputs, lib, config, configName, minimal, nodes, globals, ... }:
+  {
+
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+    ];
+
+    boot = {
+      loader.systemd-boot.enable = true;
+      loader.efi.canTouchEfiVariables = true;
+    };
+
+    # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+
+    networking = {
+      inherit (config.repo.secrets.local) hostId;
+      hostName = configName;
+      firewall.enable = true;
+      enableIPv6 = true;
+    };
+
+    swarselsystems = {
+      info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
+      flakePath = "/root/.dotfiles";
+      isImpermanence = true;
+      isSecureBoot = true;
+      isCrypted = true;
+      isBtrfs = true;
+      isLinux = true;
+      isNixos = true;
+      withMicroVMs = false;
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+
+    swarselprofiles = {
+      server = true;
+    };
+
+    swarselmodules = {
+      optional = {
+        microvmHost = true;
+      };
+      server = {
+        nfs = false;
+        nginx = false;
+        kavita = false;
+        restic = false;
+        jellyfin = false;
+        navidrome = false;
+        spotifyd = false;
+        mpd = false;
+        postgresql = false;
+        matrix = false;
+        nextcloud = false;
+        immich = false;
+        paperless = false;
+        transmission = false;
+        syncthing = false;
+        grafana = false;
+        emacs = false;
+        freshrss = false;
+        jenkins = false;
+        kanidm = false;
+        firefly-iii = false;
+        koillection = false;
+        radicale = false;
+        atuin = false;
+        forgejo = false;
+        ankisync = false;
+        homebox = false;
+        opkssh = false;
+        garage = false;
+      };
+    };
+
+    microvm.vms =
+      let
+        mkMicrovm = guestName: {
+          ${guestName} = {
+            backend = "microvm";
+            autostart = true;
+            modules = [
+              ./guests/${guestName}.nix
+              {
+                node.secretsDir = ./secrets/${guestName};
+              }
+            ];
+            microvm = {
+              system = "x86_64-linux";
+              # baseMac = config.repo.secrets.local.networking.interfaces.lan.mac;
+              # interfaces.vlan-services = { };
+            };
+            specialArgs = {
+              inherit (config) nodes globals;
+              inherit lib;
+              inherit inputs minimal;
+            };
+          };
+        };
+      in
+      lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+        { }
+        // mkMicrovm "guest1"
+      );
+
+  }
+
+#+end_src
+
+***** hardware-configuration
+#+begin_src nix-ts :tangle hosts/nixos/summers/hardware-configuration.nix
+  { config, lib, modulesPath, ... }:
+
+  {
+    imports =
+      [
+        (modulesPath + "/installer/scan/not-detected.nix")
+      ];
+
+    boot = {
+      initrd.availableKernelModules = [ "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" ];
+      initrd.kernelModules = [ ];
+      kernelModules = [ "kvm-intel" ];
+      extraModulePackages = [ ];
+
+      supportedFilesystems = [ "zfs" ];
+      zfs.extraPools = [ "Vault" ];
+    };
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+#+end_src
+***** disko
+
+#+begin_src nix-ts :tangle hosts/nixos/summers/disk-config.nix
+  { lib, config, ... }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+              luks = lib.mkIf config.swarselsystems.isCrypted {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                  settings = {
+                    allowDiscards = true;
+                    # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                    crypttabExtraOpts = [
+                      "fido2-device=auto"
+                      "token-timeout=10"
+                    ];
+                  };
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                    '';
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  }
+#+end_src
+***** Guests
+****** Guest 1
+#+begin_src nix-ts :tangle hosts/nixos/summers/guests/guest1/default.nix
+  { lib, minimal, ... }:
+  {
+
+    swarselsystems = {
+      info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+
+    swarselprofiles = {
+      server = false;
+    };
+
+    swarselmodules = {
+      optional = {
+        microvmGuest = false;
+      };
+    };
+
+    microvm = {
+      mem = 1024 * 4;
+      vcpu = 2;
+    };
+
+  }
+
+#+end_src
+
 **** machpizza (MacBook Pro)
 :PROPERTIES:
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
@@ -2623,7 +3013,7 @@ My phone. I use only a minimal config for remote debugging here.
 **** Treehouse (DGX Spark)
 
 #+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
-  { self, outputs, ... }:
+  { self, ... }:
   {
 
     imports = [
@@ -2633,12 +3023,6 @@ My phone. I use only a minimal config for remote debugging here.
       "${self}/modules/nixos/common/meta.nix"
     ];
 
-    nixpkgs = {
-      overlays = [ outputs.overlays.default ];
-      config = {
-        allowUnfree = true;
-      };
-    };
 
     services.xcape = {
       enable = true;
@@ -3427,7 +3811,7 @@ TODO: cleanup this mess
         file = {
           ".bash_history" = {
             text = ''
-              swarsel-install -n chaostheatre
+              swarsel-install -n hotel
             '';
           };
         };
@@ -3444,7 +3828,7 @@ TODO: cleanup this mess
           file = {
             ".bash_history" = {
               text = ''
-                swarsel-install -n chaostheatre
+                swarsel-install -n hotel
               '';
             };
           };
@@ -3586,7 +3970,7 @@ TODO: cleanup this mess
 
         #+end_src
 
-**** ChaosTheatre (Demo Physical/VM)
+**** Hotel (Demo Physical/VM)
 :PROPERTIES:
 :CUSTOM_ID: h:e1498bef-ec67-483d-bf02-76264e30be8e
 :END:
@@ -3599,7 +3983,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/hotel/default.nix
         { self, config, pkgs, lib, minimal, ... }:
         let
           mainUser = "demo";
@@ -3627,7 +4011,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
           };
 
           networking = {
-            hostName = "chaostheatre";
+            hostName = "hotel";
             firewall.enable = true;
           };
 
@@ -3649,7 +4033,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 
         } // lib.optionalAttrs (!minimal) {
           swarselprofiles = {
-            chaostheatre = true;
+            hotel = true;
             minimal = true;
           };
         }
@@ -3662,7 +4046,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/hotel/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , pkgs
@@ -3798,7 +4182,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/options.nix
+#+begin_src nix-ts :tangle hosts/nixos/hotel/options.nix
   _:
   { }
 
@@ -3809,7 +4193,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:88ccb198-74b9-4269-8e22-af1277f44667
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/chaostheatre/options-home.nix
+#+begin_src nix-ts :tangle hosts/nixos/hotel/options-home.nix
   _:
   { }
 
@@ -4265,7 +4649,7 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
+  { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, ... }:
   {
     options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
     config = lib.mkIf config.swarselmodules.home-manager {
@@ -4296,7 +4680,11 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
             home.stateVersion = lib.mkDefault config.system.stateVersion;
           }
         ];
-        extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal configName; };
+        extraSpecialArgs = {
+          inherit (inputs) self nixgl;
+          inherit inputs outputs globals nodes minimal configName;
+          lib = homeLib;
+        };
       };
     };
   }
@@ -10417,6 +10805,114 @@ Deployment notes:
 
   }
 #+end_src
+**** Garage
+
+Generate the admin token using =openssl rand -base64 32=.
+Generate the rpc token using =openssl rand -hex 32=.
+
+#+begin_src nix-ts :tangle modules/nixos/server/garage.nix
+  { self, lib, pkgs, config, configName, globals, ... }:
+  let
+    sopsFile = self + /secrets/${configName}/secrets2.yaml;
+
+    serviceName = "garage";
+    servicePort = 3900;
+    serviceDomain = config.repo.secrets.common.services.domains."${serviceName}-${configName}";
+    serviceAddress = globals.hosts.${configName}.ipv4;
+
+    cfg = config.services.${serviceName};
+    metadata_dir = "/var/lib/garage/meta";
+  in
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      swarselsystems.server.${serviceName} = {
+        data_dir = lib.mkOption {
+          type = lib.types.either lib.types.path (lib.types.listOf lib.types.attrs);
+          default = "/var/lib/garage/data";
+        };
+      };
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      sops = {
+        secrets.garage-admin-token = { inherit sopsFile; };
+        secrets.garage-rpc-secret = { inherit sopsFile; };
+      };
+
+      environment = {
+        persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+          { directory = metadata_dir; }
+        ];
+        systemPackages = [
+          cfg.package
+        ];
+      };
+
+      systemd.services.${serviceName}.serviceConfig = {
+        DynamicUser = false;
+        ProtectHome = lib.mkForce false;
+      };
+
+      services.${serviceName} = {
+        enable = true;
+        package = pkgs.garage_2;
+        settings = {
+          inherit (config.swarselsystems.${serviceName}) data_dir;
+          inherit metadata_dir;
+          db_engine = "lmdb";
+          block_size = "1MiB";
+          use_local_tz = false;
+
+          replication_factor = 2; # Number of copies of data
+
+          rpc_bind_addr = "[::]:3901";
+          rpc_public_addr = "${config.repo.secrets.local.ipv4}:4317";
+          rpc_secret_file = config.sops.secrets.garage-rpc-secret.path;
+
+          s3_api = {
+            s3_region = "swarsel";
+            api_bind_addr = "0.0.0.0:${builtins.toString servicePort}";
+            root_domain = ".s3.garage.localhost";
+          };
+
+          admin = {
+            api_bind_addr = "0.0.0.0:3903";
+            admin_token_file = config.sops.secrets.garage-admin-token.path;
+          };
+
+          k2v_api = {
+            api_bind_addr = "[::]:3904";
+          };
+        };
+      };
+
+      nodes.moonside.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+              };
+            };
+          };
+        };
+      };
+
+    };
+  }
+#+end_src
 *** Darwin
 :PROPERTIES:
 :CUSTOM_ID: h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47
@@ -11021,18 +11517,19 @@ Some standard options that should be set for every microvm host.
 #+begin_src nix-ts :tangle modules/nixos/optional/microvm-host.nix
   { lib, config, ... }:
   {
-    options.swarselmodules.optional.microvmHost = lib.mkEnableOption "optional microvmHost settings";
-    # imports = [
-    #   inputs.microvm.nixosModules.host
-    # ];
+    options = {
+      swarselmodules.optional.microvmHost = lib.mkEnableOption "optional microvmHost settings";
+    };
+      # imports = [
+      #   inputs.microvm.nixosModules.host
+      # ];
 
-    config = lib.mkIf (config.swarselmodules.optional.microvmHost && config.swarselsystems.withMicroVMs) {
+    config = lib.mkIf (config.guests != {}) {
 
       microvm = {
         hypervisor = lib.mkDefault "qemu";
       };
     };
-
   }
 #+end_src
 
@@ -11051,58 +11548,6 @@ Some standard options that should be set vor every microvm guest. We set the def
     # ];
     config = lib.mkIf config.swarselmodules.optional.microvmGuest
       {
-        # imports = [
-        #   inputs.microvm.nixosModules.microvm
-
-        #   "${self}/profiles/nixos"
-        #   "${self}/modules/nixos"
-        # ];
-
-        boot.kernelParams = [ "systemd.hostname=${config.networking.hostName}" ];
-
-        node.name = config;
-        documentation.enable = lib.mkForce false;
-
-        microvm = {
-          guest.enable = lib.mkForce true;
-          hypervisor = lib.mkDefault "qemu";
-          mem = lib.mkDefault 1024 * 4;
-          vcpu = lib.mkDefault 4;
-          optimize.enable = false;
-          writableStoreOverlay = "/nix/.rw-store";
-
-          # interfaces = flip lib.mapAttrsToList guestCfg.microvm.interfaces (
-          #   _: { mac, hostLink, ...}:
-          #   {
-          #     type = "macvtap";
-          #     id = "vm-${replaceStrings [ ":" ] [ "" ] mac}";
-          #     inherit mac;
-          #     macvtap = {
-          #       link = hostLink;
-          #       mode = "bridge";
-          #     };
-          #   }
-          # );
-          shares =
-            [
-              {
-                source = "/nix/store";
-                mountPoint = "/nix/.ro-store";
-                tag = "ro-store";
-                proto = "virtiofs";
-              }
-            ];
-        };
-        # systemd.network.networks = lib.flip lib.concatMapAttrs guestCfg.microvm.interfaces (
-        #   name:
-        #   { mac, ... }:
-        #   {
-        #     "10-${name}".matchConfig = mkForce {
-        #       MACAddress = mac;
-        #     };
-        #   }
-        # );
-
       };
   }
 
@@ -11200,95 +11645,101 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { self, lib, pkgs, config, ... }:
+  { self, outputs, lib, pkgs, config, ... }:
   let
     inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
   in
-  {
-    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-    config =
-      let
-        nix-version = "2_30";
-      in
-      lib.mkIf config.swarselmodules.general {
-        nix = lib.mkIf (!config.swarselsystems.isNixos) {
-          package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
-          # extraOptions = ''
-          #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-          #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-          # '';
-          extraOptions =
-            let
-              nix-plugins = pkgs.nix-plugins.override {
-                nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-              };
-            in
-            ''
-              plugin-files = ${nix-plugins}/lib/nix/plugins
+    {
+      options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+      config =
+        let
+          nix-version = "2_30";
+        in
+          lib.mkIf config.swarselmodules.general {
+            nix = lib.mkIf (!config.swarselsystems.isNixos) {
+              package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '';
+              extraOptions =
+                let
+                  nix-plugins = pkgs.nix-plugins.override {
+                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  };
+                in
+                  ''
+                    plugin-files = ${nix-plugins}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
-            '';
-          settings = {
-            experimental-features = [
-              "nix-command"
-              "flakes"
-              "ca-derivations"
-              "cgroups"
-              "pipe-operators"
-            ];
-            trusted-users = [ "@wheel" "${mainUser}" ];
-            connect-timeout = 5;
-            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-            fallback = true;
-            min-free = 128000000;
-            max-free = 1000000000;
-            auto-optimise-store = true;
-            warn-dirty = false;
-            max-jobs = 1;
-            use-cgroups = lib.mkIf isLinux true;
-          };
-        };
+                  '';
+              settings = {
+                experimental-features = [
+                  "nix-command"
+                  "flakes"
+                  "ca-derivations"
+                  "cgroups"
+                  "pipe-operators"
+                ];
+                trusted-users = [ "@wheel" "${mainUser}" ];
+                connect-timeout = 5;
+                bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+                bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+                fallback = true;
+                min-free = 128000000;
+                max-free = 1000000000;
+                auto-optimise-store = true;
+                warn-dirty = false;
+                max-jobs = 1;
+                use-cgroups = lib.mkIf isLinux true;
+              };
+            };
 
-        nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
+            # nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
+            nixpkgs = lib.mkIf (!isNixos) {
+              overlays = [ outputs.overlays.default ];
+              config = {
+                allowUnfree = true;
+              };
+            };
 
-        programs = {
-          # home-manager.enable = lib.mkIf (!isNixos) true;
-          man = {
-            enable = true;
-            generateCaches = true;
-          };
-        };
+            programs = {
+              # home-manager.enable = lib.mkIf (!isNixos) true;
+              man = {
+                enable = true;
+                generateCaches = true;
+              };
+            };
 
-        targets.genericLinux.enable = lib.mkIf (!isNixos) true;
+            targets.genericLinux.enable = lib.mkIf (!isNixos) true;
 
-        home = {
-          username = lib.mkDefault mainUser;
-          homeDirectory = lib.mkDefault "/home/${mainUser}";
-          stateVersion = lib.mkDefault "23.05";
-          keyboard.layout = "us";
-          sessionVariables = {
-            FLAKE = "/home/${mainUser}/.dotfiles";
-          };
-          extraOutputsToInstall = [
-            "doc"
-            "info"
-            "devdoc"
-          ];
-          packages = lib.mkIf (!isNixos) [
-            (pkgs.symlinkJoin {
-              name = "home-manager";
-              buildInputs = [ pkgs.makeWrapper ];
-              paths = [ pkgs.home-manager ];
-              postBuild = ''
-                wrapProgram $out/bin/home-manager \
+            home = {
+              username = lib.mkDefault mainUser;
+              homeDirectory = lib.mkDefault "/home/${mainUser}";
+              stateVersion = lib.mkDefault "23.05";
+              keyboard.layout = "us";
+              sessionVariables = {
+                FLAKE = "/home/${mainUser}/.dotfiles";
+              };
+              extraOutputsToInstall = [
+                "doc"
+                "info"
+                "devdoc"
+              ];
+              packages = lib.mkIf (!isNixos) [
+                (pkgs.symlinkJoin {
+                  name = "home-manager";
+                  buildInputs = [ pkgs.makeWrapper ];
+                  paths = [ pkgs.home-manager ];
+                  postBuild = ''
+                    wrapProgram $out/bin/home-manager \
                 --append-flags '--flake ${flakePath}#$(hostname)'
-              '';
-            })
-          ];
-        };
-      };
+                  '';
+                })
+              ];
+            };
+          };
 
-  }
+    }
 #+end_src
 
 **** nixGL
@@ -17614,7 +18065,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 #+begin_src shell :tangle files/scripts/swarsel-rebuild.sh
   set -eo pipefail
 
-  target_config="chaostheatre"
+  target_config="hotel"
   target_user="swarsel"
 
   function help_and_exit() {
@@ -17625,7 +18076,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       echo
       echo "ARGS:"
       echo "  -n <target_config>                       specify nixos config to build."
-      echo "                                          Default: chaostheatre"
+      echo "                                          Default: hotel"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
       echo "  -h | --help                             Print this help."
@@ -17734,8 +18185,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 #+begin_src shell :tangle files/scripts/swarsel-install.sh
   set -eo pipefail
 
-  target_config="chaostheatre"
-  target_hostname="chaostheatre"
+  target_config="hotel"
+  target_hostname="hotel"
   target_user="swarsel"
   persist_dir=""
   target_disk="/dev/vda"
@@ -17749,7 +18200,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       echo
       echo "ARGS:"
       echo "  -n <target_config>                      specify the nixos config to deploy."
-      echo "                                          Default: chaostheatre"
+      echo "                                          Default: hotel"
       echo "  -d <target_disk>                        specify disk to install on."
       echo "                                          Default: /dev/vda"
       echo "  -u <target_user>                        specify user to deploy for."
@@ -17886,7 +18337,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   fi
 
   green "Setting up disk ..."
-  if [[ $target_config == "chaostheatre" ]]; then
+  if [[ $target_config == "hotel" ]]; then
       sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
   else
       sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
@@ -17935,7 +18386,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 #+begin_src shell :tangle files/scripts/swarsel-postinstall.sh
   set -eo pipefail
 
-  target_config="chaostheatre"
+  target_config="hotel"
   target_user="swarsel"
 
   function help_and_exit() {
@@ -17947,8 +18398,8 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       echo "ARGS:"
       echo "  -d <disk>                               specify disk to install on."
       echo "  -n <target_config>                      specify the nixos config to deploy."
-      echo "                                          Default: chaostheatre"
-      echo "                                          Default: chaostheatre"
+      echo "                                          Default: hotel"
+      echo "                                          Default: hotel"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
       echo "  -h | --help                             Print this help."
@@ -18726,16 +19177,16 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
   }
 
 #+end_src
-**** Chaostheatre
+**** Hotel
 :PROPERTIES:
 :CUSTOM_ID: h:b79fbb59-9cf2-48eb-b469-2589223dda95
 :END:
 
-#+begin_src nix-ts :tangle profiles/nixos/chaostheatre/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/nixos/hotel/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselprofiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
-    config = lib.mkIf config.swarselprofiles.chaostheatre {
+    options.swarselprofiles.hotel = lib.mkEnableOption "is this a hotel host";
+    config = lib.mkIf config.swarselprofiles.hotel {
       swarselmodules = {
         packages = lib.mkForce true;
         general = lib.mkForce true;
@@ -19109,16 +19560,16 @@ This holds modules that are to be used on most hosts. These are also the most im
 
 #+end_src
 
-**** Chaostheatre
+**** Hotel
 :PROPERTIES:
 :CUSTOM_ID: h:36a0209f-2c17-4808-a1d0-a9e1920c307a
 :END:
 
-#+begin_src nix-ts :tangle profiles/home/chaostheatre/default.nix :mkdirp yes
+#+begin_src nix-ts :tangle profiles/home/hotel/default.nix :mkdirp yes
   { lib, config, ... }:
   {
-    options.swarselprofiles.chaostheatre = lib.mkEnableOption "is this a chaostheatre host";
-    config = lib.mkIf config.swarselprofiles.chaostheatre {
+    options.swarselprofiles.hotel = lib.mkEnableOption "is this a hotel host";
+    config = lib.mkIf config.swarselprofiles.hotel {
       swarselmodules = {
         packages = lib.mkForce true;
         ownpackages = lib.mkForce true;
@@ -24965,7 +25416,7 @@ Here lies defined the readme for GitHub and Forgejo:
     nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-rebuild -- -u <YOUR_USERNAME>
     ```
 
-    This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
+    This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
     Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
     </details>
 
@@ -25213,7 +25664,7 @@ builtins.listToAttrs converts a list of name-value pairs into an attribute set.
 #+end_src
 
 #+RESULTS:
-: { bakery = "directory"; chaostheatre = "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }
+: { bakery = "directory"; hotel= "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }
 ** nixpkgs.lib.recursiveUpdate
 :PROPERTIES:
 :CUSTOM_ID: h:2227ba24-e3a1-40ba-8fb8-4cab5210692a

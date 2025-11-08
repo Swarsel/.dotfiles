@@ -22,6 +22,11 @@ in
               #   withSystemVencord = true;
               # };
 
+              lib = prev.lib // {
+                swarselsystems = self.outputs.swarselsystemsLib;
+                hm = self.outputs.homeLib;
+              };
+
               firefox = prev.firefox.override {
                 nativeMessagingHosts = [
                   prev.tridactyl-native
@@ -72,15 +77,19 @@ in
                 (builtins.attrNames nixpkgsInputs));
 
           in
-          (additions final prev)
-          // (modifications final prev)
-          // (nixpkgs-stable-versions final prev)
-          // (inputs.niri-flake.overlays.niri final prev)
-          // (inputs.vbc-nix.overlays.default final prev)
-          // (inputs.nur.overlays.default final prev)
-          // (inputs.emacs-overlay.overlay final prev)
-          // (inputs.nix-topology.overlays.default final prev)
-          // (inputs.nixgl.overlay final prev);
+          lib.recursiveUpdate
+            (
+              (additions final prev)
+              // (nixpkgs-stable-versions final prev)
+              // (inputs.niri-flake.overlays.niri final prev)
+              // (inputs.vbc-nix.overlays.default final prev)
+              // (inputs.nur.overlays.default final prev)
+              // (inputs.emacs-overlay.overlay final prev)
+              // (inputs.nix-topology.overlays.default final prev)
+              // (inputs.nixgl.overlay final prev)
+              // (inputs.nixos-extra-modules.overlays.default final prev)
+            )
+            (modifications final prev);
       };
     };
 }

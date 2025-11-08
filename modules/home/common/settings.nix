@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, outputs, lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
 in
@@ -22,7 +22,7 @@ in
             };
           in
           ''
-            plugin-files = ${nix-plugins}/lib/nix/plugins
+                  plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '';
         settings = {
@@ -47,7 +47,13 @@ in
         };
       };
 
-      nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
+      # nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
+      nixpkgs = lib.mkIf (!isNixos) {
+        overlays = [ outputs.overlays.default ];
+        config = {
+          allowUnfree = true;
+        };
+      };
 
       programs = {
         # home-manager.enable = lib.mkIf (!isNixos) true;
@@ -78,7 +84,7 @@ in
             buildInputs = [ pkgs.makeWrapper ];
             paths = [ pkgs.home-manager ];
             postBuild = ''
-              wrapProgram $out/bin/home-manager \
+                  wrapProgram $out/bin/home-manager \
               --append-flags '--flake ${flakePath}#$(hostname)'
             '';
           })

@@ -1,4 +1,4 @@
-{ self, outputs, ... }:
+{ self, ... }:
 {
 
   imports = [
@@ -8,12 +8,6 @@
     "${self}/modules/nixos/common/meta.nix"
   ];
 
-  nixpkgs = {
-    overlays = [ outputs.overlays.default ];
-    config = {
-      allowUnfree = true;
-    };
-  };
 
   services.xcape = {
     enable = true;
