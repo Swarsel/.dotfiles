@@ -3,6 +3,7 @@ set -eo pipefail
 
 target_hostname=""
 target_destination=""
+target_arch=""
 target_user="swarsel"
 ssh_port="22"
 persist_dir=""
@@ -18,6 +19,7 @@ function help_and_exit() {
     echo "ARGS:"
     echo "  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on."
     echo "  -d <target_destination>                 specify ip or url to the target host."
+    echo "  -a <targeit_arch>                       specify the architecture of the target host."
     echo "                                          target during install process."
     echo
     echo "OPTIONS:"
@@ -100,6 +102,10 @@ while [[ $# -gt 0 ]]; do
         shift
         target_destination=$1
         ;;
+    -a)
+        shift
+        target_arch=$1
+        ;;
     -u)
         shift
         target_user=$1
@@ -119,6 +125,11 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ $target_arch == "" || $target_destination == "" || $target_hostname == "" ]]; then
+    red "error: target_arch, target_destination or target_hostname not set."
+    help_and_exit
+fi
 
 green "~SwarselSystems~ remote installer"
 green "Reading system information for $target_hostname ..."
@@ -211,8 +222,8 @@ fi
 green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
 $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
-$scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
+$scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
 # ------------------------
 
 green "Deploying minimal NixOS installation on $target_destination"
@@ -277,7 +288,7 @@ if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
 fi
 green "Updating all secrets files to reflect updates .sops.yaml"
 sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
-sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_hostname"/secrets/pii.nix.enc
+sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/pii.nix.enc
 # --------------------------
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -336,10 +347,10 @@ fi
 green "NixOS was successfully installed!"
 if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
     cd "${git_root}"
-    deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
-    nixpkgs--fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
+    deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
+    nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
     (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
-        git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &&
+        git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
         git add "$git_root/.sops.yaml" &&
         git add "$git_root/secrets" &&
         (git commit -m "feat: deployed $target_hostname" || true) && git push

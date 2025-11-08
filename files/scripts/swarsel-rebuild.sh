@@ -1,6 +1,7 @@
 set -eo pipefail
 
 target_config="hotel"
+target_arch=""
 target_user="swarsel"
 
 function help_and_exit() {
@@ -10,10 +11,11 @@ function help_and_exit() {
     echo "USAGE: $0 [OPTIONS]"
     echo
     echo "ARGS:"
-    echo "  -n <target_config>                       specify nixos config to build."
+    echo "  -n <target_config>                      specify nixos config to build."
     echo "                                          Default: hotel"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
+    echo "  -a <target_arch>                        specify target architecture."
     echo "  -h | --help                             Print this help."
     exit 0
 }
@@ -43,6 +45,10 @@ while [[ $# -gt 0 ]]; do
         shift
         target_config=$1
         ;;
+    -a)
+        shift
+        target_arch=$1
+        ;;
     -u)
         shift
         target_user=$1
@@ -55,6 +61,11 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ $target_arch == "" ]]; then
+    red "error: target_arch not set."
+    help_and_exit
+fi
 
 cd /home/"$target_user"
 
@@ -83,7 +94,7 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
     rm modules/home/common/mail.nix
     rm modules/home/common/yubikey.nix
     rm modules/nixos/server/restic.nix
-    rm hosts/nixos/milkywell/default.nix
+    rm hosts/nixos/aarch64-linux/milkywell/default.nix
     rm -rf modules/nixos/server
     rm -rf modules/home/server
     nix flake update vbc-nix
@@ -91,8 +102,8 @@ if [[ $local_keys != *"${pub_arr[1]}"* ]]; then
 else
     green "Valid SSH key found! Continuing with installation"
 fi
-sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
 
 green "Installing flake $target_config"
 sudo nixos-rebuild --show-trace --flake .#"$target_config" boot

@@ -906,24 +906,11 @@ The rest of the outputs either define or help define the actual configurations:
         inherit (outputs) lib homeLib;
         # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
-        mkNixosHost = { minimal }: configName:
-          let
-            sys = "x86_64-linux";
-            # lib = config.pkgsPre.${sys}.lib // {
-            #   inherit (inputs.home-manager.lib) hm;
-            #   swarselsystems = self.outputs.swarselsystemsLib;
-            # };
-
-            # lib = config.pkgsPre.${sys}.lib // {
-            #   inherit (inputs.home-manager.lib) hm;
-            #   swarselsystems = self.outputs.swarselsystemsLib;
-            # };
-            inherit (config.pkgs.${sys}) lib;
-          in
+        mkNixosHost = { minimal }: configName: arch:
           inputs.nixpkgs.lib.nixosSystem {
             specialArgs = {
-              inherit inputs outputs self minimal configName;
-              inherit lib homeLib;
+              inherit inputs outputs self minimal configName homeLib;
+              inherit (config.pkgs.${arch}) lib;
               inherit (config) globals nodes;
             };
             modules = [
@@ -941,7 +928,7 @@ The rest of the outputs either define or help define the actual configurations:
               inputs.microvm.nixosModules.host
               inputs.microvm.nixosModules.microvm
               (inputs.nixos-extra-modules + "/modules/guests")
-              "${self}/hosts/nixos/${configName}"
+              "${self}/hosts/nixos/${arch}/${configName}"
               "${self}/profiles/nixos"
               "${self}/modules/nixos"
               {
@@ -950,7 +937,7 @@ The rest of the outputs either define or help define the actual configurations:
 
                 node = {
                   name = lib.mkForce configName;
-                  secretsDir = ../hosts/nixos/${configName}/secrets;
+                  secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
                 };
 
                 swarselprofiles = {
@@ -968,7 +955,7 @@ The rest of the outputs either define or help define the actual configurations:
             ];
           };
 
-        mkDarwinHost = { minimal }: configName:
+        mkDarwinHost = { minimal }: configName: arch:
           inputs.nix-darwin.lib.darwinSystem {
             specialArgs = {
               inherit inputs lib outputs self minimal configName;
@@ -982,75 +969,92 @@ The rest of the outputs either define or help define the actual configurations:
               # inputs.fw-fanctrl.nixosModules.default
               # inputs.nix-topology.nixosModules.default
               inputs.home-manager.darwinModules.home-manager
-              "${self}/hosts/darwin/${configName}"
+              "${self}/hosts/darwin/${arch}/${configName}"
               "${self}/modules/nixos/darwin"
               # needed for infrastructure
               "${self}/modules/nixos/common/meta.nix"
               "${self}/modules/nixos/common/globals.nix"
               {
                 node.name = lib.mkForce configName;
-                node.secretsDir = ../hosts/darwin/${configName}/secrets;
+                node.secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
 
               }
             ];
           };
 
-        mkHalfHost = configName: type: pkgs: {
-          ${configName} =
-            let
-              systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-            in
-            systemFunc
-              {
-                inherit pkgs;
-                extraSpecialArgs = {
-                  inherit inputs lib outputs self configName;
-                  inherit (config) globals nodes;
-                  minimal = false;
-                };
-                modules = [
-                  inputs.stylix.homeModules.stylix
-                  inputs.niri-flake.homeModules.niri
-                  inputs.nix-index-database.homeModules.nix-index
-                  # inputs.sops-nix.homeManagerModules.sops
-                  inputs.spicetify-nix.homeManagerModules.default
-                  inputs.swarsel-nix.homeModules.default
-                  "${self}/hosts/${type}/${configName}"
-                  "${self}/profiles/home"
-                ];
-              };
-        };
+        mkHalfHost = configName: type: arch:
+          let
+            systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+            pkgs = lib.swarselsystems.pkgsFor.${arch};
+          in
+          systemFunc {
+            inherit pkgs;
+            extraSpecialArgs = {
+              inherit inputs lib outputs self configName;
+              inherit (config) globals nodes;
+              minimal = false;
+            };
+            modules = [
+              inputs.stylix.homeModules.stylix
+              inputs.niri-flake.homeModules.niri
+              inputs.nix-index-database.homeModules.nix-index
+              # inputs.sops-nix.homeManagerModules.sops
+              inputs.spicetify-nix.homeManagerModules.default
+              inputs.swarsel-nix.homeModules.default
+              "${self}/hosts/${type}/${arch}/${configName}"
+              "${self}/profiles/home"
+            ];
+          };
 
-        mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (name: mkHalfHost name type pkgs) hosts);
-        nixosHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/nixos"));
-        darwinHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/darwin"));
+        linuxArches = [ "x86_64-linux" "aarch64-linux" ];
+        darwinArches = [ "x86_64-darwin" "aarch64-darwin" ];
+        mkArches = type: if (type == "nixos") then linuxArches else if (type == "darwin") then darwinArches else linuxArches ++ darwinArches;
+
+        readHostDirs = hostDir:
+          if builtins.pathExists hostDir then
+            builtins.attrNames
+              (
+                lib.filterAttrs (_: type: type == "directory")
+                  (builtins.readDir hostDir)
+              ) else [ ];
+
+        mkHalfHostsForArch = type: arch:
+          let
+            hostDir = "${self}/hosts/${type}/${arch}";
+            hosts = readHostDirs hostDir;
+          in
+          lib.genAttrs hosts (host: mkHalfHost host type arch);
+
+        mkHostsForArch = type: arch: minimal:
+          let
+            hostDir = "${self}/hosts/${type}/${arch}";
+            hosts = readHostDirs hostDir;
+          in
+          if (type == "nixos") then
+            lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+          else if (type == "darwin") then
+            lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
+          else { };
+
+        mkConfigurationsPerArch = type: minimal:
+          let
+            arches = mkArches type;
+            toMake = if (minimal == null) then (arch: _: mkHalfHostsForArch type arch) else (arch: _: mkHostsForArch type arch minimal);
+          in
+          lib.concatMapAttrs toMake
+            (lib.listToAttrs (map (a: { name = a; value = { }; }) arches));
+
+        halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
+        configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
+
       in
       {
-        nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
-          minimal = false;
-        });
-        nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
-          minimal = true;
-        });
-        darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
-          minimal = false;
-        });
-        darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
-          minimal = true;
-        });
-
-        homeConfigurations =
-          let
-            inherit (lib.swarselsystems) pkgsFor readHosts;
-          in
-          mkHalfHostConfigs (readHosts "home") "home" pkgsFor.x86_64-linux
-          // mkHalfHostConfigs (readHosts "home") "home" pkgsFor.aarch64-linux;
-
-        nixOnDroidConfigurations =
-          let
-            inherit (lib.swarselsystems) pkgsFor readHosts;
-          in
-          mkHalfHostConfigs (readHosts "android") "android" pkgsFor.aarch64-linux;
+        nixosConfigurations = configurationsPerArch "nixos" false;
+        nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
+        darwinConfigurations = configurationsPerArch "darwin" false;
+        darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
+        homeConfigurations = halfConfigurationsPerArch "home";
+        nixOnDroidConfigurations = halfConfigurationsPerArch "android";
 
         guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
           _: node:
@@ -1995,7 +1999,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :PROPERTIES:
 :CUSTOM_ID: h:567c0055-f5f7-4e53-8f13-d767d7166e9d
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/pyramid/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/default.nix
   { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
@@ -2079,7 +2083,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:25115a54-c634-4896-9a41-254064ce9fcc
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/pyramid/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/hardware-configuration.nix
   { config, lib, pkgs, modulesPath, ... }:
   {
     imports =
@@ -2159,7 +2163,7 @@ My work machine. Built for more security, this is the gold standard of my config
 :CUSTOM_ID: h:e0da04c7-4199-44b0-b525-6cfc64072b45
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/pyramid/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/pyramid/disk-config.nix
   {
     disko.devices = {
       disk = {
@@ -2253,7 +2257,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :PROPERTIES:
 :CUSTOM_ID: h:6f80d614-d76a-433b-8956-78d7b323b68c
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/bakery/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/bakery/default.nix
   { self, config, inputs, lib, minimal, ... }:
   let
     primaryUser = config.swarselsystems.mainUser;
@@ -2319,7 +2323,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :CUSTOM_ID: h:bbba1646-fb5f-4d04-baf0-f606037a8b39
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/bakery/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/bakery/hardware-configuration.nix
   # Do not modify this file!  It was generated by ‘nixos-generate-config’
   # and may be overwritten by future invocations.  Please make changes
   # to /etc/nixos/configuration.nix instead.
@@ -2349,7 +2353,7 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 :CUSTOM_ID: h:72444f85-7951-47c0-858f-b51d8299de8c
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/bakery/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/bakery/disk-config.nix
   { lib, pkgs, config, ... }:
   let
     type = "btrfs";
@@ -2485,7 +2489,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/winters/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/default.nix
   { lib, config, minimal, ... }:
   {
 
@@ -2574,7 +2578,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :PROPERTIES:
 :CUSTOM_ID: h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/winters/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
   {
@@ -2624,7 +2628,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 **** Summers (Server: ASUS Z10PA-D8)
 
 ***** Main Configuration
-#+begin_src nix-ts :tangle hosts/nixos/summers/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
   { inputs, lib, config, configName, minimal, nodes, globals, ... }:
   {
 
@@ -2737,7 +2741,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 
 ***** hardware-configuration
-#+begin_src nix-ts :tangle hosts/nixos/summers/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
   {
@@ -2769,7 +2773,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 ***** disko
 
-#+begin_src nix-ts :tangle hosts/nixos/summers/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/disk-config.nix
   { lib, config, ... }:
   let
     type = "btrfs";
@@ -2891,7 +2895,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 ***** Guests
 ****** Guest 1
-#+begin_src nix-ts :tangle hosts/nixos/summers/guests/guest1/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/guest1/default.nix
   { lib, minimal, ... }:
   {
 
@@ -2927,7 +2931,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
 A Mac notebook that I have received from work. I use this machine for getting accustomed to the Apple ecosystem as well as as a sandbox for nix-darwin configurations (the darwin configuration is severely under-developed).
 
-#+begin_src nix-ts :tangle hosts/darwin/machpizza/default.nix
+#+begin_src nix-ts :tangle hosts/darwin/x86_64-darwin/machpizza/default.nix
   { lib, config, ... }:
   let
     inherit (config.repo.secrets.local) workUser;
@@ -2960,7 +2964,7 @@ A Mac notebook that I have received from work. I use this machine for getting ac
 
 My phone. I use only a minimal config for remote debugging here.
 
-#+begin_src nix-ts :tangle hosts/android/magicant/default.nix
+#+begin_src nix-ts :tangle hosts/android/aarch64-linux/magicant/default.nix
 
   { pkgs, ... }: {
     environment = {
@@ -3012,7 +3016,7 @@ My phone. I use only a minimal config for remote debugging here.
 
 **** Treehouse (DGX Spark)
 
-#+begin_src nix-ts :tangle hosts/home/treehouse/default.nix
+#+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   { self, ... }:
   {
 
@@ -3076,7 +3080,7 @@ For this I use a free Ampere instance from OCI with 50G of space. In case my acc
 :CUSTOM_ID: h:922105c3-a604-47d9-918b-db1803784c75
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/milkywell/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/default.nix
   { lib, minimal, ... }:
   {
     imports = [
@@ -3134,7 +3138,7 @@ For this I use a free Ampere instance from OCI with 50G of space. In case my acc
 :CUSTOM_ID: h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/milkywell/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/hardware-configuration.nix
   { config, lib, modulesPath, ... }: {
     imports = [
       (modulesPath + "/profiles/qemu-guest.nix")
@@ -3163,7 +3167,7 @@ For this I use a free Ampere instance from OCI with 50G of space. In case my acc
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/milkywell/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , config
@@ -3276,7 +3280,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:a8f20a56-ce92-43d8-8bfe-3edccebf2bf9
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/moonside/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/moonside/default.nix
       { lib, config, minimal, ... }:
       let
         inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
@@ -3446,7 +3450,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:f99c05ab-f047-4350-b80a-4c1ff55b91bf
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/moonside/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/moonside/hardware-configuration.nix
   { lib, modulesPath, ... }:
   {
     imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
@@ -3468,7 +3472,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/moonside/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/moonside/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , config
@@ -3610,7 +3614,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :PROPERTIES:
 :CUSTOM_ID: h:4e53b40b-98b2-4615-b1b0-3696a75edd6e
 :END:
-#+begin_src nix-ts :tangle hosts/nixos/toto/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/toto/default.nix
   { self, lib, ... }:
   {
 
@@ -3655,7 +3659,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
 :CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/toto/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/toto/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , pkgs
@@ -3983,7 +3987,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/hotel/default.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/default.nix
         { self, config, pkgs, lib, minimal, ... }:
         let
           mainUser = "demo";
@@ -4046,7 +4050,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:849e4233-ba40-4fec-acfe-0d76e1e4371b
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/hotel/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/disk-config.nix
   # NOTE: ... is needed because dikso passes diskoFile
   { lib
   , pkgs
@@ -4182,7 +4186,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:6f9c1a3b-452e-4944-86e8-cb17603cc3f9
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/hotel/options.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/options.nix
   _:
   { }
 
@@ -4193,7 +4197,7 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :CUSTOM_ID: h:88ccb198-74b9-4269-8e22-af1277f44667
 :END:
 
-#+begin_src nix-ts :tangle hosts/nixos/hotel/options-home.nix
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/options-home.nix
   _:
   { }
 
@@ -17718,6 +17722,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
   target_hostname=""
   target_destination=""
+  target_arch=""
   target_user="swarsel"
   ssh_port="22"
   persist_dir=""
@@ -17733,6 +17738,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       echo "ARGS:"
       echo "  -n <target_hostname>                    specify target_hostname of the target host to deploy the nixos config on."
       echo "  -d <target_destination>                 specify ip or url to the target host."
+      echo "  -a <targeit_arch>                       specify the architecture of the target host."
       echo "                                          target during install process."
       echo
       echo "OPTIONS:"
@@ -17815,6 +17821,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           shift
           target_destination=$1
           ;;
+      -a)
+          shift
+          target_arch=$1
+          ;;
       -u)
           shift
           target_user=$1
@@ -17834,6 +17844,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       esac
       shift
   done
+
+  if [[ $target_arch == "" || $target_destination == "" || $target_hostname == "" ]]; then
+      red "error: target_arch, target_destination or target_hostname not set."
+      help_and_exit
+  fi
 
   green "~SwarselSystems~ remote installer"
   green "Reading system information for $target_hostname ..."
@@ -17926,8 +17941,8 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "Generating hardware-config.nix for $target_hostname and adding it to the nix-config."
   $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 
-  mkdir -p "$FLAKE"/hosts/nixos/"$target_hostname"
-  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_hostname"/hardware-configuration.nix
+  mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
+  $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
   # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
@@ -17992,7 +18007,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   fi
   green "Updating all secrets files to reflect updates .sops.yaml"
   sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
-  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_hostname"/secrets/pii.nix.enc
+  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/pii.nix.enc
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -18051,10 +18066,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   green "NixOS was successfully installed!"
   if yes_or_no "You can now commit and push the nix-config, which includes the hardware-configuration.nix for $target_hostname?"; then
       cd "${git_root}"
-      deadnix hosts/nixos/"$target_hostname"/hardware-configuration.nix -qe
-      nixpkgs--fmt hosts/nixos/"$target_hostname"/hardware-configuration.nix
+      deadnix hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix -qe
+      nixpkgs--fmt hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
       (.pre-commit-config.yaml mit run --all-files 2> /dev/null || true) &&
-          git add "$git_root/hosts/nixos/$target_hostname/hardware-configuration.nix" &&
+          git add "$git_root/hosts/nixos/$target_arch/$target_hostname/hardware-configuration.nix" &&
           git add "$git_root/.sops.yaml" &&
           git add "$git_root/secrets" &&
           (git commit -m "feat: deployed $target_hostname" || true) && git push
@@ -18088,6 +18103,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   set -eo pipefail
 
   target_config="hotel"
+  target_arch=""
   target_user="swarsel"
 
   function help_and_exit() {
@@ -18097,10 +18113,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       echo "USAGE: $0 [OPTIONS]"
       echo
       echo "ARGS:"
-      echo "  -n <target_config>                       specify nixos config to build."
+      echo "  -n <target_config>                      specify nixos config to build."
       echo "                                          Default: hotel"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
+      echo "  -a <target_arch>                        specify target architecture."
       echo "  -h | --help                             Print this help."
       exit 0
   }
@@ -18130,6 +18147,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           shift
           target_config=$1
           ;;
+      -a)
+          shift
+          target_arch=$1
+          ;;
       -u)
           shift
           target_user=$1
@@ -18142,6 +18163,11 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       esac
       shift
   done
+
+  if [[ $target_arch == "" ]]; then
+      red "error: target_arch not set."
+      help_and_exit
+  fi
 
   cd /home/"$target_user"
 
@@ -18170,7 +18196,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       rm modules/home/common/mail.nix
       rm modules/home/common/yubikey.nix
       rm modules/nixos/server/restic.nix
-      rm hosts/nixos/milkywell/default.nix
+      rm hosts/nixos/aarch64-linux/milkywell/default.nix
       rm -rf modules/nixos/server
       rm -rf modules/home/server
       nix flake update vbc-nix
@@ -18178,8 +18204,8 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   else
       green "Valid SSH key found! Continuing with installation"
   fi
-  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+  sudo nixos-generate-config --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
 
   green "Installing flake $target_config"
   sudo nixos-rebuild --show-trace --flake .#"$target_config" boot
@@ -18210,6 +18236,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   target_config="hotel"
   target_hostname="hotel"
   target_user="swarsel"
+  target_arch=""
   persist_dir=""
   target_disk="/dev/vda"
   disk_encryption=0
@@ -18227,6 +18254,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       echo "                                          Default: /dev/vda"
       echo "  -u <target_user>                        specify user to deploy for."
       echo "                                          Default: swarsel"
+      echo "  -a <target_arch>                        specify target architecture."
       echo "  -h | --help                             Print this help."
       exit 0
   }
@@ -18265,6 +18293,10 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
           shift
           target_disk=$1
           ;;
+      -a)
+          shift
+          target_arch=$1
+          ;;
       -h | --help) help_and_exit ;;
       ,*)
           echo "Invalid option detected."
@@ -18279,6 +18311,11 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
       sudo rm -rf /root/.cache/nix
   }
   trap cleanup exit
+
+  if [[ $target_arch == "" || $target_hostname == "" ]]; then
+      red "error: target_arch or target_hostname not set."
+      help_and_exit
+  fi
 
   green "~SwarselSystems~ local installer"
 
@@ -18369,9 +18406,9 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
   green "Generating hardware configuration ..."
-  sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+  sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
 
-  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+  git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
   sudo mkdir -p /root/.local/share/nix/
   printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
   green "Installing flake $target_config"
@@ -25451,7 +25488,7 @@ Here lies defined the readme for GitHub and Forgejo:
 
     #### Remote deployment (recommended if you have at least one running system)
 
-    0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
+    0) Fork this repo, and write your own host config at `hosts/nixos/<YOUR_ARCHITECTURE>/<YOUR_CONFIG_NAME>/default.nix` (you can use one of the other configurations as a template. Also see https://github.com/Swarsel/.dotfiles/tree/main/modules for a list of all additional options). At the very least, you should replace the `secrets/` directory with your own secrets and replace the SSH public keys with your own ones (otherwise I will come visit you!🔓❤️). I personally recommend to use the literate configuration and `org-babel-tangle-file` in Emacs, but you can also simply edit the separate `.nix` files.
     1) Have a system with `nix` available booted (this does not need to be installed, i.e. you can use a NixOS installer image; a custom minimal installer ISO can be built by running `just iso` in the root of this repo)
     2) Make sure that your Yubikey is plugged in or that you have your SSH key available (and configured)
     3) Run `swarsel-bootstrap -n <CONFIGURATION_NAME> -d <TARGET_IP>` on your existing system.

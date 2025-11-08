@@ -6,24 +6,11 @@
       inherit (outputs) lib homeLib;
       # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
-      mkNixosHost = { minimal }: configName:
-        let
-          sys = "x86_64-linux";
-          # lib = config.pkgsPre.${sys}.lib // {
-          #   inherit (inputs.home-manager.lib) hm;
-          #   swarselsystems = self.outputs.swarselsystemsLib;
-          # };
-
-          # lib = config.pkgsPre.${sys}.lib // {
-          #   inherit (inputs.home-manager.lib) hm;
-          #   swarselsystems = self.outputs.swarselsystemsLib;
-          # };
-          inherit (config.pkgs.${sys}) lib;
-        in
+      mkNixosHost = { minimal }: configName: arch:
         inputs.nixpkgs.lib.nixosSystem {
           specialArgs = {
-            inherit inputs outputs self minimal configName;
-            inherit lib homeLib;
+            inherit inputs outputs self minimal configName homeLib;
+            inherit (config.pkgs.${arch}) lib;
             inherit (config) globals nodes;
           };
           modules = [
@@ -41,7 +28,7 @@
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
             (inputs.nixos-extra-modules + "/modules/guests")
-            "${self}/hosts/nixos/${configName}"
+            "${self}/hosts/nixos/${arch}/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
             {
@@ -50,7 +37,7 @@
 
               node = {
                 name = lib.mkForce configName;
-                secretsDir = ../hosts/nixos/${configName}/secrets;
+                secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
               };
 
               swarselprofiles = {
@@ -68,7 +55,7 @@
           ];
         };
 
-      mkDarwinHost = { minimal }: configName:
+      mkDarwinHost = { minimal }: configName: arch:
         inputs.nix-darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs lib outputs self minimal configName;
@@ -82,75 +69,92 @@
             # inputs.fw-fanctrl.nixosModules.default
             # inputs.nix-topology.nixosModules.default
             inputs.home-manager.darwinModules.home-manager
-            "${self}/hosts/darwin/${configName}"
+            "${self}/hosts/darwin/${arch}/${configName}"
             "${self}/modules/nixos/darwin"
             # needed for infrastructure
             "${self}/modules/nixos/common/meta.nix"
             "${self}/modules/nixos/common/globals.nix"
             {
               node.name = lib.mkForce configName;
-              node.secretsDir = ../hosts/darwin/${configName}/secrets;
+              node.secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
 
             }
           ];
         };
 
-      mkHalfHost = configName: type: pkgs: {
-        ${configName} =
-          let
-            systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
-          in
-          systemFunc
-            {
-              inherit pkgs;
-              extraSpecialArgs = {
-                inherit inputs lib outputs self configName;
-                inherit (config) globals nodes;
-                minimal = false;
-              };
-              modules = [
-                inputs.stylix.homeModules.stylix
-                inputs.niri-flake.homeModules.niri
-                inputs.nix-index-database.homeModules.nix-index
-                # inputs.sops-nix.homeManagerModules.sops
-                inputs.spicetify-nix.homeManagerModules.default
-                inputs.swarsel-nix.homeModules.default
-                "${self}/hosts/${type}/${configName}"
-                "${self}/profiles/home"
-              ];
-            };
-      };
+      mkHalfHost = configName: type: arch:
+        let
+          systemFunc = if (type == "home") then inputs.home-manager.lib.homeManagerConfiguration else inputs.nix-on-droid.lib.nixOnDroidConfiguration;
+          pkgs = lib.swarselsystems.pkgsFor.${arch};
+        in
+        systemFunc {
+          inherit pkgs;
+          extraSpecialArgs = {
+            inherit inputs lib outputs self configName;
+            inherit (config) globals nodes;
+            minimal = false;
+          };
+          modules = [
+            inputs.stylix.homeModules.stylix
+            inputs.niri-flake.homeModules.niri
+            inputs.nix-index-database.homeModules.nix-index
+            # inputs.sops-nix.homeManagerModules.sops
+            inputs.spicetify-nix.homeManagerModules.default
+            inputs.swarsel-nix.homeModules.default
+            "${self}/hosts/${type}/${arch}/${configName}"
+            "${self}/profiles/home"
+          ];
+        };
 
-      mkHalfHostConfigs = hosts: type: pkgs: lib.foldl (acc: set: acc // set) { } (lib.map (name: mkHalfHost name type pkgs) hosts);
-      nixosHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/nixos"));
-      darwinHosts = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir "${self}/hosts/darwin"));
+      linuxArches = [ "x86_64-linux" "aarch64-linux" ];
+      darwinArches = [ "x86_64-darwin" "aarch64-darwin" ];
+      mkArches = type: if (type == "nixos") then linuxArches else if (type == "darwin") then darwinArches else linuxArches ++ darwinArches;
+
+      readHostDirs = hostDir:
+        if builtins.pathExists hostDir then
+          builtins.attrNames
+            (
+              lib.filterAttrs (_: type: type == "directory")
+                (builtins.readDir hostDir)
+            ) else [ ];
+
+      mkHalfHostsForArch = type: arch:
+        let
+          hostDir = "${self}/hosts/${type}/${arch}";
+          hosts = readHostDirs hostDir;
+        in
+        lib.genAttrs hosts (host: mkHalfHost host type arch);
+
+      mkHostsForArch = type: arch: minimal:
+        let
+          hostDir = "${self}/hosts/${type}/${arch}";
+          hosts = readHostDirs hostDir;
+        in
+        if (type == "nixos") then
+          lib.genAttrs hosts (host: mkNixosHost { inherit minimal; } host arch)
+        else if (type == "darwin") then
+          lib.genAttrs hosts (host: mkDarwinHost { inherit minimal; } host arch)
+        else { };
+
+      mkConfigurationsPerArch = type: minimal:
+        let
+          arches = mkArches type;
+          toMake = if (minimal == null) then (arch: _: mkHalfHostsForArch type arch) else (arch: _: mkHostsForArch type arch minimal);
+        in
+        lib.concatMapAttrs toMake
+          (lib.listToAttrs (map (a: { name = a; value = { }; }) arches));
+
+      halfConfigurationsPerArch = type: mkConfigurationsPerArch type null;
+      configurationsPerArch = type: minimal: mkConfigurationsPerArch type minimal;
+
     in
     {
-      nixosConfigurations = lib.genAttrs nixosHosts (mkNixosHost {
-        minimal = false;
-      });
-      nixosConfigurationsMinimal = lib.genAttrs nixosHosts (mkNixosHost {
-        minimal = true;
-      });
-      darwinConfigurations = lib.genAttrs darwinHosts (mkDarwinHost {
-        minimal = false;
-      });
-      darwinConfigurationsMinimal = lib.genAttrs darwinHosts (mkDarwinHost {
-        minimal = true;
-      });
-
-      homeConfigurations =
-        let
-          inherit (lib.swarselsystems) pkgsFor readHosts;
-        in
-        mkHalfHostConfigs (readHosts "home") "home" pkgsFor.x86_64-linux
-        // mkHalfHostConfigs (readHosts "home") "home" pkgsFor.aarch64-linux;
-
-      nixOnDroidConfigurations =
-        let
-          inherit (lib.swarselsystems) pkgsFor readHosts;
-        in
-        mkHalfHostConfigs (readHosts "android") "android" pkgsFor.aarch64-linux;
+      nixosConfigurations = configurationsPerArch "nixos" false;
+      nixosConfigurationsMinimal = configurationsPerArch "nixos" true;
+      darwinConfigurations = configurationsPerArch "darwin" false;
+      darwinConfigurationsMinimal = configurationsPerArch "darwin" true;
+      homeConfigurations = halfConfigurationsPerArch "home";
+      nixOnDroidConfigurations = halfConfigurationsPerArch "android";
 
       guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
         _: node:
