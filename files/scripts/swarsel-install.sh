@@ -3,6 +3,7 @@ set -eo pipefail
 target_config="hotel"
 target_hostname="hotel"
 target_user="swarsel"
+target_arch=""
 persist_dir=""
 target_disk="/dev/vda"
 disk_encryption=0
@@ -20,6 +21,7 @@ function help_and_exit() {
     echo "                                          Default: /dev/vda"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
+    echo "  -a <target_arch>                        specify target architecture."
     echo "  -h | --help                             Print this help."
     exit 0
 }
@@ -58,6 +60,10 @@ while [[ $# -gt 0 ]]; do
         shift
         target_disk=$1
         ;;
+    -a)
+        shift
+        target_arch=$1
+        ;;
     -h | --help) help_and_exit ;;
     *)
         echo "Invalid option detected."
@@ -72,6 +78,11 @@ function cleanup() {
     sudo rm -rf /root/.cache/nix
 }
 trap cleanup exit
+
+if [[ $target_arch == "" || $target_hostname == "" ]]; then
+    red "error: target_arch or target_hostname not set."
+    help_and_exit
+fi
 
 green "~SwarselSystems~ local installer"
 
@@ -162,9 +173,9 @@ sudo cp -r /home/"$target_user"/.dotfiles /mnt/"$persist_dir"/home/"$target_user
 sudo chown -R 1000:100 /mnt/"$persist_dir"/home/"$target_user"
 
 green "Generating hardware configuration ..."
-sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/
+sudo nixos-generate-config --root /mnt --no-filesystems --dir /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/
 
-git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_config"/hardware-configuration.nix
+git add /home/"$target_user"/.dotfiles/hosts/nixos/"$target_arch"/"$target_config"/hardware-configuration.nix
 sudo mkdir -p /root/.local/share/nix/
 printf '{\"extra-substituters\":{\"https://nix-community.cachix.org\":true,\"https://nix-community.cachix.org https://cache.ngi0.nixos.org/\":true},\"extra-trusted-public-keys\":{\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=\":true,\"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA=\":true}}' | sudo tee /root/.local/share/nix/trusted-settings.json > /dev/null
 green "Installing flake $target_config"
