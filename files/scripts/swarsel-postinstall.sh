@@ -1,6 +1,6 @@
 set -eo pipefail
 
-target_config="chaostheatre"
+target_config="hotel"
 target_user="swarsel"
 
 function help_and_exit() {
@@ -12,8 +12,8 @@ function help_and_exit() {
     echo "ARGS:"
     echo "  -d <disk>                               specify disk to install on."
     echo "  -n <target_config>                      specify the nixos config to deploy."
-    echo "                                          Default: chaostheatre"
-    echo "                                          Default: chaostheatre"
+    echo "                                          Default: hotel"
+    echo "                                          Default: hotel"
     echo "  -u <target_user>                        specify user to deploy for."
     echo "                                          Default: swarsel"
     echo "  -h | --help                             Print this help."

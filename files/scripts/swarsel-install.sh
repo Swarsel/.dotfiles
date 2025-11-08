@@ -1,7 +1,7 @@
 set -eo pipefail
 
-target_config="chaostheatre"
-target_hostname="chaostheatre"
+target_config="hotel"
+target_hostname="hotel"
 target_user="swarsel"
 persist_dir=""
 target_disk="/dev/vda"
@@ -15,7 +15,7 @@ function help_and_exit() {
     echo
     echo "ARGS:"
     echo "  -n <target_config>                      specify the nixos config to deploy."
-    echo "                                          Default: chaostheatre"
+    echo "                                          Default: hotel"
     echo "  -d <target_disk>                        specify disk to install on."
     echo "                                          Default: /dev/vda"
     echo "  -u <target_user>                        specify user to deploy for."
@@ -152,7 +152,7 @@ if [ "$disk_encryption" -eq 1 ]; then
 fi
 
 green "Setting up disk ..."
-if [[ $target_config == "chaostheatre" ]]; then
+if [[ $target_config == "hotel" ]]; then
     sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/v1.10.0 -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks --arg diskDevice "$target_disk"
 else
     sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --flake .#"$target_config" --yes-wipe-all-disks
