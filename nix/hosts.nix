@@ -3,12 +3,29 @@
   flake = { config, ... }:
     let
       inherit (self) outputs;
-      inherit (outputs) lib;
+      inherit (outputs) lib homeLib;
       # lib = (inputs.nixpkgs.lib // inputs.home-manager.lib).extend  (_: _: { swarselsystems = import "${self}/lib" { inherit self lib inputs outputs; inherit (inputs) systems; }; });
 
       mkNixosHost = { minimal }: configName:
-        lib.nixosSystem {
-          specialArgs = { inherit inputs outputs lib self minimal configName; inherit (config) globals nodes; };
+        let
+          sys = "x86_64-linux";
+          # lib = config.pkgsPre.${sys}.lib // {
+          #   inherit (inputs.home-manager.lib) hm;
+          #   swarselsystems = self.outputs.swarselsystemsLib;
+          # };
+
+          # lib = config.pkgsPre.${sys}.lib // {
+          #   inherit (inputs.home-manager.lib) hm;
+          #   swarselsystems = self.outputs.swarselsystemsLib;
+          # };
+          inherit (config.pkgs.${sys}) lib;
+        in
+        inputs.nixpkgs.lib.nixosSystem {
+          specialArgs = {
+            inherit inputs outputs self minimal configName;
+            inherit lib homeLib;
+            inherit (config) globals nodes;
+          };
           modules = [
             inputs.disko.nixosModules.disko
             inputs.sops-nix.nixosModules.sops
@@ -23,6 +40,7 @@
             inputs.niri-flake.nixosModules.niri
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
+            (inputs.nixos-extra-modules + "/modules/guests")
             "${self}/hosts/nixos/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
@@ -31,7 +49,7 @@
               microvm.guest.enable = lib.mkDefault false;
 
               node = {
-                name = configName;
+                name = lib.mkForce configName;
                 secretsDir = ../hosts/nixos/${configName}/secrets;
               };
 
@@ -53,7 +71,7 @@
       mkDarwinHost = { minimal }: configName:
         inputs.nix-darwin.lib.darwinSystem {
           specialArgs = {
-            inherit inputs outputs lib self minimal configName;
+            inherit inputs lib outputs self minimal configName;
             inherit (config) globals nodes;
           };
           modules = [
@@ -70,7 +88,7 @@
             "${self}/modules/nixos/common/meta.nix"
             "${self}/modules/nixos/common/globals.nix"
             {
-              node.name = configName;
+              node.name = lib.mkForce configName;
               node.secretsDir = ../hosts/darwin/${configName}/secrets;
 
             }
@@ -86,7 +104,7 @@
             {
               inherit pkgs;
               extraSpecialArgs = {
-                inherit inputs outputs lib self configName;
+                inherit inputs lib outputs self configName;
                 inherit (config) globals nodes;
                 minimal = false;
               };
@@ -121,13 +139,31 @@
         minimal = true;
       });
 
-      # TODO: Build these for all architectures
-      homeConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.x86_64-linux // mkHalfHostConfigs (lib.swarselsystems.readHosts "home") "home" lib.swarselsystems.pkgsFor.aarch64-linux;
-      nixOnDroidConfigurations = mkHalfHostConfigs (lib.swarselsystems.readHosts "android") "android" lib.swarselsystems.pkgsFor.aarch64-linux;
+      homeConfigurations =
+        let
+          inherit (lib.swarselsystems) pkgsFor readHosts;
+        in
+        mkHalfHostConfigs (readHosts "home") "home" pkgsFor.x86_64-linux
+        // mkHalfHostConfigs (readHosts "home") "home" pkgsFor.aarch64-linux;
+
+      nixOnDroidConfigurations =
+        let
+          inherit (lib.swarselsystems) pkgsFor readHosts;
+        in
+        mkHalfHostConfigs (readHosts "android") "android" pkgsFor.aarch64-linux;
+
+      guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
+        _: node:
+          lib.flip lib.mapAttrs' (node.config.microvm.vms or { }) (
+            guestName: guestDef:
+              lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
+          )
+      );
 
       diskoConfigurations.default = import "${self}/files/templates/hosts/nixos/disk-config.nix";
 
-      nodes = config.nixosConfigurations // config.darwinConfigurations;
-
+      nodes = config.nixosConfigurations
+        // config.darwinConfigurations
+        // config.guestConfigurations;
     };
 }

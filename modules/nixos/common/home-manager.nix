@@ -1,4 +1,4 @@
-{ self, inputs, config, lib, outputs, globals, nodes, minimal, configName, ... }:
+{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, ... }:
 {
   options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
   config = lib.mkIf config.swarselmodules.home-manager {
@@ -29,7 +29,11 @@
           home.stateVersion = lib.mkDefault config.system.stateVersion;
         }
       ];
-      extraSpecialArgs = { inherit (inputs) self nixgl; inherit inputs outputs globals nodes minimal configName; };
+      extraSpecialArgs = {
+        inherit (inputs) self nixgl;
+        inherit inputs outputs globals nodes minimal configName;
+        lib = homeLib;
+      };
     };
   };
 }

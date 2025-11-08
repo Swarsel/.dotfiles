@@ -57,5 +57,8 @@ in
         inherit (inputs.home-manager.lib) hm;
         inherit swarselsystems;
       });
+
+      swarselsystemsLib = swarselsystems;
+      homeLib = self.outputs.lib;
     };
 }
