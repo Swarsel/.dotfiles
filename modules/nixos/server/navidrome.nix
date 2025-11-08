@@ -41,6 +41,27 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
+    services.snapserver = {
+      enable = true;
+      settings = {
+        stream = {
+          port = 1704;
+          source = "pipe:///tmp/snapfifo?name=default";
+          bind_to_address = "0.0.0.0";
+        };
+      };
+    };
+
+    systemd.services = {
+      ${serviceName}.serviceConfig = {
+        PrivateDevices = lib.mkForce false;
+        PrivateUsers = lib.mkForce false;
+        RestrictRealtime = lib.mkForce false;
+        SystemCallFilter = lib.mkForce null;
+        RootDirectory = lib.mkForce null;
+      };
+    };
+
     services.${serviceName} = {
       enable = true;
       openFirewall = true;
@@ -55,8 +76,9 @@ in
         EnableTranscodingConfig = true;
         Scanner.GroupAlbumReleases = true;
         ScanSchedule = "@every 24h";
-        MPVPath = "${pkgs.mpv}/bin/mpv";
-        MPVCommandTemplate = "mpv --audio-device=%d --no-audio-display --pause %f";
+        # MPVPath = "";
+        # MPVCommandTemplate = "${pkgs.mpv}/bin/mpv --audio-device=%d --input-ipc-server=%s --no-audio-display --log-file=/tmp/mpv.log --pause %f";
+        # MPVCmdTemplate = "${pkgs.mpv}/bin/mpv --no-audio-display --pause %f --input-ipc-server=%s --audio-channels=stereo --audio-samplerate=48000 --audio-format=s16 --ao=pcm --ao-pcm-file=/tmp/snapfifo --log-file=/tmp/mpv.log";
         ReverseProxyWhitelist = "0.0.0.0/0";
         ReverseProxyUserHeader = "X-User";
         Jukebox = {
