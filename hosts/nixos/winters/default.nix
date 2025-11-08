@@ -29,6 +29,14 @@
     isBtrfs = false;
     isLinux = true;
     isNixos = true;
+    server.garage = {
+      data_dir = [
+        {
+          capacity = "200G";
+          path = "/Vault/data/garage/main";
+        }
+      ];
+    };
   };
 
 } // lib.optionalAttrs (!minimal) {
@@ -67,6 +75,7 @@
     # snipeit = lib.mkDefault false;
     homebox = lib.mkDefault true;
     opkssh = lib.mkDefault true;
+    garage = lib.mkDefault false;
   };
 
 }
