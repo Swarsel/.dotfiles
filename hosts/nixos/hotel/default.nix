@@ -25,7 +25,7 @@ in
   };
 
   networking = {
-    hostName = "chaostheatre";
+    hostName = "hotel";
     firewall.enable = true;
   };
 
@@ -47,7 +47,7 @@ in
 
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
-    chaostheatre = true;
+    hotel = true;
     minimal = true;
   };
 }

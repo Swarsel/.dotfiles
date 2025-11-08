@@ -37,11 +37,11 @@
               (mkConnection "milkywell" "wan")
               (mkConnection "magicant" "wifi")
               (mkConnection "toto" "bootstrapper")
-              (mkConnection "chaostheatre" "demo host")
+              (mkConnection "hotel" "demo host")
             ];
           };
 
-          chaostheatre.interfaces."demo host" = { };
+          hotel.interfaces."demo host" = { };
           toto.interfaces."bootstrapper" = { };
           milkywell.interfaces.wan = { };
           moonside.interfaces.wan = { };

@@ -66,7 +66,7 @@
   nix run --experimental-features 'nix-command flakes' github:Swarsel/.dotfiles#swarsel-rebuild -- -u <YOUR_USERNAME>
   ```
 
-  This will activate the `chaostheatre` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
+  This will activate the `hotel` configuration on your system, which is a de-facto mirror of my main configuration with secret-based settings removed.
   Please keep in mind that this limited installer will make local changes to the cloned repository in order to be able to install it (otherwise the builder would fail at fetching my private secrets repository). As such, this should only be used to evaluate the system - if you want to use it longterm, you will need to create a fork and make some changes.
   </details>
 
@@ -153,16 +153,21 @@
   | Name               | Hardware                                            | Use                                                  |
   |--------------------|-----------------------------------------------------|------------------------------------------------------|
   |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal lapto                                       |
-  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS sandbox                                        |
-  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Main homeserver and data storgae                     |
-  |🖥️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
-  |🖥️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
+  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
+  |🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
+  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
+  |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
+  |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
+  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+  |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
+  |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
+  |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
+  |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
   |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
   |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
   |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
   |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
-  |🏠 **treehouse**    | -                                                   | Reference configuration for a home-manager only host |
   </details>
 
   ## General Nix tips & useful links

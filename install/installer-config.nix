@@ -10,7 +10,7 @@ in
       file = {
         ".bash_history" = {
           text = ''
-            swarsel-install -n chaostheatre
+            swarsel-install -n hotel
           '';
         };
       };
@@ -27,7 +27,7 @@ in
         file = {
           ".bash_history" = {
             text = ''
-              swarsel-install -n chaostheatre
+              swarsel-install -n hotel
             '';
           };
         };
