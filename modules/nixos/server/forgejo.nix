@@ -7,7 +7,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "forgejo";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   kanidmDomain = globals.services.kanidm.domain;
 in

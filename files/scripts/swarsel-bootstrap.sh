@@ -226,6 +226,10 @@ $ssh_root_cmd "nixos-generate-config --force --no-filesystems --root /mnt"
 mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
 $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
 # ------------------------
+green "Generating hostkey for ssh initrd"
+$ssh_root_cmd "mkdir -p /mnt/etc/secrets/initrd"
+$ssh_root_cmd "ssh-keygen -t ed25519 -N "" -f /mnt/etc/secrets/initrd/ssh_host_ed25519_key"
+# ------------------------
 
 green "Deploying minimal NixOS installation on $target_destination"
 nix run github:nix-community/nixos-anywhere/1.10.0 -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"

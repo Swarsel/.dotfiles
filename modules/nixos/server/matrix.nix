@@ -6,7 +6,7 @@ let
   serviceName = "matrix";
   serviceDomain = config.repo.secrets.common.services.domains.matrix;
   serviceUser = "matrix-synapse";
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   federationPort = 8448;
   whatsappPort = 29318;

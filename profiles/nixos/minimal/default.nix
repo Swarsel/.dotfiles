@@ -21,6 +21,7 @@
 
       server = {
         ssh = lib.mkDefault true;
+        diskEncryption = lib.mkDefault true;
       };
     };
 

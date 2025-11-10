@@ -1,36 +1,32 @@
 { self, config, pkgs, lib, ... }:
 let
   pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+  stateVersion = lib.mkDefault "23.05";
+  homeFiles = {
+    ".bash_history" = {
+      text = ''
+        swarsel-install -n hotel
+      '';
+    };
+  };
 in
 {
 
   config = {
     home-manager.users.root.home = {
-      stateVersion = "23.05";
-      file = {
-        ".bash_history" = {
-          text = ''
-            swarsel-install -n hotel
-          '';
-        };
-      };
+      inherit stateVersion;
+      file = homeFiles;
     };
     home-manager.users.swarsel = {
       home = {
         username = "swarsel";
         homeDirectory = lib.mkDefault "/home/swarsel";
-        stateVersion = lib.mkDefault "23.05";
+        inherit stateVersion;
         keyboard.layout = "us";
         sessionVariables = {
           FLAKE = "/home/swarsel/.dotfiles";
         };
-        file = {
-          ".bash_history" = {
-            text = ''
-              swarsel-install -n hotel
-            '';
-          };
-        };
+        file = homeFiles;
       };
     };
 
@@ -48,10 +44,6 @@ in
     nix = {
       channel.enable = false;
       package = pkgs.nixVersions.nix_2_28;
-      # extraOptions = ''
-      #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-      #   extra-builtins-file = ${../nix/extra-builtins.nix}
-      # '';
       extraOptions = ''
         plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
           buildInputs = [config.nix.package pkgs.boost];
@@ -103,6 +95,7 @@ in
     environment.etc."issue".text = ''
       [32m~SwarselSystems~[0m
       IP of primary interface: [31m\4[0m
+      These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{wlan0}
       The Password for all users & root is '[31msetup[0m'.
       Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
       Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
@@ -113,6 +106,7 @@ in
       wireless.enable = false;
       # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
       networkmanager.enable = true;
+      usePredictableInterfaceNames = false;
     };
 
     services.getty.autologinUser = lib.mkForce "root";
@@ -139,6 +133,8 @@ in
 
     programs.bash.shellAliases = {
       "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+      "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\|ethernet'";
+      "swarsel-kernel-module" = "lspci -k -d";
     };
 
     system.activationScripts.cache = {

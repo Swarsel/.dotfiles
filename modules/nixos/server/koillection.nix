@@ -6,7 +6,7 @@ let
   servicePort = 2282;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   serviceDir = "/Vault/data/koillection";
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432

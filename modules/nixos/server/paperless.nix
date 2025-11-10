@@ -7,7 +7,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "paperless";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   tikaPort = 9998;
   gotenbergPort = 3002;

@@ -5,7 +5,7 @@ let
   serviceName = "garage";
   servicePort = 3900;
   serviceDomain = config.repo.secrets.common.services.domains."${serviceName}-${configName}";
-  serviceAddress = globals.hosts.${configName}.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   cfg = config.services.${serviceName};
   metadata_dir = "/var/lib/garage/meta";
