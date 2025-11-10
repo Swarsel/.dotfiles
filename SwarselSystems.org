@@ -1340,110 +1340,141 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
           };
         };
 
-        devshells.default = let
-          nix-version = "2_30";
-        in {
-          packages = [
-            (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.nixVersions."nix_${nix-version}")
-            pkgs.git
-            pkgs.just
-            pkgs.age
-            pkgs.ssh-to-age
-            pkgs.sops
-            pkgs.nixpkgs-fmt
-            self.packages.${system}.swarsel-build
-            self.packages.${system}.swarsel-deploy
-            (pkgs.symlinkJoin {
-              name = "home-manager";
-              buildInputs = [ pkgs.makeWrapper ];
-              paths = [ pkgs.home-manager ];
-              postBuild = ''
-                wrapProgram $out/bin/home-manager \
-                --append-flags '--flake .#$(hostname)'
-                '';
-            })
-          ];
+        devshells = {
+          deploy =
+            let
+              nix-version = "2_28";
+            in {
+            packages = [
+              (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.stable25_05.nixVersions."nix_${nix-version}")
+              pkgs.git
+              pkgs.just
+              pkgs.age
+              pkgs.ssh-to-age
+              pkgs.sops
+            ];
 
-          commands = [
+            env =
+              [
+                {
+                  name = "NIX_CONFIG";
+                  value = ''
+                    plugin-files = ${pkgs.stable25_05.nix-plugins.overrideAttrs (o: {
+                      buildInputs = [pkgs.stable25_05.nixVersions."nix_${nix-version}" pkgs.stable25_05.boost];
+                      patches = (o.patches or []) ++ [./nix-plugins.patch];
+                    })}/lib/nix/plugins
+                    extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                  '';
+                }
+              ];
+          };
+          default =
+            let
+              nix-version = "2_30";
+            in
             {
-              package = pkgs.statix;
-              help = "Lint flake";
-            }
-            {
-              package = pkgs.deadnix;
-              help = "Check flake for dead code";
-            }
-            {
-              package = pkgs.nix-tree;
-              help = "Interactively browse dependency graphs of Nix derivations";
-            }
-            {
-              package = pkgs.nvd;
-              help = "Diff two nix toplevels and show which packages were upgraded";
-            }
-            {
-              package = pkgs.nix-diff;
-              help = "Explain why two Nix derivations differ";
-            }
-            {
-              package = pkgs.nix-output-monitor;
-              help = "Nix Output Monitor (a drop-in alternative for `nix` which shows a build graph)";
-              name = "nom \"$@\"";
-            }
-            {
-              name = "hm";
-              help = "Manage home-manager config";
-              command = "home-manager \"$@\"";
-            }
-            {
-              name = "fmt";
-              help = "Format flake";
-              command = "nixpkgs-fmt --check \"$FLAKE\"";
-            }
-            {
-              name = "sd";
-              help = "Build and deploy this nix config to nodes";
-              command = "swarsel-deploy \"$@\"";
-            }
-            {
-              name = "sl";
-              help = "Build and deploy a config to nodes";
-              command = "swarsel-deploy \${1} switch";
-            }
-            {
-              name = "sw";
-              help = "Build and switch to the host's config locally";
-              command = "swarsel-deploy $(hostname) switch";
-            }
-            {
-              name = "bld";
-              help = "Build a number of configurations";
-              command = "swarsel-build \"$@\"";
-            }
-            {
-              name = "c";
-              help = "Work with the flake git repository";
-              command = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/ \"$@\"";
-            }
-          ];
+              packages = [
+                (builtins.trace "alarm: pinned nix_${nix-version}" pkgs.nixVersions."nix_${nix-version}")
+                pkgs.git
+                pkgs.just
+                pkgs.age
+                pkgs.ssh-to-age
+                pkgs.sops
+                pkgs.nixpkgs-fmt
+                self.packages.${system}.swarsel-build
+                self.packages.${system}.swarsel-deploy
+                (pkgs.symlinkJoin {
+                  name = "home-manager";
+                  buildInputs = [ pkgs.makeWrapper ];
+                  paths = [ pkgs.home-manager ];
+                  postBuild = ''
+                    wrapProgram $out/bin/home-manager \
+                    --append-flags '--flake .#$(hostname)'
+                  '';
+                })
+              ];
 
-          devshell.startup.pre-commit-install.text = "pre-commit install";
+              commands = [
+                {
+                  package = pkgs.statix;
+                  help = "Lint flake";
+                }
+                {
+                  package = pkgs.deadnix;
+                  help = "Check flake for dead code";
+                }
+                {
+                  package = pkgs.nix-tree;
+                  help = "Interactively browse dependency graphs of Nix derivations";
+                }
+                {
+                  package = pkgs.nvd;
+                  help = "Diff two nix toplevels and show which packages were upgraded";
+                }
+                {
+                  package = pkgs.nix-diff;
+                  help = "Explain why two Nix derivations differ";
+                }
+                {
+                  package = pkgs.nix-output-monitor;
+                  help = "Nix Output Monitor (a drop-in alternative for `nix` which shows a build graph)";
+                  name = "nom \"$@\"";
+                }
+                {
+                  name = "hm";
+                  help = "Manage home-manager config";
+                  command = "home-manager \"$@\"";
+                }
+                {
+                  name = "fmt";
+                  help = "Format flake";
+                  command = "nixpkgs-fmt --check \"$FLAKE\"";
+                }
+                {
+                  name = "sd";
+                  help = "Build and deploy this nix config to nodes";
+                  command = "swarsel-deploy \"$@\"";
+                }
+                {
+                  name = "sl";
+                  help = "Build and deploy a config to nodes";
+                  command = "swarsel-deploy \${1} switch";
+                }
+                {
+                  name = "sw";
+                  help = "Build and switch to the host's config locally";
+                  command = "swarsel-deploy $(hostname) switch";
+                }
+                {
+                  name = "bld";
+                  help = "Build a number of configurations";
+                  command = "swarsel-build \"$@\"";
+                }
+                {
+                  name = "c";
+                  help = "Work with the flake git repository";
+                  command = "git --git-dir=$FLAKE/.git --work-tree=$FLAKE/ \"$@\"";
+                }
+              ];
 
-          env = let
-            nix-plugins = pkgs.nix-plugins.override {
-              nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+              devshell.startup.pre-commit-install.text = "pre-commit install";
+
+              env =
+                let
+                  nix-plugins = pkgs.nix-plugins.override {
+                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  };
+                in
+                [
+                  {
+                    name = "NIX_CONFIG";
+                    value = ''
+                      plugin-files = ${nix-plugins}/lib/nix/plugins
+                      extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                    '';
+                  }
+                ];
             };
-          in [
-            {
-              # Additionally configure nix-plugins with our extra builtins file.
-              # We need this for our repo secrets.
-              name = "NIX_CONFIG";
-              value = ''
-                plugin-files = ${nix-plugins}/lib/nix/plugins
-                extra-builtins-file = ${self + /nix/extra-builtins.nix}
-              '';
-            }
-          ];
         };
       };
   }
@@ -4801,7 +4832,7 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, minimal, ... }:
+  { config, inputs, lib, ... }:
   let
     # If the given expression is a bare set, it will be wrapped in a function,
     # so that the imported file can always be applied to the inputs, similar to
@@ -4867,7 +4898,7 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
         let
           local = config.node.secretsDir + "/pii.nix.enc";
         in
-        (lib.optionalAttrs (lib.pathExists local && !minimal) { inherit local; }) // lib.optionalAttrs (!minimal) {
+        (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // lib.optionalAttrs true {
           common = ../../../secrets/repo/pii.nix.enc;
         };
     };
@@ -17904,6 +17935,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   fi
 
   cd "$FLAKE"
+
   rm install/flake.lock || true
   git_root=$(git rev-parse --show-toplevel)
   # ------------------------
@@ -23872,12 +23904,9 @@ This file defines a few workflows that I often need to run when working on my co
   update:
     nix flake update
 
-  iso:
+  iso CONFIG="live-iso":
     rm -rf result
-    nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
-
-  iso-flake FLAKE SYSTEM="x86_64" FORMAT="iso":
-    nixos-generate --flake .#{{FLAKE}} -f {{FORMAT}} --system {{SYSTEM}}
+    nix build --print-out-paths .#live-iso
 
   iso-install DRIVE: iso
     sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
@@ -23887,6 +23916,9 @@ This file defines a few workflows that I often need to run when working on my co
 
   sync USER HOST:
     rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+
+  bootstrap DEST CONFIG ARCH="x86_64-linux":
+    nix develop .#deploy --command zsh -c "swarsel-bootstrap -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
 
 #+end_src
 ** aspell.conf

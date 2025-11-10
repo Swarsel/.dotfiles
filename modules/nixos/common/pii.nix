@@ -1,5 +1,5 @@
 # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-{ config, inputs, lib, minimal, ... }:
+{ config, inputs, lib, ... }:
 let
   # If the given expression is a bare set, it will be wrapped in a function,
   # so that the imported file can always be applied to the inputs, similar to
@@ -65,7 +65,7 @@ in
       let
         local = config.node.secretsDir + "/pii.nix.enc";
       in
-      (lib.optionalAttrs (lib.pathExists local && !minimal) { inherit local; }) // lib.optionalAttrs (!minimal) {
+      (lib.optionalAttrs (lib.pathExists local) { inherit local; }) // lib.optionalAttrs true {
         common = ../../../secrets/repo/pii.nix.enc;
       };
   };

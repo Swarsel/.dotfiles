@@ -10,12 +10,9 @@ check-trace:
 update:
   nix flake update
 
-iso:
+iso CONFIG="live-iso":
   rm -rf result
-  nix build .#nixosConfigurations.iso.config.system.build.isoImage && ln -sf result/iso/*.iso latest.iso
-
-iso-flake FLAKE SYSTEM="x86_64" FORMAT="iso":
-  nixos-generate --flake .#{{FLAKE}} -f {{FORMAT}} --system {{SYSTEM}}
+  nix build --print-out-paths .#live-iso
 
 iso-install DRIVE: iso
   sudo dd if=$(eza --sort changed result/iso/*.iso | tail -n1) of={{DRIVE}} bs=4M status=progress oflag=sync
@@ -25,3 +22,6 @@ dd DRIVE ISO:
 
 sync USER HOST:
   rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
+
+bootstrap DEST CONFIG ARCH="x86_64-linux":
+  nix develop .#deploy --command zsh -c "swarsel-bootstrap -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"

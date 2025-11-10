@@ -185,6 +185,7 @@ if [ ! -d "$FLAKE" ]; then
 fi
 
 cd "$FLAKE"
+
 rm install/flake.lock || true
 git_root=$(git rev-parse --show-toplevel)
 # ------------------------
