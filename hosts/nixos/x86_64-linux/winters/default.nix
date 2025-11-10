@@ -10,7 +10,11 @@
     loader.efi.canTouchEfiVariables = true;
   };
 
-  globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+  # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+  # globals.networks.home.hosts.${config.node.name} = {
+  #   ipv4 = config.repo.secrets.local.home-ipv4;
+  #   mac = config.repo.secrets.local.home-mac;
+  # };
 
   networking = {
     inherit (config.repo.secrets.local) hostId;

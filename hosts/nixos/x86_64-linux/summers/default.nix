@@ -11,8 +11,6 @@
     loader.efi.canTouchEfiVariables = true;
   };
 
-  # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
-
   networking = {
     inherit (config.repo.secrets.local) hostId;
     hostName = configName;
