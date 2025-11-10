@@ -5,7 +5,7 @@ let
   serviceGroup = serviceUser;
   serviceName = "grafana";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   prometheusPort = 9090;
   prometheusUser = "prometheus";

@@ -6,6 +6,22 @@ let
       inherit (inputs.nixpkgs) lib;
     in
     rec {
+      cidrToSubnetMask = cidr:
+        let
+          prefixLength = lib.toInt (lib.last (lib.splitString "/" cidr));
+          bits = lib.genList (i: if i < prefixLength then 1 else 0) 32;
+          octets = lib.genList
+            (i:
+              let
+                octetBits = lib.sublist (i * 8) 8 bits;
+                octetValue = lib.foldl (acc: bit: acc * 2 + bit) 0 octetBits;
+              in
+              octetValue
+            ) 4;
+          subnetMask = lib.concatStringsSep "." (map toString octets);
+        in
+        subnetMask;
+
       mkIfElseList = p: yes: no: lib.mkMerge [
         (lib.mkIf p yes)
         (lib.mkIf (!p) no)

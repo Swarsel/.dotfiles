@@ -15,6 +15,8 @@
       boot = lib.mkDefault true;
       server = {
         general = lib.mkDefault true;
+        network = lib.mkDefault true;
+        diskEncryption = lib.mkDefault true;
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
         nginx = lib.mkDefault true;

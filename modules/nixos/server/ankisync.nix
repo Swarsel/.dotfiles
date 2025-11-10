@@ -5,7 +5,7 @@ let
   servicePort = 27701;
   serviceName = "ankisync";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   ankiUser = globals.user.name;
 in

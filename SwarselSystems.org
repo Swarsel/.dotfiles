@@ -689,6 +689,22 @@ Concerning the =flake = _:= part:
         inherit (inputs.nixpkgs) lib;
       in
       rec {
+        cidrToSubnetMask = cidr:
+          let
+            prefixLength = lib.toInt (lib.last (lib.splitString "/" cidr));
+            bits = lib.genList (i: if i < prefixLength then 1 else 0) 32;
+            octets = lib.genList
+              (i:
+                let
+                  octetBits = lib.sublist (i * 8) 8 bits;
+                  octetValue = lib.foldl (acc: bit: acc * 2 + bit) 0 octetBits;
+                in
+                octetValue
+              ) 4;
+            subnetMask = lib.concatStringsSep "." (map toString octets);
+          in
+            subnetMask;
+
         mkIfElseList = p: yes: no: lib.mkMerge [
           (lib.mkIf p yes)
           (lib.mkIf (!p) no)
@@ -2533,7 +2549,11 @@ This is my main server that I run at home. It handles most tasks that require bi
       loader.efi.canTouchEfiVariables = true;
     };
 
-    globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+    # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
+    # globals.networks.home.hosts.${config.node.name} = {
+    #   ipv4 = config.repo.secrets.local.home-ipv4;
+    #   mac = config.repo.secrets.local.home-mac;
+    # };
 
     networking = {
       inherit (config.repo.secrets.local) hostId;
@@ -2672,8 +2692,6 @@ This is my main server that I run at home. It handles most tasks that require bi
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
     };
-
-    # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
 
     networking = {
       inherit (config.repo.secrets.local) hostId;
@@ -3837,36 +3855,32 @@ TODO: cleanup this mess
   { self, config, pkgs, lib, ... }:
   let
     pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
-  in
-  {
-
-    config = {
-      home-manager.users.root.home = {
-        stateVersion = "23.05";
-        file = {
+    stateVersion = lib.mkDefault "23.05";
+        homeFiles = {
           ".bash_history" = {
             text = ''
               swarsel-install -n hotel
             '';
           };
         };
+  in
+  {
+
+    config = {
+      home-manager.users.root.home = {
+        inherit stateVersion;
+        file = homeFiles;
       };
       home-manager.users.swarsel = {
         home = {
           username = "swarsel";
           homeDirectory = lib.mkDefault "/home/swarsel";
-          stateVersion = lib.mkDefault "23.05";
+          inherit stateVersion;
           keyboard.layout = "us";
           sessionVariables = {
             FLAKE = "/home/swarsel/.dotfiles";
           };
-          file = {
-            ".bash_history" = {
-              text = ''
-                swarsel-install -n hotel
-              '';
-            };
-          };
+          file = homeFiles;
         };
       };
 
@@ -3884,10 +3898,6 @@ TODO: cleanup this mess
       nix = {
         channel.enable = false;
         package = pkgs.nixVersions.nix_2_28;
-        # extraOptions = ''
-        #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-        #   extra-builtins-file = ${../nix/extra-builtins.nix}
-        # '';
         extraOptions = ''
           plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
             buildInputs = [config.nix.package pkgs.boost];
@@ -3939,6 +3949,7 @@ TODO: cleanup this mess
       environment.etc."issue".text = ''
         [32m~SwarselSystems~[0m
         IP of primary interface: [31m\4[0m
+        These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{wlan0}
         The Password for all users & root is '[31msetup[0m'.
         Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
         Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
@@ -3949,6 +3960,7 @@ TODO: cleanup this mess
         wireless.enable = false;
         # dhcpcd.runHook = "${pkgs.utillinux}/bin/agetty --reload";
         networkmanager.enable = true;
+        usePredictableInterfaceNames = false;
       };
 
       services.getty.autologinUser = lib.mkForce "root";
@@ -3975,6 +3987,8 @@ TODO: cleanup this mess
 
       programs.bash.shellAliases = {
         "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
+        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\|ethernet'";
+        "swarsel-kernel-module" = "lspci -k -d";
       };
 
       system.activationScripts.cache = {
@@ -4363,6 +4377,91 @@ in
       mkOption
       types
       ;
+
+    networkOptions = netSubmod: {
+      cidrv4 = mkOption {
+        type = types.nullOr types.net.cidrv4;
+        description = "The CIDRv4 of this network";
+        default = null;
+      };
+
+      subnetMask4 = mkOption {
+        type = types.nullOr types.net.cidrv4;
+        description = "The dotted decimal form of the subnet mask of this network";
+        readOnly = true;
+        default = lib.swarselsystems.cidrToSubnetMask netSubmod.cidrv4;
+      };
+
+      cidrv6 = mkOption {
+        type = types.nullOr types.net.cidrv6;
+        description = "The CIDRv6 of this network";
+        default = null;
+      };
+
+      hosts = mkOption {
+        default = { };
+        type = types.attrsOf (
+          types.submodule (hostSubmod: {
+            options = {
+              id = mkOption {
+                type = types.int;
+                description = "The id of this host in the network";
+              };
+
+              mac = mkOption {
+                type = types.nullOr types.net.mac;
+                description = "The MAC of the interface on this host that belongs to this network.";
+                default = null;
+              };
+
+              ipv4 = mkOption {
+                type = types.nullOr types.net.ipv4;
+                description = "The IPv4 of this host in this network";
+                readOnly = true;
+                default =
+                  if netSubmod.config.cidrv4 == null then
+                    null
+                  else
+                    lib.net.cidr.host hostSubmod.config.id netSubmod.config.cidrv4;
+              };
+
+              ipv6 = mkOption {
+                type = types.nullOr types.net.ipv6;
+                description = "The IPv6 of this host in this network";
+                readOnly = true;
+                default =
+                  if netSubmod.config.cidrv6 == null then
+                    null
+                  else
+                    lib.net.cidr.host hostSubmod.config.id netSubmod.config.cidrv6;
+              };
+
+              cidrv4 = mkOption {
+                type = types.nullOr types.str; # FIXME: this is not types.net.cidr because it would zero out the host part
+                description = "The IPv4 of this host in this network, including CIDR mask";
+                readOnly = true;
+                default =
+                  if netSubmod.config.cidrv4 == null then
+                    null
+                  else
+                    lib.net.cidr.hostCidr hostSubmod.config.id netSubmod.config.cidrv4;
+              };
+
+              cidrv6 = mkOption {
+                type = types.nullOr types.str; # FIXME: this is not types.net.cidr because it would zero out the host part
+                description = "The IPv6 of this host in this network, including CIDR mask";
+                readOnly = true;
+                default =
+                  if netSubmod.config.cidrv6 == null then
+                    null
+                  else
+                    lib.net.cidr.hostCidr hostSubmod.config.id netSubmod.config.cidrv6;
+              };
+            };
+          })
+        );
+      };
+    };
   in
   {
     options = {
@@ -4398,12 +4497,44 @@ in
               );
             };
 
+            networks = mkOption {
+              default = { };
+              type = types.attrsOf (
+                types.submodule (netSubmod: {
+                  options = networkOptions netSubmod // {
+                    vlans = mkOption {
+                      default = { };
+                      type = types.attrsOf (
+                        types.submodule (vlanNetSubmod: {
+                          options = networkOptions vlanNetSubmod // {
+                            id = mkOption {
+                              type = types.ints.between 1 4094;
+                              description = "The VLAN id";
+                            };
+
+                            name = mkOption {
+                              description = "The name of this VLAN";
+                              default = vlanNetSubmod.config._module.args.name;
+                              type = types.str;
+                            };
+                          };
+                        })
+                      );
+                    };
+                  };
+                })
+              );
+            };
+
             hosts = mkOption {
               type = types.attrsOf (
                 types.submodule {
                   options = {
-                    ipv4 = mkOption {
-                      type = types.str;
+                    defaultGateway4 = mkOption {
+                      type = types.nullOr types.net.ipv4;
+                    };
+                    defaultGateway6 = mkOption {
+                      type = types.nullOr types.net.ipv6;
                     };
                   };
                 }
@@ -6941,6 +7072,166 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
   }
 #+end_src
 
+**** Network settings
+
+
+#+begin_src nix-ts :tangle modules/nixos/server/network.nix
+  { lib, config, ... }:
+  {
+    options.swarselmodules.server.network = lib.mkEnableOption "enable server network config";
+    config = lib.mkIf config.swarselmodules.server.network {
+
+      globals.networks.home.hosts.${config.node.name} = {
+        inherit (config.repo.secrets.local.networking.networks.home) id;
+        mac = config.repo.secrets.local.networking.networks.home.mac or null;
+      };
+
+      globals.hosts.${config.node.name} = {
+        inherit (config.repo.secrets.local.networking) defaultGateway4;
+      };
+
+      networking = {
+        inherit (config.repo.secrets.local.networking) hostId;
+        hostName = config.node.name;
+        nftables.enable = lib.mkDefault true;
+        enableIPv6 = lib.mkDefault true;
+        firewall = {
+          enable = lib.mkDefault true;
+        };
+      };
+
+    };
+  }
+#+end_src
+
+**** Disk encryption
+
+The hostkey can be generated with =ssh-keygen -t ed25519 -N "" -f /etc/secrets/initrd/ssh_host_ed25519_key=.
+Use =lspci -v | grep -iA8 'network\|ethernet'= to supposedly find out which kernel module is needed for networking in initrd. However I prefer a different approach:
+
+Use =lspci -nn | grep -i network= to find out manufacturer info:
+
+#+begin_src shell :exports both
+lspci -nn | grep -i 'network\|ethernet'
+#+end_src
+
+#+RESULTS:
+: 04:00.0 Network controller [0280]: MEDIATEK Corp. MT7922 802.11ax PCI Express Wireless Network Adapter [14c3:0616]
+
+From the last bracket, then take the first value to find out the correct kernel module:
+
+#+begin_src shell :exports both
+lspci -k -d 14c3:
+#+end_src
+
+#+RESULTS:
+| 04:00.0 | Network    | controller: | MEDIATEK | Corp.  | MT7922  | 802.11ax | PCI | Express | Wireless | Network | Adapter |
+|         | Subsystem: | MEDIATEK    | Corp.    | Device | e616    |          |     |         |          |         |         |
+|         | Kernel     | driver      | in       | use:   | mt7921e |          |     |         |          |         |         |
+|         | Kernel     | modules:    | mt7921e  |        |         |          |     |         |          |         |         |
+
+#+begin_src nix-ts :tangle modules/nixos/server/disk-encrypt.nix
+  { self, lib, config, globals, ... }:
+  let
+    localIp = globals.networks.home.hosts.${config.node.name}.ipv4;
+    subnetMask = globals.networks.home.subnetMask4;
+    gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
+  in
+  {
+    options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
+    config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
+
+      boot.kernelParams = lib.mkIf (!config.swarselsystems.isLaptop) [ "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none" ];
+      boot.initrd = {
+        availableKernelModules = [ "r8169" ];
+        network = {
+          enable = true;
+          udhcpc.enable = lib.mkIf config.swarselsystems.isLaptop true;
+          flushBeforeStage2 = true;
+          ssh = {
+            enable = true;
+            port = 22;
+            authorizedKeyFiles = [
+              (self + /secrets/keys/ssh/yubikey.pub)
+              (self + /secrets/keys/ssh/magicant.pub)
+            ];
+            hostKeys = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
+          };
+          postCommands = ''
+            echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
+          '';
+        };
+      };
+
+    };
+  }
+#+end_src
+
+**** kavita
+:PROPERTIES:
+:CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
+:END:
+
+#+begin_src nix-ts :tangle modules/nixos/server/router.nix
+  { self, lib, config, pkgs, globals, ... }:
+  let
+    serviceName = "router";
+    serviceUser = "kavita";
+  in
+  {
+    options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      systemd.network = {
+        wait-online.anyInterface = true;
+        networks = {
+          "30-lan0" = {
+            matchConfig.Name = "lan0";
+            linkConfig.RequiredForOnline = "enslaved";
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+            };
+          };
+          "30-lan1" = {
+            matchConfig.Name = "lan1";
+            linkConfig.RequiredForOnline = "enslaved";
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+            };
+          };
+          "30-lan2" = {
+            matchConfig.Name = "lan2";
+            linkConfig.RequiredForOnline = "enslaved";
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+            };
+          };
+          "30-lan3" = {
+            matchConfig.Name = "lan3";
+            linkConfig.RequiredForOnline = "enslaved";
+            networkConfig = {
+              ConfigureWithoutCarrier = true;
+            };
+          };
+          "10-wan" = {
+            matchConfig.Name = "wan";
+            networkConfig = {
+              # start a DHCP Client for IPv4 Addressing/Routing
+              DHCP = "ipv4";
+              DNSOverTLS = true;
+              DNSSEC = true;
+              IPv6PrivacyExtensions = false;
+              IPForward = true;
+            };
+            # make routing on this interface a dependency for network-online.target
+            linkConfig.RequiredForOnline = "routable";
+      };
+    };
+  };
+    };
+  }
+#+end_src
+
 **** kavita
 :PROPERTIES:
 :CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
@@ -6955,7 +7246,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceName = "kavita";
     serviceUser = "kavita";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7027,7 +7318,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceName = "jellyfin";
     serviceUser = "jellyfin";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7099,7 +7390,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceUser = "navidrome";
     serviceGroup = serviceUser;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7453,7 +7744,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceName = "matrix";
     serviceDomain = config.repo.secrets.common.services.domains.matrix;
     serviceUser = "matrix-synapse";
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     federationPort = 8448;
     whatsappPort = 29318;
@@ -7811,7 +8102,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceGroup = serviceUser;
     serviceName = "nextcloud";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7891,7 +8182,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
     serviceUser = "immich";
     serviceName = "immich";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -7976,7 +8267,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     serviceGroup = serviceUser;
     serviceName = "paperless";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     tikaPort = 9998;
     gotenbergPort = 3002;
@@ -8304,7 +8595,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
     serviceUser = "syncthing";
     serviceGroup = serviceUser;
     serviceName = "syncthing";
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
     specificServiceName = "syncthing-${configName}";
 
     cfg = config.services.${serviceName};
@@ -8530,7 +8821,7 @@ This section exposes several metrics that I use to check the health of my server
     serviceGroup = serviceUser;
     serviceName = "grafana";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     prometheusPort = 9090;
     prometheusUser = "prometheus";
@@ -8784,7 +9075,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
     servicePort = 8088;
     serviceName = "jenkins";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -8879,7 +9170,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     serviceUser = "freshrss";
     serviceGroup = serviceName;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     inherit (config.swarselsystems) sopsFile;
   in
@@ -8995,7 +9286,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     serviceGroup = serviceUser;
     serviceName = "forgejo";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     kanidmDomain = globals.services.kanidm.domain;
   in
@@ -9159,7 +9450,7 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
     servicePort = 27701;
     serviceName = "ankisync";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     ankiUser = globals.user.name;
   in
@@ -9244,7 +9535,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceGroup = serviceUser;
     serviceName = "kanidm";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
     immichDomain = globals.services.immich.domain;
@@ -9811,7 +10102,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceGroup = serviceUser;
     serviceName = "firefly-iii";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     nginxGroup = "nginx";
 
@@ -9932,7 +10223,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     servicePort = 2282;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
     serviceDir = "/Vault/data/koillection";
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
     postgresPort = config.services.postgresql.settings.port; # 5432
@@ -10071,7 +10362,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     servicePort = 8888;
     serviceName = "atuin";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10133,7 +10424,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
     serviceUser = "radicale";
     serviceGroup = serviceUser;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     cfg = config.services.${serviceName};
   in
@@ -10698,7 +10989,7 @@ Deployment notes:
     serviceUser = "snipeit";
     serviceGroup = serviceUser;
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     mysqlPort = 3306;
   in
@@ -10770,7 +11061,7 @@ Deployment notes:
     servicePort = 7745;
     serviceName = "homebox";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-    serviceAddress = globals.hosts.winters.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10875,7 +11166,7 @@ Generate the rpc token using =openssl rand -hex 32=.
     serviceName = "garage";
     servicePort = 3900;
     serviceDomain = config.repo.secrets.common.services.domains."${serviceName}-${configName}";
-    serviceAddress = globals.hosts.${configName}.ipv4;
+    serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
     cfg = config.services.${serviceName};
     metadata_dir = "/var/lib/garage/meta";
@@ -17976,6 +18267,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
   # ------------------------
+  green "Generating hostkey for ssh initrd"
+  $ssh_root_cmd "mkdir -p /mnt/etc/secrets/initrd"
+  $ssh_root_cmd "ssh-keygen -t ed25519 -N "" -f /mnt/etc/secrets/initrd/ssh_host_ed25519_key"
+  # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
   nix run github:nix-community/nixos-anywhere/1.10.0 -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
@@ -19234,6 +19529,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
         server = {
           ssh = lib.mkDefault true;
+          diskEncryption = lib.mkDefault true;
         };
       };
 
@@ -19431,6 +19727,8 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
           boot = lib.mkDefault true;
           server = {
             general = lib.mkDefault true;
+            network = lib.mkDefault true;
+            diskEncryption = lib.mkDefault true;
             packages = lib.mkDefault true;
             ssh = lib.mkDefault true;
             nginx = lib.mkDefault true;

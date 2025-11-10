@@ -7,7 +7,7 @@ let
   serviceUser = "radicale";
   serviceGroup = serviceUser;
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   cfg = config.services.${serviceName};
 in

@@ -6,7 +6,7 @@ let
   serviceName = "kavita";
   serviceUser = "kavita";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.hosts.winters.ipv4;
+  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
