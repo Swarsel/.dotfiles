@@ -2973,6 +2973,191 @@ This is my main server that I run at home. It handles most tasks that require bi
 
 #+end_src
 
+**** Hintbooth (Router: HUNSN RM02)
+
+***** Main Configuration
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/default.nix
+  { lib, minimal,  ... }:
+  {
+
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+    ];
+
+    swarselsystems = {
+      info = "HUNSN RM02, 8GB RAM";
+      flakePath = "/root/.dotfiles";
+      isImpermanence = true;
+      isSecureBoot = true;
+      isCrypted = true;
+      isBtrfs = true;
+      isLinux = true;
+      isNixos = true;
+      rootDisk = "/dev/sda";
+      swapSize = "8G";
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+
+    swarselprofiles = {
+      server = true;
+      router = false;
+    };
+
+  }
+
+#+end_src
+
+***** hardware-configuration
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/hardware-configuration.nix
+  { config, lib, modulesPath, ... }:
+
+  {
+    imports =
+      [
+        (modulesPath + "/installer/scan/not-detected.nix")
+      ];
+
+    boot = {
+      initrd.availableKernelModules = [ "ahci" "xhci_pci" "usbhid" "usb_storage" "sd_mod" ];
+      initrd.kernelModules = [ ];
+      extraModulePackages = [ ];
+    };
+
+    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+    # (the default) this is the recommended approach. When using systemd-networkd it's
+    # still possible to use this option, but it's recommended to use it in conjunction
+    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+    networking.useDHCP = lib.mkDefault true;
+    # networking.interfaces.enp3s0.useDHCP = lib.mkDefault true;
+
+    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  }
+#+end_src
+***** disko
+
+#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/disk-config.nix
+  { lib, config, ... }:
+  let
+    type = "btrfs";
+    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
+    subvolumes = {
+      "/root" = {
+        mountpoint = "/";
+        mountOptions = [
+          "subvol=root"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/home";
+        mountOptions = [
+          "subvol=home"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/persist";
+        mountOptions = [
+          "subvol=persist"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
+        mountpoint = "/var/log";
+        mountOptions = [
+          "subvol=log"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "subvol=nix"
+          "compress=zstd"
+          "noatime"
+        ];
+      };
+      "/swap" = lib.mkIf config.swarselsystems.isSwap {
+        mountpoint = "/.swapvol";
+        swap.swapfile.size = config.swarselsystems.swapSize;
+      };
+    };
+  in
+  {
+    disko.devices = {
+      disk = {
+        disk0 = {
+          type = "disk";
+          device = config.swarselsystems.rootDisk;
+          content = {
+            type = "gpt";
+            partitions = {
+              ESP = {
+                priority = 1;
+                name = "ESP";
+                size = "512M";
+                type = "EF00";
+                content = {
+                  type = "filesystem";
+                  format = "vfat";
+                  mountpoint = "/boot";
+                  mountOptions = [ "defaults" ];
+                };
+              };
+              root = lib.mkIf (!config.swarselsystems.isCrypted) {
+                size = "100%";
+                content = {
+                  inherit type subvolumes extraArgs;
+                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                    MNTPOINT=$(mktemp -d)
+                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
+                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                  '';
+                };
+              };
+              luks = lib.mkIf config.swarselsystems.isCrypted {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "cryptroot";
+                  passwordFile = "/tmp/disko-password"; # this is populated by bootstrap.sh
+                  settings = {
+                    allowDiscards = true;
+                    # https://github.com/hmajid2301/dotfiles/blob/a0b511c79b11d9b4afe2a5e2b7eedb2af23e288f/systems/x86_64-linux/framework/disks.nix#L36
+                    crypttabExtraOpts = [
+                      "fido2-device=auto"
+                      "token-timeout=10"
+                    ];
+                  };
+                  content = {
+                    inherit type subvolumes extraArgs;
+                    postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
+                      MNTPOINT=$(mktemp -d)
+                      mount "/dev/mapper/cryptroot" "$MNTPOINT" -o subvolid=5
+                      trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                      btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
+                    '';
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
+  }
+#+end_src
 **** machpizza (MacBook Pro)
 :PROPERTIES:
 :CUSTOM_ID: h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d
@@ -7167,16 +7352,12 @@ lspci -k -d 14c3:
   }
 #+end_src
 
-**** kavita
-:PROPERTIES:
-:CUSTOM_ID: h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295
-:END:
+**** Router
 
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
-  { self, lib, config, pkgs, globals, ... }:
+  { lib, config, ... }:
   let
     serviceName = "router";
-    serviceUser = "kavita";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -19732,6 +19913,23 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             packages = lib.mkDefault true;
             ssh = lib.mkDefault true;
             nginx = lib.mkDefault true;
+          };
+        };
+    };
+
+  }
+
+#+end_src
+**** Router
+
+#+begin_src nix-ts :tangle profiles/nixos/router/default.nix :mkdirp yes
+  { lib, config, ... }:
+  {
+    options.swarselprofiles.router = lib.mkEnableOption "enable the router profile";
+    config = lib.mkIf config.swarselprofiles.router {
+      swarselmodules = {
+          server = {
+            router = lib.mkDefault true;
           };
         };
     };
