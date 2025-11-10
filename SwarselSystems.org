@@ -3301,207 +3301,6 @@ I have removed most of the machines from this section. What remains are some hos
   - =MilkyWell=: cloud server used for very lightweight sync tasks of non-critical data
   - =Moonside=: Proxy server + some lightweight services
 
-**** MilkyWell (OCI)
-:PROPERTIES:
-:CUSTOM_ID: h:4c5febb0-fdf6-44c5-8d51-7ea0f8930abf
-:END:
-
-For this I use a free Ampere instance from OCI with 50G of space. In case my account gets terminated, all of this data is easily replaceable or backed up regularly anyways.
-
-
-***** Main configuration
-:PROPERTIES:
-:CUSTOM_ID: h:922105c3-a604-47d9-918b-db1803784c75
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/default.nix
-  { lib, minimal, ... }:
-  {
-    imports = [
-      ./hardware-configuration.nix
-      ./disk-config.nix
-    ];
-
-    boot = {
-      loader.systemd-boot.enable = true;
-      tmp.cleanOnBoot = true;
-    };
-
-    networking = {
-      nftables.enable = lib.mkForce false;
-      hostName = "milkywell";
-      enableIPv6 = true;
-      domain = "subnet03112148.vcn03112148.oraclevcn.com";
-    };
-
-    topology.self = {
-      icon = "devices.cloud-server";
-    };
-
-    hardware = {
-      enableAllFirmware = lib.mkForce false;
-    };
-
-    swarselsystems = {
-      info = "VM.Standard.E2.1.Micro";
-      isImpermanence = true;
-      isSecureBoot = false;
-      isCrypted = true;
-      isSwap = true;
-      rootDisk = "/dev/sda";
-      swapSize = "4G";
-      isBtrfs = true;
-      isLinux = true;
-      isNixos = true;
-    };
-
-  } // lib.optionalAttrs (!minimal) {
-    swarselprofiles = {
-      server = true;
-    };
-
-    swarselmodules.server = {
-      forgejo = lib.mkDefault false;
-      ankisync = lib.mkDefault false;
-    };
-  }
-
-#+end_src
-***** hardware-configuration
-:PROPERTIES:
-:CUSTOM_ID: h:64dddedd-9b13-4b74-baf0-1d54d5a89d3b
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/hardware-configuration.nix
-  { config, lib, modulesPath, ... }: {
-    imports = [
-      (modulesPath + "/profiles/qemu-guest.nix")
-    ];
-
-    boot = {
-      initrd.availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
-      initrd.kernelModules = [ ];
-      kernelModules = [ "kvm-amd" ];
-      extraModulePackages = [ ];
-    };
-
-    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-    # (the default) this is the recommended approach. When using systemd-networkd it's
-    # still possible to use this option, but it's recommended to use it in conjunction
-    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-    networking.useDHCP = lib.mkDefault true;
-    # networking.interfaces.ens3.useDHCP = lib.mkDefault true;
-
-    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-    hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-  }
-#+end_src
-***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
-:END:
-
-#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/milkywell/disk-config.nix
-  # NOTE: ... is needed because dikso passes diskoFile
-  { lib
-  , config
-  , ...
-  }:
-  let
-    type = "btrfs";
-    extraArgs = [ "-L" "nixos" "-f" ]; # force overwrite
-    subvolumes = {
-      "/root" = {
-        mountpoint = "/";
-        mountOptions = [
-          "subvol=root"
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-      "/home" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountpoint = "/home";
-        mountOptions = [
-          "subvol=home"
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-      "/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountpoint = "/persist";
-        mountOptions = [
-          "subvol=persist"
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-      "/log" = lib.mkIf config.swarselsystems.isImpermanence {
-        mountpoint = "/var/log";
-        mountOptions = [
-          "subvol=log"
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-      "/nix" = {
-        mountpoint = "/nix";
-        mountOptions = [
-          "subvol=nix"
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-      "/swap" = lib.mkIf config.swarselsystems.isSwap {
-        mountpoint = "/.swapvol";
-        swap.swapfile.size = config.swarselsystems.swapSize;
-      };
-    };
-  in
-  {
-    disko.devices = {
-      disk = {
-        disk0 = {
-          type = "disk";
-          device = config.swarselsystems.rootDisk;
-          content = {
-            type = "gpt";
-            partitions = {
-              ESP = {
-                priority = 1;
-                name = "ESP";
-                size = "512M";
-                type = "EF00";
-                content = {
-                  type = "filesystem";
-                  format = "vfat";
-                  mountpoint = "/boot";
-                  mountOptions = [ "defaults" ];
-                };
-              };
-              root = {
-                size = "100%";
-                content = {
-                  inherit type subvolumes extraArgs;
-                  postCreateHook = lib.mkIf config.swarselsystems.isImpermanence ''
-                    MNTPOINT=$(mktemp -d)
-                    mount "/dev/disk/by-label/nixos" "$MNTPOINT" -o subvolid=5
-                    trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                    btrfs subvolume snapshot -r $MNTPOINT/root $MNTPOINT/root-blank
-                  '';
-                };
-              };
-            };
-          };
-        };
-      };
-    };
-
-    fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-    fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
-  }
-
-
-#+end_src
 **** Moonside (OCI)
 :PROPERTIES:
 :CUSTOM_ID: h:f547ed16-5e6e-4744-9e33-af090e0a175b
@@ -3515,168 +3314,166 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/moonside/default.nix
-      { lib, config, minimal, ... }:
-      let
-        inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
-        inherit (config.swarselsystems) sopsFile;
-      in
-      {
-        imports = [
-          ./hardware-configuration.nix
-          ./disk-config.nix
-        ];
+  { lib, config, minimal, ... }:
+  let
+    inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
+    inherit (config.swarselsystems) sopsFile;
+  in
+  {
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+    ];
 
-        sops = {
-          age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-          # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
-          secrets = {
-            wireguard-private-key = { inherit sopsFile; };
-            wireguard-home-preshared-key = { inherit sopsFile; };
-          };
-        };
+    sops = {
+      age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
+      # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
+      secrets = {
+        wireguard-private-key = { inherit sopsFile; };
+        wireguard-home-preshared-key = { inherit sopsFile; };
+      };
+    };
 
-        boot = {
-          loader.systemd-boot.enable = true;
-          tmp.cleanOnBoot = true;
-        };
+    boot = {
+      loader.systemd-boot.enable = true;
+      tmp.cleanOnBoot = true;
+    };
 
-        environment = {
-          etc."issue".text = "\4";
-        };
+    environment = {
+      etc."issue".text = "\4";
+    };
 
-        topology.self = {
-          icon = "devices.cloud-server";
-          interfaces.wg = {
-            addresses = [ "192.168.3.4" ];
-            renderer.hidePhysicalConnections = true;
-            virtual = true;
-            type = "wireguard";
-          };
-        };
+    topology.self = {
+      icon = "devices.cloud-server";
+      interfaces.wg = {
+        addresses = [ "192.168.3.4" ];
+        renderer.hidePhysicalConnections = true;
+        virtual = true;
+        type = "wireguard";
+      };
+    };
 
-        networking = {
-          nftables.enable = lib.mkForce false;
-          hostName = "moonside";
-          enableIPv6 = false;
-          domain = "subnet03291956.vcn03291956.oraclevcn.com";
-          firewall = {
-            allowedTCPPorts = [ 80 443 8384 ];
-          };
-          wireguard = {
-            enable = true;
-            interfaces = {
-              home-vpn = {
-                privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-                # ips = [ "192.168.3.4/32" ];
-                ips = [ "192.168.178.201/24" ];
-                peers = [
-                  {
-                    # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
-                    publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
-                    presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
-                    name = "moonside";
-                    persistentKeepalive = 25;
-                    # endpoint = "${config.repo.secrets.common.ipv4}:51820";
-                    endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
-                    # allowedIPs = [
-                    #   "192.168.3.0/24"
-                    #   "192.168.1.0/24"
-                    # ];
-                    allowedIPs = [
-                      "192.168.178.0/24"
-                    ];
-                  }
+    networking = {
+      domain = "subnet03291956.vcn03291956.oraclevcn.com";
+      firewall = {
+        allowedTCPPorts = [ 8384 ];
+      };
+      wireguard = {
+        enable = true;
+        interfaces = {
+          home-vpn = {
+            privateKeyFile = config.sops.secrets.wireguard-private-key.path;
+            # ips = [ "192.168.3.4/32" ];
+            ips = [ "192.168.178.201/24" ];
+            peers = [
+              {
+                # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
+                publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
+                presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
+                name = "moonside";
+                persistentKeepalive = 25;
+                # endpoint = "${config.repo.secrets.common.ipv4}:51820";
+                endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
+                # allowedIPs = [
+                #   "192.168.3.0/24"
+                #   "192.168.1.0/24"
+                # ];
+                allowedIPs = [
+                  "192.168.178.0/24"
                 ];
-              };
-            };
+              }
+            ];
           };
         };
+      };
+    };
 
-        hardware = {
-          enableAllFirmware = lib.mkForce false;
-        };
+    hardware = {
+      enableAllFirmware = lib.mkForce false;
+    };
 
-        system.stateVersion = "23.11";
+    system.stateVersion = "23.11";
 
-        services.syncthing = {
-          dataDir = lib.mkForce "/sync";
-          settings = {
-            devices = config.swarselsystems.syncthing.devices // {
-              "${dev1}" = {
-                id = "OCCDGDF-IPZ6HHQ-5SSLQ3L-MSSL5ZW-IX5JTAM-PW4PYEK-BRNMJ7E-Q7YDMA7";
-              };
-              "${dev2}" = {
-                id = "LPCFIIB-ENUM2V6-F2BWVZ6-F2HXCL2-BSBZXUF-TIMNKYB-7CATP7H-YU5D3AH";
-              };
-              "${dev3}" = {
-                id = "LAUT2ZP-KEZY35H-AHR3ARD-URAREJI-2B22P5T-PIMUNWW-PQRDETU-7KIGNQR";
-              };
-            };
-            folders = {
-              "Documents" = {
-                path = "/sync/Documents";
-                type = "receiveonly";
-                versioning = {
-                  type = "simple";
-                  params.keep = "2";
-                };
-                devices = [ "pyramid" ];
-                id = "hgr3d-pfu3w";
-              };
-              "runandbun" = {
-                path = "/sync/runandbun";
-                type = "receiveonly";
-                versioning = {
-                  type = "simple";
-                  params.keep = "5";
-                };
-                devices = [ "winters" "magicant" ];
-                id = "kwnql-ev64v";
-              };
-              "${loc1}" = {
-                path = "/sync/${loc1}";
-                type = "receiveonly";
-                versioning = {
-                  type = "simple";
-                  params.keep = "3";
-                };
-                devices = [ dev1 dev2 dev3 ];
-                id = "5gsxv-rzzst";
-              };
-            };
+    services.syncthing = {
+      dataDir = lib.mkForce "/sync";
+      settings = {
+        devices = config.swarselsystems.syncthing.devices // {
+          "${dev1}" = {
+            id = "OCCDGDF-IPZ6HHQ-5SSLQ3L-MSSL5ZW-IX5JTAM-PW4PYEK-BRNMJ7E-Q7YDMA7";
+          };
+          "${dev2}" = {
+            id = "LPCFIIB-ENUM2V6-F2BWVZ6-F2HXCL2-BSBZXUF-TIMNKYB-7CATP7H-YU5D3AH";
+          };
+          "${dev3}" = {
+            id = "LAUT2ZP-KEZY35H-AHR3ARD-URAREJI-2B22P5T-PIMUNWW-PQRDETU-7KIGNQR";
           };
         };
-
-        swarselsystems = {
-          flakePath = "/root/.dotfiles";
-          info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
-          isImpermanence = true;
-          isSecureBoot = false;
-          isCrypted = false;
-          isSwap = false;
-          rootDisk = "/dev/sda";
-          isBtrfs = true;
-          isNixos = true;
-          isLinux = true;
-          syncthing = {
-            serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
-            serviceIP = "localhost";
+        folders = {
+          "Documents" = {
+            path = "/sync/Documents";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "2";
+            };
+            devices = [ "pyramid" ];
+            id = "hgr3d-pfu3w";
+          };
+          "runandbun" = {
+            path = "/sync/runandbun";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "5";
+            };
+            devices = [ "winters" "magicant" ];
+            id = "kwnql-ev64v";
+          };
+          "${loc1}" = {
+            path = "/sync/${loc1}";
+            type = "receiveonly";
+            versioning = {
+              type = "simple";
+              params.keep = "3";
+            };
+            devices = [ dev1 dev2 dev3 ];
+            id = "5gsxv-rzzst";
           };
         };
-      } // lib.optionalAttrs (!minimal) {
-        swarselprofiles = {
-          server = true;
-        };
+      };
+    };
 
-        swarselmodules.server = {
-          oauth2-proxy = lib.mkDefault true;
-          croc = lib.mkDefault true;
-          microbin = lib.mkDefault true;
-          shlink = lib.mkDefault true;
-          slink = lib.mkDefault true;
-          syncthing = lib.mkDefault true;
-        };
-      }
+    swarselsystems = {
+      flakePath = "/root/.dotfiles";
+      info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
+      isImpermanence = true;
+      isSecureBoot = false;
+      isCrypted = false;
+      isSwap = false;
+      rootDisk = "/dev/sda";
+      isBtrfs = true;
+      isNixos = true;
+      isLinux = true;
+      syncthing = {
+        serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
+        serviceIP = "localhost";
+      };
+    };
+  } // lib.optionalAttrs (!minimal) {
+    swarselprofiles = {
+      server = true;
+    };
+
+    swarselmodules.server = {
+      oauth2-proxy = true;
+      croc = true;
+      microbin = true;
+      shlink = true;
+      slink = true;
+      syncthing = true;
+      diskEncryption = lib.mkForce false;
+    };
+  }
 
 #+end_src
 ***** hardware-configuration
@@ -3864,6 +3661,10 @@ This is a slim setup for developing base configuration. I do not track the hardw
 
     swarselprofiles = {
       minimal = lib.mkForce true;
+    };
+
+    swarselmodules = {
+      servevr.network = lib.mkForce false;
     };
 
     swarselsystems = {
