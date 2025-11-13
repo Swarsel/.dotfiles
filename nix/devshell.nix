@@ -27,6 +27,7 @@
             nixpkgs-fmt.enable = true;
             statix.enable = true;
             trim-trailing-whitespace.enable = true;
+            treefmt.enable = true;
 
             destroyed-symlinks = {
               enable = true;
