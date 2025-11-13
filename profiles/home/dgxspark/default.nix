@@ -55,6 +55,7 @@
       tmux = lib.mkDefault true;
       vesktop = lib.mkDefault false;
       vesktop-tray = lib.mkDefault false;
+      syncthing-tray = lib.mkDefault false;
       waybar = lib.mkDefault false;
       yubikey = lib.mkDefault false;
       yubikeytouch = lib.mkDefault false;

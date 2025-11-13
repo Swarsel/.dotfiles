@@ -15,6 +15,10 @@
     minimal = lib.mkForce true;
   };
 
+  swarselmodules = {
+    server.network = lib.mkForce false;
+  };
+
   swarselsystems = {
     info = "~SwarselSystems~ remote install helper";
     wallpaper = self + /files/wallpaper/lenovowp.png;

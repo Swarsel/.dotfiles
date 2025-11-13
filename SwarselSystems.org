@@ -318,6 +318,44 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   <<homemanageronlysetup>>
 #+end_src
 
+#+RESULTS:
+#+begin_export html
+These steps are required when setting up a normal NixOS host:
+
+- setup yubikey (automatic yubikey enrollment is not yet supported by `disko`):
+  - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
+
+If the new machine is a work machine, these steps are additionally needed:
+
+- setup the work VPN:
+  - using the laptop certificate `.pem` as User cert and private key (CA cert: none)
+  - vpn gateway is found in `nixosConfig.repo.secrets.local.work.vpnGateway`
+- setup gpgsm for signing of mails using S/MIME:
+  - `gpgsm --import ~/Certificates/<certname>.p12`
+  - `gpgsm --import ~/Certificates/harica-root.pem`
+  - `gpgsm --import ~/Certificates/harica-intermediate.pem`
+  - `gpgsm --list-keys --with-validation "HARICA Client RSA Root CA 2021"`
+    - trust the certificate and set passphrase
+- setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
+  - `pizauth auth <account name, e.g. 'work'>`
+  - `pizauth dump > ~/.pizauth.state`
+
+If the new machine is home-manager only, perform these steps:
+
+- (Optional) Install openssh-server
+- Set hostname to the name specified in the home-manager configuration
+- Install nix, either:
+  - (if upgrading existing nix) Install nix version matching with version that `nix-plugins` is compiled against: `nix-env --install --file '<nixpkgs>' cacert -I nixpkgs=channel:nixpkgs-unstable --attr nixVersions.nix_x_yy`
+  - (or installing nix freshly):
+    - Grab the link to the install script of the needed nix version from https://releases.nixos.org/?prefix=nix, e.g. https://releases.nixos.org/nix/nix-2.30.1/install
+    - `bash <(curl -L https://releases.nixos.org/nix/nix-x-yy-y/install) --daemon`
+- add the following to /etc/nix/nix.conf to become a trusted user: `trusted-users = @wheel root swarsel`
+- For the first build:
+  1) Clone dotfile repo & change into it
+  2) `nix --extra-experimental-features 'nix-command flakes' develop`
+  3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
+#+end_export
+
 ** Current issues
 
 #+begin_src markdown :noweb yes :exports both :results html
@@ -1315,7 +1353,7 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
       inputs.pre-commit-hooks.flakeModule
     ];
 
-    perSystem = { pkgs, system, ... }:
+    perSystem = { pkgs, config, system, ... }:
       {
         pre-commit = {
           check.enable = true;
@@ -1473,7 +1511,8 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
                 }
               ];
 
-              devshell.startup.pre-commit-install.text = "pre-commit install";
+              # devshell.startup.pre-commit-install.text = "pre-commit install";
+              devshell.startup.pre-commit.text = config.pre-commit.installationScript;
 
               env =
                 let
@@ -5949,12 +5988,15 @@ Here I disable global completion to prevent redundant compinit calls and cache i
   let
     inherit (config.swarselsystems) mainUser homeDir;
     devices = config.swarselsystems.syncthing.syncDevices;
+    servicePort = 8384;
   in
   {
     options.swarselmodules.syncthing = lib.mkEnableOption "syncthing config";
     config = lib.mkIf config.swarselmodules.syncthing {
       services.syncthing = {
         enable = true;
+        systemService = true;
+        guiAddress = "127.0.0.1:${builtins.toString servicePort}";
         package = pkgs.syncthing;
         user = mainUser;
         dataDir = homeDir;
@@ -11909,7 +11951,6 @@ The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a
 Steps to get a home-manager only setup up and running:
 
 #+begin_src markdown :noweb-ref homemanageronlysetup :exports both :results html
-
   - (Optional) Install openssh-server
   - Set hostname to the name specified in the home-manager configuration
   - Install nix, either:
@@ -11922,7 +11963,6 @@ Steps to get a home-manager only setup up and running:
     1) Clone dotfile repo & change into it
     2) `nix --extra-experimental-features 'nix-command flakes' develop`
     3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
-
 #+end_src
 
 *** TODO Common
@@ -14707,6 +14747,131 @@ Sets up a systemd user service for anki that does not stall the shutdown process
   }
 #+end_src
 
+***** syncthing service for tray
+
+#+begin_src nix-ts :tangle modules/home/common/syncthing-tray.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.syncthing-tray = lib.mkEnableOption "enable syncthing applet for tray";
+    config = lib.mkIf config.swarselmodules.syncthing-tray {
+
+      home.activation.setupSyncthingIni =
+        let
+          syncthingApiEnvVarName = "SYNCTHING_API_KEY";
+          syncthingIni = {
+            file = "${config.home.homeDirectory}/.config/syncthingtray.ini";
+            content = ''
+              [General]
+              v=2.0.2
+
+              [qt]
+              customfont=false
+              customicontheme=false
+              customlocale=false
+              custompalette=false
+              customstylesheet=false
+              customwidgetstyle=false
+              font="Cantarell,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+              icontheme=hicolor
+              iconthemepath=
+              locale=en_US
+              palette="@Variant(\0\0\0\x44\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff  jj\x86\x86\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff\xff\xff\xff\xff\xff\xff\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0\x1\x1\xff\xff\0\0\0\0\0\0\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff\xc0\xc0nn\xce\xce\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff  jj\x86\x86\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff\xff\xff\xff\xff\xff\xff\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0\x1\x1\xff\xff\0\0\0\0\0\0\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\x66\x66\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff\xc0\xc0nn\xce\xce\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff  jj\x86\x86\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\0\0::ff\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff\xff\xff\xff\xff\xff\xff\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff\x1d\x1d%%,,\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0\x1\x1\xff\xff\0\0\0\0\0\0\0\0\x1\x2\xff\xffP\x14\xff\xff\x65\x65\0\0\x1\x1\xff\xff\xa0\xa0\xb3\xb3\xc5\xc5\0\0\x1\x1\xff\xff^^\xc4\xc4\xff\xff\0\0\x1\x1\xff\xff\xc0\xc0nn\xce\xce\0\0\x1\x1\xff\xff\x17\x17\x1d\x1d##\0\0)"
+              plugindir=
+              stylesheetpath=
+              trpath=
+              widgetstyle=
+
+              [startup]
+              considerForReconnect=false
+              considerLauncherForReconnect=false
+              showButton=false
+              showLauncherButton=false
+              stopOnMetered=false
+              stopServiceOnMetered=false
+              syncthingArgs="serve --no-browser --logflags=3"
+              syncthingAutostart=false
+              syncthingPath=syncthing
+              syncthingUnit=syncthing.service
+              systemUnit=false
+              useLibSyncthing=false
+
+              [tray]
+              connections\1\apiKey=@ByteArray(''$${syncthingApiEnvVarName})
+              connections\1\authEnabled=falsex
+              connections\1\autoConnect=true
+              connections\1\devStatsPollInterval=60000
+              connections\1\diskEventLimit=200
+              connections\1\errorsPollInterval=30000
+              connections\1\httpsCertPath=${config.home.homeDirectory}/.config/syncthing/https-cert.pem
+              connections\1\label=Primary instance
+              connections\1\localPath=
+              connections\1\longPollingTimeout=0
+              connections\1\password=
+              connections\1\pauseOnMetered=false
+              connections\1\reconnectInterval=30000
+              connections\1\requestTimeout=0
+              connections\1\statusComputionFlags=123
+              connections\1\syncthingUrl=http://${config.services.syncthing.guiAddress}
+              connections\1\trafficPollInterval=5000
+              connections\1\userName=
+              connections\size=1
+              dbusNotifications=true
+              distinguishTrayIcons=false
+              frameStyle=16
+              ignoreInavailabilityAfterStart=15
+              notifyOnDisconnect=true
+              notifyOnErrors=true
+              notifyOnLauncherErrors=true
+              notifyOnLocalSyncComplete=false
+              notifyOnNewDeviceConnects=false
+              notifyOnNewDirectoryShared=false
+              notifyOnRemoteSyncComplete=false
+              positioning\assumedIconPos=@Point(0 0)
+              positioning\useAssumedIconPosition=false
+              positioning\useCursorPos=true
+              preferIconsFromTheme=false
+              showDownloads=false
+              showSyncthingNotifications=true
+              showTabTexts=true
+              showTraffic=true
+              statusIcons="#ff26b6db,#ff0882c8,#ffffffff;#ffdb3c26,#ffc80828,#ffffffff;#ffc9ce3b,#ffebb83b,#ffffffff;#ff2d9d69,#ff2d9d69,#ffffffff;#ff26b6db,#ff0882c8,#ffffffff;#ff26b6db,#ff0882c8,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff"
+              statusIconsRenderSize=@Size(32 32)
+              statusIconsStrokeWidth=0
+              tabPos=1
+              trayIcons="#ff26b6db,#ff0882c8,#ffffffff;#ffdb3c26,#ffc80828,#ffffffff;#ffc9ce3b,#ffebb83b,#ffffffff;#ff2d9d69,#ff2d9d69,#ffffffff;#ff26b6db,#ff0882c8,#ffffffff;#ff26b6db,#ff0882c8,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff;#ffa9a9a9,#ff58656c,#ffffffff"
+              trayIconsRenderSize=@Size(32 32)
+              trayIconsStrokeWidth=0
+              trayMenuSize=@Size(575 475)
+              usePaletteForStatusIcons=false
+              usePaletteForTrayIcons=false
+              windowType=0
+
+              [webview]
+              customCommand=
+              disabled=false
+              mode=0
+
+            '';
+          };
+        in
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          set -eu
+
+          if [ ! -f ${syncthingIni.file} ]; then
+          cat >${syncthingIni.file} <<'EOF'
+          ${syncthingIni.content}
+          EOF
+          export ${syncthingApiEnvVarName}=$(cat /run/syncthing-init/api_key)
+          ${lib.getExe pkgs.envsubst} -i ${syncthingIni.file} -o ${syncthingIni.file}
+          unset ${syncthingApiEnvVarName}
+          fi
+        '';
+
+    };
+
+  }
+#+end_src
+
 **** Sway
 :PROPERTIES:
 :CUSTOM_ID: h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20
@@ -15487,7 +15652,7 @@ Settings that are needed for the gpg-agent. Also we are enabling emacs support f
 
 When setting up a new machine:
 
-#+begin_src markdown :noweb-ref setup :exports both :results html
+#+begin_src markdown :noweb-ref worksetup :exports both :results html
   - setup gpgsm for signing of mails using S/MIME:
     - `gpgsm --import ~/Certificates/<certname>.p12`
     - `gpgsm --import ~/Certificates/harica-root.pem`
@@ -16337,7 +16502,7 @@ The rest of the settings is at [[#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf][work]]
 
 When setting up a new machine:
 
-#+begin_src markdown :noweb-ref setup :exports both :results html
+#+begin_src markdown :noweb-ref worksetup :exports both :results html
   - setup pizauth for microsoft mail sync (account names are possibly `uni` and `work`):
     - `pizauth auth <account name, e.g. 'work'>`
     - `pizauth dump > ~/.pizauth.state`
@@ -19829,6 +19994,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         tmux = lib.mkDefault true;
         vesktop = lib.mkDefault true;
         vesktop-tray = lib.mkDefault true;
+        syncthing-tray = lib.mkDefault true;
         waybar = lib.mkDefault true;
         yubikey = lib.mkDefault false;
         yubikeytouch = lib.mkDefault true;
@@ -19901,6 +20067,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         tmux = lib.mkDefault true;
         vesktop = lib.mkDefault false;
         vesktop-tray = lib.mkDefault false;
+        syncthing-tray = lib.mkDefault false;
         waybar = lib.mkDefault false;
         yubikey = lib.mkDefault false;
         yubikeytouch = lib.mkDefault false;
@@ -22090,6 +22257,14 @@ Recently I have grown fond of holding presentations using Emacs :)
   (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
   (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
+#+end_src
+
+**** Render markdown blocks as body to expand noweb blocks
+
+#+begin_src emacs-lisp
+(defun org-babel-execute:markdown (body params)
+  "Just return BODY unchanged, allowing noweb expansion."
+  body)
 #+end_src
 *** Nix Mode
 :PROPERTIES:
