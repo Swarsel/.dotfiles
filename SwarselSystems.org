@@ -561,6 +561,7 @@ A short overview over each input and what it does:
         url = "github:astro/microvm.nix";
         inputs.nixpkgs.follows = "nixpkgs";
       };
+      treefmt-nix.url = "github:numtide/treefmt-nix";
 
     };
     outputs =
@@ -1375,6 +1376,7 @@ Lastly, in the =perSystem= attribute set, we see that it is actually passed some
               nixpkgs-fmt.enable = true;
               statix.enable = true;
               trim-trailing-whitespace.enable = true;
+              treefmt.enable = true;
 
               destroyed-symlinks = {
                 enable = true;
@@ -1583,10 +1585,32 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 Defines a formatter that can be called using =nix flake format=. While a nice utility, I have stronger tools to perform this job.
 
 #+begin_src nix-ts :tangle nix/formatter.nix
-  _:
+  { inputs, ... }:
   {
+    imports = [
+      inputs.treefmt-nix.flakeModule
+    ];
+
     perSystem = { pkgs, ... }: {
-      formatter = pkgs.nixpkgs-fmt;
+      # formatter = pkgs.nixpkgs-fmt;
+      # formatter is set by treefmt to:
+      # formatter = lib.mkIf config.treefmt.flakeFormatter (lib.mkDefault config.treefmt.build.wrapper);
+      treefmt = {
+        projectRootFile = "flake.nix";
+        programs = {
+          nixfmt = {
+            enable = true;
+            package = pkgs.nixpkgs-fmt;
+          };
+          deadnix.enable = true;
+          statix.enable = true;
+          shellcheck.enable = true;
+        };
+        settings.formatter.shellcheck.options = [
+          "--shell"
+          "bash"
+        ];
+      };
     };
   }
 
@@ -22386,7 +22410,7 @@ This adds support for Terraform configuration files. I need this at work.
   (add-hook 'terraform-mode-hook #'outline-minor-mode)
 
 #+end_src
-*** nixpkgs-fmt
+*** nix formatting
 :PROPERTIES:
 :CUSTOM_ID: h:5ca7484b-b9d6-4023-88d1-a1e37d5df249
 :END:
