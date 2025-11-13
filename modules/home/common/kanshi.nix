@@ -39,7 +39,7 @@
             exec = [ "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}" ];
             outputs = [
               {
-                criteria = "eDP-2";
+                criteria = config.swarselsystems.sharescreen;
                 status = "enable";
                 scale = 1.0;
               }
