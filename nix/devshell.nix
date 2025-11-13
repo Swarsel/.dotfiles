@@ -5,7 +5,7 @@
     inputs.pre-commit-hooks.flakeModule
   ];
 
-  perSystem = { pkgs, system, ... }:
+  perSystem = { pkgs, config, system, ... }:
     {
       pre-commit = {
         check.enable = true;
@@ -164,7 +164,8 @@
               }
             ];
 
-            devshell.startup.pre-commit-install.text = "pre-commit install";
+            # devshell.startup.pre-commit-install.text = "pre-commit install";
+            devshell.startup.pre-commit.text = config.pre-commit.installationScript;
 
             env =
               let

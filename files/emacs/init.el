@@ -1040,6 +1040,10 @@ create a new one."
 (add-hook 'org-present-mode-quit-hook 'swarsel/org-present-end)
 (add-hook 'org-present-after-navigate-functions 'swarsel/org-present-slide)
 
+(defun org-babel-execute:markdown (body params)
+  "Just return BODY unchanged, allowing noweb expansion."
+  body)
+
 (use-package nix-mode
   :after lsp-mode
   :ensure t

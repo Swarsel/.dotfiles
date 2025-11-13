@@ -38,12 +38,9 @@ in
   };
 
   networking = {
-    nftables.enable = lib.mkForce false;
-    hostName = "moonside";
-    enableIPv6 = false;
     domain = "subnet03291956.vcn03291956.oraclevcn.com";
     firewall = {
-      allowedTCPPorts = [ 80 443 8384 ];
+      allowedTCPPorts = [ 8384 ];
     };
     wireguard = {
       enable = true;
@@ -132,7 +129,7 @@ in
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
-    info = "VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM";
+    info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
     isImpermanence = true;
     isSecureBoot = false;
     isCrypted = false;
@@ -152,11 +149,12 @@ in
   };
 
   swarselmodules.server = {
-    oauth2-proxy = lib.mkDefault true;
-    croc = lib.mkDefault true;
-    microbin = lib.mkDefault true;
-    shlink = lib.mkDefault true;
-    slink = lib.mkDefault true;
-    syncthing = lib.mkDefault true;
+    oauth2-proxy = true;
+    croc = true;
+    microbin = true;
+    shlink = true;
+    slink = true;
+    syncthing = true;
+    diskEncryption = lib.mkForce false;
   };
 }

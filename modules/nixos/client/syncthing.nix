@@ -2,12 +2,15 @@
 let
   inherit (config.swarselsystems) mainUser homeDir;
   devices = config.swarselsystems.syncthing.syncDevices;
+  servicePort = 8384;
 in
 {
   options.swarselmodules.syncthing = lib.mkEnableOption "syncthing config";
   config = lib.mkIf config.swarselmodules.syncthing {
     services.syncthing = {
       enable = true;
+      systemService = true;
+      guiAddress = "127.0.0.1:${builtins.toString servicePort}";
       package = pkgs.syncthing;
       user = mainUser;
       dataDir = homeDir;
