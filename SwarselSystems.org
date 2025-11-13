@@ -3664,7 +3664,7 @@ This is a slim setup for developing base configuration. I do not track the hardw
     };
 
     swarselmodules = {
-      servevr.network = lib.mkForce false;
+      server.network = lib.mkForce false;
     };
 
     swarselsystems = {
@@ -6794,11 +6794,15 @@ Auto login for the initial session.
         xwayland-satellite-unstable
       ];
 
-      niri-flake.cache.enable = true;
 
       programs.niri = {
         enable = true;
         package = pkgs.niri-unstable; # the actual niri that will be installed and used
+      };
+    } // {
+      niri-flake.cache.enable = true;
+      programs.niri = {
+        package = null;
       };
     };
   }
@@ -15353,6 +15357,12 @@ Currently, I am too lazy to explain every option here, but most of it is very se
         };
       };
 
+    } // {
+      programs.niri = lib.mkIf (!config.swarselmodules.niri) {
+        package = null;
+        config = null;
+        settings = null;
+      };
     };
   }
 #+end_src
@@ -15405,7 +15415,7 @@ Currently, I am too lazy to explain every option here, but most of it is very se
               exec = [ "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}" ];
               outputs = [
                 {
-                  criteria = "eDP-2";
+                  criteria = config.swarselsystems.sharescreen;
                   status = "enable";
                   scale = 1.0;
                 }
@@ -19445,7 +19455,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
         lowBattery = lib.mkDefault false;
         network = lib.mkDefault true;
         networkDevices = lib.mkDefault true;
-        niri = lib.mkDefault true;
+        niri = lib.mkDefault false;
         nix-ld = lib.mkDefault true;
         nvd = lib.mkDefault true;
         packages = lib.mkDefault true;
@@ -19792,7 +19802,7 @@ This holds modules that are to be used on most hosts. These are also the most im
         kitty = lib.mkDefault true;
         mail = lib.mkDefault true;
         mako = lib.mkDefault true;
-        niri = lib.mkDefault true;
+        niri = lib.mkDefault false;
         nix-index = lib.mkDefault true;
         nixgl = lib.mkDefault true;
         nix-your-shell = lib.mkDefault true;
