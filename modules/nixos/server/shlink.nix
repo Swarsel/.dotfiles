@@ -60,11 +60,11 @@ in
             };
           };
         }) [
-        "${serviceDir}/data"
-        "${serviceDir}/data/cache"
-        "${serviceDir}/data/locks"
-        "${serviceDir}/data/log"
-        "${serviceDir}/data/proxies"
+        "data"
+        "data/cache"
+        "data/locks"
+        "data/log"
+        "data/proxies"
       ]
     );
 
