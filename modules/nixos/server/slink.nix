@@ -41,8 +41,8 @@ in
             };
           };
         }) [
-        "${serviceDir}/var/data"
-        "${serviceDir}/images"
+        "var/data"
+        "images"
       ]
     );
 

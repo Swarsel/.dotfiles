@@ -1,6 +1,6 @@
 { self, lib, config, pkgs, globals, inputs, ... }:
 let
-  inherit (config.swarselsystems) homeDir isPublic isNixos;
+  inherit (config.swarselsystems) homeDir mainUser isPublic isNixos;
   inherit (config.repo.secrets.common.emacs) radicaleUser;
 in
 {
@@ -9,6 +9,31 @@ in
     # needed for elfeed
     # enable emacs overlay for bleeding edge features
     # also read init.el file and install use-package packages
+
+    home.activation.setupEmacsOrgFiles =
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        set -eu
+
+        if [ ! -d ${homeDir}/Org ]; then
+          ${pkgs.coreutils}/bin/install -d -m 0755 ${homeDir}/Org
+          ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org
+        fi
+
+        # create dummy files to make Emacs calendar work
+        # these have low modified dates and should be marked as sync-conflicts
+        for file in "Tasks" "Archive" "Journal"; do
+          if [ ! -f ${homeDir}/Org/"$file".org ]; then
+            ${pkgs.coreutils}/bin/touch --time=access --time=modify -t 197001010000.00 ${homeDir}/Org/"$file".org
+            ${pkgs.coreutils}/bin/chown ${mainUser}:syncthing ${homeDir}/Org/"$file".org
+          fi
+        done
+
+        # when the configuration is build again, these sync-conflicts will be cleaned up
+        for file in $(find ${homeDir}/Org/ -name "*sync-conflict*"); do
+          ${pkgs.coreutils}/bin/rm "$file"
+        done
+      '';
+
     programs.emacs = {
       enable = true;
       package = pkgs.emacsWithPackagesFromUsePackage {
