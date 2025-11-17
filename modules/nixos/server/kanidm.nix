@@ -20,8 +20,18 @@ let
   certBase = "/etc/ssl";
   certsDir = "${certBase}/certs";
   privateDir = "${certBase}/private";
-  certPath = "${certsDir}/${serviceName}.crt";
-  keyPath = "${privateDir}/${serviceName}.key";
+  certPathBase = "${certsDir}/${serviceName}.crt";
+  certPath =
+    if config.swarselsystems.isImpermanence then
+      "/persist${certPathBase}"
+    else
+      "${certPathBase}";
+  keyPathBase = "${privateDir}/${serviceName}.key";
+  keyPath =
+    if config.swarselsystems.isImpermanence then
+      "/persist${keyPathBase}"
+    else
+      "${keyPathBase}";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -54,6 +64,16 @@ in
 
     globals.services.${serviceName}.domain = serviceDomain;
 
+    environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+      files = [
+        certPathBase
+        keyPathBase
+      ];
+    };
+
+    system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
+      deps = [ "generateSSLCert-${serviceName}" "users" "groups" ];
+    };
     system.activationScripts."generateSSLCert-${serviceName}" =
       let
         daysValid = 3650;
@@ -64,13 +84,15 @@ in
           set -eu
 
           ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
+          ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
           ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+          ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
 
           need_gen=0
-          if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
+          if [ ! -f "${certPathBase}" ] || [ ! -f "${keyPathBase}" ]; then
             need_gen=1
           else
-            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
+            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPathBase}" | cut -d= -f2)"
             end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
             now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
             seconds_left=$(( end_epoch - now_epoch ))
@@ -92,7 +114,10 @@ in
             chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
           fi
         '';
-        deps = [ "etc" ];
+        deps = [
+          "etc"
+          (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
+        ];
       };
 
     services = {
@@ -103,9 +128,9 @@ in
           domain = serviceDomain;
           origin = "https://${serviceDomain}";
           # tls_chain = config.sops.secrets.kanidm-self-signed-crt.path;
-          tls_chain = certPath;
+          tls_chain = certPathBase;
           # tls_key = config.sops.secrets.kanidm-self-signed-key.path;
-          tls_key = keyPath;
+          tls_key = keyPathBase;
           bindaddress = "0.0.0.0:${toString servicePort}";
           trust_x_forward_for = true;
         };
