@@ -13,10 +13,10 @@ let
     };
 
     subnetMask4 = mkOption {
-      type = types.nullOr types.net.cidrv4;
+      type = types.nullOr types.net.ipv4;
       description = "The dotted decimal form of the subnet mask of this network";
       readOnly = true;
-      default = lib.swarselsystems.cidrToSubnetMask netSubmod.cidrv4;
+      default = lib.swarselsystems.cidrToSubnetMask netSubmod.config.cidrv4;
     };
 
     cidrv6 = mkOption {

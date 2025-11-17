@@ -1,5 +1,5 @@
 # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
-{ inputs, ... }:
+{ self, inputs, ... }:
 {
   flake = { config, lib, ... }:
     {
@@ -8,7 +8,8 @@
           globalsSystem = lib.evalModules {
             prefix = [ "globals" ];
             specialArgs = {
-              inherit lib;
+              inherit (inputs.self.pkgs.x86_64-linux) lib; # fuck
+              # inherit (self.outputs) lib;
               inherit inputs;
               inherit (config) nodes;
             };
@@ -54,6 +55,7 @@
           inherit (globalsSystem.config.globals)
             domains
             services
+            networks
             hosts
             user
             root
