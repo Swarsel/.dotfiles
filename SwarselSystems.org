@@ -866,7 +866,7 @@ Lastly, in order make this actually available to my configurations, i use the =i
 
 #+begin_src nix-ts :tangle nix/globals.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
-  { inputs, ... }:
+  { self, inputs, ... }:
   {
     flake = { config, lib, ... }:
       {
@@ -875,7 +875,8 @@ Lastly, in order make this actually available to my configurations, i use the =i
             globalsSystem = lib.evalModules {
               prefix = [ "globals" ];
               specialArgs = {
-                inherit lib;
+                inherit (inputs.self.pkgs.x86_64-linux ) lib; # fuck
+                # inherit (self.outputs) lib;
                 inherit inputs;
                 inherit (config) nodes;
               };
@@ -921,6 +922,7 @@ Lastly, in order make this actually available to my configurations, i use the =i
             inherit (globalsSystem.config.globals)
               domains
               services
+              networks
               hosts
               user
               root
@@ -2600,7 +2602,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/default.nix
-  { lib, config, minimal, ... }:
+  { lib, minimal, ... }:
   {
 
     imports = [
@@ -2652,6 +2654,7 @@ This is my main server that I run at home. It handles most tasks that require bi
     };
 
     swarselmodules.server = {
+      diskEncryption = lib.mkForce false;
       nfs = lib.mkDefault true;
       nginx = lib.mkDefault true;
       kavita = lib.mkDefault true;
@@ -4435,10 +4438,10 @@ in
       };
 
       subnetMask4 = mkOption {
-        type = types.nullOr types.net.cidrv4;
+        type = types.nullOr types.net.ipv4;
         description = "The dotted decimal form of the subnet mask of this network";
         readOnly = true;
-        default = lib.swarselsystems.cidrToSubnetMask netSubmod.cidrv4;
+        default = lib.swarselsystems.cidrToSubnetMask netSubmod.config.cidrv4;
       };
 
       cidrv6 = mkOption {
@@ -7244,7 +7247,7 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
       networking = {
         inherit (config.repo.secrets.local.networking) hostId;
         hostName = config.node.name;
-        nftables.enable = lib.mkDefault true;
+        nftables.enable = lib.mkDefault false;
         enableIPv6 = lib.mkDefault true;
         firewall = {
           enable = lib.mkDefault true;
@@ -7282,40 +7285,86 @@ lspci -k -d 14c3:
 |         | Kernel     | modules:    | mt7921e  |        |         |          |     |         |          |         |         |
 
 #+begin_src nix-ts :tangle modules/nixos/server/disk-encrypt.nix
-  { self, lib, config, globals, ... }:
-  let
-    localIp = globals.networks.home.hosts.${config.node.name}.ipv4;
-    subnetMask = globals.networks.home.subnetMask4;
-    gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
-  in
-  {
-    options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
-    config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
+     { self, pkgs, lib, config, globals, minimal, ... }:
+     let
+       localIp = globals.networks.home.hosts.${config.node.name}.ipv4;
+       subnetMask = globals.networks.home.subnetMask4;
+       gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
-      boot.kernelParams = lib.mkIf (!config.swarselsystems.isLaptop) [ "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none" ];
-      boot.initrd = {
-        availableKernelModules = [ "r8169" ];
-        network = {
-          enable = true;
-          udhcpc.enable = lib.mkIf config.swarselsystems.isLaptop true;
-          flushBeforeStage2 = true;
-          ssh = {
-            enable = true;
-            port = 22;
-            authorizedKeyFiles = [
-              (self + /secrets/keys/ssh/yubikey.pub)
-              (self + /secrets/keys/ssh/magicant.pub)
-            ];
-            hostKeys = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
-          };
-          postCommands = ''
-            echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
-          '';
-        };
-      };
+       hostKeyPath = "/etc/secrets/initrd/ssh_host_ed25519_key";
+     in
+     {
+       options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
+       options.swarselsystems.networkKernelModules = lib.mkOption {
+         type = lib.types.listOf lib.types.str;
+         default = [ ];
+       };
+       config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
 
-    };
-  }
+         system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
+           text = ''
+             [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
+           '';
+           deps = [ "users" ];
+         };
+
+         environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {
+           files = [ hostKeyPath ];
+         };
+
+         boot = lib.mkIf (config.swarselprofiles.server || minimal) {
+           kernelParams = lib.mkIf (!config.swarselsystems.isLaptop) [
+             "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
+           ];
+           initrd = {
+             availableKernelModules = config.swarselsystems.networkKernelModules;
+             network = {
+               enable = true;
+               udhcpc.enable = lib.mkIf config.swarselsystems.isLaptop true;
+               flushBeforeStage2 = true;
+               ssh = {
+                 enable = true;
+                 port = 2222; # avoid hostkey changed nag
+                 authorizedKeyFiles = [
+                   (self + /secrets/keys/ssh/yubikey.pub)
+                   (self + /secrets/keys/ssh/magicant.pub)
+                 ];
+                 hostKeys = [ hostKeyPath ];
+               };
+               # postCommands = ''
+               #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
+               # '';
+             };
+             systemd = {
+               initrdBin = with pkgs; [
+                 cryptsetup
+               ];
+               services = {
+                 unlock-luks = {
+                   description = "Unlock LUKS encrypted root device";
+                   wantedBy = [ "initrd.target" ];
+                   after = [ "network-online.target" ];
+                   before = [ "sysroot.mount" ];
+                   path = [ "/bin" ];
+
+                   # Configure how the service behaves
+                   serviceConfig = {
+                     Type = "oneshot";
+                     RemainAfterExit = true;
+                   };
+
+                   # The actual commands to unlock the drive
+                   script = ''
+                     echo "systemctl default >> /root/.profile"
+                   '';
+                 };
+               };
+             };
+           };
+         };
+       };
+
+     }
 #+end_src
 
 **** Router

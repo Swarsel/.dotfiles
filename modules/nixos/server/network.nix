@@ -15,7 +15,7 @@
     networking = {
       inherit (config.repo.secrets.local.networking) hostId;
       hostName = config.node.name;
-      nftables.enable = lib.mkDefault true;
+      nftables.enable = lib.mkDefault false;
       enableIPv6 = lib.mkDefault true;
       firewall = {
         enable = lib.mkDefault true;
