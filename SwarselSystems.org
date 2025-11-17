@@ -19069,6 +19069,32 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 
 #+end_src
 
+*** quickpass
+#+begin_src shell :tangle files/scripts/quickpass.sh :mkdirp yes
+    shopt -s nullglob globstar
+
+    notify-send "$(env | grep -E 'WAYLAND|SWAY')"
+
+    password="$1"
+
+    pass show "$password" | {
+        IFS= read -r pass
+        printf %s "$pass"
+    } | wtype -
+
+    notify-send -u critical -a pass -t 1000 "Typed Password"
+#+end_src
+
+#+begin_src nix-ts :tangle pkgs/quickpass/default.nix
+  { self, name, writeShellApplication, libnotify, pass, wtype }:
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ libnotify pass wtype ];
+    text = builtins.readFile "${self}/files/scripts/${name}.sh";
+  }
+
+#+end_src
+
 *** cura5
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
