@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, minimal, ... }:
 {
 
   imports = [
@@ -16,20 +16,12 @@
   #   mac = config.repo.secrets.local.home-mac;
   # };
 
-  networking = {
-    inherit (config.repo.secrets.local) hostId;
-    hostName = "winters";
-    firewall.enable = true;
-    enableIPv6 = false;
-    firewall.allowedTCPPorts = [ 80 443 ];
-  };
-
   swarselsystems = {
     info = "ASRock J4105-ITX, 32GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = false;
-    isSecureBoot = true;
-    isCrypted = true;
+    isSecureBoot = false;
+    isCrypted = false;
     isBtrfs = false;
     isLinux = true;
     isNixos = true;
@@ -50,6 +42,7 @@
   };
 
   swarselmodules.server = {
+    diskEncryption = lib.mkForce false;
     nfs = lib.mkDefault true;
     nginx = lib.mkDefault true;
     kavita = lib.mkDefault true;

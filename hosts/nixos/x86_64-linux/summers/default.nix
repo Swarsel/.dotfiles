@@ -1,4 +1,4 @@
-{ inputs, lib, config, configName, minimal, nodes, globals, ... }:
+{ inputs, lib, config, minimal, nodes, globals, ... }:
 {
 
   imports = [
@@ -9,13 +9,6 @@
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
-  };
-
-  networking = {
-    inherit (config.repo.secrets.local) hostId;
-    hostName = configName;
-    firewall.enable = true;
-    enableIPv6 = true;
   };
 
   swarselsystems = {
@@ -41,6 +34,7 @@
       microvmHost = true;
     };
     server = {
+      diskEncryption = lib.mkForce false; # TODO: disable
       nfs = false;
       nginx = false;
       kavita = false;

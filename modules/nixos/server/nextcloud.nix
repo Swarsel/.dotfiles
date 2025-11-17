@@ -9,6 +9,8 @@ let
   serviceName = "nextcloud";
   serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
   serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+
+  nextcloudVersion = "32";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -29,7 +31,7 @@ in
           trusted_proxies = [ "0.0.0.0" ];
           overwriteprotocol = "https";
         };
-        package = pkgs.nextcloud31;
+        package = pkgs."nextcloud${nextcloudVersion}";
         hostName = serviceDomain;
         home = "/Vault/data/${serviceName}";
         datadir = "/Vault/data/${serviceName}";
@@ -37,7 +39,7 @@ in
         configureRedis = true;
         maxUploadSize = "4G";
         extraApps = {
-          inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+          inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
         };
         extraAppsEnable = true;
         config = {

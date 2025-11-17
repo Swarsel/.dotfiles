@@ -2620,20 +2620,12 @@ This is my main server that I run at home. It handles most tasks that require bi
     #   mac = config.repo.secrets.local.home-mac;
     # };
 
-    networking = {
-      inherit (config.repo.secrets.local) hostId;
-      hostName = "winters";
-      firewall.enable = true;
-      enableIPv6 = false;
-      firewall.allowedTCPPorts = [ 80 443 ];
-    };
-
     swarselsystems = {
       info = "ASRock J4105-ITX, 32GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = false;
-      isSecureBoot = true;
-      isCrypted = true;
+      isSecureBoot = false;
+      isCrypted = false;
       isBtrfs = false;
       isLinux = true;
       isNixos = true;
@@ -2746,7 +2738,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
 ***** Main Configuration
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
-  { inputs, lib, config, configName, minimal, nodes, globals, ... }:
+  { inputs, lib, config, minimal, nodes, globals, ... }:
   {
 
     imports = [
@@ -2757,13 +2749,6 @@ This is my main server that I run at home. It handles most tasks that require bi
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
-    };
-
-    networking = {
-      inherit (config.repo.secrets.local) hostId;
-      hostName = configName;
-      firewall.enable = true;
-      enableIPv6 = true;
     };
 
     swarselsystems = {
@@ -2789,6 +2774,7 @@ This is my main server that I run at home. It handles most tasks that require bi
         microvmHost = true;
       };
       server = {
+        diskEncryption = lib.mkForce false; # TODO: disable
         nfs = false;
         nginx = false;
         kavita = false;
@@ -3062,6 +3048,7 @@ This is my main server that I run at home. It handles most tasks that require bi
       isNixos = true;
       rootDisk = "/dev/sda";
       swapSize = "8G";
+      networkKernelModules = [ "igb" ];
     };
 
   } // lib.optionalAttrs (!minimal) {
@@ -3069,6 +3056,12 @@ This is my main server that I run at home. It handles most tasks that require bi
     swarselprofiles = {
       server = true;
       router = false;
+    };
+
+    swarselmodules = {
+      server = {
+        nginx = lib.mkForce false; # we get this from the server profile
+      };
     };
 
   }
@@ -3730,7 +3723,10 @@ This is a slim setup for developing base configuration. I do not track the hardw
     };
 
     swarselmodules = {
-      server.network = lib.mkForce false;
+      server = {
+        network = lib.mkForce false;
+        diskEncryption = lib.mkForce false;
+      };
     };
 
     swarselsystems = {
@@ -4001,7 +3997,7 @@ TODO: cleanup this mess
       environment.etc."issue".text = ''
         [32m~SwarselSystems~[0m
         IP of primary interface: [31m\4[0m
-        These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{wlan0}
+        These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
         The Password for all users & root is '[31msetup[0m'.
         Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
         Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
@@ -4039,7 +4035,7 @@ TODO: cleanup this mess
 
       programs.bash.shellAliases = {
         "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\|ethernet'";
+        "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
         "swarsel-kernel-module" = "lspci -k -d";
       };
 
@@ -4085,59 +4081,66 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hotel/default.nix
-        { self, config, pkgs, lib, minimal, ... }:
-        let
-          mainUser = "demo";
-        in
-        {
+  { self, config, pkgs, lib, minimal, ... }:
+  let
+    mainUser = "demo";
+  in
+  {
 
-          imports = [
-            ./hardware-configuration.nix
-            ./disk-config.nix
-            {
-              _module.args.diskDevice = config.swarselsystems.rootDisk;
-            }
-          ];
+    imports = [
+      ./hardware-configuration.nix
+      ./disk-config.nix
+      {
+        _module.args.diskDevice = config.swarselsystems.rootDisk;
+      }
+    ];
 
-          environment.variables = {
-            WLR_RENDERER_ALLOW_SOFTWARE = 1;
-          };
+    environment.variables = {
+      WLR_RENDERER_ALLOW_SOFTWARE = 1;
+    };
 
-          services.qemuGuest.enable = true;
+    services.qemuGuest.enable = true;
 
-          boot = {
-            loader.systemd-boot.enable = lib.mkForce true;
-            loader.efi.canTouchEfiVariables = true;
-            kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
-          };
+    boot = {
+      loader.systemd-boot.enable = lib.mkForce true;
+      loader.efi.canTouchEfiVariables = true;
+      kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+    };
 
-          networking = {
-            hostName = "hotel";
-            firewall.enable = true;
-          };
+    networking = {
+      hostName = "hotel";
+      firewall.enable = true;
+    };
 
-          swarselsystems = {
-            info = "~SwarselSystems~ demo host";
-            wallpaper = self + /files/wallpaper/lenovowp.png;
-            isImpermanence = true;
-            isCrypted = true;
-            isSecureBoot = false;
-            isSwap = true;
-            swapSize = "4G";
-            rootDisk = "/dev/vda";
-            isBtrfs = false;
-            inherit mainUser;
-            isLinux = true;
-            isPublic = true;
-            isNixos = true;
-          };
+    swarselmodules = {
+      server = {
+        network = lib.mkForce false;
+        diskEncryption = lib.mkForce false;
+      };
+    };
 
-        } // lib.optionalAttrs (!minimal) {
-          swarselprofiles = {
-            hotel = true;
-            minimal = true;
-          };
-        }
+    swarselsystems = {
+      info = "~SwarselSystems~ demo host";
+      wallpaper = self + /files/wallpaper/lenovowp.png;
+      isImpermanence = true;
+      isCrypted = true;
+      isSecureBoot = false;
+      isSwap = true;
+      swapSize = "4G";
+      rootDisk = "/dev/vda";
+      isBtrfs = false;
+      inherit mainUser;
+      isLinux = true;
+      isPublic = true;
+      isNixos = true;
+    };
+
+  } // lib.optionalAttrs (!minimal) {
+    swarselprofiles = {
+      hotel = true;
+      minimal = true;
+    };
+  }
 
 
 #+end_src
@@ -4876,6 +4879,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
         useUserPackages = true;
         verbose = true;
         backupFileExtension = "hm-bak";
+        overwriteBackup = true;
         users.${config.swarselsystems.mainUser}.imports = [
           inputs.nix-index-database.homeModules.nix-index
           inputs.sops-nix.homeManagerModules.sops
@@ -6931,6 +6935,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       environment.shellAliases = lib.recursiveUpdate
         {
           nswitch = "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+          ntest = "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
           nboot = "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
           ndry = "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
         }
@@ -7272,10 +7277,10 @@ lspci -nn | grep -i 'network\|ethernet'
 #+RESULTS:
 : 04:00.0 Network controller [0280]: MEDIATEK Corp. MT7922 802.11ax PCI Express Wireless Network Adapter [14c3:0616]
 
-From the last bracket, then take the first value to find out the correct kernel module:
+From the last bracket you then find out the correct kernel module:
 
 #+begin_src shell :exports both
-lspci -k -d 14c3:
+lspci -k -d 14c3:0616
 #+end_src
 
 #+RESULTS:
@@ -8299,6 +8304,8 @@ lspci -k -d 14c3:
     serviceName = "nextcloud";
     serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
     serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+
+    nextcloudVersion = "32";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -8319,7 +8326,7 @@ lspci -k -d 14c3:
             trusted_proxies = [ "0.0.0.0" ];
             overwriteprotocol = "https";
           };
-          package = pkgs.nextcloud31;
+          package = pkgs."nextcloud${nextcloudVersion}";
           hostName = serviceDomain;
           home = "/Vault/data/${serviceName}";
           datadir = "/Vault/data/${serviceName}";
@@ -8327,7 +8334,7 @@ lspci -k -d 14c3:
           configureRedis = true;
           maxUploadSize = "4G";
           extraApps = {
-            inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
+            inherit (pkgs."nextcloud${nextcloudVersion}Packages".apps) mail calendar contacts cospend phonetrack polls tasks sociallogin;
           };
           extraAppsEnable = true;
           config = {
@@ -13517,6 +13524,7 @@ Currently I only use it as before with =initExtra= though.
               hg = "history | grep";
               hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
               nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+              ntest = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
               nboot = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
               ndry = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
               magit = "emacsclient -nc -e \"(magit-status)\"";
@@ -19947,9 +19955,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
   # ------------------------
-  green "Generating hostkey for ssh initrd"
-  $ssh_root_cmd "mkdir -p /mnt/etc/secrets/initrd"
-  $ssh_root_cmd "ssh-keygen -t ed25519 -N "" -f /mnt/etc/secrets/initrd/ssh_host_ed25519_key"
+  # green "Generating hostkey for ssh initrd"
+  # $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
+  # $ssh_root_cmd "ssh-keygen -t ed25519 -N '' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
+  # $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
   # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
@@ -21396,6 +21405,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
     config = lib.mkIf config.swarselprofiles.server {
       swarselmodules = {
           general = lib.mkDefault true;
+          lanzaboote = lib.mkDefault true;
           pii = lib.mkDefault true;
           home-manager = lib.mkDefault true;
           xserver = lib.mkDefault true;

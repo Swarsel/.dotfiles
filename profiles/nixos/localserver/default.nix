@@ -4,6 +4,7 @@
   config = lib.mkIf config.swarselprofiles.server {
     swarselmodules = {
       general = lib.mkDefault true;
+      lanzaboote = lib.mkDefault true;
       pii = lib.mkDefault true;
       home-manager = lib.mkDefault true;
       xserver = lib.mkDefault true;

@@ -16,7 +16,10 @@
   };
 
   swarselmodules = {
-    server.network = lib.mkForce false;
+    server = {
+      network = lib.mkForce false;
+      diskEncryption = lib.mkForce false;
+    };
   };
 
   swarselsystems = {
