@@ -105,6 +105,23 @@ in
       #   };
       # };
 
+      wayland.windowManager.sway =
+        let
+          inherit (nixosConfig.repo.secrets.local.work) user1 user1Long domain1 mailAddress;
+        in
+        {
+          config = {
+            keybindings =
+              let
+                inherit (config.wayland.windowManager.sway.config) modifier;
+              in
+              {
+                "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+              };
+          };
+        };
+
       stylix = {
         targets.firefox.profileNames =
           let
