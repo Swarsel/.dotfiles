@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, nixosConfig ? config, ... }:
 {
   options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
   config = lib.mkIf config.swarselmodules.ssh {
@@ -22,43 +22,7 @@
           controlPath = "~/.ssh/master-%r@%n:%p";
           controlPersist = "no";
         };
-        "pfsense" = {
-          hostname = "192.168.1.1";
-          user = "root";
-        };
-        "bakery" = {
-          hostname = "192.168.1.136";
-          user = "root";
-        };
-        "dgx" = {
-          hostname = "192.168.48.200";
-          user = "swarsel";
-        };
-        "winters" = {
-          hostname = "192.168.178.24";
-          user = "root";
-        };
-        "minecraft" = {
-          hostname = "130.61.119.129";
-          user = "opc";
-        };
-        "milkywell" = {
-          hostname = "193.122.53.173";
-          user = "root";
-        };
-        "moonside" = {
-          hostname = "130.61.238.239";
-          user = "root";
-        };
-        "songdiver" = {
-          hostname = "89.168.100.65";
-          user = "ubuntu";
-        };
-        "pkv" = {
-          hostname = "46.232.248.161";
-          user = "root";
-        };
-      };
+      } // nixosConfig.repo.secrets.common.ssh.hosts;
     };
   };
 }
