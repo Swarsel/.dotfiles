@@ -95,7 +95,7 @@ in
     environment.etc."issue".text = ''
       [32m~SwarselSystems~[0m
       IP of primary interface: [31m\4[0m
-      These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{wlan0}
+      These IPs were also found: \4{eth0} \4{eth1} \4{eth2} \4{eth3} \4{eth4} \4{eth5} \4{wlan0}
       The Password for all users & root is '[31msetup[0m'.
       Install the system remotely by running '[33mbootstrap -n <CONFIGURATION_NAME> -d <IP_FROM_ABOVE> [0m' on a machine with deployed secrets.
       Alternatively, run '[33mswarsel-install -n <CONFIGURATION_NAME>[0m' for a local install. For your convenience, an example call is in the bash history (press up on the keyboard to access).
@@ -133,7 +133,7 @@ in
 
     programs.bash.shellAliases = {
       "swarsel-install" = "nix run github:Swarsel/.dotfiles#swarsel-install --";
-      "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\|ethernet'";
+      "swarsel-net-manufacturer" = "lspci -nn | grep -i 'network\\|ethernet'";
       "swarsel-kernel-module" = "lspci -k -d";
     };
 

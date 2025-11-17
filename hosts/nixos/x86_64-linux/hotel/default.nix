@@ -29,6 +29,13 @@ in
     firewall.enable = true;
   };
 
+  swarselmodules = {
+    server = {
+      network = lib.mkForce false;
+      diskEncryption = lib.mkForce false;
+    };
+  };
+
   swarselsystems = {
     info = "~SwarselSystems~ demo host";
     wallpaper = self + /files/wallpaper/lenovowp.png;

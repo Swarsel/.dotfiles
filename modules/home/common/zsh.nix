@@ -23,6 +23,7 @@ in
             hg = "history | grep";
             hmswitch = lib.mkIf (!isNixos) "${lib.getExe pkgs.home-manager} --flake ${flakePath}#$(hostname) switch |& nom";
             nswitch = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) switch; cd -;";
+            ntest = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) test; cd -;";
             nboot = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) boot; cd -;";
             ndry = lib.mkIf isNixos "cd ${flakePath}; swarsel-deploy $(hostname) dry-activate; cd -;";
             magit = "emacsclient -nc -e \"(magit-status)\"";
