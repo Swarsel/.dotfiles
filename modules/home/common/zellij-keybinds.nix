@@ -20,6 +20,12 @@
           _children = [
             {
               bind = {
+                _args = [ "Ctrl p" ];
+                _children = [{ SwitchToMode._args = [ "normal" ]; }];
+              };
+            }
+            {
+              bind = {
                 _args = [ "left" ];
                 _children = [{ MoveFocus._args = [ "left" ]; }];
               };
@@ -44,11 +50,26 @@
             }
             {
               bind = {
-                _args = [ "c" ];
-                _children = [
-                  { SwitchToMode._args = [ "renamepane" ]; }
-                  { PaneNameInput._args = [ 0 ]; }
-                ];
+                _args = [ "h" ];
+                _children = [{ MoveFocus._args = [ "left" ]; }];
+              };
+            }
+            {
+              bind = {
+                _args = [ "j" ];
+                _children = [{ MoveFocus._args = [ "down" ]; }];
+              };
+            }
+            {
+              bind = {
+                _args = [ "k" ];
+                _children = [{ MoveFocus._args = [ "up" ]; }];
+              };
+            }
+            {
+              bind = {
+                _args = [ "l" ];
+                _children = [{ MoveFocus._args = [ "right" ]; }];
               };
             }
             {
@@ -80,30 +101,6 @@
             }
             {
               bind = {
-                _args = [ "h" ];
-                _children = [{ MoveFocus._args = [ "left" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "j" ];
-                _children = [{ MoveFocus._args = [ "down" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "k" ];
-                _children = [{ MoveFocus._args = [ "up" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "l" ];
-                _children = [{ MoveFocus._args = [ "right" ]; }];
-              };
-            }
-            {
-              bind = {
                 _args = [ "n" ];
                 _children = [
                   { NewPane = { }; }
@@ -119,33 +116,9 @@
             }
             {
               bind = {
-                _args = [ "Ctrl p" ];
-                _children = [{ SwitchToMode._args = [ "normal" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "r" ];
-                _children = [
-                  { NewPane._args = [ "right" ]; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "w" ];
+                _args = [ "f12" ];
                 _children = [
                   { ToggleFloatingPanes = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "z" ];
-                _children = [
-                  { TogglePaneFrames = { }; }
                   { SwitchToMode._args = [ "normal" ]; }
                 ];
               };
@@ -155,6 +128,12 @@
 
         tab = {
           _children = [
+            {
+              bind = {
+                _args = [ "Ctrl t" ];
+                _children = [{ SwitchToMode._args = [ "normal" ]; }];
+              };
+            }
             {
               bind = {
                 _args = [ "left" ];
@@ -262,33 +241,6 @@
             }
             {
               bind = {
-                _args = [ "[" ];
-                _children = [
-                  { BreakPaneLeft = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "]" ];
-                _children = [
-                  { BreakPaneRight = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "b" ];
-                _children = [
-                  { BreakPane = { }; }
-                  { SwitchToMode._args = [ "normal" ]; }
-                ];
-              };
-            }
-            {
-              bind = {
                 _args = [ "h" ];
                 _children = [{ GoToPreviousTab = { }; }];
               };
@@ -340,12 +292,6 @@
             }
             {
               bind = {
-                _args = [ "Ctrl t" ];
-                _children = [{ SwitchToMode._args = [ "normal" ]; }];
-              };
-            }
-            {
-              bind = {
                 _args = [ "x" ];
                 _children = [
                   { CloseTab = { }; }
@@ -353,17 +299,17 @@
                 ];
               };
             }
-            {
-              bind = {
-                _args = [ "tab" ];
-                _children = [{ ToggleTab = { }; }];
-              };
-            }
           ];
         };
 
         resize = {
           _children = [
+            {
+              bind = {
+                _args = [ "Ctrl n" ];
+                _children = [{ SwitchToMode._args = [ "normal" ]; }];
+              };
+            }
             {
               bind = {
                 _args = [ "left" ];
@@ -454,17 +400,17 @@
                 _children = [{ Resize._args = [ "Increase right" ]; }];
               };
             }
-            {
-              bind = {
-                _args = [ "Ctrl n" ];
-                _children = [{ SwitchToMode._args = [ "normal" ]; }];
-              };
-            }
           ];
         };
 
         move = {
           _children = [
+            {
+              bind = {
+                _args = [ "Ctrl h" ];
+                _children = [{ SwitchToMode._args = [ "normal" ]; }];
+              };
+            }
             {
               bind = {
                 _args = [ "left" ];
@@ -497,12 +443,6 @@
             }
             {
               bind = {
-                _args = [ "Ctrl h" ];
-                _children = [{ SwitchToMode._args = [ "normal" ]; }];
-              };
-            }
-            {
-              bind = {
                 _args = [ "j" ];
                 _children = [{ MovePane._args = [ "down" ]; }];
               };
@@ -517,24 +457,6 @@
               bind = {
                 _args = [ "l" ];
                 _children = [{ MovePane._args = [ "right" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "n" ];
-                _children = [{ MovePane = { }; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "p" ];
-                _children = [{ MovePaneBackwards = { }; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "tab" ];
-                _children = [{ MovePane = { }; }];
               };
             }
           ];
@@ -602,6 +524,12 @@
           _children = [
             {
               bind = {
+                _args = [ "Ctrl o" ];
+                _children = [{ SwitchToMode._args = [ "normal" ]; }];
+              };
+            }
+            {
+              bind = {
                 _args = [ "c" ];
                 _children = [
                   {
@@ -613,12 +541,6 @@
                   }
                   { SwitchToMode._args = [ "normal" ]; }
                 ];
-              };
-            }
-            {
-              bind = {
-                _args = [ "Ctrl o" ];
-                _children = [{ SwitchToMode._args = [ "normal" ]; }];
               };
             }
             {
@@ -700,18 +622,6 @@
             }
             {
               bind = {
-                _args = [ "Alt [" ];
-                _children = [{ PreviousSwapLayout = { }; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "Alt ]" ];
-                _children = [{ NextSwapLayout = { }; }];
-              };
-            }
-            {
-              bind = {
                 _args = [ "Alt f" ];
                 _children = [{ ToggleFloatingPanes = { }; }];
               };
@@ -748,26 +658,14 @@
             }
             {
               bind = {
-                _args = [ "Alt l" ];
-                _children = [{ MoveFocusOrTab._args = [ "right" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "Alt n" ];
+                _args = [ "Alt p" ];
                 _children = [{ NewPane = { }; }];
               };
             }
             {
               bind = {
-                _args = [ "Alt o" ];
-                _children = [{ MoveTab._args = [ "right" ]; }];
-              };
-            }
-            {
-              bind = {
-                _args = [ "Ctrl q" ];
-                _children = [{ Quit = { }; }];
+                _args = [ "Alt n" ];
+                _children = [{ NewTab = { }; }];
               };
             }
           ];

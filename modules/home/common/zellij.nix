@@ -35,24 +35,12 @@
           status-bar.path = "status-bar";
           strider.path = "strider";
           compact-bar.path = "compact-bar";
+          # configuration.path = "configuration";
+          # filepicker.path = "strider";
+          # plugin-manager.path = "plugin-manager";
+          # session-manager.path = "session-manager";
+          # welcome-screen.path = "session-manager";
         };
-        # configuration = {
-        #   _props.location = "zellij:configuration";
-        # };
-        # filepicker = {
-        #   _props.location = "zellij:strider";
-        #   cwd = "/";
-        # };
-        # plugin-manager = {
-        #   _props.location = "zellij:plugin-manager";
-        # };
-        # session-manager = {
-        #   _props.location = "zellij:session-manager";
-        # };
-        # welcome-screen = {
-        #   _props.location = "zellij:session-manager";
-        #   welcome_screen = true;
-        # };
       };
     };
 

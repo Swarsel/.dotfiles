@@ -54,21 +54,18 @@ in
           ];
           services = {
             unlock-luks = {
-              description = "Unlock LUKS encrypted root device";
               wantedBy = [ "initrd.target" ];
-              after = [ "network-online.target" ];
-              before = [ "sysroot.mount" ];
+              after = [ "network.target" ];
+              before = [ "systemd-cryptsetup@cryptroot.service" ];
               path = [ "/bin" ];
 
-              # Configure how the service behaves
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
 
-              # The actual commands to unlock the drive
               script = ''
-                echo "systemctl default >> /root/.profile"
+                echo "systemctl default" >> /root/.profile
               '';
             };
           };
