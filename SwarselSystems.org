@@ -7346,21 +7346,18 @@ lspci -k -d 14c3:0616
                ];
                services = {
                  unlock-luks = {
-                   description = "Unlock LUKS encrypted root device";
                    wantedBy = [ "initrd.target" ];
-                   after = [ "network-online.target" ];
-                   before = [ "sysroot.mount" ];
+                   after = [ "network.target" ];
+                   before = [ "systemd-cryptsetup@cryptroot.service" ];
                    path = [ "/bin" ];
 
-                   # Configure how the service behaves
                    serviceConfig = {
                      Type = "oneshot";
                      RemainAfterExit = true;
                    };
 
-                   # The actual commands to unlock the drive
                    script = ''
-                     echo "systemctl default >> /root/.profile"
+                     echo "systemctl default" >> /root/.profile
                    '';
                  };
                };
@@ -13684,24 +13681,12 @@ Currently I only use it as before with =initExtra= though.
             status-bar.path = "status-bar";
             strider.path = "strider";
             compact-bar.path = "compact-bar";
+            # configuration.path = "configuration";
+            # filepicker.path = "strider";
+            # plugin-manager.path = "plugin-manager";
+            # session-manager.path = "session-manager";
+            # welcome-screen.path = "session-manager";
           };
-          # configuration = {
-          #   _props.location = "zellij:configuration";
-          # };
-          # filepicker = {
-          #   _props.location = "zellij:strider";
-          #   cwd = "/";
-          # };
-          # plugin-manager = {
-          #   _props.location = "zellij:plugin-manager";
-          # };
-          # session-manager = {
-          #   _props.location = "zellij:session-manager";
-          # };
-          # welcome-screen = {
-          #   _props.location = "zellij:session-manager";
-          #   welcome_screen = true;
-          # };
         };
       };
 
@@ -13741,6 +13726,12 @@ Currently I only use it as before with =initExtra= though.
             _children = [
               {
                 bind = {
+                  _args = [ "Ctrl p" ];
+                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                };
+              }
+              {
+                bind = {
                   _args = [ "left" ];
                   _children = [{ MoveFocus._args = [ "left" ]; }];
                 };
@@ -13765,11 +13756,26 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "c" ];
-                  _children = [
-                    { SwitchToMode._args = [ "renamepane" ]; }
-                    { PaneNameInput._args = [ 0 ]; }
-                  ];
+                  _args = [ "h" ];
+                  _children = [{ MoveFocus._args = [ "left" ]; }];
+                };
+              }
+              {
+                bind = {
+                  _args = [ "j" ];
+                  _children = [{ MoveFocus._args = [ "down" ]; }];
+                };
+              }
+              {
+                bind = {
+                  _args = [ "k" ];
+                  _children = [{ MoveFocus._args = [ "up" ]; }];
+                };
+              }
+              {
+                bind = {
+                  _args = [ "l" ];
+                  _children = [{ MoveFocus._args = [ "right" ]; }];
                 };
               }
               {
@@ -13801,30 +13807,6 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "h" ];
-                  _children = [{ MoveFocus._args = [ "left" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "j" ];
-                  _children = [{ MoveFocus._args = [ "down" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "k" ];
-                  _children = [{ MoveFocus._args = [ "up" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "l" ];
-                  _children = [{ MoveFocus._args = [ "right" ]; }];
-                };
-              }
-              {
-                bind = {
                   _args = [ "n" ];
                   _children = [
                     { NewPane = { }; }
@@ -13840,33 +13822,9 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "Ctrl p" ];
-                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "r" ];
-                  _children = [
-                    { NewPane._args = [ "right" ]; }
-                    { SwitchToMode._args = [ "normal" ]; }
-                  ];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "w" ];
+                  _args = [ "f12" ];
                   _children = [
                     { ToggleFloatingPanes = { }; }
-                    { SwitchToMode._args = [ "normal" ]; }
-                  ];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "z" ];
-                  _children = [
-                    { TogglePaneFrames = { }; }
                     { SwitchToMode._args = [ "normal" ]; }
                   ];
                 };
@@ -13876,6 +13834,12 @@ Currently I only use it as before with =initExtra= though.
 
           tab = {
             _children = [
+              {
+                bind = {
+                  _args = [ "Ctrl t" ];
+                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                };
+              }
               {
                 bind = {
                   _args = [ "left" ];
@@ -13983,33 +13947,6 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "[" ];
-                  _children = [
-                    { BreakPaneLeft = { }; }
-                    { SwitchToMode._args = [ "normal" ]; }
-                  ];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "]" ];
-                  _children = [
-                    { BreakPaneRight = { }; }
-                    { SwitchToMode._args = [ "normal" ]; }
-                  ];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "b" ];
-                  _children = [
-                    { BreakPane = { }; }
-                    { SwitchToMode._args = [ "normal" ]; }
-                  ];
-                };
-              }
-              {
-                bind = {
                   _args = [ "h" ];
                   _children = [{ GoToPreviousTab = { }; }];
                 };
@@ -14061,12 +13998,6 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "Ctrl t" ];
-                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
-                };
-              }
-              {
-                bind = {
                   _args = [ "x" ];
                   _children = [
                     { CloseTab = { }; }
@@ -14074,17 +14005,17 @@ Currently I only use it as before with =initExtra= though.
                   ];
                 };
               }
-              {
-                bind = {
-                  _args = [ "tab" ];
-                  _children = [{ ToggleTab = { }; }];
-                };
-              }
             ];
           };
 
           resize = {
             _children = [
+              {
+                bind = {
+                  _args = [ "Ctrl n" ];
+                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                };
+              }
               {
                 bind = {
                   _args = [ "left" ];
@@ -14175,17 +14106,17 @@ Currently I only use it as before with =initExtra= though.
                   _children = [{ Resize._args = [ "Increase right" ]; }];
                 };
               }
-              {
-                bind = {
-                  _args = [ "Ctrl n" ];
-                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
-                };
-              }
             ];
           };
 
           move = {
             _children = [
+              {
+                bind = {
+                  _args = [ "Ctrl h" ];
+                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                };
+              }
               {
                 bind = {
                   _args = [ "left" ];
@@ -14218,12 +14149,6 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "Ctrl h" ];
-                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
-                };
-              }
-              {
-                bind = {
                   _args = [ "j" ];
                   _children = [{ MovePane._args = [ "down" ]; }];
                 };
@@ -14238,24 +14163,6 @@ Currently I only use it as before with =initExtra= though.
                 bind = {
                   _args = [ "l" ];
                   _children = [{ MovePane._args = [ "right" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "n" ];
-                  _children = [{ MovePane = { }; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "p" ];
-                  _children = [{ MovePaneBackwards = { }; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "tab" ];
-                  _children = [{ MovePane = { }; }];
                 };
               }
             ];
@@ -14323,6 +14230,12 @@ Currently I only use it as before with =initExtra= though.
             _children = [
               {
                 bind = {
+                  _args = [ "Ctrl o" ];
+                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
+                };
+              }
+              {
+                bind = {
                   _args = [ "c" ];
                   _children = [
                     {
@@ -14334,12 +14247,6 @@ Currently I only use it as before with =initExtra= though.
                     }
                     { SwitchToMode._args = [ "normal" ]; }
                   ];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "Ctrl o" ];
-                  _children = [{ SwitchToMode._args = [ "normal" ]; }];
                 };
               }
               {
@@ -14421,18 +14328,6 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "Alt [" ];
-                  _children = [{ PreviousSwapLayout = { }; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "Alt ]" ];
-                  _children = [{ NextSwapLayout = { }; }];
-                };
-              }
-              {
-                bind = {
                   _args = [ "Alt f" ];
                   _children = [{ ToggleFloatingPanes = { }; }];
                 };
@@ -14469,26 +14364,14 @@ Currently I only use it as before with =initExtra= though.
               }
               {
                 bind = {
-                  _args = [ "Alt l" ];
-                  _children = [{ MoveFocusOrTab._args = [ "right" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "Alt n" ];
+                  _args = [ "Alt p" ];
                   _children = [{ NewPane = { }; }];
                 };
               }
               {
                 bind = {
-                  _args = [ "Alt o" ];
-                  _children = [{ MoveTab._args = [ "right" ]; }];
-                };
-              }
-              {
-                bind = {
-                  _args = [ "Ctrl q" ];
-                  _children = [{ Quit = { }; }];
+                  _args = [ "Alt n" ];
+                  _children = [{ NewTab = { }; }];
                 };
               }
             ];
