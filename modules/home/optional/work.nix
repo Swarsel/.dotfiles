@@ -1,28 +1,36 @@
-{ self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
+{ self, inputs, config, pkgs, lib, vars, nixosConfig ? config, ... }:
 let
-  inherit (config.swarselsystems) homeDir;
+  inherit (config.swarselsystems) homeDir mainUser;
   inherit (nixosConfig.repo.secrets.local.mail) allMailAddresses;
   inherit (nixosConfig.repo.secrets.local.work) mailAddress;
+
+  certsSopsFile = self + /secrets/certs/secrets.yaml;
 in
 {
   options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
   config = lib.mkIf config.swarselmodules.optional.work
-    {
-      home.packages = with pkgs; [
-        stable.teams-for-linux
-        shellcheck
-        dig
-        docker
-        postman
-        # rclone
-        libguestfs-with-appliance
-        prometheus.cli
-        tigervnc
-        # openstackclient
+    ({
+      home = {
+        packages = with pkgs; [
+          stable.teams-for-linux
+          shellcheck
+          dig
+          docker
+          postman
+          # rclone
+          libguestfs-with-appliance
+          prometheus.cli
+          tigervnc
+          # openstackclient
 
-        vscode
-      ];
+          vscode
 
+          rustdesk-vbc
+        ];
+        sessionVariables = {
+          AWS_CA_BUNDLE = nixosConfig.sops.secrets.harica-root-ca.path;
+        };
+      };
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
       } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
@@ -644,6 +652,15 @@ in
         };
 
       };
-    };
+    } // lib.optionalAttrs (inputs ? sops) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+        harica-root-ca = {
+          sopsFile = certsSopsFile;
+          path = "${homeDir}/.aws/certs/harica-root.pem";
+          owner = mainUser;
+        };
+      };
+
+    });
 
 }

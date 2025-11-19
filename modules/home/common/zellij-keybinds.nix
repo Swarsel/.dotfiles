@@ -622,6 +622,19 @@
             }
             {
               bind = {
+                _args = [ "Alt r" ];
+                _children = [
+                  {
+                    WriteChars._args = [ "source cdr" ];
+                  }
+                  {
+                    WriteChars._args = [ "\n" ];
+                  }
+                ];
+              };
+            }
+            {
+              bind = {
                 _args = [ "Alt f" ];
                 _children = [{ ToggleFloatingPanes = { }; }];
               };
