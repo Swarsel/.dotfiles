@@ -107,7 +107,19 @@ in
         system.stateVersion = lib.mkDefault "23.05";
 
         nixpkgs = {
-          overlays = [ outputs.overlays.default ];
+          overlays = [
+            outputs.overlays.default
+            (final: prev:
+              let
+                additions = final: _: import "${self}/pkgs/config" {
+                  inherit self config lib;
+                  pkgs = final;
+                  homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
+                };
+              in
+              additions final prev
+            )
+          ];
           config = {
             allowUnfree = true;
           };

@@ -7,6 +7,7 @@
       pass-fuzzel
       cdw
       cdb
+      cdr
       bak
       timer
       e
@@ -31,8 +32,6 @@
       sshrm
       endme
       git-replace
-
-      rustdesk-vbc
     ];
   };
 }

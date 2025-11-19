@@ -832,7 +832,7 @@ More information on the actual packages build can be found in [[#h:64a5cc16-6b16
       inherit (self.outputs) lib;
     in
     {
-      packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import "${self}/pkgs" { inherit self lib pkgs; });
+      packages = lib.swarselsystems.forEachLinuxSystem (pkgs: import "${self}/pkgs/flake" { inherit self lib pkgs; });
     };
 
   perSystem = { pkgs, system, ... }:
@@ -1725,7 +1725,7 @@ On the structure of overlays: as you notice, all of the attributes within overla
         overlays = {
           default = final: prev:
             let
-              additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; }
+              additions = final: _: import "${self}/pkgs/flake" { pkgs = final; inherit self lib; }
                 // {
                 swarsel-nix = import inputs.swarsel-nix {
                   pkgs = prev;
@@ -4646,11 +4646,13 @@ in
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager-secrets.nix
-  { lib, config, globals, ... }:
+  { self, lib, config, globals, ... }:
   let
     inherit (config.swarselsystems) mainUser homeDir;
     inherit (config.repo.secrets.common.emacs) radicaleUser;
     modules = config.home-manager.users.${mainUser}.swarselmodules;
+
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
   in
   {
     config = lib.mkIf config.swarselsystems.withHomeManager {
@@ -4670,6 +4672,8 @@ in
           github-nixpkgs-review-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.emacs {
           emacs-radicale-pw = { owner = mainUser; };
+        }) // (lib.optionalAttrs modules.optional.work {
+          harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
         }) // (lib.optionalAttrs modules.anki {
           anki-user = { owner = mainUser; };
           anki-pw = { owner = mainUser; };
@@ -4851,7 +4855,19 @@ A breakdown of the flags being set:
           system.stateVersion = lib.mkDefault "23.05";
 
           nixpkgs = {
-            overlays = [ outputs.overlays.default ];
+            overlays = [
+              outputs.overlays.default
+              (final: prev:
+                let
+                  additions = final: _: import "${self}/pkgs/config" {
+                    inherit self config lib;
+                    pkgs = final;
+                    homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
+                  };
+                in
+                additions final prev
+              )
+            ];
             config = {
               allowUnfree = true;
             };
@@ -12220,97 +12236,108 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
   let
     inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
   in
-    {
-      options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-      config =
-        let
-          nix-version = "2_30";
-        in
-          lib.mkIf config.swarselmodules.general {
-            nix = lib.mkIf (!config.swarselsystems.isNixos) {
-              package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
-              # extraOptions = ''
-              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-              # '';
-              extraOptions =
-                let
-                  nix-plugins = pkgs.nix-plugins.override {
-                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-                  };
-                in
-                  ''
+  {
+    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+    config =
+      let
+        nix-version = "2_30";
+      in
+      lib.mkIf config.swarselmodules.general {
+        nix = lib.mkIf (!config.swarselsystems.isNixos) {
+          package = lib.mkForce pkgs.nixVersions."nix_${nix-version}";
+          # extraOptions = ''
+          #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+          #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+          # '';
+          extraOptions =
+            let
+              nix-plugins = pkgs.nix-plugins.override {
+                nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+              };
+            in
+            ''
                     plugin-files = ${nix-plugins}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                  '';
-              settings = {
-                experimental-features = [
-                  "nix-command"
-                  "flakes"
-                  "ca-derivations"
-                  "cgroups"
-                  "pipe-operators"
-                ];
-                trusted-users = [ "@wheel" "${mainUser}" ];
-                connect-timeout = 5;
-                bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-                bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-                fallback = true;
-                min-free = 128000000;
-                max-free = 1000000000;
-                auto-optimise-store = true;
-                warn-dirty = false;
-                max-jobs = 1;
-                use-cgroups = lib.mkIf isLinux true;
-              };
-            };
+            '';
+          settings = {
+            experimental-features = [
+              "nix-command"
+              "flakes"
+              "ca-derivations"
+              "cgroups"
+              "pipe-operators"
+            ];
+            trusted-users = [ "@wheel" "${mainUser}" ];
+            connect-timeout = 5;
+            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+            fallback = true;
+            min-free = 128000000;
+            max-free = 1000000000;
+            auto-optimise-store = true;
+            warn-dirty = false;
+            max-jobs = 1;
+            use-cgroups = lib.mkIf isLinux true;
+          };
+        };
 
-            # nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
-            nixpkgs = lib.mkIf (!isNixos) {
-              overlays = [ outputs.overlays.default ];
-              config = {
-                allowUnfree = true;
-              };
-            };
+        nixpkgs = lib.mkIf (!isNixos) {
+          overlays = [
+            outputs.overlays.default
+            (final: prev:
+              let
+                additions = final: _: import "${self}/pkgs/config" {
+                  inherit self config lib;
+                  pkgs = final;
+                  homeConfig = config;
+                };
+              in
+              additions final prev
+            )
+          ];
+          config = {
+            allowUnfree = true;
+          };
+        };
 
-            programs = {
-              # home-manager.enable = lib.mkIf (!isNixos) true;
-              man = {
-                enable = true;
-                generateCaches = true;
-              };
-            };
+        programs = {
+          # home-manager.enable = lib.mkIf (!isNixos) true;
+          man = {
+            enable = true;
+            generateCaches = true;
+          };
+        };
 
-            targets.genericLinux.enable = lib.mkIf (!isNixos) true;
+        targets.genericLinux.enable = lib.mkIf (!isNixos) true;
 
-            home = {
-              username = lib.mkDefault mainUser;
-              homeDirectory = lib.mkDefault "/home/${mainUser}";
-              stateVersion = lib.mkDefault "23.05";
-              keyboard.layout = "us";
-              sessionVariables = {
-                FLAKE = "/home/${mainUser}/.dotfiles";
-              };
-              extraOutputsToInstall = [
-                "doc"
-                "info"
-                "devdoc"
-              ];
-              packages = lib.mkIf (!isNixos) [
-                (pkgs.symlinkJoin {
-                  name = "home-manager";
-                  buildInputs = [ pkgs.makeWrapper ];
-                  paths = [ pkgs.home-manager ];
-                  postBuild = ''
+        home = {
+          username = lib.mkDefault mainUser;
+          homeDirectory = lib.mkDefault "/home/${mainUser}";
+          stateVersion = lib.mkDefault "23.05";
+          keyboard.layout = "us";
+          sessionVariables = {
+            FLAKE = "/home/${mainUser}/.dotfiles";
+          };
+          extraOutputsToInstall = [
+            "doc"
+            "info"
+            "devdoc"
+          ];
+          packages = lib.mkIf (!isNixos) [
+            (pkgs.symlinkJoin {
+              name = "home-manager";
+              buildInputs = [ pkgs.makeWrapper ];
+              paths = [ pkgs.home-manager ];
+              postBuild = ''
                     wrapProgram $out/bin/home-manager \
                 --append-flags '--flake ${flakePath}#$(hostname)'
-                  '';
-                })
-              ];
-            };
-          };
+              '';
+            })
+          ];
+        };
+      };
 
-    }
+  }
 #+end_src
 
 **** nixGL
@@ -12583,6 +12610,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         pass-fuzzel
         cdw
         cdb
+        cdr
         bak
         timer
         e
@@ -12607,8 +12635,6 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         sshrm
         endme
         git-replace
-
-        rustdesk-vbc
       ];
     };
   }
@@ -13533,7 +13559,8 @@ Currently I only use it as before with =initExtra= though.
               hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
               youtube-dl = "yt-dlp";
               cat-orig = "cat";
-              cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+              # cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+              cdr = "source cdr";
               nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
               nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
               nix-ldd-locate = "nix-locate --minimal --top-level -w ";
@@ -14324,6 +14351,19 @@ Currently I only use it as before with =initExtra= though.
                 bind = {
                   _args = [ "Alt =" ];
                   _children = [{ Resize._args = [ "Increase" ]; }];
+                };
+              }
+              {
+                bind = {
+                  _args = [ "Alt r" ];
+                  _children = [
+                    {
+                      WriteChars._args = [ "source cdr" ];
+                    }
+                    {
+                      WriteChars._args = [ "\n" ];
+                    }
+                  ];
                 };
               }
               {
@@ -17880,31 +17920,39 @@ When setting up a new machine:
 #+end_src
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, config, pkgs, lib, vars, nixosConfig ? config, ... }:
+  { self, inputs, config, pkgs, lib, vars, nixosConfig ? config, ... }:
   let
-    inherit (config.swarselsystems) homeDir;
+    inherit (config.swarselsystems) homeDir mainUser;
     inherit (nixosConfig.repo.secrets.local.mail) allMailAddresses;
     inherit (nixosConfig.repo.secrets.local.work) mailAddress;
+
+    certsSopsFile = self + /secrets/certs/secrets.yaml;
   in
   {
     options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
     config = lib.mkIf config.swarselmodules.optional.work
-      {
-        home.packages = with pkgs; [
-          stable.teams-for-linux
-          shellcheck
-          dig
-          docker
-          postman
-          # rclone
-          libguestfs-with-appliance
-          prometheus.cli
-          tigervnc
-          # openstackclient
+      ({
+        home = {
+          packages = with pkgs; [
+            stable.teams-for-linux
+            shellcheck
+            dig
+            docker
+            postman
+            # rclone
+            libguestfs-with-appliance
+            prometheus.cli
+            tigervnc
+            # openstackclient
 
-          vscode
-        ];
+            vscode
 
+            rustdesk-vbc
+          ];
+          sessionVariables = {
+            AWS_CA_BUNDLE = nixosConfig.sops.secrets.harica-root-ca.path;
+          };
+        };
         systemd.user.sessionVariables = {
           DOCUMENT_DIR_WORK = lib.mkForce "${homeDir}/Documents/Work";
         } // lib.optionalAttrs (!config.swarselsystems.isPublic) {
@@ -17997,10 +18045,10 @@ When setting up a new machine:
                 let
                   inherit (config.wayland.windowManager.sway.config) modifier;
                 in
-                  {
-                    "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
-                    "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
-                  };
+                {
+                  "${modifier}+Shift+d" = "exec ${pkgs.quickpass}/bin/quickpass work/adm/${user1}/${user1Long}@${domain1}";
+                  "${modifier}+Shift+i" = "exec ${pkgs.quickpass}/bin/quickpass work/${mailAddress}";
+                };
             };
           };
 
@@ -18526,7 +18574,16 @@ When setting up a new machine:
           };
 
         };
-      };
+      } // lib.optionalAttrs (inputs ? sops) {
+        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+          harica-root-ca = {
+            sopsFile = certsSopsFile;
+            path = "${homeDir}/.aws/certs/harica-root.pem";
+            owner = mainUser;
+          };
+        };
+
+      });
 
   }
 
@@ -18930,7 +18987,7 @@ In short, the options defined here are passed to the modules systems using =_mod
   }
 #+end_src
 
-** Packages
+*** Packages
 :PROPERTIES:
 :CUSTOM_ID: h:64a5cc16-6b16-4802-b421-c67ccef853e1
 :END:
@@ -18939,23 +18996,25 @@ This is the central station for self-defined packages. These are all referenced 
 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
-#+begin_src nix-ts :tangle pkgs/default.nix
+*** Packages (flake)
+
+#+begin_src nix-ts :tangle pkgs/flake/default.nix
   { self, lib, pkgs, ... }:
   let
     mkPackages = names: pkgs: builtins.listToAttrs (map
       (name: {
         inherit name;
-        value = pkgs.callPackage "${self}/pkgs/${name}" { inherit self name; };
+        value = pkgs.callPackage "${self}/pkgs/flake/${name}" { inherit self name; };
       })
       names);
-    packageNames = lib.swarselsystems.readNix "pkgs";
+    packageNames = lib.swarselsystems.readNix "pkgs/flake";
   in
   mkPackages packageNames pkgs
 
 
 #+end_src
 
-*** pass-fuzzel
+**** pass-fuzzel
 :PROPERTIES:
 :CUSTOM_ID: h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3
 :END:
@@ -19016,7 +19075,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
   notify-send -u critical -a pass -t 1000 "Copied/Typed Password"
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/pass-fuzzel/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/pass-fuzzel/default.nix
   { self, name, writeShellApplication, libnotify, pass, fuzzel, wtype }:
   writeShellApplication {
     inherit name;
@@ -19026,7 +19085,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 
 #+end_src
 
-*** quickpass
+**** quickpass
 #+begin_src shell :tangle files/scripts/quickpass.sh :mkdirp yes
     shopt -s nullglob globstar
 
@@ -19042,7 +19101,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
     notify-send -u critical -a pass -t 1000 "Typed Password"
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/quickpass/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/quickpass/default.nix
   { self, name, writeShellApplication, libnotify, pass, wtype }:
   writeShellApplication {
     inherit name;
@@ -19052,7 +19111,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 
 #+end_src
 
-*** cura5
+**** cura5
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
 :END:
@@ -19060,7 +19119,7 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newer AppImage here and use that instead.
 
 
-#+begin_src nix-ts :tangle pkgs/cura5/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/cura5/default.nix
   # taken from https://github.com/NixOS/nixpkgs/issues/186570#issuecomment-1627797219
   { appimageTools, fetchurl, writeScriptBin, pkgs, ... }:
 
@@ -19093,7 +19152,7 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 
 #+end_src
 
-*** hm-specialisation
+**** hm-specialisation
 :PROPERTIES:
 :CUSTOM_ID: h:e6612cff-0804-47ef-9f2b-d2cc6d81a896
 :END:
@@ -19101,7 +19160,7 @@ The version of =cura= used to be quite outdated in nixpkgs. I am fetching a newe
 This script allows for quick git home-manager specialisation switching.
 
 
-#+begin_src nix-ts :tangle pkgs/hm-specialisation/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/hm-specialisation/default.nix
   { name, writeShellApplication, fzf, findutils, home-manager, ... }:
 
   writeShellApplication {
@@ -19117,7 +19176,7 @@ This script allows for quick git home-manager specialisation switching.
 
 #+end_src
 
-*** cdw
+**** cdw
 :PROPERTIES:
 :CUSTOM_ID: h:73b14c7a-5444-4fed-b7ac-d65542cdeda3
 :END:
@@ -19125,7 +19184,7 @@ This script allows for quick git home-manager specialisation switching.
 This script allows for quick git worktree switching.
 
 
-#+begin_src nix-ts :tangle pkgs/cdw/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/cdw/default.nix
   { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
@@ -19139,14 +19198,14 @@ This script allows for quick git worktree switching.
 
 #+end_src
 
-*** cdb
+**** cdb
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
 This script allows for quick git branch switching.
 
-#+begin_src nix-ts :tangle pkgs/cdb/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/cdb/default.nix
   { name, writeShellApplication, fzf, ... }:
 
   writeShellApplication {
@@ -19159,7 +19218,7 @@ This script allows for quick git branch switching.
 
 #+end_src
 
-*** bak
+**** bak
 :PROPERTIES:
 :CUSTOM_ID: h:03b1b77b-3ca8-4a8f-8e28-9f29004d96d3
 :END:
@@ -19167,7 +19226,7 @@ This script allows for quick git branch switching.
 This script lets me quickly backup files by appending =.bak= to the filename.
 
 
-#+begin_src nix-ts :tangle pkgs/bak/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/bak/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -19180,7 +19239,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 
 #+end_src
 
-*** timer
+**** timer
 :PROPERTIES:
 :CUSTOM_ID: h:3c72d263-411c-44f0-90ff-55f14d4d9d49
 :END:
@@ -19188,7 +19247,7 @@ This script lets me quickly backup files by appending =.bak= to the filename.
 This app starts a configuratble timer and uses TTS to say something once the timer runs out.
 
 
-#+begin_src nix-ts :tangle pkgs/timer/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/timer/default.nix
   { name, writeShellApplication, speechd, ... }:
 
   writeShellApplication {
@@ -19201,7 +19260,7 @@ This app starts a configuratble timer and uses TTS to say something once the tim
 
 #+end_src
 
-*** e
+**** e
 :PROPERTIES:
 :CUSTOM_ID: h:1834df06-9238-4efa-9af6-851dafe66c68
 :END:
@@ -19234,7 +19293,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
   fi
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/e/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/e/default.nix
   { self, name, writeShellApplication, emacs30-pgtk, sway, jq }:
   writeShellApplication {
     inherit name;
@@ -19244,7 +19303,7 @@ This is a shorthand for calling emacsclient mostly. Also, it hides the kittyterm
 
 #+end_src
 
-*** command-not-found
+**** command-not-found
 :PROPERTIES:
 :CUSTOM_ID: h:10268005-a9cd-4a00-967c-cbe975c552fa
 :END:
@@ -19288,7 +19347,7 @@ The normal =command-not-found.sh= uses the outdated =nix-shell= commands as sugg
   }
 #+end_src
 
-*** swarselcheck
+**** swarselcheck
 :PROPERTIES:
 :CUSTOM_ID: h:82f4f414-749b-4d5a-aaaa-6e3ec15fbc3d
 :END:
@@ -19360,7 +19419,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   fi
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/swarselcheck/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarselcheck/default.nix
   { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
@@ -19370,7 +19429,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-*** swarselcheck-niri
+**** swarselcheck-niri
 :PROPERTIES:
 :CUSTOM_ID: h:96da8360-2d23-4e86-9602-415fbdb972af
 :END:
@@ -19414,7 +19473,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   fi
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/swarselcheck-niri/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarselcheck-niri/default.nix
   { self, name, writeShellApplication, kitty, element-desktop, vesktop, spotify-player, jq }:
   writeShellApplication {
     inherit name;
@@ -19424,7 +19483,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-*** swarselzellij
+**** swarselzellij
 :PROPERTIES:
 :CUSTOM_ID: h:564c102c-e335-4f17-a613-c5a436bb4864
 :END:
@@ -19440,7 +19499,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
   exec kitty -o confirm_os_window_close=0 zellij
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/swarselzellij/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarselzellij/default.nix
   { self, name, writeShellApplication, kitty }:
   writeShellApplication {
     inherit name;
@@ -19450,7 +19509,7 @@ This app checks for different apps that I keep around in the scratchpad for quic
 
 #+end_src
 
-*** waybarupdate
+**** waybarupdate
 :PROPERTIES:
 :CUSTOM_ID: h:f93f66f9-6b8b-478e-b139-b2f382c1f25e
 :END:
@@ -19484,7 +19543,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
   echo "$OUT"
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/waybarupdate/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/waybarupdate/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -19494,7 +19553,7 @@ This scripts checks if there are uncommited changes in either my dotfile repo, m
 
 #+end_src
 
-*** opacitytoggle
+**** opacitytoggle
 :PROPERTIES:
 :CUSTOM_ID: h:a1d94db2-837a-40c4-bbd8-81ce847440ee
 :END:
@@ -19509,7 +19568,7 @@ This app quickly toggles between 5% and 0% transparency.
   fi
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/opacitytoggle/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/opacitytoggle/default.nix
   { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
@@ -19518,7 +19577,7 @@ This app quickly toggles between 5% and 0% transparency.
   }
 #+end_src
 
-*** fs-diff
+**** fs-diff
 :PROPERTIES:
 :CUSTOM_ID: h:7c4e41b3-8c1e-4f71-87a6-30d40baed6a0
 :END:
@@ -19548,7 +19607,7 @@ This utility is used to compare the current state of the root directory with the
       done
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/fs-diff/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/fs-diff/default.nix
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
@@ -19556,7 +19615,7 @@ This utility is used to compare the current state of the root directory with the
   }
 #+end_src
 
-*** github-notifications
+**** github-notifications
 :PROPERTIES:
 :CUSTOM_ID: h:a9398c4e-4d3b-4942-b03c-192f9c0517e5
 :END:
@@ -19564,7 +19623,7 @@ This utility is used to compare the current state of the root directory with the
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
 
-#+begin_src nix-ts :tangle pkgs/github-notifications/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/github-notifications/default.nix
   { name, writeShellApplication, jq, ... }:
 
   writeShellApplication {
@@ -19580,7 +19639,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
-*** kanshare
+**** kanshare
 :PROPERTIES:
 :CUSTOM_ID: h:3981cd16-00c0-4ea8-95e2-c6d8c04ec4e5
 :END:
@@ -19588,7 +19647,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
 This utility checks if there are updated packages in nixpkgs-unstable. It does so by fully building the most recent configuration, which I do not love, but it has its merits once I am willing to switch to the newer version.
 
 
-#+begin_src nix-ts :tangle pkgs/kanshare/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/kanshare/default.nix
   { name, writeShellApplication, wlr-randr, busybox, wl-mirror, mako, ... }:
 
   writeShellApplication {
@@ -19602,7 +19661,7 @@ This utility checks if there are updated packages in nixpkgs-unstable. It does s
   }
 #+end_src
 
-*** swarsel-bootstrap
+**** swarsel-bootstrap
 :PROPERTIES:
 :CUSTOM_ID: h:74db57ae-0bb9-4257-84be-eddbc85130dd
 :END:
@@ -19984,7 +20043,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 | [     | Babel     | evaluation | exited | with | code | 1 | ] |
 
 
-#+begin_src nix-ts :tangle pkgs/swarsel-bootstrap/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-bootstrap/default.nix
   { self, name, writeShellApplication, openssh }:
   writeShellApplication {
     inherit name;
@@ -19993,7 +20052,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   }
 #+end_src
 
-*** swarsel-rebuild
+**** swarsel-rebuild
 :PROPERTIES:
 :CUSTOM_ID: h:1eabdc59-8832-44ca-a22b-11f848ab150a
 :END:
@@ -20113,7 +20172,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
 
 
-#+begin_src nix-ts :tangle pkgs/swarsel-rebuild/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-rebuild/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -20122,7 +20181,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   }
 #+end_src
 
-*** swarsel-install
+**** swarsel-install
 :PROPERTIES:
 :CUSTOM_ID: h:fbd8aaf2-9dca-4ca3-aca1-19d0d188a435
 :END:
@@ -20327,7 +20386,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 
 
-#+begin_src nix-ts :tangle pkgs/swarsel-install/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-install/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -20336,7 +20395,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-*** swarsel-postinstall
+**** swarsel-postinstall
 :PROPERTIES:
 :CUSTOM_ID: h:c98a7615-e5da-4f47-8ed1-2b2ea65519e9
 :END:
@@ -20418,7 +20477,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 
 
-#+begin_src nix-ts :tangle pkgs/swarsel-postinstall/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-postinstall/default.nix
   { self, name, writeShellApplication, git }:
   writeShellApplication {
     inherit name;
@@ -20427,12 +20486,12 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-*** t2ts
+**** t2ts
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
-#+begin_src nix-ts :tangle pkgs/t2ts/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/t2ts/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -20445,12 +20504,12 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-*** ts2t
+**** ts2t
 :PROPERTIES:
 :CUSTOM_ID: h:5ad99997-e54c-4f0b-9ab7-15f76b1e16e1
 :END:
 
-#+begin_src nix-ts :tangle pkgs/ts2t/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/ts2t/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -20463,12 +20522,12 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-*** vershell
+**** vershell
 :PROPERTIES:
 :CUSTOM_ID: h:7806b129-a4a5-4d10-af27-6cbeafbcb294
 :END:
 
-#+begin_src nix-ts :tangle pkgs/vershell/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/vershell/default.nix
   { name, writeShellApplication, ... }:
 
   writeShellApplication {
@@ -20481,12 +20540,12 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-*** eontimer
+**** eontimer
 :PROPERTIES:
 :CUSTOM_ID: h:9fda7829-09a4-4b8f-86f6-08b078ab2874
 :END:
 
-#+begin_src nix-ts :tangle pkgs/eontimer/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/eontimer/default.nix
   { lib
   , python3
   , fetchFromGitHub
@@ -20585,7 +20644,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
 
 #+end_src
 
-*** project
+**** project
 :PROPERTIES:
 :CUSTOM_ID: h:154b6df4-dd50-4f60-9794-05a140d02994
 :END:
@@ -20600,7 +20659,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   direnv allow
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/project/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/project/default.nix
   { self, name, writeShellApplication }:
   writeShellApplication {
     inherit name;
@@ -20608,13 +20667,13 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   }
 #+end_src
 
-*** fhs
+**** fhs
 :PROPERTIES:
 :CUSTOM_ID: h:36d6c17c-6d91-4297-b76d-9d7feab6c1a0
 :END:
 
 
-#+begin_src nix-ts :tangle pkgs/fhs/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/fhs/default.nix
   { name, pkgs, ... }:
   let
     base = pkgs.appimageTools.defaultFhsEnvArgs;
@@ -20628,7 +20687,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   })
 #+end_src
 
-*** swarsel-displaypower
+**** swarsel-displaypower
 :PROPERTIES:
 :CUSTOM_ID: h:814d5e7f-4b95-412d-b246-33f888514ec6
 :END:
@@ -20640,7 +20699,7 @@ A crude script to power on all displays that might be attached. Needed because s
   swaymsg "output * dpms on" > /dev/null 2>&1 || true
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/swarsel-displaypower/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-displaypower/default.nix
   { self, name, writeShellApplication, sway }:
   writeShellApplication {
     inherit name;
@@ -20650,7 +20709,7 @@ A crude script to power on all displays that might be attached. Needed because s
 
 #+end_src
 
-*** swarsel-mgba
+**** swarsel-mgba
 :PROPERTIES:
 :CUSTOM_ID: h:799579f3-ddd3-4f76-928a-a8c665980476
 :END:
@@ -20658,7 +20717,7 @@ A crude script to power on all displays that might be attached. Needed because s
 AppImage version of mgba in which the lua scripting works.
 
 
-#+begin_src nix-ts :tangle pkgs/swarsel-mgba/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-mgba/default.nix
   { appimageTools, fetchurl, ... }:
   let
     pname = "mgba";
@@ -20682,12 +20741,12 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-*** swarsel-deploy
+**** swarsel-deploy
 :PROPERTIES:
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
 
-#+begin_src nix-ts :tangle pkgs/swarsel-deploy/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-deploy/default.nix
   # heavily inspired from https://github.com/oddlama/nix-config/blob/d42cbde676001a7ad8a3cace156e050933a4dcc3/pkgs/deploy.nix
   { name, bc, nix-output-monitor, writeShellApplication, ... }:
   writeShellApplication {
@@ -20814,12 +20873,12 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-*** swarsel-build
+**** swarsel-build
 :PROPERTIES:
 :CUSTOM_ID: h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e
 :END:
 
-#+begin_src nix-ts :tangle pkgs/swarsel-build/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-build/default.nix
   { name, nix-output-monitor, writeShellApplication, ... }:
   writeShellApplication {
     runtimeInputs = [ nix-output-monitor ];
@@ -20838,14 +20897,14 @@ AppImage version of mgba in which the lua scripting works.
 
 #+end_src
 
-*** swarsel-instantiate
+**** swarsel-instantiate
 :PROPERTIES:
 :CUSTOM_ID: h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa
 :END:
 
 This is a convenience function that calls =nix-instantiate= with a number of flags that I need in order to evaluate nix expressions in org-src blocks.
 
-#+begin_src nix-ts :tangle pkgs/swarsel-instantiate/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/swarsel-instantiate/default.nix
     { name, writeShellApplication, ... }:
     writeShellApplication {
       inherit name;
@@ -20857,7 +20916,7 @@ This is a convenience function that calls =nix-instantiate= with a number of fla
 
 #+end_src
 
-*** sshrm
+**** sshrm
 :PROPERTIES:
 :CUSTOM_ID: h:02842543-caca-4d4c-a4d2-7ac749b5c136
 :END:
@@ -20878,7 +20937,7 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
   fi
 #+end_src
 
-#+begin_src nix-ts :tangle pkgs/sshrm/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/sshrm/default.nix
   { self, name, writeShellApplication, openssh }:
   writeShellApplication {
     inherit name;
@@ -20886,11 +20945,11 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
     text = builtins.readFile "${self}/files/scripts/${name}.sh";
   }
 #+end_src
-*** endme
+**** endme
 
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
 
-#+begin_src nix-ts :tangle pkgs/endme/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/endme/default.nix
   { name, writeShellApplication, ... }:
   writeShellApplication {
     inherit name;
@@ -20903,12 +20962,12 @@ Sometimes my DE crashes after putting it to suspend - to be precise, it happens 
 
 #+end_src
 
-*** git-replace
+**** git-replace
 
 This script allows for quick git replace of a string.
 
 
-#+begin_src nix-ts :tangle pkgs/git-replace/default.nix
+#+begin_src nix-ts :tangle pkgs/flake/git-replace/default.nix
   { name, writeShellApplication, git, gnugrep, findutils, ... }:
 
   writeShellApplication {
@@ -20971,6 +21030,43 @@ This script allows for quick git replace of a string.
         grep -rl "$1" . | xargs sed -i "s/$1/$2/g"
       fi
         '';
+  }
+
+
+#+end_src
+
+*** Packages (config)
+
+#+begin_src nix-ts :tangle pkgs/config/default.nix
+  { self, homeConfig, lib, pkgs, ... }:
+  let
+    mkPackages = names: pkgs: builtins.listToAttrs (map
+      (name: {
+        inherit name;
+        value = pkgs.callPackage "${self}/pkgs/config/${name}" { inherit self name homeConfig; };
+      })
+      names);
+    packageNames = lib.swarselsystems.readNix "pkgs/config";
+  in
+  mkPackages packageNames pkgs
+#+end_src
+
+**** cdr
+
+
+#+begin_src nix-ts :tangle pkgs/config/cdr/default.nix
+  { name, homeConfig, writeShellApplication, fzf, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ fzf ];
+    text = ''
+      DOCUMENT_DIR_WORK=${homeConfig.systemd.user.sessionVariables.DOCUMENT_DIR_WORK or ""}
+      DOCUMENT_DIR_PRIV=${homeConfig.systemd.user.sessionVariables.DOCUMENT_DIR_PRIV}
+      FLAKE=${homeConfig.home.sessionVariables.FLAKE}
+
+      cd "$( (find "$DOCUMENT_DIR_WORK" "$DOCUMENT_DIR_PRIV" -maxdepth 1 && echo "$FLAKE") | fzf )"
+    '';
   }
 
 
@@ -22118,6 +22214,22 @@ This function was found here: [[https://www.reddit.com/r/emacs/comments/re31i6/h
               [C-backspace] #'up-directory)
 
 #+end_src
+**** Magit: List directories using vertico/consult
+
+#+begin_src emacs-lisp
+
+  (defun swarsel/consult-magit-repos ()
+    (interactive)
+    (require 'magit)
+    (let* ((repos (magit-list-repos))
+           (repo  (consult--read repos
+                                 :prompt "Magit repo: "
+                                 :require-match t
+                                 :history 'my/consult-magit-repos-history
+                                 :sort t)))
+      (magit-status repo)))
+
+#+end_src
 **** org-mode: General setup
 :PROPERTIES:
 :CUSTOM_ID: h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5
@@ -22321,6 +22433,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
       "l"  '(:ignore l :which-key "links")
       "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
       "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+      "lr" '(swarsel/consult-magit-repos :which-key "List repos")
       "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
       "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
       "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
@@ -22370,6 +22483,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
    "C-c D" 'crux-duplicate-and-comment-current-line-or-region
    "<DUMMY-m>" 'swarsel/last-buffer
    "M-\\" 'indent-region
+   "M-r" 'swarsel/consult-magit-repos
    "<Paste>" 'yank
    "<Cut>" 'kill-region
    "<Copy>" 'kill-ring-save
@@ -24083,8 +24197,8 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 
   (use-package magit
     :config
-    (setq magit-repository-directories `((,swarsel-work-projects-directory  . 1)
-                                         (,swarsel-private-projects-directory . 1)
+    (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
+                                         (,swarsel-private-projects-directory . 3)
                                          ("~/.dotfiles/" . 0)))
     :custom
     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window

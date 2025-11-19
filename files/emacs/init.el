@@ -162,6 +162,17 @@ create a new one."
 (define-key minibuffer-local-filename-completion-map
             [C-backspace] #'up-directory)
 
+(defun swarsel/consult-magit-repos ()
+  (interactive)
+  (require 'magit)
+  (let* ((repos (magit-list-repos))
+         (repo  (consult--read repos
+                               :prompt "Magit repo: "
+                               :require-match t
+                               :history 'my/consult-magit-repos-history
+                               :sort t)))
+    (magit-status repo)))
+
 (defun swarsel/org-mode-setup ()
   (variable-pitch-mode 1)
   (add-hook 'org-tab-first-hook 'org-end-of-line)
@@ -272,6 +283,7 @@ create a new one."
     "l"  '(:ignore l :which-key "links")
     "lc" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (org-overview) )) :which-key "SwarselSystems.org")
     "le" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "Emacs") ) (org-overview) (org-cycle) )) :which-key "Emacs.org")
+    "lr" '(swarsel/consult-magit-repos :which-key "List repos")
     "ln" '((lambda () (interactive) (progn (find-file swarsel-swarsel-org-filepath) (goto-char (org-find-exact-headline-in-buffer "System") ) (org-overview) (org-cycle))) :which-key "Nixos.org")
     "lp" '((lambda () (interactive) (projectile-switch-project)) :which-key "switch project")
     "lg" '((lambda () (interactive) (magit-list-repositories)) :which-key "list git repos")
@@ -321,6 +333,7 @@ create a new one."
  "C-c D" 'crux-duplicate-and-comment-current-line-or-region
  "<DUMMY-m>" 'swarsel/last-buffer
  "M-\\" 'indent-region
+ "M-r" 'swarsel/consult-magit-repos
  "<Paste>" 'yank
  "<Cut>" 'kill-region
  "<Copy>" 'kill-ring-save
@@ -1241,8 +1254,8 @@ create a new one."
 
 (use-package magit
   :config
-  (setq magit-repository-directories `((,swarsel-work-projects-directory  . 1)
-                                       (,swarsel-private-projects-directory . 1)
+  (setq magit-repository-directories `((,swarsel-work-projects-directory  . 3)
+                                       (,swarsel-private-projects-directory . 3)
                                        ("~/.dotfiles/" . 0)))
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)) ; stay in the same window

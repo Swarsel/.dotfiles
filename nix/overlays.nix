@@ -9,7 +9,7 @@ in
       overlays = {
         default = final: prev:
           let
-            additions = final: _: import "${self}/pkgs" { pkgs = final; inherit self lib; }
+            additions = final: _: import "${self}/pkgs/flake" { pkgs = final; inherit self lib; }
               // {
               swarsel-nix = import inputs.swarsel-nix {
                 pkgs = prev;

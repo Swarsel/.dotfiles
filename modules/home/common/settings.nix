@@ -47,9 +47,20 @@ in
         };
       };
 
-      # nixpkgs.overlays = lib.mkIf isNixos (lib.mkForce null);
       nixpkgs = lib.mkIf (!isNixos) {
-        overlays = [ outputs.overlays.default ];
+        overlays = [
+          outputs.overlays.default
+          (final: prev:
+            let
+              additions = final: _: import "${self}/pkgs/config" {
+                inherit self config lib;
+                pkgs = final;
+                homeConfig = config;
+              };
+            in
+            additions final prev
+          )
+        ];
         config = {
           allowUnfree = true;
         };

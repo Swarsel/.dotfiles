@@ -35,7 +35,8 @@ in
             hotspot = "nmcli connection up local; nmcli device wifi hotspot;";
             youtube-dl = "yt-dlp";
             cat-orig = "cat";
-            cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+            # cdr = "cd \"$( (find $DOCUMENT_DIR_WORK $DOCUMENT_DIR_PRIV -maxdepth 1 && echo $FLAKE) | fzf )\"";
+            cdr = "source cdr";
             nix-ldd-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
             nix-ldd = "LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH ldd";
             nix-ldd-locate = "nix-locate --minimal --top-level -w ";
