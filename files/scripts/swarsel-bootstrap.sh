@@ -8,6 +8,8 @@ target_user="swarsel"
 ssh_port="22"
 persist_dir=""
 disk_encryption=0
+disk_encryption_args=""
+no_disko_deps="false"
 temp=$(mktemp -d)
 
 function help_and_exit() {
@@ -27,6 +29,7 @@ function help_and_exit() {
     echo "                                          Default='${target_user}'."
     echo "  --port <ssh_port>                       specify the ssh port to use for remote access. Default=${ssh_port}."
     echo "  --debug                                 Enable debug mode."
+    echo "  --no-disko-deps                         Upload only disk script and not dependencies (for use on low ram)."
     echo "  -h | --help                             Print this help."
     exit 0
 }
@@ -80,14 +83,14 @@ function update_sops_file() {
 
     SOPS_FILE=".sops.yaml"
     sed -i "{
-                                                # Remove any * and & entries for this host
-                                                /[*&]$key_name/ d;
-                                                # Inject a new age: entry
-                                                # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
-                                                /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
-                                                # Inject a new hosts or user: entry
-                                                /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
-                                                }" $SOPS_FILE
+                                                        # Remove any * and & entries for this host
+                                                        /[*&]$key_name/ d;
+                                                        # Inject a new age: entry
+                                                        # n matches the first line following age: and p prints it, then we transform it while reusing the spacing
+                                                        /age:/{n; p; s/\(.*- \*\).*/\1$key_name/};
+                                                        # Inject a new hosts or user: entry
+                                                        /&$key_type/{n; p; s/\(.*- &\).*/\1$key_name $key/}
+                                                        }" $SOPS_FILE
     green "Updating .sops.yaml"
     cd -
 }
@@ -114,6 +117,9 @@ while [[ $# -gt 0 ]]; do
         shift
         ssh_port=$1
         ;;
+    --no-disko-deps)
+        no_disko_deps="true"
+        ;;
     --debug)
         set -x
         ;;
@@ -131,6 +137,12 @@ if [[ $target_arch == "" || $target_destination == "" || $target_hostname == "" 
     help_and_exit
 fi
 
+LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
+if [[ $LOCKED == "true" ]]; then
+    red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING"
+    exit
+fi
+
 green "~SwarselSystems~ remote installer"
 green "Reading system information for $target_hostname ..."
 
@@ -141,6 +153,11 @@ CRYPTED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.sw
 if [[ $CRYPTED == "true" ]]; then
     green "Encryption: ✓"
     disk_encryption=1
+    disk_encryption_args=(
+        --disk-encryption-keys
+        /tmp/disko-password
+        /tmp/disko-password
+    )
 else
     red "Encryption: X"
     disk_encryption=0
@@ -233,7 +250,14 @@ $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "$
 # ------------------------
 
 green "Deploying minimal NixOS installation on $target_destination"
-nix run github:nix-community/nixos-anywhere/1.10.0 -- --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+
+if [[ $no_disko_deps == "true" ]]; then
+    green "Building without disko dependencies (using custom kexec)"
+    nix run github:nix-community/nixos-anywhere/1.10.0 -- "${disk_encryption_args[@]}" --no-disko-deps --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" --kexec "$(nix build --print-out-paths .#packages."$target_arch".swarsel-kexec)/swarsel-kexec-$target_arch.tar.gz" root@"$target_destination"
+else
+    green "Building with disko dependencies (using nixos-images kexec)"
+    nix run github:nix-community/nixos-anywhere/1.10.0 -- "${disk_encryption_args[@]}" --ssh-port "$ssh_port" --extra-files "$temp" --flake ./install#"$target_hostname" root@"$target_destination"
+fi
 
 echo "Updating ssh host fingerprint at $target_destination to ~/.ssh/known_hosts"
 ssh-keyscan -p "$ssh_port" "$target_destination" >> ~/.ssh/known_hosts || true
