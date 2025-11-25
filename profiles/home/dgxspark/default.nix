@@ -8,6 +8,7 @@
       atuin = lib.mkDefault true;
       autotiling = lib.mkDefault false;
       batsignal = lib.mkDefault false;
+      bash = lib.mkDefault true;
       blueman-applet = lib.mkDefault true;
       desktop = lib.mkDefault false;
       direnv = lib.mkDefault true;
