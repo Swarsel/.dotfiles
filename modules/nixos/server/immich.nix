@@ -1,21 +1,25 @@
-{ lib, pkgs, config, globals, ... }:
+{ lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  servicePort = 3001;
-  serviceUser = "immich";
-  serviceName = "immich";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "immich"; port = 3001; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users.users.${serviceUser} = {
       extraGroups = [ "video" "render" "users" ];
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;
@@ -29,9 +33,9 @@ in
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ 3001 ];
+    networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

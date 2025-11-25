@@ -1,9 +1,6 @@
-{ self, lib, config, ... }:
+{ self, lib, config, dns, globals, confLib, ... }:
 let
-  servicePort = 3000;
-  serviceName = "slink";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceDir = "/var/lib/slink";
+  inherit (confLib.gen { name = "slink"; port = 3000; dir = "/var/lib/slink"; }) servicePort serviceName serviceDomain serviceDir serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   containerRev = "sha256:98b9442696f0a8cbc92f0447f54fa4bad227af5dcfd6680545fedab2ed28ddd9";
 in
@@ -12,6 +9,10 @@ in
     swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     virtualisation.oci-containers.containers.${serviceName} = {
       image = "anirdev/slink@${containerRev}";
@@ -57,13 +58,17 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/shlink.png";
     };
-    globals.services.${serviceName}.domain = serviceDomain;
 
-    services.nginx = {
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
+
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
-            "localhost:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

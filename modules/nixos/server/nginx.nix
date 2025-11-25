@@ -85,6 +85,7 @@ in
     networking.firewall.allowedTCPPorts = [ 80 443 ];
 
     environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+      directories = [{ directory = "/var/lib/acme"; }];
       files = [ dhParamsPathBase ];
     };
 
@@ -109,27 +110,51 @@ in
         '';
       };
     };
-    system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-      deps = [ "generateDHParams" "users" "groups" ];
-    };
-    system.activationScripts."generateDHParams" =
-      {
-        text = ''
-          set -eu
-
-          ${pkgs.coreutils}/bin/install -d -m 0755 ${sslBasePath}
-          ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${sslBasePath}" else ""}
-
-          if [ ! -f "${dhParamsPathBase}" ]; then
-            ${pkgs.openssl}/bin/openssl dhparam -out ${dhParamsPath} 4096
-            chmod 0644 ${dhParamsPath}
-            chown ${serviceUser}:${serviceGroup} ${dhParamsPath}
-          fi
-        '';
-        deps = [
-          "etc"
-          (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
-        ];
+    systemd.services.generateDHParams = {
+      before = [ "nginx.service" ];
+      requiredBy = [ "nginx.service" ];
+      after = [ "local-fs.target" ];
+      requires = [ "local-fs.target" ];
+      serviceConfig = {
+        Type = "oneshot";
       };
+
+      script = ''
+        set -eu
+
+        install -d -m 0755 ${sslBasePath}
+        ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${sslBasePath}" else ""}
+
+        if [ ! -f "${dhParamsPath}" ]; then
+          ${pkgs.openssl}/bin/openssl dhparam -out "${dhParamsPath}" 4096
+          chmod 0644 "${dhParamsPath}"
+          chown ${serviceUser}:${serviceGroup} "${dhParamsPath}"
+        else
+          echo 'Already generated DHParams'
+        fi
+      '';
+    };
+
+    # system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
+    #   deps = [ "generateDHParams" "users" "groups" ];
+    # };
+    # system.activationScripts."generateDHParams" =
+    #   {
+    #     text = ''
+    #       set -eu
+
+    #       ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${sslBasePath}" else "${pkgs.coreutils}/bin/install -d -m 0755 ${sslBasePath}"}
+
+    #       if [ ! -f "${dhParamsPath}" ]; then
+    #         ${pkgs.openssl}/bin/openssl dhparam -out ${dhParamsPath} 4096
+    #         chmod 0644 ${dhParamsPath}
+    #         chown ${serviceUser}:${serviceGroup} ${dhParamsPath}
+    #       fi
+    #     '';
+    #     deps = [
+    #       (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
+    #       (lib.mkIf (!config.swarselsystems.isImpermanence) "etc")
+    #     ];
+    #   };
   };
 }

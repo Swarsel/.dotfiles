@@ -1,6 +1,6 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, confLib, ... }:
 let
-  serviceName = "postgresql";
+  inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
   postgresVersion = 14;
 in
 {

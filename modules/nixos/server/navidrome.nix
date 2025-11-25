@@ -1,15 +1,15 @@
-{ pkgs, config, lib, globals, ... }:
+{ pkgs, config, lib, globals, dns, confLib, ... }:
 let
-  servicePort = 4040;
-  serviceName = "navidrome";
-  serviceUser = "navidrome";
-  serviceGroup = serviceUser;
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "navidrome"; port = 4040; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     environment.systemPackages = with pkgs; [
       pciutils
       alsa-utils
@@ -39,7 +39,10 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.snapserver = {
       enable = true;
@@ -103,7 +106,7 @@ in
       };
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

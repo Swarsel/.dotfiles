@@ -1,11 +1,8 @@
-{ self, lib, pkgs, config, configName, globals, ... }:
+{ self, lib, pkgs, config, configName, globals, dns, confLib, ... }:
 let
-  sopsFile = self + /secrets/${configName}/secrets2.yaml;
+  inherit (confLib.gen { name = "garage"; port = 3900; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
-  serviceName = "garage";
-  servicePort = 3900;
-  serviceDomain = config.repo.secrets.common.services.domains."${serviceName}-${configName}";
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  sopsFile = self + /secrets/${configName}/secrets2.yaml;
 
   cfg = config.services.${serviceName};
   metadata_dir = "/var/lib/garage/meta";
@@ -22,6 +19,10 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     sops = {
       secrets.garage-admin-token = { inherit sopsFile; };
       secrets.garage-rpc-secret = { inherit sopsFile; };
@@ -34,6 +35,11 @@ in
       systemPackages = [
         cfg.package
       ];
+    };
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
     };
 
     systemd.services.${serviceName}.serviceConfig = {
@@ -74,7 +80,7 @@ in
       };
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

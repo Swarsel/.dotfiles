@@ -1,16 +1,10 @@
-{ self, lib, pkgs, config, globals, ... }:
+{ self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   inherit (config.swarselsystems) sopsFile;
+  inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
-  servicePort = 8300;
-  serviceUser = "kanidm";
-  serviceGroup = serviceUser;
-  serviceName = "kanidm";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
-
-  oauth2ProxyDomain = globals.services.oauth2Proxy.domain;
+  oauth2ProxyDomain = globals.services.oauth2-proxy.domain;
   immichDomain = globals.services.immich.domain;
   paperlessDomain = globals.services.paperless.domain;
   forgejoDomain = globals.services.forgejo.domain;
@@ -37,6 +31,10 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     users.users.${serviceUser} = {
       group = serviceGroup;
       isSystemUser = true;
@@ -62,7 +60,10 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
       files = [
@@ -70,17 +71,22 @@ in
         keyPathBase
       ];
     };
-
-    system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-      deps = [ "generateSSLCert-${serviceName}" "users" "groups" ];
-    };
-    system.activationScripts."generateSSLCert-${serviceName}" =
+    systemd.services."generateSSLCert-${serviceName}" =
       let
         daysValid = 3650;
         renewBeforeDays = 365;
       in
       {
-        text = ''
+        before = [ "${serviceName}.service" ];
+        requiredBy = [ "${serviceName}.service" ];
+        after = [ "local-fs.target" ];
+        requires = [ "local-fs.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+        };
+
+        script = ''
           set -eu
 
           ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
@@ -89,16 +95,18 @@ in
           ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
 
           need_gen=0
-          if [ ! -f "${certPathBase}" ] || [ ! -f "${keyPathBase}" ]; then
+          if [ ! -f "${certPath}" ] || [ ! -f "${keyPath}" ]; then
             need_gen=1
           else
-            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPathBase}" | cut -d= -f2)"
+            enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPath}" | cut -d= -f2)"
             end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
             now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
             seconds_left=$(( end_epoch - now_epoch ))
             days_left=$(( seconds_left / 86400 ))
             if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
               need_gen=1
+            else
+              echo 'Certificate exists and is still valid'
             fi
           fi
 
@@ -114,11 +122,57 @@ in
             chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
           fi
         '';
-        deps = [
-          "etc"
-          (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
-        ];
       };
+
+
+    # system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
+    #   deps = [ "generateSSLCert-${serviceName}" "users" "groups" ];
+    # };
+    # system.activationScripts."generateSSLCert-${serviceName}" =
+    #   let
+    #     daysValid = 3650;
+    #     renewBeforeDays = 365;
+    #   in
+    #   {
+    #     text = ''
+    #       set -eu
+
+    #       ${pkgs.coreutils}/bin/install -d -m 0755 ${certsDir}
+    #       ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${certsDir}" else ""}
+    #       ${pkgs.coreutils}/bin/install -d -m 0750 ${privateDir}
+    #       ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0750 /persist${privateDir}" else ""}
+
+    #       need_gen=0
+    #       if [ ! -f "${certPathBase}" ] || [ ! -f "${keyPathBase}" ]; then
+    #         need_gen=1
+    #       else
+    #         enddate="$(${pkgs.openssl}/bin/openssl x509 -noout -enddate -in "${certPathBase}" | cut -d= -f2)"
+    #         end_epoch="$(${pkgs.coreutils}/bin/date -d "$enddate" +%s)"
+    #         now_epoch="$(${pkgs.coreutils}/bin/date +%s)"
+    #         seconds_left=$(( end_epoch - now_epoch ))
+    #         days_left=$(( seconds_left / 86400 ))
+    #         if [ "$days_left" -lt ${toString renewBeforeDays} ]; then
+    #           need_gen=1
+    #         fi
+    #       fi
+
+    #       if [ "$need_gen" -eq 1 ]; then
+    #         ${pkgs.openssl}/bin/openssl req -x509 -nodes -days ${toString daysValid} -newkey rsa:4096 -sha256 \
+    #           -keyout "${keyPath}" \
+    #           -out "${certPath}" \
+    #           -subj "/CN=${serviceDomain}" \
+    #           -addext "subjectAltName=DNS:${serviceDomain}"
+
+    #         chmod 0644 "${certPath}"
+    #         chmod 0600 "${keyPath}"
+    #         chown ${serviceUser}:${serviceGroup} "${certPath}" "${keyPath}"
+    #       fi
+    #     '';
+    #     deps = [
+    #       "etc"
+    #       (lib.mkIf config.swarselsystems.isImpermanence "specialfs")
+    #     ];
+    #   };
 
     services = {
       ${serviceName} = {
@@ -326,7 +380,7 @@ in
       ${serviceName}.serviceConfig.RestartSec = "30";
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

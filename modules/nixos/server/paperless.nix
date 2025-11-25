@@ -1,13 +1,7 @@
-{ lib, pkgs, config, globals, ... }:
+{ lib, pkgs, config, dns, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-
-  servicePort = 28981;
-  serviceUser = "paperless";
-  serviceGroup = serviceUser;
-  serviceName = "paperless";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "paperless"; port = 28981; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   tikaPort = 9998;
   gotenbergPort = 3002;
@@ -16,6 +10,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users.users.${serviceUser} = {
       extraGroups = [ "users" ];
@@ -28,7 +26,10 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services = {
       ${serviceName} = {
@@ -98,7 +99,7 @@ in
                      )
     '';
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
