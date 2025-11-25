@@ -60,8 +60,10 @@ See the above repository for updates as well as full license text. */
   transform-origin: 0px calc(0px - var(--tab-min-height) - var(--tab-block-margin) * 2);
   transform: rotateX(89.9deg);
 }
-#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel)) ~ toolbox #urlbar[popover],
-/* swarsel: removed :hover from below line */
+
+:root[window-modal-open] #urlbar[popover],
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox #urlbar[popover],
+  /* swarsel: removed :hover from below line */
 #navigator-toolbox:is(:focus-within,[movingtab]) #urlbar[popover],
 #urlbar-container > #urlbar[popover]:is([focused],[open]){
   pointer-events: auto;
@@ -69,9 +71,11 @@ See the above repository for updates as well as full license text. */
   transition-delay: 33ms;
   transform: rotateX(0deg);
 }
-#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel)) ~ toolbox,
+
+:root[window-modal-open] #navigator-toolbox,
+#mainPopupSet:has(> [panelopen]:not(#ask-chat-shortcuts,#selection-shortcut-action-panel,#chat-shortcuts-options-panel,#tab-preview-panel), > #tab-group-editor > [panelopen]) ~ toolbox,
 #navigator-toolbox:has(#urlbar:is([open],[focus-within])),
-/* swarsel: removed :hover from below line */
+  /* swarsel: removed :hover from below line */
 #navigator-toolbox:is(:focus-within,[movingtab]){
   transition-delay: 33ms !important;
   transform: rotateX(0);
@@ -80,8 +84,7 @@ See the above repository for updates as well as full license text. */
 /* This makes things like OS menubar/taskbar show the toolbox when hovered in maximized windows.
  * Unfortunately it also means that other OS native surfaces (such as context menu on macos)
  * and other always-on-top applications will trigger toolbox to show up. */
-@media (-moz-bool-pref: "userchrome.autohide-toolbox.unhide-by-native-ui.enabled"),
-       -moz-pref("userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
+@media -moz-pref("userchrome.autohide-toolbox.unhide-by-native-ui.enabled"){
   :root[sizemode="maximized"]:not(:hover){
     #navigator-toolbox:not(:-moz-window-inactive),
     #urlbar[popover]:not(:-moz-window-inactive){
@@ -111,11 +114,7 @@ See the above repository for updates as well as full license text. */
   padding-block: calc(min(4px,(var(--urlbar-container-height) - var(--urlbar-height)) / 2) + var(--urlbar-container-padding)) !important;
 }
 
-/* Uncomment this if tabs toolbar is hidden with hide_tabs_toolbar.css */
- /*#titlebar{ margin-bottom: -9px }*/
-
 /* Uncomment the following for compatibility with tabs_on_bottom.css - this isn't well tested though */
 /*
 #navigator-toolbox{ flex-direction: column; display: flex; }
-#titlebar{ order: 2 }
 */
