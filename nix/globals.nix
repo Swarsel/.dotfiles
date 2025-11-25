@@ -1,5 +1,5 @@
 # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
-{ self, inputs, ... }:
+{ inputs, ... }:
 {
   flake = { config, lib, ... }:
     {

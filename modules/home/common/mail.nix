@@ -1,6 +1,6 @@
-{ lib, config, inputs, nixosConfig ? config, ... }:
+{ lib, config, inputs, globals, nixosConfig ? config, ... }:
 let
-  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4 address4-user address4-host;
+  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4;
   inherit (nixosConfig.repo.secrets.common) fullName;
   inherit (config.swarselsystems) xdgDir;
 in
@@ -123,24 +123,43 @@ in
             maildirBasePath = "Mail";
             accounts = {
               swarsel = {
+                imap = {
+                  host = globals.services.mailserver.domain;
+                  port = 993;
+                  tls.enable = true; # SSL/TLS
+                };
+                smtp = {
+                  host = globals.services.mailserver.domain;
+                  port = 465;
+                  tls.enable = true; # SSL/TLS
+                };
+                thunderbird = {
+                  enable = true;
+                  profiles = [ "default" ];
+                };
                 address = address4;
-                userName = address4-user;
+                userName = address4;
                 realName = fullName;
                 passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
-                smtp = {
-                  host = address4-host;
-                  port = 587;
-                  tls = {
-                    enable = true;
-                    useStartTls = true;
-                  };
-                };
-                mu.enable = false;
+                mu.enable = true;
                 msmtp = {
                   enable = true;
                 };
                 mbsync = {
-                  enable = false;
+                  enable = true;
+                  create = "maildir";
+                  expunge = "both";
+                  patterns = [ "*" ];
+                  extraConfig = {
+                    channel = {
+                      Sync = "All";
+                    };
+                    account = {
+                      Timeout = 120;
+                      PipelineDepth = 1;
+                      AuthMechs = "LOGIN";
+                    };
+                  };
                 };
               };
 
