@@ -14,11 +14,13 @@
       in
 
       {
+
         enable = true;
         package = pkgs.symlinkJoin {
           name = "nix-index";
           paths = [ commandNotFound ];
         };
       };
+    programs.nix-index-database.comma.enable = true;
   };
 }

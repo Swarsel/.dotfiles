@@ -86,7 +86,9 @@ in
               // (inputs.nur.overlays.default final prev)
               // (inputs.emacs-overlay.overlay final prev)
               // (inputs.nix-topology.overlays.default final prev)
+              // (inputs.nix-index-database.overlays.nix-index final prev)
               // (inputs.nixgl.overlay final prev)
+              // (inputs.nix-minecraft.overlay final prev)
               // (inputs.nixos-extra-modules.overlays.default final prev)
             )
             (modifications final prev);
