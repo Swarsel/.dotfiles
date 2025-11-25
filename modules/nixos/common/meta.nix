@@ -11,6 +11,10 @@
         description = "Node Name.";
         type = lib.types.str;
       };
+      lockFromBootstrapping = lib.mkOption {
+        description = "Whether this host should be marked to not be bootstrapped again using swarsel-bootstrap.";
+        type = lib.types.bool;
+      };
     };
   };
 }

@@ -23,5 +23,8 @@ dd DRIVE ISO:
 sync USER HOST:
   rsync -rltv --filter=':- .gitignore' -e "ssh -l {{USER}}" . {{USER}}@{{HOST}}:.dotfiles/
 
-bootstrap DEST CONFIG ARCH="x86_64-linux":
-  nix develop .#deploy --command zsh -c "swarsel-bootstrap -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
+secrets USER HOST:
+  rsync -rltv -e "ssh -l {{USER}}" /var/tmp/nix-import-encrypted/1000/ {{USER}}@{{HOST}}:/var/tmp/nix-import-encrypted/0
+
+bootstrap DEST CONFIG ARCH="x86_64-linux" NODISKODEPS="":
+  nix develop .#deploy --command zsh -c "swarsel-bootstrap {{NODISKODEPS}} -n {{CONFIG}} -d {{DEST}} -a {{ARCH}}"
