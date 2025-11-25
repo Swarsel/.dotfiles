@@ -30,8 +30,9 @@
 
       libsForQt5.qt5.qtwayland
 
-      # nix package database
-      nix-index
+      # do not do this! clashes with the flake
+      # nix-index
+
       nixos-generators
 
       # commit hooks
@@ -47,6 +48,9 @@
       # better make for general tasks
       just
 
+      # sops
+      ssh-to-age
+      sops
 
       # keyboards
       qmk

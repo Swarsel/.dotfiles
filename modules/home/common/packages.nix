@@ -60,7 +60,6 @@
       nix-inspect
       nixpkgs-review
       manix
-      comma
 
       # shellscripts
       shfmt
