@@ -15,41 +15,48 @@
           };
           modules = [
             inputs.disko.nixosModules.disko
-            inputs.sops-nix.nixosModules.sops
+            inputs.home-manager.nixosModules.home-manager
             inputs.impermanence.nixosModules.impermanence
             inputs.lanzaboote.nixosModules.lanzaboote
-            inputs.nix-topology.nixosModules.default
-            inputs.home-manager.nixosModules.home-manager
-            inputs.stylix.nixosModules.stylix
-            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
-            # inputs.swarsel-modules.nixosModules.default
-            inputs.swarsel-nix.nixosModules.default
-            inputs.niri-flake.nixosModules.niri
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
+            inputs.niri-flake.nixosModules.niri
+            inputs.nix-index-database.nixosModules.nix-index
+            inputs.nix-minecraft.nixosModules.minecraft-servers
+            inputs.nix-topology.nixosModules.default
+            inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
+            inputs.simple-nixos-mailserver.nixosModules.default
+            inputs.sops-nix.nixosModules.sops
+            inputs.stylix.nixosModules.stylix
+            inputs.swarsel-nix.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")
+            (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
             "${self}/hosts/nixos/${arch}/${configName}"
             "${self}/profiles/nixos"
             "${self}/modules/nixos"
             {
+              _module.args.dns = inputs.dns;
 
               microvm.guest.enable = lib.mkDefault false;
+
+              networking.hostName = lib.swarselsystems.mkStrong configName;
 
               node = {
                 name = lib.mkForce configName;
                 secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+                lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
               };
 
               swarselprofiles = {
-                minimal = lib.mkIf minimal (lib.mkDefault true);
+                minimal = lib.mkIf minimal (lib.swarselsystems.mkStrong true);
               };
 
               swarselmodules.server = {
-                ssh = lib.mkIf (!minimal) (lib.mkDefault true);
+                ssh = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
               };
 
               swarselsystems = {
-                mainUser = lib.mkDefault "swarsel";
+                mainUser = lib.swarselsystems.mkStrong "swarsel";
               };
             }
           ];
