@@ -1,4 +1,4 @@
-{ lib, minimal, ... }:
+{ lib, config, minimal, ... }:
 {
 
   imports = [
@@ -25,13 +25,17 @@
     isBtrfs = false;
     isLinux = true;
     isNixos = true;
-    server.garage = {
-      data_dir = [
-        {
-          capacity = "200G";
-          path = "/Vault/data/garage/main";
-        }
-      ];
+    proxyHost = "moonside";
+    server = {
+      inherit (config.repo.secrets.local.networking) localNetwork;
+      garage = {
+        data_dir = [
+          {
+            capacity = "200G";
+            path = "/Vault/data/garage/main";
+          }
+        ];
+      };
     };
   };
 

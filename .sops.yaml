@@ -7,6 +7,8 @@ keys:
     - &swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
   - &hosts
     - &winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+    - &belchsfactory age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6
+    - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
     - &hintbooth age1hsumymvh5mkqlaynrp9lv2w696yk3wtjzlyfmrpeuvh9u2tlwceqh3563x
     - &bakery age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh
     - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
@@ -21,6 +23,8 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *belchsfactory
+      - *eagleland
       - *hintbooth
       - *bakery
       - *toto
@@ -34,6 +38,8 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *belchsfactory
+      - *eagleland
       - *hintbooth
       - *bakery
       - *toto
@@ -47,6 +53,8 @@ creation_rules:
       - *swarsel
       age:
       - *nbl
+      - *belchsfactory
+      - *eagleland
       - *hintbooth
       - *bakery
       - *toto
@@ -86,6 +94,19 @@ creation_rules:
       age:
       - *moonside
 
+  - path_regex: secrets/belchsfactory/secrets.yaml
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *belchsfactory
+  - path_regex: hosts/nixos/aarch64-linux/belchsfactory/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *belchsfactory
+
   - path_regex: secrets/bakery/secrets.yaml
     key_groups:
     - pgp:
@@ -111,7 +132,22 @@ creation_rules:
       - *swarsel
       age:
       - *winters
-      - *moonside
+
+  - path_regex: secrets/eagleland/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *eagleland
+
+  - path_regex: hosts/nixos/x86_64-linux/eagleland/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *eagleland
+
+
 
   - path_regex: secrets/milkywell/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -119,7 +155,7 @@ creation_rules:
       - *swarsel
       age:
       - *milkywell
-  - path_regex: hosts/nixos/aarch64-linux/milkywell/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/x86_64-linux/milkywell/secrets/pii.nix.enc
     key_groups:
     - pgp:
       - *swarsel

@@ -72,6 +72,7 @@ in
       hideMounts = true;
       directories =
         [
+          "/root/.dotfiles"
           "/etc/nix"
           "/etc/NetworkManager/system-connections"
           "/var/lib/nixos"

@@ -29,6 +29,23 @@ let
 
       mkIfElse = p: yes: no: if p then yes else no;
 
+      getSubDomain = domain:
+        let
+          parts = builtins.split "\\." domain;
+          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
+        in
+        if builtins.length domainParts > 0
+        then builtins.head domainParts
+        else "";
+
+      getBaseDomain = domain:
+        let
+          parts = builtins.split "\\." domain;
+          domainParts = builtins.filter (x: builtins.isString x && x != "") parts;
+          baseParts = builtins.tail domainParts;
+        in
+        builtins.concatStringsSep "." baseParts;
+
       pkgsFor = lib.genAttrs (import systems) (system:
         import inputs.nixpkgs {
           inherit system;
