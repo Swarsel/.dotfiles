@@ -159,13 +159,14 @@
   |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
   |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
   |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
-  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Server for lightweight synchronization tasks         |
+  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Authoritative DNS server                             |
   |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
   |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
   |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
   |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
   |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
   |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
+  |💿 **brickroad**    | -                                                   | Kexec tarball                                        |
   |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
   |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
   </details>
