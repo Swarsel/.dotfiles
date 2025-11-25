@@ -1,5 +1,6 @@
 { self, lib, pkgs, config, outputs, inputs, minimal, ... }:
 let
+  inherit (config.swarselsystems) mainUser;
   settings = if minimal then { } else {
     environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
       assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
@@ -36,7 +37,8 @@ let
         channel.enable = false;
         registry = rec {
           nixpkgs.flake = inputs.nixpkgs;
-          swarsel.flake = inputs.swarsel;
+          # swarsel.flake = inputs.swarsel;
+          swarsel.flake = self;
           n = nixpkgs;
           s = swarsel;
         };
@@ -57,7 +59,7 @@ in
     (lib.recursiveUpdate
       {
         sops.secrets.github-api-token = lib.mkIf (!minimal) {
-          sopsFile = "${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+          owner = mainUser;
         };
 
         nix =

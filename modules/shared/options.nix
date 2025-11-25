@@ -1,6 +1,14 @@
 { self, config, lib, ... }:
 {
   options.swarselsystems = {
+    proxyHost = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+    };
+    isCloud = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+    };
     withHomeManager = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -34,7 +42,7 @@
     isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     sopsFile = lib.mkOption {
       type = lib.types.str;
-      default = "${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
+      default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
     };
     homeDir = lib.mkOption {
       type = lib.types.str;

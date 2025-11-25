@@ -11,7 +11,6 @@ in
 
   sops = {
     age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-    # defaultSopsFile = lib.mkForce "/home/swarsel/.dotfiles/secrets/moonside/secrets.yaml";
     secrets = {
       wireguard-private-key = { inherit sopsFile; };
       wireguard-home-preshared-key = { inherit sopsFile; };
@@ -138,9 +137,12 @@ in
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
+    proxyHost = "moonside";
+    server = {
+      inherit (config.repo.secrets.local.networking) localNetwork;
+    };
     syncthing = {
       serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
-      serviceIP = "localhost";
     };
   };
 } // lib.optionalAttrs (!minimal) {

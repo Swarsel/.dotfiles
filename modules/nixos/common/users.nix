@@ -1,11 +1,8 @@
-{ self, pkgs, config, lib, globals, minimal, ... }:
-let
-  sopsFile = self + /secrets/general/secrets.yaml;
-in
+{ pkgs, config, lib, globals, minimal, ... }:
 {
   options.swarselmodules.users = lib.mkEnableOption "user config";
   config = lib.mkIf config.swarselmodules.users {
-    sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { inherit sopsFile; neededForUsers = true; };
+    sops.secrets.main-user-hashed-pw = lib.mkIf (!config.swarselsystems.isPublic) { neededForUsers = true; };
 
     users = {
       mutableUsers = lib.mkIf (!minimal) false;

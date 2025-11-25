@@ -114,13 +114,31 @@ in
 
           services = mkOption {
             type = types.attrsOf (
-              types.submodule {
+              types.submodule (serviceSubmod: {
                 options = {
                   domain = mkOption {
                     type = types.str;
                   };
+                  subDomain = mkOption {
+                    readOnly = true;
+                    type = types.str;
+                    default = lib.swarselsystems.getSubDomain serviceSubmod.config.domain;
+                  };
+                  baseDomain = mkOption {
+                    readOnly = true;
+                    type = types.str;
+                    default = lib.swarselsystems.getBaseDomain serviceSubmod.config.domain;
+                  };
+                  proxyAddress4 = mkOption {
+                    type = types.nullOr types.str;
+                    default = null;
+                  };
+                  proxyAddress6 = mkOption {
+                    type = types.nullOr types.str;
+                    default = null;
+                  };
                 };
-              }
+              })
             );
           };
 
@@ -161,6 +179,12 @@ in
                     type = types.nullOr types.net.ipv4;
                   };
                   defaultGateway6 = mkOption {
+                    type = types.nullOr types.net.ipv6;
+                  };
+                  wanAddress4 = mkOption {
+                    type = types.nullOr types.net.ipv4;
+                  };
+                  wanAddress6 = mkOption {
                     type = types.nullOr types.net.ipv6;
                   };
                 };

@@ -1,39 +1,35 @@
 { lib, config, minimal, ... }:
 {
-
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
   ];
 
+  node.lockFromBootstrapping = lib.mkForce false;
+
+  topology.self = {
+    icon = "devices.cloud-server";
+  };
+  swarselmodules.server.nginx = false;
+
   swarselsystems = {
-    info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";
+    info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
     isImpermanence = true;
-    isSecureBoot = true;
+    isSecureBoot = false;
     isCrypted = true;
-    isBtrfs = true;
-    isLinux = true;
-    isNixos = true;
+    isSwap = false;
     rootDisk = "/dev/sda";
-    swapSize = "8G";
-    networkKernelModules = [ "igb" ];
+    isBtrfs = true;
+    isNixos = true;
+    isLinux = true;
+    proxyHost = "belchsfactory";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
     };
   };
-
 } // lib.optionalAttrs (!minimal) {
-
   swarselprofiles = {
     server = true;
-    router = false;
   };
-
-  swarselmodules = {
-    server = {
-      nginx = lib.mkForce false; # we get this from the server profile
-    };
-  };
-
 }
