@@ -24,6 +24,7 @@ in
           # openstackclient
 
           vscode
+          dev.antigravity
 
           rustdesk-vbc
         ];
