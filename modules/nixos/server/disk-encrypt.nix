@@ -1,10 +1,15 @@
 { self, pkgs, lib, config, globals, minimal, ... }:
 let
-  localIp = globals.networks.home.hosts.${config.node.name}.ipv4;
-  subnetMask = globals.networks.home.subnetMask4;
+  localIp = globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4;
+  subnetMask = globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".subnetMask4;
   gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
-  hostKeyPath = "/etc/secrets/initrd/ssh_host_ed25519_key";
+  hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
+  hostKeyPath =
+    if config.swarselsystems.isImpermanence then
+      "/persist/${hostKeyPathBase}"
+    else
+      "${hostKeyPathBase}";
 in
 {
   options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
@@ -14,35 +19,40 @@ in
   };
   config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
 
+
+    system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
+      deps = [ "ensureInitrdHostkey" ];
+    };
     system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
       text = ''
         [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
       '';
-      deps = [ "users" ];
+      deps = [
+        "etc"
+      ];
     };
 
     environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {
-      files = [ hostKeyPath ];
+      files = [ hostKeyPathBase ];
     };
 
-    boot = lib.mkIf (config.swarselprofiles.server || minimal) {
-      kernelParams = lib.mkIf (!config.swarselsystems.isLaptop) [
+    boot = lib.mkIf (!config.swarselsystems.isLaptop) {
+      kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
         "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
       ];
       initrd = {
         availableKernelModules = config.swarselsystems.networkKernelModules;
         network = {
           enable = true;
-          udhcpc.enable = lib.mkIf config.swarselsystems.isLaptop true;
           flushBeforeStage2 = true;
           ssh = {
             enable = true;
             port = 2222; # avoid hostkey changed nag
-            authorizedKeyFiles = [
-              (self + /secrets/keys/ssh/yubikey.pub)
-              (self + /secrets/keys/ssh/magicant.pub)
+            authorizedKeys = [
+              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/yubikey.pub"}''
+              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/magicant.pub"}''
             ];
-            hostKeys = [ hostKeyPath ];
+            hostKeys = [ hostKeyPathBase ];
           };
           # postCommands = ''
           #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
@@ -52,23 +62,24 @@ in
           initrdBin = with pkgs; [
             cryptsetup
           ];
-          services = {
-            unlock-luks = {
-              wantedBy = [ "initrd.target" ];
-              after = [ "network.target" ];
-              before = [ "systemd-cryptsetup@cryptroot.service" ];
-              path = [ "/bin" ];
+          # NOTE: the below does put the text into /root/.profile, but the command will not be run
+          # services = {
+          #   unlock-luks = {
+          #     wantedBy = [ "initrd.target" ];
+          #     after = [ "network.target" ];
+          #     before = [ "systemd-cryptsetup@cryptroot.service" ];
+          #     path = [ "/bin" ];
 
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
+          #     serviceConfig = {
+          #       Type = "oneshot";
+          #       RemainAfterExit = true;
+          #     };
 
-              script = ''
-                echo "systemctl default" >> /root/.profile
-              '';
-            };
-          };
+          #     script = ''
+          #       echo "systemctl default" >> /root/.profile
+          #     '';
+          #   };
+          # };
         };
       };
     };

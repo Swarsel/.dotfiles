@@ -1,5 +1,6 @@
-{ self, lib, config, pkgs, ... }:
+{ self, lib, config, pkgs, dns, globals, confLib, ... }:
 let
+  inherit (confLib.gen { name = "croc"; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
   servicePorts = [
     9009
     9010
@@ -7,8 +8,6 @@ let
     9012
     9013
   ];
-  serviceName = "croc";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
 
   inherit (config.swarselsystems) sopsFile;
 
@@ -17,6 +16,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     sops = {
       secrets = {
@@ -39,7 +42,10 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;

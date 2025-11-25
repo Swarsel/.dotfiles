@@ -1,13 +1,19 @@
-{ pkgs, lib, config, globals, ... }:
+{ pkgs, lib, config, globals, dns, confLib, ... }:
 let
-  servicePort = 8088;
-  serviceName = "jenkins";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "jenkins"; port = 8088; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.jenkins = {
       enable = true;
@@ -18,7 +24,7 @@ in
       home = "/Vault/apps/${serviceName}";
     };
 
-    services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

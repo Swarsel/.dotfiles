@@ -4,7 +4,6 @@
   config = lib.mkIf config.swarselmodules.server.packages {
     environment.systemPackages = with pkgs; [
       gnupg
-      nix-index
       nvd
       nix-output-monitor
       ssh-to-age

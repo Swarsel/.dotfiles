@@ -1,19 +1,17 @@
-{ self, lib, config, globals, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
+  inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
   sopsFile = self + /secrets/winters/secrets2.yaml;
-
-  servicePort = 8000;
-  serviceName = "radicale";
-  serviceUser = "radicale";
-  serviceGroup = serviceUser;
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   cfg = config.services.${serviceName};
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     sops = {
       secrets.radicale-user = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -35,7 +33,11 @@ in
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;
@@ -88,7 +90,7 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

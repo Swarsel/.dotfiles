@@ -1,12 +1,7 @@
-{ lib, config, pkgs, globals, ... }:
+{ lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-
-  servicePort = 8008;
-  serviceName = "matrix";
-  serviceDomain = config.repo.secrets.common.services.domains.matrix;
-  serviceUser = "matrix-synapse";
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "matrix"; user = "matrix-synapse"; port = 8008; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   federationPort = 8448;
   whatsappPort = 29318;
@@ -24,6 +19,11 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     environment.systemPackages = with pkgs; [
       matrix-synapse
       lottieconverter
@@ -91,7 +91,10 @@ in
       };
     };
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services = {
       postgresql = {
@@ -290,7 +293,7 @@ in
     # messages out after a while.
 
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

@@ -1,20 +1,23 @@
-{ pkgs, lib, config, globals, ... }:
+{ pkgs, lib, config, globals, dns, confLib, ... }:
 let
-  servicePort = 8096;
-  serviceName = "jellyfin";
-  serviceUser = "jellyfin";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "jellyfin"; port = 8096; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     users.users.${serviceUser} = {
       extraGroups = [ "video" "render" "users" ];
     };
+
     nixpkgs.config.packageOverrides = pkgs: {
       intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
     };
+
     hardware.graphics = {
       enable = true;
       extraPackages = with pkgs; [
@@ -26,7 +29,11 @@ in
     };
 
     topology.self.services.${serviceName}.info = "https://${serviceDomain}";
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;
@@ -34,7 +41,7 @@ in
       openFirewall = true; # this works only for the default ports
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

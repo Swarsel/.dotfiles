@@ -1,17 +1,16 @@
-{ self, lib, config, globals, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
-  servicePort = 80;
-  serviceName = "freshrss";
-  serviceUser = "freshrss";
-  serviceGroup = serviceName;
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "freshrss"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   inherit (config.swarselsystems) sopsFile;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users.users.${serviceUser} = {
       extraGroups = [ "users" ];
@@ -54,7 +53,10 @@ in
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} =
       let
@@ -74,7 +76,7 @@ in
     #   config.sops.templates.freshrss-env.path
     # ];
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

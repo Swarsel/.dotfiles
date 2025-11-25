@@ -1,10 +1,6 @@
-{ lib, config, globals, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
-  servicePort = 3004;
-  serviceUser = "oauth2-proxy";
-  serviceGroup = serviceUser;
-  serviceName = "oauth2-proxy";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  inherit (confLib.gen { name = "oauth2-proxy"; port = 3004; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   kanidmDomain = globals.services.kanidm.domain;
   mainDomain = globals.domains.main;
@@ -123,6 +119,10 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     sops = {
       secrets = {
         "oauth2-cookie-secret" = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
@@ -144,7 +144,10 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services.oauth2Proxy.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services = {
       ${serviceName} = {
@@ -195,11 +198,11 @@ in
       };
     };
 
-    services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
-            "localhost:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

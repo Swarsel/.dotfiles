@@ -1,10 +1,6 @@
-{ self, lib, config, ... }:
+{ self, lib, config, dns, globals, confLib, ... }:
 let
-  servicePort = 8777;
-  serviceName = "microbin";
-  serviceUser = "microbin";
-  serviceGroup = serviceUser;
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  inherit (confLib.gen { name = "microbin"; port = 8777; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   inherit (config.swarselsystems) sopsFile;
 
@@ -13,6 +9,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users = {
       groups.${serviceGroup} = { };
@@ -49,7 +49,11 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;
@@ -101,11 +105,11 @@ in
       { directory = cfg.dataDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
     ];
 
-    services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
-            "localhost:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

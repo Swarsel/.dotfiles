@@ -1,8 +1,6 @@
-{ lib, config, globals, ... }:
+{ lib, config, globals, confLib, ... }:
 let
-  serviceName = "opkssh";
-  serviceUser = "opksshuser";
-  serviceGroup = serviceUser;
+  inherit (confLib.gen { name = "opkssh"; user = "opksshuser"; group = "opksshuser"; }) serviceName serviceUser serviceGroup;
 
   kanidmDomain = globals.services.kanidm.domain;
 

@@ -1,11 +1,7 @@
-{ self, lib, config, pkgs, ... }:
+{ self, lib, config, pkgs, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-
-  servicePort = 3254;
-  serviceUser = "mpd";
-  serviceGroup = serviceUser;
-  serviceName = "mpd";
+  inherit (confLib.gen { name = "mpd"; port = 3254; }) servicePort serviceName serviceUser serviceGroup;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";

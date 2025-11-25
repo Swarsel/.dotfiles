@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+{ lib, config, confLib, ... }:
 let
-  serviceName = "emacs";
-  servicePort = 9812;
+  inherit (confLib.gen { name = "emacs"; port = 9812; }) servicePort serviceName;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} server on server";

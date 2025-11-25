@@ -1,17 +1,17 @@
-{ self, lib, config, globals, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-
-  servicePort = 27701;
-  serviceName = "ankisync";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "ankisync"; port = 27701; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   ankiUser = globals.user.name;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
@@ -23,7 +23,10 @@ in
       info = "https://${serviceDomain}";
     };
 
-    globals.services.${serviceName}.domain = serviceDomain;
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.anki-sync-server = {
       enable = true;
@@ -38,7 +41,7 @@ in
       ];
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

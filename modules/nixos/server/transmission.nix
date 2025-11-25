@@ -1,7 +1,6 @@
-{ self, pkgs, lib, config, ... }:
+{ self, pkgs, lib, config, confLib, ... }:
 let
-  serviceName = "transmission";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
+  inherit (confLib.gen { name = "transmission"; }) serviceName serviceDomain;
 
   lidarrUser = "lidarr";
   lidarrGroup = lidarrUser;

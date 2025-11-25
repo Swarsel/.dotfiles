@@ -1,11 +1,6 @@
-{ self, lib, config, globals, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
-  servicePort = 80;
-  serviceUser = "firefly-iii";
-  serviceGroup = serviceUser;
-  serviceName = "firefly-iii";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "firefly-iii"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
   nginxGroup = "nginx";
 
@@ -15,6 +10,10 @@ in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users = {
       groups.${serviceGroup} = { };
@@ -36,7 +35,11 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services = {
       ${serviceName} = {
@@ -78,7 +81,7 @@ in
       };
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

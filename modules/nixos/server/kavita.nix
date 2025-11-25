@@ -1,12 +1,8 @@
-{ self, lib, config, pkgs, globals, ... }:
+{ self, lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
 
-  servicePort = 8080;
-  serviceName = "kavita";
-  serviceUser = "kavita";
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
+  inherit (confLib.gen { name = "kavita"; port = 8080; }) servicePort serviceName serviceUser serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -14,6 +10,10 @@ in
     environment.systemPackages = with pkgs; [
       calibre
     ];
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
 
     users.users.${serviceUser} = {
       extraGroups = [ "users" ];
@@ -28,7 +28,11 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = {
       enable = true;
@@ -38,7 +42,7 @@ in
       dataDir = "/Vault/data/${serviceName}";
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {

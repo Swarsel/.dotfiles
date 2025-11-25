@@ -1,14 +1,9 @@
-{ lib, config, configName, globals, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems.syncthing) serviceDomain;
-  inherit (config.swarselsystems.syncthing) serviceIP;
+  inherit (confLib.gen { name = "syncthing"; port = 8384; }) servicePort serviceName serviceUser serviceGroup serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
-  servicePort = 8384;
-  serviceUser = "syncthing";
-  serviceGroup = serviceUser;
-  serviceName = "syncthing";
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
-  specificServiceName = "syncthing-${configName}";
+  specificServiceName = "${serviceName}-${config.node.name}";
 
   cfg = config.services.${serviceName};
   devices = config.swarselsystems.syncthing.syncDevices;
@@ -21,10 +16,6 @@ in
       serviceDomain = lib.mkOption {
         type = lib.types.str;
         default = config.repo.secrets.common.services.domains.syncthing1;
-      };
-      serviceIP = lib.mkOption {
-        type = lib.types.str;
-        default = "${serviceAddress}";
       };
       syncDevices = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -51,6 +42,10 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+    swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
     users.users.${serviceUser} = {
       extraGroups = [ "users" ];
       group = serviceGroup;
@@ -61,7 +56,10 @@ in
 
     networking.firewall.allowedTCPPorts = [ servicePort ];
 
-    globals.services."${specificServiceName}".domain = serviceDomain;
+    globals.services.${specificServiceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     services.${serviceName} = rec {
       enable = true;
@@ -117,11 +115,11 @@ in
       };
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${specificServiceName} = {
           servers = {
-            "${serviceIP}:${builtins.toString servicePort}" = { };
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
       };

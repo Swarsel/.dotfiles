@@ -1,12 +1,7 @@
-{ self, lib, config, globals, ... }:
+{ self, lib, config, globals, dns, confLib, ... }:
 let
-  serviceUser = "koillection";
+  inherit (confLib.gen { name = "koillection"; port = 2282; dir = "/Vault/data/koillection"; }) servicePort serviceName serviceUser serviceDir serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
   serviceDB = "koillection";
-  serviceName = "koillection";
-  servicePort = 2282;
-  serviceDomain = config.repo.secrets.common.services.domains.${serviceName};
-  serviceDir = "/Vault/data/koillection";
-  serviceAddress = globals.networks.home.hosts.${config.node.name}.ipv4;
 
   postgresUser = config.systemd.services.postgresql.serviceConfig.User; # postgres
   postgresPort = config.services.postgresql.settings.port; # 5432
@@ -18,6 +13,10 @@ in
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
     sops.secrets = {
       koillection-db-password = { inherit sopsFile; owner = postgresUser; group = postgresUser; mode = "0440"; };
       koillection-env-file = { inherit sopsFile; };
@@ -28,7 +27,11 @@ in
       info = "https://${serviceDomain}";
       icon = "${self}/files/topology-images/${serviceName}.png";
     };
-    globals.services.${serviceName}.domain = serviceDomain;
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
 
     virtualisation.oci-containers.containers = {
       koillection = {
@@ -104,7 +107,7 @@ in
       };
     };
 
-    nodes.moonside.services.nginx = {
+    nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
           servers = {
