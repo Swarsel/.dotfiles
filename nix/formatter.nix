@@ -17,6 +17,21 @@
         };
         deadnix.enable = true;
         statix.enable = true;
+        shfmt = {
+          enable = true;
+          indent_size = 4;
+          simplify = true;
+          # needed to replicate what my Emacs shfmt does
+          # there is no builtin option for space-redirects
+          package = pkgs.symlinkJoin {
+            name = "shfmt";
+            buildInputs = [ pkgs.makeWrapper ];
+            paths = [ pkgs.shfmt ];
+            postBuild = ''
+              wrapProgram $out/bin/shfmt -sr
+            '';
+          };
+        };
         shellcheck.enable = true;
       };
       settings.formatter.shellcheck.options = [

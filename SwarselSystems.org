@@ -304,6 +304,10 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 #+end_src
 
 ** Manual steps when setting up a new machine
+:PROPERTIES:
+:CUSTOM_ID: h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a
+:ID:       6c446f8e-4e40-4269-b287-389d2c70513b
+:END:
 
 #+begin_src markdown :noweb yes :exports both :results html
   These steps are required when setting up a normal NixOS host:
@@ -358,6 +362,9 @@ If the new machine is home-manager only, perform these steps:
 #+end_export
 
 ** Current issues
+:PROPERTIES:
+:CUSTOM_ID: h:b562adaf-536c-4267-88a5-026d8a0cda61
+:END:
 
 #+begin_src markdown :noweb yes :exports both :results html
   Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
@@ -1561,7 +1568,7 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
   }
 
 #+end_src
-** Formatter
+** Formatter (treefmt-nix)
 :PROPERTIES:
 :CUSTOM_ID: h:5fce36ae-715d-42d3-9ad4-46137d85083f
 :END:
@@ -1588,6 +1595,21 @@ Defines a formatter that can be called using =nix flake format=. While a nice ut
           };
           deadnix.enable = true;
           statix.enable = true;
+          shfmt = {
+            enable = true;
+            indent_size = 4;
+            simplify = true;
+            # needed to replicate what my Emacs shfmt does
+            # there is no builtin option for space-redirects
+            package = pkgs.symlinkJoin {
+              name = "shfmt";
+              buildInputs = [ pkgs.makeWrapper ];
+              paths = [ pkgs.shfmt ];
+              postBuild = ''
+                wrapProgram $out/bin/shfmt -sr
+              '';
+            };
+          };
           shellcheck.enable = true;
         };
         settings.formatter.shellcheck.options = [
@@ -1871,7 +1893,7 @@ Hence, what I instead do is to define another output =nixosConfigurationsMinimal
 :PROPERTIES:
 :CUSTOM_ID: h:02cd20be-1ffa-4904-9d5a-da5a89ba1421
 :END:
-
+[[id:6765065e-1822-4abc-82fe-0a60841caa86][Emacs]]
 This holds most of the NixOS side of configuration.
 
 ** System specific configuration
@@ -2736,8 +2758,14 @@ This is my main server that I run at home. It handles most tasks that require bi
   }
 #+end_src
 **** Summers (Server: ASUS Z10PA-D8)
+:PROPERTIES:
+:CUSTOM_ID: h:82bf7fb1-631b-4acd-966b-d0c71a9eb463
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:dc2233df-cd78-43cc-bb45-57568a83fb24
+:END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/default.nix
   { inputs, lib, config, minimal, nodes, globals, ... }:
   {
@@ -2843,6 +2871,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:394b1f22-a61b-41da-9fe7-7625f164ed57
+:END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
@@ -2874,6 +2905,9 @@ This is my main server that I run at home. It handles most tasks that require bi
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/disk-config.nix
   { lib, config, ... }:
@@ -2996,7 +3030,13 @@ This is my main server that I run at home. It handles most tasks that require bi
   }
 #+end_src
 ***** Guests
+:PROPERTIES:
+:CUSTOM_ID: h:5e571d89-6590-4aa4-a5f4-5c871683d09b
+:END:
 ****** Guest 1
+:PROPERTIES:
+:CUSTOM_ID: h:b9af4b1c-f35a-48a5-afa7-030c2be9c808
+:END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/summers/guests/guest1/default.nix
   { lib, minimal, ... }:
   {
@@ -3027,8 +3067,14 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 
 **** Hintbooth (Router: HUNSN RM02)
+:PROPERTIES:
+:CUSTOM_ID: h:58c7563e-6954-42e6-a622-9d06523e8e24
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:624b3c6a-6e31-4734-a6ea-7c5b461a3429
+:END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/default.nix
   { lib, config, minimal,  ... }:
   {
@@ -3073,6 +3119,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 #+end_src
 
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:b4a0b41c-52eb-4f0b-ba0b-64036c52e594
+:END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/hardware-configuration.nix
   { config, lib, modulesPath, ... }:
 
@@ -3100,6 +3149,9 @@ This is my main server that I run at home. It handles most tasks that require bi
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:1500fb57-334b-4f1b-92de-566ea07924d1
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/disk-config.nix
   { lib, config, ... }:
@@ -3312,6 +3364,9 @@ My phone. I use only a minimal config for remote debugging here.
 #+end_src
 
 **** Treehouse (DGX Spark)
+:PROPERTIES:
+:CUSTOM_ID: h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0
+:END:
 
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
   { self, ... }:
@@ -3696,8 +3751,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 **** Belchsfactory (OCI)
+:PROPERTIES:
+:CUSTOM_ID: h:90457194-6b97-4cd6-90bc-4f42d0d69f51
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/belchsfactory/default.nix
   { lib, config, minimal, ... }:
@@ -3738,6 +3799,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:e9e29520-5800-4756-ad13-1ec9747ab911
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/belchsfactory/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -3757,6 +3821,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/belchsfactory/disk-config.nix
   { lib, pkgs, config, ... }:
@@ -3883,8 +3950,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 **** Milkywell (OCI)
+:PROPERTIES:
+:CUSTOM_ID: h:d8869eca-cbde-45f0-9e54-9da8320b6a31
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:314601a0-e1b7-4996-a96c-663b121f9377
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/milkywell/default.nix
   { lib, config, minimal, ... }:
@@ -3936,6 +4009,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:b1f37b5b-aa18-405a-bf76-4d95642b5acc
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/milkywell/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -4095,8 +4171,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 #+end_src
 **** Eagleland (Hetzner)
+:PROPERTIES:
+:CUSTOM_ID: h:81bc8746-b46b-4d29-87de-ddbd77788b43
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:96540b9c-1610-45f2-ba19-916051ab5e10
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/eagleland/default.nix
   { lib, config, minimal, ... }:
@@ -4184,6 +4266,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:44c29a70-d5fc-49c1-b02e-a5cd2ec6119b
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/eagleland/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -4207,6 +4292,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:5c77e384-fdae-4994-bce3-ca736722529c
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/eagleland/disk-config.nix
   { lib, pkgs, config, ... }:
@@ -4710,6 +4798,9 @@ TODO: cleanup this mess
         #+end_src
 
 **** Brick Road (kexec image)
+:PROPERTIES:
+:CUSTOM_ID: h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9
+:END:
 
 #+begin_src nix-ts :tangle install/kexec.nix
   { lib, pkgs, modulesPath, options, ... }:
@@ -5444,6 +5535,7 @@ in
           github-nixpkgs-review-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.emacs {
           emacs-radicale-pw = { owner = mainUser; };
+          github-forge-token = { owner = mainUser; };
         }) // (lib.optionalAttrs modules.optional.work {
           harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
         }) // (lib.optionalAttrs modules.anki {
@@ -8046,6 +8138,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+end_src
 
 **** Network settings
+:PROPERTIES:
+:CUSTOM_ID: h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5
+:END:
 
 Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
 
@@ -8088,6 +8183,9 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
 #+end_src
 
 **** Disk encryption
+:PROPERTIES:
+:CUSTOM_ID: h:19d829f6-580f-4e04-8776-2bfd83c3c3dd
+:END:
 
 The hostkey can be generated with =ssh-keygen -t ed25519 -N "" -f /etc/secrets/initrd/ssh_host_ed25519_key=.
 Use =lspci -v | grep -iA8 'network\|ethernet'= to supposedly find out which kernel module is needed for networking in initrd. However I prefer a different approach:
@@ -8205,6 +8303,9 @@ lspci -k -d 14c3:0616
 #+end_src
 
 **** Router
+:PROPERTIES:
+:CUSTOM_ID: h:b54f2bbb-0088-46b2-957d-fd8234b772c3
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/router.nix
   { lib, config, ... }:
@@ -10178,6 +10279,7 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 **** Emacs elfeed (RSS Server)
 :PROPERTIES:
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
+:ID:       0e07e2fb-adc4-4fd8-9b54-0a59338a471e
 :END:
 
 This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
@@ -10207,6 +10309,7 @@ This was an approach of hosting an RSS server from within emacs. That would have
 **** FreshRSS
 :PROPERTIES:
 :CUSTOM_ID: h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d
+:ID:       d306070e-f06c-4cf8-800f-193d1616670f
 :END:
 
 FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
@@ -12295,6 +12398,9 @@ Deployment notes:
   }
 #+end_src
 **** OPKSSH
+:PROPERTIES:
+:CUSTOM_ID: h:6e30509a-1320-4993-a9c7-70d28ef2906a
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/opkssh.nix
   { lib, config, globals, confLib, ... }:
@@ -12335,6 +12441,9 @@ Deployment notes:
   }
 #+end_src
 **** Garage
+:PROPERTIES:
+:CUSTOM_ID: h:81c76be4-45f1-44e5-890d-6d082a95ab51
+:END:
 
 Generate the admin token using =openssl rand -base64 32=.
 Generate the rpc token using =openssl rand -hex 32=.
@@ -12449,6 +12558,9 @@ Generate the rpc token using =openssl rand -hex 32=.
   }
 #+end_src
 **** nsd (dns)
+:PROPERTIES:
+:CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nsd/default.nix
   { inputs, lib, config, globals, dns, confLib, ... }:
@@ -12491,6 +12603,9 @@ Generate the rpc token using =openssl rand -hex 32=.
   }
 #+end_src
 **** nsd (dns) - site1
+:PROPERTIES:
+:CUSTOM_ID: h:dc1dbc54-46f7-406d-a551-527e97439614
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nsd/site1.nix
   { config, globals, dns, ... }:
@@ -12612,6 +12727,9 @@ Generate the rpc token using =openssl rand -hex 32=.
   }
 #+end_src
 **** Minecraft
+:PROPERTIES:
+:CUSTOM_ID: h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -12664,6 +12782,9 @@ Generate the rpc token using =openssl rand -hex 32=.
   }
 #+end_src
 **** Mailserver
+:PROPERTIES:
+:CUSTOM_ID: h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/mailserver.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -13380,6 +13501,9 @@ When setting up a new machine:
 #+end_src
 
 **** microvm-host
+:PROPERTIES:
+:CUSTOM_ID: h:ded3276e-3e97-4863-a29e-b978d8aae1c9
+:END:
 
 Some standard options that should be set for every microvm host.
 
@@ -13403,6 +13527,9 @@ Some standard options that should be set for every microvm host.
 #+end_src
 
 **** microvm-guest
+:PROPERTIES:
+:CUSTOM_ID: h:46419b40-c40b-4b55-ac6f-a30169322bd6
+:END:
 
 Some standard options that should be set vor every microvm guest. We set the default
 
@@ -13441,6 +13568,9 @@ The general structure here is the same as in the [[#h:6da812f5-358c-49cb-aff2-0a
 #+end_src
 
 *** Steps to setup/upgrade home-manager only
+:PROPERTIES:
+:CUSTOM_ID: h:360f9da1-334e-4b04-b049-45085db8f10c
+:END:
 Steps to get a home-manager only setup up and running:
 
 #+begin_src markdown :noweb-ref homemanageronlysetup :exports both :results html
@@ -13922,6 +14052,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
 **** sops
 :PROPERTIES:
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
+:ID:       b2e99917-c9b6-424b-b0c2-0248f45a862e
 :END:
 
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -14396,6 +14527,9 @@ nix-index provides a way to find out which packages are provided by which deriva
 #+end_src
 
 **** nix-your-shell
+:PROPERTIES:
+:CUSTOM_ID: h:3fd72021-e174-49d0-a42e-58f6ed3682f2
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/nix-your-shell.nix
   { lib, config, ... }:
@@ -14947,6 +15081,9 @@ Currently I only use it as before with =initExtra= though.
 #+end_src
 
 **** bash
+:PROPERTIES:
+:CUSTOM_ID: h:ab30e218-665c-46ad-9708-9d92ebc34fed
+:END:
 
 
 #+begin_src nix-ts :tangle modules/home/common/bash.nix
@@ -14965,6 +15102,9 @@ Currently I only use it as before with =initExtra= though.
 #+end_src
 
 **** zellij
+:PROPERTIES:
+:CUSTOM_ID: h:87a28654-8377-41c9-8e6c-2d488e62575f
+:END:
 ***** Main config
 :PROPERTIES:
 :CUSTOM_ID: h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7
@@ -15029,6 +15169,9 @@ Currently I only use it as before with =initExtra= though.
   }
 #+end_src
 ***** Keybinds
+:PROPERTIES:
+:CUSTOM_ID: h:f65f9574-3b50-472d-8e24-2023271d1887
+:END:
 #+begin_src nix-ts :tangle modules/home/common/zellij-keybinds.nix
   { lib, config, ... }:
   {
@@ -16506,6 +16649,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 **** Home-manager: Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:c05d1b64-7110-4151-b436-46bc447113b4
+:ID:       ebb558ed-883a-486f-a6f5-8b283eb735a3
 :END:
 
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my =init.el= file to the configuration which will then be parsed upon system rebuild, looking for =use-package= sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (=emacs-pgtk=). All of the nice options such as =tree-sitter= support are enabled by default, so I do not need to adjust the build process.
@@ -16624,12 +16768,14 @@ Lastly, I am defining some more packages here that the parser has problems findi
         secrets = {
           fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
           emacs-radicale-pw = { };
+          github-forge-token = { };
         };
         templates = {
           authinfo = {
             path = "${homeDir}/.emacs.d/.authinfo";
             content = ''
               machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+              machine api.github.com login ${mainUser}^forge password ${config.sops.placeholder.github-forge-token}
             '';
           };
         };
@@ -17313,6 +17459,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+end_src
 
 ***** blueman-applet
+:PROPERTIES:
+:CUSTOM_ID: h:06aceb90-3b97-4d77-9e13-b1a8af26dd50
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/blueman-applet.nix
   { lib, config, ... }:
@@ -17325,6 +17474,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+end_src
 
 ***** network-manager-applet
+:PROPERTIES:
+:CUSTOM_ID: h:67907a83-40ed-49ad-9fa7-bcc0b9cf5936
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/network-manager-applet.nix
   { lib, config, ... }:
@@ -17338,6 +17490,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+end_src
 
 ***** obsidian service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:7f943057-e0c8-4dbd-9875-67e55bc74a47
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/obsidian-tray.nix
   { lib, config, ... }:
@@ -17370,6 +17525,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 #+end_src
 
 ***** anki service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:872deae6-dc31-44ac-9c4a-95720fce0a53
+:END:
 
 Sets up a systemd user service for anki that does not stall the shutdown process. Note that the outcommented =ExecStart= does not work because the home-manager anki package builds a separate anki package that - I think - cannot be referenced as no such expression exists in the module.
 
@@ -17413,6 +17571,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 #+end_src
 
 ***** element service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:2d0f1a35-cff5-4c24-b104-e431c05ae563
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/element-tray.nix
   { lib, config, pkgs, ... }:
@@ -17445,6 +17606,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 #+end_src
 
 ***** vesktop service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:ea741a3c-982e-4e23-8ecf-b30193a5c326
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/vesktop-tray.nix
   { lib, config, pkgs, ... }:
@@ -17477,6 +17641,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 #+end_src
 
 ***** syncthing service for tray
+:PROPERTIES:
+:CUSTOM_ID: h:5e7c606f-628a-4849-94e9-359d7b75f228
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/syncthing-tray.nix
   { lib, config, pkgs, ... }:
@@ -18501,6 +18668,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** Obsidian
+:PROPERTIES:
+:CUSTOM_ID: h:ffd97152-63ce-41a0-a40e-c78ba3eb6722
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/obsidian.nix
   { lib, config, pkgs, nixosConfig ? config, ... }:
@@ -18659,6 +18829,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** Anki
+:PROPERTIES:
+:CUSTOM_ID: h:6f2839dc-c681-4697-8e93-4ef191362434
+:END:
 
 
 #+begin_src nix-ts :tangle modules/home/common/anki.nix
@@ -18731,6 +18904,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** Element-desktop
+:PROPERTIES:
+:CUSTOM_ID: h:add71e84-43ff-40c7-9173-de43a13bbae6
+:END:
 
 
 #+begin_src nix-ts :tangle modules/home/common/element.nix
@@ -18766,6 +18942,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** Hexchat
+:PROPERTIES:
+:CUSTOM_ID: h:812cedcd-520e-417e-8923-aaae5ff5e316
+:END:
 
 
 #+begin_src nix-ts :tangle modules/home/common/hexchat.nix
@@ -18789,6 +18968,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** obs-studio
+:PROPERTIES:
+:CUSTOM_ID: h:ef995044-6833-40d6-825b-64063c00a790
+:END:
 
 
 #+begin_src nix-ts :tangle modules/home/common/obs-studio.nix
@@ -18808,6 +18990,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** spotify-player
+:PROPERTIES:
+:CUSTOM_ID: h:b99d62a1-4560-429f-81c1-29fc544a46fb
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/spotify-player.nix
   { lib, config, ... }:
@@ -18826,6 +19011,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** vesktop
+:PROPERTIES:
+:CUSTOM_ID: h:f5e191c5-b8c0-4f66-aa38-9cbfb1619058
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/vesktop.nix
   { lib, pkgs, config, ... }:
@@ -18911,6 +19099,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** batsignal
+:PROPERTIES:
+:CUSTOM_ID: h:b30fcdf0-93d8-4600-a267-e210bec8e680
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/batsignal.nix
   { lib, config, ... }:
@@ -18941,6 +19132,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** autotiling
+:PROPERTIES:
+:CUSTOM_ID: h:a7bac755-510c-424b-b964-18fb9e4a6667
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/autotiling.nix
   { lib, config, ... }:
@@ -18960,6 +19154,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** swayidle
+:PROPERTIES:
+:CUSTOM_ID: h:2e23f3d9-ab65-4f2f-912f-dc236189c457
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/swayidle.nix
   { lib, config, pkgs, ... }:
@@ -18999,6 +19196,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** swaylock
+:PROPERTIES:
+:CUSTOM_ID: h:8e508f62-d3e4-48bc-8bce-641bf38a0106
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/swaylock.nix
   { lib, config, pkgs, ... }:
@@ -19025,6 +19225,9 @@ This service changes the screen hue at night. I am not sure if that really does 
 #+end_src
 
 **** opkssh
+:PROPERTIES:
+:CUSTOM_ID: h:99bde2b8-ab38-4082-b06b-4afde9d06228
+:END:
 
 #+begin_src nix-ts :tangle modules/home/common/opkssh.nix
   { lib, config, ... }:
@@ -20315,6 +20518,9 @@ In short, the options defined here are passed to the modules systems using =_mod
 #+end_src
 
 *** Config Library (confLib)
+:PROPERTIES:
+:CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
+:END:
 #+begin_src nix-ts :noweb yes :tangle modules/shared/config-lib.nix
   { config, globals, ... }:
   {
@@ -20353,6 +20559,9 @@ This is the central station for self-defined packages. These are all referenced 
 Note: The structure of generating the packages was changed in commit =2cf03a3 refactor: package and module generation=. That commit can be checked out in order to see a simpler version of achieving the same thing.
 
 *** Packages (flake)
+:PROPERTIES:
+:CUSTOM_ID: h:2803e3ab-b746-46c0-bcc4-051a23185bc3
+:END:
 
 #+begin_src nix-ts :tangle pkgs/flake/default.nix
   { self, lib, pkgs, ... }:
@@ -20442,6 +20651,9 @@ This app allows me, in conjunction with my Yubikey, to quickly enter passwords w
 #+end_src
 
 **** quickpass
+:PROPERTIES:
+:CUSTOM_ID: h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9
+:END:
 #+begin_src shell :tangle files/scripts/quickpass.sh :mkdirp yes
     shopt -s nullglob globstar
 
@@ -22326,6 +22538,9 @@ This programs simply runs ssh-keygen on the last host that I tried to ssh into. 
   }
 #+end_src
 **** endme
+:PROPERTIES:
+:CUSTOM_ID: h:abbd18a2-73ae-4ee4-8487-06fef23638bb
+:END:
 
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
 
@@ -22343,6 +22558,9 @@ Sometimes my DE crashes after putting it to suspend - to be precise, it happens 
 #+end_src
 
 **** git-replace
+:PROPERTIES:
+:CUSTOM_ID: h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2
+:END:
 
 This script allows for quick git replace of a string.
 
@@ -22416,6 +22634,9 @@ This script allows for quick git replace of a string.
 #+end_src
 
 *** Packages (config)
+:PROPERTIES:
+:CUSTOM_ID: h:c01a91b8-b751-4978-b987-733de63c8211
+:END:
 
 #+begin_src nix-ts :tangle pkgs/config/default.nix
   { self, homeConfig, lib, pkgs, ... }:
@@ -22432,6 +22653,9 @@ This script allows for quick git replace of a string.
 #+end_src
 
 **** cdr
+:PROPERTIES:
+:CUSTOM_ID: h:78d17941-68b3-4b36-b378-3282ae2178b8
+:END:
 
 
 #+begin_src nix-ts :tangle pkgs/config/cdr/default.nix
@@ -22588,6 +22812,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 #+end_src
 
 **** Optionals
+:PROPERTIES:
+:CUSTOM_ID: h:07086976-8c36-4d3e-a9fe-693348411b53
+:END:
 
 #+begin_src nix-ts :tangle profiles/nixos/optionals/default.nix :mkdirp yes
   { lib, config, ... }:
@@ -22789,6 +23016,9 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
 
 #+end_src
 **** Router
+:PROPERTIES:
+:CUSTOM_ID: h:f3af356a-e732-471b-b8b3-37dcd70297d5
+:END:
 
 #+begin_src nix-ts :tangle profiles/nixos/router/default.nix :mkdirp yes
   { lib, config, ... }:
@@ -22900,6 +23130,9 @@ This holds modules that are to be used on most hosts. These are also the most im
 #+end_src
 
 **** DGX Spark
+:PROPERTIES:
+:CUSTOM_ID: h:6d30ef28-ee26-4954-90f6-53c33dee9217
+:END:
 
 #+begin_src nix-ts :tangle profiles/home/dgxspark/default.nix :mkdirp yes
   { lib, config, ... }:
@@ -23183,6 +23416,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 * Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
+:ID:       6765065e-1822-4abc-82fe-0a60841caa86
 :END:
 ** Initialization (early-init.el)
 :PROPERTIES:
@@ -23324,6 +23558,8 @@ In this section I define extra functions that I need. Some of these functions I 
 
 Since I am rebinding the =C-z= hotkey for emacs-evil-state toggling, I want to have a function that still lets me perform this action quickly.
 
+We set a keybinding to this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+
 #+begin_src emacs-lisp
 ;; -*- lexical-binding: t; -*-
 
@@ -23340,7 +23576,9 @@ Since I am rebinding the =C-z= hotkey for emacs-evil-state toggling, I want to h
 :CUSTOM_ID: h:1e0ee570-e509-4ecb-a3af-b75543731bb0
 :END:
 
-I often find myself bouncing between two buffers when I do not want to use a window split. This funnction simply jumps to the last used buffer.
+I often find myself bouncing between two buffers when I do not want to use a window split. This function simply jumps to the last used buffer.
+
+We set a keybinding to this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23428,6 +23666,8 @@ When programming, I like to be able to duplicate a line. There are easier functi
 The below function avoids these problems. Originally I used the function =duplicate-line= found here: [[https://stackoverflow.com/questions/88399/how-do-i-duplicate-a-whole-line-in-emacs]]
 
 However, this function does not work on regions. Later, I found a solution implemented by [[https://github.com/bbatsov/crux][crux]]. I do not need the whole package, so I just extracted the three functions I needed from it.
+
+We set a keybinding for some of them in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23596,6 +23836,13 @@ This function was found here: [[https://www.reddit.com/r/emacs/comments/re31i6/h
 
 #+end_src
 **** Magit: List directories using vertico/consult
+:PROPERTIES:
+:CUSTOM_ID: h:1f8bfddf-a12a-49c8-beaa-97baa47abb9f
+:END:
+
+At work and when working on private projects, I often have to jump between several git repositories. This function fires up a picker that gets me to the magit overview page of that repository.
+
+We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23649,6 +23896,7 @@ Used in: [[#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e][Centered org-mode Buffers]]
 **** org-mode: Upon-save actions (Auto-tangle, export to html, formatting)
 :PROPERTIES:
 :CUSTOM_ID: h:59d4306e-9b73-4b2c-b039-6a6518c357fc
+:ID:       a67adf2f-20ce-49d6-ba6b-0341ca3d9972
 :END:
 
 This section handles everything that shoudld happen when I save =SwarselSystems.org=. It:
@@ -23694,6 +23942,8 @@ Normally emacs cycles between three states:
 3) All headings expanded
 
 However, I want to be able to fold a single heading consistently.
+
+We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23756,9 +24006,67 @@ These functions are used here: [[#h:5653d693-ecca-4c95-9633-66b9e3241070][Corfu]
 
 #+end_src
 
+**** Insert link to another header in org file
+:PROPERTIES:
+:CUSTOM_ID: h:06e70e44-502b-4a49-8b48-63c511f1c377
+:END:
+
+When writing this file, I often want to refer to a different section of the file. One way to do this is to =C-x O= (consult-org-heading) to get to said heading, then =C=c s= (org-store-link), finally =C-o= (evil-jump-backward) to get back to the origin and insert the link using =C-c C-l= (org-insert-link).
+
+These two scripts just let me do all of this in one step. I have styled the picker in a way that is similar to consult-org-heading.
+
+We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+
+#+begin_src emacs-lisp
+
+    (defun swarsel/org-colorize-outline (parents raw)
+      (let* ((palette ["#58B6ED" "#8BD49C" "#33CED8" "#4B9CCC"
+                       "yellow" "orange" "salmon" "red"])
+             (n (length parents))
+             (colored-parents
+              (cl-mapcar
+               (lambda (p i)
+                 (propertize p 'face `(:foreground ,(aref palette (mod i (length palette))) :weight bold)))
+               parents
+               (number-sequence 0 (1- n)))))
+        (concat
+         (when parents
+           (string-join colored-parents "/"))
+         (when parents "/")
+         (propertize raw 'face `(:foreground ,(aref palette (mod n (length palette)))
+                                   :weight bold)))))
+
+  (defun swarsel/org-insert-link-to-heading ()
+    (interactive)
+    (let ((candidates '()))
+      (org-map-entries
+       (lambda ()
+         (let* ((raw (org-get-heading t t t t))
+                (parents (org-get-outline-path t))
+                (m (copy-marker (point)))
+                (colored (swarsel/org-colorize-outline parents raw)))
+           (push (cons colored m) candidates))))
+
+      (let* ((choice (completing-read "Heading: " (mapcar #'car candidates)))
+             (marker (cdr (assoc choice candidates)))
+             id raw-heading)
+        (unless marker
+          (user-error "No marker for heading??"))
+
+        (save-excursion
+          (goto-char marker)
+          (setq id (org-id-get-create))
+          (setq raw-heading (org-get-heading t t t t)))
+
+        (insert (org-link-make-string (format "id:%s" id)
+                                      raw-heading)))))
+
+#+end_src
+
 *** Custom Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5
+:ID:       46e64995-f669-46ea-b665-f76efad33d4e
 :END:
 
 This defines a set of keybinds that I want to have available globally. I have one set of keys that is globally available through the =C-SPC= prefix. This set is used mostly for functions that I have trouble remembering the original keybind for, or that I just want to have gathered in a common space.
@@ -23865,6 +24173,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
    "<DUMMY-m>" 'swarsel/last-buffer
    "M-\\" 'indent-region
    "M-r" 'swarsel/consult-magit-repos
+   "M-i" 'swarsel/org-insert-link-to-heading
    "<Paste>" 'yank
    "<Cut>" 'kill-region
    "<Copy>" 'kill-ring-save
@@ -23882,19 +24191,19 @@ I also define some keybinds to some combinations directly. Those are used mostly
 :CUSTOM_ID: h:07951589-54ba-4e3e-bd7b-4106cd22ff6a
 :END:
 
-In this section I setup some aliases that I use for various directories on my system. Some of these are actually used for magit repository finding etc., but many of them serve no real use and I need to clean this up someday.
+In this section I setup some aliases that I use for various directories on my system. This is just to prevent setting the same stuff too often.
 
 #+begin_src emacs-lisp
 
   ;; set Nextcloud directory for journals etc.
   (setq
    swarsel-emacs-directory "~/.emacs.d"
-   swarsel-dotfiles-directory "~/.dotfiles"
+   swarsel-dotfiles-directory (getenv "FLAKE")
    swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
    swarsel-tasks-org-file "Tasks.org"
    swarsel-archive-org-file "Archive.org"
-   swarsel-work-projects-directory "~/Documents/Work"
-   swarsel-private-projects-directory "~/Documents/Private"
+   swarsel-work-projects-directory (getenv "DOCUMENT_DIR_WORK")
+   swarsel-private-projects-directory (getenv "DOCUMENT_DIR_PRIV")
    )
 #+end_src
 
@@ -24267,6 +24576,8 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 :CUSTOM_ID: h:df6729b6-2135-4070-bcab-a6a26f0fb2c4
 :END:
 
+This makes it so that when setting a mark in evil mode (using =m <key>=), it creates a visual marker at that place that reminds me what the key for that marker position is (the marker is of course not part of the text of the document, and is hence not saved).
+
 #+begin_src emacs-lisp
 
   (use-package evil-visual-mark-mode
@@ -24294,11 +24605,12 @@ This adds support for tree-sitter objects. This allows for the following chords:
   (define-key evil-outer-text-objects-map "a" (evil-textobj-tree-sitter-get-textobj ("if_statement.outer" "conditional.outer" "loop.outer") '((python-mode . ((if_statement.outer) @if_statement.outer)) (python-ts-mode . ((if_statement.outer) @if_statement.outer)))))
 
 #+end_src
-**** evil-textobj-tree-sitter
+**** evil-numbers
 :PROPERTIES:
 :CUSTOM_ID: h:06002ad2-686a-42c5-82d7-61f1340e262d
 :END:
 
+A very simple package that brings back the vim possibility of incrementing/decrementing numbers. I do not need it often, but it is nice to have.
 
 #+begin_src emacs-lisp
 
@@ -24310,7 +24622,7 @@ This adds support for tree-sitter objects. This allows for the following chords:
 :CUSTOM_ID: h:e888d7a7-1755-4109-af11-5358b8cf140e
 :END:
 
-This should setup a wordlist that can be used as a dictionary. However, for some reason this does not work, and I will need to further investigate this issue.
+This sets up a wordlist that is, for example, used in completions. When coding, I do not really need this, but it is sometimes useful when writing prose.
 
 #+begin_src emacs-lisp
 
@@ -24377,7 +24689,7 @@ This section loads the base icons used in my configuration. I am using =nerd-ico
 
 Used in:
 - [[#h:b190d512-bfb5-42ec-adec-8d86bab726ce][Vertico and friends]]
-- [[#h:5653d693-ecca-4c95-9633-66b9e3241070][IN USE Corfu]]
+- [[#h:5653d693-ecca-4c95-9633-66b9e3241070][Corfu]]
 
 #+begin_src emacs-lisp
 
@@ -24408,9 +24720,9 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 :CUSTOM_ID: h:ed585848-875a-4673-910c-d2e1901dd95b
 :END:
 
-Here I set up the modeline with some information that I find useful. Specficially I am using the doom modeline. Most informations I disable for it, except for the cursor information (row + column) as well as a widget for =mu4e= and git information.
+Here I set up the modeline with some information that I find useful. I was using the doom modeline for a while. Most informations I disabled for it, except for the cursor information (row + column) as well as a widget for =mu4e= and git information.
 
-I have currently disabled this in favor of [[#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208][mini-modeline]].
+I have currently disabled this in favor of [[#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208][mini-modeline]], which saves more screen space and holds only the information I really need.
 
 #+begin_src emacs-lisp
 
@@ -24430,7 +24742,16 @@ I have currently disabled this in favor of [[#h:80ed2431-9c9a-4bfc-a3c0-08a2a058
 :CUSTOM_ID: h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208
 :END:
 
-I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach.
+I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach. The only information that is shown is:
+
+- the line number
+- state of the file (whether it is saved etc.)
+- the name of the file
+- the percentage of the cursor in the file
+- the major mode of the file
+- the current evil mode
+
+This is really the perfect solution for me, but it might not be for everyone.
 
 #+begin_src emacs-lisp
 
@@ -24472,20 +24793,15 @@ I have found that the doom-modeline, while very useful, consumes too much screen
 :CUSTOM_ID: h:b190d512-bfb5-42ec-adec-8d86bab726ce
 :END:
 
-This set of packages uses the default emacs completion framework and works together to provide a very nice user experience:
+This set of packages uses the default emacs completion framework and works together to provide a very nice user experience.
 
-- Vertico simply provides a vertically stacking completion
-- Marginalia adds more information to completion results
-- Orderless allows for fuzzy matching
-- Consult provides better implementations for several user functions, e.g. =consult-line= or =consult-outline=
-- Embark allows acting on the results in the minibuffer while the completion is still ongoing - this is extremely useful since it allows to, for example, read the documentation for several functions without closing the help search. It can also collect the results of a grep operation into a seperate buffer that edits the result in their original location.
-
-Nerd icons is originally enabled here: [[#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493][Icons]]
 
 ***** vertico
 :PROPERTIES:
 :CUSTOM_ID: h:d7c7f597-f870-4e01-8f7e-27dd31dd245d
 :END:
+
+Vertico simply provides a vertically stacking completion framework.
 
 #+begin_src emacs-lisp
 
@@ -24529,6 +24845,8 @@ This package allows for =Ido=-like directory navigation.
 :CUSTOM_ID: h:211fc0bd-0d64-4577-97d8-6abc94435f04
 :END:
 
+Orderless allows for fuzzy matching.
+
 When first installing orderless, I often times faced the problem, that when editing long files and calling =consult-line=, Emacs would hang when changing a search term in the middle (e.g. from =servicse.xserver= to =servic.xserver= in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
 
 #+begin_src emacs-lisp
@@ -24556,6 +24874,7 @@ When first installing orderless, I often times faced the problem, that when edit
 :PROPERTIES:
 :CUSTOM_ID: h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c
 :END:
+Consult provides better implementations for several user functions, e.g. =consult-line= or =consult-outline=.
 
 The big winner here are the convenient keybinds being setup here for general use. Also, I setup vim-navigation for minibuffer completions. =consult-buffer= is set twice because I am still used to that weird =C-M-j= command that I chose for =ivy-switch-buffer= when I first started using Emacs. I want to move to the other command but for now it is not feasible to delete the other one.
 
@@ -24583,6 +24902,7 @@ The big winner here are the convenient keybinds being setup here for general use
 :PROPERTIES:
 :CUSTOM_ID: h:1c564ee5-ccd7-48be-b69a-d963400c4704
 :END:
+Embark allows acting on the results in the minibuffer while the completion is still ongoing - this is extremely useful since it allows to, for example, read the documentation for several functions without closing the help search. It can also collect the results of a grep operation into a seperate buffer that edits the result in their original location.
 
 I have stripped down the embark keybinds heavily. It is very useful to me even in it's current state, but it quickly becomes overwhelming. =embark-dwim= acts on a candidate without closing the minibuffer, which is very useful. =embark-act= lets the user choose from all actions, but has an overwhelming interface.
 
@@ -24625,6 +24945,7 @@ Provides previews for embark.
 :PROPERTIES:
 :CUSTOM_ID: h:f32040a4-882f-4e6b-97f1-a0105c44c034
 :END:
+Marginalia adds more information to completion results.
 
 I set the annotation-mode of marginalia to =heavy=. This gives even more information on the stuff that you are looking at. One thing I am missing from ivy is the highlighting on =mode=-commands based on the current state of the mode. Also, I do not understand all the shorthands used by marginalia yet.
 
@@ -24645,6 +24966,7 @@ I set the annotation-mode of marginalia to =heavy=. This gives even more informa
 :END:
 
 As stated above, this simply provides nerd-icons to the completion framework.
+It is originally enabled here: [[#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493][Icons]]
 
 #+begin_src emacs-lisp
 
@@ -24777,6 +25099,8 @@ This places little angled indicators on the fringe of a window which indicate bu
 :END:
 
 This defines the authentication sources used by =org-calfw= ([[#h:c760f04e-622f-4b3e-8916-53ca8cce6edc][Calendar]]) and [[#h:1a8585ed-d9f2-478f-a132-440ada1cde2c][Forge]].
+
+This file is written using home-manager [[id:b2e99917-c9b6-424b-b0c2-0248f45a862e][sops]] in [[id:ebb558ed-883a-486f-a6f5-8b283eb735a3][Home-manager: Emacs]]
 
 #+begin_src emacs-lisp
 
@@ -25062,7 +25386,9 @@ This just makes org-mode a little bit more beautiful, mostly by making the =begi
 :CUSTOM_ID: h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425
 :END:
 
-Recently I have grown fond of holding presentations using Emacs :)
+Recently I have grown fond of holding presentations using Emacs.
+
+When holding presentations, I think it is important to not have too many distractions on your slides. org-present just shows a plain background, is very responsive, and it is still an org buffer (so you can e.g. run source block codes while in the presentation).
 
 #+begin_src emacs-lisp
 
@@ -25171,6 +25497,11 @@ Recently I have grown fond of holding presentations using Emacs :)
 #+end_src
 
 **** Render markdown blocks as body to expand noweb blocks
+:PROPERTIES:
+:CUSTOM_ID: h:d4137200-7f91-43d9-9550-e0b6bfda1683
+:END:
+
+I have written this function to allow me to get a preview of the information that is gathered throughout the file and aggregated in [[id:6c446f8e-4e40-4269-b287-389d2c70513b][Manual steps when setting up a new machine]]. Normally, running a markdown source block does nothing in Emacs. Hence, I just let it return the output, which inserts the noweb-ref blocks.
 
 #+begin_src emacs-lisp
 (defun org-babel-execute:markdown (body params)
@@ -25182,7 +25513,9 @@ Recently I have grown fond of holding presentations using Emacs :)
 :CUSTOM_ID: h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b
 :END:
 
-This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as I am mostly editing nix-files in org-mode anyways.
+This adds a nix mode to Emacs. This has become increasingly useful since I have added [[id:f8cb9724-df54-42fb-a35b-530937686c6a][lsp-mode in org-src blocks]], because since that time, I am now able to actually make use of major modes while I theoretically stay in org-mode.
+
+It supports all functions that I normally need. Note that getting completions for flake inputs is a bit finnicky and I am not quite fond of it yet.
 
 #+begin_src emacs-lisp
 
@@ -25228,9 +25561,10 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 *** HCL Mode
 :PROPERTIES:
 :CUSTOM_ID: h:e8074881-3441-4abd-b25b-358a87e7984f
+:ID:       7aa9803f-b419-40fa-aafc-4bb934c8f687
 :END:
 
-This adds support for Hashicorp Configuration Language. I need this at work.
+This adds support for Hashicorp Configuration Language. Used at work, it is mostly a [[id:267430d0-7d64-40c1-87a2-7d88762b8cb6][Terraform Mode]] that does not support autoformatting upon save. It still is nice :)
 
 #+begin_src emacs-lisp
 
@@ -25243,9 +25577,10 @@ This adds support for Hashicorp Configuration Language. I need this at work.
 *** Jenkinsfile/Groovy
 :PROPERTIES:
 :CUSTOM_ID: h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410
+:ID:       ebd53be9-c38a-4a0f-a7b4-eee30a0074fc
 :END:
 
-This adds support for Groovy, which I specifically need to work with Jenkinsfiles. I need this at work.
+This adds support for Groovy, which I specifically need to work with Jenkinsfiles. Similar to [[id:7aa9803f-b419-40fa-aafc-4bb934c8f687][HCL Mode]], it just provides some nice functions.
 
 #+begin_src emacs-lisp
 
@@ -25260,6 +25595,8 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 :CUSTOM_ID: h:77fa79d8-81d5-46f2-82f9-8e2922538d44
 :END:
 
+This is supposed to provide auto-completion when turned on. Of course I cannot globally turn this on since it would run in any =.yaml= file then, but even when manually started, it seems to do nothing. This would be nice at work.
+
 
 #+begin_src emacs-lisp
 
@@ -25271,7 +25608,7 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 :CUSTOM_ID: h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3
 :END:
 
-This adds support for Dockerfiles. I need this at work.
+This adds support for Dockerfiles in a similar way to [[id:ebd53be9-c38a-4a0f-a7b4-eee30a0074fc][Jenkinsfile/Groovy]].
 
 #+begin_src emacs-lisp
 
@@ -25282,9 +25619,10 @@ This adds support for Dockerfiles. I need this at work.
 *** Terraform Mode
 :PROPERTIES:
 :CUSTOM_ID: h:7834adb0-fbd3-4136-bdb7-6dbc9a083296
+:ID:       267430d0-7d64-40c1-87a2-7d88762b8cb6
 :END:
 
-This adds support for Terraform configuration files. I need this at work.
+This adds support for Terraform configuration files. This is basically the same as the [[id:7aa9803f-b419-40fa-aafc-4bb934c8f687][HCL Mode]] mode as the languages are very similar.
 
 #+begin_src emacs-lisp
 
@@ -25300,9 +25638,12 @@ This adds support for Terraform configuration files. I need this at work.
 *** nix formatting
 :PROPERTIES:
 :CUSTOM_ID: h:5ca7484b-b9d6-4023-88d1-a1e37d5df249
+:ID:       460a47fd-cddc-4080-9eba-6724fc63606e
 :END:
 
-Adds functions for formatting nix code.
+Adds functions for formatting nix code. I make huge use of this using the chords =C-<Space> o b= (org-babel-mark-block) and then =C-<Space> o n= (nixpkgs-fmt-region). This is what I use to keep my nix org-src-blocks formatted. However, using [[id:a67adf2f-20ce-49d6-ba6b-0341ca3d9972][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]], the resulting tangled files will be formatted in any case.
+
+Note that for files that are not managed using this file (which there should normally not be many of), we can still use =nix fmt= for running treefmt for formatting and checks.
 
 #+begin_src emacs-lisp
 
@@ -25315,7 +25656,7 @@ Adds functions for formatting nix code.
 :CUSTOM_ID: h:489a71c4-38af-44a3-a9ef-8b1ed1ee4ac4
 :END:
 
-Adds functions for formatting shellscripts.
+Adds functions for formatting shellscripts. Similarly to [[id:460a47fd-cddc-4080-9eba-6724fc63606e][nix formatting]]m I use this using the chords =C-<Space> o b= (org-babel-mark-block) and then =C-<Space> o s= (shfmt-region). This is what I use to keep shell script blocks formatted in this file. This is also handled by treefmt, but still, I want this file to stay organized as well.
 
 #+begin_src emacs-lisp
 
@@ -25335,6 +25676,8 @@ Adds functions for formatting shellscripts.
 :CUSTOM_ID: h:734dc40a-a2c4-4839-b884-cb99b81aa6fe
 :END:
 
+Adds a mode for markdown, specifically MultiMarkdown, which allows me to render LaTeX and other nice things.
+
 #+begin_src emacs-lisp
 
   (setq markdown-command "pandoc")
@@ -25353,6 +25696,8 @@ Adds functions for formatting shellscripts.
 :CUSTOM_ID: h:8d90fe51-0b32-423a-a159-4f853bc29b68
 :END:
 
+Allows me to render LaTeX just where I write it. I do not need this as much anymore, but during my studies this was very valuable to me.
+
 #+begin_src emacs-lisp
 
   (add-hook 'markdown-mode-hook
@@ -25367,6 +25712,8 @@ Adds functions for formatting shellscripts.
 :PROPERTIES:
 :CUSTOM_ID: h:a83c5820-2016-44ae-90a0-4756bb471c01
 :END:
+
+This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[id:d306070e-f06c-4cf8-800f-193d1616670f][FreshRSS]]. While I read most of my feeds on my phone (using Capy Reader), it is still good to have an Emacs-native reader as well. Some time ago I was still running a separate Emacs instance on my server: [[id:0e07e2fb-adc4-4fd8-9b54-0a59338a471e][Emacs elfeed (RSS Server)]]. This instance would then sync the read feeds to other instances. This was very brittle however and is only left as a historical note.
 
 #+begin_src emacs-lisp
 
@@ -25405,7 +25752,7 @@ Adds functions for formatting shellscripts.
 :CUSTOM_ID: h:87453f1c-8ea5-4d0a-862d-8973d5bc5405
 :END:
 
-This is the ripgrep command for Emacs.
+This is the ripgrep package for Emacs.
 
 #+begin_src emacs-lisp
 
@@ -25419,7 +25766,7 @@ This is the ripgrep command for Emacs.
 
 Tree-sitter is a parsing library integrated into Emacs to provide better syntax highlighting and code analysis. It generates concrete syntax trees for source code, enabling more accurate and efficient text processing. Emacs' tree-sitter integration enhances language support, offering features like incremental parsing and precise syntax-aware editing. This improves the development experience by providing robust and dynamic syntax features, making it easier for me to navigate and manipulate code.
 
-In order to update the language grammars, run the next command below.
+In order to update the language grammars, run the next command below. NOTE: since we now load =epkgs.treesit-grammars.with-all-grammars= in [[id:ebb558ed-883a-486f-a6f5-8b283eb735a3][Home-manager: Emacs]], we actually never run this anymore. I leave it here however for a potential future reader. For safety, I still instruct treesit to install missing grammars on the fly.
 
 #+begin_src emacs-lisp :tangle no :export both
 
@@ -25572,7 +25919,7 @@ projectile is useful for keeping track of your git projects within Emacs. I most
 
 magit is the best git utility I have ever used - it has a beautiful interface and is very verbose. Here I mostly just setup the list of repositories that I want to expost to magit.
 
-Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. We also set that here.
+Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. We set that here: [[id:59df9a4c-2a1f-466b-abe2-fbb8524cd0ed][Yubikey support]].
 
 #+begin_src emacs-lisp
 
@@ -25588,9 +25935,10 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 *** Yubikey support
 :PROPERTIES:
 :CUSTOM_ID: h:d78709dd-4f79-441c-9166-76f61f90359a
+:ID:       59df9a4c-2a1f-466b-abe2-fbb8524cd0ed
 :END:
 
-The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
+The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least. This works especially well since I have switched from =pinentry-gtk3= to =pinentry-waypromt=.
 
 #+begin_src emacs-lisp
 
@@ -25617,6 +25965,8 @@ NOTE: Make sure to configure a GitHub token before using this package!
   (1) in practice: github -<> settings -<> developer option -<>
   create classic token with repo; user; read:org permissions
   (2)machine api.github.com login USERNAME^forge password 012345abcdef...
+
+  The above is handled by [[id:ebb558ed-883a-486f-a6f5-8b283eb735a3][Home-manager: Emacs]] and only here as a historical note. Forge lets me interact with non-core git objects like issues and pull requests from within emacs.
 
 #+begin_src emacs-lisp
 
@@ -25885,6 +26235,7 @@ Still, this is avery convenient package.
 *** eglot
 :PROPERTIES:
 :CUSTOM_ID: h:6cf0310b-2fdf-45f0-9845-4704649777eb
+:ID:       07b25188-2dbf-4896-b86b-d6e60023a2d7
 :END:
 
 Up comes the section of lsp clients for Emacs. For a longer time, I thought that I had to choose one only, and after having started with =lsp-mode= I had tried out =lsp-booster= and then went to =eglot=. My requirements are as follow:
@@ -25969,7 +26320,10 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 *** lsp-mode in org-src blocks
 :PROPERTIES:
 :CUSTOM_ID: h:cd552ba1-4db1-4605-8ead-4fcb6a466826
+:ID:       f8cb9724-df54-42fb-a35b-530937686c6a
 :END:
+
+This incredible function allows to start a sub-pane in a org-file while in a source-block that spins up a lsp-server. In practise that allows me to use a nix lsp when editing complex blocks in my config. The only bother is that we have to add the modes where it should run manually to =org-babel-lang-list=, but that is a small price to pay for the usefulness that it brings.
 
 #+begin_src emacs-lisp
   ;; thanks to https://tecosaur.github.io/emacs-config/config.html#lsp-support-src
@@ -26007,6 +26361,8 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 :PROPERTIES:
 :CUSTOM_ID: h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61
 :END:
+
+This is another lsp-implementation for Emacs using multi-threading, so this should be the least blocking one. Still, in general I prefer [[id:07b25188-2dbf-4896-b86b-d6e60023a2d7][eglot]].
 
 
 #+begin_src emacs-lisp
@@ -26263,6 +26619,9 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 #+end_src
 
 **** Work: Signing Mails (S/MIME, smime)
+:PROPERTIES:
+:CUSTOM_ID: h:3584632a-9d6d-4ba6-8aa5-e1383581993c
+:END:
 
 Used to automatically sign messages sent from my work email address using S/MIME certificate.
 
@@ -26534,6 +26893,9 @@ This sets up the =dashboard=, which is really quite useless. But, it looks cool 
 
 This sections is no longer used really. An introduction can be found in [[#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5][Structure of this file]] under the historical note. The little noweb-ref blocks that I still use are found in [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]] and [[#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32][Services]].
 ** General steps when setting up a new machine
+:PROPERTIES:
+:CUSTOM_ID: h:cc04139d-e9b7-48fe-8e21-fb43aac35b88
+:END:
 
 These general steps are needed when setting up a new machine and do not fit into another block well:
 
@@ -26543,6 +26905,9 @@ These general steps are needed when setting up a new machine and do not fit into
 #+end_src
 
 ** Current patches and fixes
+:PROPERTIES:
+:CUSTOM_ID: h:e1798163-5d88-4776-aa44-57ed2df92e45
+:END:
 
 These are current deviations from the standard settings that I take while some things are broken upstream
 
