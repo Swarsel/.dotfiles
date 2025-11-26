@@ -24,6 +24,7 @@ in
         github-nixpkgs-review-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.emacs {
         emacs-radicale-pw = { owner = mainUser; };
+        github-forge-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.optional.work {
         harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
       }) // (lib.optionalAttrs modules.anki {

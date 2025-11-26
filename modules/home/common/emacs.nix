@@ -109,12 +109,14 @@ in
       secrets = {
         fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
         emacs-radicale-pw = { };
+        github-forge-token = { };
       };
       templates = {
         authinfo = {
           path = "${homeDir}/.emacs.d/.authinfo";
           content = ''
             machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+            machine api.github.com login ${mainUser}^forge password ${config.sops.placeholder.github-forge-token}
           '';
         };
       };

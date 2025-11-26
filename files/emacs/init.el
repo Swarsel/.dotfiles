@@ -236,6 +236,48 @@ create a new one."
 (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
 
+(defun swarsel/org-colorize-outline (parents raw)
+    (let* ((palette ["#58B6ED" "#8BD49C" "#33CED8" "#4B9CCC"
+                     "yellow" "orange" "salmon" "red"])
+           (n (length parents))
+           (colored-parents
+            (cl-mapcar
+             (lambda (p i)
+               (propertize p 'face `(:foreground ,(aref palette (mod i (length palette))) :weight bold)))
+             parents
+             (number-sequence 0 (1- n)))))
+      (concat
+       (when parents
+         (string-join colored-parents "/"))
+       (when parents "/")
+       (propertize raw 'face `(:foreground ,(aref palette (mod n (length palette)))
+                                 :weight bold)))))
+
+(defun swarsel/org-insert-link-to-heading ()
+  (interactive)
+  (let ((candidates '()))
+    (org-map-entries
+     (lambda ()
+       (let* ((raw (org-get-heading t t t t))
+              (parents (org-get-outline-path t))
+              (m (copy-marker (point)))
+              (colored (swarsel/org-colorize-outline parents raw)))
+         (push (cons colored m) candidates))))
+
+    (let* ((choice (completing-read "Heading: " (mapcar #'car candidates)))
+           (marker (cdr (assoc choice candidates)))
+           id raw-heading)
+      (unless marker
+        (user-error "No marker for heading??"))
+
+      (save-excursion
+        (goto-char marker)
+        (setq id (org-id-get-create))
+        (setq raw-heading (org-get-heading t t t t)))
+
+      (insert (org-link-make-string (format "id:%s" id)
+                                    raw-heading)))))
+
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -334,6 +376,7 @@ create a new one."
  "<DUMMY-m>" 'swarsel/last-buffer
  "M-\\" 'indent-region
  "M-r" 'swarsel/consult-magit-repos
+ "M-i" 'swarsel/org-insert-link-to-heading
  "<Paste>" 'yank
  "<Cut>" 'kill-region
  "<Copy>" 'kill-ring-save
@@ -348,12 +391,12 @@ create a new one."
 ;; set Nextcloud directory for journals etc.
 (setq
  swarsel-emacs-directory "~/.emacs.d"
- swarsel-dotfiles-directory "~/.dotfiles"
+ swarsel-dotfiles-directory (getenv "FLAKE")
  swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
  swarsel-tasks-org-file "Tasks.org"
  swarsel-archive-org-file "Archive.org"
- swarsel-work-projects-directory "~/Documents/Work"
- swarsel-private-projects-directory "~/Documents/Private"
+ swarsel-work-projects-directory (getenv "DOCUMENT_DIR_WORK")
+ swarsel-private-projects-directory (getenv "DOCUMENT_DIR_PRIV")
  )
 
 ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
