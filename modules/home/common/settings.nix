@@ -1,7 +1,7 @@
-{ self, outputs, lib, pkgs, config, globals, nixosConfig ? config, ... }:
+{ self, outputs, lib, pkgs, config, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
-  inherit (nixosConfig.repo.secrets.common) atticPublicKey;
+  inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
 in
 {
   options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -23,7 +23,7 @@ in
             };
           in
           ''
-                  plugin-files = ${nix-plugins}/lib/nix/plugins
+            plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '';
         settings = {

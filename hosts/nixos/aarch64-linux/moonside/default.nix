@@ -140,6 +140,12 @@ in
     proxyHost = "moonside";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
+      restic = {
+        bucketName = "SwarselMoonside";
+        paths = [
+          "/persist/opt/minecraft"
+        ];
+      };
     };
     syncthing = {
       serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
@@ -157,6 +163,8 @@ in
     shlink = true;
     slink = true;
     syncthing = true;
+    minecraft = true;
+    restic = true;
     diskEncryption = lib.mkForce false;
   };
 }

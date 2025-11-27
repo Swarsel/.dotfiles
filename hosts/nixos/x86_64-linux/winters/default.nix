@@ -28,6 +28,20 @@
     proxyHost = "moonside";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
+      restic = {
+        bucketName = "SwarselWinters";
+        paths = [
+          "/Vault/data/paperless"
+          "/Vault/data/koillection"
+          "/Vault/data/postgresql"
+          "/Vault/data/firefly-iii"
+          "/Vault/data/radicale"
+          "/Vault/data/matrix-synapse"
+          "/Vault/Eternor/Paperless"
+          "/Vault/Eternor/Bilder"
+          "/Vault/Eternor/Immich"
+        ];
+      };
       garage = {
         data_dir = {
           capacity = "200G";

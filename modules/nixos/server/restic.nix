@@ -4,6 +4,14 @@ let
 in
 {
   options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
+  options.swarselsystems.server.restic = {
+    bucketName = lib.mkOption {
+      type = lib.types.str;
+    };
+    paths = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+    };
+  };
   config = lib.mkIf config.swarselmodules.server.restic {
 
     sops = {
@@ -26,20 +34,10 @@ in
       in
       {
         backups = {
-          SwarselWinters = {
+          "${config.swarselsystems.server.restic.bucketName}" = {
             environmentFile = config.sops.templates."restic-env".path;
             passwordFile = config.sops.secrets.resticpw.path;
-            paths = [
-              "/Vault/data/paperless"
-              "/Vault/data/koillection"
-              "/Vault/data/postgresql"
-              "/Vault/data/firefly-iii"
-              "/Vault/data/radicale"
-              "/Vault/data/matrix-synapse"
-              "/Vault/Eternor/Paperless"
-              "/Vault/Eternor/Bilder"
-              "/Vault/Eternor/Immich"
-            ];
+            inherit (config.swarselsystems.server.restic) paths;
             pruneOpts = [
               "--keep-daily 3"
               "--keep-weekly 2"

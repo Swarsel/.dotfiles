@@ -1,6 +1,8 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, pkgs, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/var/lib/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+  inherit (config.swarselsystems) mainUser;
+  worldName = "${mainUser}craft";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -30,9 +32,9 @@ in
 
       serviceConfig = {
         User = "root";
-        WorkingDirectory = "/var/lib/minecraft/swarselcraft";
+        WorkingDirectory = "${serviceDir}/${worldName}";
 
-        ExecStart = "/usr/bin/java @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
+        ExecStart = "${lib.getExe pkgs.temurin-jre-bin-17} @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
 
         Restart = "always";
         RestartSec = 30;

@@ -230,25 +230,26 @@ The structure of this flake as seen many revisions, however lately I have settle
 Here I give a brief overview over the hostmachines that I am using. This is held in markdown so that I can render it into my GitHub README.
 
 #+begin_src markdown :tangle no :noweb-ref hosts
-  | Name               | Hardware                                            | Use                                                  |
-  |--------------------|-----------------------------------------------------|------------------------------------------------------|
-  |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
-  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
-  |🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
-  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
-  |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
-  |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
-  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Authoritative DNS server                             |
-  |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
-  |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
-  |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
-  |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
-  |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
-  |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
-  |💿 **brickroad**    | -                                                   | Kexec tarball                                        |
-  |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
-  |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+  | Name                | Hardware                                            | Use                                                 |
+  |---------------------|-----------------------------------------------------|-----------------------------------------------------|
+  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                         |
+  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                     |
+  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                   |
+  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference   |
+  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, datastorage  |
+  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                      |
+  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                              |
+  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative dns server                            |
+  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                         |
+  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                       |
+  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                          |
+  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services     |
+  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binarycache                   |
+  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                               |
+  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts     |
+  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines |
+  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration     |
+  |❔ **toto**          | -                                                   | Helper configuration for testing purposes           |
 #+end_src
 
 ** Programs
@@ -370,6 +371,30 @@ If the new machine is home-manager only, perform these steps:
 
   <<fixes>>
 #+end_src
+
+#+RESULTS:
+#+begin_export html
+Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
+
+- 202501102:
+  - flake:
+    - emacs-overlay:
+      - : version pinned because emacsclient is currently broken on latest
+    - niri-flake:
+      - currently not using the sugared version of screenshot-[,window], as it is currently broken
+  - home-manager:
+    - emacs-tramp:
+      - using stable version in extraPackages (broken in unstable)
+      - :ensure nil in emacs tramp settings to use package in extraPackages
+    - emacs-calfwL
+      - pinned to version not in nixpkgs (is in latest emacs-overlay, but that is broken)
+    - vesktop:
+      - running stable version (broken in unstable)
+    - batgrep:
+      - running stable version (broken in unstable)
+    - swayosd:
+      - pinned to version not in nixpkgs (fixes https://github.com/ErikReider/SwayOSD/issues/175)
+#+end_export
 
 * flake.nix
 :PROPERTIES:
@@ -2650,6 +2675,20 @@ This is my main server that I run at home. It handles most tasks that require bi
       proxyHost = "moonside";
       server = {
         inherit (config.repo.secrets.local.networking) localNetwork;
+        restic = {
+          bucketName = "SwarselWinters";
+          paths = [
+            "/Vault/data/paperless"
+            "/Vault/data/koillection"
+            "/Vault/data/postgresql"
+            "/Vault/data/firefly-iii"
+            "/Vault/data/radicale"
+            "/Vault/data/matrix-synapse"
+            "/Vault/Eternor/Paperless"
+            "/Vault/Eternor/Bilder"
+            "/Vault/Eternor/Immich"
+          ];
+        };
         garage = {
           data_dir = {
             capacity = "200G";
@@ -3366,7 +3405,7 @@ My phone. I use only a minimal config for remote debugging here.
 :END:
 
 #+begin_src nix-ts :tangle hosts/home/aarch64-linux/treehouse/default.nix
-  { self, ... }:
+  { self, pkgs, ... }:
   {
 
     imports = [
@@ -3384,11 +3423,15 @@ My phone. I use only a minimal config for remote debugging here.
       };
     };
 
+    home.packages = with pkgs; [
+      attic-client
+    ];
     # programs.zsh.initContent = "
     #   export GPG_TTY=\"$(tty)\"
     # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
     # gpgconf --launch gpg-agent
     #       ";
+    swarselmodules.pii = true;
 
     swarselsystems = {
       isLaptop = false;
@@ -3571,6 +3614,12 @@ This machine mainly acts as my proxy server to stand before my local machines.
       proxyHost = "moonside";
       server = {
         inherit (config.repo.secrets.local.networking) localNetwork;
+        restic = {
+          bucketName = "SwarselMoonside";
+          paths = [
+            "/persist/opt/minecraft"
+          ];
+        };
       };
       syncthing = {
         serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
@@ -3588,6 +3637,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
       shlink = true;
       slink = true;
       syncthing = true;
+      minecraft = true;
+      restic = true;
       diskEncryption = lib.mkForce false;
     };
   }
@@ -9918,6 +9969,7 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
 :END:
 
 This manages backups for my pictures and obsidian files.
+Note: you still need to run =restic-<name> init= once on the host to get the bucket running.
 
 #+begin_src nix-ts :tangle modules/nixos/server/restic.nix
   { lib, pkgs, config, ... }:
@@ -9926,6 +9978,14 @@ This manages backups for my pictures and obsidian files.
   in
   {
     options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
+    options.swarselsystems.server.restic = {
+      bucketName = lib.mkOption {
+        type = lib.types.str;
+      };
+      paths = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+      };
+    };
     config = lib.mkIf config.swarselmodules.server.restic {
 
       sops = {
@@ -9948,20 +10008,10 @@ This manages backups for my pictures and obsidian files.
         in
         {
           backups = {
-            SwarselWinters = {
+            "${config.swarselsystems.server.restic.bucketName}" = {
               environmentFile = config.sops.templates."restic-env".path;
               passwordFile = config.sops.secrets.resticpw.path;
-              paths = [
-                "/Vault/data/paperless"
-                "/Vault/data/koillection"
-                "/Vault/data/postgresql"
-                "/Vault/data/firefly-iii"
-                "/Vault/data/radicale"
-                "/Vault/data/matrix-synapse"
-                "/Vault/Eternor/Paperless"
-                "/Vault/Eternor/Bilder"
-                "/Vault/Eternor/Immich"
-              ];
+              inherit (config.swarselsystems.server.restic) paths;
               pruneOpts = [
                 "--keep-daily 3"
                 "--keep-weekly 2"
@@ -13038,9 +13088,11 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/var/lib/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+    inherit (config.swarselsystems) mainUser;
+    worldName = "${mainUser}craft";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -13070,9 +13122,9 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 
         serviceConfig = {
           User = "root";
-          WorkingDirectory = "/var/lib/minecraft/swarselcraft";
+          WorkingDirectory = "${serviceDir}/${worldName}";
 
-          ExecStart = "/usr/bin/java @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
+          ExecStart = "${lib.getExe pkgs.temurin-jre-bin-17} @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
 
           Restart = "always";
           RestartSec = 30;
@@ -14093,10 +14145,10 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { self, outputs, lib, pkgs, config, globals, nixosConfig ? config, ... }:
+  { self, outputs, lib, pkgs, config, globals, confLib, ... }:
   let
     inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
-    inherit (nixosConfig.repo.secrets.common) atticPublicKey;
+    inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
   in
   {
     options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -14118,7 +14170,7 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
               };
             in
             ''
-                    plugin-files = ${nix-plugins}/lib/nix/plugins
+              plugin-files = ${nix-plugins}/lib/nix/plugins
               extra-builtins-file = ${self + /nix/extra-builtins.nix}
             '';
           settings = {
@@ -14129,12 +14181,12 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
               "cgroups"
               "pipe-operators"
             ];
-                substituters = [
-                  "https://${globals.services.attic.domain}/${mainUser}"
-                ];
-                trusted-public-keys = [
-                  atticPublicKey
-                ];
+            substituters = [
+              "https://${globals.services.attic.domain}/${mainUser}"
+            ];
+            trusted-public-keys = [
+              atticPublicKey
+            ];
             trusted-users = [ "@wheel" "${mainUser}" ];
             connect-timeout = 5;
             bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
@@ -15093,6 +15145,7 @@ Eza provides me with a better =ls= command and some other useful aliases.
       programs.atuin = {
         enable = true;
         enableZshIntegration = true;
+        enableBashIntegration = true;
         settings = {
           auto_sync = true;
           sync_frequency = "5m";
@@ -15467,7 +15520,10 @@ Currently I only use it as before with =initExtra= though.
           };
           history = {
             expireDuplicatesFirst = true;
-            path = "$HOME/.histfile";
+            append = true;
+            ignoreSpace = true;
+            ignoreDups = true;
+            path = "${config.home.homeDirectory}/.histfile";
             save = 100000;
             size = 100000;
           };
@@ -15548,15 +15604,23 @@ Currently I only use it as before with =initExtra= though.
 
 
 #+begin_src nix-ts :tangle modules/home/common/bash.nix
-  { config, pkgs, lib, ... }:
+  { config, lib, ... }:
   {
     options.swarselmodules.bash = lib.mkEnableOption "bash settings";
     config = lib.mkIf config.swarselmodules.bash {
 
       programs.bash = {
-        bashrcExtra = ''
-          export PATH="${pkgs.nix}/bin:$PATH"
+        enable = true;
+        # needed for remote builders
+        bashrcExtra = lib.mkIf (!config.swarselsystems.isNixos) ''
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
         '';
+        historyFile = "${config.home.homeDirectory}/.histfile";
+        historySize = 100000;
+        historyFileSize = 100000;
+        historyControl = [
+          "ignoreboth"
+        ];
       };
     };
   }
@@ -20982,34 +21046,36 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
 :END:
 #+begin_src nix-ts :noweb yes :tangle modules/shared/config-lib.nix
-    { config, lib, globals, ... }:
-    {
-      _module.args = {
-        confLib = rec {
+  { config, lib, globals, ... }:
+  {
+    _module.args = {
+      confLib = rec {
 
-          addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4 else "localhost";
+        addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4 else "localhost";
 
-          domainDefault = service: config.repo.secrets.common.services.domains.${service};
-          proxyDefault = config.swarselsystems.proxyHost;
+        domainDefault = service: config.repo.secrets.common.services.domains.${service};
+        proxyDefault = config.swarselsystems.proxyHost;
 
-          gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
-            servicePort = port;
-            serviceName = name;
-            specificServiceName = "${name}-${config.node.name}";
-            serviceUser = user;
-            serviceGroup = group;
-            serviceDomain = domain;
-            baseDomain = lib.swarselsystems.getBaseDomain domain;
-            subDomain = lib.swarselsystems.getSubDomain domain;
-            serviceDir = dir;
-            serviceAddress = address;
-            serviceProxy = proxy;
-            proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
-            proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
-          };
+        getConfig = config;
+
+        gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
+          servicePort = port;
+          serviceName = name;
+          specificServiceName = "${name}-${config.node.name}";
+          serviceUser = user;
+          serviceGroup = group;
+          serviceDomain = domain;
+          baseDomain = lib.swarselsystems.getBaseDomain domain;
+          subDomain = lib.swarselsystems.getSubDomain domain;
+          serviceDir = dir;
+          serviceAddress = address;
+          serviceProxy = proxy;
+          proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
+          proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
         };
       };
-    }
+    };
+  }
 #+end_src
 
 *** Packages

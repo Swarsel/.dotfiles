@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2025-11-25 Di 19:55 -->
+<!-- 2025-11-27 Do 16:49 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SwarselSystems: NixOS + Emacs Configurationo</title>
@@ -209,8 +209,8 @@
 <li><a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">1.4. Hosts</a></li>
 <li><a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">1.5. Programs</a></li>
 <li><a href="#h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9">1.6. Services</a></li>
-<li><a href="#orgd5a0e12">1.7. Manual steps when setting up a new machine</a></li>
-<li><a href="#org7dd00e4">1.8. Current issues</a></li>
+<li><a href="#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a">1.7. Manual steps when setting up a new machine</a></li>
+<li><a href="#h:b562adaf-536c-4267-88a5-026d8a0cda61">1.8. Current issues</a></li>
 </ul>
 </li>
 <li><a href="#h:c7588c0d-2528-485d-b2df-04d6336428d7">2. flake.nix</a>
@@ -229,7 +229,7 @@
 <li><a href="#h:391e7712-fef3-4f13-a3ed-d36e228166fd">2.7. Topology</a></li>
 <li><a href="#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c">2.8. Devshell (checks)</a></li>
 <li><a href="#h:e817f769-9aa9-4192-b649-c269080f4fee">2.9. Templates</a></li>
-<li><a href="#h:5fce36ae-715d-42d3-9ad4-46137d85083f">2.10. Formatter</a></li>
+<li><a href="#h:5fce36ae-715d-42d3-9ad4-46137d85083f">2.10. Formatter (treefmt-nix)</a></li>
 <li><a href="#h:e8eb0617-3441-421d-9b44-716ed40159ab">2.11. <span class="todo TODO">TODO</span> Modules</a></li>
 <li><a href="#h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3">2.12. Apps</a></li>
 <li><a href="#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2">2.13. Overlays</a></li>
@@ -269,28 +269,28 @@
 <li><a href="#h:0fdefb4f-ce53-4caf-89ed-5d79646f70f0">3.1.2.3.2. hardware-configuration</a></li>
 </ul>
 </li>
-<li><a href="#orgb2d6cb8">3.1.2.4. Summers (Server: ASUS Z10PA-D8)</a>
+<li><a href="#h:82bf7fb1-631b-4acd-966b-d0c71a9eb463">3.1.2.4. Summers (Server: ASUS Z10PA-D8)</a>
 <ul>
-<li><a href="#org9b1694c">3.1.2.4.1. Main Configuration</a></li>
-<li><a href="#org479c3b1">3.1.2.4.2. hardware-configuration</a></li>
-<li><a href="#org0d0b36c">3.1.2.4.3. disko</a></li>
-<li><a href="#org02ea3fc">3.1.2.4.4. Guests</a>
+<li><a href="#h:dc2233df-cd78-43cc-bb45-57568a83fb24">3.1.2.4.1. Main Configuration</a></li>
+<li><a href="#h:394b1f22-a61b-41da-9fe7-7625f164ed57">3.1.2.4.2. hardware-configuration</a></li>
+<li><a href="#h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6">3.1.2.4.3. disko</a></li>
+<li><a href="#h:5e571d89-6590-4aa4-a5f4-5c871683d09b">3.1.2.4.4. Guests</a>
 <ul>
-<li><a href="#org5ee0823">3.1.2.4.4.1. Guest 1</a></li>
+<li><a href="#h:b9af4b1c-f35a-48a5-afa7-030c2be9c808">3.1.2.4.4.1. Guest 1</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org1600ea7">3.1.2.5. Hintbooth (Router: HUNSN RM02)</a>
+<li><a href="#h:58c7563e-6954-42e6-a622-9d06523e8e24">3.1.2.5. Hintbooth (Router: HUNSN RM02)</a>
 <ul>
-<li><a href="#orgdac3065">3.1.2.5.1. Main Configuration</a></li>
-<li><a href="#org2ed326d">3.1.2.5.2. hardware-configuration</a></li>
-<li><a href="#org85d0a5e">3.1.2.5.3. disko</a></li>
+<li><a href="#h:624b3c6a-6e31-4734-a6ea-7c5b461a3429">3.1.2.5.1. Main Configuration</a></li>
+<li><a href="#h:b4a0b41c-52eb-4f0b-ba0b-64036c52e594">3.1.2.5.2. hardware-configuration</a></li>
+<li><a href="#h:1500fb57-334b-4f1b-92de-566ea07924d1">3.1.2.5.3. disko</a></li>
 </ul>
 </li>
 <li><a href="#h:28e1a7eb-356b-4015-83f7-9c552c8c0e9d">3.1.2.6. machpizza (MacBook Pro)</a></li>
 <li><a href="#h:729af373-37e7-4379-9a3d-b09792219415">3.1.2.7. Magicant (Phone)</a></li>
-<li><a href="#org03b6a39">3.1.2.8. Treehouse (DGX Spark)</a></li>
+<li><a href="#h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0">3.1.2.8. Treehouse (DGX Spark)</a></li>
 </ul>
 </li>
 <li><a href="#h:4dc59747-9598-4029-aa7d-92bf186d6c06">3.1.3. Virtual hosts</a>
@@ -302,25 +302,25 @@
 <li><a href="#h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d">3.1.3.1.3. disko</a></li>
 </ul>
 </li>
-<li><a href="#org70a6603">3.1.3.2. Belchsfactory (OCI)</a>
+<li><a href="#h:90457194-6b97-4cd6-90bc-4f42d0d69f51">3.1.3.2. Belchsfactory (OCI)</a>
 <ul>
-<li><a href="#orgbe9ca77">3.1.3.2.1. Main Configuration</a></li>
-<li><a href="#org31eb7aa">3.1.3.2.2. hardware-configuration</a></li>
-<li><a href="#org7887abc">3.1.3.2.3. disko</a></li>
+<li><a href="#h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b">3.1.3.2.1. Main Configuration</a></li>
+<li><a href="#h:e9e29520-5800-4756-ad13-1ec9747ab911">3.1.3.2.2. hardware-configuration</a></li>
+<li><a href="#h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7">3.1.3.2.3. disko</a></li>
 </ul>
 </li>
-<li><a href="#org2c51efd">3.1.3.3. Milkywell (OCI)</a>
+<li><a href="#h:d8869eca-cbde-45f0-9e54-9da8320b6a31">3.1.3.3. Milkywell (OCI)</a>
 <ul>
-<li><a href="#org4a616dc">3.1.3.3.1. Main Configuration</a></li>
-<li><a href="#orgc7c7018">3.1.3.3.2. hardware-configuration</a></li>
+<li><a href="#h:314601a0-e1b7-4996-a96c-663b121f9377">3.1.3.3.1. Main Configuration</a></li>
+<li><a href="#h:b1f37b5b-aa18-405a-bf76-4d95642b5acc">3.1.3.3.2. hardware-configuration</a></li>
 <li><a href="#h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d">3.1.3.3.3. disko</a></li>
 </ul>
 </li>
-<li><a href="#orgf8e9446">3.1.3.4. Eagleland (Hetzner)</a>
+<li><a href="#h:81bc8746-b46b-4d29-87de-ddbd77788b43">3.1.3.4. Eagleland (Hetzner)</a>
 <ul>
-<li><a href="#orgd48da7d">3.1.3.4.1. Main Configuration</a></li>
-<li><a href="#orge7a5cf0">3.1.3.4.2. hardware-configuration</a></li>
-<li><a href="#orgecb14ab">3.1.3.4.3. disko</a></li>
+<li><a href="#h:96540b9c-1610-45f2-ba19-916051ab5e10">3.1.3.4.1. Main Configuration</a></li>
+<li><a href="#h:44c29a70-d5fc-49c1-b02e-a5cd2ec6119b">3.1.3.4.2. hardware-configuration</a></li>
+<li><a href="#h:5c77e384-fdae-4994-bce3-ca736722529c">3.1.3.4.3. disko</a></li>
 </ul>
 </li>
 </ul>
@@ -334,7 +334,7 @@
 </ul>
 </li>
 <li><a href="#h:8583371d-5d47-468b-84ba-210aad7e2c90">3.1.4.2. <span class="todo TODO">TODO</span> Drugstore (ISO installer config)</a></li>
-<li><a href="#org672b7fd">3.1.4.3. Brick Road (kexec image)</a></li>
+<li><a href="#h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9">3.1.4.3. Brick Road (kexec image)</a></li>
 <li><a href="#h:e1498bef-ec67-483d-bf02-76264e30be8e">3.1.4.4. Hotel (Demo Physical/VM)</a>
 <ul>
 <li><a href="#h:9f1f3439-b0af-4dcd-a96f-b6aa7b6cd2ab">3.1.4.4.1. Main configuration</a></li>
@@ -428,9 +428,9 @@
 <li><a href="#h:d6840d31-110c-465f-93fa-0306f755de28">3.2.3.4. nfs/samba (smb)</a></li>
 <li><a href="#h:302468d2-106a-41c8-b2bc-9fdc40064a9c">3.2.3.5. NGINX</a></li>
 <li><a href="#h:f3db197d-1d03-4bf8-b59f-f9891b358f0b">3.2.3.6. ssh</a></li>
-<li><a href="#orgdfc5c7d">3.2.3.7. Network settings</a></li>
-<li><a href="#org2e7c190">3.2.3.8. Disk encryption</a></li>
-<li><a href="#org8e6b16a">3.2.3.9. Router</a></li>
+<li><a href="#h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5">3.2.3.7. Network settings</a></li>
+<li><a href="#h:19d829f6-580f-4e04-8776-2bfd83c3c3dd">3.2.3.8. Disk encryption</a></li>
+<li><a href="#h:b54f2bbb-0088-46b2-957d-fd8234b772c3">3.2.3.9. Router</a></li>
 <li><a href="#h:d33f5982-dfe6-42d0-9cf2-2cd8c7b04295">3.2.3.10. kavita</a></li>
 <li><a href="#h:e0d4c16e-ab64-48ac-9734-1ab62953ad4b">3.2.3.11. jellyfin</a></li>
 <li><a href="#h:f347f3ad-5100-4c4f-8616-cfd7f8e14a72">3.2.3.12. navidrome</a></li>
@@ -463,12 +463,13 @@
 <li><a href="#h:e46c37ac-5610-4603-8afc-2f5f008fc14d">3.2.3.39. slink</a></li>
 <li><a href="#h:470f7ee3-3307-4949-b0fa-403171e3859a">3.2.3.40. Snipe-IT</a></li>
 <li><a href="#h:5b4feb1b-e7a3-43f1-9930-8d00012742ad">3.2.3.41. Homebox</a></li>
-<li><a href="#org6d713f6">3.2.3.42. OPKSSH</a></li>
-<li><a href="#orgf0c155d">3.2.3.43. Garage</a></li>
-<li><a href="#org9d5cd3c">3.2.3.44. nsd (dns)</a></li>
-<li><a href="#orgdae5673">3.2.3.45. nsd (dns) - site1</a></li>
-<li><a href="#org7d3cbe9">3.2.3.46. Minecraft</a></li>
-<li><a href="#org25acab5">3.2.3.47. Mailserver</a></li>
+<li><a href="#h:6e30509a-1320-4993-a9c7-70d28ef2906a">3.2.3.42. OPKSSH</a></li>
+<li><a href="#h:81c76be4-45f1-44e5-890d-6d082a95ab51">3.2.3.43. Garage</a></li>
+<li><a href="#h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a">3.2.3.44. nsd (dns)</a></li>
+<li><a href="#h:dc1dbc54-46f7-406d-a551-527e97439614">3.2.3.45. nsd (dns) - site1</a></li>
+<li><a href="#h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6">3.2.3.46. Minecraft</a></li>
+<li><a href="#h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2">3.2.3.47. Mailserver</a></li>
+<li><a href="#h:092593d2-0ca0-4f86-9951-6127a3594e25">3.2.3.48. Attic (nix binary cache)</a></li>
 </ul>
 </li>
 <li><a href="#h:ac0cd8b3-06cf-4dca-ba73-6100c8fedb47">3.2.4. Darwin</a>
@@ -488,20 +489,20 @@
 <li><a href="#h:15b581ab-09fe-4f84-af26-2f1fbf7d726b">3.2.5.8. Hibernation</a></li>
 <li><a href="#h:86fb3236-9e18-43f0-8a08-3a2acd61cc98">3.2.5.9. BTRFS</a></li>
 <li><a href="#h:bbf2ecb6-c8ff-4462-b5d5-d45b28604ddf">3.2.5.10. work</a></li>
-<li><a href="#org227e77b">3.2.5.11. microvm-host</a></li>
-<li><a href="#orgbc854b5">3.2.5.12. microvm-guest</a></li>
+<li><a href="#h:ded3276e-3e97-4863-a29e-b978d8aae1c9">3.2.5.11. microvm-host</a></li>
+<li><a href="#h:46419b40-c40b-4b55-ac6f-a30169322bd6">3.2.5.12. microvm-guest</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a href="#h:08ded95b-9c43-475d-a0b2-fc088a512287">3.3. Home-manager</a>
 <ul>
-<li><a href="#org1e6cee3">3.3.1. Steps to setup/upgrade home-manager only</a></li>
+<li><a href="#h:360f9da1-334e-4b04-b049-45085db8f10c">3.3.1. Steps to setup/upgrade home-manager only</a></li>
 <li><a href="#h:f0a6b5e0-2157-4522-b5e1-3f0abd91c05e">3.3.2. <span class="todo TODO">TODO</span> Common</a>
 <ul>
 <li><a href="#h:16fd2e85-fdd4-440a-81f0-65b9b098a43a">3.3.2.1. Imports</a></li>
 <li><a href="#h:30b81bf9-1e69-4ce8-88af-5592896bcee4">3.3.2.2. Mirror home-manager shared options (automatically active)</a></li>
-<li><a href="#h:4af4f67f-7c48-4754-b4bd-6800e3a66664">3.3.2.3. General home-manager-settings</a></li>
+<li><a href="#h:4af4f67f-7c48-4754-b4bd-6800e3a66664">3.3.2.3. General home-manager-settings (nix)</a></li>
 <li><a href="#h:90af1862-90b3-4c93-8730-2443bc62986a">3.3.2.4. nixGL</a></li>
 <li><a href="#h:893a7f33-7715-415b-a895-2687ded31c18">3.3.2.5. Installed packages</a>
 <ul>
@@ -518,7 +519,7 @@
 <li><a href="#h:4486b02f-4fb8-432b-bfa2-2e786206341d">3.3.2.12. Sourcing environment variables</a></li>
 <li><a href="#h:f0e0b580-2e1c-4ca6-a983-f05d3ebbbcde">3.3.2.13. General Programs: bottom, imv, less, lesspipe, sioyek, bat, carapace, wlogout, swayr, yt-dlp, mpv, jq, nix-index, ripgrep, pandoc, fzf, zoxide, timidity</a></li>
 <li><a href="#h:64dbbb9e-8097-4c1b-813c-8c10cf9b9748">3.3.2.14. nix-index</a></li>
-<li><a href="#orgcf4f275">3.3.2.15. nix-your-shell</a></li>
+<li><a href="#h:3fd72021-e174-49d0-a42e-58f6ed3682f2">3.3.2.15. nix-your-shell</a></li>
 <li><a href="#h:ac0e5e62-0dbf-4782-9a96-9e558eae86ae">3.3.2.16. password-store</a></li>
 <li><a href="#h:1ab84307-b3fb-4c32-9def-4b89a53a8547">3.3.2.17. direnv</a></li>
 <li><a href="#h:1bd6b0c7-f201-43e2-9624-6c50de00a1f6">3.3.2.18. eza</a></li>
@@ -528,11 +529,11 @@
 <li><a href="#h:55212502-c8f6-43af-ae99-55c8377ef34e">3.3.2.22. Starship</a></li>
 <li><a href="#h:5f1287db-d2e8-49aa-8c58-730129c7795c">3.3.2.23. Kitty</a></li>
 <li><a href="#h:91dd4cc4-aada-4e74-be23-0cc69ed85af5">3.3.2.24. zsh</a></li>
-<li><a href="#org9d1c85d">3.3.2.25. bash</a></li>
-<li><a href="#org64a1766">3.3.2.26. zellij</a>
+<li><a href="#h:ab30e218-665c-46ad-9708-9d92ebc34fed">3.3.2.25. bash</a></li>
+<li><a href="#h:87a28654-8377-41c9-8e6c-2d488e62575f">3.3.2.26. zellij</a>
 <ul>
 <li><a href="#h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7">3.3.2.26.1. Main config</a></li>
-<li><a href="#org630e108">3.3.2.26.2. Keybinds</a></li>
+<li><a href="#h:f65f9574-3b50-472d-8e24-2023271d1887">3.3.2.26.2. Keybinds</a></li>
 </ul>
 </li>
 <li><a href="#h:45de9430-f925-4df6-9db6-bffb5b8f1604">3.3.2.27. tmux</a></li>
@@ -547,13 +548,13 @@
 <li><a href="#h:99d05729-df35-4958-9940-3319d6a41359">3.3.2.32.3. Mako</a></li>
 <li><a href="#h:388e71be-f00a-4d45-ade1-218ce942057d">3.3.2.32.4. SwayOSD</a></li>
 <li><a href="#h:1598c90b-f195-41a0-9132-94612edf3586">3.3.2.32.5. yubikey-touch-detector</a></li>
-<li><a href="#orgbaaacba">3.3.2.32.6. blueman-applet</a></li>
-<li><a href="#org3b90b49">3.3.2.32.7. network-manager-applet</a></li>
-<li><a href="#org987f21a">3.3.2.32.8. obsidian service for tray</a></li>
-<li><a href="#org18f498a">3.3.2.32.9. anki service for tray</a></li>
-<li><a href="#org869744e">3.3.2.32.10. element service for tray</a></li>
-<li><a href="#org90d0654">3.3.2.32.11. vesktop service for tray</a></li>
-<li><a href="#org518bacd">3.3.2.32.12. syncthing service for tray</a></li>
+<li><a href="#h:06aceb90-3b97-4d77-9e13-b1a8af26dd50">3.3.2.32.6. blueman-applet</a></li>
+<li><a href="#h:67907a83-40ed-49ad-9fa7-bcc0b9cf5936">3.3.2.32.7. network-manager-applet</a></li>
+<li><a href="#h:7f943057-e0c8-4dbd-9875-67e55bc74a47">3.3.2.32.8. obsidian service for tray</a></li>
+<li><a href="#h:872deae6-dc31-44ac-9c4a-95720fce0a53">3.3.2.32.9. anki service for tray</a></li>
+<li><a href="#h:2d0f1a35-cff5-4c24-b104-e431c05ae563">3.3.2.32.10. element service for tray</a></li>
+<li><a href="#h:ea741a3c-982e-4e23-8ecf-b30193a5c326">3.3.2.32.11. vesktop service for tray</a></li>
+<li><a href="#h:5e7c606f-628a-4849-94e9-359d7b75f228">3.3.2.32.12. syncthing service for tray</a></li>
 </ul>
 </li>
 <li><a href="#h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20">3.3.2.33. Sway</a></li>
@@ -562,18 +563,18 @@
 <li><a href="#h:7d384e3b-1be7-4644-b304-ada4af0b692b">3.3.2.36. gpg-agent</a></li>
 <li><a href="#h:74e236be-a977-4d38-b8c5-0b9feef8af91">3.3.2.37. gammastep</a></li>
 <li><a href="#h:d1fb3075-ad52-4c1b-ba45-5ddbd0d3b708">3.3.2.38. Spicetify</a></li>
-<li><a href="#org7350e7a">3.3.2.39. Obsidian</a></li>
-<li><a href="#org8088f06">3.3.2.40. Anki</a></li>
-<li><a href="#orgd732c9a">3.3.2.41. Element-desktop</a></li>
-<li><a href="#org96d9aef">3.3.2.42. Hexchat</a></li>
-<li><a href="#orgbd51239">3.3.2.43. obs-studio</a></li>
-<li><a href="#org195bc78">3.3.2.44. spotify-player</a></li>
-<li><a href="#org7b0b5db">3.3.2.45. vesktop</a></li>
-<li><a href="#org4ebf683">3.3.2.46. batsignal</a></li>
-<li><a href="#org0e5cbde">3.3.2.47. autotiling</a></li>
-<li><a href="#org9a04485">3.3.2.48. swayidle</a></li>
-<li><a href="#org34d4659">3.3.2.49. swaylock</a></li>
-<li><a href="#org95ef971">3.3.2.50. opkssh</a></li>
+<li><a href="#h:ffd97152-63ce-41a0-a40e-c78ba3eb6722">3.3.2.39. Obsidian</a></li>
+<li><a href="#h:6f2839dc-c681-4697-8e93-4ef191362434">3.3.2.40. Anki</a></li>
+<li><a href="#h:add71e84-43ff-40c7-9173-de43a13bbae6">3.3.2.41. Element-desktop</a></li>
+<li><a href="#h:812cedcd-520e-417e-8923-aaae5ff5e316">3.3.2.42. Hexchat</a></li>
+<li><a href="#h:ef995044-6833-40d6-825b-64063c00a790">3.3.2.43. obs-studio</a></li>
+<li><a href="#h:b99d62a1-4560-429f-81c1-29fc544a46fb">3.3.2.44. spotify-player</a></li>
+<li><a href="#h:f5e191c5-b8c0-4f66-aa38-9cbfb1619058">3.3.2.45. vesktop</a></li>
+<li><a href="#h:b30fcdf0-93d8-4600-a267-e210bec8e680">3.3.2.46. batsignal</a></li>
+<li><a href="#h:a7bac755-510c-424b-b964-18fb9e4a6667">3.3.2.47. autotiling</a></li>
+<li><a href="#h:2e23f3d9-ab65-4f2f-912f-dc236189c457">3.3.2.48. swayidle</a></li>
+<li><a href="#h:8e508f62-d3e4-48bc-8bce-641bf38a0106">3.3.2.49. swaylock</a></li>
+<li><a href="#h:99bde2b8-ab38-4082-b06b-4afde9d06228">3.3.2.50. opkssh</a></li>
 </ul>
 </li>
 <li><a href="#h:b1a00339-6e9b-4ae4-b5dc-6fd5669a2ddb">3.3.3. Server</a>
@@ -601,12 +602,12 @@
 <ul>
 <li><a href="#h:79f7150f-b162-4f57-abdf-07f40dffd932">3.4.1. <span class="todo TODO">TODO</span> Configuration options</a></li>
 <li><a href="#h:ea362c55-97b4-45fd-bf41-ab461c444212">3.4.2. Variables (vars; holds firefox &amp; stylix config parts)</a></li>
-<li><a href="#orgd627e85">3.4.3. Config Library (confLib)</a></li>
+<li><a href="#h:a33322d5-014a-4072-a4a5-91bc71c343b8">3.4.3. Config Library (confLib)</a></li>
 <li><a href="#h:64a5cc16-6b16-4802-b421-c67ccef853e1">3.4.4. Packages</a></li>
-<li><a href="#org4a8525c">3.4.5. Packages (flake)</a>
+<li><a href="#h:2803e3ab-b746-46c0-bcc4-051a23185bc3">3.4.5. Packages (flake)</a>
 <ul>
 <li><a href="#h:4fce458d-7c9c-4bcd-bd90-76b745fe5ce3">3.4.5.1. pass-fuzzel</a></li>
-<li><a href="#orgc939427">3.4.5.2. quickpass</a></li>
+<li><a href="#h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9">3.4.5.2. quickpass</a></li>
 <li><a href="#h:799579f3-ddd3-4f76-928a-a8c665980476">3.4.5.3. cura5</a></li>
 <li><a href="#h:e6612cff-0804-47ef-9f2b-d2cc6d81a896">3.4.5.4. hm-specialisation</a></li>
 <li><a href="#h:73b14c7a-5444-4fed-b7ac-d65542cdeda3">3.4.5.5. cdw</a></li>
@@ -639,13 +640,13 @@
 <li><a href="#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e">3.4.5.32. swarsel-build</a></li>
 <li><a href="#h:95ebfd13-1f6b-427f-950d-e30c1ed6f9fa">3.4.5.33. swarsel-instantiate</a></li>
 <li><a href="#h:02842543-caca-4d4c-a4d2-7ac749b5c136">3.4.5.34. sshrm</a></li>
-<li><a href="#org389bbe6">3.4.5.35. endme</a></li>
-<li><a href="#org31b25c4">3.4.5.36. git-replace</a></li>
+<li><a href="#h:abbd18a2-73ae-4ee4-8487-06fef23638bb">3.4.5.35. endme</a></li>
+<li><a href="#h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2">3.4.5.36. git-replace</a></li>
 </ul>
 </li>
-<li><a href="#org8fe1e1e">3.4.6. Packages (config)</a>
+<li><a href="#h:c01a91b8-b751-4978-b987-733de63c8211">3.4.6. Packages (config)</a>
 <ul>
-<li><a href="#orgf1c4a66">3.4.6.1. cdr</a></li>
+<li><a href="#h:78d17941-68b3-4b36-b378-3282ae2178b8">3.4.6.1. cdr</a></li>
 </ul>
 </li>
 </ul>
@@ -656,19 +657,19 @@
 <ul>
 <li><a href="#h:32d654de-8db2-403a-9a27-4c46d7b9172d">3.5.1.1. Personal</a></li>
 <li><a href="#h:b926f0c8-7968-4079-924c-a5d0ae4d3a45">3.5.1.2. Minimal</a></li>
-<li><a href="#org3a8d3fb">3.5.1.3. Optionals</a></li>
+<li><a href="#h:07086976-8c36-4d3e-a9fe-693348411b53">3.5.1.3. Optionals</a></li>
 <li><a href="#h:b79fbb59-9cf2-48eb-b469-2589223dda95">3.5.1.4. Hotel</a></li>
 <li><a href="#h:cb3631a8-9c1b-42f2-ab01-502c7b4c273d">3.5.1.5. Work</a></li>
 <li><a href="#h:87a83b10-3c2f-407c-89aa-922ad77748a4">3.5.1.6. Uni</a></li>
 <li><a href="#h:eb272c99-842a-4095-bc65-283562749300">3.5.1.7. Framework</a></li>
 <li><a href="#h:dfc076fd-ee74-4663-b164-653370c52b75">3.5.1.8. Server</a></li>
-<li><a href="#org97d2823">3.5.1.9. Router</a></li>
+<li><a href="#h:f3af356a-e732-471b-b8b3-37dcd70297d5">3.5.1.9. Router</a></li>
 </ul>
 </li>
 <li><a href="#h:ced5841f-c088-4d88-b3a1-7d62aad8837b">3.5.2. home-manager</a>
 <ul>
 <li><a href="#h:26512487-8c29-4b92-835b-d67394c3f5ef">3.5.2.1. Personal</a></li>
-<li><a href="#org0799e02">3.5.2.2. DGX Spark</a></li>
+<li><a href="#h:6d30ef28-ee26-4954-90f6-53c33dee9217">3.5.2.2. DGX Spark</a></li>
 <li><a href="#h:0554a271-f8ec-4885-b46f-2a02dfd967bd">3.5.2.3. Optionals</a></li>
 <li><a href="#h:26512487-8c29-4b92-835b-d67394c3f5ef">3.5.2.4. Minimal</a></li>
 <li><a href="#h:36a0209f-2c17-4808-a1d0-a9e1920c307a">3.5.2.5. Hotel</a></li>
@@ -704,13 +705,14 @@
 <li><a href="#h:4819720a-9220-4c34-b903-ed4179f3ad1c">4.2.1.6. [prot] org-id-headings</a></li>
 <li><a href="#h:285e5c0a-875d-46a8-bb9b-0222b3d73878">4.2.1.7. Inhibit Messages in Echo Area</a></li>
 <li><a href="#h:de249f2a-6a2b-4114-8046-09d1014a7391">4.2.1.8. Move up one directory for find-file</a></li>
-<li><a href="#orgc840bde">4.2.1.9. Magit: List directories using vertico/consult</a></li>
+<li><a href="#h:1f8bfddf-a12a-49c8-beaa-97baa47abb9f">4.2.1.9. Magit: List directories using vertico/consult</a></li>
 <li><a href="#h:06b77d28-3fd5-4554-8c7d-32c1b0ec8da5">4.2.1.10. org-mode: General setup</a></li>
 <li><a href="#h:fa710375-2efe-49b4-af6a-a875aca6e4a2">4.2.1.11. org-mode: Visual-fill column</a></li>
 <li><a href="#h:59d4306e-9b73-4b2c-b039-6a6518c357fc">4.2.1.12. org-mode: Upon-save actions (Auto-tangle, export to html, formatting)</a></li>
 <li><a href="#h:dfa66e78-5748-45e3-a975-db3da104bb3a">4.2.1.13. org-mode: Fold current heading</a></li>
 <li><a href="#h:a1802f9b-bb71-4fd5-86fa-945da18e8b81">4.2.1.14. corfu: Do not interrupt navigation</a></li>
 <li><a href="#h:3c436647-71e6-441c-b452-d817ad2f8331">4.2.1.15. Disable garbage collection while minibuffer is active</a></li>
+<li><a href="#h:06e70e44-502b-4a49-8b48-63c511f1c377">4.2.1.16. Insert link to another header in org file</a></li>
 </ul>
 </li>
 <li><a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">4.2.2. Custom Keybindings</a></li>
@@ -736,7 +738,7 @@
 <li><a href="#h:aac82e5e-d882-4870-b644-ebdd0a2daae3">4.3.7.5. evil-surround</a></li>
 <li><a href="#h:df6729b6-2135-4070-bcab-a6a26f0fb2c4">4.3.7.6. evil-visual-mark-mode</a></li>
 <li><a href="#h:cd9a0fb6-e287-4c3c-8013-6aad64ef89cb">4.3.7.7. evil-textobj-tree-sitter</a></li>
-<li><a href="#h:06002ad2-686a-42c5-82d7-61f1340e262d">4.3.7.8. evil-textobj-tree-sitter</a></li>
+<li><a href="#h:06002ad2-686a-42c5-82d7-61f1340e262d">4.3.7.8. evil-numbers</a></li>
 </ul>
 </li>
 <li><a href="#h:e888d7a7-1755-4109-af11-5358b8cf140e">4.3.8. ispell</a></li>
@@ -788,7 +790,7 @@
 <li><a href="#h:a02b1162-3e19-46f1-8efc-9f375971645c">4.4.1.8. org-fragtog</a></li>
 <li><a href="#h:95b42e77-767c-4461-9ba8-b1c1cd18266c">4.4.1.9. org-modern</a></li>
 <li><a href="#h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">4.4.1.10. Presentations</a></li>
-<li><a href="#orgb400690">4.4.1.11. Render markdown blocks as body to expand noweb blocks</a></li>
+<li><a href="#h:d4137200-7f91-43d9-9550-e0b6bfda1683">4.4.1.11. Render markdown blocks as body to expand noweb blocks</a></li>
 </ul>
 </li>
 <li><a href="#h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">4.4.2. Nix Mode</a></li>
@@ -841,7 +843,7 @@
 <ul>
 <li><a href="#h:b92a18cf-eec3-4605-a8c2-37133ade3574">4.4.39.1. mu4e</a></li>
 <li><a href="#h:43209eeb-5d46-472e-b7c2-58a3fb465199">4.4.39.2. mu4e-alert</a></li>
-<li><a href="#org5576388">4.4.39.3. Work: Signing Mails (S/MIME, smime)</a></li>
+<li><a href="#h:3584632a-9d6d-4ba6-8aa5-e1383581993c">4.4.39.3. Work: Signing Mails (S/MIME, smime)</a></li>
 </ul>
 </li>
 <li><a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">4.4.40. Calendar</a></li>
@@ -856,8 +858,8 @@
 </li>
 <li><a href="#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c">5. Appendix A: Noweb-Ref blocks</a>
 <ul>
-<li><a href="#org2a58ec1">5.1. General steps when setting up a new machine</a></li>
-<li><a href="#org01ddabd">5.2. Current patches and fixes</a></li>
+<li><a href="#h:cc04139d-e9b7-48fe-8e21-fb43aac35b88">5.1. General steps when setting up a new machine</a></li>
+<li><a href="#h:e1798163-5d88-4776-aa44-57ed2df92e45">5.2. Current patches and fixes</a></li>
 </ul>
 </li>
 <li><a href="#h:8fc9f66a-7412-4091-8dee-a06f897baf67">6. Appendix B: Supplementary Files</a>
@@ -909,7 +911,7 @@
 </div>
 </div>
 <p>
-<b>This file has 109215 words spanning 29343 lines and was last revised on 2025-11-25 19:55:28 +0100.</b>
+<b>This file has 113366 words spanning 30228 lines and was last revised on 2025-11-27 16:49:14 +0100.</b>
 </p>
 
 <p>
@@ -978,7 +980,7 @@ This section defines my Emacs configuration. For a while, I considered to use ry
 </p>
 
 <p>
-My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-11-25 19:55:28 +0100)
+My emacs is built using the emacs-overlay nix flake, which builds a bleeding edge emacs on wayland (pgtk) with utilities like treesitter support. By executing the below source block, the current build setting can be updated at any time, and you can see my most up-to-date build options (last updated: 2025-11-27 16:49:14 +0100)
 </p></li>
 </ul>
 
@@ -1212,25 +1214,26 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 </p>
 
 <div class="org-src-container">
-<pre class="src src-markdown">| Name               | Hardware                                            | Use                                                  |
-|--------------------|-----------------------------------------------------|------------------------------------------------------|
-|💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-|💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
-|💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
-|🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
-|🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
-|🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
-|🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
-|☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Authoritative DNS server                             |
-|☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
-|☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
-|☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
-|☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
-|📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
-|💿 **drugstore**    | -                                                   | ISO installer configuration                          |
-|💿 **brickroad**    | -                                                   | Kexec tarball                                        |
-|❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
-|❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+<pre class="src src-markdown">| Name                | Hardware                                            | Use                                                 |
+|---------------------|-----------------------------------------------------|-----------------------------------------------------|
+|💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                         |
+|💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                     |
+|💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                   |
+|🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference   |
+|🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, datastorage  |
+|🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                      |
+|🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                              |
+|☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative dns server                            |
+|☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                         |
+|☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                       |
+|☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                          |
+|☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services     |
+|☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binarycache                   |
+|📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                               |
+|💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts     |
+|💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines |
+|❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration     |
+|❔ **toto**          | -                                                   | Helper configuration for testing purposes           |
 </pre>
 </div>
 </div>
@@ -1287,9 +1290,9 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 </div>
 </div>
 </div>
-<div id="outline-container-orgd5a0e12" class="outline-3">
-<h3 id="orgd5a0e12"><span class="section-number-3">1.7.</span> Manual steps when setting up a new machine</h3>
-<div class="outline-text-3" id="text-1-7">
+<div id="outline-container-h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a" class="outline-3">
+<h3 id="h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a"><span class="section-number-3">1.7.</span> Manual steps when setting up a new machine</h3>
+<div class="outline-text-3" id="text-h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a">
 <div class="org-src-container">
 <pre class="src src-markdown">These steps are required when setting up a normal NixOS host:
 
@@ -1364,9 +1367,9 @@ If the new machine is home-manager only, perform these steps:
   3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
 </div>
 </div>
-<div id="outline-container-org7dd00e4" class="outline-3">
-<h3 id="org7dd00e4"><span class="section-number-3">1.8.</span> Current issues</h3>
-<div class="outline-text-3" id="text-1-8">
+<div id="outline-container-h:b562adaf-536c-4267-88a5-026d8a0cda61" class="outline-3">
+<h3 id="h:b562adaf-536c-4267-88a5-026d8a0cda61"><span class="section-number-3">1.8.</span> Current issues</h3>
+<div class="outline-text-3" id="text-h:b562adaf-536c-4267-88a5-026d8a0cda61">
 <div class="org-src-container">
 <pre class="src src-markdown">Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
 
@@ -2724,7 +2727,7 @@ Otherwise, I define the function <code>mkTemplates</code> here which builds a na
 </div>
 </div>
 <div id="outline-container-h:5fce36ae-715d-42d3-9ad4-46137d85083f" class="outline-3">
-<h3 id="h:5fce36ae-715d-42d3-9ad4-46137d85083f"><span class="section-number-3">2.10.</span> Formatter</h3>
+<h3 id="h:5fce36ae-715d-42d3-9ad4-46137d85083f"><span class="section-number-3">2.10.</span> Formatter (treefmt-nix)</h3>
 <div class="outline-text-3" id="text-h:5fce36ae-715d-42d3-9ad4-46137d85083f">
 <p>
 Defines a formatter that can be called using <code>nix flake format</code>. While a nice utility, I have stronger tools to perform this job.
@@ -2750,6 +2753,21 @@ Defines a formatter that can be called using <code>nix flake format</code>. Whil
         };
         deadnix.enable = true;
         statix.enable = true;
+        shfmt = {
+          enable = true;
+          indent_size = 4;
+          simplify = true;
+          # needed to replicate what my Emacs shfmt does
+          # there is no builtin option for space-redirects
+          package = pkgs.symlinkJoin {
+            name = "shfmt";
+            buildInputs = [ pkgs.makeWrapper ];
+            paths = [ pkgs.shfmt ];
+            postBuild = ''
+              wrapProgram $out/bin/shfmt --append-flags '-sr'
+            '';
+          };
+        };
         shellcheck.enable = true;
       };
       settings.formatter.shellcheck.options = [
@@ -3858,13 +3876,25 @@ This is my main server that I run at home. It handles most tasks that require bi
     proxyHost = "moonside";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
-      garage = {
-        data_dir = [
-          {
-            capacity = "200G";
-            path = "/Vault/data/garage/main";
-          }
+      restic = {
+        bucketName = "SwarselWinters";
+        paths = [
+          "/Vault/data/paperless"
+          "/Vault/data/koillection"
+          "/Vault/data/postgresql"
+          "/Vault/data/firefly-iii"
+          "/Vault/data/radicale"
+          "/Vault/data/matrix-synapse"
+          "/Vault/Eternor/Paperless"
+          "/Vault/Eternor/Bilder"
+          "/Vault/Eternor/Immich"
         ];
+      };
+      garage = {
+        data_dir = {
+          capacity = "200G";
+          path = "/Vault/data/garage/data";
+        };
       };
     };
   };
@@ -3969,13 +3999,13 @@ This is my main server that I run at home. It handles most tasks that require bi
 </div>
 </div>
 </div>
-<div id="outline-container-orgb2d6cb8" class="outline-5">
-<h5 id="orgb2d6cb8"><span class="section-number-5">3.1.2.4.</span> Summers (Server: ASUS Z10PA-D8)</h5>
-<div class="outline-text-5" id="text-3-1-2-4">
+<div id="outline-container-h:82bf7fb1-631b-4acd-966b-d0c71a9eb463" class="outline-5">
+<h5 id="h:82bf7fb1-631b-4acd-966b-d0c71a9eb463"><span class="section-number-5">3.1.2.4.</span> Summers (Server: ASUS Z10PA-D8)</h5>
+<div class="outline-text-5" id="text-h:82bf7fb1-631b-4acd-966b-d0c71a9eb463">
 </div>
-<div id="outline-container-org9b1694c" class="outline-6">
-<h6 id="org9b1694c"><span class="section-number-6">3.1.2.4.1.</span> Main Configuration</h6>
-<div class="outline-text-6" id="text-3-1-2-4-1">
+<div id="outline-container-h:dc2233df-cd78-43cc-bb45-57568a83fb24" class="outline-6">
+<h6 id="h:dc2233df-cd78-43cc-bb45-57568a83fb24"><span class="section-number-6">3.1.2.4.1.</span> Main Configuration</h6>
+<div class="outline-text-6" id="text-h:dc2233df-cd78-43cc-bb45-57568a83fb24">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ inputs, lib, config, minimal, nodes, globals, ... }:
 {
@@ -4082,9 +4112,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 </div>
 </div>
 </div>
-<div id="outline-container-org479c3b1" class="outline-6">
-<h6 id="org479c3b1"><span class="section-number-6">3.1.2.4.2.</span> hardware-configuration</h6>
-<div class="outline-text-6" id="text-3-1-2-4-2">
+<div id="outline-container-h:394b1f22-a61b-41da-9fe7-7625f164ed57" class="outline-6">
+<h6 id="h:394b1f22-a61b-41da-9fe7-7625f164ed57"><span class="section-number-6">3.1.2.4.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:394b1f22-a61b-41da-9fe7-7625f164ed57">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ config, lib, modulesPath, ... }:
 
@@ -4118,9 +4148,9 @@ This is my main server that I run at home. It handles most tasks that require bi
 </div>
 </div>
 </div>
-<div id="outline-container-org0d0b36c" class="outline-6">
-<h6 id="org0d0b36c"><span class="section-number-6">3.1.2.4.3.</span> disko</h6>
-<div class="outline-text-6" id="text-3-1-2-4-3">
+<div id="outline-container-h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6" class="outline-6">
+<h6 id="h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6"><span class="section-number-6">3.1.2.4.3.</span> disko</h6>
+<div class="outline-text-6" id="text-h:664b45fd-bd7e-4fff-bfc5-29f7a0657be6">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -4244,13 +4274,13 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org02ea3fc" class="outline-6">
-<h6 id="org02ea3fc"><span class="section-number-6">3.1.2.4.4.</span> Guests</h6>
-<div class="outline-text-6" id="text-3-1-2-4-4">
+<div id="outline-container-h:5e571d89-6590-4aa4-a5f4-5c871683d09b" class="outline-6">
+<h6 id="h:5e571d89-6590-4aa4-a5f4-5c871683d09b"><span class="section-number-6">3.1.2.4.4.</span> Guests</h6>
+<div class="outline-text-6" id="text-h:5e571d89-6590-4aa4-a5f4-5c871683d09b">
 </div>
-<div id="outline-container-org5ee0823" class="outline-7">
-<h7 id="org5ee0823"><span class="section-number-7">3.1.2.4.4.1.</span> Guest 1</h7>
-<div class="outline-text-7" id="text-3-1-2-4-4-1">
+<div id="outline-container-h:b9af4b1c-f35a-48a5-afa7-030c2be9c808" class="outline-7">
+<h7 id="h:b9af4b1c-f35a-48a5-afa7-030c2be9c808"><span class="section-number-7">3.1.2.4.4.1.</span> Guest 1</h7>
+<div class="outline-text-7" id="text-h:b9af4b1c-f35a-48a5-afa7-030c2be9c808">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, minimal, ... }:
 {
@@ -4284,13 +4314,13 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org1600ea7" class="outline-5">
-<h5 id="org1600ea7"><span class="section-number-5">3.1.2.5.</span> Hintbooth (Router: HUNSN RM02)</h5>
-<div class="outline-text-5" id="text-3-1-2-5">
+<div id="outline-container-h:58c7563e-6954-42e6-a622-9d06523e8e24" class="outline-5">
+<h5 id="h:58c7563e-6954-42e6-a622-9d06523e8e24"><span class="section-number-5">3.1.2.5.</span> Hintbooth (Router: HUNSN RM02)</h5>
+<div class="outline-text-5" id="text-h:58c7563e-6954-42e6-a622-9d06523e8e24">
 </div>
-<div id="outline-container-orgdac3065" class="outline-6">
-<h6 id="orgdac3065"><span class="section-number-6">3.1.2.5.1.</span> Main Configuration</h6>
-<div class="outline-text-6" id="text-3-1-2-5-1">
+<div id="outline-container-h:624b3c6a-6e31-4734-a6ea-7c5b461a3429" class="outline-6">
+<h6 id="h:624b3c6a-6e31-4734-a6ea-7c5b461a3429"><span class="section-number-6">3.1.2.5.1.</span> Main Configuration</h6>
+<div class="outline-text-6" id="text-h:624b3c6a-6e31-4734-a6ea-7c5b461a3429">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, minimal,  ... }:
 {
@@ -4336,9 +4366,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org2ed326d" class="outline-6">
-<h6 id="org2ed326d"><span class="section-number-6">3.1.2.5.2.</span> hardware-configuration</h6>
-<div class="outline-text-6" id="text-3-1-2-5-2">
+<div id="outline-container-h:b4a0b41c-52eb-4f0b-ba0b-64036c52e594" class="outline-6">
+<h6 id="h:b4a0b41c-52eb-4f0b-ba0b-64036c52e594"><span class="section-number-6">3.1.2.5.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:b4a0b41c-52eb-4f0b-ba0b-64036c52e594">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ config, lib, modulesPath, ... }:
 
@@ -4368,9 +4398,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org85d0a5e" class="outline-6">
-<h6 id="org85d0a5e"><span class="section-number-6">3.1.2.5.3.</span> disko</h6>
-<div class="outline-text-6" id="text-3-1-2-5-3">
+<div id="outline-container-h:1500fb57-334b-4f1b-92de-566ea07924d1" class="outline-6">
+<h6 id="h:1500fb57-334b-4f1b-92de-566ea07924d1"><span class="section-number-6">3.1.2.5.3.</span> disko</h6>
+<div class="outline-text-6" id="text-h:1500fb57-334b-4f1b-92de-566ea07924d1">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -4589,11 +4619,11 @@ My phone. I use only a minimal config for remote debugging here.
 </div>
 </div>
 </div>
-<div id="outline-container-org03b6a39" class="outline-5">
-<h5 id="org03b6a39"><span class="section-number-5">3.1.2.8.</span> Treehouse (DGX Spark)</h5>
-<div class="outline-text-5" id="text-3-1-2-8">
+<div id="outline-container-h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0" class="outline-5">
+<h5 id="h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0"><span class="section-number-5">3.1.2.8.</span> Treehouse (DGX Spark)</h5>
+<div class="outline-text-5" id="text-h:ced1795a-9884-4277-bcde-6f7b9b1cc2f0">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, ... }:
+<pre class="src src-nix-ts">{ self, pkgs, ... }:
 {
 
   imports = [
@@ -4611,11 +4641,15 @@ My phone. I use only a minimal config for remote debugging here.
     };
   };
 
+  home.packages = with pkgs; [
+    attic-client
+  ];
   # programs.zsh.initContent = "
   #   export GPG_TTY=\"$(tty)\"
   # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   # gpgconf --launch gpg-agent
   #       ";
+  swarselmodules.pii = true;
 
   swarselsystems = {
     isLaptop = false;
@@ -4803,6 +4837,12 @@ in
     proxyHost = "moonside";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
+      restic = {
+        bucketName = "SwarselMoonside";
+        paths = [
+          "/persist/opt/minecraft"
+        ];
+      };
     };
     syncthing = {
       serviceDomain = config.repo.secrets.common.services.domains.syncthing3;
@@ -4820,6 +4860,8 @@ in
     shlink = true;
     slink = true;
     syncthing = true;
+    minecraft = true;
+    restic = true;
     diskEncryption = lib.mkForce false;
   };
 }
@@ -4985,13 +5027,13 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org70a6603" class="outline-5">
-<h5 id="org70a6603"><span class="section-number-5">3.1.3.2.</span> Belchsfactory (OCI)</h5>
-<div class="outline-text-5" id="text-3-1-3-2">
+<div id="outline-container-h:90457194-6b97-4cd6-90bc-4f42d0d69f51" class="outline-5">
+<h5 id="h:90457194-6b97-4cd6-90bc-4f42d0d69f51"><span class="section-number-5">3.1.3.2.</span> Belchsfactory (OCI)</h5>
+<div class="outline-text-5" id="text-h:90457194-6b97-4cd6-90bc-4f42d0d69f51">
 </div>
-<div id="outline-container-orgbe9ca77" class="outline-6">
-<h6 id="orgbe9ca77"><span class="section-number-6">3.1.3.2.1.</span> Main Configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-2-1">
+<div id="outline-container-h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b" class="outline-6">
+<h6 id="h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b"><span class="section-number-6">3.1.3.2.1.</span> Main Configuration</h6>
+<div class="outline-text-6" id="text-h:cb78799c-d47a-43d4-88ad-d32fcc0abd0b">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, minimal, ... }:
 {
@@ -5018,24 +5060,46 @@ in
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
+    isCloud = true;
     proxyHost = "belchsfactory";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
+      garage = {
+        data_dir = {
+          capacity = "150G";
+          path = "/var/lib/garage/data";
+        };
+        keys = {
+          nixos = [
+            "attic"
+          ];
+        };
+        buckets = [
+          "attic"
+        ];
+      };
     };
   };
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
     server = true;
   };
+
+  swarselmodules.server = {
+    postgresql = lib.mkDefault true;
+    attic = lib.mkDefault true;
+    garage = lib.mkDefault true;
+  };
+
 }
 
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org31eb7aa" class="outline-6">
-<h6 id="org31eb7aa"><span class="section-number-6">3.1.3.2.2.</span> hardware-configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-2-2">
+<div id="outline-container-h:e9e29520-5800-4756-ad13-1ec9747ab911" class="outline-6">
+<h6 id="h:e9e29520-5800-4756-ad13-1ec9747ab911"><span class="section-number-6">3.1.3.2.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:e9e29520-5800-4756-ad13-1ec9747ab911">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, modulesPath, ... }:
 {
@@ -5056,9 +5120,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org7887abc" class="outline-6">
-<h6 id="org7887abc"><span class="section-number-6">3.1.3.2.3.</span> disko</h6>
-<div class="outline-text-6" id="text-3-1-3-2-3">
+<div id="outline-container-h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7" class="outline-6">
+<h6 id="h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7"><span class="section-number-6">3.1.3.2.3.</span> disko</h6>
+<div class="outline-text-6" id="text-h:19a83f57-9e7a-44b9-ae7f-2f021f21abf7">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 let
@@ -5187,13 +5251,13 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org2c51efd" class="outline-5">
-<h5 id="org2c51efd"><span class="section-number-5">3.1.3.3.</span> Milkywell (OCI)</h5>
-<div class="outline-text-5" id="text-3-1-3-3">
+<div id="outline-container-h:d8869eca-cbde-45f0-9e54-9da8320b6a31" class="outline-5">
+<h5 id="h:d8869eca-cbde-45f0-9e54-9da8320b6a31"><span class="section-number-5">3.1.3.3.</span> Milkywell (OCI)</h5>
+<div class="outline-text-5" id="text-h:d8869eca-cbde-45f0-9e54-9da8320b6a31">
 </div>
-<div id="outline-container-org4a616dc" class="outline-6">
-<h6 id="org4a616dc"><span class="section-number-6">3.1.3.3.1.</span> Main Configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-3-1">
+<div id="outline-container-h:314601a0-e1b7-4996-a96c-663b121f9377" class="outline-6">
+<h6 id="h:314601a0-e1b7-4996-a96c-663b121f9377"><span class="section-number-6">3.1.3.3.1.</span> Main Configuration</h6>
+<div class="outline-text-6" id="text-h:314601a0-e1b7-4996-a96c-663b121f9377">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, minimal, ... }:
 {
@@ -5246,9 +5310,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgc7c7018" class="outline-6">
-<h6 id="orgc7c7018"><span class="section-number-6">3.1.3.3.2.</span> hardware-configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-3-2">
+<div id="outline-container-h:b1f37b5b-aa18-405a-bf76-4d95642b5acc" class="outline-6">
+<h6 id="h:b1f37b5b-aa18-405a-bf76-4d95642b5acc"><span class="section-number-6">3.1.3.3.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:b1f37b5b-aa18-405a-bf76-4d95642b5acc">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, modulesPath, ... }:
 
@@ -5411,13 +5475,13 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgf8e9446" class="outline-5">
-<h5 id="orgf8e9446"><span class="section-number-5">3.1.3.4.</span> Eagleland (Hetzner)</h5>
-<div class="outline-text-5" id="text-3-1-3-4">
+<div id="outline-container-h:81bc8746-b46b-4d29-87de-ddbd77788b43" class="outline-5">
+<h5 id="h:81bc8746-b46b-4d29-87de-ddbd77788b43"><span class="section-number-5">3.1.3.4.</span> Eagleland (Hetzner)</h5>
+<div class="outline-text-5" id="text-h:81bc8746-b46b-4d29-87de-ddbd77788b43">
 </div>
-<div id="outline-container-orgd48da7d" class="outline-6">
-<h6 id="orgd48da7d"><span class="section-number-6">3.1.3.4.1.</span> Main Configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-4-1">
+<div id="outline-container-h:96540b9c-1610-45f2-ba19-916051ab5e10" class="outline-6">
+<h6 id="h:96540b9c-1610-45f2-ba19-916051ab5e10"><span class="section-number-6">3.1.3.4.1.</span> Main Configuration</h6>
+<div class="outline-text-6" id="text-h:96540b9c-1610-45f2-ba19-916051ab5e10">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, minimal, ... }:
 {
@@ -5506,9 +5570,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orge7a5cf0" class="outline-6">
-<h6 id="orge7a5cf0"><span class="section-number-6">3.1.3.4.2.</span> hardware-configuration</h6>
-<div class="outline-text-6" id="text-3-1-3-4-2">
+<div id="outline-container-h:44c29a70-d5fc-49c1-b02e-a5cd2ec6119b" class="outline-6">
+<h6 id="h:44c29a70-d5fc-49c1-b02e-a5cd2ec6119b"><span class="section-number-6">3.1.3.4.2.</span> hardware-configuration</h6>
+<div class="outline-text-6" id="text-h:44c29a70-d5fc-49c1-b02e-a5cd2ec6119b">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, modulesPath, ... }:
 
@@ -5533,9 +5597,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgecb14ab" class="outline-6">
-<h6 id="orgecb14ab"><span class="section-number-6">3.1.3.4.3.</span> disko</h6>
-<div class="outline-text-6" id="text-3-1-3-4-3">
+<div id="outline-container-h:5c77e384-fdae-4994-bce3-ca736722529c" class="outline-6">
+<h6 id="h:5c77e384-fdae-4994-bce3-ca736722529c"><span class="section-number-6">3.1.3.4.3.</span> disko</h6>
+<div class="outline-text-6" id="text-h:5c77e384-fdae-4994-bce3-ca736722529c">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 let
@@ -6051,9 +6115,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org672b7fd" class="outline-5">
-<h5 id="org672b7fd"><span class="section-number-5">3.1.4.3.</span> Brick Road (kexec image)</h5>
-<div class="outline-text-5" id="text-3-1-4-3">
+<div id="outline-container-h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9" class="outline-5">
+<h5 id="h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9"><span class="section-number-5">3.1.4.3.</span> Brick Road (kexec image)</h5>
+<div class="outline-text-5" id="text-h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, modulesPath, options, ... }:
 {
@@ -6795,6 +6859,7 @@ in
         github-nixpkgs-review-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.emacs {
         emacs-radicale-pw = { owner = mainUser; };
+        github-forge-token = { owner = mainUser; };
       }) // (lib.optionalAttrs modules.optional.work {
         harica-root-ca = { sopsFile = certsSopsFile; path = "${homeDir}/.aws/certs/harica-root.pem"; owner = mainUser; };
       }) // (lib.optionalAttrs modules.anki {
@@ -6881,9 +6946,10 @@ A breakdown of the flags being set:
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, pkgs, config, outputs, inputs, minimal, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, outputs, inputs, minimal, globals, ... }:
 let
   inherit (config.swarselsystems) mainUser;
+  inherit (config.repo.secrets.common) atticPublicKey;
   settings = if minimal then { } else {
     environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
       assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
@@ -6958,6 +7024,12 @@ in
                 "ca-derivations"
                 "cgroups"
                 "pipe-operators"
+              ];
+              substituters = [
+                "https://${globals.services.attic.domain}/${mainUser}"
+              ];
+              trusted-public-keys = [
+                atticPublicKey
               ];
               trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
             };
@@ -7792,7 +7864,7 @@ Here I only enable <code>networkmanager</code> and a few default networks. The r
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
@@ -7844,7 +7916,7 @@ in
     networking = {
       inherit (config.swarselsystems) hostName;
       hosts = {
-        "192.168.178.24" = [ "store.swarsel.win" ];
+        "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
       };
       wireless.iwd = {
         enable = true;
@@ -9532,9 +9604,9 @@ Here I am forcing <code>startWhenNeeded</code> to false so that the value will n
 </div>
 </div>
 </div>
-<div id="outline-container-orgdfc5c7d" class="outline-5">
-<h5 id="orgdfc5c7d"><span class="section-number-5">3.2.3.7.</span> Network settings</h5>
-<div class="outline-text-5" id="text-3-2-3-7">
+<div id="outline-container-h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5" class="outline-5">
+<h5 id="h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5"><span class="section-number-5">3.2.3.7.</span> Network settings</h5>
+<div class="outline-text-5" id="text-h:0ff3acc5-9ce8-4b22-a2e2-f6f1e69d47a5">
 <p>
 Generate hostId using <code>head -c4 /dev/urandom | od -A none -t x4</code>
 </p>
@@ -9579,9 +9651,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org2e7c190" class="outline-5">
-<h5 id="org2e7c190"><span class="section-number-5">3.2.3.8.</span> Disk encryption</h5>
-<div class="outline-text-5" id="text-3-2-3-8">
+<div id="outline-container-h:19d829f6-580f-4e04-8776-2bfd83c3c3dd" class="outline-5">
+<h5 id="h:19d829f6-580f-4e04-8776-2bfd83c3c3dd"><span class="section-number-5">3.2.3.8.</span> Disk encryption</h5>
+<div class="outline-text-5" id="text-h:19d829f6-580f-4e04-8776-2bfd83c3c3dd">
 <p>
 The hostkey can be generated with <code>ssh-keygen -t ed25519 -N "" -f /etc/secrets/initrd/ssh_host_ed25519_key</code>.
 Use <code>lspci -v | grep -iA8 'network\|ethernet'</code> to supposedly find out which kernel module is needed for networking in initrd. However I prefer a different approach:
@@ -9596,74 +9668,10 @@ Use <code>lspci -nn | grep -i network</code> to find out manufacturer info:
 </pre>
 </div>
 
-<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+<pre class="example">
+04:00.0 Network controller [0280]: MEDIATEK Corp. MT7922 802.11ax PCI Express Wireless Network Adapter [14c3:0616]
+</pre>
 
-
-<colgroup>
-<col  class="org-right" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-left" />
-
-<col  class="org-right" />
-
-<col  class="org-left" />
-</colgroup>
-<tbody>
-<tr>
-<td class="org-right">04:00.0</td>
-<td class="org-left">Network</td>
-<td class="org-left">controller</td>
-<td class="org-left">[0280]:</td>
-<td class="org-left">MEDIATEK</td>
-<td class="org-left">Corp.</td>
-<td class="org-left">MT7922</td>
-<td class="org-left">802.11ax</td>
-<td class="org-left">PCI</td>
-<td class="org-left">Express</td>
-<td class="org-left">Wireless</td>
-<td class="org-left">Network</td>
-<td class="org-right">Adapter</td>
-<td class="org-left">[14c3:0616]</td>
-</tr>
-
-<tr>
-<td class="org-right">6a:00.0</td>
-<td class="org-left">Ethernet</td>
-<td class="org-left">controller</td>
-<td class="org-left">[0200]:</td>
-<td class="org-left">Intel</td>
-<td class="org-left">Corporation</td>
-<td class="org-left">I210</td>
-<td class="org-left">Gigabit</td>
-<td class="org-left">Network</td>
-<td class="org-left">Connection</td>
-<td class="org-left">[8086:1533]</td>
-<td class="org-left">(rev</td>
-<td class="org-right">03)</td>
-<td class="org-left">&#xa0;</td>
-</tr>
-</tbody>
-</table>
 
 <p>
 From the last bracket you then find out the correct kernel module:
@@ -9858,9 +9866,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org8e6b16a" class="outline-5">
-<h5 id="org8e6b16a"><span class="section-number-5">3.2.3.9.</span> Router</h5>
-<div class="outline-text-5" id="text-3-2-3-9">
+<div id="outline-container-h:b54f2bbb-0088-46b2-957d-fd8234b772c3" class="outline-5">
+<h5 id="h:b54f2bbb-0088-46b2-957d-fd8234b772c3"><span class="section-number-5">3.2.3.9.</span> Router</h5>
+<div class="outline-text-5" id="text-h:b54f2bbb-0088-46b2-957d-fd8234b772c3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -10410,6 +10418,7 @@ in
 let
   inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
   postgresVersion = 14;
+  postgresDirPrefix = if config.swarselsystems.isCloud then "/var/lib" else "/Vault/data" ;
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10418,9 +10427,13 @@ in
       ${serviceName} = {
         enable = true;
         package = pkgs."postgresql_${builtins.toString postgresVersion}";
-        dataDir = "/Vault/data/${serviceName}/${builtins.toString postgresVersion}";
+        dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
       };
     };
+    environment.persistence."/persist".directories = lib.mkIf (config.swarselsystems.isImpermanence &amp;&amp; config.swarselsystems.isCloud) [
+      { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+    ];
+
   };
 }
 </pre>
@@ -11446,6 +11459,7 @@ in
 <div class="outline-text-5" id="text-h:b73ac8bf-b721-4563-9eff-973925c99a39">
 <p>
 This manages backups for my pictures and obsidian files.
+Note: you still need to run <code>restic-&lt;name&gt; init</code> once on the host to get the bucket running.
 </p>
 
 <div class="org-src-container">
@@ -11455,6 +11469,14 @@ let
 in
 {
   options.swarselmodules.server.restic = lib.mkEnableOption "enable restic backups on server";
+  options.swarselsystems.server.restic = {
+    bucketName = lib.mkOption {
+      type = lib.types.str;
+    };
+    paths = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+    };
+  };
   config = lib.mkIf config.swarselmodules.server.restic {
 
     sops = {
@@ -11477,20 +11499,10 @@ in
       in
       {
         backups = {
-          SwarselWinters = {
+          "${config.swarselsystems.server.restic.bucketName}" = {
             environmentFile = config.sops.templates."restic-env".path;
             passwordFile = config.sops.secrets.resticpw.path;
-            paths = [
-              "/Vault/data/paperless"
-              "/Vault/data/koillection"
-              "/Vault/data/postgresql"
-              "/Vault/data/firefly-iii"
-              "/Vault/data/radicale"
-              "/Vault/data/matrix-synapse"
-              "/Vault/Eternor/Paperless"
-              "/Vault/Eternor/Bilder"
-              "/Vault/Eternor/Immich"
-            ];
+            inherit (config.swarselsystems.server.restic) paths;
             pruneOpts = [
               "--keep-daily 3"
               "--keep-weekly 2"
@@ -13980,9 +13992,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org6d713f6" class="outline-5">
-<h5 id="org6d713f6"><span class="section-number-5">3.2.3.42.</span> OPKSSH</h5>
-<div class="outline-text-5" id="text-3-2-3-42">
+<div id="outline-container-h:6e30509a-1320-4993-a9c7-70d28ef2906a" class="outline-5">
+<h5 id="h:6e30509a-1320-4993-a9c7-70d28ef2906a"><span class="section-number-5">3.2.3.42.</span> OPKSSH</h5>
+<div class="outline-text-5" id="text-h:6e30509a-1320-4993-a9c7-70d28ef2906a">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, globals, confLib, ... }:
 let
@@ -14024,38 +14036,114 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgf0c155d" class="outline-5">
-<h5 id="orgf0c155d"><span class="section-number-5">3.2.3.43.</span> Garage</h5>
-<div class="outline-text-5" id="text-3-2-3-43">
+<div id="outline-container-h:81c76be4-45f1-44e5-890d-6d082a95ab51" class="outline-5">
+<h5 id="h:81c76be4-45f1-44e5-890d-6d082a95ab51"><span class="section-number-5">3.2.3.43.</span> Garage</h5>
+<div class="outline-text-5" id="text-h:81c76be4-45f1-44e5-890d-6d082a95ab51">
+<p>
+Garage acts as my s3 endpoint. I use it on two of my servers:
+</p>
+<ul class="org-ul">
+<li><a href="#h:932ef6b0-4c14-4200-8e3f-2e208e748746">Winters (Server: ASRock J4105-ITX)</a>: General s3 storage</li>
+<li><a href="#h:90457194-6b97-4cd6-90bc-4f42d0d69f51">Belchsfactory (OCI)</a>: s3 storage for nix binary cache (used by <a href="#h:092593d2-0ca0-4f86-9951-6127a3594e25">Attic (nix binary cache)</a>)</li>
+</ul>
+
 <p>
 Generate the admin token using <code>openssl rand -base64 32</code>.
 Generate the rpc token using <code>openssl rand -hex 32</code>.
 </p>
 
+<p>
+If a website is to be deployed using a s3 bucket, add the corresponding files in one of two ways:
+</p>
+
+<p>
+either 1) use vhost addressing: <code>aws s3 cp &lt;local file&gt; s3://&lt;path to file; no bucket identifier needed&gt; --endpoint-url https://&lt;bucket&gt;.&lt;garage domain&gt; --region swarsel</code>
+</p>
+
+<p>
+or 2) use classic path addressing <code>aws s3 cp &lt;local file&gt; s3://&lt;bucket&gt;/&lt;path to file&gt; --endpoint-url https://&lt;garage domain&gt; --region swarsel</code>
+</p>
+
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, lib, pkgs, config, configName, globals, dns, confLib, ... }:
+<pre class="src src-nix-ts"># inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
+{ lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "garage"; port = 3900; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen {
+    name = "garage";
+    port = 3900;
+    domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
+  }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
-  sopsFile = self + /secrets/${configName}/secrets2.yaml;
+  cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
+  inherit (config.swarselsystems) sopsFile mainUser;
 
-  cfg = config.services.${serviceName};
+  # needs SSD
   metadata_dir = "/var/lib/garage/meta";
+  # metadata_dir = if config.swarselsystems.isCloud then "/var/lib/garage/meta" else "/Vault/data/garage/meta";
+
+  garageRpcPort = 3901;
+  garageWebPort = 3902;
+  garageAdminPort = 3903;
+  garageK2VPort = 3904;
+
+  adminDomain = "${subDomain}admin.${baseDomain}";
+  webDomain = "${subDomain}web.${baseDomain}";
 in
 {
   options = {
     swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
     swarselsystems.server.${serviceName} = {
-      data_dir = lib.mkOption {
-        type = lib.types.either lib.types.path (lib.types.listOf lib.types.attrs);
-        default = "/var/lib/garage/data";
+      data_dir = {
+        path = lib.mkOption {
+          type = lib.types.str;
+          description = "Directory where Garage stores its metadata";
+        };
+        capacity = lib.mkOption {
+          type = lib.types.str;
+        };
+      };
+      buckets = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        description = "List of buckets to create";
+      };
+      keys = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+        default = { };
+        description = "Keys and their associated buckets. Each key gets full access (read/write/owner) to its listed buckets.";
+        example = {
+          my_key_name = [ "bucket1" "bucket2" ];
+          my_other_key = [ "bucket2" "bucket3" ];
+        };
       };
     };
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
+    assertions = [
+      {
+        assertion = config.swarselsystems.server.${serviceName}.buckets != [ ];
+        message = "If Garage is enabled, at least one bucket must be specified in atro.garage.buckets";
+      }
+      {
+        assertion = builtins.length (lib.attrsToList config.swarselsystems.server.${serviceName}.keys) &gt; 0;
+        message = "If Garage is enabled, at least one key must be specified in atro.garage.keys";
+      }
+      {
+        assertion =
+          let
+            allKeyBuckets = lib.flatten (lib.attrValues config.swarselsystems.server.${serviceName}.keys);
+            invalidBuckets = builtins.filter (bucket: !(lib.elem bucket config.swarselsystems.server.${serviceName}.buckets)) allKeyBuckets;
+          in
+          invalidBuckets == [ ];
+        message = "All buckets referenced in keys must exist in the buckets list";
+      }
+    ];
 
-    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+      "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "*.${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     sops = {
@@ -14063,56 +14151,231 @@ in
       secrets.garage-rpc-secret = { inherit sopsFile; };
     };
 
+    # DynamicUser cannot read above secrets
+    systemd.services.${serviceName}.serviceConfig = {
+      DynamicUser = false;
+      ProtectHome = lib.mkForce false;
+    };
+
     environment = {
       persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-        { directory = metadata_dir; }
+        { directory = "/var/lib/garage"; }
+        (lib.mkIf config.swarselsystems.isCloud { directory = config.swarselsystems.server.${serviceName}.data_dir.path; })
       ];
       systemPackages = [
         cfg.package
       ];
     };
 
-    globals.services.${serviceName} = {
+    globals.services.${specificServiceName} = {
       domain = serviceDomain;
       inherit proxyAddress4 proxyAddress6;
     };
 
-    systemd.services.${serviceName}.serviceConfig = {
-      DynamicUser = false;
-      ProtectHome = lib.mkForce false;
-    };
 
     services.${serviceName} = {
       enable = true;
       package = pkgs.garage_2;
       settings = {
-        inherit (config.swarselsystems.${serviceName}) data_dir;
+        data_dir = [ config.swarselsystems.server.${serviceName}.data_dir ];
         inherit metadata_dir;
         db_engine = "lmdb";
-        block_size = "1MiB";
+        block_size = "128M";
         use_local_tz = false;
+        disable_scrub = true;
+        replication_factor = 1;
+        compression_level = "none";
 
-        replication_factor = 2; # Number of copies of data
+        rpc_bind_addr = "[::]:${builtins.toString garageRpcPort}";
+        # we are not joining our nodes, just use the private ipv4
+        rpc_public_addr = "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4}:${builtins.toString garageRpcPort}";
 
-        rpc_bind_addr = "[::]:3901";
-        rpc_public_addr = "${config.repo.secrets.local.ipv4}:4317";
         rpc_secret_file = config.sops.secrets.garage-rpc-secret.path;
 
         s3_api = {
-          s3_region = "swarsel";
-          api_bind_addr = "0.0.0.0:${builtins.toString servicePort}";
-          root_domain = ".s3.garage.localhost";
+          s3_region = mainUser;
+          api_bind_addr = "[::]:${builtins.toString servicePort}";
+          root_domain = ".${serviceDomain}";
+        };
+
+        s3_web = {
+          bind_addr = "[::]:${builtins.toString garageWebPort}";
+          root_domain = ".${config.repo.secrets.common.services.domains."garage-web-${config.node.name}"}";
+          add_host_to_metrics = true;
         };
 
         admin = {
-          api_bind_addr = "0.0.0.0:3903";
+          api_bind_addr = "[::]:${builtins.toString garageAdminPort}";
           admin_token_file = config.sops.secrets.garage-admin-token.path;
         };
 
         k2v_api = {
-          api_bind_addr = "[::]:3904";
+          api_bind_addr = "[::]:${builtins.toString garageK2VPort}";
         };
       };
+    };
+
+
+    systemd.services = {
+      garage-buckets = {
+        description = "Create Garage buckets";
+        after = [ "garage.service" ];
+        wants = [ "garage.service" ];
+        wantedBy = [ "multi-user.target" ];
+
+        path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "root";
+          Group = "root";
+        };
+
+        script = ''
+          garage status
+
+          # Checking repeatedly with garage status until getting 0 exit code
+          while ! garage status &gt;/dev/null 2&gt;&amp;1; do
+            echo "Garage not yet operational, waiting..."
+            echo "Current garage status output:"
+            garage status 2&gt;&amp;1 || true
+            echo "---"
+            sleep 5
+          done
+
+          # Now we check if garage status shows any failed nodes by checking for ==== FAILED NODES ====
+          while garage status | grep -q "==== FAILED NODES ===="; do
+            echo "Garage has failed nodes, waiting..."
+            echo "Current garage status output:"
+            garage status 2&gt;&amp;1 || true
+            echo "---"
+            sleep 5
+          done
+
+          echo "Garage is operational, proceeding with bucket management."
+
+          # Get list of existing buckets
+          existing_buckets=$(garage bucket list | tail -n +2 | awk '{print $3}' | grep -v '^$' || true)
+
+          # Create buckets that should exist
+          ${lib.concatMapStringsSep "\n" (bucket: ''
+              if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2&gt;&amp;1 &gt;/dev/null)" == *"Bucket not found"* ]]; then
+                echo "Creating bucket ${lib.escapeShellArg bucket}"
+                garage bucket create ${lib.escapeShellArg bucket}
+              else
+                echo "Bucket ${lib.escapeShellArg bucket} already exists"
+              fi
+            '')
+            cfg.buckets}
+
+          # Remove buckets that shouldn't exist
+          for bucket in $existing_buckets; do
+            should_exist=false
+            ${lib.concatMapStringsSep "\n" (bucket: ''
+              if [[ "$bucket" == ${lib.escapeShellArg bucket} ]]; then
+                should_exist=true
+              fi
+            '')
+            cfg.buckets}
+
+            if [[ "$should_exist" == "false" ]]; then
+              echo "Removing bucket $bucket"
+              garage bucket delete --yes "$bucket"
+            fi
+          done
+        '';
+      };
+
+      garage-keys = {
+        description = "Create Garage keys and set permissions";
+        after = [ "garage-buckets.service" ];
+        wants = [ "garage-buckets.service" ];
+        requires = [ "garage-buckets.service" ];
+        wantedBy = [ "multi-user.target" ];
+
+        path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          User = "root";
+          Group = "root";
+        };
+
+        script = ''
+          garage key list
+          echo "Managing keys..."
+
+          # Get list of existing keys
+          existing_keys=$(garage key list | tail -n +2 | awk '{print $3}' | grep -v '^$' || true)
+
+          # Create keys that should exist
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
+              if [[ "$(garage key info ${lib.escapeShellArg keyName} 2&gt;&amp;1)" == *"0 matching keys"* ]]; then
+                echo "Creating key ${lib.escapeShellArg keyName}"
+                garage key create ${lib.escapeShellArg keyName}
+              else
+                echo "Key ${lib.escapeShellArg keyName} already exists"
+              fi
+            '')
+            cfg.keys)}
+
+          # Set up key permissions for buckets
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
+              keyName: buckets:
+                lib.concatMapStringsSep "\n" (bucket: ''
+                  echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
+                  garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
+                '')
+                buckets
+            )
+            cfg.keys)}
+
+          # Remove permissions from buckets that are no longer associated with keys
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: buckets: ''
+              # Get current buckets this key has access to
+              current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
+
+              # Remove access from buckets not in the desired list
+              for current_bucket in $current_buckets; do
+                should_have_access=false
+                ${lib.concatMapStringsSep "\n" (bucket: ''
+                  if [[ "$current_bucket" == ${lib.escapeShellArg bucket} ]]; then
+                    should_have_access=true
+                  fi
+                '')
+                buckets}
+
+                if [[ "$should_have_access" == "false" ]]; then
+                  echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
+                  garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
+                fi
+              done
+            '')
+            cfg.keys)}
+
+          # Remove keys that shouldn't exist
+          for key in $existing_keys; do
+            should_exist=false
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
+              if [[ "$key" == ${lib.escapeShellArg keyName} ]]; then
+                should_exist=true
+              fi
+            '')
+            cfg.keys)}
+
+            if [[ "$should_exist" == "false" ]]; then
+              echo "Removing key $key"
+              garage key delete --yes "$key"
+            fi
+          done
+        '';
+      };
+    };
+
+    security.acme.certs."${webDomain}" = {
+      domain = "*.${webDomain}";
     };
 
     nodes.${serviceProxy}.services.nginx = {
@@ -14122,9 +14385,42 @@ in
             "${serviceAddress}:${builtins.toString servicePort}" = { };
           };
         };
+        "${serviceName}Web" = {
+          servers = {
+            "${serviceAddress}:${builtins.toString garageWebPort}" = { };
+          };
+        };
+        "${serviceName}Admin" = {
+          servers = {
+            "${serviceAddress}:${builtins.toString garageAdminPort}" = { };
+          };
+        };
       };
       virtualHosts = {
+        "${adminDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = false;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}Admin";
+            };
+          };
+        };
+        "*.${webDomain}" = {
+          useACMEHost = webDomain;
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = false;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}Web";
+            };
+          };
+        };
         "${serviceDomain}" = {
+          serverAliases = [ "*.${serviceDomain}" ];
           enableACME = true;
           forceSSL = true;
           acmeRoot = null;
@@ -14132,6 +14428,9 @@ in
           locations = {
             "/" = {
               proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
             };
           };
         };
@@ -14144,9 +14443,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9d5cd3c" class="outline-5">
-<h5 id="org9d5cd3c"><span class="section-number-5">3.2.3.44.</span> nsd (dns)</h5>
-<div class="outline-text-5" id="text-3-2-3-44">
+<div id="outline-container-h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a" class="outline-5">
+<h5 id="h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a"><span class="section-number-5">3.2.3.44.</span> nsd (dns)</h5>
+<div class="outline-text-5" id="text-h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ inputs, lib, config, globals, dns, confLib, ... }:
 let
@@ -14190,9 +14489,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgdae5673" class="outline-5">
-<h5 id="orgdae5673"><span class="section-number-5">3.2.3.45.</span> nsd (dns) - site1</h5>
-<div class="outline-text-5" id="text-3-2-3-45">
+<div id="outline-container-h:dc1dbc54-46f7-406d-a551-527e97439614" class="outline-5">
+<h5 id="h:dc1dbc54-46f7-406d-a551-527e97439614"><span class="section-number-5">3.2.3.45.</span> nsd (dns) - site1</h5>
+<div class="outline-text-5" id="text-h:dc1dbc54-46f7-406d-a551-527e97439614">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ config, globals, dns, ... }:
 with dns.lib.combinators; {
@@ -14315,13 +14614,15 @@ with dns.lib.combinators; {
 </div>
 </div>
 </div>
-<div id="outline-container-org7d3cbe9" class="outline-5">
-<h5 id="org7d3cbe9"><span class="section-number-5">3.2.3.46.</span> Minecraft</h5>
-<div class="outline-text-5" id="text-3-2-3-46">
+<div id="outline-container-h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6" class="outline-5">
+<h5 id="h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6"><span class="section-number-5">3.2.3.46.</span> Minecraft</h5>
+<div class="outline-text-5" id="text-h:948d4f4e-b752-4e2e-b8a9-35d9d7f246c6">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ lib, config, globals, dns, confLib, ... }:
+<pre class="src src-nix-ts">{ lib, config, pkgs, globals, dns, confLib, ... }:
 let
-  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/var/lib/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+  inherit (config.swarselsystems) mainUser;
+  worldName = "${mainUser}craft";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -14351,9 +14652,9 @@ in
 
       serviceConfig = {
         User = "root";
-        WorkingDirectory = "/var/lib/minecraft/swarselcraft";
+        WorkingDirectory = "${serviceDir}/${worldName}";
 
-        ExecStart = "/usr/bin/java @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
+        ExecStart = "${lib.getExe pkgs.temurin-jre-bin-17} @user_jvm_args.txt @libraries/net/minecraftforge/forge/1.20.1-47.2.20/unix_args.txt nogui";
 
         Restart = "always";
         RestartSec = 30;
@@ -14371,9 +14672,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org25acab5" class="outline-5">
-<h5 id="org25acab5"><span class="section-number-5">3.2.3.47.</span> Mailserver</h5>
-<div class="outline-text-5" id="text-3-2-3-47">
+<div id="outline-container-h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2" class="outline-5">
+<h5 id="h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2"><span class="section-number-5">3.2.3.47.</span> Mailserver</h5>
+<div class="outline-text-5" id="text-h:64cbeb7e-0773-4eb5-8e52-6b97c8f685e2">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, globals, dns, confLib, ... }:
 let
@@ -14483,6 +14784,157 @@ in
             "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
             "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
             "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+          };
+        };
+      };
+    };
+
+  };
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:092593d2-0ca0-4f86-9951-6127a3594e25" class="outline-5">
+<h5 id="h:092593d2-0ca0-4f86-9951-6127a3594e25"><span class="section-number-5">3.2.3.48.</span> Attic (nix binary cache)</h5>
+<div class="outline-text-5" id="text-h:092593d2-0ca0-4f86-9951-6127a3594e25">
+<p>
+Generate the attic server token using <code>openssl genrsa -traditional 4096 | base64 -w0</code>
+</p>
+
+<p>
+$ attic login local <a href="http://localhost:8080">http://localhost:8080</a> eyJ&#x2026;
+✍️ Configuring server "local"
+</p>
+
+<p>
+$ attic cache create hello
+✨ Created cache "hello" on "local"
+</p>
+
+<div class="org-src-container">
+<pre class="src src-nix-ts">{ lib, config, globals, dns, confLib, ... }:
+let
+  inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+  inherit (config.swarselsystems) mainUser isPublic sopsFile;
+  serviceDB = "atticd";
+in
+{
+  options = {
+    swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+  };
+  config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+    };
+
+    globals.services.${serviceName} = {
+      domain = serviceDomain;
+      inherit proxyAddress4 proxyAddress6;
+    };
+
+    sops = lib.mkIf (!isPublic) {
+      secrets = {
+        attic-server-token = { inherit sopsFile; };
+        attic-garage-access-key = { inherit sopsFile; };
+        attic-garage-secret-key = { inherit sopsFile; };
+      };
+      templates = {
+        "attic.env" = {
+          content = ''
+            ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
+            AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
+            AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
+          '';
+        };
+      };
+    };
+
+    services.atticd = {
+      enable = true;
+      environmentFile = config.sops.templates."attic.env".path;
+      settings = {
+        listen = "[::]:${builtins.toString servicePort}";
+        api-endpoint = "https://${serviceDomain}/";
+        allowed-hosts = [
+          serviceDomain
+        ];
+        require-proof-of-possession = false;
+        compression = {
+          type = "zstd";
+          level = 3;
+        };
+        database.url = "postgresql:///atticd?host=/run/postgresql";
+
+        storage =
+          if config.swarselmodules.server.garage then {
+            type = "s3";
+            region = mainUser;
+            bucket = serviceName;
+            # attic must be patched to never serve pre-signed s3 urls directly
+            # otherwise it will redirect clients to this localhost endpoint
+            endpoint = "http://127.0.0.1:3900";
+          } else {
+            type = "local";
+            path = serviceDir;
+            # attic must be patched to never serve pre-signed s3 urls directly
+            # otherwise it will redirect clients to this localhost endpoint
+          };
+
+        garbage-collection = {
+          interval = "1 day";
+          default-retention-period = "3 months";
+        };
+
+        chunking = {
+          nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # 64 KiB
+
+          min-size = 16 * 1024; # 16 KiB
+          avg-size = 64 * 1024; # 64 KiB
+          max-size = 256 * 1024; # 256 KiBize = 262144;
+        };
+      };
+    };
+
+    services.postgresql = {
+      enable = true;
+      enableTCPIP = true;
+      ensureDatabases = [ serviceDB ];
+      ensureUsers = [
+        {
+          name = serviceDB;
+          ensureDBOwnership = true;
+        }
+      ];
+    };
+
+    systemd.services.atticd = lib.mkIf config.swarselmodules.server.garage {
+      requires = [ "garage.service" ];
+      after = [ "garage.service" ];
+    };
+
+    nodes.${serviceProxy}.services.nginx = {
+      upstreams = {
+        ${serviceName} = {
+          servers = {
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${serviceDomain}" = {
+          enableACME = true;
+          forceSSL = true;
+          acmeRoot = null;
+          oauth2.enable = false;
+          locations = {
+            "/" = {
+              proxyPass = "http://${serviceName}";
+              extraConfig = ''
+                client_max_body_size 0;
+              '';
+            };
           };
         };
       };
@@ -15116,9 +15568,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org227e77b" class="outline-5">
-<h5 id="org227e77b"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
-<div class="outline-text-5" id="text-3-2-5-11">
+<div id="outline-container-h:ded3276e-3e97-4863-a29e-b978d8aae1c9" class="outline-5">
+<h5 id="h:ded3276e-3e97-4863-a29e-b978d8aae1c9"><span class="section-number-5">3.2.5.11.</span> microvm-host</h5>
+<div class="outline-text-5" id="text-h:ded3276e-3e97-4863-a29e-b978d8aae1c9">
 <p>
 Some standard options that should be set for every microvm host.
 </p>
@@ -15144,9 +15596,9 @@ Some standard options that should be set for every microvm host.
 </div>
 </div>
 </div>
-<div id="outline-container-orgbc854b5" class="outline-5">
-<h5 id="orgbc854b5"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
-<div class="outline-text-5" id="text-3-2-5-12">
+<div id="outline-container-h:46419b40-c40b-4b55-ac6f-a30169322bd6" class="outline-5">
+<h5 id="h:46419b40-c40b-4b55-ac6f-a30169322bd6"><span class="section-number-5">3.2.5.12.</span> microvm-guest</h5>
+<div class="outline-text-5" id="text-h:46419b40-c40b-4b55-ac6f-a30169322bd6">
 <p>
 Some standard options that should be set vor every microvm guest. We set the default
 </p>
@@ -15190,9 +15642,9 @@ in
 </pre>
 </div>
 </div>
-<div id="outline-container-org1e6cee3" class="outline-4">
-<h4 id="org1e6cee3"><span class="section-number-4">3.3.1.</span> Steps to setup/upgrade home-manager only</h4>
-<div class="outline-text-4" id="text-3-3-1">
+<div id="outline-container-h:360f9da1-334e-4b04-b049-45085db8f10c" class="outline-4">
+<h4 id="h:360f9da1-334e-4b04-b049-45085db8f10c"><span class="section-number-4">3.3.1.</span> Steps to setup/upgrade home-manager only</h4>
+<div class="outline-text-4" id="text-h:360f9da1-334e-4b04-b049-45085db8f10c">
 <p>
 Steps to get a home-manager only setup up and running:
 </p>
@@ -15275,16 +15727,17 @@ in
 </div>
 </div>
 <div id="outline-container-h:4af4f67f-7c48-4754-b4bd-6800e3a66664" class="outline-5">
-<h5 id="h:4af4f67f-7c48-4754-b4bd-6800e3a66664"><span class="section-number-5">3.3.2.3.</span> General home-manager-settings</h5>
+<h5 id="h:4af4f67f-7c48-4754-b4bd-6800e3a66664"><span class="section-number-5">3.3.2.3.</span> General home-manager-settings (nix)</h5>
 <div class="outline-text-5" id="text-h:4af4f67f-7c48-4754-b4bd-6800e3a66664">
 <p>
 Again, we adapt <code>nix</code> to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ self, outputs, lib, pkgs, config, ... }:
+<pre class="src src-nix-ts">{ self, outputs, lib, pkgs, config, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
+  inherit (confLib.getConfig.repo.secrets.common) atticPublicKey;
 in
 {
   options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -15306,7 +15759,7 @@ in
             };
           in
           ''
-                  plugin-files = ${nix-plugins}/lib/nix/plugins
+            plugin-files = ${nix-plugins}/lib/nix/plugins
             extra-builtins-file = ${self + /nix/extra-builtins.nix}
           '';
         settings = {
@@ -15316,6 +15769,12 @@ in
             "ca-derivations"
             "cgroups"
             "pipe-operators"
+          ];
+          substituters = [
+            "https://${globals.services.attic.domain}/${mainUser}"
+          ];
+          trusted-public-keys = [
+            atticPublicKey
           ];
           trusted-users = [ "@wheel" "${mainUser}" ];
           connect-timeout = 5;
@@ -15490,6 +15949,9 @@ This holds packages that I can use as provided, or with small modifications (as 
 
       # ssh login using idm
       opkssh
+
+      # cache
+      attic-client
 
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -16050,6 +16512,7 @@ in
     } // (lib.optionalAttrs (!isPublic) { });
     systemd.user.sessionVariables = {
       DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+      FLAKE = "${config.home.homeDirectory}/.dotfiles";
     } // lib.optionalAttrs (!isPublic) {
       SWARSEL_MAIL1 = address1;
       SWARSEL_MAIL2 = address2;
@@ -16214,9 +16677,9 @@ nix-index provides a way to find out which packages are provided by which deriva
 </div>
 </div>
 </div>
-<div id="outline-container-orgcf4f275" class="outline-5">
-<h5 id="orgcf4f275"><span class="section-number-5">3.3.2.15.</span> nix-your-shell</h5>
-<div class="outline-text-5" id="text-3-3-2-15">
+<div id="outline-container-h:3fd72021-e174-49d0-a42e-58f6ed3682f2" class="outline-5">
+<h5 id="h:3fd72021-e174-49d0-a42e-58f6ed3682f2"><span class="section-number-5">3.3.2.15.</span> nix-your-shell</h5>
+<div class="outline-text-5" id="text-h:3fd72021-e174-49d0-a42e-58f6ed3682f2">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -16324,6 +16787,7 @@ in
     programs.atuin = {
       enable = true;
       enableZshIntegration = true;
+      enableBashIntegration = true;
       settings = {
         auto_sync = true;
         sync_frequency = "5m";
@@ -16723,7 +17187,10 @@ in
         };
         history = {
           expireDuplicatesFirst = true;
-          path = "$HOME/.histfile";
+          append = true;
+          ignoreSpace = true;
+          ignoreDups = true;
+          path = "${config.home.homeDirectory}/.histfile";
           save = 100000;
           size = 100000;
         };
@@ -16799,19 +17266,27 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9d1c85d" class="outline-5">
-<h5 id="org9d1c85d"><span class="section-number-5">3.3.2.25.</span> bash</h5>
-<div class="outline-text-5" id="text-3-3-2-25">
+<div id="outline-container-h:ab30e218-665c-46ad-9708-9d92ebc34fed" class="outline-5">
+<h5 id="h:ab30e218-665c-46ad-9708-9d92ebc34fed"><span class="section-number-5">3.3.2.25.</span> bash</h5>
+<div class="outline-text-5" id="text-h:ab30e218-665c-46ad-9708-9d92ebc34fed">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ config, pkgs, lib, ... }:
+<pre class="src src-nix-ts">{ config, lib, ... }:
 {
   options.swarselmodules.bash = lib.mkEnableOption "bash settings";
   config = lib.mkIf config.swarselmodules.bash {
 
     programs.bash = {
-      bashrcExtra = ''
-        export PATH="${pkgs.nix}/bin:$PATH"
+      enable = true;
+      # needed for remote builders
+      bashrcExtra = lib.mkIf (!config.swarselsystems.isNixos) ''
+        export PATH="/nix/var/nix/profiles/default/bin:$PATH"
       '';
+      historyFile = "${config.home.homeDirectory}/.histfile";
+      historySize = 100000;
+      historyFileSize = 100000;
+      historyControl = [
+        "ignoreboth"
+      ];
     };
   };
 }
@@ -16819,9 +17294,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org64a1766" class="outline-5">
-<h5 id="org64a1766"><span class="section-number-5">3.3.2.26.</span> zellij</h5>
-<div class="outline-text-5" id="text-3-3-2-26">
+<div id="outline-container-h:87a28654-8377-41c9-8e6c-2d488e62575f" class="outline-5">
+<h5 id="h:87a28654-8377-41c9-8e6c-2d488e62575f"><span class="section-number-5">3.3.2.26.</span> zellij</h5>
+<div class="outline-text-5" id="text-h:87a28654-8377-41c9-8e6c-2d488e62575f">
 </div>
 <div id="outline-container-h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7" class="outline-6">
 <h6 id="h:00de4901-631c-4b4c-86ce-d9d6e62ed8c7"><span class="section-number-6">3.3.2.26.1.</span> Main config</h6>
@@ -16888,9 +17363,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org630e108" class="outline-6">
-<h6 id="org630e108"><span class="section-number-6">3.3.2.26.2.</span> Keybinds</h6>
-<div class="outline-text-6" id="text-3-3-2-26-2">
+<div id="outline-container-h:f65f9574-3b50-472d-8e24-2023271d1887" class="outline-6">
+<h6 id="h:f65f9574-3b50-472d-8e24-2023271d1887"><span class="section-number-6">3.3.2.26.2.</span> Keybinds</h6>
+<div class="outline-text-6" id="text-h:f65f9574-3b50-472d-8e24-2023271d1887">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -18496,12 +18971,14 @@ in
       secrets = {
         fever-pw = { path = "${homeDir}/.emacs.d/.fever"; };
         emacs-radicale-pw = { };
+        github-forge-token = { };
       };
       templates = {
         authinfo = {
           path = "${homeDir}/.emacs.d/.authinfo";
           content = ''
             machine ${globals.services.radicale.domain} login ${radicaleUser} password ${config.sops.placeholder.emacs-radicale-pw}
+            machine api.github.com login ${mainUser}^forge password ${config.sops.placeholder.github-forge-token}
           '';
         };
       };
@@ -19212,9 +19689,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-orgbaaacba" class="outline-6">
-<h6 id="orgbaaacba"><span class="section-number-6">3.3.2.32.6.</span> blueman-applet</h6>
-<div class="outline-text-6" id="text-3-3-2-32-6">
+<div id="outline-container-h:06aceb90-3b97-4d77-9e13-b1a8af26dd50" class="outline-6">
+<h6 id="h:06aceb90-3b97-4d77-9e13-b1a8af26dd50"><span class="section-number-6">3.3.2.32.6.</span> blueman-applet</h6>
+<div class="outline-text-6" id="text-h:06aceb90-3b97-4d77-9e13-b1a8af26dd50">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -19227,9 +19704,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org3b90b49" class="outline-6">
-<h6 id="org3b90b49"><span class="section-number-6">3.3.2.32.7.</span> network-manager-applet</h6>
-<div class="outline-text-6" id="text-3-3-2-32-7">
+<div id="outline-container-h:67907a83-40ed-49ad-9fa7-bcc0b9cf5936" class="outline-6">
+<h6 id="h:67907a83-40ed-49ad-9fa7-bcc0b9cf5936"><span class="section-number-6">3.3.2.32.7.</span> network-manager-applet</h6>
+<div class="outline-text-6" id="text-h:67907a83-40ed-49ad-9fa7-bcc0b9cf5936">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -19243,9 +19720,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org987f21a" class="outline-6">
-<h6 id="org987f21a"><span class="section-number-6">3.3.2.32.8.</span> obsidian service for tray</h6>
-<div class="outline-text-6" id="text-3-3-2-32-8">
+<div id="outline-container-h:7f943057-e0c8-4dbd-9875-67e55bc74a47" class="outline-6">
+<h6 id="h:7f943057-e0c8-4dbd-9875-67e55bc74a47"><span class="section-number-6">3.3.2.32.8.</span> obsidian service for tray</h6>
+<div class="outline-text-6" id="text-h:7f943057-e0c8-4dbd-9875-67e55bc74a47">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -19278,9 +19755,9 @@ The `extraConfig` section here CANNOT be reindented. This has something to do wi
 </div>
 </div>
 </div>
-<div id="outline-container-org18f498a" class="outline-6">
-<h6 id="org18f498a"><span class="section-number-6">3.3.2.32.9.</span> anki service for tray</h6>
-<div class="outline-text-6" id="text-3-3-2-32-9">
+<div id="outline-container-h:872deae6-dc31-44ac-9c4a-95720fce0a53" class="outline-6">
+<h6 id="h:872deae6-dc31-44ac-9c4a-95720fce0a53"><span class="section-number-6">3.3.2.32.9.</span> anki service for tray</h6>
+<div class="outline-text-6" id="text-h:872deae6-dc31-44ac-9c4a-95720fce0a53">
 <p>
 Sets up a systemd user service for anki that does not stall the shutdown process. Note that the outcommented <code>ExecStart</code> does not work because the home-manager anki package builds a separate anki package that - I think - cannot be referenced as no such expression exists in the module.
 </p>
@@ -19326,9 +19803,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 </div>
 </div>
 </div>
-<div id="outline-container-org869744e" class="outline-6">
-<h6 id="org869744e"><span class="section-number-6">3.3.2.32.10.</span> element service for tray</h6>
-<div class="outline-text-6" id="text-3-3-2-32-10">
+<div id="outline-container-h:2d0f1a35-cff5-4c24-b104-e431c05ae563" class="outline-6">
+<h6 id="h:2d0f1a35-cff5-4c24-b104-e431c05ae563"><span class="section-number-6">3.3.2.32.10.</span> element service for tray</h6>
+<div class="outline-text-6" id="text-h:2d0f1a35-cff5-4c24-b104-e431c05ae563">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
@@ -19361,9 +19838,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 </div>
 </div>
 </div>
-<div id="outline-container-org90d0654" class="outline-6">
-<h6 id="org90d0654"><span class="section-number-6">3.3.2.32.11.</span> vesktop service for tray</h6>
-<div class="outline-text-6" id="text-3-3-2-32-11">
+<div id="outline-container-h:ea741a3c-982e-4e23-8ecf-b30193a5c326" class="outline-6">
+<h6 id="h:ea741a3c-982e-4e23-8ecf-b30193a5c326"><span class="section-number-6">3.3.2.32.11.</span> vesktop service for tray</h6>
+<div class="outline-text-6" id="text-h:ea741a3c-982e-4e23-8ecf-b30193a5c326">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
@@ -19396,9 +19873,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
 </div>
 </div>
 </div>
-<div id="outline-container-org518bacd" class="outline-6">
-<h6 id="org518bacd"><span class="section-number-6">3.3.2.32.12.</span> syncthing service for tray</h6>
-<div class="outline-text-6" id="text-3-3-2-32-12">
+<div id="outline-container-h:5e7c606f-628a-4849-94e9-359d7b75f228" class="outline-6">
+<h6 id="h:5e7c606f-628a-4849-94e9-359d7b75f228"><span class="section-number-6">3.3.2.32.12.</span> syncthing service for tray</h6>
+<div class="outline-text-6" id="text-h:5e7c606f-628a-4849-94e9-359d7b75f228">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 {
@@ -20440,9 +20917,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org7350e7a" class="outline-5">
-<h5 id="org7350e7a"><span class="section-number-5">3.3.2.39.</span> Obsidian</h5>
-<div class="outline-text-5" id="text-3-3-2-39">
+<div id="outline-container-h:ffd97152-63ce-41a0-a40e-c78ba3eb6722" class="outline-5">
+<h5 id="h:ffd97152-63ce-41a0-a40e-c78ba3eb6722"><span class="section-number-5">3.3.2.39.</span> Obsidian</h5>
+<div class="outline-text-5" id="text-h:ffd97152-63ce-41a0-a40e-c78ba3eb6722">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, nixosConfig ? config, ... }:
 let
@@ -20601,9 +21078,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org8088f06" class="outline-5">
-<h5 id="org8088f06"><span class="section-number-5">3.3.2.40.</span> Anki</h5>
-<div class="outline-text-5" id="text-3-3-2-40">
+<div id="outline-container-h:6f2839dc-c681-4697-8e93-4ef191362434" class="outline-5">
+<h5 id="h:6f2839dc-c681-4697-8e93-4ef191362434"><span class="section-number-5">3.3.2.40.</span> Anki</h5>
+<div class="outline-text-5" id="text-h:6f2839dc-c681-4697-8e93-4ef191362434">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, globals, inputs, nixosConfig ? config, ... }:
 let
@@ -20675,9 +21152,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgd732c9a" class="outline-5">
-<h5 id="orgd732c9a"><span class="section-number-5">3.3.2.41.</span> Element-desktop</h5>
-<div class="outline-text-5" id="text-3-3-2-41">
+<div id="outline-container-h:add71e84-43ff-40c7-9173-de43a13bbae6" class="outline-5">
+<h5 id="h:add71e84-43ff-40c7-9173-de43a13bbae6"><span class="section-number-5">3.3.2.41.</span> Element-desktop</h5>
+<div class="outline-text-5" id="text-h:add71e84-43ff-40c7-9173-de43a13bbae6">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -20712,9 +21189,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org96d9aef" class="outline-5">
-<h5 id="org96d9aef"><span class="section-number-5">3.3.2.42.</span> Hexchat</h5>
-<div class="outline-text-5" id="text-3-3-2-42">
+<div id="outline-container-h:812cedcd-520e-417e-8923-aaae5ff5e316" class="outline-5">
+<h5 id="h:812cedcd-520e-417e-8923-aaae5ff5e316"><span class="section-number-5">3.3.2.42.</span> Hexchat</h5>
+<div class="outline-text-5" id="text-h:812cedcd-520e-417e-8923-aaae5ff5e316">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, nixosConfig ? config, ... }:
 let
@@ -20737,9 +21214,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-orgbd51239" class="outline-5">
-<h5 id="orgbd51239"><span class="section-number-5">3.3.2.43.</span> obs-studio</h5>
-<div class="outline-text-5" id="text-3-3-2-43">
+<div id="outline-container-h:ef995044-6833-40d6-825b-64063c00a790" class="outline-5">
+<h5 id="h:ef995044-6833-40d6-825b-64063c00a790"><span class="section-number-5">3.3.2.43.</span> obs-studio</h5>
+<div class="outline-text-5" id="text-h:ef995044-6833-40d6-825b-64063c00a790">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -20758,9 +21235,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org195bc78" class="outline-5">
-<h5 id="org195bc78"><span class="section-number-5">3.3.2.44.</span> spotify-player</h5>
-<div class="outline-text-5" id="text-3-3-2-44">
+<div id="outline-container-h:b99d62a1-4560-429f-81c1-29fc544a46fb" class="outline-5">
+<h5 id="h:b99d62a1-4560-429f-81c1-29fc544a46fb"><span class="section-number-5">3.3.2.44.</span> spotify-player</h5>
+<div class="outline-text-5" id="text-h:b99d62a1-4560-429f-81c1-29fc544a46fb">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -20779,9 +21256,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org7b0b5db" class="outline-5">
-<h5 id="org7b0b5db"><span class="section-number-5">3.3.2.45.</span> vesktop</h5>
-<div class="outline-text-5" id="text-3-3-2-45">
+<div id="outline-container-h:f5e191c5-b8c0-4f66-aa38-9cbfb1619058" class="outline-5">
+<h5 id="h:f5e191c5-b8c0-4f66-aa38-9cbfb1619058"><span class="section-number-5">3.3.2.45.</span> vesktop</h5>
+<div class="outline-text-5" id="text-h:f5e191c5-b8c0-4f66-aa38-9cbfb1619058">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, pkgs, config, ... }:
 let
@@ -20867,9 +21344,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org4ebf683" class="outline-5">
-<h5 id="org4ebf683"><span class="section-number-5">3.3.2.46.</span> batsignal</h5>
-<div class="outline-text-5" id="text-3-3-2-46">
+<div id="outline-container-h:b30fcdf0-93d8-4600-a267-e210bec8e680" class="outline-5">
+<h5 id="h:b30fcdf0-93d8-4600-a267-e210bec8e680"><span class="section-number-5">3.3.2.46.</span> batsignal</h5>
+<div class="outline-text-5" id="text-h:b30fcdf0-93d8-4600-a267-e210bec8e680">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -20900,9 +21377,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org0e5cbde" class="outline-5">
-<h5 id="org0e5cbde"><span class="section-number-5">3.3.2.47.</span> autotiling</h5>
-<div class="outline-text-5" id="text-3-3-2-47">
+<div id="outline-container-h:a7bac755-510c-424b-b964-18fb9e4a6667" class="outline-5">
+<h5 id="h:a7bac755-510c-424b-b964-18fb9e4a6667"><span class="section-number-5">3.3.2.47.</span> autotiling</h5>
+<div class="outline-text-5" id="text-h:a7bac755-510c-424b-b964-18fb9e4a6667">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -20922,9 +21399,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org9a04485" class="outline-5">
-<h5 id="org9a04485"><span class="section-number-5">3.3.2.48.</span> swayidle</h5>
-<div class="outline-text-5" id="text-3-3-2-48">
+<div id="outline-container-h:2e23f3d9-ab65-4f2f-912f-dc236189c457" class="outline-5">
+<h5 id="h:2e23f3d9-ab65-4f2f-912f-dc236189c457"><span class="section-number-5">3.3.2.48.</span> swayidle</h5>
+<div class="outline-text-5" id="text-h:2e23f3d9-ab65-4f2f-912f-dc236189c457">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
@@ -20964,9 +21441,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org34d4659" class="outline-5">
-<h5 id="org34d4659"><span class="section-number-5">3.3.2.49.</span> swaylock</h5>
-<div class="outline-text-5" id="text-3-3-2-49">
+<div id="outline-container-h:8e508f62-d3e4-48bc-8bce-641bf38a0106" class="outline-5">
+<h5 id="h:8e508f62-d3e4-48bc-8bce-641bf38a0106"><span class="section-number-5">3.3.2.49.</span> swaylock</h5>
+<div class="outline-text-5" id="text-h:8e508f62-d3e4-48bc-8bce-641bf38a0106">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, pkgs, ... }:
 let
@@ -20993,9 +21470,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org95ef971" class="outline-5">
-<h5 id="org95ef971"><span class="section-number-5">3.3.2.50.</span> opkssh</h5>
-<div class="outline-text-5" id="text-3-3-2-50">
+<div id="outline-container-h:99bde2b8-ab38-4082-b06b-4afde9d06228" class="outline-5">
+<h5 id="h:99bde2b8-ab38-4082-b06b-4afde9d06228"><span class="section-number-5">3.3.2.50.</span> opkssh</h5>
+<div class="outline-text-5" id="text-h:99bde2b8-ab38-4082-b06b-4afde9d06228">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 let
@@ -22328,11 +22805,11 @@ In short, the options defined here are passed to the modules systems using <code
 </div>
 </div>
 </div>
-<div id="outline-container-orgd627e85" class="outline-4">
-<h4 id="orgd627e85"><span class="section-number-4">3.4.3.</span> Config Library (confLib)</h4>
-<div class="outline-text-4" id="text-3-4-3">
+<div id="outline-container-h:a33322d5-014a-4072-a4a5-91bc71c343b8" class="outline-4">
+<h4 id="h:a33322d5-014a-4072-a4a5-91bc71c343b8"><span class="section-number-4">3.4.3.</span> Config Library (confLib)</h4>
+<div class="outline-text-4" id="text-h:a33322d5-014a-4072-a4a5-91bc71c343b8">
 <div class="org-src-container">
-<pre class="src src-nix-ts">{ config, globals, ... }:
+<pre class="src src-nix-ts">{ config, lib, globals, ... }:
 {
   _module.args = {
     confLib = rec {
@@ -22342,12 +22819,17 @@ In short, the options defined here are passed to the modules systems using <code
       domainDefault = service: config.repo.secrets.common.services.domains.${service};
       proxyDefault = config.swarselsystems.proxyHost;
 
+      getConfig = config;
+
       gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
         servicePort = port;
         serviceName = name;
+        specificServiceName = "${name}-${config.node.name}";
         serviceUser = user;
         serviceGroup = group;
         serviceDomain = domain;
+        baseDomain = lib.swarselsystems.getBaseDomain domain;
+        subDomain = lib.swarselsystems.getSubDomain domain;
         serviceDir = dir;
         serviceAddress = address;
         serviceProxy = proxy;
@@ -22373,9 +22855,9 @@ Note: The structure of generating the packages was changed in commit <code>2cf03
 </p>
 </div>
 </div>
-<div id="outline-container-org4a8525c" class="outline-4">
-<h4 id="org4a8525c"><span class="section-number-4">3.4.5.</span> Packages (flake)</h4>
-<div class="outline-text-4" id="text-3-4-5">
+<div id="outline-container-h:2803e3ab-b746-46c0-bcc4-051a23185bc3" class="outline-4">
+<h4 id="h:2803e3ab-b746-46c0-bcc4-051a23185bc3"><span class="section-number-4">3.4.5.</span> Packages (flake)</h4>
+<div class="outline-text-4" id="text-h:2803e3ab-b746-46c0-bcc4-051a23185bc3">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, lib, pkgs, ... }:
 let
@@ -22467,9 +22949,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-orgc939427" class="outline-5">
-<h5 id="orgc939427"><span class="section-number-5">3.4.5.2.</span> quickpass</h5>
-<div class="outline-text-5" id="text-3-4-5-2">
+<div id="outline-container-h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9" class="outline-5">
+<h5 id="h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9"><span class="section-number-5">3.4.5.2.</span> quickpass</h5>
+<div class="outline-text-5" id="text-h:62b9c8cd-b585-4e93-8352-2bfa4a76aec9">
 <div class="org-src-container">
 <pre class="src src-shell">shopt -s nullglob globstar
 
@@ -24402,9 +24884,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org389bbe6" class="outline-5">
-<h5 id="org389bbe6"><span class="section-number-5">3.4.5.35.</span> endme</h5>
-<div class="outline-text-5" id="text-3-4-5-35">
+<div id="outline-container-h:abbd18a2-73ae-4ee4-8487-06fef23638bb" class="outline-5">
+<h5 id="h:abbd18a2-73ae-4ee4-8487-06fef23638bb"><span class="section-number-5">3.4.5.35.</span> endme</h5>
+<div class="outline-text-5" id="text-h:abbd18a2-73ae-4ee4-8487-06fef23638bb">
 <p>
 Sometimes my DE crashes after putting it to suspend - to be precise, it happens when I put it into suspend when I have multiple screens plugged in. I have never taken the time to debug the issue, but instead just switch to a different TTY and then use this script to kill the hanging session.
 </p>
@@ -24424,9 +24906,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org31b25c4" class="outline-5">
-<h5 id="org31b25c4"><span class="section-number-5">3.4.5.36.</span> git-replace</h5>
-<div class="outline-text-5" id="text-3-4-5-36">
+<div id="outline-container-h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2" class="outline-5">
+<h5 id="h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2"><span class="section-number-5">3.4.5.36.</span> git-replace</h5>
+<div class="outline-text-5" id="text-h:e1330feb-4a9b-4e6d-9d15-6d2adb5879d2">
 <p>
 This script allows for quick git replace of a string.
 </p>
@@ -24503,9 +24985,9 @@ writeShellApplication {
 </div>
 </div>
 </div>
-<div id="outline-container-org8fe1e1e" class="outline-4">
-<h4 id="org8fe1e1e"><span class="section-number-4">3.4.6.</span> Packages (config)</h4>
-<div class="outline-text-4" id="text-3-4-6">
+<div id="outline-container-h:c01a91b8-b751-4978-b987-733de63c8211" class="outline-4">
+<h4 id="h:c01a91b8-b751-4978-b987-733de63c8211"><span class="section-number-4">3.4.6.</span> Packages (config)</h4>
+<div class="outline-text-4" id="text-h:c01a91b8-b751-4978-b987-733de63c8211">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ self, homeConfig, lib, pkgs, ... }:
 let
@@ -24521,9 +25003,9 @@ mkPackages packageNames pkgs
 </pre>
 </div>
 </div>
-<div id="outline-container-orgf1c4a66" class="outline-5">
-<h5 id="orgf1c4a66"><span class="section-number-5">3.4.6.1.</span> cdr</h5>
-<div class="outline-text-5" id="text-3-4-6-1">
+<div id="outline-container-h:78d17941-68b3-4b36-b378-3282ae2178b8" class="outline-5">
+<h5 id="h:78d17941-68b3-4b36-b378-3282ae2178b8"><span class="section-number-5">3.4.6.1.</span> cdr</h5>
+<div class="outline-text-5" id="text-h:78d17941-68b3-4b36-b378-3282ae2178b8">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ name, homeConfig, writeShellApplication, fzf, ... }:
 
@@ -24685,9 +25167,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org3a8d3fb" class="outline-5">
-<h5 id="org3a8d3fb"><span class="section-number-5">3.5.1.3.</span> Optionals</h5>
-<div class="outline-text-5" id="text-3-5-1-3">
+<div id="outline-container-h:07086976-8c36-4d3e-a9fe-693348411b53" class="outline-5">
+<h5 id="h:07086976-8c36-4d3e-a9fe-693348411b53"><span class="section-number-5">3.5.1.3.</span> Optionals</h5>
+<div class="outline-text-5" id="text-h:07086976-8c36-4d3e-a9fe-693348411b53">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -24891,9 +25373,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org97d2823" class="outline-5">
-<h5 id="org97d2823"><span class="section-number-5">3.5.1.9.</span> Router</h5>
-<div class="outline-text-5" id="text-3-5-1-9">
+<div id="outline-container-h:f3af356a-e732-471b-b8b3-37dcd70297d5" class="outline-5">
+<h5 id="h:f3af356a-e732-471b-b8b3-37dcd70297d5"><span class="section-number-5">3.5.1.9.</span> Router</h5>
+<div class="outline-text-5" id="text-h:f3af356a-e732-471b-b8b3-37dcd70297d5">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -25008,9 +25490,9 @@ in
 </div>
 </div>
 </div>
-<div id="outline-container-org0799e02" class="outline-5">
-<h5 id="org0799e02"><span class="section-number-5">3.5.2.2.</span> DGX Spark</h5>
-<div class="outline-text-5" id="text-3-5-2-2">
+<div id="outline-container-h:6d30ef28-ee26-4954-90f6-53c33dee9217" class="outline-5">
+<h5 id="h:6d30ef28-ee26-4954-90f6-53c33dee9217"><span class="section-number-5">3.5.2.2.</span> DGX Spark</h5>
+<div class="outline-text-5" id="text-h:6d30ef28-ee26-4954-90f6-53c33dee9217">
 <div class="org-src-container">
 <pre class="src src-nix-ts">{ lib, config, ... }:
 {
@@ -25465,6 +25947,11 @@ In this section I define extra functions that I need. Some of these functions I 
 Since I am rebinding the <code>C-z</code> hotkey for emacs-evil-state toggling, I want to have a function that still lets me perform this action quickly.
 </p>
 
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
+</p>
+
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">;; -*- lexical-binding: t; -*-
 
@@ -25482,7 +25969,11 @@ Since I am rebinding the <code>C-z</code> hotkey for emacs-evil-state toggling, 
 <h5 id="h:1e0ee570-e509-4ecb-a3af-b75543731bb0"><span class="section-number-5">4.2.1.2.</span> Switching to last used buffer</h5>
 <div class="outline-text-5" id="text-h:1e0ee570-e509-4ecb-a3af-b75543731bb0">
 <p>
-I often find myself bouncing between two buffers when I do not want to use a window split. This funnction simply jumps to the last used buffer.
+I often find myself bouncing between two buffers when I do not want to use a window split. This function simply jumps to the last used buffer.
+</p>
+
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
 </p>
 
 <div class="org-src-container">
@@ -25589,6 +26080,10 @@ The below function avoids these problems. Originally I used the function <code>d
 
 <p>
 However, this function does not work on regions. Later, I found a solution implemented by <a href="https://github.com/bbatsov/crux">crux</a>. I do not need the whole package, so I just extracted the three functions I needed from it.
+</p>
+
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
 </p>
 
 <div class="org-src-container">
@@ -25779,9 +26274,17 @@ This function was found here: <a href="https://www.reddit.com/r/emacs/comments/r
 </div>
 </div>
 </div>
-<div id="outline-container-orgc840bde" class="outline-5">
-<h5 id="orgc840bde"><span class="section-number-5">4.2.1.9.</span> Magit: List directories using vertico/consult</h5>
-<div class="outline-text-5" id="text-4-2-1-9">
+<div id="outline-container-h:1f8bfddf-a12a-49c8-beaa-97baa47abb9f" class="outline-5">
+<h5 id="h:1f8bfddf-a12a-49c8-beaa-97baa47abb9f"><span class="section-number-5">4.2.1.9.</span> Magit: List directories using vertico/consult</h5>
+<div class="outline-text-5" id="text-h:1f8bfddf-a12a-49c8-beaa-97baa47abb9f">
+<p>
+At work and when working on private projects, I often have to jump between several git repositories. This function fires up a picker that gets me to the magit overview page of that repository.
+</p>
+
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (defun swarsel/consult-magit-repos ()
@@ -25902,6 +26405,10 @@ Normally emacs cycles between three states:
 However, I want to be able to fold a single heading consistently.
 </p>
 
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (defun org-fold-outer ()
@@ -25963,6 +26470,69 @@ These functions are used here: <a href="#h:5653d693-ecca-4c95-9633-66b9e3241070"
 (add-hook 'minibuffer-setup-hook #'swarsel/minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'swarsel/minibuffer-exit-hook)
 
+
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-h:06e70e44-502b-4a49-8b48-63c511f1c377" class="outline-5">
+<h5 id="h:06e70e44-502b-4a49-8b48-63c511f1c377"><span class="section-number-5">4.2.1.16.</span> Insert link to another header in org file</h5>
+<div class="outline-text-5" id="text-h:06e70e44-502b-4a49-8b48-63c511f1c377">
+<p>
+When writing this file, I often want to refer to a different section of the file. One way to do this is to <code>C-x O</code> (consult-org-heading) to get to said heading, then <code>C=c s</code> (org-store-link), finally <code>C-o</code> (evil-jump-backward) to get back to the origin and insert the link using <code>C-c C-l</code> (org-insert-link).
+</p>
+
+<p>
+These two scripts just let me do all of this in one step. I have styled the picker in a way that is similar to consult-org-heading.
+</p>
+
+<p>
+We set a keybinding to this in <a href="#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5">Custom Keybindings</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">
+  (defun swarsel/org-colorize-outline (parents raw)
+    (let* ((palette ["#58B6ED" "#8BD49C" "#33CED8" "#4B9CCC"
+                     "yellow" "orange" "salmon" "red"])
+           (n (length parents))
+           (colored-parents
+            (cl-mapcar
+             (lambda (p i)
+               (propertize p 'face `(:foreground ,(aref palette (mod i (length palette))) :weight bold)))
+             parents
+             (number-sequence 0 (1- n)))))
+      (concat
+       (when parents
+         (string-join colored-parents "/"))
+       (when parents "/")
+       (propertize raw 'face `(:foreground ,(aref palette (mod n (length palette)))
+                                 :weight bold)))))
+
+(defun swarsel/org-insert-link-to-heading ()
+  (interactive)
+  (let ((candidates '()))
+    (org-map-entries
+     (lambda ()
+       (let* ((raw (org-get-heading t t t t))
+              (parents (org-get-outline-path t))
+              (m (copy-marker (point)))
+              (colored (swarsel/org-colorize-outline parents raw)))
+         (push (cons colored m) candidates))))
+
+    (let* ((choice (completing-read "Heading: " (mapcar #'car candidates)))
+           (marker (cdr (assoc choice candidates)))
+           id raw-heading)
+      (unless marker
+        (user-error "No marker for heading??"))
+
+      (save-excursion
+        (goto-char marker)
+        (setq id (prot-org--id-get))
+        (setq raw-heading (org-get-heading t t t t)))
+
+      (insert (org-link-make-string (format "#%s" id)
+                                    raw-heading)))))
 
 </pre>
 </div>
@@ -26080,6 +26650,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
  "&lt;DUMMY-m&gt;" 'swarsel/last-buffer
  "M-\\" 'indent-region
  "M-r" 'swarsel/consult-magit-repos
+ "M-i" 'swarsel/org-insert-link-to-heading
  "&lt;Paste&gt;" 'yank
  "&lt;Cut&gt;" 'kill-region
  "&lt;Copy&gt;" 'kill-ring-save
@@ -26099,7 +26670,7 @@ I also define some keybinds to some combinations directly. Those are used mostly
 <h4 id="h:07951589-54ba-4e3e-bd7b-4106cd22ff6a"><span class="section-number-4">4.2.3.</span> Directory setup / File structure</h4>
 <div class="outline-text-4" id="text-h:07951589-54ba-4e3e-bd7b-4106cd22ff6a">
 <p>
-In this section I setup some aliases that I use for various directories on my system. Some of these are actually used for magit repository finding etc., but many of them serve no real use and I need to clean this up someday.
+In this section I setup some aliases that I use for various directories on my system. This is just to prevent setting the same stuff too often.
 </p>
 
 <div class="org-src-container">
@@ -26107,12 +26678,12 @@ In this section I setup some aliases that I use for various directories on my sy
 ;; set Nextcloud directory for journals etc.
 (setq
  swarsel-emacs-directory "~/.emacs.d"
- swarsel-dotfiles-directory "~/.dotfiles"
+ swarsel-dotfiles-directory (getenv "FLAKE")
  swarsel-swarsel-org-filepath (expand-file-name "SwarselSystems.org" swarsel-dotfiles-directory)
  swarsel-tasks-org-file "Tasks.org"
  swarsel-archive-org-file "Archive.org"
- swarsel-work-projects-directory "~/Documents/Work"
- swarsel-private-projects-directory "~/Documents/Private"
+ swarsel-work-projects-directory (getenv "DOCUMENT_DIR_WORK")
+ swarsel-private-projects-directory (getenv "DOCUMENT_DIR_PRIV")
  )
 </pre>
 </div>
@@ -26200,7 +26771,7 @@ Here I set up some things that are too minor to put under other categories.
 <pre class="src src-emacs-lisp">
 ;; use UTF-8 everywhere
 (set-language-environment "UTF-8")
-(profiler-start 'cpu)
+;; (profiler-start 'cpu)
 ;; set default font size
 (defvar swarsel/default-font-size 130)
 (setq swarsel-standard-font "FiraCode Nerd Font Mono"
@@ -26529,6 +27100,10 @@ This minor-mode adds functionality for doing better surround-commands; for examp
 <div id="outline-container-h:df6729b6-2135-4070-bcab-a6a26f0fb2c4" class="outline-5">
 <h5 id="h:df6729b6-2135-4070-bcab-a6a26f0fb2c4"><span class="section-number-5">4.3.7.6.</span> evil-visual-mark-mode</h5>
 <div class="outline-text-5" id="text-h:df6729b6-2135-4070-bcab-a6a26f0fb2c4">
+<p>
+This makes it so that when setting a mark in evil mode (using <code>m &lt;key&gt;</code>), it creates a visual marker at that place that reminds me what the key for that marker position is (the marker is of course not part of the text of the document, and is hence not saved).
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package evil-visual-mark-mode
@@ -26565,8 +27140,12 @@ This adds support for tree-sitter objects. This allows for the following chords:
 </div>
 </div>
 <div id="outline-container-h:06002ad2-686a-42c5-82d7-61f1340e262d" class="outline-5">
-<h5 id="h:06002ad2-686a-42c5-82d7-61f1340e262d"><span class="section-number-5">4.3.7.8.</span> evil-textobj-tree-sitter</h5>
+<h5 id="h:06002ad2-686a-42c5-82d7-61f1340e262d"><span class="section-number-5">4.3.7.8.</span> evil-numbers</h5>
 <div class="outline-text-5" id="text-h:06002ad2-686a-42c5-82d7-61f1340e262d">
+<p>
+A very simple package that brings back the vim possibility of incrementing/decrementing numbers. I do not need it often, but it is nice to have.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package evil-numbers)
@@ -26580,7 +27159,7 @@ This adds support for tree-sitter objects. This allows for the following chords:
 <h4 id="h:e888d7a7-1755-4109-af11-5358b8cf140e"><span class="section-number-4">4.3.8.</span> ispell</h4>
 <div class="outline-text-4" id="text-h:e888d7a7-1755-4109-af11-5358b8cf140e">
 <p>
-This should setup a wordlist that can be used as a dictionary. However, for some reason this does not work, and I will need to further investigate this issue.
+This sets up a wordlist that is, for example, used in completions. When coding, I do not really need this, but it is sometimes useful when writing prose.
 </p>
 
 <div class="org-src-container">
@@ -26657,7 +27236,7 @@ Used in:
 </p>
 <ul class="org-ul">
 <li><a href="#h:b190d512-bfb5-42ec-adec-8d86bab726ce">Vertico and friends</a></li>
-<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">IN USE Corfu</a></li>
+<li><a href="#h:5653d693-ecca-4c95-9633-66b9e3241070">Corfu</a></li>
 </ul>
 
 <div class="org-src-container">
@@ -26692,11 +27271,11 @@ This minor mode allows mixing fixed and variable pitch fonts within the same buf
 <h4 id="h:ed585848-875a-4673-910c-d2e1901dd95b"><span class="section-number-4">4.3.13.</span> Modeline</h4>
 <div class="outline-text-4" id="text-h:ed585848-875a-4673-910c-d2e1901dd95b">
 <p>
-Here I set up the modeline with some information that I find useful. Specficially I am using the doom modeline. Most informations I disable for it, except for the cursor information (row + column) as well as a widget for <code>mu4e</code> and git information.
+Here I set up the modeline with some information that I find useful. I was using the doom modeline for a while. Most informations I disabled for it, except for the cursor information (row + column) as well as a widget for <code>mu4e</code> and git information.
 </p>
 
 <p>
-I have currently disabled this in favor of <a href="#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">mini-modeline</a>.
+I have currently disabled this in favor of <a href="#h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">mini-modeline</a>, which saves more screen space and holds only the information I really need.
 </p>
 
 <div class="org-src-container">
@@ -26718,7 +27297,20 @@ I have currently disabled this in favor of <a href="#h:80ed2431-9c9a-4bfc-a3c0-0
 <h4 id="h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208"><span class="section-number-4">4.3.14.</span> mini-modeline</h4>
 <div class="outline-text-4" id="text-h:80ed2431-9c9a-4bfc-a3c0-08a2a058d208">
 <p>
-I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach.
+I have found that the doom-modeline, while very useful, consumes too much screen space for my liking. This modeline takes a more minimalistic approach. The only information that is shown is:
+</p>
+
+<ul class="org-ul">
+<li>the line number</li>
+<li>state of the file (whether it is saved etc.)</li>
+<li>the name of the file</li>
+<li>the percentage of the cursor in the file</li>
+<li>the major mode of the file</li>
+<li>the current evil mode</li>
+</ul>
+
+<p>
+This is really the perfect solution for me, but it might not be for everyone.
 </p>
 
 <div class="org-src-container">
@@ -26762,24 +27354,16 @@ I have found that the doom-modeline, while very useful, consumes too much screen
 <h5 id="h:b190d512-bfb5-42ec-adec-8d86bab726ce"><span class="section-number-5">4.3.15.1.</span> Vertico, Orderless, Marginalia, Consult, Embark</h5>
 <div class="outline-text-5" id="text-h:b190d512-bfb5-42ec-adec-8d86bab726ce">
 <p>
-This set of packages uses the default emacs completion framework and works together to provide a very nice user experience:
-</p>
-
-<ul class="org-ul">
-<li>Vertico simply provides a vertically stacking completion</li>
-<li>Marginalia adds more information to completion results</li>
-<li>Orderless allows for fuzzy matching</li>
-<li>Consult provides better implementations for several user functions, e.g. <code>consult-line</code> or <code>consult-outline</code></li>
-<li>Embark allows acting on the results in the minibuffer while the completion is still ongoing - this is extremely useful since it allows to, for example, read the documentation for several functions without closing the help search. It can also collect the results of a grep operation into a seperate buffer that edits the result in their original location.</li>
-</ul>
-
-<p>
-Nerd icons is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">Icons</a>
+This set of packages uses the default emacs completion framework and works together to provide a very nice user experience.
 </p>
 </div>
 <div id="outline-container-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d" class="outline-6">
 <h6 id="h:d7c7f597-f870-4e01-8f7e-27dd31dd245d"><span class="section-number-6">4.3.15.1.1.</span> vertico</h6>
 <div class="outline-text-6" id="text-h:d7c7f597-f870-4e01-8f7e-27dd31dd245d">
+<p>
+Vertico simply provides a vertically stacking completion framework.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (setq read-buffer-completion-ignore-case t
@@ -26825,6 +27409,10 @@ This package allows for <code>Ido</code>-like directory navigation.
 <h6 id="h:211fc0bd-0d64-4577-97d8-6abc94435f04"><span class="section-number-6">4.3.15.1.3.</span> orderless</h6>
 <div class="outline-text-6" id="text-h:211fc0bd-0d64-4577-97d8-6abc94435f04">
 <p>
+Orderless allows for fuzzy matching.
+</p>
+
+<p>
 When first installing orderless, I often times faced the problem, that when editing long files and calling <code>consult-line</code>, Emacs would hang when changing a search term in the middle (e.g. from <code>servicse.xserver</code> to <code>servic.xserver</code> in order to fix the typo). The below orderless rules have a more strict matching that has a positive impact on performance.
 </p>
 
@@ -26855,6 +27443,10 @@ When first installing orderless, I often times faced the problem, that when edit
 <h6 id="h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c"><span class="section-number-6">4.3.15.1.4.</span> consult</h6>
 <div class="outline-text-6" id="text-h:49ab82bf-812d-4fbe-a5b6-d3ad703fe32c">
 <p>
+Consult provides better implementations for several user functions, e.g. <code>consult-line</code> or <code>consult-outline</code>.
+</p>
+
+<p>
 The big winner here are the convenient keybinds being setup here for general use. Also, I setup vim-navigation for minibuffer completions. <code>consult-buffer</code> is set twice because I am still used to that weird <code>C-M-j</code> command that I chose for <code>ivy-switch-buffer</code> when I first started using Emacs. I want to move to the other command but for now it is not feasible to delete the other one.
 </p>
 
@@ -26884,6 +27476,10 @@ The big winner here are the convenient keybinds being setup here for general use
 <div id="outline-container-h:1c564ee5-ccd7-48be-b69a-d963400c4704" class="outline-6">
 <h6 id="h:1c564ee5-ccd7-48be-b69a-d963400c4704"><span class="section-number-6">4.3.15.1.5.</span> embark</h6>
 <div class="outline-text-6" id="text-h:1c564ee5-ccd7-48be-b69a-d963400c4704">
+<p>
+Embark allows acting on the results in the minibuffer while the completion is still ongoing - this is extremely useful since it allows to, for example, read the documentation for several functions without closing the help search. It can also collect the results of a grep operation into a seperate buffer that edits the result in their original location.
+</p>
+
 <p>
 I have stripped down the embark keybinds heavily. It is very useful to me even in it's current state, but it quickly becomes overwhelming. <code>embark-dwim</code> acts on a candidate without closing the minibuffer, which is very useful. <code>embark-act</code> lets the user choose from all actions, but has an overwhelming interface.
 </p>
@@ -26933,6 +27529,10 @@ Provides previews for embark.
 <h6 id="h:f32040a4-882f-4e6b-97f1-a0105c44c034"><span class="section-number-6">4.3.15.1.7.</span> marginalia</h6>
 <div class="outline-text-6" id="text-h:f32040a4-882f-4e6b-97f1-a0105c44c034">
 <p>
+Marginalia adds more information to completion results.
+</p>
+
+<p>
 I set the annotation-mode of marginalia to <code>heavy</code>. This gives even more information on the stuff that you are looking at. One thing I am missing from ivy is the highlighting on <code>mode</code>-commands based on the current state of the mode. Also, I do not understand all the shorthands used by marginalia yet.
 </p>
 
@@ -26955,6 +27555,7 @@ I set the annotation-mode of marginalia to <code>heavy</code>. This gives even m
 <div class="outline-text-6" id="text-h:d70ec2fb-da43-4523-9ee4-774ececdb80e">
 <p>
 As stated above, this simply provides nerd-icons to the completion framework.
+It is originally enabled here: <a href="#h:eb0ea526-a83a-4664-b3a1-2b40d3a31493">Icons</a>
 </p>
 
 <div class="org-src-container">
@@ -27103,6 +27704,10 @@ This places little angled indicators on the fringe of a window which indicate bu
 <div class="outline-text-4" id="text-h:053a36bf-168f-4f63-a0c4-f0139dc6cc3b">
 <p>
 This defines the authentication sources used by <code>org-calfw</code> (<a href="#h:c760f04e-622f-4b3e-8916-53ca8cce6edc">Calendar</a>) and <a href="#h:1a8585ed-d9f2-478f-a132-440ada1cde2c">Forge</a>.
+</p>
+
+<p>
+This file is written using home-manager <a href="#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb">sops</a> in <a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">Home-manager: Emacs</a>
 </p>
 
 <div class="org-src-container">
@@ -27426,7 +28031,11 @@ This just makes org-mode a little bit more beautiful, mostly by making the <code
 <h5 id="h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425"><span class="section-number-5">4.4.1.10.</span> Presentations</h5>
 <div class="outline-text-5" id="text-h:4e11a845-a7bb-4eb5-b4ce-5b2f52e07425">
 <p>
-Recently I have grown fond of holding presentations using Emacs :)
+Recently I have grown fond of holding presentations using Emacs.
+</p>
+
+<p>
+When holding presentations, I think it is important to not have too many distractions on your slides. org-present just shows a plain background, is very responsive, and it is still an org buffer (so you can e.g. run source block codes while in the presentation).
 </p>
 
 <div class="org-src-container">
@@ -27537,9 +28146,13 @@ Recently I have grown fond of holding presentations using Emacs :)
 </div>
 </div>
 </div>
-<div id="outline-container-orgb400690" class="outline-5">
-<h5 id="orgb400690"><span class="section-number-5">4.4.1.11.</span> Render markdown blocks as body to expand noweb blocks</h5>
-<div class="outline-text-5" id="text-4-4-1-11">
+<div id="outline-container-h:d4137200-7f91-43d9-9550-e0b6bfda1683" class="outline-5">
+<h5 id="h:d4137200-7f91-43d9-9550-e0b6bfda1683"><span class="section-number-5">4.4.1.11.</span> Render markdown blocks as body to expand noweb blocks</h5>
+<div class="outline-text-5" id="text-h:d4137200-7f91-43d9-9550-e0b6bfda1683">
+<p>
+I have written this function to allow me to get a preview of the information that is gathered throughout the file and aggregated in <a href="#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a">Manual steps when setting up a new machine</a>. Normally, running a markdown source block does nothing in Emacs. Hence, I just let it return the output, which inserts the noweb-ref blocks.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">(defun org-babel-execute:markdown (body params)
   "Just return BODY unchanged, allowing noweb expansion."
@@ -27553,7 +28166,11 @@ Recently I have grown fond of holding presentations using Emacs :)
 <h4 id="h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b"><span class="section-number-4">4.4.2.</span> Nix Mode</h4>
 <div class="outline-text-4" id="text-h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b">
 <p>
-This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as I am mostly editing nix-files in org-mode anyways.
+This adds a nix mode to Emacs. This has become increasingly useful since I have added <a href="#h:cd552ba1-4db1-4605-8ead-4fcb6a466826">lsp-mode in org-src blocks</a>, because since that time, I am now able to actually make use of major modes while I theoretically stay in org-mode.
+</p>
+
+<p>
+It supports all functions that I normally need. Note that getting completions for flake inputs is a bit finnicky and I am not quite fond of it yet.
 </p>
 
 <div class="org-src-container">
@@ -27604,7 +28221,7 @@ This adds a rudimentary nix-mode to Emacs. I have not really tried this out, as 
 <h4 id="h:e8074881-3441-4abd-b25b-358a87e7984f"><span class="section-number-4">4.4.3.</span> HCL Mode</h4>
 <div class="outline-text-4" id="text-h:e8074881-3441-4abd-b25b-358a87e7984f">
 <p>
-This adds support for Hashicorp Configuration Language. I need this at work.
+This adds support for Hashicorp Configuration Language. Used at work, it is mostly a <a href="#h:7834adb0-fbd3-4136-bdb7-6dbc9a083296">Terraform Mode</a> that does not support autoformatting upon save. It still is nice :)
 </p>
 
 <div class="org-src-container">
@@ -27622,7 +28239,7 @@ This adds support for Hashicorp Configuration Language. I need this at work.
 <h4 id="h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410"><span class="section-number-4">4.4.4.</span> Jenkinsfile/Groovy</h4>
 <div class="outline-text-4" id="text-h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410">
 <p>
-This adds support for Groovy, which I specifically need to work with Jenkinsfiles. I need this at work.
+This adds support for Groovy, which I specifically need to work with Jenkinsfiles. Similar to [BROKEN LINK: 7aa9803f-b419-40fa-aafc-4bb934c8f687], it just provides some nice functions.
 </p>
 
 <div class="org-src-container">
@@ -27639,6 +28256,11 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 <div id="outline-container-h:77fa79d8-81d5-46f2-82f9-8e2922538d44" class="outline-4">
 <h4 id="h:77fa79d8-81d5-46f2-82f9-8e2922538d44"><span class="section-number-4">4.4.5.</span> Ansible</h4>
 <div class="outline-text-4" id="text-h:77fa79d8-81d5-46f2-82f9-8e2922538d44">
+<p>
+This is supposed to provide auto-completion when turned on. Of course I cannot globally turn this on since it would run in any <code>.yaml</code> file then, but even when manually started, it seems to do nothing. This would be nice at work.
+</p>
+
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package ansible)
@@ -27651,7 +28273,7 @@ This adds support for Groovy, which I specifically need to work with Jenkinsfile
 <h4 id="h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3"><span class="section-number-4">4.4.6.</span> Dockerfile</h4>
 <div class="outline-text-4" id="text-h:534d8729-4422-4f0c-9ae6-d3737d4a6dd3">
 <p>
-This adds support for Dockerfiles. I need this at work.
+This adds support for Dockerfiles in a similar way to [BROKEN LINK: ebd53be9-c38a-4a0f-a7b4-eee30a0074fc].
 </p>
 
 <div class="org-src-container">
@@ -27667,7 +28289,7 @@ This adds support for Dockerfiles. I need this at work.
 <h4 id="h:7834adb0-fbd3-4136-bdb7-6dbc9a083296"><span class="section-number-4">4.4.7.</span> Terraform Mode</h4>
 <div class="outline-text-4" id="text-h:7834adb0-fbd3-4136-bdb7-6dbc9a083296">
 <p>
-This adds support for Terraform configuration files. I need this at work.
+This adds support for Terraform configuration files. This is basically the same as the [BROKEN LINK: 7aa9803f-b419-40fa-aafc-4bb934c8f687] mode as the languages are very similar.
 </p>
 
 <div class="org-src-container">
@@ -27688,7 +28310,11 @@ This adds support for Terraform configuration files. I need this at work.
 <h4 id="h:5ca7484b-b9d6-4023-88d1-a1e37d5df249"><span class="section-number-4">4.4.8.</span> nix formatting</h4>
 <div class="outline-text-4" id="text-h:5ca7484b-b9d6-4023-88d1-a1e37d5df249">
 <p>
-Adds functions for formatting nix code.
+Adds functions for formatting nix code. I make huge use of this using the chords <code>C-&lt;Space&gt; o b</code> (org-babel-mark-block) and then <code>C-&lt;Space&gt; o n</code> (nixpkgs-fmt-region). This is what I use to keep my nix org-src-blocks formatted. However, using [BROKEN LINK: a67adf2f-20ce-49d6-ba6b-0341ca3d9972], the resulting tangled files will be formatted in any case.
+</p>
+
+<p>
+Note that for files that are not managed using this file (which there should normally not be many of), we can still use <code>nix fmt</code> for running treefmt for formatting and checks.
 </p>
 
 <div class="org-src-container">
@@ -27703,7 +28329,7 @@ Adds functions for formatting nix code.
 <h4 id="h:489a71c4-38af-44a3-a9ef-8b1ed1ee4ac4"><span class="section-number-4">4.4.9.</span> shfmt</h4>
 <div class="outline-text-4" id="text-h:489a71c4-38af-44a3-a9ef-8b1ed1ee4ac4">
 <p>
-Adds functions for formatting shellscripts.
+Adds functions for formatting shellscripts. Similarly to [BROKEN LINK: 460a47fd-cddc-4080-9eba-6724fc63606e]m I use this using the chords <code>C-&lt;Space&gt; o b</code> (org-babel-mark-block) and then <code>C-&lt;Space&gt; o s</code> (shfmt-region). This is what I use to keep shell script blocks formatted in this file. This is also handled by treefmt, but still, I want this file to stay organized as well.
 </p>
 
 <div class="org-src-container">
@@ -27724,6 +28350,10 @@ Adds functions for formatting shellscripts.
 <div id="outline-container-h:734dc40a-a2c4-4839-b884-cb99b81aa6fe" class="outline-5">
 <h5 id="h:734dc40a-a2c4-4839-b884-cb99b81aa6fe"><span class="section-number-5">4.4.10.1.</span> Mode</h5>
 <div class="outline-text-5" id="text-h:734dc40a-a2c4-4839-b884-cb99b81aa6fe">
+<p>
+Adds a mode for markdown, specifically MultiMarkdown, which allows me to render LaTeX and other nice things.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (setq markdown-command "pandoc")
@@ -27742,6 +28372,10 @@ Adds functions for formatting shellscripts.
 <div id="outline-container-h:8d90fe51-0b32-423a-a159-4f853bc29b68" class="outline-5">
 <h5 id="h:8d90fe51-0b32-423a-a159-4f853bc29b68"><span class="section-number-5">4.4.10.2.</span> LaTeX in Markdown</h5>
 <div class="outline-text-5" id="text-h:8d90fe51-0b32-423a-a159-4f853bc29b68">
+<p>
+Allows me to render LaTeX just where I write it. I do not need this as much anymore, but during my studies this was very valuable to me.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (add-hook 'markdown-mode-hook
@@ -27758,6 +28392,10 @@ Adds functions for formatting shellscripts.
 <div id="outline-container-h:a83c5820-2016-44ae-90a0-4756bb471c01" class="outline-4">
 <h4 id="h:a83c5820-2016-44ae-90a0-4756bb471c01"><span class="section-number-4">4.4.11.</span> elfeed</h4>
 <div class="outline-text-4" id="text-h:a83c5820-2016-44ae-90a0-4756bb471c01">
+<p>
+This adds elfeed, a neat RSS reader for Emacs. I use this as a client for <a href="#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d">FreshRSS</a>. While I read most of my feeds on my phone (using Capy Reader), it is still good to have an Emacs-native reader as well. Some time ago I was still running a separate Emacs instance on my server: [BROKEN LINK: 0e07e2fb-adc4-4fd8-9b54-0a59338a471e]. This instance would then sync the read feeds to other instances. This was very brittle however and is only left as a historical note.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package elfeed)
@@ -27796,7 +28434,7 @@ Adds functions for formatting shellscripts.
 <h4 id="h:87453f1c-8ea5-4d0a-862d-8973d5bc5405"><span class="section-number-4">4.4.12.</span> Ripgrep</h4>
 <div class="outline-text-4" id="text-h:87453f1c-8ea5-4d0a-862d-8973d5bc5405">
 <p>
-This is the ripgrep command for Emacs.
+This is the ripgrep package for Emacs.
 </p>
 
 <div class="org-src-container">
@@ -27815,7 +28453,7 @@ Tree-sitter is a parsing library integrated into Emacs to provide better syntax 
 </p>
 
 <p>
-In order to update the language grammars, run the next command below.
+In order to update the language grammars, run the next command below. NOTE: since we now load <code>epkgs.treesit-grammars.with-all-grammars</code> in <a href="#h:c05d1b64-7110-4151-b436-46bc447113b4">Home-manager: Emacs</a>, we actually never run this anymore. I leave it here however for a potential future reader. For safety, I still instruct treesit to install missing grammars on the fly.
 </p>
 
 <div class="org-src-container">
@@ -27977,7 +28615,7 @@ magit is the best git utility I have ever used - it has a beautiful interface an
 </p>
 
 <p>
-Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. We also set that here.
+Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. We set that here: [BROKEN LINK: 59df9a4c-2a1f-466b-abe2-fbb8524cd0ed].
 </p>
 
 <div class="org-src-container">
@@ -27997,7 +28635,7 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 <h4 id="h:d78709dd-4f79-441c-9166-76f61f90359a"><span class="section-number-4">4.4.19.</span> Yubikey support</h4>
 <div class="outline-text-4" id="text-h:d78709dd-4f79-441c-9166-76f61f90359a">
 <p>
-The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least.
+The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least. This works especially well since I have switched from <code>pinentry-gtk3</code> to <code>pinentry-waypromt</code>.
 </p>
 
 <div class="org-src-container">
@@ -28031,6 +28669,10 @@ NOTE: Make sure to configure a GitHub token before using this package!
 (1) in practice: github -&lt;&gt; settings -&lt;&gt; developer option -&lt;&gt;
 create classic token with repo; user; read:org permissions
 (2)machine api.github.com login USERNAME<sup>forge</sup> password 012345abcdef&#x2026;
+</p>
+
+<p>
+The above is handled by [BROKEN LINK: ebb558ed-883a-486f-a6f5-8b283eb735a3] and only here as a historical note. Forge lets me interact with non-core git objects like issues and pull requests from within emacs.
 </p></li>
 </ul>
 
@@ -28434,6 +29076,10 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 <div id="outline-container-h:cd552ba1-4db1-4605-8ead-4fcb6a466826" class="outline-4">
 <h4 id="h:cd552ba1-4db1-4605-8ead-4fcb6a466826"><span class="section-number-4">4.4.32.</span> lsp-mode in org-src blocks</h4>
 <div class="outline-text-4" id="text-h:cd552ba1-4db1-4605-8ead-4fcb6a466826">
+<p>
+This incredible function allows to start a sub-pane in a org-file while in a source-block that spins up a lsp-server. In practise that allows me to use a nix lsp when editing complex blocks in my config. The only bother is that we have to add the modes where it should run manually to <code>org-babel-lang-list</code>, but that is a small price to pay for the usefulness that it brings.
+</p>
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">;; thanks to https://tecosaur.github.io/emacs-config/config.html#lsp-support-src
 (cl-defmacro lsp-org-babel-enable (lang)
@@ -28472,6 +29118,11 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 <div id="outline-container-h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61" class="outline-4">
 <h4 id="h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61"><span class="section-number-4">4.4.33.</span> lsp-bridge</h4>
 <div class="outline-text-4" id="text-h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61">
+<p>
+This is another lsp-implementation for Emacs using multi-threading, so this should be the least blocking one. Still, in general I prefer <a href="#h:6cf0310b-2fdf-45f0-9845-4704649777eb">eglot</a>.
+</p>
+
+
 <div class="org-src-container">
 <pre class="src src-emacs-lisp">
 (use-package lsp-bridge
@@ -28754,9 +29405,9 @@ This adds the simple utility of sending desktop notifications whenever a new mai
 </div>
 </div>
 </div>
-<div id="outline-container-org5576388" class="outline-5">
-<h5 id="org5576388"><span class="section-number-5">4.4.39.3.</span> Work: Signing Mails (S/MIME, smime)</h5>
-<div class="outline-text-5" id="text-4-4-39-3">
+<div id="outline-container-h:3584632a-9d6d-4ba6-8aa5-e1383581993c" class="outline-5">
+<h5 id="h:3584632a-9d6d-4ba6-8aa5-e1383581993c"><span class="section-number-5">4.4.39.3.</span> Work: Signing Mails (S/MIME, smime)</h5>
+<div class="outline-text-5" id="text-h:3584632a-9d6d-4ba6-8aa5-e1383581993c">
 <p>
 Used to automatically sign messages sent from my work email address using S/MIME certificate.
 </p>
@@ -29039,9 +29690,9 @@ Also see `prot-window-delete-popup-frame'." command)
 This sections is no longer used really. An introduction can be found in <a href="#h:bcc3ebbe-df8a-46bd-b42d-73aad6fc66e5">Structure of this file</a> under the historical note. The little noweb-ref blocks that I still use are found in <a href="#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02">Hosts</a> and <a href="#h:3bb92528-c61c-4b8d-8214-bf2a40baaa32">Services</a>.
 </p>
 </div>
-<div id="outline-container-org2a58ec1" class="outline-3">
-<h3 id="org2a58ec1"><span class="section-number-3">5.1.</span> General steps when setting up a new machine</h3>
-<div class="outline-text-3" id="text-5-1">
+<div id="outline-container-h:cc04139d-e9b7-48fe-8e21-fb43aac35b88" class="outline-3">
+<h3 id="h:cc04139d-e9b7-48fe-8e21-fb43aac35b88"><span class="section-number-3">5.1.</span> General steps when setting up a new machine</h3>
+<div class="outline-text-3" id="text-h:cc04139d-e9b7-48fe-8e21-fb43aac35b88">
 <p>
 These general steps are needed when setting up a new machine and do not fit into another block well:
 </p>
@@ -29056,9 +29707,9 @@ These general steps are needed when setting up a new machine and do not fit into
   - `systemd-cryptenroll --fido2-device=auto /dev/<device, e.g. 'nvme0n1p2'>`
 </div>
 </div>
-<div id="outline-container-org01ddabd" class="outline-3">
-<h3 id="org01ddabd"><span class="section-number-3">5.2.</span> Current patches and fixes</h3>
-<div class="outline-text-3" id="text-5-2">
+<div id="outline-container-h:e1798163-5d88-4776-aa44-57ed2df92e45" class="outline-3">
+<h3 id="h:e1798163-5d88-4776-aa44-57ed2df92e45"><span class="section-number-3">5.2.</span> Current patches and fixes</h3>
+<div class="outline-text-3" id="text-h:e1798163-5d88-4776-aa44-57ed2df92e45">
 <p>
 These are current deviations from the standard settings that I take while some things are broken upstream
 </p>
@@ -31561,25 +32212,26 @@ Here lies defined the readme for GitHub and Forgejo:
 
   ### Hosts
 
-  | Name               | Hardware                                            | Use                                                  |
-  |--------------------|-----------------------------------------------------|------------------------------------------------------|
-  |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
-  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
-  |🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
-  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
-  |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
-  |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
-  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Authoritative DNS server                             |
-  |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
-  |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
-  |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
-  |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
-  |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
-  |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
-  |💿 **brickroad**    | -                                                   | Kexec tarball                                        |
-  |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
-  |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+  | Name                | Hardware                                            | Use                                                 |
+  |---------------------|-----------------------------------------------------|-----------------------------------------------------|
+  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                         |
+  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                     |
+  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                   |
+  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference   |
+  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, datastorage  |
+  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                      |
+  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                              |
+  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative dns server                            |
+  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                         |
+  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                       |
+  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                          |
+  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services     |
+  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binarycache                   |
+  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                               |
+  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts     |
+  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines |
+  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration     |
+  |❔ **toto**          | -                                                   | Helper configuration for testing purposes           |
   &lt;/details&gt;
 
   ## General Nix tips &amp; useful links
@@ -32044,7 +32696,7 @@ similarly, there exists an version that starts from the right.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Leon Schwarzäugl</p>
-<p class="date">Created: 2025-11-25 Di 19:55</p>
+<p class="date">Created: 2025-11-27 Do 16:49</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
