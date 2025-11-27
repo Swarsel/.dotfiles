@@ -23,13 +23,35 @@
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
+    isCloud = true;
     proxyHost = "belchsfactory";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
+      garage = {
+        data_dir = {
+          capacity = "150G";
+          path = "/var/lib/garage/data";
+        };
+        keys = {
+          nixos = [
+            "attic"
+          ];
+        };
+        buckets = [
+          "attic"
+        ];
+      };
     };
   };
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
     server = true;
   };
+
+  swarselmodules.server = {
+    postgresql = lib.mkDefault true;
+    attic = lib.mkDefault true;
+    garage = lib.mkDefault true;
+  };
+
 }

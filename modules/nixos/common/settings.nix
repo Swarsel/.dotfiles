@@ -1,6 +1,7 @@
-{ self, lib, pkgs, config, outputs, inputs, minimal, ... }:
+{ self, lib, pkgs, config, outputs, inputs, minimal, globals, ... }:
 let
   inherit (config.swarselsystems) mainUser;
+  inherit (config.repo.secrets.common) atticPublicKey;
   settings = if minimal then { } else {
     environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
       assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
@@ -75,6 +76,12 @@ in
                 "ca-derivations"
                 "cgroups"
                 "pipe-operators"
+              ];
+              substituters = [
+                "https://${globals.services.attic.domain}/${mainUser}"
+              ];
+              trusted-public-keys = [
+                atticPublicKey
               ];
               trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
             };

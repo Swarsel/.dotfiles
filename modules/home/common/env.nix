@@ -16,6 +16,7 @@ in
     } // (lib.optionalAttrs (!isPublic) { });
     systemd.user.sessionVariables = {
       DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+      FLAKE = "${config.home.homeDirectory}/.dotfiles";
     } // lib.optionalAttrs (!isPublic) {
       SWARSEL_MAIL1 = address1;
       SWARSEL_MAIL2 = address2;

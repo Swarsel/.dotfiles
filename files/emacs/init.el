@@ -272,10 +272,10 @@ create a new one."
 
       (save-excursion
         (goto-char marker)
-        (setq id (org-id-get-create))
+        (setq id (prot-org--id-get))
         (setq raw-heading (org-get-heading t t t t)))
 
-      (insert (org-link-make-string (format "id:%s" id)
+      (insert (org-link-make-string (format "#%s" id)
                                     raw-heading)))))
 
 ;; Make ESC quit prompts
@@ -427,7 +427,7 @@ create a new one."
 
 ;; use UTF-8 everywhere
 (set-language-environment "UTF-8")
-(profiler-start 'cpu)
+;; (profiler-start 'cpu)
 ;; set default font size
 (defvar swarsel/default-font-size 130)
 (setq swarsel-standard-font "FiraCode Nerd Font Mono"

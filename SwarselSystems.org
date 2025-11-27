@@ -306,7 +306,6 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 ** Manual steps when setting up a new machine
 :PROPERTIES:
 :CUSTOM_ID: h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a
-:ID:       6c446f8e-4e40-4269-b287-389d2c70513b
 :END:
 
 #+begin_src markdown :noweb yes :exports both :results html
@@ -1576,49 +1575,49 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 Defines a formatter that can be called using =nix flake format=. While a nice utility, I have stronger tools to perform this job.
 
 #+begin_src nix-ts :tangle nix/formatter.nix
-  { inputs, ... }:
-  {
-    imports = [
-      inputs.treefmt-nix.flakeModule
-    ];
+    { inputs, ... }:
+    {
+      imports = [
+        inputs.treefmt-nix.flakeModule
+      ];
 
-    perSystem = { pkgs, ... }: {
-      # formatter = pkgs.nixpkgs-fmt;
-      # formatter is set by treefmt to:
-      # formatter = lib.mkIf config.treefmt.flakeFormatter (lib.mkDefault config.treefmt.build.wrapper);
-      treefmt = {
-        projectRootFile = "flake.nix";
-        programs = {
-          nixfmt = {
-            enable = true;
-            package = pkgs.nixpkgs-fmt;
-          };
-          deadnix.enable = true;
-          statix.enable = true;
-          shfmt = {
-            enable = true;
-            indent_size = 4;
-            simplify = true;
-            # needed to replicate what my Emacs shfmt does
-            # there is no builtin option for space-redirects
-            package = pkgs.symlinkJoin {
-              name = "shfmt";
-              buildInputs = [ pkgs.makeWrapper ];
-              paths = [ pkgs.shfmt ];
-              postBuild = ''
-                wrapProgram $out/bin/shfmt -sr
-              '';
+      perSystem = { pkgs, ... }: {
+        # formatter = pkgs.nixpkgs-fmt;
+        # formatter is set by treefmt to:
+        # formatter = lib.mkIf config.treefmt.flakeFormatter (lib.mkDefault config.treefmt.build.wrapper);
+        treefmt = {
+          projectRootFile = "flake.nix";
+          programs = {
+            nixfmt = {
+              enable = true;
+              package = pkgs.nixpkgs-fmt;
             };
+            deadnix.enable = true;
+            statix.enable = true;
+            shfmt = {
+              enable = true;
+              indent_size = 4;
+              simplify = true;
+              # needed to replicate what my Emacs shfmt does
+              # there is no builtin option for space-redirects
+              package = pkgs.symlinkJoin {
+                name = "shfmt";
+                buildInputs = [ pkgs.makeWrapper ];
+                paths = [ pkgs.shfmt ];
+                postBuild = ''
+                  wrapProgram $out/bin/shfmt --append-flags '-sr'
+                '';
+              };
+            };
+            shellcheck.enable = true;
           };
-          shellcheck.enable = true;
+          settings.formatter.shellcheck.options = [
+            "--shell"
+            "bash"
+          ];
         };
-        settings.formatter.shellcheck.options = [
-          "--shell"
-          "bash"
-        ];
       };
-    };
-  }
+    }
 
 #+end_src
 ** TODO Modules
@@ -1893,7 +1892,7 @@ Hence, what I instead do is to define another output =nixosConfigurationsMinimal
 :PROPERTIES:
 :CUSTOM_ID: h:02cd20be-1ffa-4904-9d5a-da5a89ba1421
 :END:
-[[id:6765065e-1822-4abc-82fe-0a60841caa86][Emacs]]
+
 This holds most of the NixOS side of configuration.
 
 ** System specific configuration
@@ -2652,12 +2651,10 @@ This is my main server that I run at home. It handles most tasks that require bi
       server = {
         inherit (config.repo.secrets.local.networking) localNetwork;
         garage = {
-          data_dir = [
-            {
-              capacity = "200G";
-              path = "/Vault/data/garage/main";
-            }
-          ];
+          data_dir = {
+            capacity = "200G";
+            path = "/Vault/data/garage/data";
+          };
         };
       };
     };
@@ -3786,15 +3783,37 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isBtrfs = true;
       isNixos = true;
       isLinux = true;
+      isCloud = true;
       proxyHost = "belchsfactory";
       server = {
         inherit (config.repo.secrets.local.networking) localNetwork;
+        garage = {
+          data_dir = {
+            capacity = "150G";
+            path = "/var/lib/garage/data";
+          };
+          keys = {
+            nixos = [
+              "attic"
+            ];
+          };
+          buckets = [
+            "attic"
+          ];
+        };
       };
     };
   } // lib.optionalAttrs (!minimal) {
     swarselprofiles = {
       server = true;
     };
+
+    swarselmodules.server = {
+      postgresql = lib.mkDefault true;
+      attic = lib.mkDefault true;
+      garage = lib.mkDefault true;
+    };
+
   }
 
 #+end_src
@@ -5610,138 +5629,145 @@ A breakdown of the flags being set:
 - nix.nixPath: Basically the same as =nix.registry=, but for the legacy nix commands
 
 #+begin_src nix-ts :tangle modules/nixos/common/settings.nix
-    { self, lib, pkgs, config, outputs, inputs, minimal, ... }:
-    let
-      inherit (config.swarselsystems) mainUser;
-      settings = if minimal then { } else {
-        environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
-          assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
-          { }
-        '';
+  { self, lib, pkgs, config, outputs, inputs, minimal, globals, ... }:
+  let
+    inherit (config.swarselsystems) mainUser;
+    inherit (config.repo.secrets.common) atticPublicKey;
+    settings = if minimal then { } else {
+      environment.etc."nixos/configuration.nix".source = pkgs.writeText "configuration.nix" ''
+        assert builtins.trace "This location is not used. The config is found in ${config.swarselsystems.flakePath}!" false;
+        { }
+      '';
 
-        nix =
-          let
-            flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-          in
-          {
-            settings = {
-              connect-timeout = 5;
-              bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-              bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
-              fallback = true;
-              min-free = 128000000;
-              max-free = 1000000000;
-              flake-registry = "";
-              auto-optimise-store = true;
-              warn-dirty = false;
-              max-jobs = 1;
-              use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
-            };
-            gc = {
-              automatic = true;
-              dates = "weekly";
-              options = "--delete-older-than 10d";
-            };
-            optimise = {
-              automatic = true;
-              dates = "weekly";
-            };
-            channel.enable = false;
-            registry = rec {
-              nixpkgs.flake = inputs.nixpkgs;
-              # swarsel.flake = inputs.swarsel;
-              swarsel.flake = self;
-              n = nixpkgs;
-              s = swarsel;
-            };
-            nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+      nix =
+        let
+          flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+        in
+        {
+          settings = {
+            connect-timeout = 5;
+            bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
+            bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+            fallback = true;
+            min-free = 128000000;
+            max-free = 1000000000;
+            flake-registry = "";
+            auto-optimise-store = true;
+            warn-dirty = false;
+            max-jobs = 1;
+            use-cgroups = lib.mkIf config.swarselsystems.isLinux true;
           };
-
-        services.dbus.implementation = "broker";
-
-        systemd.services.nix-daemon = {
-          environment.TMPDIR = "/var/tmp";
+          gc = {
+            automatic = true;
+            dates = "weekly";
+            options = "--delete-older-than 10d";
+          };
+          optimise = {
+            automatic = true;
+            dates = "weekly";
+          };
+          channel.enable = false;
+          registry = rec {
+            nixpkgs.flake = inputs.nixpkgs;
+            # swarsel.flake = inputs.swarsel;
+            swarsel.flake = self;
+            n = nixpkgs;
+            s = swarsel;
+          };
+          nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
         };
 
+      services.dbus.implementation = "broker";
+
+      systemd.services.nix-daemon = {
+        environment.TMPDIR = "/var/tmp";
       };
-    in
-    {
-      options.swarselmodules.general = lib.mkEnableOption "general nix settings";
-      config = lib.mkIf config.swarselmodules.general
-        (lib.recursiveUpdate
-          {
-            sops.secrets.github-api-token = lib.mkIf (!minimal) {
-              owner = mainUser;
+
+    };
+  in
+  {
+    options.swarselmodules.general = lib.mkEnableOption "general nix settings";
+    config = lib.mkIf config.swarselmodules.general
+      (lib.recursiveUpdate
+        {
+          sops.secrets.github-api-token = lib.mkIf (!minimal) {
+            owner = mainUser;
+          };
+
+          nix =
+            let
+              nix-version = "2_30";
+            in
+            {
+              package = pkgs.nixVersions."nix_${nix-version}";
+              settings = {
+                experimental-features = [
+                  "nix-command"
+                  "flakes"
+                  "ca-derivations"
+                  "cgroups"
+                  "pipe-operators"
+                ];
+                substituters = [
+                  "https://${globals.services.attic.domain}/${mainUser}"
+                ];
+                trusted-public-keys = [
+                  atticPublicKey
+                ];
+                trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+              };
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '' + lib.optionalString (!minimal) ''
+              #   !include ${config.sops.secrets.github-api-token.path}
+              # '';
+              # extraOptions = ''
+              #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
+              #     buildInputs = [config.nix.package pkgs.boost];
+              #     patches = o.patches or [];
+              #   })}/lib/nix/plugins
+              #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
+              # '';
+
+              extraOptions =
+                let
+                  nix-plugins = pkgs.nix-plugins.override {
+                    nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
+                  };
+                in
+                ''
+                  plugin-files = ${nix-plugins}/lib/nix/plugins
+                  extra-builtins-file = ${self + /nix/extra-builtins.nix}
+                '' + lib.optionalString (!minimal) ''
+                  !include ${config.sops.secrets.github-api-token.path}
+                '';
             };
 
-            nix =
-              let
-                nix-version = "2_30";
-              in
-              {
-                package = pkgs.nixVersions."nix_${nix-version}";
-                settings = {
-                  experimental-features = [
-                    "nix-command"
-                    "flakes"
-                    "ca-derivations"
-                    "cgroups"
-                    "pipe-operators"
-                  ];
-                  trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
-                };
-                # extraOptions = ''
-                #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins
-                #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                # '' + lib.optionalString (!minimal) ''
-                #   !include ${config.sops.secrets.github-api-token.path}
-                # '';
-                # extraOptions = ''
-                #   plugin-files = ${pkgs.nix-plugins.overrideAttrs (o: {
-                #     buildInputs = [config.nix.package pkgs.boost];
-                #     patches = o.patches or [];
-                #   })}/lib/nix/plugins
-                #   extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                # '';
+          system.stateVersion = lib.mkDefault "23.05";
 
-                extraOptions =
-                  let
-                    nix-plugins = pkgs.nix-plugins.override {
-                      nixComponents = pkgs.nixVersions."nixComponents_${nix-version}";
-                    };
-                  in
-                  ''
-                    plugin-files = ${nix-plugins}/lib/nix/plugins
-                    extra-builtins-file = ${self + /nix/extra-builtins.nix}
-                  '' + lib.optionalString (!minimal) ''
-                    !include ${config.sops.secrets.github-api-token.path}
-                  '';
-              };
-
-            system.stateVersion = lib.mkDefault "23.05";
-
-            nixpkgs = {
-              overlays = [
-                outputs.overlays.default
-                (final: prev:
-                  let
-                    additions = final: _: import "${self}/pkgs/config" {
-                      inherit self config lib;
-                      pkgs = final;
-                      homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
-                    };
-                  in
-                  additions final prev
-                )
-              ];
-              config = {
-                allowUnfree = true;
-              };
+          nixpkgs = {
+            overlays = [
+              outputs.overlays.default
+              (final: prev:
+                let
+                  additions = final: _: import "${self}/pkgs/config" {
+                    inherit self config lib;
+                    pkgs = final;
+                    homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
+                  };
+                in
+                additions final prev
+              )
+            ];
+            config = {
+              allowUnfree = true;
             };
+          };
 
-          }
-          settings);
-    }
+        }
+        settings);
+  }
 #+end_src
 
 **** Setup home-manager base
@@ -6482,7 +6508,7 @@ Pipewire handles communication on Wayland. This enables several sound tools as w
 Here I only enable =networkmanager= and a few default networks. The rest of the network config is done separately in [[#h:88bf4b90-e94b-46fb-aaf1-a381a512860d][System specific configuration]].
 
 #+begin_src nix-ts :tangle modules/nixos/client/network.nix
-  { self, lib, pkgs, config, ... }:
+  { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/certs/secrets.yaml;
     clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
@@ -6534,7 +6560,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
       networking = {
         inherit (config.swarselsystems) hostName;
         hosts = {
-          "192.168.178.24" = [ "store.swarsel.win" ];
+          "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
         };
         wireless.iwd = {
           enable = true;
@@ -8856,6 +8882,7 @@ lspci -k -d 14c3:0616
   let
     inherit (confLib.gen { name = "postgresql"; port = 3254; }) serviceName;
     postgresVersion = 14;
+    postgresDirPrefix = if config.swarselsystems.isCloud then "/var/lib" else "/Vault/data" ;
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -8864,9 +8891,13 @@ lspci -k -d 14c3:0616
         ${serviceName} = {
           enable = true;
           package = pkgs."postgresql_${builtins.toString postgresVersion}";
-          dataDir = "/Vault/data/${serviceName}/${builtins.toString postgresVersion}";
+          dataDir = "${postgresDirPrefix}/${serviceName}/${builtins.toString postgresVersion}";
         };
       };
+      environment.persistence."/persist".directories = lib.mkIf (config.swarselsystems.isImpermanence && config.swarselsystems.isCloud) [
+        { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+      ];
+
     };
   }
 #+end_src
@@ -10279,7 +10310,6 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
 **** Emacs elfeed (RSS Server)
 :PROPERTIES:
 :CUSTOM_ID: h:4e6824bc-c3db-485d-b543-4072e6283b62
-:ID:       0e07e2fb-adc4-4fd8-9b54-0a59338a471e
 :END:
 
 This was an approach of hosting an RSS server from within emacs. That would have been useful as it would have allowed me to allow my feeds from any device. However, it proved impossible to do bidirectional syncing, so I abandoned this configuration in favor of [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]].
@@ -10309,7 +10339,6 @@ This was an approach of hosting an RSS server from within emacs. That would have
 **** FreshRSS
 :PROPERTIES:
 :CUSTOM_ID: h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d
-:ID:       d306070e-f06c-4cf8-800f-193d1616670f
 :END:
 
 FreshRSS is a more 'classical' RSS aggregator that I can just host as a distinct service. This also has its upsides because I jave more control over the state this way.
@@ -12445,33 +12474,99 @@ Deployment notes:
 :CUSTOM_ID: h:81c76be4-45f1-44e5-890d-6d082a95ab51
 :END:
 
+Garage acts as my s3 endpoint. I use it on two of my servers:
+  - [[#h:932ef6b0-4c14-4200-8e3f-2e208e748746][Winters (Server: ASRock J4105-ITX)]]: General s3 storage
+  - [[#h:90457194-6b97-4cd6-90bc-4f42d0d69f51][Belchsfactory (OCI)]]: s3 storage for nix binary cache (used by [[#h:092593d2-0ca0-4f86-9951-6127a3594e25][Attic (nix binary cache)]])
+
 Generate the admin token using =openssl rand -base64 32=.
 Generate the rpc token using =openssl rand -hex 32=.
 
+If a website is to be deployed using a s3 bucket, add the corresponding files in one of two ways:
+
+either 1) use vhost addressing: =aws s3 cp <local file> s3://<path to file; no bucket identifier needed> --endpoint-url https://<bucket>.<garage domain> --region swarsel=
+
+or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to file> --endpoint-url https://<garage domain> --region swarsel=
+
 #+begin_src nix-ts :tangle modules/nixos/server/garage.nix
-  { self, lib, pkgs, config, configName, globals, dns, confLib, ... }:
+  # inspired by https://github.com/atropos112/nixos/blob/7fef652006a1c939f4caf9c8a0cb0892d9cdfe21/modules/garage.nix
+  { lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "garage"; port = 3900; }) servicePort serviceName serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen {
+      name = "garage";
+      port = 3900;
+      domain = config.repo.secrets.common.services.domains."garage-${config.node.name}";
+    }) servicePort serviceName specificServiceName serviceDomain subDomain baseDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
-    sopsFile = self + /secrets/${configName}/secrets2.yaml;
+    cfg = lib.recursiveUpdate config.services.${serviceName} config.swarselsystems.server.${serviceName};
+    inherit (config.swarselsystems) sopsFile mainUser;
 
-    cfg = config.services.${serviceName};
+    # needs SSD
     metadata_dir = "/var/lib/garage/meta";
+    # metadata_dir = if config.swarselsystems.isCloud then "/var/lib/garage/meta" else "/Vault/data/garage/meta";
+
+    garageRpcPort = 3901;
+    garageWebPort = 3902;
+    garageAdminPort = 3903;
+    garageK2VPort = 3904;
+
+    adminDomain = "${subDomain}admin.${baseDomain}";
+    webDomain = "${subDomain}web.${baseDomain}";
   in
   {
     options = {
       swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
       swarselsystems.server.${serviceName} = {
-        data_dir = lib.mkOption {
-          type = lib.types.either lib.types.path (lib.types.listOf lib.types.attrs);
-          default = "/var/lib/garage/data";
+        data_dir = {
+          path = lib.mkOption {
+            type = lib.types.str;
+            description = "Directory where Garage stores its metadata";
+          };
+          capacity = lib.mkOption {
+            type = lib.types.str;
+          };
+        };
+        buckets = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          description = "List of buckets to create";
+        };
+        keys = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+          default = { };
+          description = "Keys and their associated buckets. Each key gets full access (read/write/owner) to its listed buckets.";
+          example = {
+            my_key_name = [ "bucket1" "bucket2" ];
+            my_other_key = [ "bucket2" "bucket3" ];
+          };
         };
       };
     };
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
+      assertions = [
+        {
+          assertion = config.swarselsystems.server.${serviceName}.buckets != [ ];
+          message = "If Garage is enabled, at least one bucket must be specified in atro.garage.buckets";
+        }
+        {
+          assertion = builtins.length (lib.attrsToList config.swarselsystems.server.${serviceName}.keys) > 0;
+          message = "If Garage is enabled, at least one key must be specified in atro.garage.keys";
+        }
+        {
+          assertion =
+            let
+              allKeyBuckets = lib.flatten (lib.attrValues config.swarselsystems.server.${serviceName}.keys);
+              invalidBuckets = builtins.filter (bucket: !(lib.elem bucket config.swarselsystems.server.${serviceName}.buckets)) allKeyBuckets;
+            in
+            invalidBuckets == [ ];
+          message = "All buckets referenced in keys must exist in the buckets list";
+        }
+      ];
 
-      swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+        "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "*.${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
       sops = {
@@ -12479,56 +12574,231 @@ Generate the rpc token using =openssl rand -hex 32=.
         secrets.garage-rpc-secret = { inherit sopsFile; };
       };
 
+      # DynamicUser cannot read above secrets
+      systemd.services.${serviceName}.serviceConfig = {
+        DynamicUser = false;
+        ProtectHome = lib.mkForce false;
+      };
+
       environment = {
         persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
-          { directory = metadata_dir; }
+          { directory = "/var/lib/garage"; }
+          (lib.mkIf config.swarselsystems.isCloud { directory = config.swarselsystems.server.${serviceName}.data_dir.path; })
         ];
         systemPackages = [
           cfg.package
         ];
       };
 
-      globals.services.${serviceName} = {
+      globals.services.${specificServiceName} = {
         domain = serviceDomain;
         inherit proxyAddress4 proxyAddress6;
       };
 
-      systemd.services.${serviceName}.serviceConfig = {
-        DynamicUser = false;
-        ProtectHome = lib.mkForce false;
-      };
 
       services.${serviceName} = {
         enable = true;
         package = pkgs.garage_2;
         settings = {
-          inherit (config.swarselsystems.${serviceName}) data_dir;
+          data_dir = [ config.swarselsystems.server.${serviceName}.data_dir ];
           inherit metadata_dir;
           db_engine = "lmdb";
-          block_size = "1MiB";
+          block_size = "128M";
           use_local_tz = false;
+          disable_scrub = true;
+          replication_factor = 1;
+          compression_level = "none";
 
-          replication_factor = 2; # Number of copies of data
+          rpc_bind_addr = "[::]:${builtins.toString garageRpcPort}";
+          # we are not joining our nodes, just use the private ipv4
+          rpc_public_addr = "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4}:${builtins.toString garageRpcPort}";
 
-          rpc_bind_addr = "[::]:3901";
-          rpc_public_addr = "${config.repo.secrets.local.ipv4}:4317";
           rpc_secret_file = config.sops.secrets.garage-rpc-secret.path;
 
           s3_api = {
-            s3_region = "swarsel";
-            api_bind_addr = "0.0.0.0:${builtins.toString servicePort}";
-            root_domain = ".s3.garage.localhost";
+            s3_region = mainUser;
+            api_bind_addr = "[::]:${builtins.toString servicePort}";
+            root_domain = ".${serviceDomain}";
+          };
+
+          s3_web = {
+            bind_addr = "[::]:${builtins.toString garageWebPort}";
+            root_domain = ".${config.repo.secrets.common.services.domains."garage-web-${config.node.name}"}";
+            add_host_to_metrics = true;
           };
 
           admin = {
-            api_bind_addr = "0.0.0.0:3903";
+            api_bind_addr = "[::]:${builtins.toString garageAdminPort}";
             admin_token_file = config.sops.secrets.garage-admin-token.path;
           };
 
           k2v_api = {
-            api_bind_addr = "[::]:3904";
+            api_bind_addr = "[::]:${builtins.toString garageK2VPort}";
           };
         };
+      };
+
+
+      systemd.services = {
+        garage-buckets = {
+          description = "Create Garage buckets";
+          after = [ "garage.service" ];
+          wants = [ "garage.service" ];
+          wantedBy = [ "multi-user.target" ];
+
+          path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "root";
+            Group = "root";
+          };
+
+          script = ''
+            garage status
+
+            # Checking repeatedly with garage status until getting 0 exit code
+            while ! garage status >/dev/null 2>&1; do
+              echo "Garage not yet operational, waiting..."
+              echo "Current garage status output:"
+              garage status 2>&1 || true
+              echo "---"
+              sleep 5
+            done
+
+            # Now we check if garage status shows any failed nodes by checking for ==== FAILED NODES ====
+            while garage status | grep -q "==== FAILED NODES ===="; do
+              echo "Garage has failed nodes, waiting..."
+              echo "Current garage status output:"
+              garage status 2>&1 || true
+              echo "---"
+              sleep 5
+            done
+
+            echo "Garage is operational, proceeding with bucket management."
+
+            # Get list of existing buckets
+            existing_buckets=$(garage bucket list | tail -n +2 | awk '{print $3}' | grep -v '^$' || true)
+
+            # Create buckets that should exist
+            ${lib.concatMapStringsSep "\n" (bucket: ''
+                if [[ "$(garage bucket info ${lib.escapeShellArg bucket} 2>&1 >/dev/null)" == *"Bucket not found"* ]]; then
+                  echo "Creating bucket ${lib.escapeShellArg bucket}"
+                  garage bucket create ${lib.escapeShellArg bucket}
+                else
+                  echo "Bucket ${lib.escapeShellArg bucket} already exists"
+                fi
+              '')
+              cfg.buckets}
+
+            # Remove buckets that shouldn't exist
+            for bucket in $existing_buckets; do
+              should_exist=false
+              ${lib.concatMapStringsSep "\n" (bucket: ''
+                if [[ "$bucket" == ${lib.escapeShellArg bucket} ]]; then
+                  should_exist=true
+                fi
+              '')
+              cfg.buckets}
+
+              if [[ "$should_exist" == "false" ]]; then
+                echo "Removing bucket $bucket"
+                garage bucket delete --yes "$bucket"
+              fi
+            done
+          '';
+        };
+
+        garage-keys = {
+          description = "Create Garage keys and set permissions";
+          after = [ "garage-buckets.service" ];
+          wants = [ "garage-buckets.service" ];
+          requires = [ "garage-buckets.service" ];
+          wantedBy = [ "multi-user.target" ];
+
+          path = [ cfg.package pkgs.gawk pkgs.coreutils ];
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "root";
+            Group = "root";
+          };
+
+          script = ''
+            garage key list
+            echo "Managing keys..."
+
+            # Get list of existing keys
+            existing_keys=$(garage key list | tail -n +2 | awk '{print $3}' | grep -v '^$' || true)
+
+            # Create keys that should exist
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
+                if [[ "$(garage key info ${lib.escapeShellArg keyName} 2>&1)" == *"0 matching keys"* ]]; then
+                  echo "Creating key ${lib.escapeShellArg keyName}"
+                  garage key create ${lib.escapeShellArg keyName}
+                else
+                  echo "Key ${lib.escapeShellArg keyName} already exists"
+                fi
+              '')
+              cfg.keys)}
+
+            # Set up key permissions for buckets
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (
+                keyName: buckets:
+                  lib.concatMapStringsSep "\n" (bucket: ''
+                    echo "Granting full access to key ${lib.escapeShellArg keyName} for bucket ${lib.escapeShellArg bucket}"
+                    garage bucket allow --read --write --owner --key ${lib.escapeShellArg keyName} ${lib.escapeShellArg bucket}
+                  '')
+                  buckets
+              )
+              cfg.keys)}
+
+            # Remove permissions from buckets that are no longer associated with keys
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: buckets: ''
+                # Get current buckets this key has access to
+                current_buckets=$(garage key info ${lib.escapeShellArg keyName} | grep -A 1000 "==== BUCKETS FOR THIS KEY ====" | tail -n +3 | awk '{print $3}' | grep -v '^$' || true)
+
+                # Remove access from buckets not in the desired list
+                for current_bucket in $current_buckets; do
+                  should_have_access=false
+                  ${lib.concatMapStringsSep "\n" (bucket: ''
+                    if [[ "$current_bucket" == ${lib.escapeShellArg bucket} ]]; then
+                      should_have_access=true
+                    fi
+                  '')
+                  buckets}
+
+                  if [[ "$should_have_access" == "false" ]]; then
+                    echo "Removing access for key ${lib.escapeShellArg keyName} from bucket $current_bucket"
+                    garage bucket deny --key ${lib.escapeShellArg keyName} $current_bucket
+                  fi
+                done
+              '')
+              cfg.keys)}
+
+            # Remove keys that shouldn't exist
+            for key in $existing_keys; do
+              should_exist=false
+              ${lib.concatStringsSep "\n" (lib.mapAttrsToList (keyName: _: ''
+                if [[ "$key" == ${lib.escapeShellArg keyName} ]]; then
+                  should_exist=true
+                fi
+              '')
+              cfg.keys)}
+
+              if [[ "$should_exist" == "false" ]]; then
+                echo "Removing key $key"
+                garage key delete --yes "$key"
+              fi
+            done
+          '';
+        };
+      };
+
+      security.acme.certs."${webDomain}" = {
+        domain = "*.${webDomain}";
       };
 
       nodes.${serviceProxy}.services.nginx = {
@@ -12538,9 +12808,42 @@ Generate the rpc token using =openssl rand -hex 32=.
               "${serviceAddress}:${builtins.toString servicePort}" = { };
             };
           };
+          "${serviceName}Web" = {
+            servers = {
+              "${serviceAddress}:${builtins.toString garageWebPort}" = { };
+            };
+          };
+          "${serviceName}Admin" = {
+            servers = {
+              "${serviceAddress}:${builtins.toString garageAdminPort}" = { };
+            };
+          };
         };
         virtualHosts = {
+          "${adminDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}Admin";
+              };
+            };
+          };
+          "*.${webDomain}" = {
+            useACMEHost = webDomain;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}Web";
+              };
+            };
+          };
           "${serviceDomain}" = {
+            serverAliases = [ "*.${serviceDomain}" ];
             enableACME = true;
             forceSSL = true;
             acmeRoot = null;
@@ -12548,6 +12851,9 @@ Generate the rpc token using =openssl rand -hex 32=.
             locations = {
               "/" = {
                 proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
               };
             };
           };
@@ -12895,6 +13201,151 @@ Generate the rpc token using =openssl rand -hex 32=.
               "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
               "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
               "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+            };
+          };
+        };
+      };
+
+    };
+  }
+#+end_src
+**** Attic (nix binary cache)
+:PROPERTIES:
+:CUSTOM_ID: h:092593d2-0ca0-4f86-9951-6127a3594e25
+:END:
+
+Generate the attic server token using =openssl genrsa -traditional 4096 | base64 -w0=
+
+# Copy and paste from the atticd output
+$ attic login local http://localhost:8080 eyJ...
+✍️ Configuring server "local"
+
+$ attic cache create hello
+✨ Created cache "hello" on "local"
+
+#+begin_src nix-ts :tangle modules/nixos/server/attic.nix
+  { lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+    inherit (config.swarselsystems) mainUser isPublic sopsFile;
+    serviceDB = "atticd";
+  in
+  {
+    options = {
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    };
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+      globals.services.${serviceName} = {
+        domain = serviceDomain;
+        inherit proxyAddress4 proxyAddress6;
+      };
+
+      sops = lib.mkIf (!isPublic) {
+        secrets = {
+          attic-server-token = { inherit sopsFile; };
+          attic-garage-access-key = { inherit sopsFile; };
+          attic-garage-secret-key = { inherit sopsFile; };
+        };
+        templates = {
+          "attic.env" = {
+            content = ''
+              ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic-server-token}
+              AWS_ACCESS_KEY_ID=${config.sops.placeholder.attic-garage-access-key}
+              AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.attic-garage-secret-key}
+            '';
+          };
+        };
+      };
+
+      services.atticd = {
+        enable = true;
+        environmentFile = config.sops.templates."attic.env".path;
+        settings = {
+          listen = "[::]:${builtins.toString servicePort}";
+          api-endpoint = "https://${serviceDomain}/";
+          allowed-hosts = [
+            serviceDomain
+          ];
+          require-proof-of-possession = false;
+          compression = {
+            type = "zstd";
+            level = 3;
+          };
+          database.url = "postgresql:///atticd?host=/run/postgresql";
+
+          storage =
+            if config.swarselmodules.server.garage then {
+              type = "s3";
+              region = mainUser;
+              bucket = serviceName;
+              # attic must be patched to never serve pre-signed s3 urls directly
+              # otherwise it will redirect clients to this localhost endpoint
+              endpoint = "http://127.0.0.1:3900";
+            } else {
+              type = "local";
+              path = serviceDir;
+              # attic must be patched to never serve pre-signed s3 urls directly
+              # otherwise it will redirect clients to this localhost endpoint
+            };
+
+          garbage-collection = {
+            interval = "1 day";
+            default-retention-period = "3 months";
+          };
+
+          chunking = {
+            nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # 64 KiB
+
+            min-size = 16 * 1024; # 16 KiB
+            avg-size = 64 * 1024; # 64 KiB
+            max-size = 256 * 1024; # 256 KiBize = 262144;
+          };
+        };
+      };
+
+      services.postgresql = {
+        enable = true;
+        enableTCPIP = true;
+        ensureDatabases = [ serviceDB ];
+        ensureUsers = [
+          {
+            name = serviceDB;
+            ensureDBOwnership = true;
+          }
+        ];
+      };
+
+      systemd.services.atticd = lib.mkIf config.swarselmodules.server.garage {
+        requires = [ "garage.service" ];
+        after = [ "garage.service" ];
+      };
+
+      nodes.${serviceProxy}.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${serviceDomain}" = {
+            enableACME = true;
+            forceSSL = true;
+            acmeRoot = null;
+            oauth2.enable = false;
+            locations = {
+              "/" = {
+                proxyPass = "http://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size 0;
+                '';
+              };
             };
           };
         };
@@ -13634,7 +14085,7 @@ This section sets up all the imports that are used in the home-manager section.
   }
 #+end_src
 
-**** General home-manager-settings
+**** General home-manager-settings (nix)
 :PROPERTIES:
 :CUSTOM_ID: h:4af4f67f-7c48-4754-b4bd-6800e3a66664
 :END:
@@ -13642,9 +14093,10 @@ This section sets up all the imports that are used in the home-manager section.
 Again, we adapt =nix= to our needs, enable the home-manager command for non-NixOS machines (NixOS machines are using it as a module) and setting user information that I always keep the same.
 
 #+begin_src nix-ts :tangle modules/home/common/settings.nix
-  { self, outputs, lib, pkgs, config, ... }:
+  { self, outputs, lib, pkgs, config, globals, nixosConfig ? config, ... }:
   let
     inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
+    inherit (nixosConfig.repo.secrets.common) atticPublicKey;
   in
   {
     options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -13677,6 +14129,12 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
               "cgroups"
               "pipe-operators"
             ];
+                substituters = [
+                  "https://${globals.services.attic.domain}/${mainUser}"
+                ];
+                trusted-public-keys = [
+                  atticPublicKey
+                ];
             trusted-users = [ "@wheel" "${mainUser}" ];
             connect-timeout = 5;
             bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
@@ -13838,6 +14296,9 @@ This holds packages that I can use as provided, or with small modifications (as 
 
         # ssh login using idm
         opkssh
+
+        # cache
+        attic-client
 
         # dict
         (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
@@ -14052,7 +14513,6 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
 **** sops
 :PROPERTIES:
 :CUSTOM_ID: h:d87d80fd-2ac7-4f29-b338-0518d06b4deb
-:ID:       b2e99917-c9b6-424b-b0c2-0248f45a862e
 :END:
 
 I use sops-nix to handle secrets that I want to have available on my machines at all times. Procedure to add a new machine:
@@ -14368,6 +14828,7 @@ Sets environment variables. Here I am only setting the EDITOR variable, most var
       } // (lib.optionalAttrs (!isPublic) { });
       systemd.user.sessionVariables = {
         DOCUMENT_DIR_PRIV = lib.mkForce "${homeDir}/Documents/Private";
+        FLAKE = "${config.home.homeDirectory}/.dotfiles";
       } // lib.optionalAttrs (!isPublic) {
         SWARSEL_MAIL1 = address1;
         SWARSEL_MAIL2 = address2;
@@ -16649,7 +17110,6 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
 **** Home-manager: Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:c05d1b64-7110-4151-b436-46bc447113b4
-:ID:       ebb558ed-883a-486f-a6f5-8b283eb735a3
 :END:
 
 By using the emacs-overlay NixOS module, I can install all Emacs packages that I want to use right through NixOS. This is done by passing my =init.el= file to the configuration which will then be parsed upon system rebuild, looking for =use-package= sections in the Elisp code. Also I define here the style of Emacs that I want to run - I am going with native Wayland Emacs here (=emacs-pgtk=). All of the nice options such as =tree-sitter= support are enabled by default, so I do not need to adjust the build process.
@@ -20522,31 +20982,34 @@ In short, the options defined here are passed to the modules systems using =_mod
 :CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
 :END:
 #+begin_src nix-ts :noweb yes :tangle modules/shared/config-lib.nix
-  { config, globals, ... }:
-  {
-    _module.args = {
-      confLib = rec {
+    { config, lib, globals, ... }:
+    {
+      _module.args = {
+        confLib = rec {
 
-        addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4 else "localhost";
+          addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4 else "localhost";
 
-        domainDefault = service: config.repo.secrets.common.services.domains.${service};
-        proxyDefault = config.swarselsystems.proxyHost;
+          domainDefault = service: config.repo.secrets.common.services.domains.${service};
+          proxyDefault = config.swarselsystems.proxyHost;
 
-        gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
-          servicePort = port;
-          serviceName = name;
-          serviceUser = user;
-          serviceGroup = group;
-          serviceDomain = domain;
-          serviceDir = dir;
-          serviceAddress = address;
-          serviceProxy = proxy;
-          proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
-          proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
+          gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
+            servicePort = port;
+            serviceName = name;
+            specificServiceName = "${name}-${config.node.name}";
+            serviceUser = user;
+            serviceGroup = group;
+            serviceDomain = domain;
+            baseDomain = lib.swarselsystems.getBaseDomain domain;
+            subDomain = lib.swarselsystems.getSubDomain domain;
+            serviceDir = dir;
+            serviceAddress = address;
+            serviceProxy = proxy;
+            proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
+            proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
+          };
         };
       };
-    };
-  }
+    }
 #+end_src
 
 *** Packages
@@ -23416,7 +23879,6 @@ This holds modules that are to be used on most hosts. These are also the most im
 * Emacs
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
-:ID:       6765065e-1822-4abc-82fe-0a60841caa86
 :END:
 ** Initialization (early-init.el)
 :PROPERTIES:
@@ -23558,7 +24020,8 @@ In this section I define extra functions that I need. Some of these functions I 
 
 Since I am rebinding the =C-z= hotkey for emacs-evil-state toggling, I want to have a function that still lets me perform this action quickly.
 
-We set a keybinding to this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
+
 
 #+begin_src emacs-lisp
 ;; -*- lexical-binding: t; -*-
@@ -23578,7 +24041,7 @@ We set a keybinding to this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom
 
 I often find myself bouncing between two buffers when I do not want to use a window split. This function simply jumps to the last used buffer.
 
-We set a keybinding to this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23667,7 +24130,7 @@ The below function avoids these problems. Originally I used the function =duplic
 
 However, this function does not work on regions. Later, I found a solution implemented by [[https://github.com/bbatsov/crux][crux]]. I do not need the whole package, so I just extracted the three functions I needed from it.
 
-We set a keybinding for some of them in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23842,7 +24305,7 @@ This function was found here: [[https://www.reddit.com/r/emacs/comments/re31i6/h
 
 At work and when working on private projects, I often have to jump between several git repositories. This function fires up a picker that gets me to the magit overview page of that repository.
 
-We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -23896,7 +24359,6 @@ Used in: [[#h:bbcfa895-4d46-4b1d-b84e-f634e982c46e][Centered org-mode Buffers]]
 **** org-mode: Upon-save actions (Auto-tangle, export to html, formatting)
 :PROPERTIES:
 :CUSTOM_ID: h:59d4306e-9b73-4b2c-b039-6a6518c357fc
-:ID:       a67adf2f-20ce-49d6-ba6b-0341ca3d9972
 :END:
 
 This section handles everything that shoudld happen when I save =SwarselSystems.org=. It:
@@ -23943,7 +24405,7 @@ Normally emacs cycles between three states:
 
 However, I want to be able to fold a single heading consistently.
 
-We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -24015,7 +24477,7 @@ When writing this file, I often want to refer to a different section of the file
 
 These two scripts just let me do all of this in one step. I have styled the picker in a way that is similar to consult-org-heading.
 
-We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custom Keybindings]].
+We set a keybinding to this in [[#h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5][Custom Keybindings]].
 
 #+begin_src emacs-lisp
 
@@ -24055,10 +24517,10 @@ We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custo
 
         (save-excursion
           (goto-char marker)
-          (setq id (org-id-get-create))
+          (setq id (prot-org--id-get))
           (setq raw-heading (org-get-heading t t t t)))
 
-        (insert (org-link-make-string (format "id:%s" id)
+        (insert (org-link-make-string (format "#%s" id)
                                       raw-heading)))))
 
 #+end_src
@@ -24066,7 +24528,6 @@ We set a keybinding for this in [[id:46e64995-f669-46ea-b665-f76efad33d4e][Custo
 *** Custom Keybindings
 :PROPERTIES:
 :CUSTOM_ID: h:2b827c27-0de7-45ed-9d9e-6c511e2c6bb5
-:ID:       46e64995-f669-46ea-b665-f76efad33d4e
 :END:
 
 This defines a set of keybinds that I want to have available globally. I have one set of keys that is globally available through the =C-SPC= prefix. This set is used mostly for functions that I have trouble remembering the original keybind for, or that I just want to have gathered in a common space.
@@ -24279,7 +24740,7 @@ Here I set up some things that are too minor to put under other categories.
 
   ;; use UTF-8 everywhere
   (set-language-environment "UTF-8")
-  (profiler-start 'cpu)
+  ;; (profiler-start 'cpu)
   ;; set default font size
   (defvar swarsel/default-font-size 130)
   (setq swarsel-standard-font "FiraCode Nerd Font Mono"
@@ -25100,7 +25561,7 @@ This places little angled indicators on the fringe of a window which indicate bu
 
 This defines the authentication sources used by =org-calfw= ([[#h:c760f04e-622f-4b3e-8916-53ca8cce6edc][Calendar]]) and [[#h:1a8585ed-d9f2-478f-a132-440ada1cde2c][Forge]].
 
-This file is written using home-manager [[id:b2e99917-c9b6-424b-b0c2-0248f45a862e][sops]] in [[id:ebb558ed-883a-486f-a6f5-8b283eb735a3][Home-manager: Emacs]]
+This file is written using home-manager [[#h:d87d80fd-2ac7-4f29-b338-0518d06b4deb][sops]] in [[#h:c05d1b64-7110-4151-b436-46bc447113b4][Home-manager: Emacs]]
 
 #+begin_src emacs-lisp
 
@@ -25501,7 +25962,7 @@ When holding presentations, I think it is important to not have too many distrac
 :CUSTOM_ID: h:d4137200-7f91-43d9-9550-e0b6bfda1683
 :END:
 
-I have written this function to allow me to get a preview of the information that is gathered throughout the file and aggregated in [[id:6c446f8e-4e40-4269-b287-389d2c70513b][Manual steps when setting up a new machine]]. Normally, running a markdown source block does nothing in Emacs. Hence, I just let it return the output, which inserts the noweb-ref blocks.
+I have written this function to allow me to get a preview of the information that is gathered throughout the file and aggregated in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. Normally, running a markdown source block does nothing in Emacs. Hence, I just let it return the output, which inserts the noweb-ref blocks.
 
 #+begin_src emacs-lisp
 (defun org-babel-execute:markdown (body params)
@@ -25513,7 +25974,7 @@ I have written this function to allow me to get a preview of the information tha
 :CUSTOM_ID: h:406c2ecc-0e3e-4d9f-9ae3-3eb1f8b87d1b
 :END:
 
-This adds a nix mode to Emacs. This has become increasingly useful since I have added [[id:f8cb9724-df54-42fb-a35b-530937686c6a][lsp-mode in org-src blocks]], because since that time, I am now able to actually make use of major modes while I theoretically stay in org-mode.
+This adds a nix mode to Emacs. This has become increasingly useful since I have added [[#h:cd552ba1-4db1-4605-8ead-4fcb6a466826][lsp-mode in org-src blocks]], because since that time, I am now able to actually make use of major modes while I theoretically stay in org-mode.
 
 It supports all functions that I normally need. Note that getting completions for flake inputs is a bit finnicky and I am not quite fond of it yet.
 
@@ -25561,10 +26022,9 @@ It supports all functions that I normally need. Note that getting completions fo
 *** HCL Mode
 :PROPERTIES:
 :CUSTOM_ID: h:e8074881-3441-4abd-b25b-358a87e7984f
-:ID:       7aa9803f-b419-40fa-aafc-4bb934c8f687
 :END:
 
-This adds support for Hashicorp Configuration Language. Used at work, it is mostly a [[id:267430d0-7d64-40c1-87a2-7d88762b8cb6][Terraform Mode]] that does not support autoformatting upon save. It still is nice :)
+This adds support for Hashicorp Configuration Language. Used at work, it is mostly a [[#h:7834adb0-fbd3-4136-bdb7-6dbc9a083296][Terraform Mode]] that does not support autoformatting upon save. It still is nice :)
 
 #+begin_src emacs-lisp
 
@@ -25577,7 +26037,6 @@ This adds support for Hashicorp Configuration Language. Used at work, it is most
 *** Jenkinsfile/Groovy
 :PROPERTIES:
 :CUSTOM_ID: h:c9e3ffd7-4fb1-4a04-8563-92ceec4b4410
-:ID:       ebd53be9-c38a-4a0f-a7b4-eee30a0074fc
 :END:
 
 This adds support for Groovy, which I specifically need to work with Jenkinsfiles. Similar to [[id:7aa9803f-b419-40fa-aafc-4bb934c8f687][HCL Mode]], it just provides some nice functions.
@@ -25619,7 +26078,6 @@ This adds support for Dockerfiles in a similar way to [[id:ebd53be9-c38a-4a0f-a7
 *** Terraform Mode
 :PROPERTIES:
 :CUSTOM_ID: h:7834adb0-fbd3-4136-bdb7-6dbc9a083296
-:ID:       267430d0-7d64-40c1-87a2-7d88762b8cb6
 :END:
 
 This adds support for Terraform configuration files. This is basically the same as the [[id:7aa9803f-b419-40fa-aafc-4bb934c8f687][HCL Mode]] mode as the languages are very similar.
@@ -25638,7 +26096,6 @@ This adds support for Terraform configuration files. This is basically the same 
 *** nix formatting
 :PROPERTIES:
 :CUSTOM_ID: h:5ca7484b-b9d6-4023-88d1-a1e37d5df249
-:ID:       460a47fd-cddc-4080-9eba-6724fc63606e
 :END:
 
 Adds functions for formatting nix code. I make huge use of this using the chords =C-<Space> o b= (org-babel-mark-block) and then =C-<Space> o n= (nixpkgs-fmt-region). This is what I use to keep my nix org-src-blocks formatted. However, using [[id:a67adf2f-20ce-49d6-ba6b-0341ca3d9972][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]], the resulting tangled files will be formatted in any case.
@@ -25713,7 +26170,7 @@ Allows me to render LaTeX just where I write it. I do not need this as much anym
 :CUSTOM_ID: h:a83c5820-2016-44ae-90a0-4756bb471c01
 :END:
 
-This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[id:d306070e-f06c-4cf8-800f-193d1616670f][FreshRSS]]. While I read most of my feeds on my phone (using Capy Reader), it is still good to have an Emacs-native reader as well. Some time ago I was still running a separate Emacs instance on my server: [[id:0e07e2fb-adc4-4fd8-9b54-0a59338a471e][Emacs elfeed (RSS Server)]]. This instance would then sync the read feeds to other instances. This was very brittle however and is only left as a historical note.
+This adds elfeed, a neat RSS reader for Emacs. I use this as a client for [[#h:9da3df74-6fc5-4ee1-a345-23ab4e8a613d][FreshRSS]]. While I read most of my feeds on my phone (using Capy Reader), it is still good to have an Emacs-native reader as well. Some time ago I was still running a separate Emacs instance on my server: [[id:0e07e2fb-adc4-4fd8-9b54-0a59338a471e][Emacs elfeed (RSS Server)]]. This instance would then sync the read feeds to other instances. This was very brittle however and is only left as a historical note.
 
 #+begin_src emacs-lisp
 
@@ -25766,7 +26223,7 @@ This is the ripgrep package for Emacs.
 
 Tree-sitter is a parsing library integrated into Emacs to provide better syntax highlighting and code analysis. It generates concrete syntax trees for source code, enabling more accurate and efficient text processing. Emacs' tree-sitter integration enhances language support, offering features like incremental parsing and precise syntax-aware editing. This improves the development experience by providing robust and dynamic syntax features, making it easier for me to navigate and manipulate code.
 
-In order to update the language grammars, run the next command below. NOTE: since we now load =epkgs.treesit-grammars.with-all-grammars= in [[id:ebb558ed-883a-486f-a6f5-8b283eb735a3][Home-manager: Emacs]], we actually never run this anymore. I leave it here however for a potential future reader. For safety, I still instruct treesit to install missing grammars on the fly.
+In order to update the language grammars, run the next command below. NOTE: since we now load =epkgs.treesit-grammars.with-all-grammars= in [[#h:c05d1b64-7110-4151-b436-46bc447113b4][Home-manager: Emacs]], we actually never run this anymore. I leave it here however for a potential future reader. For safety, I still instruct treesit to install missing grammars on the fly.
 
 #+begin_src emacs-lisp :tangle no :export both
 
@@ -25935,7 +26392,6 @@ Also, Emacs needs a little extra love to accept my Yubikey for git commits etc. 
 *** Yubikey support
 :PROPERTIES:
 :CUSTOM_ID: h:d78709dd-4f79-441c-9166-76f61f90359a
-:ID:       59df9a4c-2a1f-466b-abe2-fbb8524cd0ed
 :END:
 
 The following settings are needed to make sure emacs works for magit commits and pushes. It is not a beautiful solution since commiting uses pinentry-emacs and pushing uses pinentry-gtk2, but it works for now at least. This works especially well since I have switched from =pinentry-gtk3= to =pinentry-waypromt=.
@@ -26235,7 +26691,6 @@ Still, this is avery convenient package.
 *** eglot
 :PROPERTIES:
 :CUSTOM_ID: h:6cf0310b-2fdf-45f0-9845-4704649777eb
-:ID:       07b25188-2dbf-4896-b86b-d6e60023a2d7
 :END:
 
 Up comes the section of lsp clients for Emacs. For a longer time, I thought that I had to choose one only, and after having started with =lsp-mode= I had tried out =lsp-booster= and then went to =eglot=. My requirements are as follow:
@@ -26320,7 +26775,6 @@ company is now disabled since it seems that corfu runs just fine with lsp-mode a
 *** lsp-mode in org-src blocks
 :PROPERTIES:
 :CUSTOM_ID: h:cd552ba1-4db1-4605-8ead-4fcb6a466826
-:ID:       f8cb9724-df54-42fb-a35b-530937686c6a
 :END:
 
 This incredible function allows to start a sub-pane in a org-file while in a source-block that spins up a lsp-server. In practise that allows me to use a nix lsp when editing complex blocks in my config. The only bother is that we have to add the modes where it should run manually to =org-babel-lang-list=, but that is a small price to pay for the usefulness that it brings.
@@ -26362,7 +26816,7 @@ This incredible function allows to start a sub-pane in a org-file while in a sou
 :CUSTOM_ID: h:f7bc590b-9f91-4f6a-8ffe-93e1dea90a61
 :END:
 
-This is another lsp-implementation for Emacs using multi-threading, so this should be the least blocking one. Still, in general I prefer [[id:07b25188-2dbf-4896-b86b-d6e60023a2d7][eglot]].
+This is another lsp-implementation for Emacs using multi-threading, so this should be the least blocking one. Still, in general I prefer [[#h:6cf0310b-2fdf-45f0-9845-4704649777eb][eglot]].
 
 
 #+begin_src emacs-lisp
