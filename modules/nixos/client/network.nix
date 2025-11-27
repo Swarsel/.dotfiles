@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/certs/secrets.yaml;
   clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
@@ -50,7 +50,7 @@ in
     networking = {
       inherit (config.swarselsystems) hostName;
       hosts = {
-        "192.168.178.24" = [ "store.swarsel.win" ];
+        "${globals.networks.home-lan.hosts.winters.ipv4}" = [ globals.services.transmission.domain ];
       };
       wireless.iwd = {
         enable = true;

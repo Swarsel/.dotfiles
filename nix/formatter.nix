@@ -28,7 +28,7 @@
             buildInputs = [ pkgs.makeWrapper ];
             paths = [ pkgs.shfmt ];
             postBuild = ''
-              wrapProgram $out/bin/shfmt -sr
+              wrapProgram $out/bin/shfmt --append-flags '-sr'
             '';
           };
         };

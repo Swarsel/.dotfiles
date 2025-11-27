@@ -1,4 +1,4 @@
-{ config, globals, ... }:
+{ config, lib, globals, ... }:
 {
   _module.args = {
     confLib = rec {
@@ -11,9 +11,12 @@
       gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
         servicePort = port;
         serviceName = name;
+        specificServiceName = "${name}-${config.node.name}";
         serviceUser = user;
         serviceGroup = group;
         serviceDomain = domain;
+        baseDomain = lib.swarselsystems.getBaseDomain domain;
+        subDomain = lib.swarselsystems.getSubDomain domain;
         serviceDir = dir;
         serviceAddress = address;
         serviceProxy = proxy;

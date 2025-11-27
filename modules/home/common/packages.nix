@@ -25,6 +25,9 @@
       # ssh login using idm
       opkssh
 
+      # cache
+      attic-client
+
       # dict
       (aspellWithDicts (dicts: with dicts; [ de en en-computers en-science ]))
 

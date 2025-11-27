@@ -29,12 +29,10 @@
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
       garage = {
-        data_dir = [
-          {
-            capacity = "200G";
-            path = "/Vault/data/garage/main";
-          }
-        ];
+        data_dir = {
+          capacity = "200G";
+          path = "/Vault/data/garage/data";
+        };
       };
     };
   };

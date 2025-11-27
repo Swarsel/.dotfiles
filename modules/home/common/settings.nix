@@ -1,6 +1,7 @@
-{ self, outputs, lib, pkgs, config, ... }:
+{ self, outputs, lib, pkgs, config, globals, nixosConfig ? config, ... }:
 let
   inherit (config.swarselsystems) mainUser flakePath isNixos isLinux;
+  inherit (nixosConfig.repo.secrets.common) atticPublicKey;
 in
 {
   options.swarselmodules.general = lib.mkEnableOption "general nix settings";
@@ -32,6 +33,12 @@ in
             "ca-derivations"
             "cgroups"
             "pipe-operators"
+          ];
+          substituters = [
+            "https://${globals.services.attic.domain}/${mainUser}"
+          ];
+          trusted-public-keys = [
+            atticPublicKey
           ];
           trusted-users = [ "@wheel" "${mainUser}" ];
           connect-timeout = 5;
