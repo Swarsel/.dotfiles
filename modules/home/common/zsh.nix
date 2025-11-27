@@ -67,7 +67,10 @@ in
         };
         history = {
           expireDuplicatesFirst = true;
-          path = "$HOME/.histfile";
+          append = true;
+          ignoreSpace = true;
+          ignoreDups = true;
+          path = "${config.home.homeDirectory}/.histfile";
           save = 100000;
           size = 100000;
         };

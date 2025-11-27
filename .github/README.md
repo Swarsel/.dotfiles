@@ -150,25 +150,26 @@
 
   ### Hosts
 
-  | Name               | Hardware                                            | Use                                                  |
-  |--------------------|-----------------------------------------------------|------------------------------------------------------|
-  |💻 **pyramid**      | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                          |
-  |💻 **bakery**       | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                      |
-  |💻 **machpizza**    | MacBook Pro 2016                                    | MacOS reference and build sandbox                    |
-  |🏠 **treehouse**    | NVIDIA DGX Spark                                    | Workstation, AI playground and home-manager reference|
-  |🖥️ **winters**      | ASRock J4105-ITX, 32GB RAM                          | Secondary homeserver and data storgae                |
-  |🖥️ **summers**      | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Main homeserver running microvms, data storage       |
-  |🖥️ **hintbooth**    | HUNSN RM02, 8GB RAM                                 | Router                                               |
-  |☁️ **milkywell**    | Oracle Cloud: VM.Standard.E2.1.Micro                | Authoritative DNS server                             |
-  |☁️ **moonside**     | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Proxy for local services, some lightweight services  |
-  |☁️ **belchsfactory**| Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Hydra builder and nix binary cache                   |
-  |☁️ **monkeycave**   | Oracle Cloud: VM.Standard.A1.Flex, 4 OCPUs, 24GB RAM| Gaming server                                        |
-  |☁️ **eagleland**    | Hetzner Cloud: CX23                                 | Mail server                                          |
-  |📱 **magicant**     | Samsung Galaxy Z Flip 6                             | Phone                                                |
-  |💿 **drugstore**    | -                                                   | ISO installer configuration                          |
-  |💿 **brickroad**    | -                                                   | Kexec tarball                                        |
-  |❔ **chaotheatre**  | -                                                   | Demo config for checking out my configurtion         |
-  |❔ **toto**         | -                                                   | Helper configuration for bootstrapping a new system  |
+  | Name                | Hardware                                            | Use                                                 |
+  |---------------------|-----------------------------------------------------|-----------------------------------------------------|
+  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                         |
+  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                     |
+  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                   |
+  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference   |
+  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, datastorage  |
+  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                      |
+  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                              |
+  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative dns server                            |
+  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                         |
+  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                       |
+  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                          |
+  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services     |
+  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binarycache                   |
+  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                               |
+  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts     |
+  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines |
+  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration     |
+  |❔ **toto**          | -                                                   | Helper configuration for testing purposes           |
   </details>
 
   ## General Nix tips & useful links

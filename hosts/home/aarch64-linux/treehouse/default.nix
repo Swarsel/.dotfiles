@@ -1,4 +1,4 @@
-{ self, ... }:
+{ self, pkgs, ... }:
 {
 
   imports = [
@@ -16,11 +16,15 @@
     };
   };
 
+  home.packages = with pkgs; [
+    attic-client
+  ];
   # programs.zsh.initContent = "
   #   export GPG_TTY=\"$(tty)\"
   # export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
   # gpgconf --launch gpg-agent
   #       ";
+  swarselmodules.pii = true;
 
   swarselsystems = {
     isLaptop = false;

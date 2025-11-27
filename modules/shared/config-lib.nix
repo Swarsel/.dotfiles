@@ -8,6 +8,8 @@
       domainDefault = service: config.repo.secrets.common.services.domains.${service};
       proxyDefault = config.swarselsystems.proxyHost;
 
+      getConfig = config;
+
       gen = { name, user ? name, group ? name, dir ? null, port ? null, domain ? (domainDefault name), address ? addressDefault, proxy ? proxyDefault }: rec {
         servicePort = port;
         serviceName = name;
