@@ -789,7 +789,7 @@ Concerning the =flake = _:= part:
         forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f pkgsFor.${system});
 
         readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
-        readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
+        readNix = type: lib.filter (name: name != "default.nix" && name != "optional") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
         mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
       };
@@ -4019,53 +4019,84 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 
 #+end_src
-**** Milkywell (OCI)
-:PROPERTIES:
-:CUSTOM_ID: h:d8869eca-cbde-45f0-9e54-9da8320b6a31
-:END:
+**** Stoicclub (OCI)
 
 ***** Main Configuration
-:PROPERTIES:
-:CUSTOM_ID: h:314601a0-e1b7-4996-a96c-663b121f9377
-:END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/milkywell/default.nix
-  { lib, config, minimal, ... }:
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/default.nix
+  { lib, config, minimal, globals, ... }:
   {
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
     ];
-    node.lockFromBootstrapping = false;
-    sops = {
-      age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-    };
 
     topology.self = {
       icon = "devices.cloud-server";
     };
+    swarselmodules.server.nginx = false;
 
     networking = {
-      domain = "subnet03112148.vcn03112148.oraclevcn.com";
-      firewall = {
-        allowedTCPPorts = [ 53 ];
+      useDHCP = lib.mkForce false;
+      useNetworkd = true;
+      dhcpcd.enable = false;
+      renameInterfacesByMac = lib.mapAttrs (_: v: v.mac) (
+        config.repo.secrets.local.networking.networks or { }
+      );
+    };
+    boot.initrd.systemd.network = {
+      enable = true;
+      networks."10-${config.swarselsystems.server.localNetwork}" = config.systemd.network.networks."10-${config.swarselsystems.server.localNetwork}";
+    };
+
+    systemd = {
+      network = {
+        enable = true;
+        wait-online.enable = false;
+        networks =
+          let
+            netConfig = config.repo.secrets.local.networking;
+          in
+          {
+            "10-${config.swarselsystems.server.localNetwork}" = {
+              address = [
+                "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv4}"
+                "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv6}"
+              ];
+              routes = [
+                {
+                  Gateway = netConfig.defaultGateway6;
+                  GatewayOnLink = true;
+                }
+                {
+                  Gateway = netConfig.defaultGateway4;
+                  GatewayOnLink = true;
+                }
+              ];
+              networkConfig = {
+                IPv6PrivacyExtensions = true;
+                IPv6AcceptRA = false;
+              };
+              matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
+              linkConfig.RequiredForOnline = "routable";
+            };
+          };
       };
     };
 
-    system.stateVersion = "23.11";
-
     swarselsystems = {
       flakePath = "/root/.dotfiles";
-      info = "VM.Standard.E2.1.Micro";
+      info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
       isImpermanence = true;
       isSecureBoot = false;
-      isCrypted = false;
-      isSwap = true;
-      swapSize = "8G";
-      rootDisk = "/dev/sda";
+      isCrypted = true;
+      isSwap = false;
+      rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
       isBtrfs = true;
       isNixos = true;
       isLinux = true;
+      isCloud = true;
+      proxyHost = "stoicclub";
       server = {
         inherit (config.repo.secrets.local.networking) localNetwork;
       };
@@ -4079,45 +4110,27 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
-:PROPERTIES:
-:CUSTOM_ID: h:b1f37b5b-aa18-405a-bf76-4d95642b5acc
-:END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/milkywell/hardware-configuration.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/hardware-configuration.nix
   { lib, modulesPath, ... }:
-
   {
-    imports =
-      [
-        (modulesPath + "/profiles/qemu-guest.nix")
-      ];
+    imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 
     boot = {
       initrd = {
-        availableKernelModules = [ "ata_piix" "uhci_hcd" "virtio_pci" "virtio_scsi" "sd_mod" ];
-        kernelModules = [ "dm-snapshot" ];
+        availableKernelModules = [ "xhci_pci" "virtio_pci" "virtio_scsi" "usbhid" ];
+        kernelModules = [ ];
       };
-      kernelModules = [ "kvm-amd" ];
+      kernelModules = [ ];
       extraModulePackages = [ ];
     };
 
-    # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-    # (the default) this is the recommended approach. When using systemd-networkd it's
-    # still possible to use this option, but it's recommended to use it in conjunction
-    # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-    networking.useDHCP = lib.mkDefault true;
-    # networking.interfaces.ens3.useDHCP = lib.mkDefault true;
-
-    nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+    nixpkgs.hostPlatform = lib.mkForce "aarch64-linux";
   }
-
 #+end_src
 ***** disko
-:PROPERTIES:
-:CUSTOM_ID: h:cec82b06-39ca-4c0e-b4f5-c1fda9b14e6d
-:END:
 
-#+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/milkywell/disk-config.nix
+#+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/disk-config.nix
   { lib, pkgs, config, ... }:
   let
     type = "btrfs";
@@ -4239,6 +4252,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
     fileSystems."/persist".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
     fileSystems."/home".neededForBoot = lib.mkIf config.swarselsystems.isImpermanence true;
   }
+
 #+end_src
 **** Eagleland (Hetzner)
 :PROPERTIES:
@@ -4251,7 +4265,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/eagleland/default.nix
-  { lib, config, minimal, ... }:
+  { lib, config, minimal, globals, ... }:
   {
     imports = [
       ./hardware-configuration.nix
@@ -4288,19 +4302,24 @@ This machine mainly acts as my proxy server to stand before my local machines.
           {
             "10-wan" = {
               address = [
-                "${netConfig.wanAddress4}/32"
-                "${netConfig.wanAddress6}/64"
+                "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv4}"
+                "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv6}"
               ];
-              gateway = [ "fe80::1" ];
               routes = [
-                { Destination = netConfig.defaultGateway4; }
+                {
+                  Gateway = netConfig.defaultGateway6;
+                  GatewayOnLink = true;
+                }
                 {
                   Gateway = netConfig.defaultGateway4;
                   GatewayOnLink = true;
                 }
               ];
+              networkConfig = {
+                IPv6PrivacyExtensions = true;
+                IPv6AcceptRA = false;
+              };
               matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
-              networkConfig.IPv6PrivacyExtensions = "yes";
               linkConfig.RequiredForOnline = "routable";
             };
           };
@@ -5415,7 +5434,8 @@ in
                   if netSubmod.config.cidrv6 == null then
                     null
                   else
-                    lib.net.cidr.hostCidr hostSubmod.config.id netSubmod.config.cidrv6;
+                    # if we use the /32 wan address as local address directly, do not use the network address in ipv6
+                    lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
               };
             };
           })
