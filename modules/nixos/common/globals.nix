@@ -82,7 +82,8 @@ let
                 if netSubmod.config.cidrv6 == null then
                   null
                 else
-                  lib.net.cidr.hostCidr hostSubmod.config.id netSubmod.config.cidrv6;
+                # if we use the /32 wan address as local address directly, do not use the network address in ipv6
+                  lib.net.cidr.hostCidr (if hostSubmod.config.id == 0 then 1 else hostSubmod.config.id) netSubmod.config.cidrv6;
             };
           };
         })

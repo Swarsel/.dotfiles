@@ -7,6 +7,7 @@ keys:
     - &swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
   - &hosts
     - &winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+    - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
     - &belchsfactory age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6
     - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
     - &hintbooth age1hsumymvh5mkqlaynrp9lv2w696yk3wtjzlyfmrpeuvh9u2tlwceqh3563x
@@ -14,7 +15,6 @@ keys:
     - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
     - &surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
     - &nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
-    - &milkywell age1glge4e97vgqzh332mqs5990vteezu2m8k4wq3z35jk0q8czw3gks2d7a3h
     - &moonside age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh
 creation_rules:
   - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
@@ -23,6 +23,7 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *stoicclub
       - *belchsfactory
       - *eagleland
       - *hintbooth
@@ -30,7 +31,6 @@ creation_rules:
       - *toto
       - *surface
       - *nbl
-      - *milkywell
       - *moonside
   - path_regex: secrets/repo/[^/]+$
     key_groups:
@@ -38,6 +38,7 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *stoicclub
       - *belchsfactory
       - *eagleland
       - *hintbooth
@@ -45,7 +46,6 @@ creation_rules:
       - *toto
       - *surface
       - *nbl
-      - *milkywell
       - *moonside
   - path_regex: secrets/certs/[^/]+\.(yaml|json|env|ini)$
     key_groups:
@@ -53,6 +53,7 @@ creation_rules:
       - *swarsel
       age:
       - *nbl
+      - *stoicclub
       - *belchsfactory
       - *eagleland
       - *hintbooth
@@ -149,18 +150,18 @@ creation_rules:
 
 
 
-  - path_regex: secrets/milkywell/[^/]+\.(yaml|json|env|ini)$
+  - path_regex: secrets/stoicclub/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *milkywell
-  - path_regex: hosts/nixos/x86_64-linux/milkywell/secrets/pii.nix.enc
+      - *stoicclub
+  - path_regex: hosts/nixos/aarch64-linux/stoicclub/secrets/pii.nix.enc
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *milkywell
+      - *stoicclub
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/
     key_groups:

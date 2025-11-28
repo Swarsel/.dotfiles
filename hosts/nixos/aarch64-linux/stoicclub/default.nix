@@ -8,6 +8,7 @@
   topology.self = {
     icon = "devices.cloud-server";
   };
+  swarselmodules.server.nginx = false;
 
   networking = {
     useDHCP = lib.mkForce false;
@@ -19,9 +20,7 @@
   };
   boot.initrd.systemd.network = {
     enable = true;
-    networks = {
-      inherit (config.systemd.network.networks) "10-wan";
-    };
+    networks."10-${config.swarselsystems.server.localNetwork}" = config.systemd.network.networks."10-${config.swarselsystems.server.localNetwork}";
   };
 
   systemd = {
@@ -33,7 +32,7 @@
           netConfig = config.repo.secrets.local.networking;
         in
         {
-          "10-wan" = {
+          "10-${config.swarselsystems.server.localNetwork}" = {
             address = [
               "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv4}"
               "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv6}"
@@ -59,22 +58,19 @@
     };
   };
 
-  swarselmodules.server.mailserver = true;
-
   swarselsystems = {
     flakePath = "/root/.dotfiles";
-    info = "2vCPU, 4GB Ram";
+    info = "VM.Standard.A1.Flex, 4 vCPUs, 24GB RAM";
     isImpermanence = true;
     isSecureBoot = false;
     isCrypted = true;
-    isCloud = true;
-    isSwap = true;
-    swapSize = "4G";
-    rootDisk = "/dev/sda";
+    isSwap = false;
+    rootDisk = "/dev/disk/by-id/scsi-360e1a5236f034316a10a97cc703ce9e3";
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
-    proxyHost = "eagleland";
+    isCloud = true;
+    proxyHost = "stoicclub";
     server = {
       inherit (config.repo.secrets.local.networking) localNetwork;
     };
