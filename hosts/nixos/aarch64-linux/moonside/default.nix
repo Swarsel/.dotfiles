@@ -137,9 +137,7 @@ in
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
-    proxyHost = "moonside";
     server = {
-      inherit (config.repo.secrets.local.networking) localNetwork;
       restic = {
         bucketName = "SwarselMoonside";
         paths = [

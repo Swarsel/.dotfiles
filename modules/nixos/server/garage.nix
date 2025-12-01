@@ -54,11 +54,11 @@ in
     assertions = [
       {
         assertion = config.swarselsystems.server.${serviceName}.buckets != [ ];
-        message = "If Garage is enabled, at least one bucket must be specified in atro.garage.buckets";
+        message = "If Garage is enabled, at least one bucket must be specified in swarselsystems.server.${serviceName}.buckets";
       }
       {
         assertion = builtins.length (lib.attrsToList config.swarselsystems.server.${serviceName}.keys) > 0;
-        message = "If Garage is enabled, at least one key must be specified in atro.garage.keys";
+        message = "If Garage is enabled, at least one key must be specified in swarselsystems.server.${serviceName}.keys";
       }
       {
         assertion =
@@ -71,7 +71,7 @@ in
       }
     ];
 
-    swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
+    nodes.stoicclub.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
       "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "${subDomain}admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
@@ -121,7 +121,7 @@ in
 
         rpc_bind_addr = "[::]:${builtins.toString garageRpcPort}";
         # we are not joining our nodes, just use the private ipv4
-        rpc_public_addr = "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4}:${builtins.toString garageRpcPort}";
+        rpc_public_addr = "${globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4}:${builtins.toString garageRpcPort}";
 
         rpc_secret_file = config.sops.secrets.garage-rpc-secret.path;
 

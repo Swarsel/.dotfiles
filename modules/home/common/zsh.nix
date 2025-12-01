@@ -1,4 +1,4 @@
-{ config, pkgs, lib, minimal, inputs, globals, nixosConfig ? config, ... }:
+{ config, pkgs, lib, minimal, inputs, globals, confLib, ... }:
 let
   inherit (config.swarselsystems) flakePath isNixos;
   crocDomain = globals.services.croc.domain;
@@ -127,8 +127,8 @@ in
         '';
         sessionVariables = lib.mkIf (!config.swarselsystems.isPublic) {
           CROC_RELAY = crocDomain;
-          CROC_PASS = "$(cat ${nixosConfig.sops.secrets.croc-password.path or ""})";
-          GITHUB_TOKEN = "$(cat ${nixosConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
+          CROC_PASS = "$(cat ${confLib.getConfig.sops.secrets.croc-password.path or ""})";
+          GITHUB_TOKEN = "$(cat ${confLib.getConfig.sops.secrets.github-nixpkgs-review-token.path or ""})";
           QT_QPA_PLATFORM_PLUGIN_PATH = "${pkgs.libsForQt5.qt5.qtbase.bin}/lib/qt-${pkgs.libsForQt5.qt5.qtbase.version}/plugins";
           # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
         };

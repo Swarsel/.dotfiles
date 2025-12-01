@@ -1,65 +1,16 @@
-{ lib, config, minimal, globals, ... }:
+{ self, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+
+    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
 
   topology.self = {
     icon = "devices.cloud-server";
   };
 
-  networking = {
-    useDHCP = lib.mkForce false;
-    useNetworkd = true;
-    dhcpcd.enable = false;
-    renameInterfacesByMac = lib.mapAttrs (_: v: v.mac) (
-      config.repo.secrets.local.networking.networks or { }
-    );
-  };
-  boot.initrd.systemd.network = {
-    enable = true;
-    networks = {
-      inherit (config.systemd.network.networks) "10-wan";
-    };
-  };
-
-  systemd = {
-    network = {
-      enable = true;
-      wait-online.enable = false;
-      networks =
-        let
-          netConfig = config.repo.secrets.local.networking;
-        in
-        {
-          "10-wan" = {
-            address = [
-              "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv4}"
-              "${globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.cidrv6}"
-            ];
-            routes = [
-              {
-                Gateway = netConfig.defaultGateway6;
-                GatewayOnLink = true;
-              }
-              {
-                Gateway = netConfig.defaultGateway4;
-                GatewayOnLink = true;
-              }
-            ];
-            networkConfig = {
-              IPv6PrivacyExtensions = true;
-              IPv6AcceptRA = false;
-            };
-            matchConfig.MACAddress = netConfig.networks.${config.swarselsystems.server.localNetwork}.mac;
-            linkConfig.RequiredForOnline = "routable";
-          };
-        };
-    };
-  };
-
-  swarselmodules.server.mailserver = true;
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -75,11 +26,11 @@
     isNixos = true;
     isLinux = true;
     proxyHost = "eagleland";
-    server = {
-      inherit (config.repo.secrets.local.networking) localNetwork;
-    };
   };
 } // lib.optionalAttrs (!minimal) {
+
+  swarselmodules.server.mailserver = true;
+
   swarselprofiles = {
     server = true;
   };

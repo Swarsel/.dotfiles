@@ -34,6 +34,11 @@ let
       "nginx"
       "virtualHosts"
     ]
+    [
+      "swarselsystems"
+      "server"
+      "dns"
+    ]
   ];
 
   attrsForEachOption =

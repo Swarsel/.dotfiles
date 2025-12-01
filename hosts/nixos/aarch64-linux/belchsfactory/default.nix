@@ -1,8 +1,10 @@
-{ lib, config, minimal, ... }:
+{ self, lib, minimal, ... }:
 {
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+
+    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
 
   node.lockFromBootstrapping = lib.mkForce false;
@@ -24,9 +26,7 @@
     isNixos = true;
     isLinux = true;
     isCloud = true;
-    proxyHost = "belchsfactory";
     server = {
-      inherit (config.repo.secrets.local.networking) localNetwork;
       garage = {
         data_dir = {
           capacity = "150G";
@@ -49,6 +49,7 @@
   };
 
   swarselmodules.server = {
+    ssh-builder = lib.mkDefault true;
     postgresql = lib.mkDefault true;
     attic = lib.mkDefault true;
     garage = lib.mkDefault true;

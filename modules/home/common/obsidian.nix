@@ -1,7 +1,7 @@
-{ lib, config, pkgs, nixosConfig ? config, ... }:
+{ lib, config, pkgs, confLib, ... }:
 let
   moduleName = "obsidian";
-  inherit (nixosConfig.repo.secrets.common.obsidian) userIgnoreFilters;
+  inherit (confLib.getConfig.repo.secrets.common.obsidian) userIgnoreFilters;
   name = "Main";
 in
 {

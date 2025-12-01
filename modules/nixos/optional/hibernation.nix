@@ -1,6 +1,5 @@
 { lib, config, ... }:
 {
-  options.swarselmodules.optional.hibernation = lib.mkEnableOption "optional amd gpu settings";
   options.swarselsystems = {
     hibernation = {
       offset = lib.mkOption {
@@ -13,7 +12,7 @@
       };
     };
   };
-  config = lib.mkIf config.swarselmodules.optional.hibernation {
+  config = {
     boot = {
       kernelParams = [
         "resume_offset=${builtins.toString config.swarselsystems.hibernation.offset}"

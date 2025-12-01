@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.optional.amdgpu = lib.mkEnableOption "optional amd gpu settings";
-  config = lib.mkIf config.swarselmodules.optional.amdgpu {
+  config = {
     hardware = {
       amdgpu = {
         opencl.enable = true;

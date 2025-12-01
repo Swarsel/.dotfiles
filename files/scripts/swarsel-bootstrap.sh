@@ -329,8 +329,8 @@ $ssh_root_cmd "chown $target_user:users /home/$target_user/.ssh/ssh_host_ed25519
 
 if yes_or_no "Add ssh host fingerprints for git upstream repositories? (This is needed for building the full config)"; then
     green "Adding ssh host fingerprints for git{lab,hub}"
-    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /home/$target_user/.ssh/known_hosts"
-    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com swagit.swarsel.win | tee /root/.ssh/known_hosts"
+    $ssh_cmd "mkdir -p /home/$target_user/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /home/$target_user/.ssh/known_hosts"
+    $ssh_root_cmd "mkdir -p /root/.ssh/; ssh-keyscan -t ssh-ed25519 gitlab.com github.com | tee /root/.ssh/known_hosts"
 fi
 # --------------------------
 

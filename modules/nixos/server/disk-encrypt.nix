@@ -1,7 +1,7 @@
 { self, pkgs, lib, config, globals, minimal, ... }:
 let
-  localIp = globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".hosts.${config.node.name}.ipv4;
-  subnetMask = globals.networks."${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}".subnetMask4;
+  localIp = globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4;
+  subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
   gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
   hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
@@ -36,7 +36,7 @@ in
       files = [ hostKeyPathBase ];
     };
 
-    boot = lib.mkIf (!config.swarselsystems.isLaptop) {
+    boot = lib.mkIf (!config.swarselsystems.isClient) {
       kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
         "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
       ];

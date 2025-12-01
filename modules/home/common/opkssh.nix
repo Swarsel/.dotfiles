@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, globals, ... }:
 let
   moduleName = "opkssh";
 in
@@ -13,7 +13,7 @@ in
         providers = [
           {
             alias = "kanidm";
-            issuer = "https://sso.swarsel.win/oauth2/openid/opkssh";
+            issuer = "https://${globals.services.kanidm.domain}/oauth2/openid/opkssh";
             client_id = "opkssh";
             scopes = "openid email profile";
             redirect_uris = [

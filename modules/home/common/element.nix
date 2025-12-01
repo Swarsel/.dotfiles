@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, globals, ... }:
 let
   moduleName = "element-desktop";
 in
@@ -10,7 +10,7 @@ in
       settings = {
         default_server_config = {
           "m.homeserver" = {
-            base_url = "https://swatrix.swarsel.win/";
+            base_url = "https://${globals.services.matrix.domain}/";
           };
         };
         UIFeature = {

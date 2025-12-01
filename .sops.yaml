@@ -7,6 +7,8 @@ keys:
     - &swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
   - &hosts
     - &winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
+    - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
+    - &liliputsteps age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx
     - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
     - &belchsfactory age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6
     - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
@@ -23,6 +25,8 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *twothreetunnel
+      - *liliputsteps
       - *stoicclub
       - *belchsfactory
       - *eagleland
@@ -38,6 +42,8 @@ creation_rules:
       - *swarsel
       age:
       - *winters
+      - *twothreetunnel
+      - *liliputsteps
       - *stoicclub
       - *belchsfactory
       - *eagleland
@@ -53,6 +59,8 @@ creation_rules:
       - *swarsel
       age:
       - *nbl
+      - *twothreetunnel
+      - *liliputsteps
       - *stoicclub
       - *belchsfactory
       - *eagleland
@@ -162,6 +170,32 @@ creation_rules:
       - *swarsel
       age:
       - *stoicclub
+
+  - path_regex: secrets/liliputsteps/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *liliputsteps
+  - path_regex: hosts/nixos/aarch64-linux/liliputsteps/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *liliputsteps
+
+  - path_regex: secrets/twothreetunnel/[^/]+\.(yaml|json|env|ini)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *twothreetunnel
+  - path_regex: hosts/nixos/aarch64-linux/twothreetunnel/secrets/pii.nix.enc
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *twothreetunnel
 
   - path_regex: hosts/nixos/x86_64-linux/summers/secrets/
     key_groups:

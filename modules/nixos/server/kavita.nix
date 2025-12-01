@@ -11,7 +11,7 @@ in
       calibre
     ];
 
-    swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
