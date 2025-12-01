@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, minimal, ... }:
 {
 
   imports = [
@@ -18,9 +18,6 @@
     rootDisk = "/dev/sda";
     swapSize = "8G";
     networkKernelModules = [ "igb" ];
-    server = {
-      inherit (config.repo.secrets.local.networking) localNetwork;
-    };
   };
 
 } // lib.optionalAttrs (!minimal) {

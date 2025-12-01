@@ -78,7 +78,7 @@ let
       forEachLinuxSystem = f: lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (system: f pkgsFor.${system});
 
       readHosts = type: lib.attrNames (builtins.readDir "${self}/hosts/${type}");
-      readNix = type: lib.filter (name: name != "default.nix") (lib.attrNames (builtins.readDir "${self}/${type}"));
+      readNix = type: lib.filter (name: name != "default.nix" && name != "optional" && name != "darwin") (lib.attrNames (builtins.readDir "${self}/${type}"));
 
       mkImports = names: baseDir: lib.map (name: "${self}/${baseDir}/${name}") names;
     };

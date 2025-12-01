@@ -1,4 +1,4 @@
-{ lib, config, minimal, ... }:
+{ lib, minimal, ... }:
 {
 
   imports = [
@@ -27,7 +27,6 @@
     isNixos = true;
     proxyHost = "moonside";
     server = {
-      inherit (config.repo.secrets.local.networking) localNetwork;
       restic = {
         bucketName = "SwarselWinters";
         paths = [

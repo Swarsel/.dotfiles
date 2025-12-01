@@ -13,7 +13,7 @@ in
           comment = "Sway compositor managed by UWSM";
           binPath = "/run/current-system/sw/bin/sway";
         };
-        niri = {
+        niri = lib.mkIf (config.swarselmodules ? niri) {
           prettyName = "Niri";
           comment = "Niri compositor managed by UWSM";
           binPath = "/run/current-system/sw/bin/niri-session";

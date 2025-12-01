@@ -1,8 +1,11 @@
-{ lib, config, pkgs, ... }:
+{ inputs, lib, config, pkgs, ... }:
 let
   moduleName = "niri";
 in
 {
+  imports = [
+    inputs.niri-flake.nixosModules.niri
+  ];
   options.swarselmodules.${moduleName} = lib.mkEnableOption "${moduleName} settings";
   config = lib.mkIf config.swarselmodules.${moduleName}
     {

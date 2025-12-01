@@ -1,7 +1,7 @@
-{ lib, config, nixosConfig ? config, ... }:
+{ lib, config, confLib, ... }:
 let
   moduleName = "hexchat";
-  inherit (nixosConfig.repo.secrets.common.irc) irc_nick1;
+  inherit (confLib.getConfig.repo.secrets.common.irc) irc_nick1;
 in
 {
   options.swarselmodules.${moduleName} = lib.mkEnableOption "enable ${moduleName} and settings";

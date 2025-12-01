@@ -1,9 +1,11 @@
-{ inputs, lib, config, minimal, nodes, globals, ... }:
+{ self, inputs, lib, config, minimal, nodes, globals, ... }:
 {
 
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+
+    "${self}/modules/nixos/optional/microvm-host.nix"
   ];
 
   boot = {
@@ -30,9 +32,6 @@
   };
 
   swarselmodules = {
-    optional = {
-      microvmHost = true;
-    };
     server = {
       diskEncryption = lib.mkForce false; # TODO: disable
       nfs = false;

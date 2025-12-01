@@ -59,8 +59,8 @@ in
   config = lib.mkIf config.swarselmodules.general
     (lib.recursiveUpdate
       {
-        sops.secrets.github-api-token = lib.mkIf (!minimal) {
-          owner = mainUser;
+        sops.secrets = lib.mkIf (!minimal) {
+          github-api-token = { owner = mainUser; };
         };
 
         nix =
@@ -83,7 +83,11 @@ in
               trusted-public-keys = [
                 atticPublicKey
               ];
-              trusted-users = [ "@wheel" "${config.swarselsystems.mainUser}" ];
+              trusted-users = [
+                "@wheel"
+                "${config.swarselsystems.mainUser}"
+                (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+              ];
             };
             # extraOptions = ''
             #   plugin-files = ${pkgs.dev.nix-plugins}/lib/nix/plugins

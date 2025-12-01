@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, configName, ... }:
+{ self, lib, pkgs, config, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -6,18 +6,24 @@ let
   sopsFile = self + /secrets/work/secrets.yaml;
 in
 {
-  options.swarselmodules.optional.work = lib.mkEnableOption "optional work settings";
   options.swarselsystems = {
     hostName = lib.mkOption {
       type = lib.types.str;
-      default = configName;
+      default = config.node.name;
     };
     fqdn = lib.mkOption {
       type = lib.types.str;
       default = "";
     };
   };
-  config = lib.mkIf config.swarselmodules.optional.work {
+  config = {
+
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/work.nix"
+      ];
+    };
+
     sops =
       let
         secretNames = [

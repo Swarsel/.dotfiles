@@ -1,6 +1,6 @@
 { pkgs, lib, config, ... }:
 let
-  inherit (config.repo.secrets.common) dnsProvider;
+  inherit (config.repo.secrets.common) dnsProvider dnsBase;
   inherit (config.repo.secrets.common.mail) address3;
 
   serviceUser = "nginx";
@@ -63,9 +63,12 @@ in
     ];
 
     sops = {
-      secrets.acme-dns-token = { inherit (config.swarselsystems) sopsFile; };
+      secrets = {
+        acme-dns-token = { inherit (config.swarselsystems) sopsFile; };
+      };
       templates."certs.secret".content = ''
-        CF_DNS_API_TOKEN=${config.sops.placeholder.acme-dns-token}
+        ACME_DNS_API_BASE=${dnsBase}
+        ACME_DNS_STORAGE_PATH=${config.sops.placeholder.acme-dns-token}
       '';
     };
 

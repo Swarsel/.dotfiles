@@ -1,5 +1,8 @@
-{ config, pkgs, lib, vars, ... }:
+{ inputs, config, pkgs, lib, vars, ... }:
 {
+  imports = [
+    inputs.niri-flake.homeModules.niri
+  ];
   options.swarselmodules.niri = lib.mkEnableOption "niri settings";
   config = lib.mkIf config.swarselmodules.niri
     {

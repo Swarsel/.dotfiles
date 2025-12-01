@@ -9,6 +9,10 @@
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
         PermitRootLogin = "yes";
+        AllowUsers = [
+          "root"
+          config.swarselsystems.mainUser
+        ];
       };
       hostKeys = [
         {
@@ -20,10 +24,12 @@
     users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
       (self + /secrets/keys/ssh/yubikey.pub)
       (self + /secrets/keys/ssh/magicant.pub)
+      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
     ];
     users.users.root.openssh.authorizedKeys.keyFiles = [
       (self + /secrets/keys/ssh/yubikey.pub)
       (self + /secrets/keys/ssh/magicant.pub)
+      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
     ];
     security.sudo.extraConfig = ''
       Defaults    env_keep+=SSH_AUTH_SOCK

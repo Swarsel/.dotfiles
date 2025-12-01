@@ -1,4 +1,4 @@
-{ lib, config, inputs, nixosConfig ? config, ... }:
+{ lib, config, inputs, confLib, ... }:
 let
   inherit (config.swarselsystems) homeDir;
 in
@@ -9,8 +9,8 @@ in
 
     pam.yubico.authorizedYubiKeys = lib.mkIf (config.swarselsystems.isNixos && !config.swarselsystems.isPublic) {
       ids = [
-        nixosConfig.repo.secrets.common.yubikeys.dev1
-        nixosConfig.repo.secrets.common.yubikeys.dev2
+        confLib.getConfig.repo.secrets.common.yubikeys.dev1
+        confLib.getConfig.secrets.common.yubikeys.dev2
       ];
     };
   } // lib.optionalAttrs (inputs ? sops) {

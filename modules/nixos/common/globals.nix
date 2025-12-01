@@ -197,6 +197,10 @@ in
             main = mkOption {
               type = types.str;
             };
+            externalDns = mkOption {
+              type = types.listOf types.str;
+              description = "List of external dns nameservers";
+            };
           };
         };
       };

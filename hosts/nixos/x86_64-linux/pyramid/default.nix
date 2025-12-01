@@ -10,15 +10,16 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
-  ];
+    "${self}/modules/nixos/optional/amdcpu.nix"
+    "${self}/modules/nixos/optional/amdgpu.nix"
+    "${self}/modules/nixos/optional/framework.nix"
+    "${self}/modules/nixos/optional/gaming.nix"
+    "${self}/modules/nixos/optional/hibernation.nix"
+    "${self}/modules/nixos/optional/nswitch-rcm.nix"
+    "${self}/modules/nixos/optional/virtualbox.nix"
+    "${self}/modules/nixos/optional/work.nix"
 
-  swarselmodules = {
-    optional = {
-      amdcpu = true;
-      amdgpu = true;
-      hibernation = true;
-    };
-  };
+  ];
 
   swarselsystems = {
     lowResolution = "1280x800";
@@ -67,9 +68,5 @@ in
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
     personal = true;
-    optionals = true;
-    work = true;
-    uni = true;
-    framework = true;
   };
 }

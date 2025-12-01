@@ -1,7 +1,6 @@
-{ lib, config, ... }:
+_:
 {
-  options.swarselmodules.optional.amdcpu = lib.mkEnableOption "optional amd cpu settings";
-  config = lib.mkIf config.swarselmodules.optional.amdcpu {
+  config = {
     hardware = {
       cpu.amd.updateMicrocode = true;
     };

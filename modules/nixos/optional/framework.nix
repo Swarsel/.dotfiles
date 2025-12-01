@@ -1,7 +1,13 @@
-{ lib, config, ... }:
+{ self, config, ... }:
 {
-  options.swarselmodules.optional.framework = lib.mkEnableOption "optional framework machine settings";
-  config = lib.mkIf config.swarselmodules.optional.framework {
+  config = {
+
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/framework.nix"
+      ];
+    };
+
     services = {
       fwupd = {
         enable = true;

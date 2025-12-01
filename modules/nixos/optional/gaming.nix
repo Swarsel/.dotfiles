@@ -1,7 +1,13 @@
-{ pkgs, lib, config, ... }:
+{ self, pkgs, config, ... }:
 {
-  options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-  config = lib.mkIf config.swarselmodules.optional.gaming {
+  config = {
+
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/gaming.nix"
+      ];
+    };
+
     programs.steam = {
       enable = true;
       package = pkgs.steam;

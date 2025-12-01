@@ -3,11 +3,23 @@
   options.swarselsystems = {
     proxyHost = lib.mkOption {
       type = lib.types.str;
-      default = "";
+      default = config.node.name;
+    };
+    isBastionTarget = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
     };
     isCloud = lib.mkOption {
       type = lib.types.bool;
       default = false;
+    };
+    isServer = lib.mkOption {
+      type = lib.types.bool;
+      default = config.swarselsystems.isCloud;
+    };
+    isClient = lib.mkOption {
+      type = lib.types.bool;
+      default = config.swarselsystems.isLaptop;
     };
     withHomeManager = lib.mkOption {
       type = lib.types.bool;

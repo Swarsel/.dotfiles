@@ -26,7 +26,6 @@
       lowBattery = lib.mkDefault false;
       network = lib.mkDefault true;
       networkDevices = lib.mkDefault true;
-      niri = lib.mkDefault false;
       nix-ld = lib.mkDefault true;
       nvd = lib.mkDefault true;
       packages = lib.mkDefault true;
@@ -35,6 +34,7 @@
       ppd = lib.mkDefault true;
       programs = lib.mkDefault true;
       pulseaudio = lib.mkDefault true;
+      remotebuild = lib.mkDefault true;
       security = lib.mkDefault true;
       sops = lib.mkDefault true;
       stylix = lib.mkDefault true;

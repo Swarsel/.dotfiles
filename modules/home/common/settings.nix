@@ -40,7 +40,11 @@ in
           trusted-public-keys = [
             atticPublicKey
           ];
-          trusted-users = [ "@wheel" "${mainUser}" ];
+          trusted-users = [
+            "@wheel"
+            "${mainUser}"
+            (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+          ];
           connect-timeout = 5;
           bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
           bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";

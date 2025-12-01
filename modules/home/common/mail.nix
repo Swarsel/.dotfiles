@@ -1,7 +1,7 @@
-{ lib, config, inputs, globals, nixosConfig ? config, ... }:
+{ lib, config, inputs, globals, confLib, ... }:
 let
-  inherit (nixosConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4;
-  inherit (nixosConfig.repo.secrets.common) fullName;
+  inherit (confLib.getConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4;
+  inherit (confLib.getConfig.repo.secrets.common) fullName;
   inherit (config.swarselsystems) xdgDir;
 in
 {
@@ -140,7 +140,7 @@ in
                 address = address4;
                 userName = address4;
                 realName = fullName;
-                passwordCommand = "cat ${nixosConfig.sops.secrets.address4-token.path}";
+                passwordCommand = "cat ${confLib.getConfig.sops.secrets.address4-token.path}";
                 mu.enable = true;
                 msmtp = {
                   enable = true;
@@ -169,7 +169,7 @@ in
                   address = address1;
                   userName = address1;
                   realName = fullName;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address1-token.path}";
+                  passwordCommand = "cat ${confLib.getConfig.sops.secrets.address1-token.path}";
                   gpg = {
                     key = "0x76FD3810215AE097";
                     signByDefault = true;
@@ -183,7 +183,7 @@ in
                   address = address2;
                   userName = address2;
                   realName = address2-name;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address2-token.path}";
+                  passwordCommand = "cat ${confLib.getConfig.sops.secrets.address2-token.path}";
                 }
                 defaultSettings;
 
@@ -193,7 +193,7 @@ in
                   address = address3;
                   userName = address3;
                   realName = address3-name;
-                  passwordCommand = "cat ${nixosConfig.sops.secrets.address3-token.path}";
+                  passwordCommand = "cat ${confLib.getConfig.sops.secrets.address3-token.path}";
                 }
                 defaultSettings;
 

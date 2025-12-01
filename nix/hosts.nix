@@ -20,7 +20,6 @@
             inputs.lanzaboote.nixosModules.lanzaboote
             inputs.microvm.nixosModules.host
             inputs.microvm.nixosModules.microvm
-            inputs.niri-flake.nixosModules.niri
             inputs.nix-index-database.nixosModules.nix-index
             inputs.nix-minecraft.nixosModules.minecraft-servers
             inputs.nix-topology.nixosModules.default
@@ -103,7 +102,6 @@
           };
           modules = [
             inputs.stylix.homeModules.stylix
-            inputs.niri-flake.homeModules.niri
             inputs.nix-index-database.homeModules.nix-index
             # inputs.sops-nix.homeManagerModules.sops
             inputs.spicetify-nix.homeManagerModules.default

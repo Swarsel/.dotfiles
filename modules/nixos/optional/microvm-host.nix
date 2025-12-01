@@ -1,10 +1,7 @@
-{ lib, config, ... }:
+{ config, lib, ... }:
 {
-  options = {
-    swarselmodules.optional.microvmHost = lib.mkEnableOption "optional microvmHost settings";
-  };
   # imports = [
-  #   inputs.microvm.nixosModules.host
+  # inputs.microvm.nixosModules.host
   # ];
 
   config = lib.mkIf (config.guests != { }) {

@@ -1,4 +1,4 @@
-{ lib, config, pkgs, globals, inputs, nixosConfig ? config, ... }:
+{ lib, config, pkgs, globals, inputs, confLib, ... }:
 let
   moduleName = "anki";
   inherit (config.swarselsystems) isPublic isNixos;
@@ -23,11 +23,11 @@ in
           syncMedia = true;
           autoSyncMediaMinutes = 5;
           url = "https://${globals.services.ankisync.domain}";
-          usernameFile = nixosConfig.sops.secrets.anki-user.path;
+          usernameFile = confLib.getConfig.sops.secrets.anki-user.path;
           # this is not the password but the syncKey
           # get it by logging in or out, saving preferences and then
           # show details on the "settings wont be saved" dialog
-          keyFile = nixosConfig.sops.secrets.anki-pw.path;
+          keyFile = confLib.getConfig.sops.secrets.anki-pw.path;
         };
         addons =
           let

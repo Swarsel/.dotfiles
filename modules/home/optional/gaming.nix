@@ -1,10 +1,9 @@
-{ lib, config, pkgs, nixosConfig ? config, ... }:
+{ config, pkgs, confLib, ... }:
 let
   inherit (config.swarselsystems) isNixos;
 in
 {
-  options.swarselmodules.optional.gaming = lib.mkEnableOption "optional gaming settings";
-  config = lib.mkIf config.swarselmodules.optional.gaming {
+  config = {
     # specialisation = {
     #   gaming.configuration = {
     home.packages = with pkgs; [
@@ -44,7 +43,7 @@ in
         gamescope
         umu-launcher
       ];
-      steamPackage = if isNixos then nixosConfig.programs.steam.package else pkgs.steam;
+      steamPackage = if isNixos then confLib.getConfig.programs.steam.package else pkgs.steam;
       winePackages = with pkgs; [
         wineWow64Packages.waylandFull
       ];

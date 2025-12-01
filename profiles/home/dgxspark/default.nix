@@ -30,7 +30,6 @@
       kitty = lib.mkDefault true;
       mail = lib.mkDefault false;
       mako = lib.mkDefault false;
-      niri = lib.mkDefault false;
       nix-index = lib.mkDefault true;
       nixgl = lib.mkDefault true;
       nix-your-shell = lib.mkDefault true;

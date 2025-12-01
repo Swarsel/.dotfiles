@@ -1,7 +1,7 @@
-{ lib, config, nixosConfig ? config, ... }:
+{ inputs, lib, config, confLib, ... }:
 {
   options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
-  config = lib.mkIf config.swarselmodules.ssh {
+  config = lib.mkIf config.swarselmodules.ssh ({
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
@@ -18,11 +18,15 @@
           serverAliveCountMax = 3;
           hashKnownHosts = false;
           userKnownHostsFile = "~/.ssh/known_hosts";
-          controlMaster = "no";
+          controlMaster = "auto";
           controlPath = "~/.ssh/master-%r@%n:%p";
-          controlPersist = "no";
+          controlPersist = "5m";
         };
-      } // nixosConfig.repo.secrets.common.ssh.hosts;
+      } // confLib.getConfig.repo.secrets.common.ssh.hosts;
     };
-  };
+  } // lib.optionalAttrs (inputs ? sops) {
+    sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+      builder-key = { path = "${config.home.homeDirectory}/.ssh/builder"; mode = "0600"; };
+    };
+  });
 }

@@ -42,7 +42,7 @@ in
   };
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-    swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
+    nodes.stoicclub.swarselsystems.server.dns.${globals.services.${specificServiceName}.baseDomain}.subdomainRecords = {
       "${globals.services.${specificServiceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 

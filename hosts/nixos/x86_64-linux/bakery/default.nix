@@ -10,6 +10,10 @@ in
     ./disk-config.nix
     ./hardware-configuration.nix
 
+    "${self}/modules/nixos/optional/gaming.nix"
+    "${self}/modules/nixos/optional/nswitch-rcm.nix"
+    "${self}/modules/nixos/optional/virtualbox.nix"
+
   ];
 
   swarselsystems = {
@@ -31,7 +35,6 @@ in
     isSwap = true;
     rootDisk = "/dev/nvme0n1";
     swapSize = "4G";
-    hostName = config.node.name;
   };
 
   home-manager.users."${primaryUser}" = {
