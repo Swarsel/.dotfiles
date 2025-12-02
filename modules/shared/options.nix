@@ -54,7 +54,7 @@
     isBtrfs = lib.mkEnableOption "use btrfs filesystem";
     sopsFile = lib.mkOption {
       type = lib.types.str;
-      default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
+      default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.node.secretsDir}/secrets.yaml";
     };
     homeDir = lib.mkOption {
       type = lib.types.str;

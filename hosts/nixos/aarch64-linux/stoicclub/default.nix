@@ -35,5 +35,6 @@
   swarselmodules.server = {
     nsd = true;
     nginx = false;
+    dns-hostrecord = true;
   };
 }

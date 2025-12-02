@@ -2,12 +2,8 @@
 {
 
   imports = [
-    # inputs.sops-nix.homeManagerModules.sops
     "${self}/modules/home"
-    "${self}/modules/nixos/common/pii.nix"
-    "${self}/modules/nixos/common/meta.nix"
   ];
-
 
   services.xcape = {
     enable = true;

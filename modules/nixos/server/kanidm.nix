@@ -1,6 +1,6 @@
 { self, lib, pkgs, config, globals, dns, confLib, ... }:
 let
-  certsSopsFile = self + /secrets/certs/secrets.yaml;
+  certsSopsFile = self + /secrets/repo/certs.yaml;
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 

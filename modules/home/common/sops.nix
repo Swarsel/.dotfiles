@@ -1,13 +1,13 @@
-{ config, lib, inputs, ... }:
+{ config, lib, type, ... }:
 let
   inherit (config.swarselsystems) homeDir;
 in
 {
   options.swarselmodules.sops = lib.mkEnableOption "sops settings";
-  config = lib.optionalAttrs (inputs ? sops) {
-    sops = {
-      age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/ssh_host_ed25519_key" ];
-      defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+  config = lib.optionalAttrs (type != "nixos") {
+    sops = lib.mkIf (!config.swarselsystems.isNixos) {
+      age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/sops" ];
+      defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/repo/common.yaml";
 
       validateSopsFiles = false;
     };

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, minimal, inputs, globals, confLib, ... }:
+{ config, pkgs, lib, minimal, globals, confLib, type, ... }:
 let
   inherit (config.swarselsystems) flakePath isNixos;
   crocDomain = globals.services.croc.domain;
@@ -133,9 +133,9 @@ in
           # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
         };
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
 
-      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+      sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         croc-password = { };
         github-nixpkgs-review-token = { };
       };

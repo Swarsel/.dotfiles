@@ -29,7 +29,10 @@
   };
 } // lib.optionalAttrs (!minimal) {
 
-  swarselmodules.server.mailserver = true;
+  swarselmodules.server = {
+    mailserver = true;
+    dns-hostrecord = true;
+  };
 
   swarselprofiles = {
     server = true;

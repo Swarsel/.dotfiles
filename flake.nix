@@ -36,7 +36,7 @@
     nur.url = "github:nix-community/NUR";
     nixgl.url = "github:guibou/nixGL";
     stylix.url = "github:danth/stylix";
-    sops-nix.url = "github:Mic92/sops-nix";
+    sops.url = "github:Mic92/sops-nix";
     lanzaboote.url = "github:nix-community/lanzaboote";
     nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
     nixos-generators.url = "github:nix-community/nixos-generators";

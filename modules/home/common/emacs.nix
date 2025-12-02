@@ -1,4 +1,4 @@
-{ self, lib, config, pkgs, globals, inputs, ... }:
+{ self, lib, config, pkgs, globals, inputs, type, ... }:
 let
   inherit (config.swarselsystems) homeDir mainUser isPublic isNixos;
   inherit (config.repo.secrets.common.emacs) radicaleUser;
@@ -103,7 +103,7 @@ in
       startWithUserSession = "graphical";
     };
 
-  } // lib.optionalAttrs (inputs ? sops) {
+  } // lib.optionalAttrs (type != "nixos") {
 
     sops = lib.mkIf (!isPublic && !isNixos) {
       secrets = {

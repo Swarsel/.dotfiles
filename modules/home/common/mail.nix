@@ -1,4 +1,4 @@
-{ lib, config, inputs, globals, confLib, ... }:
+{ lib, config, globals, confLib, type, ... }:
 let
   inherit (confLib.getConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4;
   inherit (confLib.getConfig.repo.secrets.common) fullName;
@@ -200,7 +200,7 @@ in
             };
           };
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         address1-token = { path = "${xdgDir}/secrets/address1-token"; };
         address2-token = { path = "${xdgDir}/secrets/address2-token"; };

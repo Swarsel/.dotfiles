@@ -1,7 +1,8 @@
 { lib, config, ... }:
 let
   netConfig = config.repo.secrets.local.networking;
-  netName = "${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}";
+  netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
+  netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
 in
 {
   options = {
@@ -14,6 +15,11 @@ in
       netConfigName = lib.mkOption {
         type = lib.types.str;
         default = netName;
+        readOnly = true;
+      };
+      netConfigPrefix = lib.mkOption {
+        type = lib.types.str;
+        default = netPrefix;
         readOnly = true;
       };
     };

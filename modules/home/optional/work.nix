@@ -1,10 +1,10 @@
-{ self, inputs, config, pkgs, lib, vars, confLib, ... }:
+{ self, config, pkgs, lib, vars, confLib, type, ... }:
 let
   inherit (config.swarselsystems) homeDir mainUser;
   inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
   inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
 
-  certsSopsFile = self + /secrets/certs/secrets.yaml;
+  certsSopsFile = self + /secrets/repo/certs.yaml;
 in
 {
   options.swarselmodules.optional-work = lib.swarselsystems.mkTrueOption;
@@ -652,7 +652,7 @@ in
       };
 
     };
-  } // lib.optionalAttrs (inputs ? sops) {
+  } // lib.optionalAttrs (type != "nixos") {
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       harica-root-ca = {
         sopsFile = certsSopsFile;

@@ -407,7 +407,7 @@ Nowadays, I use flake-parts to manage my flake. It allows me to conveniently spl
 - =imports= are files pulled in to build the flake configuration (similar to the imports in the module system)
 - =systems= defines the architectures that the flake should be provided for - I go here for the four "main" architectures, although true support is only provided for linux systems (see [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] for the main reason)
 
-** flake.nix skeleton
+** flake.nix skeleton (inputs)
 :PROPERTIES:
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
 :END:
@@ -526,7 +526,7 @@ A short overview over each input and what it does:
       nur.url = "github:nix-community/NUR";
       nixgl.url = "github:guibou/nixGL";
       stylix.url = "github:danth/stylix";
-      sops-nix.url = "github:Mic92/sops-nix";
+      sops.url = "github:Mic92/sops-nix";
       lanzaboote.url = "github:nix-community/lanzaboote";
       nix-on-droid.url = "github:nix-community/nix-on-droid/release-24.05";
       nixos-generators.url = "github:nix-community/nixos-generators";
@@ -666,7 +666,7 @@ This is the file that manages the actual decryption of the files mentioned in [[
 
   # Decrypt only if necessary
   if [[ ! -e $out ]]; then
-      agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/sops || sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key)
+      agekey=$(sudo ssh-to-age -private-key -i /etc/ssh/ssh_host_ed25519_key || sudo ssh-to-age -private-key -i ~/.ssh/sops)
       SOPS_AGE_KEY="$agekey" sops decrypt --output "$out" "$file"
   fi
 
@@ -971,9 +971,10 @@ The rest of the outputs either define or help define the actual configurations:
         mkNixosHost = { minimal }: configName: arch:
           inputs.nixpkgs.lib.nixosSystem {
             specialArgs = {
-              inherit inputs outputs self minimal configName homeLib;
+              inherit inputs outputs self minimal homeLib configName arch;
               inherit (config.pkgs.${arch}) lib;
               inherit (config) globals nodes;
+              type = "nixos";
             };
             modules = [
               inputs.disko.nixosModules.disko
@@ -987,7 +988,7 @@ The rest of the outputs either define or help define the actual configurations:
               inputs.nix-topology.nixosModules.default
               inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
               inputs.simple-nixos-mailserver.nixosModules.default
-              inputs.sops-nix.nixosModules.sops
+              inputs.sops.nixosModules.sops
               inputs.stylix.nixosModules.stylix
               inputs.swarsel-nix.nixosModules.default
               (inputs.nixos-extra-modules + "/modules/guests")
@@ -1004,6 +1005,8 @@ The rest of the outputs either define or help define the actual configurations:
 
                 node = {
                   name = lib.mkForce configName;
+                  arch = lib.mkForce arch;
+                  type = lib.mkForce "nixos";
                   secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
                   lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
                 };
@@ -1031,7 +1034,7 @@ The rest of the outputs either define or help define the actual configurations:
             };
             modules = [
               # inputs.disko.nixosModules.disko
-              # inputs.sops-nix.nixosModules.sops
+              # inputs.sops.nixosModules.sops
               # inputs.impermanence.nixosModules.impermanence
               # inputs.lanzaboote.nixosModules.lanzaboote
               # inputs.fw-fanctrl.nixosModules.default
@@ -1040,12 +1043,15 @@ The rest of the outputs either define or help define the actual configurations:
               "${self}/hosts/darwin/${arch}/${configName}"
               "${self}/modules/nixos/darwin"
               # needed for infrastructure
-              "${self}/modules/nixos/common/meta.nix"
+              "${self}/modules/shared/meta.nix"
               "${self}/modules/nixos/common/globals.nix"
               {
-                node.name = lib.mkForce configName;
-                node.secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
-
+                node = {
+                  name = lib.mkForce configName;
+                  arch = lib.mkForce arch;
+                  type = lib.mkForce "darwin";
+                  secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
+                };
               }
             ];
           };
@@ -1058,18 +1064,27 @@ The rest of the outputs either define or help define the actual configurations:
           systemFunc {
             inherit pkgs;
             extraSpecialArgs = {
-              inherit inputs lib outputs self configName;
+              inherit inputs lib outputs self configName arch type;
               inherit (config) globals nodes;
               minimal = false;
             };
             modules = [
               inputs.stylix.homeModules.stylix
               inputs.nix-index-database.homeModules.nix-index
-              # inputs.sops-nix.homeManagerModules.sops
+              inputs.sops.homeManagerModules.sops
               inputs.spicetify-nix.homeManagerModules.default
               inputs.swarsel-nix.homeModules.default
               "${self}/hosts/${type}/${arch}/${configName}"
               "${self}/profiles/home"
+              "${self}/modules/nixos/common/pii.nix"
+              {
+                node = {
+                  name = lib.mkForce configName;
+                  arch = lib.mkForce arch;
+                  type = lib.mkForce type;
+                  secretsDir = ../hosts/${type}/${arch}/${configName}/secrets;
+                };
+              }
             ];
           };
 
@@ -2391,6 +2406,7 @@ My work machine. Built for more security, this is the gold standard of my config
     fileSystems = {
       "/persist".neededForBoot = true;
       "/home".neededForBoot = true;
+      "/".neededForBoot = true;
       "/var/log".neededForBoot = true;
     };
   }
@@ -3399,12 +3415,8 @@ My phone. I use only a minimal config for remote debugging here.
   {
 
     imports = [
-      # inputs.sops-nix.homeManagerModules.sops
       "${self}/modules/home"
-      "${self}/modules/nixos/common/pii.nix"
-      "${self}/modules/nixos/common/meta.nix"
     ];
-
 
     services.xcape = {
       enable = true;
@@ -3628,6 +3640,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       minecraft = true;
       restic = true;
       diskEncryption = lib.mkForce false;
+      dns-hostrecord = true;
     };
   }
 
@@ -3852,6 +3865,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       postgresql = lib.mkDefault true;
       attic = lib.mkDefault true;
       garage = lib.mkDefault true;
+      dns-hostrecord = true;
     };
 
   }
@@ -4050,6 +4064,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
     swarselmodules.server = {
       nsd = true;
       nginx = false;
+      dns-hostrecord = true;
     };
   }
 
@@ -4239,6 +4254,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
     swarselmodules.server = {
       nginx = false;
       bastion = true;
+      dns-hostrecord = true;
       # ssh = false;
     };
 
@@ -4430,6 +4446,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
     swarselmodules.server = {
       nginx = false;
+      dns-hostrecord = true;
     };
 
   }
@@ -4622,7 +4639,10 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
   } // lib.optionalAttrs (!minimal) {
 
-    swarselmodules.server.mailserver = true;
+    swarselmodules.server = {
+      mailserver = true;
+      dns-hostrecord = true;
+    };
 
     swarselprofiles = {
       server = true;
@@ -4998,7 +5018,7 @@ TODO: cleanup this mess
 #+begin_src nix-ts :tangle install/installer-config.nix
   { self, config, pkgs, lib, ... }:
   let
-    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/keys/ssh";
+    pubKeys = lib.filesystem.listFilesRecursive "${self}/secrets/public/ssh";
     stateVersion = lib.mkDefault "23.05";
         homeFiles = {
           ".bash_history" = {
@@ -5850,35 +5870,6 @@ in
   }
 #+end_src
 
-**** Meta options (options only)
-:PROPERTIES:
-:CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
-:END:
-
-
-#+begin_src nix-ts :tangle modules/nixos/common/meta.nix
-  { lib, ... }:
-  {
-    options = {
-      node = {
-        secretsDir = lib.mkOption {
-          description = "Path to the secrets directory for this node.";
-          type = lib.types.path;
-          default = ./.;
-        };
-        name = lib.mkOption {
-          description = "Node Name.";
-          type = lib.types.str;
-        };
-        lockFromBootstrapping = lib.mkOption {
-          description = "Whether this host should be marked to not be bootstrapped again using swarsel-bootstrap.";
-          type = lib.types.bool;
-        };
-      };
-    };
-  }
-#+end_src
-
 **** Expose home-manager sops secrets in NixOS (automatically active)
 :PROPERTIES:
 :CUSTOM_ID: h:a8bbe15f-a7dd-4e6d-ba49-26206c38e9c8
@@ -5891,7 +5882,7 @@ in
     inherit (config.repo.secrets.common.emacs) radicaleUser;
     modules = config.home-manager.users.${mainUser}.swarselmodules;
 
-    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    certsSopsFile = self + /secrets/repo/certs.yaml;
   in
   {
     config = lib.mkIf config.swarselsystems.withHomeManager {
@@ -6139,7 +6130,7 @@ A breakdown of the flags being set:
 We enable the use of =home-manager= as a NixoS module. A nice trick here is the =extraSpecialArgs = inputs= line, which enables the use of =seflf= in most parts of the configuration. This is useful to refer to the root of the flake (which is otherwise quite hard while maintaining flake purity).
 
 #+begin_src nix-ts :tangle modules/nixos/common/home-manager.nix
-  { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, ... }:
+  { self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
   {
     options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
     config = lib.mkIf config.swarselmodules.home-manager {
@@ -6151,7 +6142,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
         overwriteBackup = true;
         users.${config.swarselsystems.mainUser}.imports = [
           inputs.nix-index-database.homeModules.nix-index
-          inputs.sops-nix.homeManagerModules.sops
+          # inputs.sops.homeManagerModules.sops # this is not needed!! we add these secrets in nixos scope
           inputs.spicetify-nix.homeManagerModules.default
           inputs.swarsel-nix.homeModules.default
           {
@@ -6172,7 +6163,7 @@ We enable the use of =home-manager= as a NixoS module. A nice trick here is the 
         ];
         extraSpecialArgs = {
           inherit (inputs) self nixgl;
-          inherit inputs outputs globals nodes minimal configName;
+          inherit inputs outputs globals nodes minimal configName arch type;
           lib = homeLib;
         };
       };
@@ -6871,8 +6862,8 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
 #+begin_src nix-ts :tangle modules/nixos/client/network.nix
   { self, lib, pkgs, config, globals, ... }:
   let
-    certsSopsFile = self + /secrets/certs/secrets.yaml;
-    clientSopsFile = self + /secrets/${config.node.name}/secrets.yaml;
+    certsSopsFile = self + /secrets/repo/certs.yaml;
+    clientSopsFile = "${config.node.secretsDir}/secrets.yaml";
 
     inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 
@@ -7183,7 +7174,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
 - cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
 - add the output to .sops.yaml
-- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
+- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/public/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
 #+begin_src nix-ts :tangle modules/nixos/client/sops.nix
@@ -7194,8 +7185,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
       sops = {
 
         # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
-        age.sshKeyPaths = [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
-        defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/general/secrets.yaml";
+        age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
+        defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
 
         validateSopsFiles = false;
 
@@ -8568,14 +8559,14 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
         ];
       };
       users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
-        (self + /secrets/keys/ssh/yubikey.pub)
-        (self + /secrets/keys/ssh/magicant.pub)
-        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
+        (self + /secrets/public/ssh/yubikey.pub)
+        (self + /secrets/public/ssh/magicant.pub)
+        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
       ];
       users.users.root.openssh.authorizedKeys.keyFiles = [
-        (self + /secrets/keys/ssh/yubikey.pub)
-        (self + /secrets/keys/ssh/magicant.pub)
-        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
+        (self + /secrets/public/ssh/yubikey.pub)
+        (self + /secrets/public/ssh/magicant.pub)
+        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
       ];
       security.sudo.extraConfig = ''
         Defaults    env_keep+=SSH_AUTH_SOCK
@@ -8603,9 +8594,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
             group = lib.mkForce "jump";
             createHome = lib.mkForce true;
             openssh.authorizedKeys.keyFiles = [
-              (self + /secrets/keys/ssh/yubikey.pub)
-              (self + /secrets/keys/ssh/magicant.pub)
-              (self + /secrets/keys/ssh/builder.pub)
+              (self + /secrets/public/ssh/yubikey.pub)
+              (self + /secrets/public/ssh/magicant.pub)
+              (self + /secrets/public/ssh/builder.pub)
             ];
           };
         };
@@ -8689,7 +8680,7 @@ Restricts access to the system by the nix build user as per https://discourse.ni
           isSystemUser = true;
           group = "builder";
           openssh.authorizedKeys.keys = [
-            ''${ssh-restrict} ${builtins.readFile "${self}/secrets/keys/ssh/builder.pub"}''
+            ''${ssh-restrict} ${builtins.readFile "${self}/secrets/public/ssh/builder.pub"}''
           ];
         };
       };
@@ -8709,7 +8700,8 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
   { lib, config, ... }:
   let
     netConfig = config.repo.secrets.local.networking;
-    netName = "${if config.swarselsystems.isCloud then config.node.name else "home"}-${config.swarselsystems.server.localNetwork}";
+    netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
+    netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
   in
   {
     options = {
@@ -8722,6 +8714,11 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
         netConfigName = lib.mkOption {
           type = lib.types.str;
           default = netName;
+          readOnly = true;
+        };
+        netConfigPrefix = lib.mkOption {
+          type = lib.types.str;
+          default = netPrefix;
           readOnly = true;
         };
       };
@@ -8836,8 +8833,8 @@ lspci -k -d 14c3:0616
                 enable = true;
                 port = 2222; # avoid hostkey changed nag
                 authorizedKeys = [
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/yubikey.pub"}''
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/magicant.pub"}''
+                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
+                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
                 ];
                 hostKeys = [ hostKeyPathBase ];
               };
@@ -8873,6 +8870,137 @@ lspci -k -d 14c3:0616
       };
 
     }
+#+end_src
+
+**** Wireguard
+
+#+begin_src nix-ts :tangle modules/nixos/server/wireguard.nix
+  { self, lib, config, confLib, globals, ... }:
+  let
+    wgInterface = "wg0";
+    inherit (confLib.gen { name = "wireguard"; port = 52829; user = "systemd-network"; group = "systemd-network"; }) servicePort serviceName serviceUser serviceGroup;
+
+    inherit (config.swarselsystems) sopsFile;
+    inherit (config.swarselsystems.server.wireguard) peers isClient isServer;
+  in
+  {
+    options = {
+      swarselmodules.${serviceName} = lib.mkEnableOption "enable ${serviceName} settings";
+      swarselsystems.server.wireguard = {
+        isServer = lib.mkEnableOption "set this as a wireguard server";
+        peers = lib.mkOption {
+          type = lib.types.listOf (lib.types.submodule {
+            freeformType = lib.types.attrs;
+            options = { };
+          });
+          default = [ ];
+          description = "Wireguard peer submodules as expected by systemd.network.netdevs.<name>.wireguardPeers";
+        };
+      };
+
+    };
+        config = lib.mkIf config.swarselmodules.${serviceName} {
+
+          sops = {
+            secrets = {
+              wireguard-private-key = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
+              wireguard-home-preshared-key = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
+            };
+          };
+
+          networking = {
+            firewall.allowedUDPPorts = [ servicePort ];
+            nat = {
+              enable = true;
+              enableIPv6 = true;
+              externalInterface = "ens6";
+              internalInterfaces = [ wgInterface ];
+            };
+          };
+
+          systemd.network = {
+            enable = true;
+
+            networks."50-${wgInterface}" = {
+              matchConfig.Name = wgInterface;
+
+              networkConfig = {
+                IPv4Forwarding = true;
+                IPv6Forwarding = true;
+              };
+
+              address = [
+                "${globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv4}"
+                "${globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv6}"
+              ];
+            };
+
+            netdevs."50-wg0" = {
+              netdevConfig = {
+                Kind = "wireguard";
+                Name = wgInterface;
+              };
+
+              wireguardConfig = {
+                ListenPort = lib.mkIf isServer servicePort;
+
+                # ensure file is readable by `systemd-network` user
+                PrivateKeyFile = config.age.secrets.wg-key-vps.path;
+
+                # To automatically create routes for everything in AllowedIPs,
+                # add RouteTable=main
+                # RouteTable = "main";
+
+                # FirewallMark marks all packets send and received by wg0
+                # with the number 42, which can be used to define policy rules on these packets.
+                # FirewallMark = 42;
+              };
+              wireguardPeers = peers ++ lib.optionals isClient [
+                {
+                  PublicKey = builtins.readFile "${self}/secrets/public/wg/${config.node.name}.pub";
+                  PresharedKeyFile = config.sops.secrets."${config.node.name}-presharedKey".path;
+                  Endpoint = "${globals.hosts.${config.node.name}.wanAddress4}:${toString servicePort}";
+                  # Access to the whole network is routed through our entry node.
+                  # AllowedIPs =
+                  #   (optional (networkCfg.cidrv4 != null) networkCfg.cidrv4)
+                  #     ++ (optional (networkCfg.cidrv6 != null) networkCfg.cidrv6);
+                }
+              ];
+            };
+          };
+
+          # networking = {
+          #   wireguard = {
+          #     enable = true;
+          #     interfaces = {
+          #       wg1 = {
+          #         privateKeyFile = config.sops.secrets.wireguard-private-key.path;
+          #         ips = [ "192.168.178.201/24" ];
+          #         peers = [
+          #           {
+          #             publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
+          #             presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
+          #             name = "moonside";
+          #             persistentKeepalive = 25;
+          #             # endpoint = "${config.repo.secrets.common.ipv4}:51820";
+          #             endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
+          #             # allowedIPs = [
+          #             #   "192.168.3.0/24"
+          #             #   "192.168.1.0/24"
+          #             # ];
+          #             allowedIPs = [
+          #               "192.168.178.0/24"
+          #             ];
+          #           }
+          #         ];
+          #       };
+          #     };
+          #   };
+          # };
+
+
+        };
+      }
 #+end_src
 
 **** BTRFS
@@ -10553,7 +10681,7 @@ Note: you still need to run =restic-<name> init= once on the host to get the buc
 This section exposes several metrics that I use to check the health of my server. I need to expand on the exporters section at some point, but for now I have everything I need.
 
 #+begin_src nix-ts :tangle modules/nixos/server/monitoring.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
@@ -10566,6 +10694,8 @@ This section exposes several metrics that I use to check the health of my server
     kanidmDomain = globals.services.kanidm.domain;
 
     inherit (config.swarselsystems) sopsFile;
+
+    sopsFile2 = "${config.node.secretsDir}/secrets2.yaml";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10580,7 +10710,7 @@ This section exposes several metrics that I use to check the health of my server
           grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          prometheus-admin-hash = { sopsFile = self + /secrets/winters/secrets2.yaml; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+          prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
         };
         templates = {
@@ -11280,7 +11410,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
   { self, lib, pkgs, config, globals, dns, confLib, ... }:
   let
-    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    certsSopsFile = self + /secrets/repo/certs.yaml;
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "kanidm"; port = 8300; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
@@ -12261,10 +12391,10 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/radicale.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-    sopsFile = self + /secrets/winters/secrets2.yaml;
+    sopsFile = "${config.node.secretsDir}/secrets2.yaml";
 
     cfg = config.services.${serviceName};
   in
@@ -12846,10 +12976,10 @@ Deployment notes:
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/snipe-it.nix
-  { self, lib, config, globals, dns, confLib, ... }:
+  { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-    sopsFile = self + /secrets/winters/secrets2.yaml;
+    sopsFile = "${config.node.secretsDir}/secrets2.yaml";
 
     serviceDB = "snipeit";
 
@@ -13423,6 +13553,24 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     };
   }
 #+end_src
+**** Set host domain for dns
+
+#+begin_src nix-ts :tangle modules/nixos/server/dns-hostrecord.nix
+  { lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "dns-hostrecord"; proxy = config.node.name; }) serviceName proxyAddress4 proxyAddress6;
+  in
+  {
+    options. swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+      nodes.stoicclub.swarselsystems.server.dns.${globals.domains.main}.subdomainRecords = {
+        "server.${config.node.name}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      };
+
+    };
+  }
+#+end_src
 **** nsd (dns)
 :PROPERTIES:
 :CUSTOM_ID: h:ef5b7ace-4870-4dfa-9532-9a9d2722dc9a
@@ -13531,7 +13679,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2025120201; # update this on changes for secondary dns
+      serial = 2025120203; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -14842,11 +14990,11 @@ Again, we adapt =nix= to our needs, enable the home-manager command for non-NixO
                   trusted-users = [
                     "@wheel"
                     "${mainUser}"
-                    (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+                    (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
                   ];
                   connect-timeout = 5;
-                  bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-                  bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+                  bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
+                  bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
                   fallback = true;
                   min-free = 128000000;
                   max-free = 1000000000;
@@ -15227,22 +15375,24 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - `ssh-keygen -t ed25519 -C "NAME sops"` in .ssh directory (or wherever) - name e.g. "sops"
 - cat ~/.ssh/sops.pub | ssh-to-age | wl-copy
 - add the output to .sops.yaml
-- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/keys/NAME.pub
+- cp ~/.ssh/sops.pub ~/.dotfiles/secrets/public/NAME.pub
 - update entry for sops.age.sshKeyPaths
 
   Since we are using the home-manager implementation here, we need to specify the runtime path.
 
+  At the same time, I want to avoid running the homeManager module of sops on a NixOS machine. Note that we cannot use =lib.mkIf= in the line =config == ...= as this would evaluate the blocks that are within; however, on a NixOS machine, there will be no =sops= module in the homeManager scope. Hence we use =optionalAttrs=. Also, we cannot make use of =config.swarselsystems.isNixos= because that will lead to an infinite recursion. Hence, we take the =type= arg that we passed during host declaration to make sure sops stays disabled. This is used in all places in the home-manager config that make use of sops-secrets.
+
 #+begin_src nix-ts :tangle modules/home/common/sops.nix
-  { config, lib, inputs, ... }:
+  { config, lib, type, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
     {
       options.swarselmodules.sops = lib.mkEnableOption "sops settings";
-      config = lib.optionalAttrs (inputs ? sops)  {
-        sops = {
-          age.sshKeyPaths = [ "${homeDir}/.ssh/sops" "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/ssh_host_ed25519_key" ];
-          defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/general/secrets.yaml";
+      config = lib.optionalAttrs (type != "nixos")  {
+        sops = lib.mkIf (!config.swarselsystems.isNixos) {
+          age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/sops" ];
+          defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/repo/common.yaml";
 
           validateSopsFiles = false;
         };
@@ -15256,7 +15406,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 :END:
 
 #+begin_src nix-ts :tangle modules/home/common/yubikey.nix
-  { lib, config, inputs, confLib, ... }:
+  { lib, config, confLib, type, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -15271,7 +15421,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           confLib.getConfig.secrets.common.yubikeys.dev2
         ];
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
         u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
       };
@@ -15287,7 +15437,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 It is very convenient to have SSH aliases in place for machines that I use. This is mainly used for some server machines and some university clusters. We also enable agent forwarding to have our Yubikey SSH key accessible on the remote host.
 
 #+begin_src nix-ts :tangle modules/home/common/ssh.nix
-  { inputs, lib, config, confLib, ... }:
+  { lib, config, confLib, type, ... }:
   {
     options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
     config = lib.mkIf config.swarselmodules.ssh ({
@@ -15313,7 +15463,7 @@ It is very convenient to have SSH aliases in place for machines that I use. This
           };
         } // confLib.getConfig.repo.secrets.common.ssh.hosts;
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         builder-key = { path = "${config.home.homeDirectory}/.ssh/builder"; mode = "0600"; };
       };
@@ -16117,7 +16267,7 @@ lib.mkMerge [ zshConfigEarlyInit zshConfig ];
 Currently I only use it as before with =initExtra= though.
 
 #+begin_src nix-ts :tangle modules/home/common/zsh.nix
-  { config, pkgs, lib, minimal, inputs, globals, confLib, ... }:
+  { config, pkgs, lib, minimal, globals, confLib, type, ... }:
   let
     inherit (config.swarselsystems) flakePath isNixos;
     crocDomain = globals.services.croc.domain;
@@ -16252,9 +16402,9 @@ Currently I only use it as before with =initExtra= though.
             # QTWEBENGINE_CHROMIUM_FLAGS = "--no-sandbox";
           };
         };
-      } // lib.optionalAttrs (inputs ? sops) {
+      } // lib.optionalAttrs (type != "nixos") {
 
-        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
+        sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
           croc-password = { };
           github-nixpkgs-review-token = { };
         };
@@ -17624,7 +17774,7 @@ Currently I only use it as before with =initExtra= though.
 Normally I use 4 mail accounts - here I set them all up. Three of them are Google accounts (sadly), which are a chore to setup. The last is just a sender account that I setup SMTP for here.
 
 #+begin_src nix-ts :tangle modules/home/common/mail.nix
-  { lib, config, inputs, globals, confLib, ... }:
+  { lib, config, globals, confLib, type, ... }:
   let
     inherit (confLib.getConfig.repo.secrets.common.mail) address1 address2 address2-name address3 address3-name address4;
     inherit (confLib.getConfig.repo.secrets.common) fullName;
@@ -17826,7 +17976,7 @@ Normally I use 4 mail accounts - here I set them all up. Three of them are Googl
               };
             };
         };
-      } // lib.optionalAttrs (inputs ? sops) {
+      } // lib.optionalAttrs (type != "nixos") {
         sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
           address1-token = { path = "${xdgDir}/secrets/address1-token"; };
           address2-token = { path = "${xdgDir}/secrets/address2-token"; };
@@ -17847,7 +17997,7 @@ By using the emacs-overlay NixOS module, I can install all Emacs packages that I
 Lastly, I am defining some more packages here that the parser has problems finding. Also there are some packages that are not in ELPA or MELPA that I still want to use, like =calfw= and =fast-scroll=, so I build them here.
 
 #+begin_src nix-ts :tangle modules/home/common/emacs.nix
-  { self, lib, config, pkgs, globals, inputs, ... }:
+  { self, lib, config, pkgs, globals, inputs, type, ... }:
   let
     inherit (config.swarselsystems) homeDir mainUser isPublic isNixos;
     inherit (config.repo.secrets.common.emacs) radicaleUser;
@@ -17952,7 +18102,7 @@ Lastly, I am defining some more packages here that the parser has problems findi
         startWithUserSession = "graphical";
       };
 
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
 
       sops = lib.mkIf (!isPublic && !isNixos) {
         secrets = {
@@ -17991,7 +18141,7 @@ The rest of the related configuration is found here:
 - [[#h:f93f66f9-6b8b-478e-b139-b2f382c1f25e][waybarupdate]]
 
 #+begin_src nix-ts :tangle modules/home/common/waybar.nix
-  { self, config, lib, inputs, pkgs, ... }:
+  { self, config, lib, pkgs, type, ... }:
   let
     inherit (config.swarselsystems) xdgDir;
     generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
@@ -18313,7 +18463,7 @@ The rest of the related configuration is found here:
         };
         style = builtins.readFile (self + /files/waybar/style.css);
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
       };
@@ -19560,7 +19710,7 @@ When setting up a new machine:
         enable = true;
         publicKeys = [
           {
-            source = "${self}/secrets/keys/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+            source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
             trust = 5;
           }
         ];
@@ -19805,7 +19955,7 @@ This service changes the screen hue at night. I am not sure if that really does 
 
 
 #+begin_src nix-ts :tangle modules/home/common/anki.nix
-  { lib, config, pkgs, globals, inputs, confLib, ... }:
+  { lib, config, pkgs, globals, confLib, type, ... }:
   let
     moduleName = "anki";
     inherit (config.swarselsystems) isPublic isNixos;
@@ -19861,7 +20011,7 @@ This service changes the screen hue at night. I am not sure if that really does 
                 })
             ];
         };
-      } // lib.optionalAttrs (inputs ? sops) {
+      } // lib.optionalAttrs (type != "nixos") {
         sops = lib.mkIf (!isPublic && !isNixos) {
           secrets = {
             anki-user = { };
@@ -20634,13 +20784,13 @@ When setting up a new machine:
 #+end_src
 
 #+begin_src nix-ts :tangle modules/home/optional/work.nix :noweb yes
-  { self, inputs, config, pkgs, lib, vars, confLib, ... }:
+  { self, config, pkgs, lib, vars, confLib, type, ... }:
   let
     inherit (config.swarselsystems) homeDir mainUser;
     inherit (confLib.getConfig.repo.secrets.local.mail) allMailAddresses;
     inherit (confLib.getConfig.repo.secrets.local.work) mailAddress;
 
-    certsSopsFile = self + /secrets/certs/secrets.yaml;
+    certsSopsFile = self + /secrets/repo/certs.yaml;
   in
   {
     options.swarselmodules.optional-work = lib.swarselsystems.mkTrueOption;
@@ -21288,7 +21438,7 @@ When setting up a new machine:
         };
 
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
         harica-root-ca = {
           sopsFile = certsSopsFile;
@@ -21429,7 +21579,7 @@ TODO: check which of these can be replaced but builtin functions.
       isBtrfs = lib.mkEnableOption "use btrfs filesystem";
       sopsFile = lib.mkOption {
         type = lib.types.str;
-        default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/${config.node.name}/secrets.yaml";
+        default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.node.secretsDir}/secrets.yaml";
       };
       homeDir = lib.mkOption {
         type = lib.types.str;
@@ -21718,6 +21868,40 @@ In short, the options defined here are passed to the modules systems using =_mod
   }
 #+end_src
 
+*** Meta options (options only)
+:PROPERTIES:
+:CUSTOM_ID: h:30b81bf9-1e69-4ce8-88af-5592896bcee4
+:END:
+
+
+#+begin_src nix-ts :tangle modules/shared/meta.nix
+  { lib, ... }:
+  {
+    options = {
+      node = {
+        secretsDir = lib.mkOption {
+          description = "Path to the secrets directory for this node.";
+          type = lib.types.path;
+          default = ./.;
+        };
+        name = lib.mkOption {
+          type = lib.types.str;
+        };
+        arch = lib.mkOption {
+          type = lib.types.str;
+        };
+        type = lib.mkOption {
+          type = lib.types.str;
+        };
+        lockFromBootstrapping = lib.mkOption {
+          description = "Whether this host should be marked to not be bootstrapped again using swarsel-bootstrap.";
+          type = lib.types.bool;
+        };
+      };
+    };
+  }
+#+end_src
+
 *** Config Library (confLib)
 :PROPERTIES:
 :CUSTOM_ID: h:a33322d5-014a-4072-a4a5-91bc71c343b8
@@ -21747,7 +21931,7 @@ In short, the options defined here are passed to the modules systems using =_mod
           serviceDir = dir;
           serviceAddress = address;
           serviceProxy = proxy;
-          proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
+          proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
           proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
         };
       };
@@ -22762,8 +22946,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       vim "${git_root}"/.sops.yaml
   fi
   green "Updating all secrets files to reflect updates .sops.yaml"
-  sops updatekeys --yes --enable-local-keyservice "${git_root}"/secrets/*/secrets.yaml
-  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/pii.nix.enc
+  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/*
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -22936,7 +23119,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   fi
 
   local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
   read -ra pub_arr <<< "$pub_key"
 
   cd .dotfiles
@@ -23085,7 +23268,7 @@ Autoformatting always puts the =EOF= with indentation, which makes shfmt check f
   git clone https://github.com/Swarsel/.dotfiles.git
 
   local_keys=$(ssh-add -L || true)
-  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+  pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
   read -ra pub_arr <<< "$pub_key"
 
   cd .dotfiles

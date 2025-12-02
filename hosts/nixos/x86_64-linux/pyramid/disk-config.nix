@@ -75,6 +75,7 @@
   fileSystems = {
     "/persist".neededForBoot = true;
     "/home".neededForBoot = true;
+    "/".neededForBoot = true;
     "/var/log".neededForBoot = true;
   };
 }

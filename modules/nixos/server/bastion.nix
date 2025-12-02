@@ -14,9 +14,9 @@
           group = lib.mkForce "jump";
           createHome = lib.mkForce true;
           openssh.authorizedKeys.keyFiles = [
-            (self + /secrets/keys/ssh/yubikey.pub)
-            (self + /secrets/keys/ssh/magicant.pub)
-            (self + /secrets/keys/ssh/builder.pub)
+            (self + /secrets/public/ssh/yubikey.pub)
+            (self + /secrets/public/ssh/magicant.pub)
+            (self + /secrets/public/ssh/builder.pub)
           ];
         };
       };

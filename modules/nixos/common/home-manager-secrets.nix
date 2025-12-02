@@ -4,7 +4,7 @@ let
   inherit (config.repo.secrets.common.emacs) radicaleUser;
   modules = config.home-manager.users.${mainUser}.swarselmodules;
 
-  certsSopsFile = self + /secrets/certs/secrets.yaml;
+  certsSopsFile = self + /secrets/repo/certs.yaml;
 in
 {
   config = lib.mkIf config.swarselsystems.withHomeManager {

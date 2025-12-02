@@ -1,4 +1,4 @@
-{ lib, config, pkgs, globals, inputs, confLib, ... }:
+{ lib, config, pkgs, globals, confLib, type, ... }:
 let
   moduleName = "anki";
   inherit (config.swarselsystems) isPublic isNixos;
@@ -54,7 +54,7 @@ in
               })
           ];
       };
-    } // lib.optionalAttrs (inputs ? sops) {
+    } // lib.optionalAttrs (type != "nixos") {
       sops = lib.mkIf (!isPublic && !isNixos) {
         secrets = {
           anki-user = { };

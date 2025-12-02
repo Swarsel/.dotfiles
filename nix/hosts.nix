@@ -9,9 +9,10 @@
       mkNixosHost = { minimal }: configName: arch:
         inputs.nixpkgs.lib.nixosSystem {
           specialArgs = {
-            inherit inputs outputs self minimal configName homeLib;
+            inherit inputs outputs self minimal homeLib configName arch;
             inherit (config.pkgs.${arch}) lib;
             inherit (config) globals nodes;
+            type = "nixos";
           };
           modules = [
             inputs.disko.nixosModules.disko
@@ -25,7 +26,7 @@
             inputs.nix-topology.nixosModules.default
             inputs.nswitch-rcm-nix.nixosModules.nswitch-rcm
             inputs.simple-nixos-mailserver.nixosModules.default
-            inputs.sops-nix.nixosModules.sops
+            inputs.sops.nixosModules.sops
             inputs.stylix.nixosModules.stylix
             inputs.swarsel-nix.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")
@@ -42,6 +43,8 @@
 
               node = {
                 name = lib.mkForce configName;
+                arch = lib.mkForce arch;
+                type = lib.mkForce "nixos";
                 secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
                 lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
               };
@@ -69,7 +72,7 @@
           };
           modules = [
             # inputs.disko.nixosModules.disko
-            # inputs.sops-nix.nixosModules.sops
+            # inputs.sops.nixosModules.sops
             # inputs.impermanence.nixosModules.impermanence
             # inputs.lanzaboote.nixosModules.lanzaboote
             # inputs.fw-fanctrl.nixosModules.default
@@ -78,12 +81,15 @@
             "${self}/hosts/darwin/${arch}/${configName}"
             "${self}/modules/nixos/darwin"
             # needed for infrastructure
-            "${self}/modules/nixos/common/meta.nix"
+            "${self}/modules/shared/meta.nix"
             "${self}/modules/nixos/common/globals.nix"
             {
-              node.name = lib.mkForce configName;
-              node.secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
-
+              node = {
+                name = lib.mkForce configName;
+                arch = lib.mkForce arch;
+                type = lib.mkForce "darwin";
+                secretsDir = ../hosts/darwin/${arch}/${configName}/secrets;
+              };
             }
           ];
         };
@@ -96,18 +102,27 @@
         systemFunc {
           inherit pkgs;
           extraSpecialArgs = {
-            inherit inputs lib outputs self configName;
+            inherit inputs lib outputs self configName arch type;
             inherit (config) globals nodes;
             minimal = false;
           };
           modules = [
             inputs.stylix.homeModules.stylix
             inputs.nix-index-database.homeModules.nix-index
-            # inputs.sops-nix.homeManagerModules.sops
+            inputs.sops.homeManagerModules.sops
             inputs.spicetify-nix.homeManagerModules.default
             inputs.swarsel-nix.homeModules.default
             "${self}/hosts/${type}/${arch}/${configName}"
             "${self}/profiles/home"
+            "${self}/modules/nixos/common/pii.nix"
+            {
+              node = {
+                name = lib.mkForce configName;
+                arch = lib.mkForce arch;
+                type = lib.mkForce type;
+                secretsDir = ../hosts/${type}/${arch}/${configName}/secrets;
+              };
+            }
           ];
         };
 

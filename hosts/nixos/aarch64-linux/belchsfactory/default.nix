@@ -53,6 +53,7 @@
     postgresql = lib.mkDefault true;
     attic = lib.mkDefault true;
     garage = lib.mkDefault true;
+    dns-hostrecord = true;
   };
 
 }

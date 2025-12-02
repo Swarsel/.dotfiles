@@ -1,4 +1,4 @@
-{ self, config, lib, inputs, pkgs, ... }:
+{ self, config, lib, pkgs, type, ... }:
 let
   inherit (config.swarselsystems) xdgDir;
   generateIcons = n: lib.concatStringsSep " " (builtins.map (x: "{icon" + toString x + "}") (lib.range 0 (n - 1)));
@@ -320,7 +320,7 @@ in
       };
       style = builtins.readFile (self + /files/waybar/style.css);
     };
-  } // lib.optionalAttrs (inputs ? sops) {
+  } // lib.optionalAttrs (type != "nixos") {
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       github-notifications-token = { path = "${xdgDir}/secrets/github-notifications-token"; };
     };

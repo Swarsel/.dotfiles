@@ -96,7 +96,7 @@ green "Cloning repository from GitHub"
 git clone https://github.com/Swarsel/.dotfiles.git
 
 local_keys=$(ssh-add -L || true)
-pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/keys/ssh/yubikey.pub)
+pub_key=$(cat /home/"$target_user"/.dotfiles/secrets/public/ssh/yubikey.pub)
 read -ra pub_arr <<< "$pub_key"
 
 cd .dotfiles
