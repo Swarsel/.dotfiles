@@ -43,11 +43,11 @@ in
           trusted-users = [
             "@wheel"
             "${mainUser}"
-            (lib.mkIf config.swarselmodules.server.ssh-builder "builder")
+            (lib.mkIf ((config.swarselmodules ? server) ? ssh-builder) "builder")
           ];
           connect-timeout = 5;
-          bash-prompt-prefix = "[33m$SHLVL:\\w [0m";
-          bash-prompt = "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
+          bash-prompt-prefix = lib.mkIf config.swarselsystems.isClient "[33m$SHLVL:\\w [0m";
+          bash-prompt = lib.mkIf config.swarselsystems.isClient "$(if [[ $? -gt 0 ]]; then printf \"[31m\"; else printf \"[32m\"; fi)λ [0m";
           fallback = true;
           min-free = 128000000;
           max-free = 1000000000;

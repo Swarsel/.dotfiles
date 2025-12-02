@@ -30,7 +30,7 @@ in
       enable = true;
       publicKeys = [
         {
-          source = "${self}/secrets/keys/gpg/gpg-public-key-0x76FD3810215AE097.asc";
+          source = "${self}/secrets/public/gpg/gpg-public-key-0x76FD3810215AE097.asc";
           trust = 5;
         }
       ];

@@ -49,8 +49,8 @@ in
             enable = true;
             port = 2222; # avoid hostkey changed nag
             authorizedKeys = [
-              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/yubikey.pub"}''
-              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/keys/ssh/magicant.pub"}''
+              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
+              ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
             ];
             hostKeys = [ hostKeyPathBase ];
           };

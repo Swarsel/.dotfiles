@@ -1,7 +1,7 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-  sopsFile = self + /secrets/winters/secrets2.yaml;
+  sopsFile = "${config.node.secretsDir}/secrets2.yaml";
 
   serviceDB = "snipeit";
 

@@ -1,4 +1,4 @@
-{ self, lib, config, globals, dns, confLib, ... }:
+{ lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "grafana"; port = 3000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
 
@@ -11,6 +11,8 @@ let
   kanidmDomain = globals.services.kanidm.domain;
 
   inherit (config.swarselsystems) sopsFile;
+
+  sopsFile2 = "${config.node.secretsDir}/secrets2.yaml";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -25,7 +27,7 @@ in
         grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        prometheus-admin-hash = { sopsFile = self + /secrets/winters/secrets2.yaml; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+        prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
       };
       templates = {

@@ -22,14 +22,14 @@
       ];
     };
     users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/ssh/yubikey.pub)
-      (self + /secrets/keys/ssh/magicant.pub)
-      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
+      (self + /secrets/public/ssh/yubikey.pub)
+      (self + /secrets/public/ssh/magicant.pub)
+      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
     ];
     users.users.root.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/keys/ssh/yubikey.pub)
-      (self + /secrets/keys/ssh/magicant.pub)
-      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/keys/ssh/jump.pub))
+      (self + /secrets/public/ssh/yubikey.pub)
+      (self + /secrets/public/ssh/magicant.pub)
+      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
     ];
     security.sudo.extraConfig = ''
       Defaults    env_keep+=SSH_AUTH_SOCK

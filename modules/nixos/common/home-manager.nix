@@ -1,4 +1,4 @@
-{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, ... }:
+{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
 {
   options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
   config = lib.mkIf config.swarselmodules.home-manager {
@@ -10,7 +10,7 @@
       overwriteBackup = true;
       users.${config.swarselsystems.mainUser}.imports = [
         inputs.nix-index-database.homeModules.nix-index
-        inputs.sops-nix.homeManagerModules.sops
+        # inputs.sops.homeManagerModules.sops # this is not needed!! we add these secrets in nixos scope
         inputs.spicetify-nix.homeManagerModules.default
         inputs.swarsel-nix.homeModules.default
         {
@@ -31,7 +31,7 @@
       ];
       extraSpecialArgs = {
         inherit (inputs) self nixgl;
-        inherit inputs outputs globals nodes minimal configName;
+        inherit inputs outputs globals nodes minimal configName arch type;
         lib = homeLib;
       };
     };

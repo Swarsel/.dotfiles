@@ -6,20 +6,20 @@ keys:
   - &users
     - &swarsel 4BE7925262289B476DBBC17B76FD3810215AE097
   - &hosts
-    - &winters age1h72072slm2pthn9m2qwjsyy2dsazc6hz97kpzh4gksvv0r2jqecqul8w63
-    - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
-    - &liliputsteps age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx
-    - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
+    - &bakery age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh
     - &belchsfactory age1k73gy5em3js9zklnnkzp5hme9k04lny32fgahmzddknjw5c295asdyr4x6
     - &eagleland age1cmzh82q8k59yzceuuy2epmqu22g7m84gqvq056mhgehwpmvjadfsc3glc8
     - &hintbooth age1hsumymvh5mkqlaynrp9lv2w696yk3wtjzlyfmrpeuvh9u2tlwceqh3563x
-    - &bakery age1mjgw3nxlnqdj04mgjz3wn7fj2nl2nxla4p2r2fn4nkvayfgp09pqllxzyh
-    - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
-    - &surface age1zlnxraee6tddr07xn59mx5rdexw8qxryd53eqlsajasfhfy78fkq705dfg
-    - &nbl age16lnmuuxfuxxtty3atnhut8wseppwnhp7rdhmxqd5tdvs9qnjffjq42sqyy
+    - &liliputsteps age1ly2endyt0y9xyddj6yuj4nw6fa3ltvzlvew4cr4lzs6dv8dkavpqadmyxx
     - &moonside age18quey88vge7xytclg2nuq4ncme86dg04lxwczqxczmdchnjg3p0saehsnh
+    - &pyramid age15cx90pnp54xp5gxlt02yn9j2pz968wp3l5ukdkx55xuecp34e5pszjku4m
+    - &stoicclub age15klj4t7gpfp69472mne4ue62pp6m4e04dmjyw7yf30qtqd3vl3uqjmcyxm
+    - &toto age16vzhcvz8tyxj8e0f47fy0z4p3dsg0ak4vl52ut3l07a0tz465cxslmhevl
+    - &twothreetunnel age1g7atkxdlt4ymeh7v7aa2yzr2hq2qkvzrc4r49ugttm3n582ymv9qrmpk8d
+    - &winters age1s0vssf9fey2l456hucppzx2x58xep279nsdcglvkqm30sr9ht37s8rvpza
+    - &dgx age1ax5hqk6e2ekgfx5u7pl8ayc3vvhrehyvtvf07llaxhs5azpnny0qpltrns
 creation_rules:
-  - path_regex: secrets/general/[^/]+\.(yaml|json|env|ini)$
+  - path_regex: secrets/repo/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
@@ -33,183 +33,93 @@ creation_rules:
       - *hintbooth
       - *bakery
       - *toto
-      - *surface
-      - *nbl
+      - *pyramid
       - *moonside
-  - path_regex: secrets/repo/[^/]+$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *winters
-      - *twothreetunnel
-      - *liliputsteps
-      - *stoicclub
-      - *belchsfactory
-      - *eagleland
-      - *hintbooth
-      - *bakery
-      - *toto
-      - *surface
-      - *nbl
-      - *moonside
-  - path_regex: secrets/certs/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *nbl
-      - *twothreetunnel
-      - *liliputsteps
-      - *stoicclub
-      - *belchsfactory
-      - *eagleland
-      - *hintbooth
-      - *bakery
-      - *toto
-      - *surface
-      - *winters
-      - *moonside
+      - *dgx
+
   - path_regex: secrets/work/[^/]+\.(yaml|json|env|ini)$
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *nbl
+      - *pyramid
 
-  - path_regex: secrets/pyramid/[^/]+\.(yaml|json|env|ini)$
+  - path_regex: hosts/nixos/x86_64-linux/pyramid/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *nbl
-  - path_regex: hosts/nixos/x86_64-linux/pyramid/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *nbl
+      - *pyramid
 
-  - path_regex: secrets/moonside/secrets.yaml
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *moonside
-  - path_regex: hosts/nixos/aarch64-linux/moonside/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *moonside
-
-  - path_regex: secrets/belchsfactory/secrets.yaml
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *belchsfactory
-  - path_regex: hosts/nixos/aarch64-linux/belchsfactory/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *belchsfactory
-
-  - path_regex: secrets/bakery/secrets.yaml
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *bakery
-  - path_regex: hosts/nixos/x86_64-linux/bakery/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/x86_64-linux/bakery/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *bakery
 
-  - path_regex: secrets/winters/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *winters
-  - path_regex: hosts/nixos/x86_64-linux/winters/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/x86_64-linux/winters/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *winters
 
-  - path_regex: secrets/eagleland/[^/]+\.(yaml|json|env|ini)$
+  - path_regex: hosts/nixos/x86_64-linux/eagleland/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *eagleland
 
-  - path_regex: hosts/nixos/x86_64-linux/eagleland/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/aarch64-linux/moonside/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
-      - *eagleland
+      - *moonside
 
+  - path_regex: hosts/nixos/aarch64-linux/belchsfactory/secrets/[^/]+\.(yaml|json|env|ini|enc)$
+    key_groups:
+    - pgp:
+      - *swarsel
+      age:
+      - *belchsfactory
 
-
-  - path_regex: secrets/stoicclub/[^/]+\.(yaml|json|env|ini)$
+  - path_regex: hosts/nixos/aarch64-linux/stoicclub/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *stoicclub
-  - path_regex: hosts/nixos/aarch64-linux/stoicclub/secrets/pii.nix.enc
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *stoicclub
 
-  - path_regex: secrets/liliputsteps/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *liliputsteps
-  - path_regex: hosts/nixos/aarch64-linux/liliputsteps/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/aarch64-linux/liliputsteps/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *liliputsteps
 
-  - path_regex: secrets/twothreetunnel/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-    - pgp:
-      - *swarsel
-      age:
-      - *twothreetunnel
-  - path_regex: hosts/nixos/aarch64-linux/twothreetunnel/secrets/pii.nix.enc
+  - path_regex: hosts/nixos/aarch64-linux/twothreetunnel/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *twothreetunnel
 
-  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/
+  - path_regex: hosts/nixos/x86_64-linux/summers/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
 
-  - path_regex: hosts/nixos/x86_64-linux/hintbooth/secrets/
+  - path_regex: hosts/nixos/x86_64-linux/hintbooth/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel
       age:
       - *hintbooth
 
-  - path_regex: hosts/darwin/nbm-imba-166/secrets/pii.nix.enc
+  - path_regex: hosts/darwin/x86_64-darwin/nbm-imba-166/secrets/[^/]+\.(yaml|json|env|ini|enc)$
     key_groups:
     - pgp:
       - *swarsel

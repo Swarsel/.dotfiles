@@ -1,4 +1,4 @@
-{ inputs, lib, config, confLib, ... }:
+{ lib, config, confLib, type, ... }:
 {
   options.swarselmodules.ssh = lib.mkEnableOption "ssh settings";
   config = lib.mkIf config.swarselmodules.ssh ({
@@ -24,7 +24,7 @@
         };
       } // confLib.getConfig.repo.secrets.common.ssh.hosts;
     };
-  } // lib.optionalAttrs (inputs ? sops) {
+  } // lib.optionalAttrs (type != "nixos") {
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic && !config.swarselsystems.isNixos) {
       builder-key = { path = "${config.home.homeDirectory}/.ssh/builder"; mode = "0600"; };
     };

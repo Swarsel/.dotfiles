@@ -1,4 +1,4 @@
-{ lib, config, inputs, confLib, ... }:
+{ lib, config, confLib, type, ... }:
 let
   inherit (config.swarselsystems) homeDir;
 in
@@ -13,7 +13,7 @@ in
         confLib.getConfig.secrets.common.yubikeys.dev2
       ];
     };
-  } // lib.optionalAttrs (inputs ? sops) {
+  } // lib.optionalAttrs (type != "nixos") {
     sops.secrets = lib.mkIf (!config.swarselsystems.isPublic) {
       u2f-keys = { path = "${homeDir}/.config/Yubico/u2f_keys"; };
     };

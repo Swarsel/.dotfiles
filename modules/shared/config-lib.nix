@@ -22,7 +22,7 @@
         serviceDir = dir;
         serviceAddress = address;
         serviceProxy = proxy;
-        proxyAddress4 = globals.hosts.${proxy}.wanAddress4;
+        proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
       };
     };

@@ -164,5 +164,6 @@ in
     minecraft = true;
     restic = true;
     diskEncryption = lib.mkForce false;
+    dns-hostrecord = true;
   };
 }

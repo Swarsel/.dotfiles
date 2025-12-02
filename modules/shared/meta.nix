@@ -8,7 +8,12 @@
         default = ./.;
       };
       name = lib.mkOption {
-        description = "Node Name.";
+        type = lib.types.str;
+      };
+      arch = lib.mkOption {
+        type = lib.types.str;
+      };
+      type = lib.mkOption {
         type = lib.types.str;
       };
       lockFromBootstrapping = lib.mkOption {

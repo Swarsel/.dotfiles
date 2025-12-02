@@ -26,7 +26,7 @@ in
         isSystemUser = true;
         group = "builder";
         openssh.authorizedKeys.keys = [
-          ''${ssh-restrict} ${builtins.readFile "${self}/secrets/keys/ssh/builder.pub"}''
+          ''${ssh-restrict} ${builtins.readFile "${self}/secrets/public/ssh/builder.pub"}''
         ];
       };
     };
