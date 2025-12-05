@@ -23,6 +23,18 @@
     isNixos = true;
     isLinux = true;
     isCloud = true;
+    server = {
+      wireguard = {
+        ifName = "wg";
+        isServer = true;
+        peers = [
+          "moonside"
+          "winters"
+          "belchsfactory"
+          "eagleland"
+        ];
+      };
+    };
   };
 } // lib.optionalAttrs (!minimal) {
   swarselprofiles = {
@@ -30,8 +42,10 @@
   };
 
   swarselmodules.server = {
-    nginx = false;
+    nginx = true; # for now
+    oauth2-proxy = true; # for now
     dns-hostrecord = true;
+    wireguard = true;
   };
 
 }

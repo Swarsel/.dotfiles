@@ -3,7 +3,18 @@
   _module.args = {
     confLib = rec {
 
-      addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4 else "localhost";
+      addressDefault =
+        if
+          config.swarselsystems.proxyHost != config.node.name
+        then
+          if
+            config.swarselsystems.server.wireguard.isClient
+          then
+            globals.networks."${config.swarselsystems.server.wireguard.serverNetConfigPrefix}-wg".hosts.${config.node.name}.ipv4
+          else
+            globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
+        else
+          "localhost";
 
       domainDefault = service: config.repo.secrets.common.services.domains.${service};
       proxyDefault = config.swarselsystems.proxyHost;

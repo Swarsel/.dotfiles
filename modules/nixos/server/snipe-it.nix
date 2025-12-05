@@ -1,7 +1,8 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-  sopsFile = "${config.node.secretsDir}/secrets2.yaml";
+  # sopsFile = config.node.secretsDir + "/secrets2.yaml";
+  inherit (config.swarselsystems) sopsFile;
 
   serviceDB = "snipeit";
 
@@ -55,7 +56,8 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
+
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;

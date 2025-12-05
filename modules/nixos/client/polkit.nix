@@ -4,6 +4,9 @@
   config = lib.mkIf config.swarselmodules.security {
 
     security = {
+      # pki.certificateFiles = [
+      #   config.sops.secrets.harica-root-ca.path
+      # ];
       pam.services = lib.mkIf (!minimal) {
         login.u2fAuth = true;
         sudo.u2fAuth = true;

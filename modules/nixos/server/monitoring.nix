@@ -12,7 +12,7 @@ let
 
   inherit (config.swarselsystems) sopsFile;
 
-  sopsFile2 = "${config.node.secretsDir}/secrets2.yaml";
+  # sopsFile2 = config.node.secretsDir + "/secrets2.yaml";
 in
 {
   options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -27,7 +27,8 @@ in
         grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
         kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-        prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+        # prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+        prometheus-admin-hash = { inherit sopsFile; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
       };
       templates = {
@@ -226,7 +227,8 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
+
           forceSSL = true;
           acmeRoot = null;
           locations = {
