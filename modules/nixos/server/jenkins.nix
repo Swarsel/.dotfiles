@@ -34,7 +34,8 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
+
           forceSSL = true;
           acmeRoot = null;
           locations = {

@@ -2,7 +2,7 @@
 let
   netConfig = config.repo.secrets.local.networking;
   netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
-  netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
+  # netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
 in
 {
   options = {
@@ -14,7 +14,7 @@ in
       };
       netConfigName = lib.mkOption {
         type = lib.types.str;
-        default = netName;
+        default = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
         readOnly = true;
       };
       netConfigPrefix = lib.mkOption {
@@ -28,10 +28,21 @@ in
 
     swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-    globals.networks.${netName}.hosts.${config.node.name} = {
-      inherit (netConfig.networks.${netConfig.localNetwork}) id;
-      mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
-    };
+    # globals.networks.${netName}.hosts.${config.node.name} = {
+    #   inherit (netConfig.networks.${netConfig.localNetwork}) id;
+    #   mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
+    # };
+
+    globals.networks = lib.mapAttrs'
+      (netName: _:
+        lib.nameValuePair "${netPrefix}-${netName}" {
+          hosts.${config.node.name} = {
+            inherit (netConfig.networks.${netName}) id;
+            mac = netConfig.networks.${netName}.mac or null;
+          };
+        }
+      )
+      netConfig.networks;
 
     globals.hosts.${config.node.name} = {
       inherit (config.repo.secrets.local.networking) defaultGateway4;

@@ -1,8 +1,10 @@
-{ lib, minimal, ... }:
+{ self, lib, minimal, ... }:
 {
 
   imports = [
     ./hardware-configuration.nix
+
+    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
 
   boot = {
@@ -25,8 +27,12 @@
     isBtrfs = false;
     isLinux = true;
     isNixos = true;
-    proxyHost = "moonside";
+    proxyHost = "twothreetunnel";
     server = {
+      wireguard = {
+        isClient = true;
+        serverName = "twothreetunnel";
+      };
       restic = {
         bucketName = "SwarselWinters";
         paths = [
@@ -58,6 +64,7 @@
 
   swarselmodules.server = {
     diskEncryption = lib.mkForce false;
+    wireguard = lib.mkDefault true;
     nfs = lib.mkDefault true;
     nginx = lib.mkDefault true;
     kavita = lib.mkDefault true;

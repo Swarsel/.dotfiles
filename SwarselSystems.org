@@ -229,26 +229,26 @@ The structure of this flake as seen many revisions, however lately I have settle
 Here I give a brief overview over the hostmachines that I am using. This is held in markdown so that I can render it into my GitHub README.
 
 #+begin_src markdown :tangle no :noweb-ref hosts
-  | Name                | Hardware                                            | Use                                                 |
-  |---------------------|-----------------------------------------------------|-----------------------------------------------------|
-  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                         |
-  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                     |
-  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                   |
-  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference   |
-  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, datastorage  |
-  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                      |
-  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                              |
-  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative dns server                            |
-  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                         |
-  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                       |
-  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                          |
-  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services     |
-  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binarycache                   |
-  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                               |
-  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts     |
-  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines |
-  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration     |
-  |❔ **toto**          | -                                                   | Helper configuration for testing purposes           |
+  | Name                | Hardware                                            | Use                                                             |
+  |---------------------|-----------------------------------------------------|-----------------------------------------------------------------|
+  |💻 **pyramid**       | Framework Laptop 16, AMD 7940HS, RX 7700S, 64GB RAM | Work laptop                                                     |
+  |💻 **bakery**        | Lenovo Ideapad 720S-13IKB                           | Personal laptop                                                 |
+  |💻 **machpizza**     | MacBook Pro 2016                                    | MacOS reference and build sandbox                               |
+  |🏠 **treehouse**     | NVIDIA DGX Spark                                    | AI Workstation, remote builder, hm-only-reference               |
+  |🖥️ **summers**       | ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM  | Homeserver (microvms), remote builder, data storage             |
+  |🖥️ **winters**       | ASRock J4105-ITX, 32GB RAM                          | Homeserver (IoT server in spe)                                  |
+  |🖥️ **hintbooth**     | HUNSN RM02, 8GB RAM                                 | Router                                                          |
+  |☁️ **stoicclub**     | Cloud Server: 1 vCPUs, 8GB RAM                      | Authoritative DNS server                                        |
+  |☁️ **liliputsteps**  | Cloud Server: 1 vCPUs, 8GB RAM                      | SSH bastion                                                     |
+  |☁️ **twothreetunnel**| Cloud Server: 2 vCPUs, 8GB RAM                      | Service proxy                                                   |
+  |☁️ **eagleland**     | Cloud Server: 2 vCPUs, 8GB RAM                      | Mailserver                                                      |
+  |☁️ **moonside**      | Cloud Server: 4 vCPUs, 24GB RAM                     | Gaming server, syncthing + lightweight services                 |
+  |☁️ **belchsfactory** | Cloud Server: 4 vCPUs, 24GB RAM                     | Hydra builder and nix binary cache                              |
+  |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
+  |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
+  |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |
+  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration                 |
+  |❔ **toto**          | -                                                   | Helper configuration for testing purposes                       |
 #+end_src
 
 ** Programs
@@ -257,18 +257,18 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :END:
 
 #+begin_src markdown :tangle no :noweb-ref programs
-  | Topic         | Program                         |
-  |---------------|---------------------------------|
-  |🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                            |
-  |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                         |
-  |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                         |
-  |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                         |
-  |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                          |
-  |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                          |
-  |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                         |
-  |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                           |
-  |🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                        |
-  |🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)|
+  | Topic         | Program                                                                                                                     |
+  |---------------|-----------------------------------------------------------------------------------------------------------------------------|
+  |🐚 **Shell**   | [zsh](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                                           |
+  |🚪 **DM**      | [greetd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/common/login.nix)                                     |
+  |🪟 **WM**      | [SwayFX](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sway.nix)                                       |
+  |⛩️ **Bar**     | [Waybar](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/waybar.nix)                                     |
+  |✒️ **Editor**  | [Emacs](https://github.com/Swarsel/.dotfiles/tree/main/files/emacs/init.el)                                                 |
+  |🖥️ **Terminal**| [Kitty](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/kitty.nix)                                       |
+  |🚀 **Launcher**| [Fuzzel](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/fuzzel.nix)                                     |
+  |🚨 **Alerts**  | [Mako](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/mako.nix)                                         |
+  |🌐 **Browser** | [Firefox](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/zsh.nix)                                       |
+  |🎨 **Theme**   | [City-Lights (managed by stylix)](https://github.com/Swarsel/.dotfiles/tree/main/modules/home/common/sharedsetup.nix)       |
 #+end_src
 
 ** Services
@@ -277,30 +277,37 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :END:
 
 #+begin_src markdown :tangle no :noweb-ref services
-  | Topic                 | Program                                                                                                             |
-  |-----------------------|---------------------------------------------------------------------------------------------------------------------|
-  |📖 **Books**           |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                           |
-  |📼 **Videos**          | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                        |
-  |🎵 **Music**           | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
-  |🗨️ **Messaging**       | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                            |
-  |📁 **Filesharing**     | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                      |
-  |🎞️ **Photos**          | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                            |
-  |📄 **Documents**       | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                      |
-  |🔄 **File Sync**       | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                      |
-  |💾 **Backups**         | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                            |
-  |👁️ **Monitoring**      | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                       |
-  |🍴 **RSS**             | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                        |
-  |🌳 **Git**             | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                          |
-  |⚓ **Anki Sync**       | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)                |
-  |🪪 **SSO**             | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)                                            |
-  |💸 **Finance**         | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)                  |
-  |🃏 **Collections**     | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)                  |
-  |🗃️ **Shell History**   | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                              |
-  |📅 **CalDav/CardDav**  | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                        |
-  |↔️ **P2P Filesharing** | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                                |
-  |✂️ **Paste Tool**      | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                        |
-  |📸 **Image Sharing**   | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/slink.nix)                              |
-  |🔗 **Link Shortener**  | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                            |
+  | Topic                      | Program                                                                                                        |
+  |----------------------------|----------------------------------------------------------------------------------------------------------------|
+  |📖 **Books**                |  [Kavita](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kavita.nix)                      |
+  |📼 **Videos**               | [Jellyfin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/jellyfin.nix)                   |
+  |🎵 **Music**                | [Navidrome](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/navidrome.nix) +  [Spotifyd](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/spotifyd.nix) +  [MPD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mpd.nix)                                                              |
+  |🗨️ **Messaging**            | [Matrix](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/matrix.nix)                       |
+  |📁 **Filesharing**          | [Nectcloud](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nextcloud.nix)                 |
+  |🎞️ **Photos**               | [Immich](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/immich.nix)                       |
+  |📄 **Documents**            | [Paperless](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/paperless.nix)                 |
+  |🔄 **File Sync**            | [Syncthing](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/syncthing.nix)                 |
+  |💾 **Backups**              | [Restic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/restic.nix)                       |
+  |👁️ **Monitoring**           | [Grafana](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/monitoring.nix)                  |
+  |🍴 **RSS**                  | [FreshRss](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/freshrss.nix)                   |
+  |🌳 **Git**                  | [Forgejo](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/forgejo.nix)                     |
+  |⚓ **Anki Sync**            | [Anki Sync Server](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/ankisync.nix)           |
+  |🪪 **SSO**                  | [Kanidm](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/kanidm.nix) + [oauth2-proxy](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/oauth2-proxy.nix)                                            |
+  |💸 **Finance**              | [Firefly-III](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/firefly-iii.nix)             |
+  |🃏 **Collections**          | [Koillection](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/koillection.nix)             |
+  |🗃️ **Shell History**        | [Atuin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/atuin.nix)                         |
+  |📅 **CalDav/CardDav**       | [Radicale](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/radicale.nix)                   |
+  |↔️ **P2P Filesharing**      | [Croc](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/croc.nix)                           |
+  |✂️ **Paste Tool**           | [Microbin](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/microbin.nix)                   |
+  |📸 **Image Sharing**        | [Slink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/slink.nix)                         |
+  |🔗 **Link Shortener**       | [Shlink](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/shlink.nix)                       |
+  |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
+  |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
+  |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
+  |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
+  |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
+  |👀 **DNS**                  | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
+  |✉️ **Mail**                 | [simple-nixos-mailserver](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/mailserver.nix)  |
 #+end_src
 
 ** Manual steps when setting up a new machine
@@ -2659,11 +2666,13 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/default.nix
-  { lib, minimal, ... }:
+  { self, lib, minimal, ... }:
   {
 
     imports = [
       ./hardware-configuration.nix
+
+      "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     ];
 
     boot = {
@@ -2686,8 +2695,12 @@ This is my main server that I run at home. It handles most tasks that require bi
       isBtrfs = false;
       isLinux = true;
       isNixos = true;
-      proxyHost = "moonside";
+      proxyHost = "twothreetunnel";
       server = {
+        wireguard = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
         restic = {
           bucketName = "SwarselWinters";
           paths = [
@@ -2719,6 +2732,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules.server = {
       diskEncryption = lib.mkForce false;
+      wireguard = lib.mkDefault true;
       nfs = lib.mkDefault true;
       nginx = lib.mkDefault true;
       kavita = lib.mkDefault true;
@@ -3474,33 +3488,17 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/moonside/default.nix
-  { lib, config, minimal, ... }:
+  { self, lib, config, minimal, ... }:
   let
     inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
-    inherit (config.swarselsystems) sopsFile;
   in
   {
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
+
+      "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     ];
-
-    sops = {
-      age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-      secrets = {
-        wireguard-private-key = { inherit sopsFile; };
-        wireguard-home-preshared-key = { inherit sopsFile; };
-      };
-    };
-
-    boot = {
-      loader.systemd-boot.enable = true;
-      tmp.cleanOnBoot = true;
-    };
-
-    environment = {
-      etc."issue".text = "\4";
-    };
 
     topology.self = {
       icon = "devices.cloud-server";
@@ -3510,45 +3508,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
         virtual = true;
         type = "wireguard";
       };
-    };
-
-    networking = {
-      domain = "subnet03291956.vcn03291956.oraclevcn.com";
-      firewall = {
-        allowedTCPPorts = [ 8384 ];
-      };
-      wireguard = {
-        enable = true;
-        interfaces = {
-          home-vpn = {
-            privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-            # ips = [ "192.168.3.4/32" ];
-            ips = [ "192.168.178.201/24" ];
-            peers = [
-              {
-                # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
-                publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
-                presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
-                name = "moonside";
-                persistentKeepalive = 25;
-                # endpoint = "${config.repo.secrets.common.ipv4}:51820";
-                endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
-                # allowedIPs = [
-                #   "192.168.3.0/24"
-                #   "192.168.1.0/24"
-                # ];
-                allowedIPs = [
-                  "192.168.178.0/24"
-                ];
-              }
-            ];
-          };
-        };
-      };
-    };
-
-    hardware = {
-      enableAllFirmware = lib.mkForce false;
     };
 
     system.stateVersion = "23.11";
@@ -3613,7 +3572,13 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isBtrfs = true;
       isNixos = true;
       isLinux = true;
+      isCloud = true;
+      proxyHost = "twothreetunnel";
       server = {
+        wireguard = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
         restic = {
           bucketName = "SwarselMoonside";
           paths = [
@@ -3631,7 +3596,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
 
     swarselmodules.server = {
-      oauth2-proxy = true;
+      wireguard = true;
       croc = true;
       microbin = true;
       shlink = true;
@@ -4438,6 +4403,18 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isNixos = true;
       isLinux = true;
       isCloud = true;
+      server = {
+        wireguard = {
+          ifName = "wg";
+          isServer = true;
+          peers = [
+            "moonside"
+            "winters"
+            "belchsfactory"
+            "eagleland"
+          ];
+        };
+      };
     };
   } // lib.optionalAttrs (!minimal) {
     swarselprofiles = {
@@ -4445,8 +4422,10 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
 
     swarselmodules.server = {
-      nginx = false;
+      nginx = true; # for now
+      oauth2-proxy = true; # for now
       dns-hostrecord = true;
+      wireguard = true;
     };
 
   }
@@ -6701,6 +6680,9 @@ Needed for control over system-wide privileges etc. Also I make sure that the ro
     config = lib.mkIf config.swarselmodules.security {
 
       security = {
+        # pki.certificateFiles = [
+        #   config.sops.secrets.harica-root-ca.path
+        # ];
         pam.services = lib.mkIf (!minimal) {
           login.u2fAuth = true;
           sudo.u2fAuth = true;
@@ -6863,7 +6845,7 @@ Here I only enable =networkmanager= and a few default networks. The rest of the 
   { self, lib, pkgs, config, globals, ... }:
   let
     certsSopsFile = self + /secrets/repo/certs.yaml;
-    clientSopsFile = "${config.node.secretsDir}/secrets.yaml";
+    clientSopsFile = config.node.secretsDir + "/secrets.yaml";
 
     inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 
@@ -7178,7 +7160,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 - update entry for sops.age.sshKeyPaths
 
 #+begin_src nix-ts :tangle modules/nixos/client/sops.nix
-  { config, lib, ... }:
+  { self, config, lib, ... }:
   {
     options.swarselmodules.sops = lib.mkEnableOption "sops config";
     config = lib.mkIf config.swarselmodules.sops {
@@ -7186,7 +7168,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 
         # age.sshKeyPaths = lib.swarselsystems.mkIfElseList config.swarselsystems.isBtrfs [ "/persist/.ssh/sops" "/persist/.ssh/ssh_host_ed25519_key" ] [ "${config.swarselsystems.homeDir}/.ssh/sops" "/etc/ssh/sops" "/etc/ssh/ssh_host_ed25519_key" ];
         age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}/etc/ssh/ssh_host_ed25519_key" ];
-        defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
+        # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.swarselsystems.flakePath}/secrets/repo/common.yaml";
+        defaultSopsFile = self + "/secrets/repo/common.yaml";
 
         validateSopsFiles = false;
 
@@ -8288,6 +8271,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         sops
         swarsel-deploy
         tmux
+        busybox
       ];
     };
   }
@@ -8362,10 +8346,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
-  { pkgs, lib, config, ... }:
+  { pkgs, lib, config, globals, ... }:
   let
-    inherit (config.repo.secrets.common) dnsProvider dnsBase;
-    inherit (config.repo.secrets.common.mail) address3;
+    inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
 
     serviceUser = "nginx";
     serviceGroup = serviceUser;
@@ -8382,42 +8365,66 @@ Here we just define some aliases for rebuilding the system, and we allow some in
     options.swarselmodules.server.nginx = lib.mkEnableOption "enable nginx on server";
     options.services.nginx = {
       recommendedSecurityHeaders = lib.mkEnableOption "additional security headers by default in each location block.";
+      defaultStapling = lib.mkEnableOption "add ssl stapling in each location block..";
       virtualHosts = lib.mkOption {
         type = lib.types.attrsOf (
-          lib.types.submodule {
-            options.locations = lib.mkOption {
-              type = lib.types.attrsOf (
-                lib.types.submodule (submod: {
-                  options = {
-                    recommendedSecurityHeaders = lib.mkOption {
-                      type = lib.types.bool;
-                      default = config.services.nginx.recommendedSecurityHeaders;
-                      description = "Whether to add additional security headers to this location.";
+          lib.types.submodule (topmod: {
+            options = {
+              defaultStapling = lib.mkOption {
+                type = lib.types.bool;
+                default = config.services.nginx.defaultStapling;
+                description = "Whether to add ssl stapling to this location.";
+              };
+              locations = lib.mkOption {
+                type = lib.types.attrsOf (
+                  lib.types.submodule (submod: {
+                    options = {
+                      recommendedSecurityHeaders = lib.mkOption {
+                        type = lib.types.bool;
+                        default = config.services.nginx.recommendedSecurityHeaders;
+                        description = "Whether to add additional security headers to this location.";
+                      };
+
+                      X-Frame-Options = lib.mkOption {
+                        type = lib.types.str;
+                        default = "DENY";
+                        description = "The value to use for X-Frame-Options";
+                      };
                     };
 
-                    X-Frame-Options = lib.mkOption {
-                      type = lib.types.str;
-                      default = "DENY";
-                      description = "The value to use for X-Frame-Options";
+                    config = {
+                      extraConfig = lib.mkIf submod.config.recommendedSecurityHeaders (lib.mkBefore ''
+                        # Hide upstream's versions
+                        proxy_hide_header Strict-Transport-Security;
+                        proxy_hide_header Referrer-Policy;
+                        proxy_hide_header X-Content-Type-Options;
+                        proxy_hide_header X-Frame-Options;
+
+                        # Enable HTTP Strict Transport Security (HSTS)
+                        add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+
+                        # Minimize information leaked to other domains
+                        add_header Referrer-Policy "origin-when-cross-origin";
+
+                        add_header X-XSS-Protection "1; mode=block";
+                        add_header X-Frame-Options "${submod.config.X-Frame-Options}";
+                        add_header X-Content-Type-Options "nosniff";
+                      ''
+                      );
                     };
-                  };
-                  config = lib.mkIf submod.config.recommendedSecurityHeaders {
-                    extraConfig = lib.mkBefore ''
-                      # Enable HTTP Strict Transport Security (HSTS)
-                      add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
-
-                      # Minimize information leaked to other domains
-                      add_header Referrer-Policy "origin-when-cross-origin";
-
-                      add_header X-XSS-Protection "1; mode=block";
-                      add_header X-Frame-Options "${submod.config.X-Frame-Options}";
-                      add_header X-Content-Type-Options "nosniff";
-                    '';
-                  };
-                })
-              );
+                  })
+                );
+              };
             };
-          }
+            config = {
+              extraConfig = lib.mkIf topmod.config.defaultStapling (lib.mkAfter ''
+                ssl_stapling on;
+                ssl_stapling_verify on;
+                resolver 1.1.1.1 8.8.8.8 valid=300s;
+                resolver_timeout 5s;
+              '');
+            };
+          })
         );
       };
     };
@@ -8426,33 +8433,36 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         lego
       ];
 
-      sops = {
+      sops = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
         secrets = {
-          acme-dns-token = { inherit (config.swarselsystems) sopsFile; };
+          acme-creds = { format = "json"; key = ""; group = "acme"; sopsFile = config.node.secretsDir + "/acme.json"; mode = "0660"; };
         };
         templates."certs.secret".content = ''
-          ACME_DNS_API_BASE=${dnsBase}
-          ACME_DNS_STORAGE_PATH=${config.sops.placeholder.acme-dns-token}
+          ACME_DNS_API_BASE = ${dnsBase}
+          ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
         '';
       };
 
       users.groups.acme.members = [ "nginx" ];
 
-      security.acme = {
+      security.acme = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
         acceptTerms = true;
         defaults = {
           inherit dnsProvider;
-          email = address3;
+          email = dnsMail;
           environmentFile = "${config.sops.templates."certs.secret".path}";
           reloadServices = [ "nginx" ];
           dnsPropagationCheck = true;
+        };
+        certs."${globals.domains.main}" = {
+          domain = "*.${globals.domains.main}";
         };
       };
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
       environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        directories = [ { directory = "/var/lib/acme"; } ];
+        directories = [{ directory = "/var/lib/acme"; }];
         files = [ dhParamsPathBase ];
       };
 
@@ -8467,6 +8477,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         recommendedGzipSettings = true;
         recommendedBrotliSettings = true;
         recommendedSecurityHeaders = true;
+        defaultStapling = true;
         sslCiphers = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:!aNULL";
         sslDhparam = dhParamsPathBase;
         virtualHosts.fallback = {
@@ -8493,11 +8504,11 @@ Here we just define some aliases for rebuilding the system, and we allow some in
           ${if config.swarselsystems.isImpermanence then "${pkgs.coreutils}/bin/install -d -m 0755 /persist${sslBasePath}" else ""}
 
           if [ ! -f "${dhParamsPath}" ]; then
-            ${pkgs.openssl}/bin/openssl dhparam -out "${dhParamsPath}" 4096
-            chmod 0644 "${dhParamsPath}"
-            chown ${serviceUser}:${serviceGroup} "${dhParamsPath}"
+          ${pkgs.openssl}/bin/openssl dhparam -out "${dhParamsPath}" 4096
+          chmod 0644 "${dhParamsPath}"
+          chown ${serviceUser}:${serviceGroup} "${dhParamsPath}"
           else
-            echo 'Already generated DHParams'
+          echo 'Already generated DHParams'
           fi
         '';
       };
@@ -8701,7 +8712,7 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
   let
     netConfig = config.repo.secrets.local.networking;
     netPrefix = "${if config.swarselsystems.isCloud then config.node.name else "home"}";
-    netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
+    # netName = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
   in
   {
     options = {
@@ -8713,7 +8724,7 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
         };
         netConfigName = lib.mkOption {
           type = lib.types.str;
-          default = netName;
+          default = "${netPrefix}-${config.swarselsystems.server.localNetwork}";
           readOnly = true;
         };
         netConfigPrefix = lib.mkOption {
@@ -8727,10 +8738,21 @@ Generate hostId using =head -c4 /dev/urandom | od -A none -t x4=
 
       swarselsystems.server.localNetwork = netConfig.localNetwork or "";
 
-      globals.networks.${netName}.hosts.${config.node.name} = {
-        inherit (netConfig.networks.${netConfig.localNetwork}) id;
-        mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
-      };
+      # globals.networks.${netName}.hosts.${config.node.name} = {
+      #   inherit (netConfig.networks.${netConfig.localNetwork}) id;
+      #   mac = netConfig.networks.${netConfig.localNetwork}.mac or null;
+      # };
+
+      globals.networks = lib.mapAttrs'
+        (netName: _:
+          lib.nameValuePair "${netPrefix}-${netName}" {
+            hosts.${config.node.name} = {
+              inherit (netConfig.networks.${netName}) id;
+              mac = netConfig.networks.${netName}.mac or null;
+            };
+          }
+        )
+        netConfig.networks;
 
       globals.hosts.${config.node.name} = {
         inherit (config.repo.secrets.local.networking) defaultGateway4;
@@ -8782,225 +8804,275 @@ lspci -k -d 14c3:0616
 |         | Kernel     | modules:    | mt7921e  |        |         |          |     |         |          |         |         |
 
 #+begin_src nix-ts :tangle modules/nixos/server/disk-encrypt.nix
-    { self, pkgs, lib, config, globals, minimal, ... }:
-    let
-      localIp = globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4;
-      subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
-      gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
+  { self, pkgs, lib, config, globals, minimal, ... }:
+  let
+    localIp = globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4;
+    subnetMask = globals.networks.${config.swarselsystems.server.netConfigName}.subnetMask4;
+    gatewayIp = globals.hosts.${config.node.name}.defaultGateway4;
 
-      hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
-      hostKeyPath =
-        if config.swarselsystems.isImpermanence then
-          "/persist/${hostKeyPathBase}"
-        else
-          "${hostKeyPathBase}";
-    in
-    {
-      options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
-      options.swarselsystems.networkKernelModules = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
+    hostKeyPathBase = "/etc/secrets/initrd/ssh_host_ed25519_key";
+    hostKeyPath =
+      if config.swarselsystems.isImpermanence then
+        "/persist/${hostKeyPathBase}"
+      else
+        "${hostKeyPathBase}";
+  in
+  {
+    options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
+    options.swarselsystems.networkKernelModules = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+    };
+    config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
+
+
+      system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
+        deps = [ "ensureInitrdHostkey" ];
       };
-      config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
+      system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
+        text = ''
+          [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
+        '';
+        deps = [
+          "etc"
+        ];
+      };
 
+      environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {
+        files = [ hostKeyPathBase ];
+      };
 
-        system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-          deps = [ "ensureInitrdHostkey" ];
-        };
-        system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
-          text = ''
-            [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
-          '';
-          deps = [
-            "etc"
-          ];
-        };
-
-        environment.persistence."/persist" = lib.mkIf (config.swarselsystems.isImpermanence && (config.swarselprofiles.server || minimal)) {
-          files = [ hostKeyPathBase ];
-        };
-
-        boot = lib.mkIf (!config.swarselsystems.isClient) {
-          kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
-            "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
-          ];
-          initrd = {
-            availableKernelModules = config.swarselsystems.networkKernelModules;
-            network = {
+      boot = lib.mkIf (!config.swarselsystems.isClient) {
+        kernelParams = lib.mkIf (!config.swarselsystems.isCloud) [
+          "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
+        ];
+        initrd = {
+          secrets."${hostKeyPathBase}" = lib.mkIf (!minimal) hostKeyPathBase;
+          availableKernelModules = config.swarselsystems.networkKernelModules;
+          network = {
+            enable = true;
+            flushBeforeStage2 = true;
+            ssh = {
               enable = true;
-              flushBeforeStage2 = true;
-              ssh = {
-                enable = true;
-                port = 2222; # avoid hostkey changed nag
-                authorizedKeys = [
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
-                  ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
-                ];
-                hostKeys = [ hostKeyPathBase ];
-              };
-              # postCommands = ''
-              #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
-              # '';
-            };
-            systemd = {
-              initrdBin = with pkgs; [
-                cryptsetup
+              port = 2222; # avoid hostkey changed nag
+              authorizedKeys = [
+                ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
+                ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
               ];
-              # NOTE: the below does put the text into /root/.profile, but the command will not be run
-              # services = {
-              #   unlock-luks = {
-              #     wantedBy = [ "initrd.target" ];
-              #     after = [ "network.target" ];
-              #     before = [ "systemd-cryptsetup@cryptroot.service" ];
-              #     path = [ "/bin" ];
-
-              #     serviceConfig = {
-              #       Type = "oneshot";
-              #       RemainAfterExit = true;
-              #     };
-
-              #     script = ''
-              #       echo "systemctl default" >> /root/.profile
-              #     '';
-              #   };
-              # };
+              hostKeys = [ hostKeyPathBase ];
             };
+            # postCommands = ''
+            #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
+            # '';
+          };
+          systemd = {
+            initrdBin = with pkgs; [
+              cryptsetup
+            ];
+            # NOTE: the below does put the text into /root/.profile, but the command will not be run
+            # services = {
+            #   unlock-luks = {
+            #     wantedBy = [ "initrd.target" ];
+            #     after = [ "network.target" ];
+            #     before = [ "systemd-cryptsetup@cryptroot.service" ];
+            #     path = [ "/bin" ];
+
+            #     serviceConfig = {
+            #       Type = "oneshot";
+            #       RemainAfterExit = true;
+            #     };
+
+            #     script = ''
+            #       echo "systemctl default" >> /root/.profile
+            #     '';
+            #   };
+            # };
           };
         };
       };
+    };
 
-    }
+  }
 #+end_src
 
 **** Wireguard
 
 #+begin_src nix-ts :tangle modules/nixos/server/wireguard.nix
-  { self, lib, config, confLib, globals, ... }:
+  { self, lib, pkgs, config, confLib, nodes, globals, ... }:
   let
     wgInterface = "wg0";
     inherit (confLib.gen { name = "wireguard"; port = 52829; user = "systemd-network"; group = "systemd-network"; }) servicePort serviceName serviceUser serviceGroup;
 
     inherit (config.swarselsystems) sopsFile;
-    inherit (config.swarselsystems.server.wireguard) peers isClient isServer;
+    wgSopsFile = self + "/secrets/repo/wg.yaml";
+    inherit (config.swarselsystems.server.wireguard) peers isClient isServer serverName serverNetConfigPrefix ifName;
   in
   {
     options = {
-      swarselmodules.${serviceName} = lib.mkEnableOption "enable ${serviceName} settings";
+      swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} settings";
       swarselsystems.server.wireguard = {
         isServer = lib.mkEnableOption "set this as a wireguard server";
+        isClient = lib.mkEnableOption "set this as a wireguard client";
+        serverName = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+        };
+        serverNetConfigPrefix = lib.mkOption {
+          type = lib.types.str;
+          default = "${if nodes.${serverName}.config.swarselsystems.isCloud then nodes.${serverName}.config.node.name else "home"}";
+          readOnly = true;
+        };
+        ifName = lib.mkOption {
+          type = lib.types.str;
+          default = wgInterface;
+        };
         peers = lib.mkOption {
-          type = lib.types.listOf (lib.types.submodule {
-            freeformType = lib.types.attrs;
-            options = { };
-          });
+          type = lib.types.listOf lib.types.str;
           default = [ ];
-          description = "Wireguard peer submodules as expected by systemd.network.netdevs.<name>.wireguardPeers";
+          description = "Wireguard peer config names";
         };
       };
 
     };
-        config = lib.mkIf config.swarselmodules.${serviceName} {
+    config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
-          sops = {
-            secrets = {
-              wireguard-private-key = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
-              wireguard-home-preshared-key = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
-            };
+      environment.systemPackages = with pkgs; [
+        wireguard-tools
+      ];
+
+      sops = {
+        secrets = {
+          wireguard-private-key = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
+          # create this secret only if this is a simple client with only one peer (the server)
+          "wireguard-${serverName}-${config.node.name}-presharedKey" = lib.mkIf (isClient && peers == [ ]) { sopsFile = wgSopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
+        }
+        # create these secrets only if this host has multiple peers
+        // lib.optionalAttrs (peers != [ ]) (builtins.listToAttrs (map
+          (clientName: {
+            name = "wireguard-${config.node.name}-${clientName}-presharedKey";
+            value = { sopsFile = wgSopsFile; owner = serviceUser; group = serviceGroup; mode = "0600"; };
+          })
+          peers));
+      };
+
+      networking = {
+        firewall.checkReversePath = lib.mkIf isClient "loose";
+        firewall.allowedUDPPorts = [ servicePort ];
+        # nat = lib.mkIf (config.swarselsystems.isCloud && isServer) {
+        #   enable = true;
+        #   enableIPv6 = true;
+        #   externalInterface = "enp0s6";
+        #   internalInterfaces = [ ifName ];
+        # };
+        # interfaces.${ifName}.mtu = 1280; # the default (1420) is not enough!
+      };
+
+      systemd.network = {
+        enable = true;
+
+        networks."50-${ifName}" = {
+          matchConfig.Name = ifName;
+          linkConfig = {
+            MTUBytes = 1408; # TODO: figure out where we lose those 12 bits (8 from pppoe maybe + ???)
           };
 
-          networking = {
-            firewall.allowedUDPPorts = [ servicePort ];
-            nat = {
-              enable = true;
-              enableIPv6 = true;
-              externalInterface = "ens6";
-              internalInterfaces = [ wgInterface ];
-            };
-          };
-
-          systemd.network = {
-            enable = true;
-
-            networks."50-${wgInterface}" = {
-              matchConfig.Name = wgInterface;
-
-              networkConfig = {
-                IPv4Forwarding = true;
-                IPv6Forwarding = true;
-              };
-
-              address = [
-                "${globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv4}"
-                "${globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv6}"
-              ];
-            };
-
-            netdevs."50-wg0" = {
-              netdevConfig = {
-                Kind = "wireguard";
-                Name = wgInterface;
-              };
-
-              wireguardConfig = {
-                ListenPort = lib.mkIf isServer servicePort;
-
-                # ensure file is readable by `systemd-network` user
-                PrivateKeyFile = config.age.secrets.wg-key-vps.path;
-
-                # To automatically create routes for everything in AllowedIPs,
-                # add RouteTable=main
-                # RouteTable = "main";
-
-                # FirewallMark marks all packets send and received by wg0
-                # with the number 42, which can be used to define policy rules on these packets.
-                # FirewallMark = 42;
-              };
-              wireguardPeers = peers ++ lib.optionals isClient [
-                {
-                  PublicKey = builtins.readFile "${self}/secrets/public/wg/${config.node.name}.pub";
-                  PresharedKeyFile = config.sops.secrets."${config.node.name}-presharedKey".path;
-                  Endpoint = "${globals.hosts.${config.node.name}.wanAddress4}:${toString servicePort}";
-                  # Access to the whole network is routed through our entry node.
-                  # AllowedIPs =
-                  #   (optional (networkCfg.cidrv4 != null) networkCfg.cidrv4)
-                  #     ++ (optional (networkCfg.cidrv6 != null) networkCfg.cidrv6);
-                }
-              ];
-            };
-          };
-
-          # networking = {
-          #   wireguard = {
-          #     enable = true;
-          #     interfaces = {
-          #       wg1 = {
-          #         privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-          #         ips = [ "192.168.178.201/24" ];
-          #         peers = [
-          #           {
-          #             publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
-          #             presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
-          #             name = "moonside";
-          #             persistentKeepalive = 25;
-          #             # endpoint = "${config.repo.secrets.common.ipv4}:51820";
-          #             endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
-          #             # allowedIPs = [
-          #             #   "192.168.3.0/24"
-          #             #   "192.168.1.0/24"
-          #             # ];
-          #             allowedIPs = [
-          #               "192.168.178.0/24"
-          #             ];
-          #           }
-          #         ];
-          #       };
-          #     };
-          #   };
+          # networkConfig = lib.mkIf (config.swarselsystems.isCloud && isServer) {
+          #   IPv4Forwarding = true;
+          #   IPv6Forwarding = true;
           # };
 
+          address = if isServer then [
+            globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv4
+            globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${config.node.name}.cidrv6
+          ] else [
+            globals.networks."${serverNetConfigPrefix}-wg".hosts.${config.node.name}.cidrv4
+            globals.networks."${serverNetConfigPrefix}-wg".hosts.${config.node.name}.cidrv6
+          ];
+        };
+
+        netdevs."50-${ifName}" = {
+          netdevConfig = {
+            Kind = "wireguard";
+            Name = ifName;
+          };
+
+          wireguardConfig = {
+            ListenPort = lib.mkIf isServer servicePort;
+
+            # ensure file is readable by `systemd-network` user
+            PrivateKeyFile = config.sops.secrets.wireguard-private-key.path;
+
+            # To automatically create routes for everything in AllowedIPs,
+            # add RouteTable=main
+            RouteTable = lib.mkIf isClient "main";
+
+            # FirewallMark marks all packets send and received by wg0
+            # with the number 42, which can be used to define policy rules on these packets.
+            # FirewallMark = 42;
+          };
+          wireguardPeers = lib.optionals isClient [
+            {
+              PublicKey = builtins.readFile "${self}/secrets/public/wg/${serverName}.pub";
+              PresharedKeyFile = config.sops.secrets."wireguard-${serverName}-${config.node.name}-presharedKey".path;
+              Endpoint = "server.${serverName}.${globals.domains.main}:${toString servicePort}";
+              # Access to the whole network is routed through our entry node.
+              # PersistentKeepalive = 25;
+              AllowedIPs =
+                let
+                  wgNetwork = globals.networks."${serverNetConfigPrefix}-wg";
+                in
+                  (lib.optional (wgNetwork.cidrv4 != null) wgNetwork.cidrv4)
+                     ++ (lib.optional (wgNetwork.cidrv6 != null) wgNetwork.cidrv6);
+            }
+          ] ++ lib.optionals isServer (map
+            (clientName: {
+              PublicKey = builtins.readFile "${self}/secrets/public/wg/${clientName}.pub";
+              PresharedKeyFile = config.sops.secrets."wireguard-${config.node.name}-${clientName}-presharedKey".path;
+              # PersistentKeepalive = 25;
+              AllowedIPs =
+                let
+                  clientInWgNetwork = globals.networks."${config.swarselsystems.server.netConfigPrefix}-wg".hosts.${clientName};
+                in
+                  (lib.optional (clientInWgNetwork.ipv4 != null) (lib.net.cidr.make 32 clientInWgNetwork.ipv4))
+                  ++ (lib.optional (clientInWgNetwork.ipv6 != null) (lib.net.cidr.make 128 clientInWgNetwork.ipv6));
+            })
+            peers);
 
         };
-      }
+      };
+
+      # networking = {
+      #   wireguard = {
+      #     enable = true;
+      #     interfaces = {
+      #       wg1 = {
+      #         privateKeyFile = config.sops.secrets.wireguard-private-key.path;
+      #         ips = [ "192.168.178.201/24" ];
+      #         peers = [
+      #           {
+      #             publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
+      #             presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
+      #             name = "moonside";
+      #             persistentKeepalive = 25;
+      #             # endpoint = "${config.repo.secrets.common.ipv4}:51820";
+      #             endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
+      #             # allowedIPs = [
+      #             #   "192.168.3.0/24"
+      #             #   "192.168.1.0/24"
+      #             # ];
+      #             allowedIPs = [
+      #               "192.168.178.0/24"
+      #             ];
+      #           }
+      #         ];
+      #       };
+      #     };
+      #   };
+      # };
+
+
+    };
+  }
 #+end_src
 
 **** BTRFS
@@ -9141,7 +9213,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -9218,7 +9291,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -9361,7 +9435,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = true;
@@ -9902,7 +9977,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             listen = [
@@ -10018,7 +10094,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -10089,7 +10166,8 @@ lspci -k -d 14c3:0616
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -10239,7 +10317,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -10583,7 +10662,8 @@ Also I install Tika and Gotenberg, which are needed to create PDFs out of =.eml=
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -10695,7 +10775,7 @@ This section exposes several metrics that I use to check the health of my server
 
     inherit (config.swarselsystems) sopsFile;
 
-    sopsFile2 = "${config.node.secretsDir}/secrets2.yaml";
+    # sopsFile2 = config.node.secretsDir + "/secrets2.yaml";
   in
   {
     options.swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
@@ -10710,7 +10790,8 @@ This section exposes several metrics that I use to check the health of my server
           grafana-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           prometheus-admin-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
           kanidm-grafana-client = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
-          prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+          # prometheus-admin-hash = { sopsFile = sopsFile2; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
+          prometheus-admin-hash = { inherit sopsFile; owner = prometheusUser; group = prometheusGroup; mode = "0440"; };
 
         };
         templates = {
@@ -10909,7 +10990,8 @@ This section exposes several metrics that I use to check the health of my server
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -10934,7 +11016,7 @@ This section exposes several metrics that I use to check the health of my server
   }
 #+end_src
 
-**** Jenkins
+**** Jenkins (currently unused)
 :PROPERTIES:
 :CUSTOM_ID: h:23452a18-a0a1-4515-8612-ceb19bb5fc22
 :END:
@@ -10978,7 +11060,8 @@ This is a WIP Jenkins instance. It is used to automatically build a new system w
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -11128,7 +11211,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = true;
@@ -11298,7 +11382,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -11376,7 +11461,8 @@ FreshRSS claims to support HTTP header auth, but at least it does not work with 
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -11586,7 +11672,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 
       services = {
         ${serviceName} = {
-          package = pkgs.kanidmWithSecretProvisioning_1_7;
+          package = pkgs.kanidmWithSecretProvisioning_1_8;
           enableServer = true;
           serverSettings = {
             domain = serviceDomain;
@@ -11800,7 +11886,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12035,7 +12122,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12153,7 +12241,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = true;
@@ -12302,7 +12391,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12365,7 +12455,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12394,7 +12485,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-    sopsFile = "${config.node.secretsDir}/secrets2.yaml";
+    # sopsFile = config.node.secretsDir + "/secrets2.yaml";
+    inherit (config.swarselsystems) sopsFile;
 
     cfg = config.services.${serviceName};
   in
@@ -12493,7 +12585,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -12719,7 +12812,8 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12846,7 +12940,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -12948,7 +13042,8 @@ Deployment notes:
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = true;
@@ -12970,7 +13065,7 @@ Deployment notes:
   }
 #+end_src
 
-**** Snipe-IT
+**** Snipe-IT (currently unused)
 :PROPERTIES:
 :CUSTOM_ID: h:470f7ee3-3307-4949-b0fa-403171e3859a
 :END:
@@ -12979,7 +13074,8 @@ Deployment notes:
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "snipeit"; port = 80; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-    sopsFile = "${config.node.secretsDir}/secrets2.yaml";
+    # sopsFile = config.node.secretsDir + "/secrets2.yaml";
+    inherit (config.swarselsystems) sopsFile;
 
     serviceDB = "snipeit";
 
@@ -13033,7 +13129,8 @@ Deployment notes:
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -13099,7 +13196,8 @@ Deployment notes:
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
+
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -13679,7 +13777,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2025120203; # update this on changes for secondary dns
+      serial = 2025120501; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -13689,6 +13787,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
       "srv"
     ] ++ globals.domains.externalDns;
 
+    CAA = letsEncrypt config.repo.secrets.common.dnsMail;
 
     A = [ config.repo.secrets.local.dns.homepage-ip ];
 
@@ -14804,7 +14903,7 @@ Some standard options that should be set vor every microvm guest. We set the def
       useDHCP = lib.mkForce false;
       useNetworkd = true;
       dhcpcd.enable = false;
-      renameInterfacesByMac = lib.mapAttrs (_: v: v.mac) (
+      renameInterfacesByMac = lib.mapAttrs (_: v: if (v ? mac) then v.mac else "") (
         config.repo.secrets.local.networking.networks or { }
       );
     };
@@ -15383,7 +15482,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
   At the same time, I want to avoid running the homeManager module of sops on a NixOS machine. Note that we cannot use =lib.mkIf= in the line =config == ...= as this would evaluate the blocks that are within; however, on a NixOS machine, there will be no =sops= module in the homeManager scope. Hence we use =optionalAttrs=. Also, we cannot make use of =config.swarselsystems.isNixos= because that will lead to an infinite recursion. Hence, we take the =type= arg that we passed during host declaration to make sure sops stays disabled. This is used in all places in the home-manager config that make use of sops-secrets.
 
 #+begin_src nix-ts :tangle modules/home/common/sops.nix
-  { config, lib, type, ... }:
+  { self, config, lib, type, ... }:
   let
     inherit (config.swarselsystems) homeDir;
   in
@@ -15392,7 +15491,8 @@ I use sops-nix to handle secrets that I want to have available on my machines at
       config = lib.optionalAttrs (type != "nixos")  {
         sops = lib.mkIf (!config.swarselsystems.isNixos) {
           age.sshKeyPaths = [ "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.ssh/sops" ];
-          defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/repo/common.yaml";
+          # defaultSopsFile = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${homeDir}/.dotfiles/secrets/repo/common.yaml";
+          defaultSopsFile = self + "/secrets/repo/common.yaml";
 
           validateSopsFiles = false;
         };
@@ -21578,8 +21678,9 @@ TODO: check which of these can be replaced but builtin functions.
       isLinux = lib.mkEnableOption "whether this is a linux machine";
       isBtrfs = lib.mkEnableOption "use btrfs filesystem";
       sopsFile = lib.mkOption {
-        type = lib.types.str;
-        default = "${if config.swarselsystems.isImpermanence then "/persist" else ""}${config.node.secretsDir}/secrets.yaml";
+        type = lib.types.either lib.types.str lib.types.path;
+        # default = (if config.swarselsystems.isImpermanence then "/persist" else "") + config.node.secretsDir + "/secrets.yaml";
+        default = config.node.secretsDir + "/secrets.yaml";
       };
       homeDir = lib.mkOption {
         type = lib.types.str;
@@ -21912,7 +22013,18 @@ In short, the options defined here are passed to the modules systems using =_mod
     _module.args = {
       confLib = rec {
 
-        addressDefault = if config.swarselsystems.proxyHost != config.node.name then globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4 else "localhost";
+        addressDefault =
+          if
+            config.swarselsystems.proxyHost != config.node.name
+          then
+            if
+              config.swarselsystems.server.wireguard.isClient
+            then
+              globals.networks."${config.swarselsystems.server.wireguard.serverNetConfigPrefix}-wg".hosts.${config.node.name}.ipv4
+            else
+              globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
+          else
+            "localhost";
 
         domainDefault = service: config.repo.secrets.common.services.domains.${service};
         proxyDefault = config.swarselsystems.proxyHost;
@@ -30370,7 +30482,7 @@ The double source block is intended here to circumvent a org-babel convenience w
 Here lies defined the readme for GitHub and Forgejo:
 
 #+begin_src markdown :tangle .github/README.md :noweb yes :mkdirp yes
-    [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&style=flat&labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
+  [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSwarsel%2F.dotfiles%2Fbadge%3Fref%3Dmain&style=flat&labelColor=11111b)](https://actions-badge.atrox.dev/Swarsel/.dotfiles/goto?ref=main)
 
     ###### Disclaimer
 
@@ -30394,33 +30506,38 @@ Here lies defined the readme for GitHub and Forgejo:
       - [nix-darwin](https://github.com/LnL7/nix-darwin)
       - [nix-on-droid](https://github.com/nix-community/nix-on-droid)
     - Streamlined configuration and deployment pipeline:
-      - Framework for [packages](https://github.com/Swarsel/.dotfiles/blob/main/pkgs/default.nix), [overlays](https://github.com/Swarsel/.dotfiles/blob/main/overlays/default.nix), [modules](https://github.com/Swarsel/.dotfiles/tree/main/modules), and [library functions](https://github.com/Swarsel/.dotfiles/tree/main/lib/default.nix)
-      - Dynamically generated host configurations
-      - Limited local installer (no secrets handling) with a supported demo build
-      - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
+      - Framework for [packages](https://github.com/Swarsel/.dotfiles/blob/main/nix/packages.nix), [overlays](https://github.com/Swarsel/.dotfiles/blob/main/nix/overlays.nix), [modules](https://github.com/Swarsel/.dotfiles/tree/main/modules), and [library functions](https://github.com/Swarsel/.dotfiles/blob/main/nix/lib.nix)
+      - Dynamically generated config:
+        - host configurations
+        - dns records
+        - network setup (+ wireguard mesh on systemd-networkd)
+      - Remote Builders for [x86_64,aarch64]-linux running in hydra, feeding a private nix binary cache
+      - Bootstrapping:
+        - Limited local installer (no secrets handling) with a supported demo build
+        - Fully autonomous remote deployment using [nixos-anywhere](https://github.com/nix-community/nixos-anywhere) and [disko](https://github.com/nix-community/disko) (with secrets handling)
       - Improved nix tooling
     - Support for advanced features:
       - Secrets handling using [sops-nix](https://github.com/Mic92/sops-nix) (pls no pwn ❤️)
       - Management of personally identifiable information using [nix-plugins](https://github.com/shlevy/nix-plugins)
       - Full Yubikey support
-      - LUKS-encryption
+      - LUKS-encryption with support for remote disk unlock over SSH
       - Secure boot using [Lanzaboote](https://github.com/nix-community/lanzaboote)
       - BTRFS-based [Impermanence](https://github.com/nix-community/impermanence)
       - Configuration shared between configurations (configuration for one nixosConfiguration can be defined in another nixosConfiguration)
       - Global attributes shared between all configurations to reduce attribute redeclaration
+      - [Config library](https://github.com/Swarsel/.dotfiles/blob/9acfc5f93457ec14773cc0616cab616917cc8af5/modules/shared/config-lib.nix#L4) for defining config-based functions for generating service information
+      - Reduced friction between full NixOS- and home-manager-only deployments regarding secrets handling and config sharing
 
     ## Documentation
 
-    If you are mainly interested in how I configured this system, check out this page:
+    The full documentation can be found here:
 
     [SwarselSystems literate configuration](https://swarsel.github.io/.dotfiles/)
 
-    This file will take you through my design process, in varying amounts of detail.
+    I went to great lengths in order to document the full design process of my infrastructure properly; the above document strives to serve as an introductory lecture to nix / NixOS while at the same time explaining the config in general.
 
-    Otherwise, the files that are possibly of biggest interest are found here:
+    If you only came here for my Emacs configuration, the relevant files are here:
 
-    - [SwarselSystems.org](../SwarselSystems.org)
-    - [flake.nix](../flake.nix)
     - [early-init.el](../files/emacs/early-init.el)
     - [init.el](../files/emacs/init.el)
 
@@ -30742,6 +30859,13 @@ If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= in
 
 #+RESULTS:
 : [ 2 3 4 ]
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.map (x: { result = x + 1; }) [1 2 3]'
+#+end_src
+
+#+RESULTS:
+: [ { result = 2; } { result = 3; } { result = 4; } ]
 
 ** nixpkgs.lib.mkOverride
 :PROPERTIES:

@@ -1,7 +1,8 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "radicale"; port = 8000; }) servicePort serviceName serviceUser serviceGroup serviceDomain serviceAddress serviceProxy proxyAddress4 proxyAddress6;
-  sopsFile = "${config.node.secretsDir}/secrets2.yaml";
+  # sopsFile = config.node.secretsDir + "/secrets2.yaml";
+  inherit (config.swarselsystems) sopsFile;
 
   cfg = config.services.${serviceName};
 in
@@ -100,7 +101,8 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
+
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;

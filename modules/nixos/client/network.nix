@@ -1,7 +1,7 @@
 { self, lib, pkgs, config, globals, ... }:
 let
   certsSopsFile = self + /secrets/repo/certs.yaml;
-  clientSopsFile = "${config.node.secretsDir}/secrets.yaml";
+  clientSopsFile = config.node.secretsDir + "/secrets.yaml";
 
   inherit (config.repo.secrets.common.network) wlan1 mobile1 vpn1-location vpn1-cipher vpn1-address eduroam-anon;
 

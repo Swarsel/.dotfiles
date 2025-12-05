@@ -41,6 +41,7 @@ in
         "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
       ];
       initrd = {
+        secrets."${hostKeyPathBase}" = lib.mkIf (!minimal) hostKeyPathBase;
         availableKernelModules = config.swarselsystems.networkKernelModules;
         network = {
           enable = true;

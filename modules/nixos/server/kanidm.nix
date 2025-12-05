@@ -176,7 +176,7 @@ in
 
     services = {
       ${serviceName} = {
-        package = pkgs.kanidmWithSecretProvisioning_1_7;
+        package = pkgs.kanidmWithSecretProvisioning_1_8;
         enableServer = true;
         serverSettings = {
           domain = serviceDomain;
@@ -390,7 +390,8 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
+
           forceSSL = true;
           acmeRoot = null;
           locations = {

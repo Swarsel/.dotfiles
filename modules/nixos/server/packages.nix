@@ -13,6 +13,7 @@
       sops
       swarsel-deploy
       tmux
+      busybox
     ];
   };
 }

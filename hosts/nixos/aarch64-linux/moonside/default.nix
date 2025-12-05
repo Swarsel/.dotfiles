@@ -1,30 +1,14 @@
-{ lib, config, minimal, ... }:
+{ self, lib, config, minimal, ... }:
 let
   inherit (config.repo.secrets.local.syncthing) dev1 dev2 dev3 loc1;
-  inherit (config.swarselsystems) sopsFile;
 in
 {
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+
+    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
-
-  sops = {
-    age.sshKeyPaths = lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ];
-    secrets = {
-      wireguard-private-key = { inherit sopsFile; };
-      wireguard-home-preshared-key = { inherit sopsFile; };
-    };
-  };
-
-  boot = {
-    loader.systemd-boot.enable = true;
-    tmp.cleanOnBoot = true;
-  };
-
-  environment = {
-    etc."issue".text = "\4";
-  };
 
   topology.self = {
     icon = "devices.cloud-server";
@@ -34,45 +18,6 @@ in
       virtual = true;
       type = "wireguard";
     };
-  };
-
-  networking = {
-    domain = "subnet03291956.vcn03291956.oraclevcn.com";
-    firewall = {
-      allowedTCPPorts = [ 8384 ];
-    };
-    wireguard = {
-      enable = true;
-      interfaces = {
-        home-vpn = {
-          privateKeyFile = config.sops.secrets.wireguard-private-key.path;
-          # ips = [ "192.168.3.4/32" ];
-          ips = [ "192.168.178.201/24" ];
-          peers = [
-            {
-              # publicKey = "NNGvakADslOTCmN9HJOW/7qiM+oJ3jAlSZGoShg4ZWw=";
-              publicKey = "PmeFInoEJcKx+7Kva4dNnjOEnJ8lbudSf1cbdo/tzgw=";
-              presharedKeyFile = config.sops.secrets.wireguard-home-preshared-key.path;
-              name = "moonside";
-              persistentKeepalive = 25;
-              # endpoint = "${config.repo.secrets.common.ipv4}:51820";
-              endpoint = "${config.repo.secrets.common.wireguardEndpoint}";
-              # allowedIPs = [
-              #   "192.168.3.0/24"
-              #   "192.168.1.0/24"
-              # ];
-              allowedIPs = [
-                "192.168.178.0/24"
-              ];
-            }
-          ];
-        };
-      };
-    };
-  };
-
-  hardware = {
-    enableAllFirmware = lib.mkForce false;
   };
 
   system.stateVersion = "23.11";
@@ -137,7 +82,13 @@ in
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
+    isCloud = true;
+    proxyHost = "twothreetunnel";
     server = {
+      wireguard = {
+        isClient = true;
+        serverName = "twothreetunnel";
+      };
       restic = {
         bucketName = "SwarselMoonside";
         paths = [
@@ -155,7 +106,7 @@ in
   };
 
   swarselmodules.server = {
-    oauth2-proxy = true;
+    wireguard = true;
     croc = true;
     microbin = true;
     shlink = true;
