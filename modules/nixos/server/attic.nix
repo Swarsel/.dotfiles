@@ -1,4 +1,4 @@
-{ lib, config, globals, dns, confLib, ... }:
+{ lib, config, pkgs, globals, dns, confLib, ... }:
 let
   inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
   inherit (config.swarselsystems) mainUser isPublic sopsFile;
@@ -36,8 +36,33 @@ in
       };
     };
 
+    networking.firewall.allowedTCPPorts = [ servicePort ];
+
     services.atticd = {
       enable = true;
+      # NOTE: remove once https://github.com/zhaofengli/attic/pull/268 is merged
+      package = pkgs.attic-server.overrideAttrs
+        (oldAttrs: {
+          patches = (oldAttrs.patches or [ ]) ++ [
+            (pkgs.writeText "remove-s3-checksums.patch" ''
+              diff --git a/server/src/storage/s3.rs b/server/src/storage/s3.rs
+              index 1d5719f3..036f3263 100644
+              --- a/server/src/storage/s3.rs
+              +++ b/server/src/storage/s3.rs
+              @@ -278,10 +278,6 @@ impl StorageBackend for S3Backend {
+                               CompletedPart::builder()
+                                   .set_e_tag(part.e_tag().map(str::to_string))
+                                   .set_part_number(Some(part_number as i32))
+              -                    .set_checksum_crc32(part.checksum_crc32().map(str::to_string))
+              -                    .set_checksum_crc32_c(part.checksum_crc32_c().map(str::to_string))
+              -                    .set_checksum_sha1(part.checksum_sha1().map(str::to_string))
+              -                    .set_checksum_sha256(part.checksum_sha256().map(str::to_string))
+                                   .build()
+                           })
+                           .collect::<Vec<_>>();
+            '')
+          ];
+        });
       environmentFile = config.sops.templates."attic.env".path;
       settings = {
         listen = "[::]:${builtins.toString servicePort}";
@@ -59,12 +84,10 @@ in
             bucket = serviceName;
             # attic must be patched to never serve pre-signed s3 urls directly
             # otherwise it will redirect clients to this localhost endpoint
-            endpoint = "http://127.0.0.1:3900";
+            endpoint = "http://127.0.0.1:3900"; # garage port
           } else {
             type = "local";
             path = serviceDir;
-            # attic must be patched to never serve pre-signed s3 urls directly
-            # otherwise it will redirect clients to this localhost endpoint
           };
 
         garbage-collection = {
@@ -73,11 +96,11 @@ in
         };
 
         chunking = {
-          nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # 64 KiB
+          nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # garage using s3
 
-          min-size = 16 * 1024; # 16 KiB
-          avg-size = 64 * 1024; # 64 KiB
-          max-size = 256 * 1024; # 256 KiBize = 262144;
+          min-size = 16 * 1024;
+          avg-size = 64 * 1024;
+          max-size = 256 * 1024;
         };
       };
     };
@@ -109,7 +132,7 @@ in
       };
       virtualHosts = {
         "${serviceDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;
@@ -118,6 +141,11 @@ in
               proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size 0;
+                client_body_timeout        600s;
+                proxy_connect_timeout      600s;
+                proxy_send_timeout         600s;
+                proxy_read_timeout         600s;
+                proxy_request_buffering    off;
               '';
             };
           };

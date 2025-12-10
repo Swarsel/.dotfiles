@@ -117,7 +117,7 @@ in
             PresharedKeyFile = config.sops.secrets."wireguard-${serverName}-${config.node.name}-presharedKey".path;
             Endpoint = "server.${serverName}.${globals.domains.main}:${toString servicePort}";
             # Access to the whole network is routed through our entry node.
-            # PersistentKeepalive = 25;
+            PersistentKeepalive = 25;
             AllowedIPs =
               let
                 wgNetwork = globals.networks."${serverNetConfigPrefix}-wg";

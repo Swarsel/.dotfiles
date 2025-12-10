@@ -31,5 +31,13 @@ in
       };
     };
 
+    services.openssh = {
+      settings = {
+        AllowUsers = [
+          "builder"
+        ];
+      };
+    };
+
   };
 }

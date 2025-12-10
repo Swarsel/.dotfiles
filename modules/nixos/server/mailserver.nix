@@ -2,7 +2,7 @@
 let
   inherit (config.swarselsystems) sopsFile;
   inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceDomain serviceProxy proxyAddress4 proxyAddress6;
-  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 user3;
+  inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
   baseDomain = globals.domains.main;
 in
 {
@@ -31,7 +31,7 @@ in
       { directory = "/var/sieve"; user = serviceUser; group = serviceGroup; mode = "0770"; }
       { directory = "/var/dkim"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
       { directory = serviceDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-      { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+      # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
       { directory = "/var/lib/rspamd"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
       { directory = "/var/lib/roundcube"; user = "roundcube"; group = "roundcube"; mode = "0700"; }
       { directory = "/var/lib/redis-rspamd"; user = "redis-rspamd"; group = "redis-rspamd"; mode = "0700"; }
@@ -63,6 +63,7 @@ in
           hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
           aliases = [
             "${alias2_1}@${baseDomain}"
+            "${alias2_2}@${baseDomain}"
           ];
           sendOnly = true;
         };

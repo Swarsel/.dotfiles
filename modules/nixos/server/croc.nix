@@ -1,6 +1,6 @@
 { self, lib, config, pkgs, dns, globals, confLib, ... }:
 let
-  inherit (confLib.gen { name = "croc"; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
   servicePorts = [
     9009
     9010

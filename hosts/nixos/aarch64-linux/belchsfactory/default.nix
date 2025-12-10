@@ -26,7 +26,12 @@
     isNixos = true;
     isLinux = true;
     isCloud = true;
+    proxyHost = "twothreetunnel";
     server = {
+      wireguard = {
+        isClient = true;
+        serverName = "twothreetunnel";
+      };
       garage = {
         data_dir = {
           capacity = "150G";
@@ -49,10 +54,12 @@
   };
 
   swarselmodules.server = {
-    ssh-builder = lib.mkDefault true;
-    postgresql = lib.mkDefault true;
-    attic = lib.mkDefault true;
-    garage = lib.mkDefault true;
+    wireguard = true;
+    ssh-builder = true;
+    postgresql = true;
+    attic = true;
+    garage = true;
+    hydra = true;
     dns-hostrecord = true;
   };
 

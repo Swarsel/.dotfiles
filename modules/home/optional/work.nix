@@ -483,7 +483,7 @@ in
         };
 
         Service = {
-          ExecStart = "${pkgs._1password-gui}/bin/1password";
+          ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
         };
       };
 
