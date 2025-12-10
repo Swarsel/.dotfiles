@@ -19,8 +19,8 @@ let
   garageAdminPort = 3903;
   garageK2VPort = 3904;
 
-  adminDomain = "${subDomain}admin.${baseDomain}";
-  webDomain = "${subDomain}web.${baseDomain}";
+  adminDomain = "${subDomain}-admin.${baseDomain}";
+  webDomain = "${subDomain}-web.${baseDomain}";
 in
 {
   options = {
@@ -71,12 +71,14 @@ in
       }
     ];
 
+    networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+
     nodes.stoicclub.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
       "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-      "*.${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
     sops = {
@@ -307,10 +309,6 @@ in
       };
     };
 
-    security.acme.certs."${webDomain}" = {
-      domain = "*.${webDomain}";
-    };
-
     nodes.${serviceProxy}.services.nginx = {
       upstreams = {
         ${serviceName} = {
@@ -331,7 +329,7 @@ in
       };
       virtualHosts = {
         "${adminDomain}" = {
-          enableACME = true;
+          useACMEHost = globals.domains.main;
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;
@@ -342,7 +340,7 @@ in
           };
         };
         "*.${webDomain}" = {
-          useACMEHost = webDomain;
+          useACMEHost = globals.domains.main;
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;
@@ -354,7 +352,7 @@ in
         };
         "${serviceDomain}" = {
           serverAliases = [ "*.${serviceDomain}" ];
-          enableACME = true;
+          useACMEHost = globals.domains.main;
           forceSSL = true;
           acmeRoot = null;
           oauth2.enable = false;
@@ -363,6 +361,11 @@ in
               proxyPass = "http://${serviceName}";
               extraConfig = ''
                 client_max_body_size 0;
+                client_body_timeout        600s;
+                proxy_connect_timeout      600s;
+                proxy_send_timeout         600s;
+                proxy_read_timeout         600s;
+                proxy_request_buffering    off;
               '';
             };
           };

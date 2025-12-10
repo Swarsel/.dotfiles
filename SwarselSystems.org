@@ -508,6 +508,20 @@ A short overview over each input and what it does:
     };
     inputs = {
       nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+      hydra.url = "github:nixos/hydra/nix-2.30";
+      # hydra.inputs.nix.follows = "nix";
+      hydra.inputs.nix-eval-jobs.follows = "nix-eval-jobs";
+      # nix = {
+      #   url = "github:NixOS/nix/2.30-maintenance";
+      #   # We want to control the deps precisely
+      #   flake = false;
+      # };
+      nix-eval-jobs = {
+        url = "github:nix-community/nix-eval-jobs/v2.30.0";
+        # We want to control the deps precisely
+        flake = false;
+      };
+
       smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
       nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
       nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
@@ -3803,7 +3817,12 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isNixos = true;
       isLinux = true;
       isCloud = true;
+      proxyHost = "twothreetunnel";
       server = {
+        wireguard = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
         garage = {
           data_dir = {
             capacity = "150G";
@@ -3826,10 +3845,12 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
 
     swarselmodules.server = {
-      ssh-builder = lib.mkDefault true;
-      postgresql = lib.mkDefault true;
-      attic = lib.mkDefault true;
-      garage = lib.mkDefault true;
+      wireguard = true;
+      ssh-builder = true;
+      postgresql = true;
+      attic = true;
+      garage = true;
+      hydra = true;
       dns-hostrecord = true;
     };
 
@@ -4621,6 +4642,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
     swarselmodules.server = {
       mailserver = true;
       dns-hostrecord = true;
+      postgresql = true;
     };
 
     swarselprofiles = {
@@ -7220,6 +7242,7 @@ I use sops-nix to handle secrets that I want to have available on my machines at
           }
         ];
       };
+
       programs.ssh = {
         knownHosts = {
           nixbuild = {
@@ -8696,6 +8719,14 @@ Restricts access to the system by the nix build user as per https://discourse.ni
         };
       };
 
+      services.openssh = {
+        settings = {
+          AllowUsers = [
+            "builder"
+          ];
+        };
+      };
+
     };
   }
 #+end_src
@@ -9016,7 +9047,7 @@ lspci -k -d 14c3:0616
               PresharedKeyFile = config.sops.secrets."wireguard-${serverName}-${config.node.name}-presharedKey".path;
               Endpoint = "server.${serverName}.${globals.domains.main}:${toString servicePort}";
               # Access to the whole network is routed through our entry node.
-              # PersistentKeepalive = 25;
+              PersistentKeepalive = 25;
               AllowedIPs =
                 let
                   wgNetwork = globals.networks."${serverNetConfigPrefix}-wg";
@@ -11493,6 +11524,12 @@ A stupid (but simple) way to get the =originUrl= is to simply set any URL there 
 
 To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clientID>/.well-known/oauth-authorization-server, e.g. https://<kanidmDomain>/oauth2/openid/nextcloud/.well-known/oauth-authorization-server, with clienID being the client name as specified in kanidm.
 
+Create user:
+
+ kanidm login -D idm_admin
+
+kanidm person credential create-reset-token <user>
+
 #+begin_src nix-ts :tangle modules/nixos/server/kanidm.nix
   { self, lib, pkgs, config, globals, dns, confLib, ... }:
   let
@@ -12615,7 +12652,7 @@ To get other URLs (token, etc.), use https://<kanidmDomain>/oauth2/openid/<clien
 #+begin_src nix-ts :tangle modules/nixos/server/croc.nix
   { self, lib, config, pkgs, dns, globals, confLib, ... }:
   let
-    inherit (confLib.gen { name = "croc"; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "croc"; proxy = config.node.name; }) serviceName serviceDomain proxyAddress4 proxyAddress6;
     servicePorts = [
       9009
       9010
@@ -13297,8 +13334,8 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     garageAdminPort = 3903;
     garageK2VPort = 3904;
 
-    adminDomain = "${subDomain}admin.${baseDomain}";
-    webDomain = "${subDomain}web.${baseDomain}";
+    adminDomain = "${subDomain}-admin.${baseDomain}";
+    webDomain = "${subDomain}-web.${baseDomain}";
   in
   {
     options = {
@@ -13349,12 +13386,14 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         }
       ];
 
+      networking.firewall.allowedTCPPorts = [ servicePort 3901 3902 3903 3904 ];
+
       nodes.stoicclub.swarselsystems.server.dns.${baseDomain}.subdomainRecords = {
         "${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "${subDomain}admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}-admin" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
         "*.${subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
-        "*.${subDomain}web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "*.${subDomain}-web" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
       sops = {
@@ -13585,10 +13624,6 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         };
       };
 
-      security.acme.certs."${webDomain}" = {
-        domain = "*.${webDomain}";
-      };
-
       nodes.${serviceProxy}.services.nginx = {
         upstreams = {
           ${serviceName} = {
@@ -13609,7 +13644,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         };
         virtualHosts = {
           "${adminDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -13620,7 +13655,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             };
           };
           "*.${webDomain}" = {
-            useACMEHost = webDomain;
+            useACMEHost = globals.domains.main;
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -13632,7 +13667,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
           };
           "${serviceDomain}" = {
             serverAliases = [ "*.${serviceDomain}" ];
-            enableACME = true;
+            useACMEHost = globals.domains.main;
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -13641,6 +13676,11 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
                 proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
+                  client_body_timeout        600s;
+                  proxy_connect_timeout      600s;
+                  proxy_send_timeout         600s;
+                  proxy_read_timeout         600s;
+                  proxy_request_buffering    off;
                 '';
               };
             };
@@ -13777,7 +13817,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2025120501; # update this on changes for secondary dns
+      serial = 2025120506; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -13882,7 +13922,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
 #+begin_src nix-ts :tangle modules/nixos/server/minecraft/default.nix
   { lib, config, pkgs, globals, dns, confLib, ... }:
   let
-    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "minecraft"; port = 25565; dir = "/opt/minecraft"; proxy = config.node.name; }) serviceName servicePort serviceDir serviceDomain proxyAddress4 proxyAddress6;
     inherit (config.swarselsystems) mainUser;
     worldName = "${mainUser}craft";
   in
@@ -13941,7 +13981,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
   let
     inherit (config.swarselsystems) sopsFile;
     inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceDomain serviceProxy proxyAddress4 proxyAddress6;
-    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 user3;
+    inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
     baseDomain = globals.domains.main;
   in
   {
@@ -13970,7 +14010,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         { directory = "/var/sieve"; user = serviceUser; group = serviceGroup; mode = "0770"; }
         { directory = "/var/dkim"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
         { directory = serviceDir; user = serviceUser; group = serviceGroup; mode = "0700"; }
-        { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
+        # { directory = "/var/lib/postgresql"; user = "postgres"; group = "postgres"; mode = "0750"; }
         { directory = "/var/lib/rspamd"; user = "rspamd"; group = "rspamd"; mode = "0700"; }
         { directory = "/var/lib/roundcube"; user = "roundcube"; group = "roundcube"; mode = "0700"; }
         { directory = "/var/lib/redis-rspamd"; user = "redis-rspamd"; group = "redis-rspamd"; mode = "0700"; }
@@ -14002,6 +14042,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
             hashedPasswordFile = config.sops.secrets.user2-hashed-pw.path;
             aliases = [
               "${alias2_1}@${baseDomain}"
+              "${alias2_2}@${baseDomain}"
             ];
             sendOnly = true;
           };
@@ -14068,7 +14109,7 @@ $ attic cache create hello
 ✨ Created cache "hello" on "local"
 
 #+begin_src nix-ts :tangle modules/nixos/server/attic.nix
-  { lib, config, globals, dns, confLib, ... }:
+  { lib, config, pkgs, globals, dns, confLib, ... }:
   let
     inherit (confLib.gen { name = "attic"; port = 8091; }) serviceName serviceDir servicePort serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
     inherit (config.swarselsystems) mainUser isPublic sopsFile;
@@ -14106,8 +14147,33 @@ $ attic cache create hello
         };
       };
 
+      networking.firewall.allowedTCPPorts = [ servicePort ];
+
       services.atticd = {
         enable = true;
+        # NOTE: remove once https://github.com/zhaofengli/attic/pull/268 is merged
+        package = pkgs.attic-server.overrideAttrs
+          (oldAttrs: {
+            patches = (oldAttrs.patches or [ ]) ++ [
+              (pkgs.writeText "remove-s3-checksums.patch" ''
+                diff --git a/server/src/storage/s3.rs b/server/src/storage/s3.rs
+                index 1d5719f3..036f3263 100644
+                --- a/server/src/storage/s3.rs
+                +++ b/server/src/storage/s3.rs
+                @@ -278,10 +278,6 @@ impl StorageBackend for S3Backend {
+                                 CompletedPart::builder()
+                                     .set_e_tag(part.e_tag().map(str::to_string))
+                                     .set_part_number(Some(part_number as i32))
+                -                    .set_checksum_crc32(part.checksum_crc32().map(str::to_string))
+                -                    .set_checksum_crc32_c(part.checksum_crc32_c().map(str::to_string))
+                -                    .set_checksum_sha1(part.checksum_sha1().map(str::to_string))
+                -                    .set_checksum_sha256(part.checksum_sha256().map(str::to_string))
+                                     .build()
+                             })
+                             .collect::<Vec<_>>();
+              '')
+            ];
+          });
         environmentFile = config.sops.templates."attic.env".path;
         settings = {
           listen = "[::]:${builtins.toString servicePort}";
@@ -14129,12 +14195,10 @@ $ attic cache create hello
               bucket = serviceName;
               # attic must be patched to never serve pre-signed s3 urls directly
               # otherwise it will redirect clients to this localhost endpoint
-              endpoint = "http://127.0.0.1:3900";
+              endpoint = "http://127.0.0.1:3900"; # garage port
             } else {
               type = "local";
               path = serviceDir;
-              # attic must be patched to never serve pre-signed s3 urls directly
-              # otherwise it will redirect clients to this localhost endpoint
             };
 
           garbage-collection = {
@@ -14143,11 +14207,11 @@ $ attic cache create hello
           };
 
           chunking = {
-            nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # 64 KiB
+            nar-size-threshold = if config.swarselmodules.server.garage then 0 else 64 * 1024; # garage using s3
 
-            min-size = 16 * 1024; # 16 KiB
-            avg-size = 64 * 1024; # 64 KiB
-            max-size = 256 * 1024; # 256 KiBize = 262144;
+            min-size = 16 * 1024;
+            avg-size = 64 * 1024;
+            max-size = 256 * 1024;
           };
         };
       };
@@ -14179,7 +14243,7 @@ $ attic cache create hello
         };
         virtualHosts = {
           "${serviceDomain}" = {
-            enableACME = true;
+            useACMEHost = globals.domains.main;
             forceSSL = true;
             acmeRoot = null;
             oauth2.enable = false;
@@ -14188,6 +14252,11 @@ $ attic cache create hello
                 proxyPass = "http://${serviceName}";
                 extraConfig = ''
                   client_max_body_size 0;
+                  client_body_timeout        600s;
+                  proxy_connect_timeout      600s;
+                  proxy_send_timeout         600s;
+                  proxy_read_timeout         600s;
+                  proxy_request_buffering    off;
                 '';
               };
             };
@@ -14197,6 +14266,150 @@ $ attic cache create hello
 
     };
   }
+#+end_src
+**** Hydra
+
+Need to create user manually:
+
+# su - hydra
+$ hydra-create-user alice --full-name 'Alice Q. User' \
+    --email-address 'alice@example.org' --password-prompt --role admin
+
+
+#+begin_src nix-ts :tangle modules/nixos/server/hydra.nix
+  { inputs, lib, config, globals, dns, confLib, ... }:
+  let
+    inherit (confLib.gen { name = "hydra"; port = 8002; }) serviceName servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+    inherit (config.swarselsystems) sopsFile;
+  in
+    {
+      options = {
+        swarselmodules.server.${serviceName} = lib.mkEnableOption "enable ${serviceName} on server";
+      };
+      config = lib.mkIf config.swarselmodules.server.${serviceName} {
+
+        nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
+          "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        };
+
+        globals.services.${serviceName} = {
+          domain = serviceDomain;
+          inherit proxyAddress4 proxyAddress6;
+        };
+
+        sops = {
+          secrets = {
+            nixbuild-net-key = { mode = "0600"; };
+            hydra-pw = { inherit sopsFile; owner = serviceUser; group = serviceGroup; mode = "0440"; };
+          };
+          templates = {
+            "hydra-env" = {
+              content = ''
+                HYDRA_PW="${config.sops.placeholder.hydra-pw}"
+              '';
+              owner = serviceUser;
+              group = serviceGroup;
+              mode = "0440";
+            };
+          };
+        };
+
+        services.hydra = {
+          enable = true;
+          package = inputs.hydra.packages.${config.node.arch}.hydra;
+          port = servicePort;
+          hydraURL = "https://${serviceDomain}";
+          listenHost = "*";
+          notificationSender = "hydra@${globals.domains.main}";
+          minimumDiskFreeEvaluator = 20; # 20G
+          minimumDiskFree = 20; # 20G
+          useSubstitutes = true;
+          smtpHost = globals.services.mailserver.domain;
+          buildMachinesFiles = [
+            "/etc/nix/machines"
+          ];
+          extraConfig = ''
+            using_frontend_proxy 1
+          '';
+        };
+
+        systemd.services.hydra-user-setup = {
+          description = "Create admin user for Hydra";
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "hydra";
+            EnvironmentFile = [
+              config.sops.templates.hydra-env.path
+            ];
+          };
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "hydra-init.service" ];
+          after = [ "hydra-init.service" ];
+          environment = lib.mkForce config.systemd.services.hydra-init.environment;
+          script = ''
+            set -eu
+          if [ ! -e ~hydra/.user-setup-done ]; then
+            /run/current-system/sw/bin/hydra-create-user admin --full-name 'admin' --email-address 'admin@${globals.domains.main}' --password "$HYDRA_PW" --role admin
+            touch ~hydra/.user-setup-done
+          fi
+          '';
+        };
+
+        environment.persistence."/persist".directories = lib.mkIf config.swarselsystems.isImpermanence [
+        ];
+
+        nix = {
+          settings.builders-use-substitutes = true;
+          distributedBuilds = true;
+          buildMachines = [
+            {
+              hostName = "localhost";
+              protocol = null;
+              system = config.node.arch;
+              supportedFeatures = [ "kvm" "nixos-test" "big-parallel" "benchmark" ];
+              maxJobs = 4;
+            }
+          ];
+        };
+
+        networking.firewall.allowedTCPPorts = [ servicePort ];
+
+        programs.ssh = {
+          extraConfig = ''
+            StrictHostKeyChecking no
+          '';
+        };
+
+        nodes.${serviceProxy}.services.nginx = {
+          upstreams = {
+            ${serviceName} = {
+              servers = {
+                "${serviceAddress}:${builtins.toString servicePort}" = { };
+              };
+            };
+          };
+          virtualHosts = {
+            "${serviceDomain}" = {
+              enableACME = true;
+              forceSSL = true;
+              acmeRoot = null;
+              oauth2.enable = false;
+              locations = {
+                "/" = {
+                  proxyPass = "http://${serviceName}";
+                  extraConfig = ''
+                    client_max_body_size 0;
+                  proxy_set_header  X-Request-Base    /hydra;
+                  '';
+                };
+              };
+            };
+          };
+        };
+
+      };
+    }
 #+end_src
 *** Darwin
 :PROPERTIES:
@@ -14667,6 +14880,7 @@ When setting up a new machine:
         _1password.enable = true;
         _1password-gui = {
           enable = true;
+          package = pkgs._1password-gui-beta;
           polkitPolicyOwners = [ "${mainUser}" ];
         };
       };
@@ -21369,7 +21583,7 @@ When setting up a new machine:
           };
 
           Service = {
-            ExecStart = "${pkgs._1password-gui}/bin/1password";
+            ExecStart = "${pkgs._1password-gui-beta}/bin/1password";
           };
         };
 
@@ -24694,7 +24908,7 @@ This holds modules that are to be used on most hosts. These are also the most im
 
 #+end_src
 
-* Emacs
+* Emacse
 :PROPERTIES:
 :CUSTOM_ID: h:ed4cd05c-0879-41c6-bc39-3f1246a96f04
 :END:

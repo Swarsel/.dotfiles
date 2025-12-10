@@ -32,6 +32,7 @@
   swarselmodules.server = {
     mailserver = true;
     dns-hostrecord = true;
+    postgresql = true;
   };
 
   swarselprofiles = {

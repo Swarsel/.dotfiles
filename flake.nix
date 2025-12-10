@@ -11,6 +11,20 @@
   };
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    hydra.url = "github:nixos/hydra/nix-2.30";
+    # hydra.inputs.nix.follows = "nix";
+    hydra.inputs.nix-eval-jobs.follows = "nix-eval-jobs";
+    # nix = {
+    #   url = "github:NixOS/nix/2.30-maintenance";
+    #   # We want to control the deps precisely
+    #   flake = false;
+    # };
+    nix-eval-jobs = {
+      url = "github:nix-community/nix-eval-jobs/v2.30.0";
+      # We want to control the deps precisely
+      flake = false;
+    };
+
     smallpkgs.url = "github:nixos/nixpkgs/08fcb0dcb59df0344652b38ea6326a2d8271baff?narHash=sha256-HXIQzULIG/MEUW2Q/Ss47oE3QrjxvpUX7gUl4Xp6lnc%3D&shallow=1";
     nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
     nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
