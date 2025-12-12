@@ -32,6 +32,7 @@
       sshrm
       endme
       git-replace
+      prstatus
     ];
   };
 }
