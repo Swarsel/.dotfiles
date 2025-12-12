@@ -15674,6 +15674,7 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         sshrm
         endme
         git-replace
+        prstatus
       ];
     };
   }
@@ -22497,6 +22498,23 @@ This script allows for quick git branch switching.
     runtimeInputs = [ fzf ];
     text = ''
       git checkout "$(git branch --list | grep -v "^\*" | fzf | awk '{print $1}')"
+    '';
+  }
+
+#+end_src
+
+**** prstatus
+
+This script allows for quick checking of nixpkgs PR statuses.
+
+#+begin_src nix-ts :tangle pkgs/flake/prstatus/default.nix
+  { name, writeShellApplication, curl, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ curl ];
+    text = ''
+      curl https://nixpkgs.molybdenum.software/api/v2/landings/"$1"
     '';
   }
 
