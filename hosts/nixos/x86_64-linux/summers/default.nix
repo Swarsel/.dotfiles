@@ -13,15 +13,19 @@
     loader.efi.canTouchEfiVariables = true;
   };
 
+  node.lockFromBootstrapping = lib.mkForce false;
+
   swarselsystems = {
     info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;
-    isSecureBoot = true;
+    isSecureBoot = false;
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
     isNixos = true;
+    isSwap = false;
+    rootDisk = "/dev/sda";
     withMicroVMs = false;
   };
 
@@ -33,7 +37,6 @@
 
   swarselmodules = {
     server = {
-      diskEncryption = lib.mkForce false; # TODO: disable
       nfs = false;
       nginx = false;
       kavita = false;
