@@ -2859,15 +2859,19 @@ This is my main server that I run at home. It handles most tasks that require bi
       loader.efi.canTouchEfiVariables = true;
     };
 
+    node.lockFromBootstrapping = lib.mkForce false;
+
     swarselsystems = {
       info = "ASUS Z10PA-D8, 2* Intel Xeon E5-2650 v4, 128GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = true;
-      isSecureBoot = true;
+      isSecureBoot = false;
       isCrypted = true;
       isBtrfs = true;
       isLinux = true;
       isNixos = true;
+      isSwap = false;
+      rootDisk = "/dev/sda";
       withMicroVMs = false;
     };
 
@@ -2879,7 +2883,6 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules = {
       server = {
-        diskEncryption = lib.mkForce false; # TODO: disable
         nfs = false;
         nginx = false;
         kavita = false;
@@ -3149,19 +3152,21 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:624b3c6a-6e31-4734-a6ea-7c5b461a3429
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/hintbooth/default.nix
-  { lib, minimal,  ... }:
+  { self, lib, minimal,  ... }:
   {
 
     imports = [
       ./hardware-configuration.nix
       ./disk-config.nix
+
+      "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     ];
 
     swarselsystems = {
       info = "HUNSN RM02, 8GB RAM";
       flakePath = "/root/.dotfiles";
       isImpermanence = true;
-      isSecureBoot = true;
+      isSecureBoot = false;
       isCrypted = true;
       isBtrfs = true;
       isLinux = true;
@@ -23112,7 +23117,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
   LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
   if [[ $LOCKED == "true" ]]; then
-      red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING"
+      red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set `node.lockFromBootstrapping = lib.mkForce false;` to proceed"
       exit
   fi
 

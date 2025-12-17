@@ -1,16 +1,18 @@
-{ lib, minimal, ... }:
+{ self, lib, minimal, ... }:
 {
 
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+
+    "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
 
   swarselsystems = {
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";
     isImpermanence = true;
-    isSecureBoot = true;
+    isSecureBoot = false;
     isCrypted = true;
     isBtrfs = true;
     isLinux = true;
