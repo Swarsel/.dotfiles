@@ -308,20 +308,29 @@ in
             };
           }
           {
-            # work main screen
+            # work side screen
             output = {
               criteria = "HP Inc. HP 732pk CNC4080YL5";
               scale = 1.0;
               mode = "3840x2160";
+              transform = "270";
             };
           }
+          # {
+          #   # work side screen
+          #   output = {
+          #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
+          #     scale = 1.0;
+          #     mode = "1920x1200";
+          #     transform = "270";
+          #   };
+          # }
           {
-            # work side screen
+            # work main screen
             output = {
-              criteria = "Hewlett Packard HP Z24i CN44250RDT";
+              criteria = "HP Inc. HP Z32 CN41212T55";
               scale = 1.0;
-              mode = "1920x1200";
-              transform = "270";
+              mode = "3840x2160";
             };
           }
           {
@@ -329,28 +338,28 @@ in
               name = "lidopen";
               exec = [
                 "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
               ];
               outputs = [
                 {
                   criteria = config.swarselsystems.sharescreen;
                   status = "enable";
                   scale = 1.5;
-                  position = "1462,0";
+                  position = "2560,0";
                 }
                 {
                   criteria = "HP Inc. HP 732pk CNC4080YL5";
-                  scale = 1.4;
+                  scale = 1.0;
                   mode = "3840x2160";
-                  position = "-1280,0";
+                  position = "-3440,-1050";
+                  transform = "270";
                 }
                 {
-                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  criteria = "HP Inc. HP Z32 CN41212T55";
                   scale = 1.0;
-                  mode = "1920x1200";
-                  transform = "90";
-                  position = "-2480,0";
+                  mode = "3840x2160";
+                  position = "-1280,0";
                 }
               ];
             };
@@ -387,8 +396,8 @@ in
             profile = {
               name = "lidclosed";
               exec = [
-                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
               ];
               outputs = [
                 {
@@ -397,16 +406,16 @@ in
                 }
                 {
                   criteria = "HP Inc. HP 732pk CNC4080YL5";
-                  scale = 1.4;
+                  scale = 1.0;
                   mode = "3840x2160";
-                  position = "-1280,0";
+                  position = "-3440,-1050";
+                  transform = "270";
                 }
                 {
-                  criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                  criteria = "HP Inc. HP Z32 CN41212T55";
                   scale = 1.0;
-                  mode = "1920x1200";
-                  transform = "270";
-                  position = "-2480,0";
+                  mode = "3840x2160";
+                  position = "-1280,0";
                 }
               ];
             };
@@ -591,25 +600,35 @@ in
           # output = "DP-7";
           output = name;
         };
-        work_back_right = rec {
+        work_middle_middle_main = rec {
           name = "HP Inc. HP Z32 CN41212T55";
           mode = "3840x2160";
           scale = "1";
-          position = "5120,0";
+          position = "-1280,0";
           workspace = "1:一";
           # output = "DP-3";
           output = name;
         };
-        work_middle_middle_main = rec {
+        # work_middle_middle_main = rec {
+        #   name = "HP Inc. HP 732pk CNC4080YL5";
+        #   mode = "3840x2160";
+        #   scale = "1";
+        #   position = "-1280,0";
+        #   workspace = "11:M";
+        #   # output = "DP-8";
+        #   output = name;
+        # };
+        work_middle_middle_side = rec {
           name = "HP Inc. HP 732pk CNC4080YL5";
           mode = "3840x2160";
+          transform = "270";
           scale = "1";
-          position = "-1280,0";
-          workspace = "11:M";
+          position = "-3440,-1050";
+          workspace = "12:S";
           # output = "DP-8";
           output = name;
         };
-        work_middle_middle_side = rec {
+        work_middle_middle_old = rec {
           name = "Hewlett Packard HP Z24i CN44250RDT";
           mode = "1920x1200";
           transform = "270";

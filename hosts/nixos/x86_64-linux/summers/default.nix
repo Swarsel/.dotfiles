@@ -25,8 +25,9 @@
     isLinux = true;
     isNixos = true;
     isSwap = false;
-    rootDisk = "/dev/sda";
+    rootDisk = "/dev/disk/by-id/ata-TS128GMTS430S_H537280456";
     withMicroVMs = false;
+    server.localNetwork = "lan";
   };
 
 } // lib.optionalAttrs (!minimal) {
@@ -35,38 +36,8 @@
     server = true;
   };
 
-  swarselmodules = {
-    server = {
-      nfs = false;
-      nginx = false;
-      kavita = false;
-      restic = false;
-      jellyfin = false;
-      navidrome = false;
-      spotifyd = false;
-      mpd = false;
-      postgresql = false;
-      matrix = false;
-      nextcloud = false;
-      immich = false;
-      paperless = false;
-      transmission = false;
-      syncthing = false;
-      grafana = false;
-      emacs = false;
-      freshrss = false;
-      jenkins = false;
-      kanidm = false;
-      firefly-iii = false;
-      koillection = false;
-      radicale = false;
-      atuin = false;
-      forgejo = false;
-      ankisync = false;
-      homebox = false;
-      opkssh = false;
-      garage = false;
-    };
+  swarselmodules.server = {
+    nginx = lib.mkForce false;
   };
 
   microvm.vms =
