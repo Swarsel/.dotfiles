@@ -46,13 +46,13 @@ For a beginner, I recommend to read this file like a book, from start to finish.
 This file is structured as follows:
 
 - [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]]
-  This is the block you are currently in. It holds no code that actually builds the system, it just outlines the general approach and explains my rough mentality
+  This is the block you are currently in. It holds no code that actually builds the system, it just outlines the general approach and explains the rough design mentality. For simply understanding the code in here, reading this should not be necessary (feel free to skip to [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]])
 
 - [[#h:c7588c0d-2528-485d-b2df-04d6336428d7][flake.nix]]
-  This block holds everything related to the heart of the nix side of the configuration - the =flake.nix= file.
+  This block holds everything related to the heart of the nix side of the configuration - the =flake.nix= file. I am using [[https://github.com/hercules-ci/flake-parts][flake-parts]] to manage this flake, so different aspects of the configuration are handled by flake-part modules in different files.
 
 - [[#h:02cd20be-1ffa-4904-9d5a-da5a89ba1421][System]]
-  This section holds all configuration options that apply to NixOS or home-manager. In other words, here we are doing system and user level configuration.
+  This section holds all configuration options that apply to NixOS or home-manager. In other words, here we are doing system and user level configuration. In a way, I consider this the most important part of this file, as (nearly) all of the nix magic is going to happen here.
 
 - [[#h:ed4cd05c-0879-41c6-bc39-3f1246a96f04][Emacs]]
   This section defines my Emacs configuration. For a while, I considered to use rycee's =emacs-init= module ([[https://github.com/nix-community/nur-combined/blob/master/repos/rycee/hm-modules/emacs-init.nix]]) to manage my Emacs configuration; I have since come to the conclusion that this would be a bad idea: at the moment, even though it might seem as I am very bound to the configuration file that you are currently reading, if I ever decide to change how I run my system, I can simply take the generated =.nix= and =.el= files and put them wherever I need them. This file only simplifies that generation without putting further restrictions on my. If I were however to switch to =emacs-init= then I would be indeed to some level confined to the nix ecosystem with my Emacs configuration, as I would no longer have a valid =.org= file to manage it with, instead generating an =init.el= directly from nix code. I like to keep that level of freedom for potential future use. Also, you will notice there is no package system setup in this configuration. This is because packages are automatically handled on the NixOS side by parsing the generated =init.el= file for package installs.
@@ -120,10 +120,7 @@ window.addEventListener('load', addDarkmodeWidget);
 
   This section hold code that can be templated at other parts of the configuration. This is mostly used for the NixOS side of the configuration where I define my host systems that usually have a lot in common.
 
-- [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix A: Supplementary Files]]
-  This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl. Note that shell scripts are still defined under their respective entry in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
-
-- Historical Note: Noweb-Ref blocks
+- [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]]
 
 These blocks were used in several places throughout the configurations, but not on all machines necessarily. For example, the theming section used need to be in a NixOS block on NixOS machines but in a home-manager block on non-NixOS.
 
@@ -146,6 +143,13 @@ which can then be used in a block like:
 
 not that noweb-reffed blocks will not be indented correctly. You will want to account for that when checking your nix flake with the formatter of your choice. Personally, I have solved this issue using the functions defined in [[#h:59d4306e-9b73-4b2c-b039-6a6518c357fc][org-mode: Upon-save actions (Auto-tangle, export to html, formatting)]]. Originally, I also automatically exported to html there, but it incurred a too high memory penalty which made Emacs become sluggish over time.
 
+- [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]]
+  This section holds files that are not written in nix but are still referenced in the configuration in some way. This is mostly used for configuration of programs that have no native nix support, like tridactyl. Note that shell scripts are still defined under their respective entry in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]]. Over time, the goal is to reduce this section to a minimum, but things like the aforementioned tridactyl might stay for a long time, until we have a stable interface to configure browser plugins.
+
+- [[#h:8ea35dcc-ef94-4c10-9112-8be8efd6f424][Appendix C: Explanations to nix functions and operators]]
+  When I started to learn about nix, I found that journey quite arduous; while I disagree with the general public in that the documentation is too sparse, I will say that, while it is very good, reading (and understanding!) it requires a certain level of existing nix knowledge that one will problably not have when starging out. Hence, the goal of this document is to explain common nix functions as they come up in this document (I thing I wrote this before :sweat:), in hopes that you will be able to understand most of the code. When a new function appears for the first time, I will try to link to an entry in the appendix.
+
+
 ** TODO Structure of this flake
 :PROPERTIES:
 :CUSTOM_ID: h:2c5529ed-e6d9-44b6-b0d3-5bf96a6bed64
@@ -161,7 +165,7 @@ The structure of this flake as seen many revisions, however lately I have settle
 
   The corresponding configurations are automatically generated by =mkFullHostConfigs= and =mkHalfHostConfigs=. A "full" host either in the nixos or darwin folder, while a "half" host is in either of home or android. This has to do with the scheme in which these configurations are generated.
 
-  These <hosttype> folders hold in turn a number of <hostname> folders, the actual configurations. At this time, the files stored in this folder are:
+  These <hosttype> folders hold on the first level a folder describing the machine archetype (=x86_64-linux= or =aarch64-linux= for linux, =x86_64-darwin= or =aarch64-darwin= for macs). Those folders then hold a number of <hostname> folders, the actual configurations. At this time, the files stored in this folder are:
     - default.nix:
       This file holds the abstracted configuration of the host. This should mostly be enabling [[#h:f0f1c961-3e7a-47b8-99ab-1654bb45dffc][Profiles]] as well as setting some [[#h:f4f22166-e345-43e6-b15f-b7f5bb886554][Shared Configuration Options]].
     - hardware-config.nix:
@@ -169,7 +173,7 @@ The structure of this flake as seen many revisions, however lately I have settle
     - disk-config.nix
       Holds the aforementioned filesystem configuration and is applied using [[https://github.com/nix-community/disko][disko]].
 
-    - The hosts/<hosttype>/<hostname> folders may also have a =secrets= folder, under which a single file =pii.nix.enc= can be stored. As the name suggests, this file should be encrypted. Specifically, it needs to be a [[https://github.com/getsops/sops][sops]]-encrypted file (sops does not seem to suggest a file ending other than .yml or others, which is not verbose enough for me, so I went with =.enc=).  This file should have the structure of a nix expression, e.g.:
+    - The hosts/<hosttype>/<hostname> folders may also have a =secrets= folder, under which files of the ending =.nix.enc= may be stored. As the name suggests, these files should be encrypted. Specifically, they need to be [[https://github.com/getsops/sops][sops]]-encrypted files (sops does not seem to suggest a file ending other than .yml or others, which is not verbose enough for me, so I went with =.enc=).  This should have the structure of a nix expression, e.g.:
 
   #+begin_src nix-ts :tangle no
     {
@@ -182,51 +186,59 @@ The structure of this flake as seen many revisions, however lately I have settle
 
       Using the mechanisms in [[#h:82b8ede2-02d8-4c43-8952-7200ebd4dc23][PII management]] (which in turn uses [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]] and [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]]), these files are decrypted during evaluation time and stored under a persistent directory. As the name suggests, I am using these files to store personally identifiable information - these "secrets" are stored world-readable in the nix store. As such, this should not be used to store important secrets, but rather information that you would not like everyone on the internet to easily find in your git repo.
 
+      Other than that, the =secrets= folder will also be used to store conventional (decryted at activation-time) sops-encrypted secrets in the standard =.yaml= / =.toml= / =.ini= formats.
+
   - =modules=
     This folder holds the most part of the actual system configuration done in this repository. At some point I thought it was cool to have my whole configuration exposed under the flakes =nixosModules=, which is indeed achieved (its usefulness is however debatable). In any way, this folder splits up as:
     - nixos: Holds true NixOS configuration
     - home: Holds configuration to be used by home-manager (either as a NixOS submodule or not)
-    - darwin: Holds configuration for nix-darwin. This folder further splits up into a nixos and a home folder, which hold respective nix or home-manager configuration for nix-darwin.
-    - iso: Holds specific configuration for my installer ISO that I do not want to have loaded in the rest of the configuration.
+    - shared: This is for configuraion bits that are to be used by both types.
 
     The nixos and home folders further split up:
 
       - common: Configuration that can be used by all hosts (TODO: this currently includes configuration used by my user devices, which will mostly not be used by servers)
       - server: Configuration to be used on servers
+      - darwin: Holds configuration for nix-darwin.
       - optional: Configuration that will be used rather rarely
 
-      This structure is very optionated and highly subjective. I will possibly change this in the future.
+        This structure is very optionated and highly subjective. I will possibly change this in the future.
 
-    By themselves, most of the files in the modules folder will not do anything. In order for them to do something, their corresponding =config.swarselsystems.modules= attribute needs to be enabled. This is done using...
+      By themselves, most of the files in the modules folder will not do anything. In order for them to do something, their corresponding =config.swarselmodules= attribute needs to be enabled. This is partly done using...
 
-  - =profiles=: This folder splits up into =home= and =nixos= subfolders, where groupings of module enablers are stored for the respective home and nix setups. Note that =home= profiles are also used in NixOS setups (extensively even)!
+  - =profiles=: This folder splits up into =home= and =nixos= subfolders, where groupings of module enablers are stored for the respective home and nix setups. Note that =home= profiles are also used in NixOS setups (extensively even)! This is used to quickly enable common configuration for a machine use, e.g. the [[#h:dfc076fd-ee74-4663-b164-653370c52b75][Server]] profile.
 
-  - =nix=: This special folder holds mostly =.nix= files that are not automatically loaded, but rather setup specific things that affect most of the flake. For example, here lies the aforementioned [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]] as well as the setup for the [[*Globals][Globals]] system. TODO: Move flake-parts units there and explain them here.
+  - =nix=: This special folder holds mostly =.nix= files that are not automatically loaded, but rather setup specific things that affect most of the flake. For example, here lies the aforementioned [[#h:87c7893e-e946-4fc0-8973-1ca27d15cf0e][extra-builtins]] as well as the setup for the [[*Globals][Globals]] system. Also in here are the flake-parts files that you read about earlier. This gives the following functionality:
+    - =lib=: I define some utility functions that I add to the nixpkgs library under the =swarselsystems= attribute set. An example would be the =mkIfElse= function.
+    - =checks=: As part of a [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]], I declare pre-commit hooks that should run before I push changes to my repo.
+    - =overlays=: Here we also define the main (default) overlay I am using in my configuration. It is responsible for adding my defined packages and modifications to the final nixpkgs. Also I add some other conveniences like all past stable nixpkgs and some other package sets.
+    - =apps=: I also define [[#h:52e1fae8-0e8c-4be6-a6ce-758ada652dd3][Apps]], which is an output of derivations that can be called by =nix run= without having the flake locally - this is mostly used for my =swarsel-*= utilities.
+    - =topology=: I also created a diagram of my infrastructure using [[https://github.com/oddlama/nix-topology][nix-topology]]. While I do not update this too often, this (I think) can quickly give a good overview of the scope of this flake as well as its services.
 
-  - =lib=: This folder holds utility functions that I add to the nixpkgs library under the =swarselsystems= attribute set. An example would be the =mkIfElse= function.
+  - =pkgs=: This folder holds derivations (mostly packages) that I define myself. This is mostly used to grab versions that are not (yet) in nixpkgs, or modified versions of another package. Each derivation in this folder is in turn in its own folder which holds a defautlt.nix. Using the mechanism in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]], these are automatically built and available to all configurations (packages still need to be installed e.g. in =environment.systemPackages=). Note that the folder at the top level splits up in =config= and =flake= subdirectories:
+    - The =config= dir is used for packages that need the actual config of the machine where they run in order to be built. These packages cannot simply be released as a flake output (or better, it would not make a lot of sense). Instead, these are added within the configuration as an overlay
 
-  - =pkgs=: This folder holds derivations (mostly packages) that I define myself. This is mostly used to grab versions that are not (yet) in nixpkgs, or modified versions of another package. Each derivation in this folder is in turn in its own folder which holds a defautlt.nix. Using the mechanism in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]], these are automatically built and available to all configurations (packages still need to be installed e.g. in =environment.systemPackages=)
+    - The =flake= dir is used for the conventional packages that I described above.
 
-  - =checks=: Holds a file that defines my pre-commit-hook checks. TODO: move this to /nix probably
+  - =files=: This is kind of a catchall folder that holds (nearly) all non-nix files. It mostly holds blocks created in [[#h:8fc9f66a-7412-4091-8dee-a06f897baf67][Appendix B: Supplementary Files]], but also some more specific directories:
+    - =scripts=: This folder holds a bunch of shell scripts that I use for various tasks. Nearly all of these are made into a derivation using =pkgs.writeShellApplication=. In the future (TODO?), I might convert these to native nix, but in the past I kept the as true shellfiles in case I ever wanted to move away from nix. This is becoming less and less likely, however. And even in case that this would happen, I could retrieve these files from the nix store and would simply have to remove the nix store paths.
+    - =wallpaper=: Holds my wallpapers and profile pictures :)
+    - =topology-images=: Holds pictures used by [[#h:391e7712-fef3-4f13-a3ed-d36e228166fd][Topology]] :)
 
-  - =scripts=: This folder holds a bunch of shell scripts that I use for various tasks. Nearly all of these are made into a derivation using =pkgs.writeShellApplication=. In the future (TODO?), I might convert these to native nix, but in the past I kept the as true shellfiles in case I ever wanted to move away from nix. This is becoming less and less likely, however. And even in case that this would happen, I could retrieve these files from the nix store and would simply have to remove the nix store paths.
+  - =secrets=: Unlike the similar folder under =hosts=, this folder holds sops-encrypted secrets and PIIs that are used by a number of hosts that is greater than one.
 
-  - =secrets=: Unlike the similar folder under =hosts=, this folder holds actual sops-encrypted secrets that are created at activation time and not in the nix store. The folder splits up into a bunch of <hostname> folders, as well as a =repo= folder, which holds another =pii.nix.enc=, which holds global PII's, and a =certs= folder that holds some longer certificate style secrets.
+  - =install=: This folder holds another [[#h:1d4514b4-e952-4faf-b30e-d89e73a526c6][Installer flake]]. That flake pulls in the =nixosConfigurationsMinimal= that are defined in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]] of the main flake, which enables me to build an extemely reduced configuration when I deploy a new host for the first time - this is used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in the first installation step. It also holds the configuration of the two installer images that I use to deploy this flake:
+    - [[#h:8583371d-5d47-468b-84ba-210aad7e2c90][Drugstore (ISO installer config)]]: This is the general installer ISO that I use whenever I can when I want to deploy a new host. It has a few conveniences like some of my utility programs for figuring out some dependencies or network quirks, as well as my public ssh keys so that I can immediately login to them.
 
-  - =overlays=: This holds a single =default.nix= that defines the overlay I am using in my configuration. It is responsible for adding my defined packages and modifications to the final nixpkgs. Also I add some other conveniences like all past stable nixpkgs and some other package sets.
+    - [[#h:e9fe580c-f1b2-4d7b-aaff-bbdf89a8c9f9][Brick Road (kexec image)]]: This is a kexec tarball that can be used by [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] in case that I need to deploy to a machine that has less than 1GB of RAM. It is basically just an even more stripped down version of the detault one used by nixos-anywhere, but notably I added cryptsetup so that it can be used when setting up an encrypted device using disko.
 
-  - =programs=: This folder holds configurations for various programs (most notably emacs' =init.el= and =early-init.el=), that are being rendered using org-babel and loaded using nix.
-
-  - =wallpaper=: Holds wallpapers and profile pictures.
-
-  - =topology=: Holds the configuration used by [[https://github.com/oddlama/nix-topology][nix-topology]].
+  - =.github=: Canonically, this holds github related files like the [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] and some workflows.
 
 ** Hosts
 :PROPERTIES:
 :CUSTOM_ID: h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02
 :END:
 
-Here I give a brief overview over the hostmachines that I am using. This is held in markdown so that I can render it into my GitHub README.
+Here I give a brief overview over the host machines that I am using. This is held in markdown so that I can render it into my [[#h:bf3e6fc0-a95a-46d0-9305-0d1068b2f1ec][GitHub Readme]] without further effort.
 
 #+begin_src markdown :tangle no :noweb-ref hosts
   | Name                | Hardware                                            | Use                                                             |
@@ -247,7 +259,7 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
   |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
   |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |
-  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration                 |
+  |❔ **hotel**         | -                                                   | Demo config for checking out this configuration                 |
   |❔ **toto**          | -                                                   | Helper configuration for testing purposes                       |
 #+end_src
 
@@ -255,6 +267,8 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :PROPERTIES:
 :CUSTOM_ID: h:3bb92528-c61c-4b8d-8214-bf2a40baaa32
 :END:
+
+This is meant to give a brief overview over the main programs/components that I use on a daily basis on my client machines. This should be mostly useful for people wanting to rice their config, or people who believed this repos title and are looking for =.dotfiles= :p
 
 #+begin_src markdown :tangle no :noweb-ref programs
   | Topic         | Program                                                                                                                     |
@@ -275,6 +289,8 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :PROPERTIES:
 :CUSTOM_ID: h:191e82b6-6ae5-4ec8-ae6d-dc683ce325d9
 :END:
+
+This is a comprehensive list of the services/components ran by my server machines.
 
 #+begin_src markdown :tangle no :noweb-ref services
   | Topic                      | Program                                                                                                        |
@@ -304,6 +320,7 @@ Here I give a brief overview over the hostmachines that I am using. This is held
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
+  |🐙 **Nix Build farm**       | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS**                  | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
@@ -315,7 +332,14 @@ Here I give a brief overview over the hostmachines that I am using. This is held
 :CUSTOM_ID: h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a
 :END:
 
-#+begin_src markdown :noweb yes :exports both :results html
+In the [[#h:a86fe971-f169-4052-aacf-15e0f267c6cd][Introduction (no code)]], I mentioned that this is a nearly fully declarative config. In fact, most client configs are in one way or another not fully declarative. I use oneshotting systemd services + sentinel files for most such tasks (which makes them declarative!), but some of them I would rather perform manually once. This mainly concerns work related things.
+
+Whenever I encounter a configuration bit that needs manual steps, I use a [[#h:dae0c5bb-edb7-4fe4-ae31-9f8f064cc53c][Appendix A: Noweb-Ref blocks]] to tangle that bit of information into a central place (here). I discern between the following scenarios:
+  - =setup=: Used in a standard NixOs + home-manager deployment
+  - =worksetup=: Stuff to be done only on work machines
+  - =homemanageronlysetup=: Steps that are needed only on machines that are not running NixOs.
+
+#+begin_src markdown :noweb yes :exports results :results html
   These steps are required when setting up a normal NixOS host:
 
   <<setup>>
@@ -365,14 +389,20 @@ If the new machine is home-manager only, perform these steps:
   1) Clone dotfile repo & change into it
   2) `nix --extra-experimental-features 'nix-command flakes' develop`
   3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
-#+end_export
+#+end
 
-** Current issues
+** TODO Current issues
 :PROPERTIES:
 :CUSTOM_ID: h:b562adaf-536c-4267-88a5-026d8a0cda61
 :END:
 
-#+begin_src markdown :noweb yes :exports both :results html
+Besides the manual steps outlined above, sometimes things break when I update this flake. The fix, for me, is most of the times one of these two:
+  - instead of the broken package, use the package from the latest stable nixpkgs release where the package is still functoning (this is why I pull all of these in as inputs)
+  - if the broken component is critical, I perform manual patches/overrides.
+
+In order to keep track of these changes, I gather them here in a similar style to what you saw in [[#h:ed34ee4d-31f9-4d27-bc6e-ba37ee502d5a][Manual steps when setting up a new machine]]. I simply prefix them with the date and check them after a while to see if things got better. TODO: this list is not comprehensive probably
+
+#+begin_src markdown :noweb yes :exports results :results html
   Currently, these adaptions are made to the configuration to account for bugs in upstream repos:
 
   <<fixes>>
@@ -419,11 +449,11 @@ Nowadays, I use flake-parts to manage my flake. It allows me to conveniently spl
 :CUSTOM_ID: h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b
 :END:
 
-In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, modules, and more. The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
+In general, a nix flake consists of one or more inputs and several outputs. The inputs are used to define where nix should be looking for packages, modules, and more (the most common input is =nixpkgs=, which provides a lot of packages, library functions and modules). The outputs generate expressions that can be used in .nix files as well as system configurations using these files.
 
 In the start, I enable some public cache repositories. This saves some time during rebuilds because it avoids building as many packages from scratch - this is mainly important for community flakes like =emacs-overlay=, which basically would trigger a rebuild whenever updating the flake. The repository does of course not hold everything, but it lightens the pain. It would look cleaner if this were to be used only inside a nix configuration block of an actual system, but I want these caches to be used for e.g. app calls as well.
 
-In many flakes, you see a structure like this: =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>=. For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file. In fact, I also used to make use of this mechanism. However, using flake-parts, all I really need for the outputs function is inputs, which is why my outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } { [...] ). Note that flake-parts must inherit these inputs and no other arguments are expected.
+In many flakes, you see a structure like this: =outputs = inputs@ [...]=, the =inputs@= makes it so that all inputs are automatically passed to the outputs and can be called as =inputs.<name>=, whereas explicit arguments may just be called by using =<name>= (for a more detailed explanation, s). For most flakes this is fully sufficient, as they do not need to be called often and it saves me maintainance effort with this file. In fact, I also used to make use of this mechanism. However, using flake-parts, all I really need for the outputs function is inputs, which is why my outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } { [...] ). Note that flake-parts must inherit these inputs and no other arguments are expected.
 
 In this section I am creating some attributes that define general concepts of my configuration:
 
@@ -450,15 +480,15 @@ Here, just add the input names, urls and other options that are needed, like =ni
 A short overview over each input and what it does:
 
 - [[https://github.com/NixOS/nixpkgs][nixpkgs]]
-  This is the base repository that I am following for all packages. I follow the unstable branch.
+  This is the base repository that I am following for all packages. I follow the unstable branch. Also I pull in some older revisions of nixpkgs stable for various purposes.
 - [[https://github.com/nix-community/home-manager][home-manager]]
   This handles user-level configuration and mostly provides dotfiles that are generated and symlinked to =~/.config/=.
-- [[https://github.com/Swarsel/.dotfiles][swarsel]]
-  This pulls in the very dotfiles you are currently reading. I am adding this to the flake registry in order to have easier access to my customizations in nix calls, for example =nix-instantiate=
+- [[https://github.com/Swarsel/swarsel-nix][swarsel-nix]]
+  This pulls in the very dotfiles you are currently reading. I am adding this to the flake registry in order to
 - [[https://github.com/nix-community/NUR][NUR]]
   The nix user repository contains user provided modules, packages and expressions. These are not audited by the nix community, so be aware of supply chain vulnerabilities when using those. I am only really using rycee's firefox addons from there which saves me a lot of hassle, and it seems to be a safe resource.
 - [[https://github.com/nix-community/nixGL][nixGL]]
-  This solves the problem that nix has with "OpenGL", as libraries are not linked and programs will often fail to find drivers. But I do not fully understand what it does. All I know is that I usually have to use this on non-NIxoS systems.
+  This solves the problem that nix has with =OpenGL=, as libraries are not linked and programs will often fail to find drivers. Nowadays, this is included in the [[#h:90af1862-90b3-4c93-8730-2443bc62986a][nixGL]] module of home-manager, but even that requres a binary for nixGL, which is what I pull from this input.
 - [[https://github.com/danth/stylix][stylix]]
   As described before, this handles all theme related options.
 - [[https://github.com/Mic92/sops-nix][sops-nix]]
@@ -489,10 +519,33 @@ A short overview over each input and what it does:
   Provides access to several checks that can be hooked to be run before several stages in the process.
 - [[https://github.com/oddlama/nix-topology][nix-topology]]
   This automatically creates a topology diagram of my configuration.
-- flake-parts
+- [[https://github.com/hercules-ci/flake-parts][flake-parts]]
   The aforementioned system that allows for more convenient flake crafting.
-- devshell
+- [[https://github.com/numtide/devshell][devshell]]
   This provides devshell support for flake-parts
+- [[https://github.com/Gerg-L/spicetify-nix][spicetify]]
+  This is a improved spotify client. This provides a NixOs module to manage it.
+- [[https://github.com/sodiboo/niri-flake][niri-flake]]
+  This is an optional input that I reserve to use in the future; it provides a module to manage [[#h:06e77ca4-28ff-4cfd-bc60-b7fd848bfedb][Niri]] in a way that is way more all-encompassing than the current modules in nixpkgs/home-manager. However, I do not include this by default as this leads to a full compilation of latest niri - this is used only be the niri config evaluator, but is even built if niri is not included in the final config. Also, the binary cache provided by this flake does usually not have the latest niri cached.
+- [[https://github.com/microvm-nix/microvm.nix][microvm.nix]]
+  This flake brings support for microvms to nix. This is basically a more isolated alternative to classic NixOs containers, while keeping most of their benefits.
+- [[https://github.com/numtide/treefmt-nix][treefmt-nix]]
+  This allows to specify a range of formatters for different languages and aspects which can all be run upon =nix fmt=.
+- [[https://github.com/oddlama/nixos-extra-modules][nixos-extra-modules]]
+  This is a collection of modules that add some qualitative functions to several aspects of nix, for example:
+  - microvm management
+  - wireguard support for nix-topology
+  - some extensions to the network library
+
+  At the moment I am not using the full range of modules, but my usage keeps increasing steadily. Using this module forced me to make some adjustments in my config, namely exposing the =nodes= output in [[#h:48e0cb2c-e412-4ae3-a244-80a8c09dbb02][Hosts]].
+- [[https://github.com/nix-community/dns.nix][dns.nix]]
+  This adds a module that helps with creating zone files (like [[#h:dc1dbc54-46f7-406d-a551-527e97439614][nsd (dns) - site1]]). This flake was competing with [[https://github.com/Janik-Haag/nixos-dns/][NixOS-DNS]] for my favour - while the latter adds many nice utilities that generage records straight from a host configuration, I prefer to do this myself using the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] + [[#h:5c3027b4-ba66-445e-9c5f-c27e332c90e5][Share configuration between nodes (automatically active)]] systems. In the end, I just tried out dns.nix without giving NixOS-DNS a chance and it has been working great, but I believe NixOS-DNS still deserves a mention here, as it would have been a great fit as well, most likely.
+- [[https://github.com/Infinidoge/nix-minecraft][nix-minecraft]]
+  This adds a module that makes it easier to manage (modded) minecraft servers. At the moment, it does not really work with Forge 1.20.1 (which is what my server is running), so I am not making full use of it right now, but I keep close watch on it every day.
+- [[https://gitlab.com/simple-nixos-mailserver/nixos-mailserver][nixos-mailserver]]
+  This adds a module that basically sets up a full mailserver stack. Apart of DNS records and a few extra steps for e.g. a web client, this is one-stop solution that has been working greatly for me.
+- [[https://github.com/NixOS/hydra][hydra]]
+  The hydra module already exists in nixpkgs - however, because, I am also using [[https://github.com/shlevy/nix-plugins][nix-plugins]], I need to build all tools that are using nix against a specific nix version (this is also why I pull in =nix-eval-jobs= as a flake input).
 
 #+begin_src nix :noweb yes :tangle flake.nix
   {
@@ -2871,8 +2924,9 @@ This is my main server that I run at home. It handles most tasks that require bi
       isLinux = true;
       isNixos = true;
       isSwap = false;
-      rootDisk = "/dev/sda";
+      rootDisk = "/dev/disk/by-id/ata-TS128GMTS430S_H537280456";
       withMicroVMs = false;
+      server.localNetwork = "lan";
     };
 
   } // lib.optionalAttrs (!minimal) {
@@ -2881,38 +2935,8 @@ This is my main server that I run at home. It handles most tasks that require bi
       server = true;
     };
 
-    swarselmodules = {
-      server = {
-        nfs = false;
-        nginx = false;
-        kavita = false;
-        restic = false;
-        jellyfin = false;
-        navidrome = false;
-        spotifyd = false;
-        mpd = false;
-        postgresql = false;
-        matrix = false;
-        nextcloud = false;
-        immich = false;
-        paperless = false;
-        transmission = false;
-        syncthing = false;
-        grafana = false;
-        emacs = false;
-        freshrss = false;
-        jenkins = false;
-        kanidm = false;
-        firefly-iii = false;
-        koillection = false;
-        radicale = false;
-        atuin = false;
-        forgejo = false;
-        ankisync = false;
-        homebox = false;
-        opkssh = false;
-        garage = false;
-      };
+    swarselmodules.server = {
+      nginx = lib.mkForce false;
     };
 
     microvm.vms =
@@ -21414,20 +21438,29 @@ When setting up a new machine:
               };
             }
             {
-              # work main screen
+              # work side screen
               output = {
                 criteria = "HP Inc. HP 732pk CNC4080YL5";
                 scale = 1.0;
                 mode = "3840x2160";
+                transform = "270";
               };
             }
+            # {
+            #   # work side screen
+            #   output = {
+            #     criteria = "Hewlett Packard HP Z24i CN44250RDT";
+            #     scale = 1.0;
+            #     mode = "1920x1200";
+            #     transform = "270";
+            #   };
+            # }
             {
-              # work side screen
+              # work main screen
               output = {
-                criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                criteria = "HP Inc. HP Z32 CN41212T55";
                 scale = 1.0;
-                mode = "1920x1200";
-                transform = "270";
+                mode = "3840x2160";
               };
             }
             {
@@ -21435,28 +21468,28 @@ When setting up a new machine:
                 name = "lidopen";
                 exec = [
                   "${pkgs.swaybg}/bin/swaybg --output '${config.swarselsystems.sharescreen}' --image ${config.swarselsystems.wallpaper} --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
                 outputs = [
                   {
                     criteria = config.swarselsystems.sharescreen;
                     status = "enable";
                     scale = 1.5;
-                    position = "1462,0";
+                    position = "2560,0";
                   }
                   {
                     criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
+                    scale = 1.0;
                     mode = "3840x2160";
-                    position = "-1280,0";
+                    position = "-3440,-1050";
+                    transform = "270";
                   }
                   {
-                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                    criteria = "HP Inc. HP Z32 CN41212T55";
                     scale = 1.0;
-                    mode = "1920x1200";
-                    transform = "90";
-                    position = "-2480,0";
+                    mode = "3840x2160";
+                    position = "-1280,0";
                   }
                 ];
               };
@@ -21493,8 +21526,8 @@ When setting up a new machine:
               profile = {
                 name = "lidclosed";
                 exec = [
-                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
-                  "${pkgs.swaybg}/bin/swaybg --output 'Hewlett Packard HP Z24i CN44250RDT' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP Z32 CN41212T55'  --image ${self}/files/wallpaper/botanicswp.png --mode ${config.stylix.imageScalingMode}"
+                  "${pkgs.swaybg}/bin/swaybg --output 'HP Inc. HP 732pk CNC4080YL5' --image ${self}/files/wallpaper/op6wp.png --mode ${config.stylix.imageScalingMode}"
                 ];
                 outputs = [
                   {
@@ -21503,16 +21536,16 @@ When setting up a new machine:
                   }
                   {
                     criteria = "HP Inc. HP 732pk CNC4080YL5";
-                    scale = 1.4;
+                    scale = 1.0;
                     mode = "3840x2160";
-                    position = "-1280,0";
+                    position = "-3440,-1050";
+                    transform = "270";
                   }
                   {
-                    criteria = "Hewlett Packard HP Z24i CN44250RDT";
+                    criteria = "HP Inc. HP Z32 CN41212T55";
                     scale = 1.0;
-                    mode = "1920x1200";
-                    transform = "270";
-                    position = "-2480,0";
+                    mode = "3840x2160";
+                    position = "-1280,0";
                   }
                 ];
               };
@@ -21697,25 +21730,35 @@ When setting up a new machine:
             # output = "DP-7";
             output = name;
           };
-          work_back_right = rec {
+          work_middle_middle_main = rec {
             name = "HP Inc. HP Z32 CN41212T55";
             mode = "3840x2160";
             scale = "1";
-            position = "5120,0";
+            position = "-1280,0";
             workspace = "1:一";
             # output = "DP-3";
             output = name;
           };
-          work_middle_middle_main = rec {
+          # work_middle_middle_main = rec {
+          #   name = "HP Inc. HP 732pk CNC4080YL5";
+          #   mode = "3840x2160";
+          #   scale = "1";
+          #   position = "-1280,0";
+          #   workspace = "11:M";
+          #   # output = "DP-8";
+          #   output = name;
+          # };
+          work_middle_middle_side = rec {
             name = "HP Inc. HP 732pk CNC4080YL5";
             mode = "3840x2160";
+            transform = "270";
             scale = "1";
-            position = "-1280,0";
-            workspace = "11:M";
+            position = "-3440,-1050";
+            workspace = "12:S";
             # output = "DP-8";
             output = name;
           };
-          work_middle_middle_side = rec {
+          work_middle_middle_old = rec {
             name = "Hewlett Packard HP Z24i CN44250RDT";
             mode = "1920x1200";
             transform = "270";
@@ -23014,6 +23057,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
   function cleanup() {
       rm -rf "$temp"
+      rm -rf /tmp/disko-password
   }
   trap cleanup exit
 
@@ -23117,7 +23161,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
 
   LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
   if [[ $LOCKED == "true" ]]; then
-      red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set `node.lockFromBootstrapping = lib.mkForce false;` to proceed"
+      red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set 'node.lockFromBootstrapping = lib.mkForce false;' to proceed"
       exit
   fi
 
@@ -23207,6 +23251,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
           green "Please confirm passphrase:"
           read -rs luks_passphrase_confirm
           if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+              echo "$luks_passphrase" > /tmp/disko-password
               $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
               break
           else
@@ -23295,7 +23340,7 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
       vim "${git_root}"/.sops.yaml
   fi
   green "Updating all secrets files to reflect updates .sops.yaml"
-  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/*
+  sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
   # --------------------------
   green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
   sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -23366,6 +23411,8 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   if yes_or_no "Reboot now?"; then
       $ssh_root_cmd "reboot"
   fi
+
+  rm -rf /tmp/disko-password
 #+end_src
 
 #+RESULTS:
