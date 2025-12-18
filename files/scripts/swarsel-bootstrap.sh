@@ -36,6 +36,7 @@ function help_and_exit() {
 
 function cleanup() {
     rm -rf "$temp"
+    rm -rf /tmp/disko-password
 }
 trap cleanup exit
 
@@ -139,7 +140,7 @@ fi
 
 LOCKED="$(nix eval ~/.dotfiles#nixosConfigurations."$target_hostname".config.node.lockFromBootstrapping)"
 if [[ $LOCKED == "true" ]]; then
-    red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING"
+    red "THIS SYSTEM IS LOCKED FROM BOOTSTRAPPING - set 'node.lockFromBootstrapping = lib.mkForce false;' to proceed"
     exit
 fi
 
@@ -229,6 +230,7 @@ if [ "$disk_encryption" -eq 1 ]; then
         green "Please confirm passphrase:"
         read -rs luks_passphrase_confirm
         if [[ $luks_passphrase == "$luks_passphrase_confirm" ]]; then
+            echo "$luks_passphrase" > /tmp/disko-password
             $ssh_root_cmd "echo '$luks_passphrase' > /tmp/disko-password"
             break
         else
@@ -317,7 +319,7 @@ if yes_or_no "Do you want to manually edit .sops.yaml now?"; then
     vim "${git_root}"/.sops.yaml
 fi
 green "Updating all secrets files to reflect updates .sops.yaml"
-sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/*
+sops updatekeys --yes --enable-local-keyservice "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/secrets/* || true
 # --------------------------
 green "Making ssh_host_ed25519_key available to home-manager for user $target_user"
 sed -i "/$target_hostname/d; /$target_destination/d" ~/.ssh/known_hosts
@@ -388,3 +390,5 @@ fi
 if yes_or_no "Reboot now?"; then
     $ssh_root_cmd "reboot"
 fi
+
+rm -rf /tmp/disko-password
