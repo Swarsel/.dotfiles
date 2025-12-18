@@ -155,6 +155,7 @@
   |⛏️ **Minecraft**            | [Minecraft](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/minecraft.nix)                 |
   |☁️ **S3**                   | [Garage](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/garage.nix)                       |
   |🕸️ **Nix Binary Cache**     | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/attic.nix)                         |
+  |🐙 **Nix Build farm**       | [Attic](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/hydra.nix)                         |
   |🔑 **Cert-based SSH**       | [OPKSSH](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/opkssh.nix)                       |
   |🔨 **Home Asset Management**| [Homebox](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/homebox.nix)                     |
   |👀 **DNS**                  | [NSD](https://github.com/Swarsel/.dotfiles/tree/main/modules/nixos/server/nsd.nix)                             |
@@ -180,7 +181,7 @@
   |📱 **magicant**      | Samsung Galaxy Z Flip 6                             | Phone                                                           |
   |💿 **drugstore**     | -                                                   | NixOS-installer ISO for bootstrapping new hosts                 |
   |💿 **brickroad**     | -                                                   | Kexec tarball for bootstrapping low-memory machines             |
-  |❔ **chaotheatre**   | -                                                   | Demo config for checking out this configuration                 |
+  |❔ **hotel**         | -                                                   | Demo config for checking out this configuration                 |
   |❔ **toto**          | -                                                   | Helper configuration for testing purposes                       |
   </details>
 
