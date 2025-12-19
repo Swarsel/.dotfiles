@@ -11,7 +11,8 @@
           specialArgs = {
             inherit inputs outputs self minimal homeLib configName arch;
             inherit (config.pkgs.${arch}) lib;
-            inherit (config) globals nodes;
+            inherit (config) nodes;
+            globals = config.globals.${arch};
             type = "nixos";
           };
           modules = [
@@ -68,7 +69,8 @@
         inputs.nix-darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs lib outputs self minimal configName;
-            inherit (config) globals nodes;
+            inherit (config) nodes;
+            globals = config.globals.${arch};
           };
           modules = [
             # inputs.disko.nixosModules.disko
@@ -103,7 +105,8 @@
           inherit pkgs;
           extraSpecialArgs = {
             inherit inputs lib outputs self configName arch type;
-            inherit (config) globals nodes;
+            inherit (config) nodes;
+            globals = config.globals.${arch};
             minimal = false;
           };
           modules = [
