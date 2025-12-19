@@ -764,6 +764,7 @@ A breakdown for the functions that have a non-obvious purpose:
   - uses [[#h:94690fcb-e039-49da-9bd3-610fa80fa08b][nixpkgs.lib.genAttrs]]
   - Also, in that function I am defining the =pkgs= that should be used when I reference =pkgs= in the actual configuration. I want to make sure that the correct system is used (keep in mind this is for home-manager configurations, which need that info! As a remark, you would not set this for a NixOS host), that I load my [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]] (extra packages and modifications that I add to =pkgs=), as well as a setting that allows me to install unfree software. As a base package set I choose =nixpkgs= from my inputs (and so does nearly every configuration out there. Keep in mind however that you could use any package set here! =nixpkgs= however also comes with a lot of useful =lib= functions (that are not =builtins= to the nix language!))
 - =mkTrueOption=: Defines a nixos module option that is by default enables (as opposed to =mkEnableOption= which are per default disabled).
+  - uses [[#h:3ce2e7ef-0f6c-4137-a978-ba190b26dcac][nixpkgs.lib.mkOption]] to create the defaulted option.
 - =mkStrong=:
   - An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 60), which is higher than setting an option normally (i.e. =option = value=; which has priority 100), but being of lower priority than using [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]], which has priority 50 (lower priority takes precedence). For completeness' sake, the priority set when using [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] is 1000 (a very low value).
 - =forEachLinuxSystem=: performs the =pkgsFor= function for a set of =systems= (here: =x86_64-linux= and =aarch64-linux=). I need to use this in the [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]] section in order to avoid trying to build those packages for darwin systems.
@@ -776,6 +777,22 @@ A breakdown for the functions that have a non-obvious purpose:
   - uses [[#h:0fded8e7-6160-4fcd-a491-42f0debfec52][nixpkgs.lib.attrNames]] to acquire attribute names from the outputs of =builtins.readDir=
 - =mkImports=: These are used to help with importing files mostly:
   - uses [[#h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e][nixpkgs.lib.map]] to actually import the list of modules that are passed to =mkImports= in names.
+- =cidrToSubnetMask=: this takes in an IP address in cidr notation (for example 192.168.1.0/24) and returns the matching subnet mask (here: 255.255.255.0)
+  - uses [[#h:4c98ce64-4ee7-4453-b5a7-b8fd142362ca][nixpkgs.lib.toInt]] to grab the CIDR mask as an int
+  - uses [[#h:e853e1b7-a078-478d-8192-02f389fe8369][nixpkgs.lib.genList]] to both get the bitwise representation of said CIDR mask as well as converting it to the octet notation of the subnet mask.
+  - uses [[#h:18de50e8-180d-43c7-b651-bb0f38369e85][nixpkgs.lib.concatStringsSep]] to build the final subnet most of the octets calculated.
+- =mkIfElseList= generates either one or another list based on a conditional
+  - uses [[#h:82c26445-2af4-4a6c-ae91-c804325fdf11][nixpkgs.lib.mkMerge]] to merge the results of the de-facto =if= and =else=, yielding a single list in the end.
+- =getBaseDomain= takes in a domain (like =sub.about.com=) and extracts only the base domain (here: =about.com=)
+  - uses [[#h:74f83083-d987-4935-a4ec-8b8f4c764779][nixpkgs.lib.split]] to get the parts of the input domain
+  - uses [[#h:38d8aecf-d997-4b50-80a2-c86314b5e67e][nixpkgs.lib.filter]] to keep only the non-empty strings (checking using [[#h:331d759d-835c-400c-8799-c894cf1d2071][nixpkgs.lib.isString]]) from the list generatded by split
+  - uses [[#h:0a53b0f2-438b-4b10-942c-a5d5ecca7e39][nixpkgs.lib.tail]] to strip the subdomain which keeps the base domain and then conjoins the remaining two elements using [[#h:18de50e8-180d-43c7-b651-bb0f38369e85][nixpkgs.lib.concatStringsSep]]. Indeed this means that this function would break for deeper subdomain nestings, but so far I am not using these.
+- =getSubDomain= works in a similar way on a domain subdomain (for the above example: =sub=)
+  - works similar to =getBaseDomain= but I also calls [[#h:48183c56-2ddf-4d6f-800a-08282b81252c][nixpkgs.lib.length]] to make sure we have an element left which we then grab by [[#h:7cb4c6e7-9b3f-43fc-994e-7f62a3f98572][nixpkgs.lib.head]].
+- =toCapitalized=: returns the capitalized version of a string (="about"= -> ="About"=)
+  - uses [[#h:a22ddf24-fd22-4842-af4a-58bfda110998][nixpkgs.lib.stringLength]] to prevent working on an empty string
+  - [[#h:6f73291f-812c-4310-9e17-253e22a6fd74][nixpkgs.lib.subString]] as well as =nixpkgs.lib.toUpper= and =nixpkgs.lib.toLower= to build the respective capitalized string
+
 
 Concerning the =flake = _:= part:
   - this is a mechanism introduced by [[https://flake.parts/][flake-parts]]. A =flake= output is akin to a 'normal' output of a standard nix flake (meaning, it will not be built specifically for each system defined by =mkFlake=)
@@ -885,9 +902,13 @@ Concerning the =flake = _:= part:
 :CUSTOM_ID: h:6ed1a641-dba8-4e85-a62e-be93264df57a
 :END:
 
-This does not use =perSystem= from =flake-parts= since some of my custom packages are not able to be built on darwin systems, and I was not yet interested in writing logic for handling that. Instead I use =forEachLinuxSystem= as described in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]] in roder to only build this for linux hosts.
+This does not use =perSystem= from =flake-parts= for package outputs, since some of my custom packages are not able to be built on darwin systems, and I was not yet interested in writing logic for handling that. Instead I use =forEachLinuxSystem= as described in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]] in roder to only build this for linux hosts.
 
-Other nix users can make use of these packages either by installing them directly in their config (using my flake as an input and then installing =<packages.<systems>.<name>=) or by making use of the overlay that I provide in  [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. In the latter case all packages will be made available to the consuming flake
+Other nix users can make use of these packages either by installing them directly in their config (using my flake as an input and then installing =<packages.<systems>.<name>=) or by making use of the overlay that I provide in  [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]. In the latter case all packages will be made available to the consuming flake.
+
+You might now be wondering why I then have a =perSystem= in this file. This has to do with the =nixos-extra-modules= flake output that I pulled in in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton (inputs)]]: it provides a few library functions that I want to use in the [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] system. Since however these globals are evaluated to a flake output I need to make sure that these library functions are not only available from within a configuration, but also as a callable expression in the flake - and of course they also should be available in configurations. Generally, =lib= exists under =pkgs=, which means that it is built for an architecture. So, if I want to expand lib, I need to make sure this is done for all architectures. For that, I extend the flake-parts =perSystem= options by a pkgs option using =mkTransposedPerSystemModule=. This points to a file that will specify the correct =pkgs= - in this case, this is the same file. We then add a module arg named =pkgs= which can no make use of the =system= parameter thanks to what we did above, and set the correct overlay - the =self.overlay.defaults= includes the overlay from =nixos-extra-modules= that we need (see [[#h:7a059bd9-13f8-4005-b270-b41eeb6a4af2][Overlays]]). Finally, we make this =pkgs= available as an output.
+
+The =_module.args= part is needed because we need to set/override the =flake-parts= =pkgs= as per https://flake.parts/module-arguments.html?highlight=modulewith#pkgs.
 
 More information on the actual packages build can be found in [[#h:64a5cc16-6b16-4802-b421-c67ccef853e1][Packages]].
 
@@ -943,29 +964,41 @@ I also have a file for global values that cannot be attributed to one =nixosConf
 
 Lastly, in order make this actually available to my configurations, i use the =inherit (globalsSystem.config.globals) [...]= which produces the =globals= output which I will pass to the =specialArgs= of my =nixosConfigurations=, which is when I will be finally able to use these definitions in my config.
 
+Similar to [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]], we again create a perSystem module for =globals=. We want this because we need to ingest the right =lib= with the extensions from =nixos-extra-modules= as discussed in [[#h:6ed1a641-dba8-4e85-a62e-be93264df57a][Packages (pkgs)]]. One side effect is that instead of a single =globals= output, we instead create outputs of the form =globals.<arch>=. This is not a problem as long as we pass one of these in [[#h:5c5bf78a-9a66-436f-bd85-85871d9d402b][Hosts]], but it needs to be kept in mind. In effect, because we overrode =pkgs=, we can now use the =perSystem= module argument =pkgs= which will fetch the right =pkgs=. Anther method would be using =inputs'= together with =inputs'.pkgs.lib= as per https://flake.parts/module-arguments.html?highlight=modulewith#inputs.
+
 #+begin_src nix-ts :tangle nix/globals.nix
   # adapted from https://github.com/oddlama/nix-config/blob/main/nix/globals.nix
-  { inputs, ... }:
+  { self, inputs, ... }:
   {
-    flake = { config, lib, ... }:
+
+    imports = [
+      (
+        { lib, flake-parts-lib, ... }:
+        flake-parts-lib.mkTransposedPerSystemModule {
+          name = "globals";
+          file = ./globals.nix;
+          option = lib.mkOption {
+            type = lib.types.unspecified;
+          };
+        }
+      )
+    ];
+    perSystem = { lib, pkgs, ... }:
       {
         globals =
           let
             globalsSystem = lib.evalModules {
               prefix = [ "globals" ];
               specialArgs = {
-                inherit (inputs.self.pkgs.x86_64-linux ) lib; # fuck
-                # inherit (self.outputs) lib;
+                inherit (pkgs) lib;
+                inherit (self.outputs) nodes;
                 inherit inputs;
-                inherit (config) nodes;
               };
               modules = [
                 ../modules/nixos/common/globals.nix
                 (
                   { lib, ... }:
                   let
-                    # Try to access the extra builtin we loaded via nix-plugins.
-                    # Throw an error if that doesn't exist.
                     sopsImportEncrypted =
                       assert lib.assertMsg (builtins ? extraBuiltins.sopsImportEncrypted)
                         "The extra builtin 'sopsImportEncrypted' is not available, so repo.secrets cannot be decrypted. Did you forget to add nix-plugins and point it to `./nix/extra-builtins.nix` ?";
@@ -984,7 +1017,7 @@ Lastly, in order make this actually available to my configurations, i use the =i
                   {
                     globals = lib.mkMerge (
                       lib.concatLists (
-                        lib.flip lib.mapAttrsToList config.nodes (
+                        lib.flip lib.mapAttrsToList self.outputs.nodes (
                           name: cfg:
                             builtins.addErrorContext "while aggregating globals from nixosConfigurations.${name} into flake-level globals:" cfg.config._globalsDefs
                         )
@@ -996,8 +1029,6 @@ Lastly, in order make this actually available to my configurations, i use the =i
             };
           in
           {
-            # Make sure the keys of this attrset are trivially evaluatable to avoid infinite recursion,
-            # therefore we inherit relevant attributes from the config.
             inherit (globalsSystem.config.globals)
               domains
               services
@@ -1019,19 +1050,25 @@ Lastly, in order make this actually available to my configurations, i use the =i
 
 Here I define my hosts. Earlier (in [[#h:aee5ec75-7ca6-40d8-b6ac-a3e7e33a474b][flake.nix skeleton]]), I told you how I used to use noweb-ref blocks to achieve this task. You see, a single =nixosConfiguration= uses =nixpkgs.lib.nixosSystem=, passing modules and arguments to define itself. I have automated this process by reading all directories in the =hosts/= directory and then applying =nixpkgs.lib.nixosSystem= as a function on these returns. I also provide a =nixosConfigurationsMinimal= output which is ingested by the flake in =install/flake.nix= to be used during the initial deployment of a new system (it basically just disables most modules).
 
+Note that the =config= top-level module attribute [[https://flake.parts/module-arguments.html?highlight=modulewith#config][includes the entire flake config]] (this is not the same behaviour as for =perSystem=).
+
 - =mkNixosHost=: Very much akin to a simple call of =nixpkgs.lib.nixosSystem=, I simply define =specialArgs= and =modules= that I want to use for every configuration. Here, I load all the extra modules from my other input flakes. Also, I add the =globals= output from [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]] and the =nodes= output that I define right here (it simply mirrors all "full" configurations - nixOS and darwin. I like to refer to home-manager only and nix-on-droid as a "half" configurations). It is also here that I set the node name for the configuration (I prefer this explicit call over referencing =networking.hostName= or such) and the directory that should be used for secrets of a configuration.
 - =mkDarwinHost= works in the same way but for darwin machines.
-
 - =mkHalfHost= is a function that either creates a pure home-manager configuration or a nix-on-droid one. The type must be explicitly passed when calling the function. Here, again, we make use of =pkgsFor= that we defined in [[#h:f9b7ffba-b7e2-4554-9a35-ece0bf173e1c][Library functions]]. Also, we make sure to pass =extraSpecialArgs= (the pendant to =specialArgs=, just for home-manager configurations).
 
 - =diskoConfigurations=: specifies a default disko configuration that is to be used if someone pulls in my flake as a disko configuration. This is not used by me, but I think it is kind of neat.
 
 - =nodes=: As stated above, a shorthand for my configurations. Is built using the [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]
 
-The rest of the outputs either define or help define the actual configurations:
-  - =mkHalfHostConfigs= works by calling the =nixpkgs.lib.foldl= function to build an attribute set of home-manager/nix-on-droidd configurations
-    - uses [[#h:e21d17fb-0c98-42d5-b08f-1c7584afa07f][nixpkgs.lib.foldl]]  on the list created by [[#h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e][nixpkgs.lib.map]] over =mkHalfHost=. In each step of the fold, I receive an attribute set. This attribute set is then merged to the resulting set using the =(acc: set: acc // set)= expression
-    - uses [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]] to merge the sets of the fold operation.
+- =guestConfigurations=: This holds all microvm hosts.
+
+The rest of the functions are used to build full NixOS systems as well as halfConfigurations regardless of system architecture:
+ - =readHostDirs= simply gets the config directories
+ - =mkHalfHostsForArch= generates attribute sets for every halfHost found through =readHostDirs=
+ - =mkHostsForArch= does the same for full NixOS configurations
+ - =mkConfigurationsPerArch= is the wrapper that calls =mkHalfHostsForArch= or =mkHostsForArch= depending on the config it is called for, holding all configurations in principal
+ - =halfConfigurationsPerArch== returns all halfConfigurations of a certain type (android or home-manager only)
+ - =ConfigurationsPerArch== does the same for full NixOS systems (NixOS or darwin). These can further be specialized by passing in the corresponding =minimal= arg that is used during bootstrapping.
 
 #+begin_src nix-ts :tangle nix/hosts.nix
   { self, inputs, ... }:
@@ -1047,7 +1084,8 @@ The rest of the outputs either define or help define the actual configurations:
             specialArgs = {
               inherit inputs outputs self minimal homeLib configName arch;
               inherit (config.pkgs.${arch}) lib;
-              inherit (config) globals nodes;
+              inherit (config) nodes;
+              globals = config.globals.${arch};
               type = "nixos";
             };
             modules = [
@@ -1104,7 +1142,8 @@ The rest of the outputs either define or help define the actual configurations:
           inputs.nix-darwin.lib.darwinSystem {
             specialArgs = {
               inherit inputs lib outputs self minimal configName;
-              inherit (config) globals nodes;
+              inherit (config) nodes;
+              globals = config.globals.${arch};
             };
             modules = [
               # inputs.disko.nixosModules.disko
@@ -1139,7 +1178,8 @@ The rest of the outputs either define or help define the actual configurations:
             inherit pkgs;
             extraSpecialArgs = {
               inherit inputs lib outputs self configName arch type;
-              inherit (config) globals nodes;
+              inherit (config) nodes;
+              globals = config.globals.${arch};
               minimal = false;
             };
             modules = [
@@ -1229,7 +1269,7 @@ The rest of the outputs either define or help define the actual configurations:
   }
 #+end_src
 
-** Topology
+** Topology (nix-topology generated network diagram)
 :PROPERTIES:
 :CUSTOM_ID: h:391e7712-fef3-4f13-a3ed-d36e228166fd
 :END:
@@ -1237,7 +1277,7 @@ The rest of the outputs either define or help define the actual configurations:
 This defines some topology for the [[https://github.com/oddlama/nix-topology][nix-topology]] modole that can not otherwise be parsed from the config (or is global). For example, this is used to define a number of switches, printers and routers. The topology graph is built from left to right, meaning that =nodes.internet = mkInternet { connections = [ (mkConnection "moonside" "wan") ]; };= means that the node =internet= 'initiates' the connection to the node =moonside= (=internet= will be on the left).
 
 Another note concerning [[https://flake.parts/][flake-parts]]:
-  - =perSystem= is a mechanism that tells flake-parts to build the following attribute set for all systems. This replaces the need to handle myself any =system= or =pkgs= variables, this is done by flake-parts.
+  - =perSystem= is a mechanism that tells flake-parts to build the following attribute set for all systems. This replaces the need to handle myself any =system= or =pkgs= variables, this is done by flake-parts. In this case this is needed so that the topology diagram can be built locally.
 
 #+begin_src nix-ts :tangle nix/topology.nix
   { self, inputs, ... }:
@@ -1249,6 +1289,7 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
     perSystem.topology.modules = [
       ({ config, ... }:
         let
+          inherit (self.outputs) globals;
           inherit (config.lib.topology)
             mkInternet
             mkDevice
@@ -1263,95 +1304,89 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
           networks = {
             home-lan = {
               name = "Home LAN";
-              cidrv4 = "192.168.1.0/24";
+              inherit (globals.networks.home-lan) cidrv4;
+            };
+            fritz-wg = {
+              name = "Wireguard Tunnel for Fritzbox net access";
+              inherit (globals.networks.twothreetunnel-wg) cidrv4;
             };
             wg = {
-              name = "Wireguard Tunnel";
-              cidrv4 = "192.168.3.0/24";
+              name = "Wireguard Tunnel for proxy access";
+              inherit (globals.networks.twothreetunnel-wg) cidrv4;
             };
           };
 
           nodes = {
             internet = mkInternet {
               connections = [
+                (mkConnection "fritzbox" "dsl")
                 (mkConnection "moonside" "wan")
-                (mkConnection "pfsense" "wan")
-                (mkConnection "milkywell" "wan")
+                (mkConnection "belchsfactory" "wan")
+                (mkConnection "twothreetunnel" "wan")
+                (mkConnection "stoicclub" "wan")
+                (mkConnection "liliputsteps" "wan")
+                (mkConnection "eagleland" "wan")
                 (mkConnection "magicant" "wifi")
                 (mkConnection "toto" "bootstrapper")
                 (mkConnection "hotel" "demo host")
               ];
             };
 
-            hotel.interfaces."demo host" = { };
-            toto.interfaces."bootstrapper" = { };
-            milkywell.interfaces.wan = { };
-            moonside.interfaces.wan = { };
 
-            pfsense = mkRouter "pfSense" {
-              info = "HUNSN RM02";
+            fritzbox = mkRouter "FRITZ!Box" {
+              info = "FRITZ!Box 7682";
               image = "${self}/files/topology-images/hunsn.png";
               interfaceGroups = [
                 [
+                  "eth1"
                   "eth2"
                   "eth3"
-                  "eth4"
-                  "eth5"
-                  "eth6"
+                  "eth-wan"
+                  "wifi"
                 ]
-                [ "wan" ]
+                [ "dsl" ]
               ];
-              interfaces.wg = {
-                addresses = [ "192.168.3.1" ];
-                network = "wg";
-                virtual = true;
-                type = "wireguard";
-              };
 
               connections = {
-                eth2 = mkConnection "switch-livingroom" "eth1";
-                eth4 = mkConnection "winters" "eth1";
-                eth3 = mkConnection "switch-bedroom" "eth1";
-                eth6 = mkConnection "wifi-ap" "eth1";
-                wg = mkConnection "moonside" "wg";
+                eth1 = mkConnection "winters" "eth1";
+                eth2 = mkConnection "switch-bedroom" "eth1";
+                eth3 = mkConnection "switch-livingroom" "eth1";
+                eth-wan = mkConnection "hintbooth" "eth6";
+                wgPyramid = mkConnection "pyramid" "fritz-wg";
+                wgMagicant = mkConnection "magicant" "fritz-wg";
+                wifiPyramid = mkConnection "pyramid" "wifi";
+                wifiMagicant = mkConnection "magicant" "wifi";
+                wifiBakery = mkConnection "bakery" "wifi";
+                wifiMachpizza = mkConnection "machpizza" "wifi";
               };
               interfaces = {
+                eth1 = {
+                  addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
+                  network = "home-lan";
+                };
                 eth2 = {
-                  addresses = [ "192.168.1.1" ];
+                  addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                   network = "home-lan";
                 };
                 eth3 = {
-                  addresses = [ "192.168.1.1" ];
+                  addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                   network = "home-lan";
                 };
-                eth4 = {
-                  addresses = [ "192.168.1.1" ];
+                eth-wan = {
+                  addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                   network = "home-lan";
                 };
-                eth6 = {
-                  addresses = [ "192.168.1.1" ];
+                wifi = {
+                  addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
+                  virtual = true;
                   network = "home-lan";
                 };
-              };
-            };
-
-            winters.interfaces."eth1" = { };
-            bakery.interfaces = {
-              "eth1" = { };
-              "wifi" = { };
-            };
-
-            wifi-ap = mkSwitch "Wi-Fi AP" {
-              info = "Huawei";
-              image = "${self}/files/topology-images/huawei.png";
-              interfaceGroups = [
-                [
-                  "eth1"
-                  "wifi"
-                ]
-              ];
-              connections = {
-                wifi = mkConnection "bakery" "wifi";
+                fritz-wg = {
+                  addresses = [ globals.networks.fritz-wg.hosts.fritzbox.ipv4 ];
+                  network = "wg";
+                  virtual = true;
+                  type = "wireguard";
+                };
               };
             };
 
@@ -1377,33 +1412,6 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
               };
             };
 
-            nswitch = mkDevice "Nintendo Switch" {
-              info = "Nintendo Switch";
-              image = "${self}/files/topology-images/nintendo-switch.png";
-              interfaces.eth1 = { };
-            };
-
-            magicant = mkDevice "magicant" {
-              icon = "${self}/files/topology-images/phone.png";
-              info = "Samsung Z Flip 6";
-              image = "${self}/files/topology-images/zflip6.png";
-              interfaces.wifi = { };
-            };
-
-            machpizza = mkDevice "machpizza" {
-              info = "MacBook Pro 2016";
-              icon = "${self}/files/topology-images/mac.png";
-              interfaces."eth1" = { };
-            };
-
-            pc = mkDevice "Windows Gaming Server" {
-              info = "i7-4790k, GTX970, 32GB RAM";
-              image = "${self}/files/topology-images/pc.png";
-              interfaces.eth1 = { };
-            };
-
-            pyramid.interfaces.eth1 = { };
-
             switch-bedroom = mkSwitch "Switch Bedroom" {
               info = "TL-SG1005D";
               image = "${self}/files/topology-images/TL-SG1005D.png";
@@ -1418,6 +1426,37 @@ Another note concerning [[https://flake.parts/][flake-parts]]:
               ];
               connections.eth2 = mkConnection "printer" "eth1";
               connections.eth3 = mkConnection "machpizza" "eth1";
+            };
+
+            nswitch = mkDevice "Nintendo Switch" {
+              info = "Nintendo Switch";
+              image = "${self}/files/topology-images/nintendo-switch.png";
+              interfaces.eth1 = { };
+            };
+
+            magicant = mkDevice "magicant" {
+              icon = "${self}/files/topology-images/phone.png";
+              info = "Samsung Z Flip 6";
+              image = "${self}/files/topology-images/zflip6.png";
+              interfaces = {
+                wifi = { };
+                fritz-wg = { };
+              };
+            };
+
+            machpizza = mkDevice "machpizza" {
+              info = "MacBook Pro 2016";
+              icon = "${self}/files/topology-images/mac.png";
+              interfaces = {
+                eth1 = { };
+                wifi = { };
+              };
+            };
+
+            pc = mkDevice "Windows Gaming Server" {
+              info = "i7-4790k, GTX970, 32GB RAM";
+              image = "${self}/files/topology-images/pc.png";
+              interfaces.eth1 = { };
             };
 
             printer = mkDevice "Printer" {
@@ -1445,7 +1484,7 @@ This file defines a number of checks that can either be run by calling =nix flak
 
 The devshell also provides a number of useful shorthand commands, as well as a 'safe' version of nixpkgs that I can use to rebuild from in case a version bump in nixpkgs suddenly breaks [[https://github.com/shlevy/nix-plugins][nix-plugins]].
 
-Lastly, in the =perSystem= attribute set, we see that it is actually passed some values here. These expose to the scoped expressions the enclosed values, which makes it possible to still reference e.g. =system= and =pkgs= even when they are actually handled by flake-parts.
+Aside from the =default= devShell which is the one that should usually be called interactively, I also define a =deploy= devshell: this one compiles nix-plugins against an earlier version of nix, which is needed so that the version nixos-anywhere that I am using works. However, that version is a little annoying since it had a bug in nix-plugins that is here fixed using a patch file. I guess it also serves as another fallback should problems with the current nix-plugins version arise.
 
 #+begin_src nix-ts :tangle nix/devshell.nix
   { self, inputs, ... }:
@@ -1683,7 +1722,9 @@ Otherwise, I define the function =mkTemplates= here which builds a named attribu
 :CUSTOM_ID: h:5fce36ae-715d-42d3-9ad4-46137d85083f
 :END:
 
-Defines a formatter that can be called using =nix flake format=. While a nice utility, I have stronger tools to perform this job.
+Defines a formatter that can be called using =nix fmt=.
+
+Usually all formatting in this repo is done automatically while editing in emacs. However, it is nice to have a backup formatter to rely on and treefmt is extermely nice to work with, as it allows setting formatters for all kinds of aspects of the flake.
 
 #+begin_src nix-ts :tangle nix/formatter.nix
       { inputs, ... }:
@@ -1693,7 +1734,6 @@ Defines a formatter that can be called using =nix flake format=. While a nice ut
         ];
 
         perSystem = { pkgs, ... }: {
-          # formatter = pkgs.nixpkgs-fmt;
           # formatter is set by treefmt to:
           # formatter = lib.mkIf config.treefmt.flakeFormatter (lib.mkDefault config.treefmt.build.wrapper);
           treefmt = {
@@ -1732,16 +1772,16 @@ Defines a formatter that can be called using =nix flake format=. While a nice ut
       }
 
 #+end_src
-** TODO Modules
+** Modules
 :PROPERTIES:
 :CUSTOM_ID: h:e8eb0617-3441-421d-9b44-716ed40159ab
 :END:
 
-This exposes all of my modular configuration as modules. Other people can use them in their flake using =imports = [ inputs.<name>.nixosModules ];=. Per default, this enables some mechanisms like config sharing between nodes and the globals system. TODO: make it so that nothing is enabled upon initial import.
+This exposes all of my modular configuration as modules. Other people can use them in their flake using =imports = [ inputs.<name>.nixosModules ];=. Per default, this enables some mechanisms like config sharing between nodes and the globals system.
 
 =nixosModules= is a `defined` flake output, where external tools might expect some sort of structure; hence, I call the default output =default=, which will, in many cases, allow the user to just reference to the flake itself (which will then use =nixosModules.default= automatically.
 
-=homeModules= on the other hand is not standardized in this way (for example, many flakes refere to =homeManagerModules= instead); in order not to unnecessarily break things, I leave it as is.
+=homeModules= on the other hand is not standardized in this way (for example, many flakes refer to =homeManagerModules= instead); in order not to unnecessarily break things, I leave it as is.
 
 #+begin_src nix-ts :tangle nix/modules.nix
   { self, ... }:
@@ -1808,7 +1848,7 @@ This defines some apps; they differ from normal packages in that they can be cal
 
 In this section I define packages that I manually add to nixpkgs, or that I want to use in a modified way. This can be useful for packages that are currently awaiting a PR or public packages that I do not want to maintain.
 
-As such, I also define three additional overlays:
+As such, I also define three additional local overlays:
 
 1) =additions=
    These are for the aforementioned added packages.
@@ -1818,12 +1858,10 @@ As such, I also define three additional overlays:
 3) =nixpkgs-stable-versions=
    These are simply mirrors of other branches of nixpkgs (mostly past stable branches). Useful for packages that are broken on nixpkgs, but do not need to be on bleeding edge anyways. Automatically fetches all inputs names =nixpkgs-<suffix>= and adds them under the name in =<suffix>=.
 
-Also, this is where I define all of my own modules. These are mostly used for setting some host-specifics directly than opposed to through multiple options.
-
-Lastly, I add some of my own library functions to be used alongside the functions provided by =nixpkgs= and =home-manager=.
+As part of the modifications, I add some of my own library functions to be used alongside the functions provided by =nixpkgs= and =home-manager=.
 
 On the structure of overlays: as you notice, all of the attributes within overlays are functions which take =final= and =prev= as arguments. This is a convention (sometimes you also see =super= instead of =final=) that aims to tell you that =final= represents the =pkgs= set after it has gone over all modifications, while =prev= is the =pkgs= set before the current modification.
-  - So, in =additions=, the =final= set is the same as in =modifications=, but their =prev= sets might differ (in this case, I believe they will be the same since all modifications are done at the same step). #TODO: fact check
+  - So, in =additions=, the =final= set is the same as in =modifications=, but their =prev= sets might differ (in this case, I believe they will be the same since all modifications are done at the same step).
   - This starts to make a difference when you use multiple overlays and have one overlay depend on the modifications in another overlay.
 
 - The =_= argument is used like in a number of other programing languages and signals that the argument is never actually used in the function.
@@ -1927,16 +1965,16 @@ On the structure of overlays: as you notice, all of the attributes within overla
       };
   }
 #+end_src
-** Installer iso
+** Installer images (iso, kexec)
 :PROPERTIES:
 :CUSTOM_ID: h:1d1ccae5-62ca-4d37-a28e-c59987850ed2
 :END:
 
-This sections makes use of [[https://github.com/nix-community/nixos-generators][nixos-generators]] in order to easily allow me to build a live ISO of my installer system. It can be built using =nix build --print-out-paths --no-link <flake path>#images.<target-system>.live-iso=, and can then be copied to a USB drive using, for example, =dd=.
+This sections makes use of [[https://github.com/nix-community/nixos-generators][nixos-generators]] in order to easily allow me to build a live ISO of my installer system. It can be built using =nix build --print-out-paths --no-link <flake path>#live-iso=, and can then be copied to a USB drive using, for example, =dd=.
+
+In a similar way, =nix build --print-out-paths --no-link <flake-path>.#pnap-kexec --system <system>= will build the kexec tarball that I need when using disko to deploy to a low-RAM systems.
 
 This is an improvement to what I did earlier, where I did not use =nixos-generators= but instead manually imported the needed modules to make this configration into a bootable USB image. Now, I can just write this in the same way that I would to write any other configuration.
-
-- =perSystem= is again a =flake-parts= construct.
 
 #+begin_src nix-ts :tangle nix/iso.nix
   { self, inputs, ... }:
@@ -1982,7 +2020,7 @@ When using tools like (the builtin) =nixos-rebuild= or =nixos-anywhere=, these t
 
 When I define my configurations, I am actually defining two versions for each actual system:
   - One 'regular' config that should be used by all rebuild tools such as =nixos-rebuild=
-  - One 'minimal' config that should be used by =nixos=anywhere= during initial deployment of a system
+  - One 'minimal' config that should be used by =nixos-anywhere= during initial deployment of a system
 
 Now, I could of course define a =<name>= and =<name>-minimal= attribute for each configuration and just put these under =nixosConfigurations=, but that would have several drawbacks:
   - evaluation time would increase
@@ -1993,7 +2031,7 @@ Hence, what I instead do is to define another output =nixosConfigurationsMinimal
 
 #+begin_src nix-ts :tangle install/flake.nix
   {
-    description = "Minimal installer flake - not to be used manually";
+    description = "Minimal installer flake - automatically generated by SwarselSystems.org";
 
     inputs.swarsel.url = "./..";
 
@@ -2265,6 +2303,14 @@ My work machine. Built for more security, this is the gold standard of my config
 
     ];
 
+    topology.self = {
+      interfaces = {
+        "eth1" = { };
+        "wifi" = { };
+        "fritz-wg" = { };
+      };
+    };
+
     swarselsystems = {
       lowResolution = "1280x800";
       highResolution = "2560x1600";
@@ -2516,6 +2562,11 @@ My personal laptop. Closely follows the =pyramid= config, but leaves out some se
 
     ];
 
+    topology.self.interfaces = {
+      "eth1" = { };
+      "wifi" = { };
+    };
+
     swarselsystems = {
       isLaptop = true;
       isNixos = true;
@@ -2740,7 +2791,10 @@ This is my main server that I run at home. It handles most tasks that require bi
       ./hardware-configuration.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
+
+    topology.self.interfaces."eth1" = { };
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -2906,6 +2960,13 @@ This is my main server that I run at home. It handles most tasks that require bi
 
       "${self}/modules/nixos/optional/microvm-host.nix"
     ];
+
+    topology.self = {
+      interfaces = {
+        "eth1" = { };
+        "eth2" = { };
+      };
+    };
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -3185,6 +3246,17 @@ This is my main server that I run at home. It handles most tasks that require bi
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
     ];
+
+    topology.self = {
+      interfaces = {
+        "eth1" = { };
+        "eth2" = { };
+        "eth3" = { };
+        "eth4" = { };
+        "eth5" = { };
+        "eth6" = { };
+      };
+    };
 
     swarselsystems = {
       info = "HUNSN RM02, 8GB RAM";
@@ -3541,17 +3613,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
-
-    topology.self = {
-      icon = "devices.cloud-server";
-      interfaces.wg = {
-        addresses = [ "192.168.3.4" ];
-        renderer.hidePhysicalConnections = true;
-        virtual = true;
-        type = "wireguard";
-      };
-    };
 
     system.stateVersion = "23.11";
 
@@ -3825,6 +3888,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
 
     node.lockFromBootstrapping = lib.mkForce false;
@@ -4038,8 +4102,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 **** Stoicclub (OCI)
+:PROPERTIES:
+:CUSTOM_ID: h:1888ded8-69dc-431f-bb39-5089a8e8b1f4
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:0fe53305-52c3-4cc3-81fe-33408070165e
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/default.nix
   { self, lib, minimal, ... }:
@@ -4085,6 +4155,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:0430a228-87ca-4511-89cf-0f9540bb99ba
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -4104,6 +4177,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:1638acbc-b651-4ddb-8498-f85aa67762f0
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/stoicclub/disk-config.nix
   { lib, pkgs, config, ... }:
@@ -4230,8 +4306,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 **** Liliputsteps (OCI)
+:PROPERTIES:
+:CUSTOM_ID: h:a6baab45-b608-4289-bc92-4454bb0856c6
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:b58a57d9-7986-489e-a5e8-3ec4c2924b45
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/liliputsteps/default.nix
   { self, lib, minimal, ... }:
@@ -4241,6 +4323,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
 
     topology.self = {
@@ -4279,6 +4362,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:aa85497a-7ebd-4532-b585-0bbcc9b3b269
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/liliputsteps/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -4298,6 +4384,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:496fc493-219e-4916-a66f-6345eea95917
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/liliputsteps/disk-config.nix
   { lib, pkgs, config, ... }:
@@ -4424,8 +4513,14 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 **** Twothreetunnel (OCI)
+:PROPERTIES:
+:CUSTOM_ID: h:19300583-322b-4e0b-b657-857fbf23dfa1
+:END:
 
 ***** Main Configuration
+:PROPERTIES:
+:CUSTOM_ID: h:7e66d04d-55c7-4195-b1ee-a013dac26217
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/default.nix
   { self, lib, minimal, ... }:
@@ -4435,6 +4530,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
 
     topology.self = {
@@ -4482,6 +4578,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
 #+end_src
 ***** hardware-configuration
+:PROPERTIES:
+:CUSTOM_ID: h:3424e7fc-3d73-4442-9fb7-cf6921785764
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/hardware-configuration.nix
   { lib, modulesPath, ... }:
@@ -4501,6 +4600,9 @@ This machine mainly acts as my proxy server to stand before my local machines.
   }
 #+end_src
 ***** disko
+:PROPERTIES:
+:CUSTOM_ID: h:cf827191-9a24-46a3-b4a5-e4225412a2c7
+:END:
 
 #+begin_src nix-ts :tangle hosts/nixos/aarch64-linux/twothreetunnel/disk-config.nix
   { lib, pkgs, config, ... }:
@@ -4644,6 +4746,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       ./disk-config.nix
 
       "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+      "${self}/modules/nixos/optional/nix-topology-self.nix"
     ];
 
     topology.self = {
@@ -4858,6 +4961,8 @@ This is a slim setup for developing base configuration. I do not track the hardw
       ./disk-config.nix
       ./hardware-configuration.nix
     ];
+
+    topology.self.interfaces."bootstrapper" = { };
 
     networking = {
       hostName = "toto";
@@ -5349,6 +5454,8 @@ I also set the =WLR_RENDERER_ALLOW_SOFTWARE=1= to allow this configuration to ru
     environment.variables = {
       WLR_RENDERER_ALLOW_SOFTWARE = 1;
     };
+
+    topology.self.interfaces."demo host" = { };
 
     services.qemuGuest.enable = true;
 
@@ -7230,6 +7337,9 @@ I use sops-nix to handle secrets that I want to have available on my machines at
 #+end_src
 
 **** Remote building
+:PROPERTIES:
+:CUSTOM_ID: h:43aa6c7e-ef6a-4907-9d22-3e6fb5ba4c08
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/client/remotebuild.nix
   { lib, config, globals, ... }:
@@ -8639,6 +8749,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+end_src
 
 **** Bastion
+:PROPERTIES:
+:CUSTOM_ID: h:d858c65c-4ca8-4ee5-971b-1a4aa4ccaa57
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/bastion.nix
   { self, lib, config, ... }:
@@ -8711,6 +8824,9 @@ Here I am forcing =startWhenNeeded= to false so that the value will not be set t
 #+end_src
 
 **** ssh builder config
+:PROPERTIES:
+:CUSTOM_ID: h:24eca48d-715f-4459-b7cd-8c3e74fd93a4
+:END:
 
 Restricts access to the system by the nix build user as per https://discourse.nixos.org/t/wrapper-to-restrict-builder-access-through-ssh-worth-upstreaming/25834.
 
@@ -8956,6 +9072,9 @@ lspci -k -d 14c3:0616
 #+end_src
 
 **** Wireguard
+:PROPERTIES:
+:CUSTOM_ID: h:8cf0018d-00ba-4616-87d9-f91c614face9
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/wireguard.nix
   { self, lib, pkgs, config, confLib, nodes, globals, ... }:
@@ -9136,6 +9255,9 @@ lspci -k -d 14c3:0616
 #+end_src
 
 **** BTRFS
+:PROPERTIES:
+:CUSTOM_ID: h:475b0892-bdbd-4aa2-b68e-86a037f27b04
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/btrfs.nix
   { lib, config, ... }:
@@ -13721,6 +13843,9 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
   }
 #+end_src
 **** Set host domain for dns
+:PROPERTIES:
+:CUSTOM_ID: h:d1458f94-64e0-4804-8e92-35b87716e494
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/dns-hostrecord.nix
   { lib, config, globals, dns, confLib, ... }:
@@ -14297,6 +14422,9 @@ $ attic cache create hello
   }
 #+end_src
 **** Hydra
+:PROPERTIES:
+:CUSTOM_ID: h:59f9ba07-8f63-4317-8def-83855a2a2ac1
+:END:
 
 Need to create user manually:
 
@@ -15076,6 +15204,9 @@ When setting up a new machine:
 #+end_src
 
 **** Uni
+:PROPERTIES:
+:CUSTOM_ID: h:a94e9a54-5393-4586-a1c2-34a90030b588
+:END:
 
 #+begin_src nix-ts :tangle modules/nixos/optional/uni.nix :noweb yes
   { self, config, ... }:
@@ -15136,6 +15267,9 @@ Some standard options that should be set vor every microvm guest. We set the def
 #+end_src
 
 **** systemd-networkd (server)
+:PROPERTIES:
+:CUSTOM_ID: h:12370671-7892-4a74-a804-84f871acde06
+:END:
 
 Some standard options that should be set vor every microvm guest. We set the default
 
@@ -15187,6 +15321,27 @@ Some standard options that should be set vor every microvm guest. We set the def
               linkConfig.RequiredForOnline = "routable";
             };
           };
+      };
+    };
+  }
+
+#+end_src
+
+**** nix-topology node config
+
+Hold standard options for nix-topology per config
+
+#+begin_src nix-ts :tangle modules/nixos/optional/nix-topology-self.nix
+  { config, globals, ... }:
+  {
+    topology.self = {
+      icon = lib.mkIf config.swarselsystems.isCloud "devices.cloud-server";
+      interfaces.wan = lib.mkIf config.swarselsystems.isCloud { };
+      interfaces.wg = lib.mkIf (config.swarselsystems.server.wireguard.isClient || config.swarselsystems.server.wireguard.isServer) {
+        addresses = [ globals.networks.twothreetunnel-wg.hosts.${config.node.name}.ipv4 ];
+        renderer.hidePhysicalConnections = true;
+        virtual = true;
+        type = "wireguard";
       };
     };
   }
@@ -22552,6 +22707,9 @@ This script allows for quick git branch switching.
 #+end_src
 
 **** prstatus
+:PROPERTIES:
+:CUSTOM_ID: h:bc5be0e7-2dab-4185-9a52-eb98afe3159f
+:END:
 
 This script allows for quick checking of nixpkgs PR statuses.
 
@@ -31036,7 +31194,9 @@ Here lies defined the readme for GitHub and Forgejo:
 :END:
 
 This sections explains commonly used functions in nix (both builtins as well as in the nixpkgs library).
-** The '//' operator
+
+** Concepts
+*** The '//' operator
 :PROPERTIES:
 :CUSTOM_ID: h:b1fe7a9a-661b-4446-aefa-98373108f8fd
 :END:
@@ -31061,7 +31221,30 @@ Also, this will not merge nested sets:
 
  It only took the latter =b= set, even though the =b2= value was not contested. This functionality is provided by [[#h:2227ba24-e3a1-40ba-8fb8-4cab5210692a][nixpkgs.lib.recursiveUpdate]].
 
-** builtins.listToAttrs
+
+** Builtin functions
+
+The following functions are only base functionality of nix, and not exported to nixpkgs. When using them we need to make sure that the nix version in use is matching the expected function.
+
+*** builtins.readDir
+:PROPERTIES:
+:CUSTOM_ID: h:1fb6ff92-7cc1-4447-8a63-460f24633053
+:END:
+
+=builtins.readDir= reads the name of items of a directory as attributes and their type as values.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'builtins.readDir ./hosts/nixos'
+#+end_src
+
+#+RESULTS:
+: { bakery = "directory"; hotel= "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }
+
+** Builtin functions exported to nixpkgs
+
+These functions exist in nix, but are exported to nixpkgs to make sure they use a nix version that works in the used nixpgks. Most of the times I should prefer to use the nixpkgs version of these.
+
+*** nixpkgs.lib.listToAttrs
 :PROPERTIES:
 :CUSTOM_ID: h:c63cd469-7724-4a05-b932-8843722a00f0
 :END:
@@ -31075,48 +31258,7 @@ builtins.listToAttrs converts a list of name-value pairs into an attribute set.
 #+RESULTS:
 : { bar = 2; foo = 1; }
 
-** builtins.readDir
-:PROPERTIES:
-:CUSTOM_ID: h:1fb6ff92-7cc1-4447-8a63-460f24633053
-:END:
-
-=builtins.readDir= reads the name of items of a directory as attributes and their type as values.
-
-#+begin_src bash :exports both
-  swarsel-instantiate 'builtins.readDir ./hosts/nixos'
-#+end_src
-
-#+RESULTS:
-: { bakery = "directory"; hotel= "directory"; milkywell = "directory"; moonside = "directory"; pyramid = "directory"; toto = "directory"; winters = "directory"; }
-** nixpkgs.lib.recursiveUpdate
-:PROPERTIES:
-:CUSTOM_ID: h:2227ba24-e3a1-40ba-8fb8-4cab5210692a
-:END:
-
-If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= instead of [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]:
-
-#+begin_src bash :exports both
-  swarsel-instantiate 'lib.recursiveUpdate { a = { a1 = 1; a2 = 2; }; b = { b1 = 1; b2 = 2; }; } { b = { b1 = 3; b3 = 4;}; c = 4; }'
-#+end_src
-
-#+RESULTS:
-: { a = { a1 = 1; a2 = 2; }; b = { b1 = 3; b2 = 2; b3 = 4; }; c = 4; }
-
-** nixpkgs.lib.genAttrs
-:PROPERTIES:
-:CUSTOM_ID: h:94690fcb-e039-49da-9bd3-610fa80fa08b
-:END:
-
-=nixpkgs.lib.genAttrs= is used to generate an attribute set (a dictionary-like structure) from a list of keys and a function that computes the values for those keys.
-
-#+begin_src bash :exports both
-  swarsel-instantiate 'lib.genAttrs ["a" "b" "c"] (x: "${x}-value")'
-#+end_src
-
-#+RESULTS:
-: { a = "a-value"; b = "b-value"; c = "c-value"; }
-
-** nixpkgs.lib.attrNames
+*** nixpkgs.lib.attrNames
 :PROPERTIES:
 :CUSTOM_ID: h:0fded8e7-6160-4fcd-a491-42f0debfec52
 :END:
@@ -31130,7 +31272,7 @@ If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= in
 #+RESULTS:
 : [ "a" "b" "c" ]
 
-** nixpkgs.lib.map
+*** nixpkgs.lib.map
 :PROPERTIES:
 :CUSTOM_ID: h:a4f9752a-33a6-4dd4-97ea-ef6bf340bd8e
 :END:
@@ -31144,6 +31286,7 @@ If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= in
 #+RESULTS:
 : [ 2 3 4 ]
 
+
 #+begin_src bash :exports both
   swarsel-instantiate 'lib.map (x: { result = x + 1; }) [1 2 3]'
 #+end_src
@@ -31151,29 +31294,7 @@ If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= in
 #+RESULTS:
 : [ { result = 2; } { result = 3; } { result = 4; } ]
 
-** nixpkgs.lib.mkOverride
-:PROPERTIES:
-:CUSTOM_ID: h:9e81b727-1436-4228-82b1-1edec5c50e06
-:END:
-=nixpkgs.lib.mkOverride= sets the priority of an expression.
-
-If two expression are defined twice accross the configuration, the evaluator does not know which one should take precedence; this will lead to an error. By default, all option definitions are given priority 100. Lower values take precedence over lower values. For reference, here are some commonly used values:
-
-- [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]] sets the priority to 50, which is a very low value, meaning it will be prioritised in nearly all cases
-- [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] sets the priority to 1000, which is a quite high value that will almost never be used if the same attribute is defined elswheer.
-** nixpkgs.lib.mkForce
-:PROPERTIES:
-:CUSTOM_ID: h:16599d68-0ca5-40fa-810e-76b5c739b2b1
-:END:
-
-An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 50).
-** nixpkgs.lib.mkDefault
-:PROPERTIES:
-:CUSTOM_ID: h:41180e6c-2a13-4b46-89b2-791562b4b816
-:END:
-
-An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 1000).
-** nixpkgs.lib.filter
+*** nixpkgs.lib.filter
 :PROPERTIES:
 :CUSTOM_ID: h:38d8aecf-d997-4b50-80a2-c86314b5e67e
 :END:
@@ -31187,7 +31308,220 @@ An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]
 #+RESULTS:
 : [ "b" "c" ]
 
-** nixpkgs.lib.mapAttrsToList
+*** nixpkgs.lib.concatLists
+:PROPERTIES:
+:CUSTOM_ID: h:22264e49-b6d0-4c1f-8d05-2ef1f3da3d54
+:END:
+
+=nixpkgs.lib.concatLists=, as the name suggests, concatenates lists, while keeping the original order of items:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.concatLists  [ [ 1 2 ] [ 3 4 ] [ 5 ] ]'
+#+end_src
+
+#+RESULTS:
+: [ 1 2 3 4 5 ]
+
+*** nixpkgs.lib.genList
+:PROPERTIES:
+:CUSTOM_ID: h:e853e1b7-a078-478d-8192-02f389fe8369
+:END:
+
+=nixpkgs.lib.genList= generates a list from a function:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.genList (i: if i < 16 then 1 else 0) 32'
+#+end_src
+
+#+RESULTS:
+: [ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+
+
+*** nixpkgs.lib.concatStringsSep
+:PROPERTIES:
+:CUSTOM_ID: h:18de50e8-180d-43c7-b651-bb0f38369e85
+:END:
+
+=nixpkgs.lib.concatStringsSep= concatenates a list of strings with a defined separator:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.concatStringsSep "." ["services" "nginx"]'
+#+end_src
+
+#+RESULTS:
+: services.nginx
+
+
+*** nixpkgs.lib.split
+:PROPERTIES:
+:CUSTOM_ID: h:74f83083-d987-4935-a4ec-8b8f4c764779
+:END:
+
+=nixpkgs.lib.split= creates a list containing both the list of regex matches as well as the non-matched strings of a regex pattern:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.split "\\." "sub.about.com"'
+#+end_src
+
+#+RESULTS:
+: [ "sub" [ ] "about" [ ] "com" ]
+
+Another example with regex matches:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.split "(s)." "swarsel"'
+#+end_src
+
+#+RESULTS:
+: [ "" [ "s" ] "ar" [ "s" ] "l" ]
+
+The result list always begins with non-matching patterns, so if the first character is in a match, the first element will be =""=.
+
+*** nixpkgs.lib.tail
+:PROPERTIES:
+:CUSTOM_ID: h:0a53b0f2-438b-4b10-942c-a5d5ecca7e39
+:END:
+
+=nixpkgs.lib.tail= returns a list without its first item:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.tail [ "sub" "about" "com" ]'
+#+end_src
+
+#+RESULTS:
+: [ "about" "com" ]
+
+*** nixpkgs.lib.head
+:PROPERTIES:
+:CUSTOM_ID: h:7cb4c6e7-9b3f-43fc-994e-7f62a3f98572
+:END:
+
+=nixpkgs.lib.tail= returns the first item of a list:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.head [ "sub" "about" "com" ]'
+#+end_src
+
+#+RESULTS:
+: sub
+
+*** nixpkgs.lib.isString
+:PROPERTIES:
+:CUSTOM_ID: h:331d759d-835c-400c-8799-c894cf1d2071
+:END:
+
+=nixpkgs.lib.isString= returns a bool based on if the input evaluates to a string:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.isString [ "1" ]'
+  swarsel-instantiate 'lib.isString "1"'
+#+end_src
+
+#+RESULTS:
+| false |
+| true  |
+
+*** nixpkgs.lib.length
+:PROPERTIES:
+:CUSTOM_ID: h:48183c56-2ddf-4d6f-800a-08282b81252c
+:END:
+
+=nixpkgs.lib.length= returns the length of a list:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.length [ "1" [] ]'
+#+end_src
+
+#+RESULTS:
+: 2
+
+*** nixpkgs.lib.stringLength
+:PROPERTIES:
+:CUSTOM_ID: h:a22ddf24-fd22-4842-af4a-58bfda110998
+:END:
+
+=nixpkgs.lib.stringLength= returns the byte length of a string:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.stringLength "<3"'
+  swarsel-instantiate 'lib.stringLength "❤"'
+  swarsel-instantiate 'lib.stringLength "❤️"'
+#+end_src
+
+#+RESULTS:
+| 2 |
+| 3 |
+| 6 |
+
+*** nixpkgs.lib.subString
+:PROPERTIES:
+:CUSTOM_ID: h:6f73291f-812c-4310-9e17-253e22a6fd74
+:END:
+
+=nixpkgs.lib.substring= returns the substring within the specified range (excluding the end index):
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.substring 0 3 "about"'
+#+end_src
+
+#+RESULTS:
+: abo
+
+** Functions in nixpgks
+
+These functions only exist in nixpkgs and cannot be used in generic nix code.
+
+*** nixpkgs.lib.recursiveUpdate
+:PROPERTIES:
+:CUSTOM_ID: h:2227ba24-e3a1-40ba-8fb8-4cab5210692a
+:END:
+
+If you want to merge nested attribute sets, use =nixpkgs.lib.recursiveUpdate= instead of [[#h:b1fe7a9a-661b-4446-aefa-98373108f8fd][The '//' operator]]:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.recursiveUpdate { a = { a1 = 1; a2 = 2; }; b = { b1 = 1; b2 = 2; }; } { b = { b1 = 3; b3 = 4;}; c = 4; }'
+#+end_src
+
+#+RESULTS:
+: { a = { a1 = 1; a2 = 2; }; b = { b1 = 3; b2 = 2; b3 = 4; }; c = 4; }
+
+*** nixpkgs.lib.genAttrs
+:PROPERTIES:
+:CUSTOM_ID: h:94690fcb-e039-49da-9bd3-610fa80fa08b
+:END:
+
+=nixpkgs.lib.genAttrs= is used to generate an attribute set (a dictionary-like structure) from a list of keys and a function that computes the values for those keys.
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.genAttrs ["a" "b" "c"] (x: "${x}-value")'
+#+end_src
+
+#+RESULTS:
+: { a = "a-value"; b = "b-value"; c = "c-value"; }
+
+*** nixpkgs.lib.mkOverride
+:PROPERTIES:
+:CUSTOM_ID: h:9e81b727-1436-4228-82b1-1edec5c50e06
+:END:
+=nixpkgs.lib.mkOverride= sets the priority of an expression.
+
+If two expression are defined twice accross the configuration, the evaluator does not know which one should take precedence; this will lead to an error. By default, all option definitions are given priority 100. Lower values take precedence over lower values. For reference, here are some commonly used values:
+
+- [[#h:16599d68-0ca5-40fa-810e-76b5c739b2b1][nixpkgs.lib.mkForce]] sets the priority to 50, which is a very low value, meaning it will be prioritised in nearly all cases
+- [[#h:41180e6c-2a13-4b46-89b2-791562b4b816][nixpkgs.lib.mkDefault]] sets the priority to 1000, which is a quite high value that will almost never be used if the same attribute is defined elswheer.
+*** nixpkgs.lib.mkForce
+:PROPERTIES:
+:CUSTOM_ID: h:16599d68-0ca5-40fa-810e-76b5c739b2b1
+:END:
+
+An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 50).
+*** nixpkgs.lib.mkDefault
+:PROPERTIES:
+:CUSTOM_ID: h:41180e6c-2a13-4b46-89b2-791562b4b816
+:END:
+
+An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]] 1000).
+*** nixpkgs.lib.mapAttrsToList
 :PROPERTIES:
 :CUSTOM_ID: h:b9663237-2232-4554-bc81-843be28a707c
 :END:
@@ -31201,7 +31535,7 @@ An alias for ([[#h:9e81b727-1436-4228-82b1-1edec5c50e06][nixpkgs.lib.mkOverride]
 #+RESULTS:
 : [ "a = 1" "b = 2" ]
 
-** nixpkgs.lib.flip
+*** nixpkgs.lib.flip
 :PROPERTIES:
 :CUSTOM_ID: h:21389cc9-fd89-45ca-9836-592f84a45bb4
 :END:
@@ -31225,21 +31559,7 @@ It prints the attributs unchanged, as is to be expected. If, however, we call th
 #+RESULTS:
 : [ "1 = a" "2 = b" ]
 
-** nixpkgs.lib.concatLists
-:PROPERTIES:
-:CUSTOM_ID: h:22264e49-b6d0-4c1f-8d05-2ef1f3da3d54
-:END:
-
-=nixpkgs.lib.concatLists=, as the name suggests, concatenates lists, while keeping the original order of items:
-
-#+begin_src bash :exports both
-  swarsel-instantiate 'lib.concatLists  [ [ 1 2 ] [ 3 4 ] [ 5 ] ]'
-#+end_src
-
-#+RESULTS:
-: [ 1 2 3 4 5 ]
-
-** nixpkgs.lib.mkMerge
+*** nixpkgs.lib.mkMerge
 :PROPERTIES:
 :CUSTOM_ID: h:82c26445-2af4-4a6c-ae91-c804325fdf11
 :END:
@@ -31263,7 +31583,7 @@ It prints the attributs unchanged, as is to be expected. If, however, we call th
 #+RESULTS:
 : { _type = "merge"; contents = [ { a = [ 1 ]; } { a = [ 3 ]; } ]; }
 
-** nixpkgs.lib.foldl
+*** nixpkgs.lib.foldl
 :PROPERTIES:
 :CUSTOM_ID: h:e21d17fb-0c98-42d5-b08f-1c7584afa07f
 :END:
@@ -31285,3 +31605,21 @@ similarly, there exists an version that starts from the right.
 
 #+RESULTS:
 : (1 + (2 + (3 + 0)))
+
+*** nixpkgs.lib.toInt
+:PROPERTIES:
+:CUSTOM_ID: h:4c98ce64-4ee7-4453-b5a7-b8fd142362ca
+:END:
+
+=nixpkgs.lib.toInt= casts a value to an int. Strips spaces:
+
+#+begin_src bash :exports both
+  swarsel-instantiate 'lib.toInt " 3"'
+#+end_src
+
+#+RESULTS:
+: 3
+
+Note that the string cannot be preceded by 0 - =lib.toInt "01"= would yield ==> error: Ambiguity in interpretation of 00024 between octal and zero padded integer.=
+
+*** nixpkgs.lib.mkOption
