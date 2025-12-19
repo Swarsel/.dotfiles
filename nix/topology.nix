@@ -7,6 +7,7 @@
   perSystem.topology.modules = [
     ({ config, ... }:
       let
+        inherit (self.outputs) globals;
         inherit (config.lib.topology)
           mkInternet
           mkDevice
@@ -21,95 +22,89 @@
         networks = {
           home-lan = {
             name = "Home LAN";
-            cidrv4 = "192.168.1.0/24";
+            inherit (globals.networks.home-lan) cidrv4;
+          };
+          fritz-wg = {
+            name = "Wireguard Tunnel for Fritzbox net access";
+            inherit (globals.networks.twothreetunnel-wg) cidrv4;
           };
           wg = {
-            name = "Wireguard Tunnel";
-            cidrv4 = "192.168.3.0/24";
+            name = "Wireguard Tunnel for proxy access";
+            inherit (globals.networks.twothreetunnel-wg) cidrv4;
           };
         };
 
         nodes = {
           internet = mkInternet {
             connections = [
+              (mkConnection "fritzbox" "dsl")
               (mkConnection "moonside" "wan")
-              (mkConnection "pfsense" "wan")
-              (mkConnection "milkywell" "wan")
+              (mkConnection "belchsfactory" "wan")
+              (mkConnection "twothreetunnel" "wan")
+              (mkConnection "stoicclub" "wan")
+              (mkConnection "liliputsteps" "wan")
+              (mkConnection "eagleland" "wan")
               (mkConnection "magicant" "wifi")
               (mkConnection "toto" "bootstrapper")
               (mkConnection "hotel" "demo host")
             ];
           };
 
-          hotel.interfaces."demo host" = { };
-          toto.interfaces."bootstrapper" = { };
-          milkywell.interfaces.wan = { };
-          moonside.interfaces.wan = { };
 
-          pfsense = mkRouter "pfSense" {
-            info = "HUNSN RM02";
+          fritzbox = mkRouter "FRITZ!Box" {
+            info = "FRITZ!Box 7682";
             image = "${self}/files/topology-images/hunsn.png";
             interfaceGroups = [
               [
+                "eth1"
                 "eth2"
                 "eth3"
-                "eth4"
-                "eth5"
-                "eth6"
+                "eth-wan"
+                "wifi"
               ]
-              [ "wan" ]
+              [ "dsl" ]
             ];
-            interfaces.wg = {
-              addresses = [ "192.168.3.1" ];
-              network = "wg";
-              virtual = true;
-              type = "wireguard";
-            };
 
             connections = {
-              eth2 = mkConnection "switch-livingroom" "eth1";
-              eth4 = mkConnection "winters" "eth1";
-              eth3 = mkConnection "switch-bedroom" "eth1";
-              eth6 = mkConnection "wifi-ap" "eth1";
-              wg = mkConnection "moonside" "wg";
+              eth1 = mkConnection "winters" "eth1";
+              eth2 = mkConnection "switch-bedroom" "eth1";
+              eth3 = mkConnection "switch-livingroom" "eth1";
+              eth-wan = mkConnection "hintbooth" "eth6";
+              wgPyramid = mkConnection "pyramid" "fritz-wg";
+              wgMagicant = mkConnection "magicant" "fritz-wg";
+              wifiPyramid = mkConnection "pyramid" "wifi";
+              wifiMagicant = mkConnection "magicant" "wifi";
+              wifiBakery = mkConnection "bakery" "wifi";
+              wifiMachpizza = mkConnection "machpizza" "wifi";
             };
             interfaces = {
+              eth1 = {
+                addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
+                network = "home-lan";
+              };
               eth2 = {
-                addresses = [ "192.168.1.1" ];
+                addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                 network = "home-lan";
               };
               eth3 = {
-                addresses = [ "192.168.1.1" ];
+                addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                 network = "home-lan";
               };
-              eth4 = {
-                addresses = [ "192.168.1.1" ];
+              eth-wan = {
+                addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
                 network = "home-lan";
               };
-              eth6 = {
-                addresses = [ "192.168.1.1" ];
+              wifi = {
+                addresses = [ globals.networks.home-lan.hosts.fritzbox.ipv4 ];
+                virtual = true;
                 network = "home-lan";
               };
-            };
-          };
-
-          winters.interfaces."eth1" = { };
-          bakery.interfaces = {
-            "eth1" = { };
-            "wifi" = { };
-          };
-
-          wifi-ap = mkSwitch "Wi-Fi AP" {
-            info = "Huawei";
-            image = "${self}/files/topology-images/huawei.png";
-            interfaceGroups = [
-              [
-                "eth1"
-                "wifi"
-              ]
-            ];
-            connections = {
-              wifi = mkConnection "bakery" "wifi";
+              fritz-wg = {
+                addresses = [ globals.networks.fritz-wg.hosts.fritzbox.ipv4 ];
+                network = "wg";
+                virtual = true;
+                type = "wireguard";
+              };
             };
           };
 
@@ -135,33 +130,6 @@
             };
           };
 
-          nswitch = mkDevice "Nintendo Switch" {
-            info = "Nintendo Switch";
-            image = "${self}/files/topology-images/nintendo-switch.png";
-            interfaces.eth1 = { };
-          };
-
-          magicant = mkDevice "magicant" {
-            icon = "${self}/files/topology-images/phone.png";
-            info = "Samsung Z Flip 6";
-            image = "${self}/files/topology-images/zflip6.png";
-            interfaces.wifi = { };
-          };
-
-          machpizza = mkDevice "machpizza" {
-            info = "MacBook Pro 2016";
-            icon = "${self}/files/topology-images/mac.png";
-            interfaces."eth1" = { };
-          };
-
-          pc = mkDevice "Windows Gaming Server" {
-            info = "i7-4790k, GTX970, 32GB RAM";
-            image = "${self}/files/topology-images/pc.png";
-            interfaces.eth1 = { };
-          };
-
-          pyramid.interfaces.eth1 = { };
-
           switch-bedroom = mkSwitch "Switch Bedroom" {
             info = "TL-SG1005D";
             image = "${self}/files/topology-images/TL-SG1005D.png";
@@ -176,6 +144,37 @@
             ];
             connections.eth2 = mkConnection "printer" "eth1";
             connections.eth3 = mkConnection "machpizza" "eth1";
+          };
+
+          nswitch = mkDevice "Nintendo Switch" {
+            info = "Nintendo Switch";
+            image = "${self}/files/topology-images/nintendo-switch.png";
+            interfaces.eth1 = { };
+          };
+
+          magicant = mkDevice "magicant" {
+            icon = "${self}/files/topology-images/phone.png";
+            info = "Samsung Z Flip 6";
+            image = "${self}/files/topology-images/zflip6.png";
+            interfaces = {
+              wifi = { };
+              fritz-wg = { };
+            };
+          };
+
+          machpizza = mkDevice "machpizza" {
+            info = "MacBook Pro 2016";
+            icon = "${self}/files/topology-images/mac.png";
+            interfaces = {
+              eth1 = { };
+              wifi = { };
+            };
+          };
+
+          pc = mkDevice "Windows Gaming Server" {
+            info = "i7-4790k, GTX970, 32GB RAM";
+            image = "${self}/files/topology-images/pc.png";
+            interfaces.eth1 = { };
           };
 
           printer = mkDevice "Printer" {

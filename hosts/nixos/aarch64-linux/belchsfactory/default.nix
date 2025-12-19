@@ -5,6 +5,7 @@
     ./disk-config.nix
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+    "${self}/modules/nixos/optional/nix-topology-self.nix"
   ];
 
   node.lockFromBootstrapping = lib.mkForce false;

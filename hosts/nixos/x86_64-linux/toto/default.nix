@@ -6,6 +6,8 @@
     ./hardware-configuration.nix
   ];
 
+  topology.self.interfaces."bootstrapper" = { };
+
   networking = {
     hostName = "toto";
     firewall.enable = false;

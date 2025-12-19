@@ -21,6 +21,14 @@ in
 
   ];
 
+  topology.self = {
+    interfaces = {
+      "eth1" = { };
+      "wifi" = { };
+      "fritz-wg" = { };
+    };
+  };
+
   swarselsystems = {
     lowResolution = "1280x800";
     highResolution = "2560x1600";

@@ -16,6 +16,8 @@ in
     WLR_RENDERER_ALLOW_SOFTWARE = 1;
   };
 
+  topology.self.interfaces."demo host" = { };
+
   services.qemuGuest.enable = true;
 
   boot = {

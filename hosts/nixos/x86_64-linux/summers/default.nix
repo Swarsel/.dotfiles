@@ -8,6 +8,13 @@
     "${self}/modules/nixos/optional/microvm-host.nix"
   ];
 
+  topology.self = {
+    interfaces = {
+      "eth1" = { };
+      "eth2" = { };
+    };
+  };
+
   boot = {
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;

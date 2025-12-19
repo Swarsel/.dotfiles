@@ -8,17 +8,8 @@ in
     ./disk-config.nix
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+    "${self}/modules/nixos/optional/nix-topology-self.nix"
   ];
-
-  topology.self = {
-    icon = "devices.cloud-server";
-    interfaces.wg = {
-      addresses = [ "192.168.3.4" ];
-      renderer.hidePhysicalConnections = true;
-      virtual = true;
-      type = "wireguard";
-    };
-  };
 
   system.stateVersion = "23.11";
 
