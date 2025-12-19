@@ -5,7 +5,6 @@
   ];
 
   perSystem = { pkgs, ... }: {
-    # formatter = pkgs.nixpkgs-fmt;
     # formatter is set by treefmt to:
     # formatter = lib.mkIf config.treefmt.flakeFormatter (lib.mkDefault config.treefmt.build.wrapper);
     treefmt = {
