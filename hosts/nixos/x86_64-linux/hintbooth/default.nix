@@ -8,6 +8,17 @@
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
   ];
 
+  topology.self = {
+    interfaces = {
+      "eth1" = { };
+      "eth2" = { };
+      "eth3" = { };
+      "eth4" = { };
+      "eth5" = { };
+      "eth6" = { };
+    };
+  };
+
   swarselsystems = {
     info = "HUNSN RM02, 8GB RAM";
     flakePath = "/root/.dotfiles";

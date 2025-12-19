@@ -16,6 +16,11 @@ in
 
   ];
 
+  topology.self.interfaces = {
+    "eth1" = { };
+    "wifi" = { };
+  };
+
   swarselsystems = {
     isLaptop = true;
     isNixos = true;

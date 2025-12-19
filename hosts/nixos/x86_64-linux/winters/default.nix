@@ -5,7 +5,10 @@
     ./hardware-configuration.nix
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+    "${self}/modules/nixos/optional/nix-topology-self.nix"
   ];
+
+  topology.self.interfaces."eth1" = { };
 
   boot = {
     loader.systemd-boot.enable = true;
