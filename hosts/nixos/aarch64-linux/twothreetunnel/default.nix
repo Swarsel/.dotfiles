@@ -25,15 +25,17 @@
     isLinux = true;
     isCloud = true;
     server = {
-      wireguard = {
-        ifName = "wg";
-        isServer = true;
-        peers = [
-          "moonside"
-          "winters"
-          "belchsfactory"
-          "eagleland"
-        ];
+      wireguard.interfaces = {
+        wgProxy = {
+          # ifName = "wg";
+          isServer = true;
+          peers = [
+            "moonside"
+            "winters"
+            "belchsfactory"
+            # "eagleland"
+          ];
+        };
       };
     };
   };
