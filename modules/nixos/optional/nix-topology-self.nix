@@ -1,4 +1,4 @@
-{ config, globals, ... }:
+{ lib, config, globals, ... }:
 {
   topology.self = {
     icon = lib.mkIf config.swarselsystems.isCloud "devices.cloud-server";

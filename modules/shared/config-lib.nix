@@ -8,9 +8,9 @@
           config.swarselsystems.proxyHost != config.node.name
         then
           if
-            config.swarselsystems.server.wireguard.isClient
+            config.swarselsystems.server.wireguard.interfaces.wgProxy.isClient
           then
-            globals.networks."${config.swarselsystems.server.wireguard.serverNetConfigPrefix}-wg".hosts.${config.node.name}.ipv4
+            globals.networks."${config.swarselsystems.server.wireguard.interfaces.wgProxy.serverNetConfigPrefix}-wgProxy".hosts.${config.node.name}.ipv4
           else
             globals.networks.${config.swarselsystems.server.netConfigName}.hosts.${config.node.name}.ipv4
         else

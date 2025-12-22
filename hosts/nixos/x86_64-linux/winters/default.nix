@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, lib, minimal, globals, ... }:
 {
 
   imports = [
@@ -15,11 +15,10 @@
     loader.efi.canTouchEfiVariables = true;
   };
 
-  # globals.hosts.${config.node.name}.ipv4 = config.repo.secrets.local.ipv4;
-  # globals.networks.home.hosts.${config.node.name} = {
-  #   ipv4 = config.repo.secrets.local.home-ipv4;
-  #   mac = config.repo.secrets.local.home-mac;
-  # };
+  networking.hosts = {
+    ${globals.networks.home-lan.hosts.hintbooth.ipv4} = [ "server.hintbooth.${globals.domains.main}" ];
+    ${globals.networks.home-lan.hosts.hintbooth.ipv6} = [ "server.hintbooth.${globals.domains.main}" ];
+  };
 
   swarselsystems = {
     info = "ASRock J4105-ITX, 32GB RAM";
@@ -32,9 +31,15 @@
     isNixos = true;
     proxyHost = "twothreetunnel";
     server = {
-      wireguard = {
-        isClient = true;
-        serverName = "twothreetunnel";
+      wireguard.interfaces = {
+        wgProxy = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
+        wgHome = {
+          isClient = true;
+          serverName = "hintbooth";
+        };
       };
       restic = {
         bucketName = "SwarselWinters";

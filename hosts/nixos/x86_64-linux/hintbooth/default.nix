@@ -31,6 +31,16 @@
     rootDisk = "/dev/sda";
     swapSize = "8G";
     networkKernelModules = [ "igb" ];
+    server = {
+      wireguard.interfaces = {
+        wgHome = {
+          isServer = true;
+          peers = [
+            "winters"
+          ];
+        };
+      };
+    };
   };
 
 } // lib.optionalAttrs (!minimal) {
@@ -43,6 +53,7 @@
   swarselmodules = {
     server = {
       nginx = lib.mkForce false; # we get this from the server profile
+      wireguard = true;
     };
   };
 
