@@ -2784,7 +2784,7 @@ This is my main server that I run at home. It handles most tasks that require bi
 :CUSTOM_ID: h:8ad68406-4a75-45ba-97ad-4c310b921124
 :END:
 #+begin_src nix-ts :tangle hosts/nixos/x86_64-linux/winters/default.nix
-  { self, lib, minimal, ... }:
+  { self, lib, minimal, globals, ... }:
   {
 
     imports = [
@@ -6440,7 +6440,7 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-  { config, inputs, lib, ... }:
+  { config, inputs, lib, nodes, ... }:
   let
     # If the given expression is a bare set, it will be wrapped in a function,
     # so that the imported file can always be applied to the inputs, similar to
@@ -6494,7 +6494,7 @@ This is also exposed to home-manager configurations, in case this ever breaks, I
 
         secrets = lib.mkOption {
           readOnly = true;
-          default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
+          default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; }) config.repo.secretFiles;
           type = lib.types.unspecified;
           description = "Exposes the loaded repo secrets. This option is read-only.";
         };

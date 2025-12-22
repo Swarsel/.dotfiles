@@ -1,5 +1,5 @@
 # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-{ config, inputs, lib, ... }:
+{ config, inputs, lib, nodes, ... }:
 let
   # If the given expression is a bare set, it will be wrapped in a function,
   # so that the imported file can always be applied to the inputs, similar to
@@ -53,7 +53,7 @@ in
 
       secrets = lib.mkOption {
         readOnly = true;
-        default = lib.mapAttrs (_: x: importEncrypted x inputs) config.repo.secretFiles;
+        default = lib.mapAttrs (_: x: importEncrypted x { inherit lib nodes inputs; }) config.repo.secretFiles;
         type = lib.types.unspecified;
         description = "Exposes the loaded repo secrets. This option is read-only.";
       };
