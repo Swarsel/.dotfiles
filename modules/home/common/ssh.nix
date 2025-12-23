@@ -18,9 +18,9 @@
           serverAliveCountMax = 3;
           hashKnownHosts = false;
           userKnownHostsFile = "~/.ssh/known_hosts";
-          controlMaster = "auto";
+          controlMaster = "no";
           controlPath = "~/.ssh/master-%r@%n:%p";
-          controlPersist = "5m";
+          controlPersist = "no";
         };
       } // confLib.getConfig.repo.secrets.common.ssh.hosts;
     };

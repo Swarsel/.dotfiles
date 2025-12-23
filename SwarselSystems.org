@@ -6271,7 +6271,6 @@ A breakdown of the flags being set:
                      additions = final: _: import "${self}/pkgs/config" {
                        inherit self config lib;
                        pkgs = final;
-                       nixosConfig = config;
                        homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
                      };
                    in
@@ -9044,6 +9043,11 @@ lspci -k -d 14c3:0616
         "/persist/${hostKeyPathBase}"
       else
         "${hostKeyPathBase}";
+
+    # this key is only used only for ssh to stage 1 in initial provisioning (in nix store)
+    generatedHostKey = pkgs.runCommand "initrd-hostkey" { } ''
+    ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f $out
+    '';
   in
   {
     options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
@@ -9054,15 +9058,15 @@ lspci -k -d 14c3:0616
     config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
 
 
-      system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-        deps = [ "ensureInitrdHostkey" ];
-      };
-      system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
+      # as soon as we hit a stable system, we will use a persisted key
+      # @future me: dont mkIf this to minimal, we need to create this as soon as possible
+      system.activationScripts.ensureInitrdHostkey = {
         text = ''
           [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
         '';
         deps = [
-          "etc"
+          "users"
+          "createPersistentStorageDirs"
         ];
       };
 
@@ -9075,7 +9079,7 @@ lspci -k -d 14c3:0616
           "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
         ];
         initrd = {
-          secrets."${hostKeyPathBase}" = lib.mkIf (!minimal) hostKeyPathBase;
+          secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
           availableKernelModules = config.swarselsystems.networkKernelModules;
           network = {
             enable = true;
@@ -9087,11 +9091,8 @@ lspci -k -d 14c3:0616
                 ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
                 ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
               ];
-              hostKeys = [ hostKeyPathBase ];
+              hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
             };
-            # postCommands = ''
-            #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
-            # '';
           };
           systemd = {
             initrdBin = with pkgs; [
@@ -16107,9 +16108,9 @@ It is very convenient to have SSH aliases in place for machines that I use. This
             serverAliveCountMax = 3;
             hashKnownHosts = false;
             userKnownHostsFile = "~/.ssh/known_hosts";
-            controlMaster = "auto";
+            controlMaster = "no";
             controlPath = "~/.ssh/master-%r@%n:%p";
-            controlPersist = "5m";
+            controlPersist = "no";
           };
         } // confLib.getConfig.repo.secrets.common.ssh.hosts;
       };
@@ -23575,10 +23576,10 @@ This program sets up a new NixOS host remotely. It also takes care of secret man
   mkdir -p "$FLAKE"/hosts/nixos/"$target_arch"/"$target_hostname"
   $scp_cmd root@"$target_destination":/mnt/etc/nixos/hardware-configuration.nix "${git_root}"/hosts/nixos/"$target_arch"/"$target_hostname"/hardware-configuration.nix
   # ------------------------
-  # green "Generating hostkey for ssh initrd"
-  # $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
-  # $ssh_root_cmd "ssh-keygen -t ed25519 -N '' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
-  # $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
+  green "Generating hostkey for ssh initrd"
+  $ssh_root_cmd "mkdir -p $temp/etc/secrets/initrd /etc/secrets/initrd"
+  $ssh_root_cmd "ssh-keygen -t ed25519 -N '' -f $temp/etc/secrets/initrd/ssh_host_ed25519_key"
+  $ssh_root_cmd "cp $temp/etc/secrets/initrd/ssh_host_ed25519_key /etc/secrets/initrd/ssh_host_ed25519_key"
   # ------------------------
 
   green "Deploying minimal NixOS installation on $target_destination"
@@ -24733,12 +24734,12 @@ This script allows for quick git replace of a string.
 :END:
 
 #+begin_src nix-ts :tangle pkgs/config/default.nix
-  { self, homeConfig, lib, pkgs, nixosConfig ? null, ... }:
+  { self, homeConfig, lib, pkgs, config, ... }:
   let
     mkPackages = names: pkgs: builtins.listToAttrs (map
       (name: {
         inherit name;
-        value = pkgs.callPackage "${self}/pkgs/config/${name}" { inherit self name homeConfig nixosConfig; };
+        value = pkgs.callPackage "${self}/pkgs/config/${name}" { inherit self name homeConfig config; };
       })
       names);
     packageNames = lib.swarselsystems.readNix "pkgs/config";
@@ -24775,11 +24776,11 @@ This script allows for quick git replace of a string.
 This script quickly lists all nix generatinos on the system
 
 #+begin_src nix-ts :tangle pkgs/config/swarsel-gens/default.nix
-  { name, writeShellApplication, nixosConfig, ... }:
+  { name, writeShellApplication, config, ... }:
 
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ nixosConfig.nix.package ];
+    runtimeInputs = [ config.nix.package ];
     text = ''
       sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
     '';
@@ -24793,11 +24794,11 @@ This script quickly lists all nix generatinos on the system
 This script quickly switches to another nix generation.
 
 #+begin_src nix-ts :tangle pkgs/config/swarsel-switch/default.nix
-  { name, writeShellApplication, nixosConfig, ... }:
+  { name, writeShellApplication, config, ... }:
 
   writeShellApplication {
     inherit name;
-    runtimeInputs = [ nixosConfig.nix.package ];
+    runtimeInputs = [ config.nix.package ];
     text = ''
       sudo nix-env --switch-generation "$1" -p /nix/var/nix/profiles/system && sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
     '';

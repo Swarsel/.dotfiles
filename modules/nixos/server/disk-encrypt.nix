@@ -10,6 +10,11 @@ let
       "/persist/${hostKeyPathBase}"
     else
       "${hostKeyPathBase}";
+
+  # this key is only used only for ssh to stage 1 in initial provisioning (in nix store)
+  generatedHostKey = pkgs.runCommand "initrd-hostkey" { } ''
+    ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f $out
+  '';
 in
 {
   options.swarselmodules.server.diskEncryption = lib.mkEnableOption "enable disk encryption config";
@@ -20,15 +25,15 @@ in
   config = lib.mkIf (config.swarselmodules.server.diskEncryption && config.swarselsystems.isCrypted) {
 
 
-    system.activationScripts."createPersistentStorageDirs" = lib.mkIf config.swarselsystems.isImpermanence {
-      deps = [ "ensureInitrdHostkey" ];
-    };
-    system.activationScripts.ensureInitrdHostkey = lib.mkIf (config.swarselprofiles.server || minimal) {
+    # as soon as we hit a stable system, we will use a persisted key
+    # @future me: dont mkIf this to minimal, we need to create this as soon as possible
+    system.activationScripts.ensureInitrdHostkey = {
       text = ''
         [[ -e ${hostKeyPath} ]] || ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f ${hostKeyPath}
       '';
       deps = [
-        "etc"
+        "users"
+        "createPersistentStorageDirs"
       ];
     };
 
@@ -41,7 +46,7 @@ in
         "ip=${localIp}::${gatewayIp}:${subnetMask}:${config.networking.hostName}::none"
       ];
       initrd = {
-        secrets."${hostKeyPathBase}" = lib.mkIf (!minimal) hostKeyPathBase;
+        secrets."/tmp${hostKeyPathBase}" = if minimal then (lib.mkForce generatedHostKey) else (lib.mkForce hostKeyPath); # need to mkForce this or it behaves stateful
         availableKernelModules = config.swarselsystems.networkKernelModules;
         network = {
           enable = true;
@@ -53,11 +58,8 @@ in
               ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/yubikey.pub"}''
               ''command="/bin/systemctl default" ${builtins.readFile "${self}/secrets/public/ssh/magicant.pub"}''
             ];
-            hostKeys = [ hostKeyPathBase ];
+            hostKeys = [ "/tmp${hostKeyPathBase}" ]; # use a tmp file otherwise persist mount will be unhappy
           };
-          # postCommands = ''
-          #   echo 'cryptsetup-askpass || echo "Unlock was successful; exiting SSH session" && exit 1' >> /root/.profile
-          # '';
         };
         systemd = {
           initrdBin = with pkgs; [
