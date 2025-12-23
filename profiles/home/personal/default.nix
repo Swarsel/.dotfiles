@@ -5,6 +5,7 @@
     swarselmodules = {
       anki = lib.mkDefault true;
       anki-tray = lib.mkDefault true;
+      attic-store-push = lib.mkDefault true;
       atuin = lib.mkDefault true;
       autotiling = lib.mkDefault true;
       batsignal = lib.mkDefault true;

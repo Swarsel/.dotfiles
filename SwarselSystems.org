@@ -8459,10 +8459,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         emacs
         vim
         sops
-        swarsel-deploy
         tmux
         busybox
-        attic-client
+        swarsel-deploy
         swarsel-gens
         swarsel-switch
       ];
@@ -9101,6 +9100,64 @@ lspci -k -d 14c3:0616
           };
         };
       };
+    };
+
+  }
+#+end_src
+
+**** Attic setup
+
+
+#+begin_src nix-ts :tangle modules/nixos/server/attic-setup.nix
+  { lib, config, pkgs, globals, ... }:
+
+  {
+    options.swarselmodules.server.attic-setup = lib.mkEnableOption "enable attic setup";
+    config = lib.mkIf config.swarselmodules.server.attic-setup {
+
+      environment.systemPackages = with pkgs; [
+        attic-client
+      ];
+
+      sops = {
+        secrets = {
+          attic-cache-key = { };
+        };
+        templates = {
+          "attic-env".content = ''
+            DOMAIN=https://${globals.services.attic.domain}
+            TOKEN=${config.sops.placeholder.attic-cache-key}
+          '';
+        };
+      };
+
+      systemd.services.attic-cache-setup = {
+        description = "Ensure attic is authenticated to cache";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          EnvironmentFile = [
+            config.sops.templates.attic-env.path
+          ];
+        };
+        script = let
+          attic = lib.getExe pkgs.attic-client;
+        in ''
+          set -eu
+          if ${attic} cache info ${config.swarselsystems.mainUser} >/dev/null 2>&1; then
+            echo "cache already authenticated"
+            exit 0
+          fi
+          echo "cache not authenticated, attempting login..."
+          ${attic} login ${config.swarselsystems.mainUser} "$DOMAIN" "$TOKEN" --set-default
+          ${attic} use ${config.swarselsystems.mainUser}
+        '';
+
+      };
+
     };
 
   }
@@ -19741,6 +19798,35 @@ Sets up a systemd user service for anki that does not stall the shutdown process
   }
 #+end_src
 
+***** attic store push service
+
+#+begin_src nix-ts :tangle modules/home/common/attic-store-push.nix
+  { lib, config, pkgs, ... }:
+  {
+    options.swarselmodules.attic-store-push = lib.mkEnableOption "enable automatic attic store push";
+    config = lib.mkIf config.swarselmodules.attic-store-push {
+
+      systemd.user.services.attic-store-push = {
+        Unit = {
+          Description = "Attic store pusher";
+          Requires = [ "graphical-session.target" ];
+          After = [ "graphical-session.target" ];
+          PartOf = [ "graphical-session.target" ];
+        };
+
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+
+        Service = {
+          ExecStart = "${lib.getExe pkgs.attic-client} watch-store ${config.swarselsystems.mainUser}:${config.swarselsystems.mainUser}";
+        };
+      };
+    };
+
+  }
+#+end_src
+
 **** Sway
 :PROPERTIES:
 :CUSTOM_ID: h:02df9dfc-d1af-4a37-a7a0-d8da0af96a20
@@ -25011,6 +25097,7 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             diskEncryption = lib.mkDefault true;
             packages = lib.mkDefault true;
             ssh = lib.mkDefault true;
+            attic-setup = lib.mkDefault true;
           };
         };
     };
@@ -25068,6 +25155,7 @@ This holds modules that are to be used on most hosts. These are also the most im
       swarselmodules = {
         anki = lib.mkDefault true;
         anki-tray = lib.mkDefault true;
+        attic-store-push = lib.mkDefault true;
         atuin = lib.mkDefault true;
         autotiling = lib.mkDefault true;
         batsignal = lib.mkDefault true;
