@@ -20,6 +20,7 @@
         diskEncryption = lib.mkDefault true;
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
+        attic-setup = lib.mkDefault true;
       };
     };
   };
