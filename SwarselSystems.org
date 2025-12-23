@@ -6431,12 +6431,30 @@ Setup timezone and locale. I want to use the US layout, but have the rest adapte
   }
 #+end_src
 
-**** PII management
+**** TODO PII management
 :PROPERTIES:
 :CUSTOM_ID: h:82b8ede2-02d8-4c43-8952-7200ebd4dc23
 :END:
 
 This is also exposed to home-manager configurations, in case this ever breaks, I can also go back to importing =nixosConfig= as an attribute in the input attribute set and call the secrets using =nixosConfig.repo.secrets=.
+
+Two modes of operation are supported:
+- loading in a secret as a plain attribute set ={a = 3;}=
+- loading in a function ={ nodes, ...}: {mac = nodes.xxx.interface.mac;}=
+
+Both cases should return the proper values - in the second case the parent set must be passed to the inherit under =options.repo.secrets=.
+
+In general, there are three types of pii file:
+- Per-node secrets: found under the nodes =secretDir= as =pii.nix.enc= (exposed as =config.repo.secrets.local=)
+- Common secrets: found in =secrets/repo/pii.nix.enc= (exposed as =config.repo.secrets.common=)
+- Global definitions of networks and domains: found in =secrets/repo/globals.nix.enc= (not exposed to nodes, but only loaded in in [[#h:af83893d-c0f9-4b45-b816-4849110d41b3][Globals]])
+
+This system, while highly pleasant to work with during everyday use, sometimes has quirks:
+- =nixos-rebuild= cannot be used
+  - this is because we need to call =nix build= in a separate step where [[#h:315e6ef6-27d5-4cd8-85ff-053eabe60ddb][sops-decrypt-and-cache]] will be cached. Once we have a finished build we can switch to that (all of this is handled by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]])
+  - this is a bit cumbersome for hosts that are not supported by [[#h:c3362d4e-d3a8-43e8-9ef7-272b6de0572e][swarsel-deploy]] (currently this is mostly home-manager only configurations). In principal, building their config locally should work without issue, however, sometimes the decrypt step hiccups. In that case I usually resort to scp'ing the decrypted secrets to the host in question using [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]]'s =just secrets= command. After that, the secrets in =/var/tmp/nix-import-encrypted= need to be moved to the correct dir depending on the build user uid (0/root or 1000/swarsel). After that I delete the cached secrets again. TODO: fix this behaviour.
+- the used nix version needs to be kept in sync with the version of nix that nix-plugins is compiled against
+  - currently, this mostly poses an issue when provisioning new hosts - the version of nixos-anywhere that I am using uses nix =2.28.x=, so I wrote a dedicated [[#h:4d0548db-99b2-4e07-b762-6d86fbb26d4c][Devshell (checks)]] (called =deploy=) that is used to set this environment up. This devshell is automatically used by the [[#h:788937cf-8816-466b-8e57-1b695cb50f52][justfile]] command =just bootstrap=.
 
 #+begin_src nix-ts :tangle modules/nixos/common/pii.nix
   # largely based on https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
@@ -9029,6 +9047,12 @@ lspci -k -d 14c3:0616
 |         | Kernel     | driver      | in       | use:   | mt7921e |          |     |         |          |         |         |
 |         | Kernel     | modules:    | mt7921e  |        |         |          |     |         |          |         |         |
 
+A little note about the secrets part:
+
+systemd-initrd provides a lightweight SSH server in form of dropbear - in order to not crash we need to have a hostkey ready in the initrd. I achieve this by generating a hostkey in the build process in casy I am doing an initial install (another way - and safer - would be to push that in [[#h:74db57ae-0bb9-4257-84be-eddbc85130dd][swarsel-bootstrap]] I guess) - this results in the hostkey landing in the nix store. However, I only ever spend like 5 minutes in this state before I rebuild to the full system, where this hostkey is no longer used. This is because upon first activation, we will then run another =ssh-keygen= that will then write to persisted storage. All "unlock" SSH hosts are to be reached over port 2222, and =systemctl default= will be run immediately upon login, which will guide towards attaining a working system (in normal operation, it will simply ask for the password).
+
+I also take some precautions in how I get networking information during stage 1. For the most part, I just use [[#h:12370671-7892-4a74-a804-84f871acde06][systemd-networkd (server)]], however, for hosts in my local network, I take another step to define the network in the =kernelParams=, to make extra sure I can reach it.
+
 #+begin_src nix-ts :tangle modules/nixos/server/disk-encrypt.nix
   { self, pkgs, lib, config, globals, minimal, ... }:
   let
@@ -9107,6 +9131,7 @@ lspci -k -d 14c3:0616
 
 **** Attic setup
 
+By default, attic only provides a cli client to authenticate to caches. I want all my servers to use my main binary cache, which is what I set up here.
 
 #+begin_src nix-ts :tangle modules/nixos/server/attic-setup.nix
   { lib, config, pkgs, globals, ... }:
@@ -9163,10 +9188,24 @@ lspci -k -d 14c3:0616
   }
 #+end_src
 
-**** Wireguard
+**** TODO Wireguard
 :PROPERTIES:
 :CUSTOM_ID: h:8cf0018d-00ba-4616-87d9-f91c614face9
 :END:
+
+I use wireguard for two things:
+- proxying of my services (both internal and external) to my proxy node
+- proxying of my internal services to an internal [[#h:302468d2-106a-41c8-b2bc-9fdc40064a9c][NGINX]] in order to save on bandwidth
+
+At current, this means that I am running two wireguard interfaces - the following configuration allows me to define an arbitrary number of wireguard interfaces that each host can be part of (either as "client" or "server"). All of these connections are really point-to-point. On the client side, I set =persistentKeepalive= unconditionally, which is lazy (and a bit of a security issue). Also, I noticed that I lose 12 bits of MTU somewhere - I would have expected to be able to set MTU 1420, but that does not seem to be the case.  TODO:fix both
+
+In order to define a new wireguard interface, I have to:
+
+- add another <nodeName>-<wgInterfaceName> network to globals
+  - add its members under hosts
+  - add the =wgInterfaceName= together with id to the server nodes local pii
+  - make sure all members have their private keys in their secrets file and their public key under =secrets/public/wg=
+  - make sure that all preshared keys exist in =secrets/repo/wg.yaml= TODO: maybe split wg.yaml into per-interface files with finer-grained acl
 
 #+begin_src nix-ts :tangle modules/nixos/server/wireguard.nix
   { self, lib, pkgs, config, confLib, nodes, globals, ... }:
@@ -19798,7 +19837,9 @@ Sets up a systemd user service for anki that does not stall the shutdown process
   }
 #+end_src
 
-***** attic store push service
+***** TODO attic store push service
+
+Normally, I want to push all nix build artifacts to my main cache automatically, which is realized here. Note that authentication to the cache must be done manually once on client nodes. TODO: fix that
 
 #+begin_src nix-ts :tangle modules/home/common/attic-store-push.nix
   { lib, config, pkgs, ... }:
