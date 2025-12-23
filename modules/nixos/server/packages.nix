@@ -14,6 +14,9 @@
       swarsel-deploy
       tmux
       busybox
+      attic-client
+      swarsel-gens
+      swarsel-switch
     ];
   };
 }

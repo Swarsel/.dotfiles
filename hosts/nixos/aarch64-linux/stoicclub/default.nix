@@ -10,8 +10,6 @@
   topology.self = {
     icon = "devices.cloud-server";
   };
-  swarselmodules.server.nginx = false;
-
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -34,7 +32,6 @@
 
   swarselmodules.server = {
     nsd = true;
-    nginx = false;
     dns-hostrecord = true;
   };
 }

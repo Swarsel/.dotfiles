@@ -52,7 +52,6 @@
 
   swarselmodules = {
     server = {
-      nginx = lib.mkForce false; # we get this from the server profile
       wireguard = true;
     };
   };

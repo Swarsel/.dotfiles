@@ -1,7 +1,5 @@
-{ pkgs, lib, config, globals, ... }:
+{ pkgs, lib, config, ... }:
 let
-  inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
-
   serviceUser = "nginx";
   serviceGroup = serviceUser;
 
@@ -81,40 +79,12 @@ in
     };
   };
   config = lib.mkIf config.swarselmodules.server.nginx {
-    environment.systemPackages = with pkgs; [
-      lego
-    ];
 
-    sops = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
-      secrets = {
-        acme-creds = { format = "json"; key = ""; group = "acme"; sopsFile = config.node.secretsDir + "/acme.json"; mode = "0660"; };
-      };
-      templates."certs.secret".content = ''
-        ACME_DNS_API_BASE = ${dnsBase}
-        ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
-      '';
-    };
-
-    users.groups.acme.members = [ "nginx" ];
-
-    security.acme = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
-      acceptTerms = true;
-      defaults = {
-        inherit dnsProvider;
-        email = dnsMail;
-        environmentFile = "${config.sops.templates."certs.secret".path}";
-        reloadServices = [ "nginx" ];
-        dnsPropagationCheck = true;
-      };
-      certs."${globals.domains.main}" = {
-        domain = "*.${globals.domains.main}";
-      };
-    };
+    swarselmodules.server.acme = lib.mkDefault true;
 
     networking.firewall.allowedTCPPorts = [ 80 443 ];
 
     environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-      directories = [{ directory = "/var/lib/acme"; }];
       files = [ dhParamsPathBase ];
     };
 

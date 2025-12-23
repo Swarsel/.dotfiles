@@ -2858,37 +2858,36 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules.server = {
       diskEncryption = lib.mkForce false;
-      wireguard = lib.mkDefault true;
-      nfs = lib.mkDefault true;
-      nginx = lib.mkDefault true;
-      kavita = lib.mkDefault true;
-      restic = lib.mkDefault true;
-      jellyfin = lib.mkDefault true;
-      navidrome = lib.mkDefault true;
-      spotifyd = lib.mkDefault true;
-      mpd = lib.mkDefault true;
-      postgresql = lib.mkDefault true;
-      matrix = lib.mkDefault true;
-      nextcloud = lib.mkDefault true;
-      immich = lib.mkDefault true;
-      paperless = lib.mkDefault true;
-      transmission = lib.mkDefault true;
-      syncthing = lib.mkDefault true;
-      grafana = lib.mkDefault true;
-      emacs = lib.mkDefault true;
-      freshrss = lib.mkDefault true;
-      jenkins = lib.mkDefault false;
-      kanidm = lib.mkDefault true;
-      firefly-iii = lib.mkDefault true;
-      koillection = lib.mkDefault true;
-      radicale = lib.mkDefault true;
-      atuin = lib.mkDefault true;
-      forgejo = lib.mkDefault true;
-      ankisync = lib.mkDefault true;
-      # snipeit = lib.mkDefault false;
-      homebox = lib.mkDefault true;
-      opkssh = lib.mkDefault true;
-      garage = lib.mkDefault false;
+      nginx = true; # for php stuff
+      acme = false; # cert handled by proxy
+      wireguard = true;
+
+      nfs = true;
+      kavita = true;
+      restic = true;
+      jellyfin = true;
+      navidrome = true;
+      spotifyd = true;
+      mpd = true;
+      postgresql = true;
+      matrix = true;
+      nextcloud = true;
+      immich = true;
+      paperless = true;
+      transmission = true;
+      syncthing = true;
+      grafana = true;
+      emacs = true;
+      freshrss = true;
+      kanidm = true;
+      firefly-iii = true;
+      koillection = true;
+      radicale = true;
+      atuin = true;
+      forgejo = true;
+      ankisync = true;
+      homebox = true;
+      opkssh = true;
     };
 
   }
@@ -2999,10 +2998,6 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselprofiles = {
       server = true;
-    };
-
-    swarselmodules.server = {
-      nginx = lib.mkForce false;
     };
 
     microvm.vms =
@@ -3296,7 +3291,6 @@ This is my main server that I run at home. It handles most tasks that require bi
 
     swarselmodules = {
       server = {
-        nginx = lib.mkForce false; # we get this from the server profile
         wireguard = true;
       };
     };
@@ -3914,7 +3908,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
     topology.self = {
       icon = "devices.cloud-server";
     };
-    swarselmodules.server.nginx = false;
 
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -3963,7 +3956,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
       postgresql = true;
       attic = true;
       garage = true;
-      hydra = true;
+      hydra = false;
       dns-hostrecord = true;
     };
 
@@ -4144,8 +4137,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
     topology.self = {
       icon = "devices.cloud-server";
     };
-    swarselmodules.server.nginx = false;
-
 
     swarselsystems = {
       flakePath = "/root/.dotfiles";
@@ -4168,7 +4159,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
 
     swarselmodules.server = {
       nsd = true;
-      nginx = false;
       dns-hostrecord = true;
     };
   }
@@ -4370,7 +4360,6 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
 
     swarselmodules.server = {
-      nginx = false;
       bastion = true;
       dns-hostrecord = true;
       # ssh = false;
@@ -4578,7 +4567,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
               "moonside"
               "winters"
               "belchsfactory"
-              # "eagleland"
+              "eagleland"
             ];
           };
         };
@@ -4590,8 +4579,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
     };
 
     swarselmodules.server = {
-      nginx = true; # for now
-      oauth2-proxy = true; # for now
+      nginx = true;
+      oauth2-proxy = true;
       dns-hostrecord = true;
       wireguard = true;
     };
@@ -4756,6 +4745,7 @@ This machine mainly acts as my proxy server to stand before my local machines.
 :END:
 
 ***** Main Configuration
+
 :PROPERTIES:
 :CUSTOM_ID: h:96540b9c-1610-45f2-ba19-916051ab5e10
 :END:
@@ -4789,7 +4779,15 @@ This machine mainly acts as my proxy server to stand before my local machines.
       isBtrfs = true;
       isNixos = true;
       isLinux = true;
-      proxyHost = "eagleland";
+      proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
+      server = {
+        wireguard.interfaces = {
+          wgProxy = {
+            isClient = true;
+            serverName = "twothreetunnel";
+          };
+        };
+      };
     };
   } // lib.optionalAttrs (!minimal) {
 
@@ -4797,6 +4795,8 @@ This machine mainly acts as my proxy server to stand before my local machines.
       mailserver = true;
       dns-hostrecord = true;
       postgresql = true;
+      nginx = true;
+      wireguard = true;
     };
 
     swarselprofiles = {
@@ -6271,6 +6271,7 @@ A breakdown of the flags being set:
                      additions = final: _: import "${self}/pkgs/config" {
                        inherit self config lib;
                        pkgs = final;
+                       nixosConfig = config;
                        homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
                      };
                    in
@@ -8440,7 +8441,7 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   }
 #+end_src
 
-**** System Packages
+**** System Packages (Server Programs)
 :PROPERTIES:
 :CUSTOM_ID: h:6f2967d9-7e32-4605-bb5c-5e27770bec0f
 :END:
@@ -8462,6 +8463,9 @@ Here we just define some aliases for rebuilding the system, and we allow some in
         swarsel-deploy
         tmux
         busybox
+        attic-client
+        swarsel-gens
+        swarsel-switch
       ];
     };
   }
@@ -8530,16 +8534,64 @@ Here we just define some aliases for rebuilding the system, and we allow some in
   }
 #+end_src
 
+**** acme
+
+#+begin_src nix-ts :tangle modules/nixos/server/acme.nix
+    { self, pkgs, lib, config, globals, ... }:
+    let
+      inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
+
+      sopsFile = self + "/secrets/nginx/acme.json";
+    in
+    {
+      options.swarselmodules.server.acme = lib.mkEnableOption "enable acme on server";
+      config = lib.mkIf config.swarselmodules.server.acme {
+        environment.systemPackages = with pkgs; [
+          lego
+        ];
+
+        sops = {
+          secrets = {
+            acme-creds = { format = "json"; key = ""; group = "acme"; inherit sopsFile; mode = "0660"; };
+          };
+          templates."certs.secret".content = ''
+            ACME_DNS_API_BASE = ${dnsBase}
+            ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
+          '';
+        };
+
+        users.groups.acme.members = lib.mkIf config.swarselmodules.server.nginx [ "nginx" ];
+
+        security.acme = {
+          acceptTerms = true;
+          defaults = {
+            inherit dnsProvider;
+            email = dnsMail;
+            environmentFile = "${config.sops.templates."certs.secret".path}";
+            reloadServices = [ "nginx" ];
+            dnsPropagationCheck = true;
+          };
+          certs."${globals.domains.main}" = {
+            domain = "*.${globals.domains.main}";
+          };
+        };
+
+        environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
+          directories = [{ directory = "/var/lib/acme"; }];
+        };
+
+      };
+    }
+#+end_src
+
 **** NGINX
 :PROPERTIES:
 :CUSTOM_ID: h:302468d2-106a-41c8-b2bc-9fdc40064a9c
 :END:
 
 #+begin_src nix-ts :tangle modules/nixos/server/nginx.nix
-  { pkgs, lib, config, globals, ... }:
+  { pkgs, lib, config, ... }:
   let
-    inherit (config.repo.secrets.common) dnsProvider dnsBase dnsMail;
-
     serviceUser = "nginx";
     serviceGroup = serviceUser;
 
@@ -8619,40 +8671,12 @@ Here we just define some aliases for rebuilding the system, and we allow some in
       };
     };
     config = lib.mkIf config.swarselmodules.server.nginx {
-      environment.systemPackages = with pkgs; [
-        lego
-      ];
 
-      sops = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
-        secrets = {
-          acme-creds = { format = "json"; key = ""; group = "acme"; sopsFile = config.node.secretsDir + "/acme.json"; mode = "0660"; };
-        };
-        templates."certs.secret".content = ''
-          ACME_DNS_API_BASE = ${dnsBase}
-          ACME_DNS_STORAGE_PATH=${config.sops.secrets.acme-creds.path}
-        '';
-      };
-
-      users.groups.acme.members = [ "nginx" ];
-
-      security.acme = lib.mkIf (config.node.name == config.swarselsystems.proxyHost) {
-        acceptTerms = true;
-        defaults = {
-          inherit dnsProvider;
-          email = dnsMail;
-          environmentFile = "${config.sops.templates."certs.secret".path}";
-          reloadServices = [ "nginx" ];
-          dnsPropagationCheck = true;
-        };
-        certs."${globals.domains.main}" = {
-          domain = "*.${globals.domains.main}";
-        };
-      };
+      swarselmodules.server.acme = lib.mkDefault true;
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
       environment.persistence."/persist" = lib.mkIf config.swarselsystems.isImpermanence {
-        directories = [{ directory = "/var/lib/acme"; }];
         files = [ dhParamsPathBase ];
       };
 
@@ -14041,7 +14065,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     SOA = {
       nameServer = "soa";
       adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-      serial = 2025120506; # update this on changes for secondary dns
+      serial = 2025122204; # update this on changes for secondary dns
     };
 
     useOrigin = false;
@@ -14051,7 +14075,23 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
       "srv"
     ] ++ globals.domains.externalDns;
 
-    CAA = letsEncrypt config.repo.secrets.common.dnsMail;
+    CAA = [
+      {
+        issuerCritical = false;
+        tag = "issue";
+        value = "letsencrypt.org";
+      }
+      {
+        issuerCritical = false;
+        tag = "issuewild";
+        value = "letsencrypt.org";
+      }
+      {
+        issuerCritical = false;
+        tag = "iodef";
+        value = "mailto:${config.repo.secrets.common.dnsMail}";
+      }
+    ];
 
     A = [ config.repo.secrets.local.dns.homepage-ip ];
 
@@ -14204,9 +14244,13 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
   { lib, config, globals, dns, confLib, ... }:
   let
     inherit (config.swarselsystems) sopsFile;
-    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+    inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
     inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
     baseDomain = globals.domains.main;
+
+    roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
+    endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
+    endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
   in
   {
     options = {
@@ -14215,12 +14259,20 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
     config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
       nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+        "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+        "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
       };
 
-      globals.services.${serviceName} = {
-        domain = serviceDomain;
-        inherit proxyAddress4 proxyAddress6;
+      globals.services = {
+        ${serviceName} = {
+          domain = serviceDomain;
+          proxyAddress4 = endpointAddress4;
+          proxyAddress6 = endpointAddress6;
+        };
+        roundcube = {
+          domain = roundcubeDomain;
+          inherit proxyAddress4 proxyAddress6;
+        };
       };
 
       sops.secrets = {
@@ -14286,7 +14338,7 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
         enable = true;
         # this is the url of the vhost, not necessarily the same as the fqdn of
         # the mailserver
-        hostName = serviceDomain;
+        hostName = roundcubeDomain;
         extraConfig = ''
           $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
           $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
@@ -14299,10 +14351,11 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
       # the rest of the ports are managed by snm
       networking.firewall.allowedTCPPorts = [ 80 servicePort ];
 
-      nodes.${serviceProxy}.services.nginx = {
+      services.nginx = {
         virtualHosts = {
-          "${serviceDomain}" = {
-            enableACME = true;
+          "${roundcubeDomain}" = {
+            useACMEHost = globals.domains.main;
+            enableACME = false;
             forceSSL = true;
             acmeRoot = null;
             locations = {
@@ -14310,6 +14363,32 @@ or 2) use classic path addressing =aws s3 cp <local file> s3://<bucket>/<path to
               "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
               "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
               "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+            };
+          };
+        };
+      };
+
+      nodes.${serviceProxy}.services.nginx = {
+        upstreams = {
+          ${serviceName} = {
+            servers = {
+              "${serviceAddress}:${builtins.toString servicePort}" = { };
+            };
+          };
+        };
+        virtualHosts = {
+          "${roundcubeDomain}" = {
+            useACMEHost = globals.domains.main;
+
+            forceSSL = true;
+            acmeRoot = null;
+            locations = {
+              "/" = {
+                proxyPass = "https://${serviceName}";
+                extraConfig = ''
+                  client_max_body_size    0;
+                '';
+              };
             };
           };
         };
@@ -15929,6 +16008,8 @@ This is just a separate container for derivations defined in [[#h:64a5cc16-6b16-
         endme
         git-replace
         prstatus
+        swarsel-gens
+        swarsel-switch
       ];
     };
   }
@@ -24652,12 +24733,12 @@ This script allows for quick git replace of a string.
 :END:
 
 #+begin_src nix-ts :tangle pkgs/config/default.nix
-  { self, homeConfig, lib, pkgs, ... }:
+  { self, homeConfig, lib, pkgs, nixosConfig ? null, ... }:
   let
     mkPackages = names: pkgs: builtins.listToAttrs (map
       (name: {
         inherit name;
-        value = pkgs.callPackage "${self}/pkgs/config/${name}" { inherit self name homeConfig; };
+        value = pkgs.callPackage "${self}/pkgs/config/${name}" { inherit self name homeConfig nixosConfig; };
       })
       names);
     packageNames = lib.swarselsystems.readNix "pkgs/config";
@@ -24683,6 +24764,42 @@ This script allows for quick git replace of a string.
       FLAKE=${homeConfig.home.sessionVariables.FLAKE}
 
       cd "$( (find "$DOCUMENT_DIR_WORK" "$DOCUMENT_DIR_PRIV" -maxdepth 1 && echo "$FLAKE") | fzf )"
+    '';
+  }
+
+
+#+end_src
+
+**** swarsel-gens
+
+This script quickly lists all nix generatinos on the system
+
+#+begin_src nix-ts :tangle pkgs/config/swarsel-gens/default.nix
+  { name, writeShellApplication, nixosConfig, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ nixosConfig.nix.package ];
+    text = ''
+      sudo nix-env --list-generations --profile /nix/var/nix/profiles/system
+    '';
+  }
+
+
+#+end_src
+
+**** swarsel-switch
+
+This script quickly switches to another nix generation.
+
+#+begin_src nix-ts :tangle pkgs/config/swarsel-switch/default.nix
+  { name, writeShellApplication, nixosConfig, ... }:
+
+  writeShellApplication {
+    inherit name;
+    runtimeInputs = [ nixosConfig.nix.package ];
+    text = ''
+      sudo nix-env --switch-generation "$1" -p /nix/var/nix/profiles/system && sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
     '';
   }
 
@@ -24911,7 +25028,6 @@ Modules that need to be loaded on the NixOS level. Note that these will not be a
             diskEncryption = lib.mkDefault true;
             packages = lib.mkDefault true;
             ssh = lib.mkDefault true;
-            nginx = lib.mkDefault true;
           };
         };
     };

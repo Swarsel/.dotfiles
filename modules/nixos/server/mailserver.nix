@@ -1,9 +1,13 @@
 { lib, config, globals, dns, confLib, ... }:
 let
   inherit (config.swarselsystems) sopsFile;
-  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceDomain serviceProxy proxyAddress4 proxyAddress6;
+  inherit (confLib.gen { name = "mailserver"; dir = "/var/lib/dovecot"; user = "virtualMail"; group = "virtualMail"; port = 443; }) serviceName serviceDir servicePort serviceUser serviceGroup serviceAddress serviceDomain serviceProxy proxyAddress4 proxyAddress6;
   inherit (config.repo.secrets.local.mailserver) user1 alias1_1 alias1_2 alias1_3 alias1_4 user2 alias2_1 alias2_2 user3;
   baseDomain = globals.domains.main;
+
+  roundcubeDomain = config.repo.secrets.common.services.domains.roundcube;
+  endpointAddress4 = globals.hosts.${config.node.name}.wanAddress4 or null;
+  endpointAddress6 = globals.hosts.${config.node.name}.wanAddress6 or null;
 in
 {
   options = {
@@ -12,12 +16,20 @@ in
   config = lib.mkIf config.swarselmodules.server.${serviceName} {
 
     nodes.stoicclub.swarselsystems.server.dns.${globals.services.${serviceName}.baseDomain}.subdomainRecords = {
-      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
+      "${globals.services.${serviceName}.subDomain}" = dns.lib.combinators.host endpointAddress4 endpointAddress6;
+      "${globals.services.roundcube.subDomain}" = dns.lib.combinators.host proxyAddress4 proxyAddress6;
     };
 
-    globals.services.${serviceName} = {
-      domain = serviceDomain;
-      inherit proxyAddress4 proxyAddress6;
+    globals.services = {
+      ${serviceName} = {
+        domain = serviceDomain;
+        proxyAddress4 = endpointAddress4;
+        proxyAddress6 = endpointAddress6;
+      };
+      roundcube = {
+        domain = roundcubeDomain;
+        inherit proxyAddress4 proxyAddress6;
+      };
     };
 
     sops.secrets = {
@@ -83,7 +95,7 @@ in
       enable = true;
       # this is the url of the vhost, not necessarily the same as the fqdn of
       # the mailserver
-      hostName = serviceDomain;
+      hostName = roundcubeDomain;
       extraConfig = ''
         $config['imap_host'] = "ssl://${config.mailserver.fqdn}";
         $config['smtp_host'] = "ssl://${config.mailserver.fqdn}";
@@ -96,10 +108,11 @@ in
     # the rest of the ports are managed by snm
     networking.firewall.allowedTCPPorts = [ 80 servicePort ];
 
-    nodes.${serviceProxy}.services.nginx = {
+    services.nginx = {
       virtualHosts = {
-        "${serviceDomain}" = {
-          enableACME = true;
+        "${roundcubeDomain}" = {
+          useACMEHost = globals.domains.main;
+          enableACME = false;
           forceSSL = true;
           acmeRoot = null;
           locations = {
@@ -107,6 +120,32 @@ in
             "~ ^/(SQL|bin|config|logs|temp|vendor)/".recommendedSecurityHeaders = false;
             "~ ^/(CHANGELOG.md|INSTALL|LICENSE|README.md|SECURITY.md|UPGRADING|composer.json|composer.lock)".recommendedSecurityHeaders = false;
             "~* \\.php(/|$)".recommendedSecurityHeaders = false;
+          };
+        };
+      };
+    };
+
+    nodes.${serviceProxy}.services.nginx = {
+      upstreams = {
+        ${serviceName} = {
+          servers = {
+            "${serviceAddress}:${builtins.toString servicePort}" = { };
+          };
+        };
+      };
+      virtualHosts = {
+        "${roundcubeDomain}" = {
+          useACMEHost = globals.domains.main;
+
+          forceSSL = true;
+          acmeRoot = null;
+          locations = {
+            "/" = {
+              proxyPass = "https://${serviceName}";
+              extraConfig = ''
+                client_max_body_size    0;
+              '';
+            };
           };
         };
       };
