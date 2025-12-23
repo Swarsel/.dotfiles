@@ -11,10 +11,9 @@
       emacs
       vim
       sops
-      swarsel-deploy
       tmux
       busybox
-      attic-client
+      swarsel-deploy
       swarsel-gens
       swarsel-switch
     ];
