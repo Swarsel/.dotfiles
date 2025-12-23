@@ -127,6 +127,7 @@ in
                 additions = final: _: import "${self}/pkgs/config" {
                   inherit self config lib;
                   pkgs = final;
+                  nixosConfig = config;
                   homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
                 };
               in

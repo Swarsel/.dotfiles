@@ -72,37 +72,36 @@
 
   swarselmodules.server = {
     diskEncryption = lib.mkForce false;
-    wireguard = lib.mkDefault true;
-    nfs = lib.mkDefault true;
-    nginx = lib.mkDefault true;
-    kavita = lib.mkDefault true;
-    restic = lib.mkDefault true;
-    jellyfin = lib.mkDefault true;
-    navidrome = lib.mkDefault true;
-    spotifyd = lib.mkDefault true;
-    mpd = lib.mkDefault true;
-    postgresql = lib.mkDefault true;
-    matrix = lib.mkDefault true;
-    nextcloud = lib.mkDefault true;
-    immich = lib.mkDefault true;
-    paperless = lib.mkDefault true;
-    transmission = lib.mkDefault true;
-    syncthing = lib.mkDefault true;
-    grafana = lib.mkDefault true;
-    emacs = lib.mkDefault true;
-    freshrss = lib.mkDefault true;
-    jenkins = lib.mkDefault false;
-    kanidm = lib.mkDefault true;
-    firefly-iii = lib.mkDefault true;
-    koillection = lib.mkDefault true;
-    radicale = lib.mkDefault true;
-    atuin = lib.mkDefault true;
-    forgejo = lib.mkDefault true;
-    ankisync = lib.mkDefault true;
-    # snipeit = lib.mkDefault false;
-    homebox = lib.mkDefault true;
-    opkssh = lib.mkDefault true;
-    garage = lib.mkDefault false;
+    nginx = true; # for php stuff
+    acme = false; # cert handled by proxy
+    wireguard = true;
+
+    nfs = true;
+    kavita = true;
+    restic = true;
+    jellyfin = true;
+    navidrome = true;
+    spotifyd = true;
+    mpd = true;
+    postgresql = true;
+    matrix = true;
+    nextcloud = true;
+    immich = true;
+    paperless = true;
+    transmission = true;
+    syncthing = true;
+    grafana = true;
+    emacs = true;
+    freshrss = true;
+    kanidm = true;
+    firefly-iii = true;
+    koillection = true;
+    radicale = true;
+    atuin = true;
+    forgejo = true;
+    ankisync = true;
+    homebox = true;
+    opkssh = true;
   };
 
 }

@@ -43,10 +43,6 @@
     server = true;
   };
 
-  swarselmodules.server = {
-    nginx = lib.mkForce false;
-  };
-
   microvm.vms =
     let
       mkMicrovm = guestName: {

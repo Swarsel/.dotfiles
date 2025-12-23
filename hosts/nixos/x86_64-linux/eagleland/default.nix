@@ -26,7 +26,15 @@
     isBtrfs = true;
     isNixos = true;
     isLinux = true;
-    proxyHost = "eagleland";
+    proxyHost = "twothreetunnel"; # mail shall not be proxied through twothreetunnel
+    server = {
+      wireguard.interfaces = {
+        wgProxy = {
+          isClient = true;
+          serverName = "twothreetunnel";
+        };
+      };
+    };
   };
 } // lib.optionalAttrs (!minimal) {
 
@@ -34,6 +42,8 @@
     mailserver = true;
     dns-hostrecord = true;
     postgresql = true;
+    nginx = true;
+    wireguard = true;
   };
 
   swarselprofiles = {

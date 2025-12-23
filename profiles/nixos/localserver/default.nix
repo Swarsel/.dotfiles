@@ -20,7 +20,6 @@
         diskEncryption = lib.mkDefault true;
         packages = lib.mkDefault true;
         ssh = lib.mkDefault true;
-        nginx = lib.mkDefault true;
       };
     };
   };

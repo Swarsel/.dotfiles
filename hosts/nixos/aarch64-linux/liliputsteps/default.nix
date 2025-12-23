@@ -32,7 +32,6 @@
   };
 
   swarselmodules.server = {
-    nginx = false;
     bastion = true;
     dns-hostrecord = true;
     # ssh = false;

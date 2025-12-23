@@ -33,7 +33,7 @@
             "moonside"
             "winters"
             "belchsfactory"
-            # "eagleland"
+            "eagleland"
           ];
         };
       };
@@ -45,8 +45,8 @@
   };
 
   swarselmodules.server = {
-    nginx = true; # for now
-    oauth2-proxy = true; # for now
+    nginx = true;
+    oauth2-proxy = true;
     dns-hostrecord = true;
     wireguard = true;
   };

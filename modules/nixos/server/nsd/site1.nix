@@ -3,7 +3,7 @@ with dns.lib.combinators; {
   SOA = {
     nameServer = "soa";
     adminEmail = "admin@${globals.domains.main}"; # this option is not parsed as domain (we cannot just write "admin")
-    serial = 2025120506; # update this on changes for secondary dns
+    serial = 2025122204; # update this on changes for secondary dns
   };
 
   useOrigin = false;
@@ -13,7 +13,23 @@ with dns.lib.combinators; {
     "srv"
   ] ++ globals.domains.externalDns;
 
-  CAA = letsEncrypt config.repo.secrets.common.dnsMail;
+  CAA = [
+    {
+      issuerCritical = false;
+      tag = "issue";
+      value = "letsencrypt.org";
+    }
+    {
+      issuerCritical = false;
+      tag = "issuewild";
+      value = "letsencrypt.org";
+    }
+    {
+      issuerCritical = false;
+      tag = "iodef";
+      value = "mailto:${config.repo.secrets.common.dnsMail}";
+    }
+  ];
 
   A = [ config.repo.secrets.local.dns.homepage-ip ];
 

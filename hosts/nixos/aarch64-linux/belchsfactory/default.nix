@@ -13,7 +13,6 @@
   topology.self = {
     icon = "devices.cloud-server";
   };
-  swarselmodules.server.nginx = false;
 
   swarselsystems = {
     flakePath = "/root/.dotfiles";
@@ -62,7 +61,7 @@
     postgresql = true;
     attic = true;
     garage = true;
-    hydra = true;
+    hydra = false;
     dns-hostrecord = true;
   };
 

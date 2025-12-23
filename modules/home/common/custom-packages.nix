@@ -33,6 +33,8 @@
       endme
       git-replace
       prstatus
+      swarsel-gens
+      swarsel-switch
     ];
   };
 }
