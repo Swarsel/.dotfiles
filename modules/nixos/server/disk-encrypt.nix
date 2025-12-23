@@ -65,24 +65,6 @@ in
           initrdBin = with pkgs; [
             cryptsetup
           ];
-          # NOTE: the below does put the text into /root/.profile, but the command will not be run
-          # services = {
-          #   unlock-luks = {
-          #     wantedBy = [ "initrd.target" ];
-          #     after = [ "network.target" ];
-          #     before = [ "systemd-cryptsetup@cryptroot.service" ];
-          #     path = [ "/bin" ];
-
-          #     serviceConfig = {
-          #       Type = "oneshot";
-          #       RemainAfterExit = true;
-          #     };
-
-          #     script = ''
-          #       echo "systemctl default" >> /root/.profile
-          #     '';
-          #   };
-          # };
         };
       };
     };
