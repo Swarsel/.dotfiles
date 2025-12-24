@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, withHomeManager, ... }:
 let
   inherit (config.swarselsystems) mainUser homeDir;
   iwd = config.networking.networkmanager.wifi.backend == "iwd";
@@ -17,12 +17,6 @@ in
     };
   };
   config = {
-
-    home-manager.users."${config.swarselsystems.mainUser}" = {
-      imports = [
-        "${self}/modules/home/optional/work.nix"
-      ];
-    };
 
     sops =
       let
@@ -198,7 +192,7 @@ in
       openssh = {
         enable = true;
         extraConfig = ''
-        '';
+            '';
       };
 
       syncthing = {
@@ -236,6 +230,13 @@ in
     #     ];
     #   };
     # };
+  } // lib.optionalAttrs withHomeManager {
+
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/work.nix"
+      ];
+    };
   };
 
 }

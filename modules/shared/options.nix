@@ -21,9 +21,9 @@
       type = lib.types.bool;
       default = config.swarselsystems.isLaptop;
     };
-    withHomeManager = lib.mkOption {
+    isMicroVM = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
     };
     isSwap = lib.mkOption {
       type = lib.types.bool;

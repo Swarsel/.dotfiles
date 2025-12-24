@@ -1,6 +1,6 @@
-{ self, config, ... }:
+{ self, config, withHomeManager, ... }:
 {
-  config = {
+  config = { } // lib.optionalAttrs withHomeManager {
 
     home-manager.users."${config.swarselsystems.mainUser}" = {
       imports = [

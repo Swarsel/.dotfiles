@@ -7,6 +7,11 @@
         type = lib.types.path;
         default = ./.;
       };
+      configDir = lib.mkOption {
+        description = "Path to the base directory for this node.";
+        type = lib.types.path;
+        default = ./.;
+      };
       name = lib.mkOption {
         type = lib.types.str;
       };

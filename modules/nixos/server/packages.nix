@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, withHomeManager, ... }:
 {
   options.swarselmodules.server.packages = lib.mkEnableOption "enable packages on server";
   config = lib.mkIf config.swarselmodules.server.packages {
@@ -14,6 +14,7 @@
       tmux
       busybox
       swarsel-deploy
+    ] ++ lib.optionals withHomeManager [
       swarsel-gens
       swarsel-switch
     ];

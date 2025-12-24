@@ -1,12 +1,6 @@
-{ self, pkgs, config, ... }:
+{ self, lib, pkgs, config, withHomeManager, ... }:
 {
   config = {
-
-    home-manager.users."${config.swarselsystems.mainUser}" = {
-      imports = [
-        "${self}/modules/home/optional/gaming.nix"
-      ];
-    };
 
     programs.steam = {
       enable = true;
@@ -41,6 +35,12 @@
     #     ];
     #   };
     # };
+  } // lib.optionalAttrs withHomeManager {
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/gaming.nix"
+      ];
+    };
   };
 
 }

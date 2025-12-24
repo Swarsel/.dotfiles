@@ -1,12 +1,7 @@
-{ self, config, ... }:
+{ self, lib, config, withHomeManager, ... }:
 {
   config = {
 
-    home-manager.users."${config.swarselsystems.mainUser}" = {
-      imports = [
-        "${self}/modules/home/optional/framework.nix"
-      ];
-    };
 
     services = {
       fwupd = {
@@ -28,6 +23,12 @@
       config = {
         defaultStrategy = "lazy";
       };
+    };
+  } // lib.optionalAttrs withHomeManager {
+    home-manager.users."${config.swarselsystems.mainUser}" = {
+      imports = [
+        "${self}/modules/home/optional/framework.nix"
+      ];
     };
   };
 }

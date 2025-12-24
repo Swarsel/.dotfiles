@@ -1,4 +1,4 @@
-{ self, lib, minimal, ... }:
+{ self, config, lib, minimal, confLib, ... }:
 {
 
   imports = [
@@ -6,6 +6,7 @@
     ./disk-config.nix
 
     "${self}/modules/nixos/optional/systemd-networkd-server.nix"
+    "${self}/modules/nixos/optional/systemd-networkd-vlan.nix"
   ];
 
   topology.self = {
@@ -31,6 +32,7 @@
     rootDisk = "/dev/sda";
     swapSize = "8G";
     networkKernelModules = [ "igb" ];
+    withMicroVMs = true;
     server = {
       wireguard.interfaces = {
         wgHome = {
@@ -47,7 +49,7 @@
 
   swarselprofiles = {
     server = true;
-    router = false;
+    router = true;
   };
 
   swarselmodules = {
@@ -55,5 +57,10 @@
       wireguard = true;
     };
   };
+
+  guests = lib.mkIf (!minimal && config.swarselsystems.withMicroVMs) (
+    { }
+    // confLib.mkMicrovm "adguardhome"
+  );
 
 }

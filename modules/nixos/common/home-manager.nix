@@ -1,8 +1,8 @@
-{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, ... }:
+{ self, inputs, config, lib, homeLib, outputs, globals, nodes, minimal, configName, arch, type, withHomeManager, ... }:
 {
   options.swarselmodules.home-manager = lib.mkEnableOption "home-manager";
   config = lib.mkIf config.swarselmodules.home-manager {
-    home-manager = lib.mkIf config.swarselsystems.withHomeManager {
+    home-manager = lib.mkIf withHomeManager {
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;

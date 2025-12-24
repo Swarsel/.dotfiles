@@ -1,4 +1,4 @@
-{ self, homeConfig, lib, pkgs, config, ... }:
+{ self, lib, pkgs, config, homeConfig, ... }:
 let
   mkPackages = names: pkgs: builtins.listToAttrs (map
     (name: {

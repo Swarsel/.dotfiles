@@ -18,6 +18,7 @@
       autologin = lib.mkDefault true;
       boot = lib.mkDefault true;
       btrfs = lib.mkDefault true;
+      nftables = lib.mkDefault true;
 
       server = {
         ssh = lib.mkDefault true;
