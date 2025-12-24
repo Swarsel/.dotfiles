@@ -138,6 +138,10 @@ in
                     type = types.nullOr types.str;
                     default = null;
                   };
+                  isHome = mkOption {
+                    type = types.bool;
+                    default = false;
+                  };
                 };
               })
             );
@@ -187,6 +191,9 @@ in
                   };
                   wanAddress6 = mkOption {
                     type = types.nullOr types.net.ipv6;
+                  };
+                  isHome = mkOption {
+                    type = types.bool;
                   };
                 };
               }

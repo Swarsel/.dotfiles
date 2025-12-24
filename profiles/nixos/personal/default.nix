@@ -26,6 +26,7 @@
       lowBattery = lib.mkDefault false;
       network = lib.mkDefault true;
       networkDevices = lib.mkDefault true;
+      nftables = lib.mkDefault true;
       nix-ld = lib.mkDefault true;
       nvd = lib.mkDefault true;
       packages = lib.mkDefault true;

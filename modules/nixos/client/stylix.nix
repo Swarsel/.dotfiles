@@ -1,4 +1,4 @@
-{ self, lib, config, vars, ... }:
+{ self, lib, config, vars, withHomeManager, ... }:
 {
   options.swarselmodules.stylix = lib.mkEnableOption "stylix config";
   config = {
@@ -12,6 +12,7 @@
           image = config.swarselsystems.wallpaper;
         }
         vars.stylix);
+  } // lib.optionalAttrs withHomeManager {
     home-manager.users."${config.swarselsystems.mainUser}" = {
       stylix = {
         targets = vars.stylixHomeTargets;

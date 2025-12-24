@@ -1,4 +1,4 @@
-{ self, lib, pkgs, config, outputs, inputs, minimal, globals, ... }:
+{ self, lib, pkgs, config, outputs, inputs, minimal, globals, withHomeManager, ... }:
 let
   inherit (config.swarselsystems) mainUser;
   inherit (config.repo.secrets.common) atticPublicKey;
@@ -122,18 +122,19 @@ in
         nixpkgs = {
           overlays = [
             outputs.overlays.default
+          ] ++ lib.optionals withHomeManager [
             (final: prev:
               let
                 additions = final: _: import "${self}/pkgs/config" {
                   inherit self config lib;
                   pkgs = final;
-                  homeConfig = config.home-manager.users.${config.swarselsystems.mainUser};
+                  homeConfig = config.home-manager.users.${config.swarselsystems.mainUser} or { };
                 };
               in
               additions final prev
             )
           ];
-          config = {
+          config = lib.mkIf (!config.swarselsystems.isMicroVM) {
             allowUnfree = true;
           };
         };

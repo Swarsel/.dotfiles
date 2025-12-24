@@ -1,4 +1,4 @@
-{ self, lib, config, ... }:
+{ self, lib, config, withHomeManager, ... }:
 {
   options.swarselmodules.server.ssh = lib.mkEnableOption "enable ssh on server";
   config = lib.mkIf config.swarselmodules.server.ssh {
@@ -21,16 +21,18 @@
         }
       ];
     };
-    users.users."${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/public/ssh/yubikey.pub)
-      (self + /secrets/public/ssh/magicant.pub)
-      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-    ];
-    users.users.root.openssh.authorizedKeys.keyFiles = [
-      (self + /secrets/public/ssh/yubikey.pub)
-      (self + /secrets/public/ssh/magicant.pub)
-      # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
-    ];
+    users.users = {
+      "${config.swarselsystems.mainUser}".openssh.authorizedKeys.keyFiles = lib.mkIf withHomeManager [
+        (self + /secrets/public/ssh/yubikey.pub)
+        (self + /secrets/public/ssh/magicant.pub)
+        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+      ];
+      root.openssh.authorizedKeys.keyFiles = [
+        (self + /secrets/public/ssh/yubikey.pub)
+        (self + /secrets/public/ssh/magicant.pub)
+        # (lib.mkIf config.swarselsystems.isBastionTarget (self + /secrets/public/ssh/jump.pub))
+      ];
+    };
     security.sudo.extraConfig = ''
       Defaults    env_keep+=SSH_AUTH_SOCK
     '';

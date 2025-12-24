@@ -43,6 +43,7 @@
       lowBattery = lib.mkForce true;
       lanzaboote = lib.mkForce true;
       autologin = lib.mkForce true;
+      nftables = lib.mkDefault true;
     };
 
   };

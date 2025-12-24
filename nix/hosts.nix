@@ -14,6 +14,8 @@
             inherit (config) nodes;
             globals = config.globals.${arch};
             type = "nixos";
+            withHomeManager = true;
+            extraModules = [ "${self}/modules/nixos/common/globals.nix" ];
           };
           modules = [
             inputs.disko.nixosModules.disko
@@ -30,6 +32,7 @@
             inputs.sops.nixosModules.sops
             inputs.stylix.nixosModules.stylix
             inputs.swarsel-nix.nixosModules.default
+            inputs.nixos-nftables-firewall.nixosModules.default
             (inputs.nixos-extra-modules + "/modules/guests")
             (inputs.nixos-extra-modules + "/modules/interface-naming.nix")
             "${self}/hosts/nixos/${arch}/${configName}"
@@ -47,6 +50,7 @@
                 arch = lib.mkForce arch;
                 type = lib.mkForce "nixos";
                 secretsDir = ../hosts/nixos/${arch}/${configName}/secrets;
+                configDir = ../hosts/nixos/${arch}/${configName};
                 lockFromBootstrapping = lib.mkIf (!minimal) (lib.swarselsystems.mkStrong true);
               };
 
@@ -70,6 +74,7 @@
           specialArgs = {
             inherit inputs lib outputs self minimal configName;
             inherit (config) nodes;
+            withHomeManager = true;
             globals = config.globals.${arch};
           };
           modules = [
@@ -181,7 +186,7 @@
 
       guestConfigurations = lib.flip lib.concatMapAttrs config.nixosConfigurations (
         _: node:
-          lib.flip lib.mapAttrs' (node.config.microvm.vms or { }) (
+          lib.flip lib.mapAttrs' (node.config.guests or { }) (
             guestName: guestDef:
               lib.nameValuePair guestDef.nodeName node.config.microvm.vms.${guestName}.config
           )

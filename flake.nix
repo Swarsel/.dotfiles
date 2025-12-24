@@ -74,6 +74,7 @@
     dns.url = "github:kirelagin/dns.nix";
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
     simple-nixos-mailserver.url = "gitlab:simple-nixos-mailserver/nixos-mailserver/master";
+    nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
   };
 
   outputs =

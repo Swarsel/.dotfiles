@@ -1,4 +1,4 @@
-{ config, lib, globals, nixosConfig ? null, ... }:
+{ self, config, lib, globals, inputs, outputs, minimal, nixosConfig ? null, ... }:
 {
   _module.args = {
     confLib = rec {
@@ -36,6 +36,44 @@
         proxyAddress4 = globals.hosts.${proxy}.wanAddress4 or null;
         proxyAddress6 = globals.hosts.${proxy}.wanAddress6 or null;
       };
+
+      mkMicrovm =
+        if config.swarselsystems.withMicroVMs then
+          (guestName: {
+            ${guestName} = {
+              backend = "microvm";
+              autostart = true;
+              modules = [
+                (config.node.configDir + /guests/${guestName}.nix)
+                {
+                  node.secretsDir = config.node.configDir + /secrets/${guestName};
+                  node.configDir = config.node.configDir + /guests/${guestName};
+                  networking.nftables.firewall = {
+                    zones.untrusted.interfaces = lib.mkIf
+                      (
+                        lib.length config.guests.${guestName}.networking.links == 1
+                      )
+                      config.guests.${guestName}.networking.links;
+                  };
+                }
+                "${self}/modules/nixos/optional/microvm-guest.nix"
+              ];
+              microvm = {
+                system = config.node.arch;
+                baseMac = config.repo.secrets.local.networking.networks.lan.mac;
+                interfaces.vlan-services = { };
+              };
+              extraSpecialArgs = {
+                inherit (outputs) nodes;
+                inherit (inputs.self.pkgs.${config.node.arch}) lib;
+                inherit inputs outputs minimal;
+                inherit (inputs) self;
+                withHomeManager = false;
+                globals = outputs.globals.${config.node.arch};
+              };
+            };
+          }) else (_: { _ = { }; });
+
     };
   };
 }
