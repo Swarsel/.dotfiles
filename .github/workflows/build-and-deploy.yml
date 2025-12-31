@@ -3,8 +3,8 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - feat/router  # or master, depending on your default branch
-  workflow_dispatch:  # allows manual trigger
+      - feat/router
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,22 +27,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y emacs-nox elpa-htmlize
 
-      - name: Tangle Org files
-        run: |
-          emacs --batch \
-            --eval "(require 'org)" \
-            --eval "(setq org-confirm-babel-evaluate nil)" \
-            --visit=SwarselSystems.org \
-            --funcall org-babel-tangle
-
-      - name: Export Org to HTML
+      - name: Tangle files & export to HTML
         run: |
           emacs --batch \
             --eval "(require 'org)" \
             --eval "(setq org-confirm-babel-evaluate nil
                      org-html-validation-link nil
+                     org-export-headline-levels 6
                      org-export-with-broken-links 'mark)" \
             --visit=SwarselSystems.org \
+            --funcall org-babel-tangle \
             --funcall org-html-export-to-html
 
       - name: Setup Pages
