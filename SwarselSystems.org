@@ -200,7 +200,7 @@ I also add this javascript to add header pinning functionality to the site, usin
         showBtn = document.createElement('button');
         showBtn.id = 'show-pinned-btn';
         showBtn.type = 'button';
-        showBtn.textContent = 'Show Pinned';
+        showBtn.textContent = 'Pinned';
         document.body.appendChild(showBtn);
       }
 
@@ -414,7 +414,7 @@ I also add this javascript to add header pinning functionality to the site, usin
         attachPinBehavior(pinBtn, href, text);
       });
 
-      const headers = content.querySelectorAll('h2, h3, h4, h5');
+      const headers = content.querySelectorAll('h2, h3, h4, h5, h6');
       headers.forEach(header => {
         const id = header.getAttribute('id');
         if (!id) return;
@@ -31433,7 +31433,7 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
     width: calc(100vw - 300px);
   }
 
-  h1, h2, h3, h4, h5 {
+  h1, h2, h3, h4, h5, h6 {
     color: #70e1e8;
     font-weight: 500;
     margin-top: 2.2rem;
@@ -31449,6 +31449,18 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
 
   h3 {
     font-size: 1.3rem;
+  }
+
+  h4 {
+    font-size: 1.2rem;
+  }
+
+  h5 {
+    font-size: 1.1rem;
+  }
+
+  h6 {
+    font-size: 1.0rem;
   }
 
   a {
@@ -31629,30 +31641,6 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
     display: block;
   }
 
-  @media (max-width: 1600px) {
-    #content {
-      max-width: 100%;
-    }
-  }
-
-  @media (max-width: 1300px) {
-    #pinned-panel {
-      display: none !important;
-    }
-
-    #show-pinned-btn {
-      display: none !important;
-    }
-
-    #content,
-    #content.pinned-hidden {
-      margin-right: 0;
-      width: calc(100vw - 300px);
-      max-width: 100%;
-      padding: 1.8rem 2.2rem;
-    }
-  }
-
   #mobile-toc-toggle,
   #mobile-pinned-toggle {
     position: fixed;
@@ -31681,6 +31669,49 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
     background-color: #2f3b45;
     color: #5ec4ff;
   }
+
+  @media (max-width: 1600px) {
+    #content {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 1300px) {
+    #mobile-pinned-toggle {
+      display: block;
+    }
+
+    #pinned-panel {
+      display: block !important;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 260px;
+      max-width: 80vw;
+      height: 100vh;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 1000;
+    }
+
+    #pinned-panel.mobile-visible {
+      transform: translateX(0);
+    }
+
+    #show-pinned-btn {
+      display: none !important;
+    }
+
+    #content,
+    #content.pinned-hidden {
+      margin-right: 0;
+      width: calc(100vw - 300px);
+      max-width: 100%;
+      padding: 1.8rem 2.2rem;
+    }
+  }
+
 
   @media (max-width: 1000px) {
     #mobile-toc-toggle,
@@ -31754,7 +31785,8 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
   h2 .toc-pin-btn,
   h3 .toc-pin-btn,
   h4 .toc-pin-btn,
-  h5 .toc-pin-btn {
+  h5 .toc-pin-btn,
+  h6 .toc-pin-btn {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
@@ -31764,7 +31796,8 @@ This is the stylesheet used by the [[#h:12880c64-229c-4063-9eea-387a97490676][HT
   h2:hover .toc-pin-btn,
   h3:hover .toc-pin-btn,
   h4:hover .toc-pin-btn,
-  h5:hover .toc-pin-btn {
+  h5:hover .toc-pin-btn,
+  h6:hover .toc-pin-btn {
     opacity: 1;
     visibility: visible;
   }
