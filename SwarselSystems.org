@@ -163,15 +163,9 @@ window.addEventListener('load', addDarkmodeWidget);
 
     if (!content || !pinnedList || !toggleBtn || !clearAllBtn) return;
 
-    // ------------------------------------------------------------------
-    // State
-    // href -> { li: <li> | null, btns: Set<button>, text: string }
-    // plus a persistent set of hrefs that are currently pinned.
-    // ------------------------------------------------------------------
     const pinnedItems = new Map();
     let initiallyPinnedHrefs = new Set();
 
-    // ---- persistence helpers -----------------------------------------
     function loadFromStorage() {
       try {
         const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
@@ -197,9 +191,21 @@ window.addEventListener('load', addDarkmodeWidget);
       }
     }
 
-    // ------------------------------------------------------------------
-    // Panel show / hide
-    // ------------------------------------------------------------------
+    function sortPinnedList() {
+      // Collect all li elements with their text
+      const items = Array.from(pinnedList.children).map(li => {
+        const link = li.querySelector('a');
+        return {
+          li: li,
+          text: link ? link.textContent.trim().toLowerCase() : ''
+        };
+      });
+
+      items.sort((a, b) => a.text.localeCompare(b.text));
+
+      items.forEach(item => pinnedList.appendChild(item.li));
+    }
+
     function hidePinnedPanel() {
       pinnedPanel.classList.add('hidden');
       content.classList.add('pinned-hidden');
@@ -215,9 +221,6 @@ window.addEventListener('load', addDarkmodeWidget);
     toggleBtn.addEventListener('click', hidePinnedPanel);
     showBtn.addEventListener('click', showPinnedPanel);
 
-    // ------------------------------------------------------------------
-    // Clear all pins
-    // ------------------------------------------------------------------
     clearAllBtn.addEventListener('click', function() {
       if (pinnedItems.size === 0) return;
 
@@ -236,9 +239,6 @@ window.addEventListener('load', addDarkmodeWidget);
       saveToStorage();
     });
 
-    // ------------------------------------------------------------------
-    // Attach pin behavior (identical semantics to your original)
-    // ------------------------------------------------------------------
     function attachPinBehavior(pinBtn, href, text) {
       if (!href) return;
 
@@ -248,7 +248,6 @@ window.addEventListener('load', addDarkmodeWidget);
       const entry = pinnedItems.get(href);
       entry.btns.add(pinBtn);
 
-      // Initial label: depends on whether li exists (set later) / restored
       pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
 
       pinBtn.addEventListener('click', function(e) {
@@ -294,19 +293,16 @@ window.addEventListener('load', addDarkmodeWidget);
 
           current.li = li;
           current.btns.forEach(b => b.textContent = '[unpin]');
+
+          sortPinnedList();
+
           saveToStorage();
         }
       });
     }
 
-    // ------------------------------------------------------------------
-    // 1) Load which hrefs should start pinned
-    // ------------------------------------------------------------------
     loadFromStorage();
 
-    // ------------------------------------------------------------------
-    // 2) Build ToC buttons (same as your original)
-    // ------------------------------------------------------------------
     const tocLinks = document.querySelectorAll('#text-table-of-contents a');
     tocLinks.forEach(link => {
       if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
@@ -331,9 +327,6 @@ window.addEventListener('load', addDarkmodeWidget);
       attachPinBehavior(pinBtn, href, text);
     });
 
-    // ------------------------------------------------------------------
-    // 3) Build header buttons (same as your original)
-    // ------------------------------------------------------------------
     const headers = content.querySelectorAll('h2, h3, h4, h5');
     headers.forEach(header => {
       const id = header.getAttribute('id');
@@ -354,9 +347,6 @@ window.addEventListener('load', addDarkmodeWidget);
       attachPinBehavior(pinBtn, href, text);
     });
 
-    // ------------------------------------------------------------------
-    // 4) Actually create pinned list items for those in storage
-    // ------------------------------------------------------------------
     initiallyPinnedHrefs.forEach(href => {
       const entry = pinnedItems.get(href);
       if (!entry) {
@@ -393,7 +383,8 @@ window.addEventListener('load', addDarkmodeWidget);
       entry.btns.forEach(b => b.textContent = '[unpin]');
     });
 
-    // Ensure storage is in sync with what's currently pinned on first load
+    sortPinnedList();
+
     saveToStorage();
   });
 })();
@@ -671,7 +662,7 @@ If the new machine is home-manager only, perform these steps:
   1) Clone dotfile repo & change into it
   2) `nix --extra-experimental-features 'nix-command flakes' develop`
   3) `home-manager --extra-experimental-features 'nix-command flakes' switch --flake .#$(hostname) --show-trace`
-#+end
+#+end_export
 
 ** TODO Current issues
 :PROPERTIES:
