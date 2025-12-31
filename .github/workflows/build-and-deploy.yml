@@ -27,6 +27,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y emacs-nox elpa-htmlize
 
+      - name: Tangle Org files
+        run: |
+          emacs --batch \
+            --eval "(require 'org)" \
+            --eval "(setq org-confirm-babel-evaluate nil)" \
+            --visit=SwarselSystems.org \
+            --funcall org-babel-tangle
+
       - name: Export Org to HTML
         run: |
           emacs --batch \
@@ -43,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: 'site'
 
   deploy:
     environment:
