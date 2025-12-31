@@ -130,6 +130,8 @@ window.addEventListener('load', addDarkmodeWidget);
   }
 
   ready(function initPinned() {
+    const STORAGE_KEY = 'org-pinned-items-v2';
+
     let pinnedPanel = document.getElementById('pinned-panel');
     if (!pinnedPanel) {
       pinnedPanel = document.createElement('aside');
@@ -139,6 +141,7 @@ window.addEventListener('load', addDarkmodeWidget);
           <h2>Pinned</h2>
           <button id="toggle-pinned-btn" type="button" title="Hide pinned panel">✕</button>
         </div>
+        <button id="clear-all-pins-btn" type="button">Clear All</button>
         <ul id="pinned-list"></ul>
       `;
       document.body.appendChild(pinnedPanel);
@@ -156,11 +159,47 @@ window.addEventListener('load', addDarkmodeWidget);
     const content    = document.getElementById('content');
     const pinnedList = document.getElementById('pinned-list');
     const toggleBtn  = document.getElementById('toggle-pinned-btn');
+    const clearAllBtn = document.getElementById('clear-all-pins-btn');
 
-    if (!content || !pinnedList || !toggleBtn) return;
+    if (!content || !pinnedList || !toggleBtn || !clearAllBtn) return;
 
+    // ------------------------------------------------------------------
+    // State
+    // href -> { li: <li> | null, btns: Set<button>, text: string }
+    // plus a persistent set of hrefs that are currently pinned.
+    // ------------------------------------------------------------------
     const pinnedItems = new Map();
+    let initiallyPinnedHrefs = new Set();
 
+    // ---- persistence helpers -----------------------------------------
+    function loadFromStorage() {
+      try {
+        const raw = window.localStorage && localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return;
+        initiallyPinnedHrefs = new Set(arr);
+      } catch (e) {
+        console.warn('Pinned: failed to load from localStorage', e);
+      }
+    }
+
+    function saveToStorage() {
+      try {
+        if (!window.localStorage) return;
+        const arr = [];
+        pinnedItems.forEach((entry, href) => {
+          if (entry.li) arr.push(href);
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      } catch (e) {
+        console.warn('Pinned: failed to save to localStorage', e);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Panel show / hide
+    // ------------------------------------------------------------------
     function hidePinnedPanel() {
       pinnedPanel.classList.add('hidden');
       content.classList.add('pinned-hidden');
@@ -176,15 +215,40 @@ window.addEventListener('load', addDarkmodeWidget);
     toggleBtn.addEventListener('click', hidePinnedPanel);
     showBtn.addEventListener('click', showPinnedPanel);
 
+    // ------------------------------------------------------------------
+    // Clear all pins
+    // ------------------------------------------------------------------
+    clearAllBtn.addEventListener('click', function() {
+      if (pinnedItems.size === 0) return;
+
+      const confirmed = confirm('Are you sure you want to clear all pinned items?');
+      if (!confirmed) return;
+
+      // Remove all li elements and reset buttons
+      pinnedItems.forEach((entry, href) => {
+        if (entry.li && entry.li.parentElement) {
+          entry.li.parentElement.removeChild(entry.li);
+        }
+        entry.li = null;
+        entry.btns.forEach(b => b.textContent = '[pin]');
+      });
+
+      saveToStorage();
+    });
+
+    // ------------------------------------------------------------------
+    // Attach pin behavior (identical semantics to your original)
+    // ------------------------------------------------------------------
     function attachPinBehavior(pinBtn, href, text) {
       if (!href) return;
 
       if (!pinnedItems.has(href)) {
-        pinnedItems.set(href, { li: null, btns: new Set() });
+        pinnedItems.set(href, { li: null, btns: new Set(), text: text });
       }
       const entry = pinnedItems.get(href);
       entry.btns.add(pinBtn);
 
+      // Initial label: depends on whether li exists (set later) / restored
       pinBtn.textContent = entry.li ? '[unpin]' : '[pin]';
 
       pinBtn.addEventListener('click', function(e) {
@@ -194,17 +258,20 @@ window.addEventListener('load', addDarkmodeWidget);
         if (!current) return;
 
         if (current.li) {
+          // --- Unpin
           if (current.li.parentElement) {
             current.li.parentElement.removeChild(current.li);
           }
           current.li = null;
           current.btns.forEach(b => b.textContent = '[pin]');
+          saveToStorage();
         } else {
+          // --- Pin
           const li = document.createElement('li');
 
           const a = document.createElement('a');
           a.href = href;
-          a.textContent = text;
+          a.textContent = current.text;
 
           const removeBtn = document.createElement('button');
           removeBtn.className = 'pin-remove';
@@ -218,6 +285,7 @@ window.addEventListener('load', addDarkmodeWidget);
             }
             cur.li = null;
             cur.btns.forEach(b => b.textContent = '[pin]');
+            saveToStorage();
           });
 
           li.appendChild(a);
@@ -226,10 +294,19 @@ window.addEventListener('load', addDarkmodeWidget);
 
           current.li = li;
           current.btns.forEach(b => b.textContent = '[unpin]');
+          saveToStorage();
         }
       });
     }
 
+    // ------------------------------------------------------------------
+    // 1) Load which hrefs should start pinned
+    // ------------------------------------------------------------------
+    loadFromStorage();
+
+    // ------------------------------------------------------------------
+    // 2) Build ToC buttons (same as your original)
+    // ------------------------------------------------------------------
     const tocLinks = document.querySelectorAll('#text-table-of-contents a');
     tocLinks.forEach(link => {
       if (link.parentElement && link.parentElement.classList.contains('toc-entry')) {
@@ -254,6 +331,9 @@ window.addEventListener('load', addDarkmodeWidget);
       attachPinBehavior(pinBtn, href, text);
     });
 
+    // ------------------------------------------------------------------
+    // 3) Build header buttons (same as your original)
+    // ------------------------------------------------------------------
     const headers = content.querySelectorAll('h2, h3, h4, h5');
     headers.forEach(header => {
       const id = header.getAttribute('id');
@@ -273,6 +353,48 @@ window.addEventListener('load', addDarkmodeWidget);
       header.appendChild(pinBtn);
       attachPinBehavior(pinBtn, href, text);
     });
+
+    // ------------------------------------------------------------------
+    // 4) Actually create pinned list items for those in storage
+    // ------------------------------------------------------------------
+    initiallyPinnedHrefs.forEach(href => {
+      const entry = pinnedItems.get(href);
+      if (!entry) {
+        // Section might have disappeared in this version of the doc
+        return;
+      }
+
+      const li = document.createElement('li');
+
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = entry.text;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'pin-remove';
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        const cur = pinnedItems.get(href);
+        if (!cur) return;
+        if (cur.li && cur.li.parentElement) {
+          cur.li.parentElement.removeChild(cur.li);
+        }
+        cur.li = null;
+        cur.btns.forEach(b => b.textContent = '[pin]');
+        saveToStorage();
+      });
+
+      li.appendChild(a);
+      li.appendChild(removeBtn);
+      pinnedList.appendChild(li);
+
+      entry.li = li;
+      entry.btns.forEach(b => b.textContent = '[unpin]');
+    });
+
+    // Ensure storage is in sync with what's currently pinned on first load
+    saveToStorage();
   });
 })();
 </script>
@@ -31186,6 +31308,24 @@ This is the stylesheet used by waybar.
   h5:hover .toc-pin-btn {
     opacity: 1;
     visibility: visible;
+  }
+
+  #clear-all-pins-btn {
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.6rem;
+    background-color: #2f3b45;
+    border: 1px solid #3a4a56;
+    color: #b7c5d3;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  #clear-all-pins-btn:hover {
+    background-color: #3a4a56;
+    color: #ff6b6b;
   }
 #+end_src
 ** justfile
