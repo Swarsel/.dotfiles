@@ -156,12 +156,58 @@ window.addEventListener('load', addDarkmodeWidget);
       document.body.appendChild(showBtn);
     }
 
-    const content    = document.getElementById('content');
-    const pinnedList = document.getElementById('pinned-list');
-    const toggleBtn  = document.getElementById('toggle-pinned-btn');
-    const clearAllBtn = document.getElementById('clear-all-pins-btn');
+    const content      = document.getElementById('content');
+    const pinnedList   = document.getElementById('pinned-list');
+    const toggleBtn    = document.getElementById('toggle-pinned-btn');
+    const clearAllBtn  = document.getElementById('clear-all-pins-btn');
+    const toc          = document.getElementById('table-of-contents');
+    const body         = document.body;
 
-    if (!content || !pinnedList || !toggleBtn || !clearAllBtn) return;
+    if (!content || !pinnedList || !toggleBtn || !clearAllBtn || !toc) return;
+
+    let mobileTocBtn = document.getElementById('mobile-toc-toggle');
+    if (!mobileTocBtn) {
+      mobileTocBtn = document.createElement('button');
+      mobileTocBtn.id = 'mobile-toc-toggle';
+      mobileTocBtn.type = 'button';
+      mobileTocBtn.textContent = 'TOC';
+      document.body.appendChild(mobileTocBtn);
+    }
+
+    let mobilePinnedBtn = document.getElementById('mobile-pinned-toggle');
+    if (!mobilePinnedBtn) {
+      mobilePinnedBtn = document.createElement('button');
+      mobilePinnedBtn.id = 'mobile-pinned-toggle';
+      mobilePinnedBtn.type = 'button';
+      mobilePinnedBtn.textContent = 'Pinned';
+      document.body.appendChild(mobilePinnedBtn);
+    }
+
+    function anyMobilePanelOpen() {
+      return toc.classList.contains('mobile-visible') ||
+             pinnedPanel.classList.contains('mobile-visible');
+    }
+
+    function updateBodyMobilePanelState() {
+      if (anyMobilePanelOpen()) body.classList.add('mobile-panel-open');
+      else body.classList.remove('mobile-panel-open');
+    }
+
+    mobileTocBtn.addEventListener('click', function() {
+      const isOpen = toc.classList.toggle('mobile-visible');
+      if (isOpen) {
+        pinnedPanel.classList.remove('mobile-visible');
+      }
+      updateBodyMobilePanelState();
+    });
+
+    mobilePinnedBtn.addEventListener('click', function() {
+      const isOpen = pinnedPanel.classList.toggle('mobile-visible');
+      if (isOpen) {
+        toc.classList.remove('mobile-visible');
+      }
+      updateBodyMobilePanelState();
+    });
 
     const pinnedItems = new Map();
     let initiallyPinnedHrefs = new Set();
@@ -192,7 +238,6 @@ window.addEventListener('load', addDarkmodeWidget);
     }
 
     function sortPinnedList() {
-      // Collect all li elements with their text
       const items = Array.from(pinnedList.children).map(li => {
         const link = li.querySelector('a');
         return {
@@ -200,9 +245,7 @@ window.addEventListener('load', addDarkmodeWidget);
           text: link ? link.textContent.trim().toLowerCase() : ''
         };
       });
-
       items.sort((a, b) => a.text.localeCompare(b.text));
-
       items.forEach(item => pinnedList.appendChild(item.li));
     }
 
@@ -227,7 +270,6 @@ window.addEventListener('load', addDarkmodeWidget);
       const confirmed = confirm('Are you sure you want to clear all pinned items?');
       if (!confirmed) return;
 
-      // Remove all li elements and reset buttons
       pinnedItems.forEach((entry, href) => {
         if (entry.li && entry.li.parentElement) {
           entry.li.parentElement.removeChild(entry.li);
@@ -257,7 +299,6 @@ window.addEventListener('load', addDarkmodeWidget);
         if (!current) return;
 
         if (current.li) {
-          // --- Unpin
           if (current.li.parentElement) {
             current.li.parentElement.removeChild(current.li);
           }
@@ -265,7 +306,6 @@ window.addEventListener('load', addDarkmodeWidget);
           current.btns.forEach(b => b.textContent = '[pin]');
           saveToStorage();
         } else {
-          // --- Pin
           const li = document.createElement('li');
 
           const a = document.createElement('a');
@@ -295,7 +335,6 @@ window.addEventListener('load', addDarkmodeWidget);
           current.btns.forEach(b => b.textContent = '[unpin]');
 
           sortPinnedList();
-
           saveToStorage();
         }
       });
@@ -331,7 +370,7 @@ window.addEventListener('load', addDarkmodeWidget);
     headers.forEach(header => {
       const id = header.getAttribute('id');
       if (!id) return;
-      if (header.querySelector('.toc-pin-btn')) return; // avoid duplicates
+      if (header.querySelector('.toc-pin-btn')) return;
 
       const href = '#' + id;
       const text = header.textContent.trim();
@@ -349,10 +388,7 @@ window.addEventListener('load', addDarkmodeWidget);
 
     initiallyPinnedHrefs.forEach(href => {
       const entry = pinnedItems.get(href);
-      if (!entry) {
-        // Section might have disappeared in this version of the doc
-        return;
-      }
+      if (!entry) return;
 
       const li = document.createElement('li');
 
@@ -384,7 +420,6 @@ window.addEventListener('load', addDarkmodeWidget);
     });
 
     sortPinnedList();
-
     saveToStorage();
   });
 })();
@@ -31017,7 +31052,8 @@ This is the stylesheet used by waybar.
     max-width: 1200px;
     width: calc(100vw - 620px);
     box-sizing: border-box;
-    transition: margin 0.3s ease, padding 0.3s ease, width 0.3s ease, max-width 0.3s ease;
+    transition: margin 0.3s ease, padding 0.3s ease,
+                width 0.3s ease, max-width 0.3s ease;
   }
 
   #content.pinned-hidden {
@@ -31245,12 +31281,79 @@ This is the stylesheet used by waybar.
     }
   }
 
+  #mobile-toc-toggle,
+  #mobile-pinned-toggle {
+    position: fixed;
+    top: 1rem;
+    z-index: 1100;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid #2f3b45;
+    background-color: #232b32;
+    color: #b7c5d3;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: none;
+  }
+
+  #mobile-toc-toggle {
+    left: 1rem;
+  }
+
+  #mobile-pinned-toggle {
+    right: 1rem;
+  }
+
+  #mobile-toc-toggle:hover,
+  #mobile-pinned-toggle:hover {
+    background-color: #2f3b45;
+    color: #5ec4ff;
+  }
+
   @media (max-width: 1000px) {
-    #table-of-contents {
-      display: none;
+    #mobile-toc-toggle,
+    #mobile-pinned-toggle {
+      display: block;
     }
 
-    #content {
+    #table-of-contents {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      max-width: 80vw;
+      height: 100vh;
+      overflow-y: auto;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 1000;
+    }
+
+    #table-of-contents.mobile-visible {
+      transform: translateX(0);
+    }
+
+    #pinned-panel {
+      display: block !important;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 260px;
+      max-width: 80vw;
+      height: 100vh;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 1000;
+    }
+
+    #pinned-panel.mobile-visible {
+      transform: translateX(0);
+    }
+
+    #content,
+    #content.pinned-hidden {
       margin-left: 0;
       margin-right: 0;
       width: 100vw;
@@ -31263,17 +31366,10 @@ This is the stylesheet used by waybar.
     #content {
       padding: 1.2rem 1rem;
     }
-    .darkmode-toggle,
-    .darkmode-layer,
-    .darkmode-background {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
   }
 
-  .darkmode-layer, .darkmode-toggle {
+  .darkmode-layer,
+  .darkmode-toggle {
     z-index: 500;
   }
 
@@ -31317,6 +31413,12 @@ This is the stylesheet used by waybar.
   #clear-all-pins-btn:hover {
     background-color: #3a4a56;
     color: #ff6b6b;
+  }
+
+  @media (max-width: 1000px) {
+    body.mobile-panel-open {
+      overflow: hidden;
+    }
   }
 #+end_src
 ** justfile
