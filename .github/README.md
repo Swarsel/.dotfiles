@@ -273,9 +273,8 @@
 
   These are in random order (also known as 'the order in which I discovered them'). I would like to express my gratitude to:
 
-  - All the great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete):
   <details>
-    <summary>Click here to expand...</summary>
+    <summary>The great people who have contributed code for the nix-community, with special mentions for (this list is unfairly incomplete)</summary>
 
   - [guibou](https://github.com/guibou/)
   - [rycee](https://github.com/rycee)
@@ -300,9 +299,8 @@
   - [oddlama](https://github.com/oddlama)
   </details>
 
-  - All the people who have inspired me with their configurations (sadly also highly incomplete):
   <details>
-    <summary>Click here to expand...</summary>
+    <summary>The people who have inspired me with their configurations (sadly also highly incomplete)</summary>
 
   - [theSuess](https://github.com/theSuess) with their [home-manager](https://code.kulupu.party/thesuess/home-manager)
   - [hlissner](https://github.com/hlissner) with their [dotfiles](https://github.com/hlissner/dotfiles)
@@ -315,7 +313,7 @@
   - [EmergentMind](https://github.com/EmergentMind) with their [nix-config](https://github.com/EmergentMind/nix-config)
   - [librephoenix](https://github.com/librephoenix) with their [nixos-config](https://github.com/librephoenix/nixos-config)
   - [Xe](https://github.com/Xe) with their [blog](https://xeiaso.net/blog/)
-  - [oddlama](https://github.com/oddlama) with their absolutely incredible [nix-config](https:/github.com/oddlama/nix-config)
+  - [oddlama](https://github.com/oddlama) with their [nix-config](https:/github.com/oddlama/nix-config)
   </details>
 
   If you feel that I forgot to pay you tribute for code that I used in this repository, please shoot me a message and I will fix it :)
